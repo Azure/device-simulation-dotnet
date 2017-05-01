@@ -1,5 +1,5 @@
 language: csharp
-mono: latest
+mono: beta
 dotnet: 1.0.1
 dist: trusty
 sudo: false
