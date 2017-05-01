@@ -6,11 +6,7 @@ source "$APP_HOME/scripts/.functions.sh"
 cd $APP_HOME
 
 check_dependencies() {
-    TEST=$(which mono)
-    if [[ -z "$TEST" ]]; then
-        echo "ERROR: 'mono' command not found. Install Mono 5.x first (http://www.mono-project.com/docs/about-mono/releases/5.0.0)."
-        exit 1
-    fi
+    set +e
 
     TEST=$(which nuget)
     if [[ -z "$TEST" ]]; then
@@ -18,11 +14,12 @@ check_dependencies() {
         exit 1
     fi
 
-    TEST=$(which dotnet)
+    TEST=$(which msbuild)
     if [[ -z "$TEST" ]]; then
-        echo "ERROR: 'dotnet' command not found. Install .NET Core first (https://dotnet.github.io)."
+        echo "ERROR: 'msbuild' command not found. Install Mono 5.x first (http://www.mono-project.com/docs/about-mono/releases/5.0.0)."
         exit 1
     fi
+    set -e
 }
 
 failed() {

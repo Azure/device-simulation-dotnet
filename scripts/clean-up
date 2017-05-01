@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+set -e
+APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )/"
+source "$APP_HOME/scripts/.functions.sh"
+
+if [[ ${#APP_HOME} -lt 20 ]]; then
+    error "Unable to detect current folder. Aborting."
+    exit 1
+fi
+
+check_dependencies() {
+    set +e
+    TEST=$(which dotnet)
+    if [[ -z "$TEST" ]]; then
+        error "ERROR: 'dotnet' command not found. Install .NET Core first (https://dotnet.github.io)."
+        exit 1
+    fi
+    set -e
+}
+
+cleanup_folders() {
+    cd $APP_HOME
+    rm -fR packages
+
+    PROJECTS=$(dotnet sln list | grep 'csproj$')
+    for PROJ in $PROJECTS; do
+        PROJ=$(dirname "$PROJ")
+        cd $PROJ
+        rm -fR bin/
+        rm -fR obj/
+        cd $APP_HOME
+    done
+}
+
+header "Removing temporary folders and files..."
+check_dependencies
+cleanup_folders
+echo "Done"
