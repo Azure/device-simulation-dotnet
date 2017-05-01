@@ -10,7 +10,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
     public class StatusModel
     {
         public string Message { get; set; }
-        public DateTime CurrentTime { get; set; }
+        public DateTime CurrentTime => DateTime.UtcNow;
         public DateTime StartTime => Uptime.Start;
         public TimeSpan UpTime => Uptime.Duration;
 

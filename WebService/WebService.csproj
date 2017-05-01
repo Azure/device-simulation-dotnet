@@ -75,7 +75,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Runtime\Uptime.cs" />
+    <Compile Include="v1\Controllers\DevicesController.cs" />
     <Compile Include="v1\Controllers\StatusController.cs" />
+    <Compile Include="v1\Models\DeviceApiModel.cs" />
+    <Compile Include="v1\Models\DeviceListApiModel.cs" />
+    <Compile Include="v1\Models\DeviceTwinApiModel.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Runtime\Config.cs" />
@@ -89,6 +93,12 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="application.conf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Dockerfile">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include=".dockerignore">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

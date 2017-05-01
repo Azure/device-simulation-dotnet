@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
 using System.Web.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
 
@@ -9,13 +8,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
     [RoutePrefix(Version.Name)]
     public class StatusController : ApiController
     {
+        /// <summary>Return the service status</summary>
+        /// <returns>Status object</returns>
         public StatusModel Get()
         {
-            return new StatusModel
-            {
-                Message = "OK",
-                CurrentTime = DateTime.UtcNow
-            };
+            return new StatusModel { Message = "OK" };
         }
     }
 }

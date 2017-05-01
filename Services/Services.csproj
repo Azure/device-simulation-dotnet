@@ -80,7 +80,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Devices.cs" />
+    <Compile Include="DeviceTwins.cs" />
+    <Compile Include="Exceptions\InvalidInput.cs" />
+    <Compile Include="Models\DeviceServiceModel.cs" />
+    <Compile Include="Models\DeviceTwinServiceModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Runtime\Config.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

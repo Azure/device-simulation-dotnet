@@ -5,6 +5,7 @@ using Owin;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 {
+    /// <summary>Application wrapper started by the entry point, see Program.cs</summary>
     public class Startup
     {
         public void Configuration(IAppBuilder app)

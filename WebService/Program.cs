@@ -6,6 +6,7 @@ using Microsoft.Owin.Hosting;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 {
+    /// <summary>Application entry point</summary>
     public class Program
     {
         static readonly IConfig config = new Config();
