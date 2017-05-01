@@ -1,7 +1,7 @@
 * [Contribution license Agreement](#contribution-license-agreement)
 * [Azure IoT Hub setup](#azure-iot-hub-setup)
 * [Development setup](#development-setup)
-* [Build and Run](#build-and-run)
+* [Build, Run locally and with Docker](#build-run-locally-and-with-docker)
 
 Contribution license Agreement
 ==============================
@@ -80,8 +80,8 @@ If you use ReSharper or Rider, you can load the code style settings from
 the repository, stored in
 [device-simulation.sln.DotSettings](device-simulation.sln.DotSettings)
 
-Build and Run
-=============
+Build, Run locally and with Docker
+==================================
 
 The [scripts](scripts) folder includes some scripts for frequent tasks:
 
@@ -89,3 +89,7 @@ The [scripts](scripts) folder includes some scripts for frequent tasks:
 * `compile`: compile all the projects.
 * `run`: compile the projects and run the service. This will prompt for
   elevated privileges in Windows to run the web service.
+* `docker-build`: build a Docker container and store the image in the local
+  registry.
+* `docker-run`: run the Docker container from the image stored in the local
+  registry.

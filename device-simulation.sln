@@ -31,6 +31,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{62C8
 		scripts\run.vbs = scripts\run.vbs
 		scripts\compile = scripts\compile
 		scripts\compile.cmd = scripts\compile.cmd
+		scripts\docker-build = scripts\docker-build
+		scripts\docker-build.cmd = scripts\docker-build.cmd
+		scripts\docker-run = scripts\docker-run
+		scripts\docker-run.cmd = scripts\docker-run.cmd
 	EndProjectSection
 EndProject
 Global

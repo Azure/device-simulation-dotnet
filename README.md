@@ -37,7 +37,7 @@ Edge cases
 Other documents
 ===============
 
-* [Contributing and development setup](CONTRIBUTING.md)
+* [Contributing and Development setup](CONTRIBUTING.md)
 
 
 [build-badge]: https://img.shields.io/travis/Azure/device-simulation-dotnet.svg
