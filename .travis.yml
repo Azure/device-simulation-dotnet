@@ -1,0 +1,16 @@
+language: csharp
+mono: none
+dotnet: 1.0.1
+dist: trusty
+sudo: false
+cache:
+  directories:
+  - "$HOME/.nuget/"
+before_install:
+- set -e
+script:
+- "./$CODEBASE/scripts/build"
+notifications:
+  slack:
+    rooms:
+    - secure: uHniNf/kLZ0s2M3PdWQrzeNNB3v9zeHrCRaXSOzNgSNgV10OBm6ryLolGSPic/4jImCOPviiCu7M9lZ/IxdJn3zg0lY9o7q8JzyIOt5FYoVrdlxEoQebX4UdPLh3X/1YNSThdC+crgwHKc/6g8YRNluwd1jggdNdYpm021lOA0AItmtwl9bXn2Ba7Zlu6R7MezXxVo0hDELBwONra+lixpIGwprHEQfIX54lrBAaaEX9Pm3W9VSEfV+0YLnxI09PkF/vLquUdrm6axh9XG4UA2TxkCGB2nk11LSc+lvDxkcZmuQdEED7lAuuthB7TiQ5NViULtYl42S/uCfXGZHpmoiyp5t6vPftuZeEkq3c/Zlmi6qNX1PxzXML4v2VHHmLxOii47vUsfbntOWFmCMavztSdsnBTen3i6+IpPXMw2tJ4NVRFss8pnlELMlVGCEqRhVseNBDF1Ni0sCTyOzqGxnfjWmQqgITwGHDOrg6UU09qLtz43U+4OzItXUWwQdG14wP0ZpPkWI/LnfktPe8TwBU+eu4iF5bLjZUSldueInOgVzk6xUCox42NGsDQ96jNt+nU8YKofsKwHHHrTRf6mcORGc7kYvkJkeYkPEBfOnns7uZZaYCWaij7y9gtrV7E9r3wQBndNLS6/HD9OhUuGGnd627QvLqtfzhEmrZAwQ=

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+# Debug|Release
+CONFIGURATION=Release
+
+set -e
+
+APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )/"
+cd $APP_HOME
+
+echo "Building..."
+nuget restore
+msbuild /m /p:Configuration=$CONFIGURATION /verbosity:quiet
+
+echo "Starting web service..."
+cd $APP_HOME/WebService/bin/$CONFIGURATION/
+mono Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.exe

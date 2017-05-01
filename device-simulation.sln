@@ -1,0 +1,65 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services", "Services\Services.csproj", "{8ACBC846-B16C-4857-94F1-0BB297FE1CD3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services.Test", "Services.Test\Services.Test.csproj", "{CDB4D7B6-84D6-48F8-983F-81843B288699}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebService", "WebService\WebService.csproj", "{2834A1FA-8D60-4BA4-9155-E318608B1C4F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebService.Test", "WebService.Test\WebService.Test.csproj", "{15CBDB1E-2AA0-438B-B502-A6483AB594B4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{3FC36D0A-780E-49C1-9AE0-F8B4B07CC802}"
+	ProjectSection(SolutionItems) = preProject
+		.gitconfig = .gitconfig
+		.gitignore = .gitignore
+		.travis.yml = .travis.yml
+		CONTRIBUTING.md = CONTRIBUTING.md
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{62C8C8A3-CD4F-4A9B-9BB5-F5C6D7BE94CC}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\.functions.sh = scripts\.functions.sh
+		scripts\build = scripts\build
+		scripts\build.cmd = scripts\build.cmd
+		scripts\run = scripts\run
+		scripts\run.cmd = scripts\run.cmd
+		scripts\run.vbs = scripts\run.vbs
+		scripts\compile = scripts\compile
+		scripts\compile.cmd = scripts\compile.cmd
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8ACBC846-B16C-4857-94F1-0BB297FE1CD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8ACBC846-B16C-4857-94F1-0BB297FE1CD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8ACBC846-B16C-4857-94F1-0BB297FE1CD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8ACBC846-B16C-4857-94F1-0BB297FE1CD3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CDB4D7B6-84D6-48F8-983F-81843B288699}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CDB4D7B6-84D6-48F8-983F-81843B288699}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CDB4D7B6-84D6-48F8-983F-81843B288699}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CDB4D7B6-84D6-48F8-983F-81843B288699}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2834A1FA-8D60-4BA4-9155-E318608B1C4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2834A1FA-8D60-4BA4-9155-E318608B1C4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2834A1FA-8D60-4BA4-9155-E318608B1C4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2834A1FA-8D60-4BA4-9155-E318608B1C4F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15CBDB1E-2AA0-438B-B502-A6483AB594B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15CBDB1E-2AA0-438B-B502-A6483AB594B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15CBDB1E-2AA0-438B-B502-A6483AB594B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15CBDB1E-2AA0-438B-B502-A6483AB594B4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{62C8C8A3-CD4F-4A9B-9BB5-F5C6D7BE94CC} = {3FC36D0A-780E-49C1-9AE0-F8B4B07CC802}
+	EndGlobalSection
+EndGlobal

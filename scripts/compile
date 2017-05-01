@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+set -e
+APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )/"
+source "$APP_HOME/scripts/.functions.sh"
+cd $APP_HOME
+
+check_dependencies() {
+    TEST=$(which mono)
+    if [[ -z "$TEST" ]]; then
+        echo "ERROR: 'mono' command not found. Install Mono 5.x first (http://www.mono-project.com/docs/about-mono/releases/5.0.0)."
+        exit 1
+    fi
+
+    TEST=$(which nuget)
+    if [[ -z "$TEST" ]]; then
+        echo "ERROR: 'nuget' command not found. Install Mono 5.x first (http://www.mono-project.com/docs/about-mono/releases/5.0.0)."
+        exit 1
+    fi
+
+    TEST=$(which dotnet)
+    if [[ -z "$TEST" ]]; then
+        echo "ERROR: 'dotnet' command not found. Install .NET Core first (https://dotnet.github.io)."
+        exit 1
+    fi
+}
+
+failed() {
+    echo "Build failed"
+    exit 1
+}
+
+compile() {
+    nuget restore
+    msbuild /m /p:Configuration=Debug
+    msbuild /m /p:Configuration=Release
+}
+
+check_dependencies
+compile
