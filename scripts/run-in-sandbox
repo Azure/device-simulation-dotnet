@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+EXT_PORT=8080
+
+set -e
+APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )/"
+source "$APP_HOME/scripts/.functions.sh"
+
+setup_cache() {
+    cd $APP_HOME
+    mkdir -p .cache/sandbox/.config
+    mkdir -p .cache/sandbox/.dotnet
+    mkdir -p .cache/sandbox/.nuget
+}
+
+run_in_sandbox() {
+    cd $APP_HOME
+
+    # On Windows this script should use docker.exe, in which case
+    # the parameters syntax is different, e.g. volumes path
+    # (i.e. C:\path\path\... vs /c/path/path/...). Note that this
+    # script is also used for the git precommit hook.
+    set +e
+    IS_WINDOWS=$(which cmd.exe)
+    set -e
+    if [[ -z "$IS_WINDOWS" ]]; then
+        check_dependency_docker
+        docker run -it \
+            -p $EXT_PORT:8080 \
+            -e "PCS_IOTHUB_CONN_STRING=$PCS_IOTHUB_CONN_STRING" \
+            -v "$APP_HOME/.cache/sandbox/.config:/root/.config" \
+            -v "$APP_HOME/.cache/sandbox/.dotnet:/root/.dotnet" \
+            -v "$APP_HOME/.cache/sandbox/.nuget:/root/.nuget" \
+            -v "$APP_HOME:/opt/code" \
+            azureiotpcs/code-builder-dotnet:1.0 /opt/scripts/run
+    else
+        # Note 'winpty' is required to provide a TTY to Docker
+        cmd.exe /c "winpty .\scripts\run-in-sandbox.cmd"
+    fi
+}
+
+setup_cache
+run_in_sandbox
+
+set +e

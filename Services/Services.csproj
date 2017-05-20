@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{8ACBC846-B16C-4857-94F1-0BB297FE1CD3}</ProjectGuid>
+    <ProjectGuid>{786A5B9B-98EE-4B73-9FE3-2080B70007AF}</ProjectGuid>
     <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -80,16 +80,16 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Devices.cs" />
-    <Compile Include="DeviceTwins.cs" />
-    <Compile Include="Exceptions\InvalidInput.cs" />
-    <Compile Include="Models\DeviceServiceModel.cs" />
-    <Compile Include="Models\DeviceTwinServiceModel.cs" />
+    <Compile Include="Exceptions\InvalidInputException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Runtime\Config.cs" />
+    <Compile Include="Runtime\ServicesConfig.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Models\README.md" />
+    <Content Include="README.md" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -4,39 +4,33 @@
 CONFIGURATION=Release
 
 set -e
-
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )/"
-cd $APP_HOME
+source "$APP_HOME/scripts/.functions.sh"
 
-check_dependencies() {
-    set +e
+run() {
+    check_dependency_nuget
+    check_dependency_msbuild
+    check_dependency_mono
 
-    TEST=$(which nuget)
-    if [[ -z "$TEST" ]]; then
-        echo "ERROR: 'nuget' command not found. Install Mono 5.x first (http://www.mono-project.com/docs/about-mono/releases/5.0.0)."
-        exit 1
-    fi
+    cd $APP_HOME
+    echo "Building..."
+    nuget restore
+    msbuild /m /p:Configuration=$CONFIGURATION /verbosity:quiet
 
-    TEST=$(which msbuild)
-    if [[ -z "$TEST" ]]; then
-        echo "ERROR: 'msbuild' command not found. Install Mono 5.x first (http://www.mono-project.com/docs/about-mono/releases/5.0.0)."
-        exit 1
-    fi
-
-    TEST=$(which mono)
-    if [[ -z "$TEST" ]]; then
-        echo "ERROR: 'mono' command not found. Install Mono 5.x first (http://www.mono-project.com/docs/about-mono/releases/5.0.0)."
-        exit 1
-    fi
-    set -e
+    echo "Starting web service..."
+    cd $APP_HOME/WebService/bin/$CONFIGURATION/
+    mono Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.exe
 }
 
-check_dependencies
+run_in_sandbox() {
+    cd $APP_HOME
+    ./scripts/run-in-sandbox
+}
 
-echo "Building..."
-nuget restore
-msbuild /m /p:Configuration=$CONFIGURATION /verbosity:quiet
+if [[ "$1" == "--in-sandbox" || "$1" == "-s" ]]; then
+    run_in_sandbox
+else
+    run
+fi
 
-echo "Starting web service..."
-cd $APP_HOME/WebService/bin/$CONFIGURATION/
-mono Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.exe
+set +e

@@ -3,35 +3,26 @@
 set -e
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )/"
 source "$APP_HOME/scripts/.functions.sh"
-cd $APP_HOME
-
-check_dependencies() {
-    set +e
-
-    TEST=$(which nuget)
-    if [[ -z "$TEST" ]]; then
-        echo "ERROR: 'nuget' command not found. Install Mono 5.x first (http://www.mono-project.com/docs/about-mono/releases/5.0.0)."
-        exit 1
-    fi
-
-    TEST=$(which msbuild)
-    if [[ -z "$TEST" ]]; then
-        echo "ERROR: 'msbuild' command not found. Install Mono 5.x first (http://www.mono-project.com/docs/about-mono/releases/5.0.0)."
-        exit 1
-    fi
-    set -e
-}
-
-failed() {
-    echo "Build failed"
-    exit 1
-}
 
 compile() {
+    check_dependency_nuget
+    check_dependency_msbuild
+
+    cd $APP_HOME
     nuget restore
     msbuild /m /p:Configuration=Debug
     msbuild /m /p:Configuration=Release
 }
 
-check_dependencies
-compile
+compile_in_sandbox() {
+    cd $APP_HOME
+    ./scripts/compile-in-sandbox
+}
+
+if [[ "$1" == "--in-sandbox" || "$1" == "-s" ]]; then
+    compile_in_sandbox
+else
+    compile
+fi
+
+set +e

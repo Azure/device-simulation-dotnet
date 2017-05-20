@@ -1,6 +1,6 @@
 [core]
     whitespace = trailing-space,space-before-tab
-    autocrlf = true
+    autocrlf = false
     eol = lf
 [apply]
     whitespace = fix

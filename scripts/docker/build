@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+# Note: use lowercase names for the Docker images
+DOCKER_IMAGE="azureiotpcs/device-simulation-dotnet:0.1-SNAPSHOT"
+
+# Debug|Release
+CONFIGURATION=Release
+
+set -e
+APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && cd .. && pwd )/"
+source "$APP_HOME/scripts/.functions.sh"
+
+compile() {
+    check_dependency_nuget
+    check_dependency_msbuild
+
+    cd $APP_HOME
+    nuget restore
+    msbuild /m /p:Configuration=$CONFIGURATION
+}
+
+build_docker_image() {
+    check_dependency_docker
+
+    cd $APP_HOME
+    cp scripts/docker/.dockerignore WebService/bin/$CONFIGURATION/
+    cp scripts/docker/Dockerfile WebService/bin/$CONFIGURATION/
+    cd WebService/bin/$CONFIGURATION
+    docker build --tag "$DOCKER_IMAGE" --squash --compress --label "Tags=azure,iot,pcs,.NET" .
+}
+
+compile
+build_docker_image
+
+set +e

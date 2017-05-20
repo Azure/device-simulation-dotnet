@@ -9,18 +9,20 @@ if [[ ${#APP_HOME} -lt 20 ]]; then
     exit 1
 fi
 
-check_dependencies() {
-    set +e
-    TEST=$(which dotnet)
-    if [[ -z "$TEST" ]]; then
-        error "ERROR: 'dotnet' command not found. Install .NET Core first (https://dotnet.github.io)."
-        exit 1
-    fi
-    set -e
+reset_cache() {
+    cd $APP_HOME
+    rm -fR .cache
+    mkdir -p .cache/sandbox/.config
+    mkdir -p .cache/sandbox/.dotnet
+    mkdir -p .cache/sandbox/.nuget
 }
 
-cleanup_folders() {
+cleanup_tmp_files() {
+    check_dependency_dotnet
+
     cd $APP_HOME
+    header "Removing temporary folders and files..."
+
     rm -fR packages
 
     PROJECTS=$(dotnet sln list | grep 'csproj$')
@@ -31,9 +33,11 @@ cleanup_folders() {
         rm -fR obj/
         cd $APP_HOME
     done
+
+    echo -e "\nDone"
 }
 
-header "Removing temporary folders and files..."
-check_dependencies
-cleanup_folders
-echo "Done"
+cleanup_tmp_files
+reset_cache
+
+set +e

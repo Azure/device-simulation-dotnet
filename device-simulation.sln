@@ -1,41 +1,78 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services", "Services\Services.csproj", "{8ACBC846-B16C-4857-94F1-0BB297FE1CD3}"
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebService", "WebService\WebService.csproj", "{F305CAD5-BE38-4391-A692-580C526A0CB1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services.Test", "Services.Test\Services.Test.csproj", "{CDB4D7B6-84D6-48F8-983F-81843B288699}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebService.Test", "WebService.Test\WebService.Test.csproj", "{6A4D86AD-56D0-421B-B9B2-2EBB34A5BBBC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebService", "WebService\WebService.csproj", "{2834A1FA-8D60-4BA4-9155-E318608B1C4F}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{8289AFAE-0933-40EF-9D19-6FFA2DB04837}"
+ProjectSection(SolutionItems) = preProject
+	.gitattributes = .gitattributes
+	.gitconfig = .gitconfig
+	.gitignore = .gitignore
+	.travis.yml = .travis.yml
+	CONTRIBUTING.md = CONTRIBUTING.md
+	LICENSE = LICENSE
+	README.md = README.md
+	DEVELOPMENT.md = DEVELOPMENT.md
+EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebService.Test", "WebService.Test\WebService.Test.csproj", "{15CBDB1E-2AA0-438B-B502-A6483AB594B4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services", "Services\Services.csproj", "{786A5B9B-98EE-4B73-9FE3-2080B70007AF}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{3FC36D0A-780E-49C1-9AE0-F8B4B07CC802}"
-	ProjectSection(SolutionItems) = preProject
-		.gitconfig = .gitconfig
-		.gitignore = .gitignore
-		.travis.yml = .travis.yml
-		CONTRIBUTING.md = CONTRIBUTING.md
-		LICENSE = LICENSE
-		README.md = README.md
-	EndProjectSection
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services.Test", "Services.Test\Services.Test.csproj", "{1BC54189-1DF9-448E-AE5F-66EB2EF51D82}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{62C8C8A3-CD4F-4A9B-9BB5-F5C6D7BE94CC}"
-	ProjectSection(SolutionItems) = preProject
-		scripts\.functions.sh = scripts\.functions.sh
-		scripts\build = scripts\build
-		scripts\build.cmd = scripts\build.cmd
-		scripts\run = scripts\run
-		scripts\run.cmd = scripts\run.cmd
-		scripts\run.vbs = scripts\run.vbs
-		scripts\compile = scripts\compile
-		scripts\compile.cmd = scripts\compile.cmd
-		scripts\docker-build = scripts\docker-build
-		scripts\docker-build.cmd = scripts\docker-build.cmd
-		scripts\docker-run = scripts\docker-run
-		scripts\docker-run.cmd = scripts\docker-run.cmd
-	EndProjectSection
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{7357A079-B54D-490F-AA91-1B7BDAFE5E3F}"
+ProjectSection(SolutionItems) = preProject
+	scripts\.functions.sh = scripts\.functions.sh
+	scripts\build = scripts\build
+	scripts\build.cmd = scripts\build.cmd
+	scripts\clean-up = scripts\clean-up
+	scripts\clean-up.cmd = scripts\clean-up.cmd
+	scripts\compile = scripts\compile
+	scripts\compile.cmd = scripts\compile.cmd
+	scripts\run = scripts\run
+	scripts\run.cmd = scripts\run.cmd
+	scripts\run.vbs = scripts\run.vbs
+	scripts\build-in-sandbox = scripts\build-in-sandbox
+	scripts\build-in-sandbox.cmd = scripts\build-in-sandbox.cmd
+	scripts\compile-in-sandbox = scripts\compile-in-sandbox
+	scripts\compile-in-sandbox.cmd = scripts\compile-in-sandbox.cmd
+	scripts\run-in-sandbox = scripts\run-in-sandbox
+	scripts\run-in-sandbox.cmd = scripts\run-in-sandbox.cmd
+	scripts\setup-env-vars = scripts\setup-env-vars
+	scripts\setup-env-vars.cmd = scripts\setup-env-vars.cmd
+	scripts\setup-env-vars.ps1 = scripts\setup-env-vars.ps1
+EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "git", "git", "{FE64576E-E29D-4463-ABDA-93DB429A5F2F}"
+ProjectSection(SolutionItems) = preProject
+	scripts\git\pre-commit-runner-no-sandbox.sh = scripts\git\pre-commit-runner-no-sandbox.sh
+	scripts\git\pre-commit-runner-with-sandbox.sh = scripts\git\pre-commit-runner-with-sandbox.sh
+	scripts\git\pre-commit.sh = scripts\git\pre-commit.sh
+	scripts\git\setup = scripts\git\setup
+	scripts\git\setup.cmd = scripts\git\setup.cmd
+	scripts\git\fix-perms.sh = scripts\git\fix-perms.sh
+EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "iothub", "iothub", "{62782BA5-0E78-4354-9962-B5F2CF3B5204}"
+ProjectSection(SolutionItems) = preProject
+	scripts\iothub\.functions.sh = scripts\iothub\.functions.sh
+	scripts\iothub\create-hub.sh = scripts\iothub\create-hub.sh
+	scripts\iothub\list-hubs.sh = scripts\iothub\list-hubs.sh
+	scripts\iothub\list-subscriptions.sh = scripts\iothub\list-subscriptions.sh
+	scripts\iothub\select-subscription.sh = scripts\iothub\select-subscription.sh
+	scripts\iothub\show-hub.sh = scripts\iothub\show-hub.sh
+EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{DB8AF4E5-71A1-4650-A881-9F08FCB53DAA}"
+ProjectSection(SolutionItems) = preProject
+	scripts\docker\.dockerignore = scripts\docker\.dockerignore
+	scripts\docker\Dockerfile = scripts\docker\Dockerfile
+	scripts\docker\build = scripts\docker\build
+	scripts\docker\build.cmd = scripts\docker\build.cmd
+	scripts\docker\run = scripts\docker\run
+	scripts\docker\run.cmd = scripts\docker\run.cmd
+EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -43,27 +80,40 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{8ACBC846-B16C-4857-94F1-0BB297FE1CD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8ACBC846-B16C-4857-94F1-0BB297FE1CD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8ACBC846-B16C-4857-94F1-0BB297FE1CD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8ACBC846-B16C-4857-94F1-0BB297FE1CD3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CDB4D7B6-84D6-48F8-983F-81843B288699}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CDB4D7B6-84D6-48F8-983F-81843B288699}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CDB4D7B6-84D6-48F8-983F-81843B288699}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CDB4D7B6-84D6-48F8-983F-81843B288699}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2834A1FA-8D60-4BA4-9155-E318608B1C4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2834A1FA-8D60-4BA4-9155-E318608B1C4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2834A1FA-8D60-4BA4-9155-E318608B1C4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2834A1FA-8D60-4BA4-9155-E318608B1C4F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{15CBDB1E-2AA0-438B-B502-A6483AB594B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{15CBDB1E-2AA0-438B-B502-A6483AB594B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{15CBDB1E-2AA0-438B-B502-A6483AB594B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{15CBDB1E-2AA0-438B-B502-A6483AB594B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F305CAD5-BE38-4391-A692-580C526A0CB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F305CAD5-BE38-4391-A692-580C526A0CB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F305CAD5-BE38-4391-A692-580C526A0CB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F305CAD5-BE38-4391-A692-580C526A0CB1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A4D86AD-56D0-421B-B9B2-2EBB34A5BBBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A4D86AD-56D0-421B-B9B2-2EBB34A5BBBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A4D86AD-56D0-421B-B9B2-2EBB34A5BBBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A4D86AD-56D0-421B-B9B2-2EBB34A5BBBC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{786A5B9B-98EE-4B73-9FE3-2080B70007AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{786A5B9B-98EE-4B73-9FE3-2080B70007AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{786A5B9B-98EE-4B73-9FE3-2080B70007AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{786A5B9B-98EE-4B73-9FE3-2080B70007AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BC54189-1DF9-448E-AE5F-66EB2EF51D82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BC54189-1DF9-448E-AE5F-66EB2EF51D82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BC54189-1DF9-448E-AE5F-66EB2EF51D82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BC54189-1DF9-448E-AE5F-66EB2EF51D82}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		Policies = $0
+		$0.DotNetNamingPolicy = $1
+		$0.TextStylePolicy = $2
+		$2.inheritsSet = null
+		$2.scope = text/x-csharp
+		$0.CSharpFormattingPolicy = $3
+		$3.scope = text/x-csharp
+		$0.VersionControlPolicy = $4
+	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{62C8C8A3-CD4F-4A9B-9BB5-F5C6D7BE94CC} = {3FC36D0A-780E-49C1-9AE0-F8B4B07CC802}
+		{7357A079-B54D-490F-AA91-1B7BDAFE5E3F} = {8289AFAE-0933-40EF-9D19-6FFA2DB04837}
+		{FE64576E-E29D-4463-ABDA-93DB429A5F2F} = {7357A079-B54D-490F-AA91-1B7BDAFE5E3F}
+		{62782BA5-0E78-4354-9962-B5F2CF3B5204} = {7357A079-B54D-490F-AA91-1B7BDAFE5E3F}
+		{DB8AF4E5-71A1-4650-A881-9F08FCB53DAA} = {7357A079-B54D-490F-AA91-1B7BDAFE5E3F}
 	EndGlobalSection
 EndGlobal

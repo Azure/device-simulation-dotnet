@@ -9,6 +9,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1
         public const string Name = "v1";
 
         /// <summary>Date when the API version has been published</summary>
-        public const string Date = "201704";
+        public const string Date = "201705";
     }
 }

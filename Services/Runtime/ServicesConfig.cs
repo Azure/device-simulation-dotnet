@@ -2,12 +2,12 @@
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 {
-    public interface IConfig
+    public interface IServicesConfig
     {
         string HubConnString { get; set; }
     }
 
-    public class Config : IConfig
+    public class ServicesConfig : IServicesConfig
     {
         public string HubConnString { get; set; }
     }
