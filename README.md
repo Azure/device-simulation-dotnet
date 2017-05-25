@@ -2,7 +2,7 @@
 [![Issues][issues-badge]][issues-url]
 [![Gitter][gitter-badge]][gitter-url]
 
-PROJECT NAME HERE
+Device Simulation
 =================
 
 ... project description ...

@@ -15,6 +15,7 @@ ProjectSection(SolutionItems) = preProject
 	LICENSE = LICENSE
 	README.md = README.md
 	DEVELOPMENT.md = DEVELOPMENT.md
+	device-simulation.sln.DotSettings = device-simulation.sln.DotSettings
 EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services", "Services\Services.csproj", "{786A5B9B-98EE-4B73-9FE3-2080B70007AF}"

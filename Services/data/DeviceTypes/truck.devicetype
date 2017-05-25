@@ -1,0 +1,56 @@
+schema-version: 1.0.0
+
+id: 5b5d31de-fb2b-41fb-8f8c-e00616ca713b
+version: 0.0.1
+
+name: Truck
+description: Simulated Truck with one Speed sensor
+
+protocol: MQTT
+
+functions {
+    get-truck-speed {
+        type: javascript
+        path: truck-speed-sensor.js
+    }
+
+    get-truck-location {
+        type: javascript
+        path: truck-geolocation-sensor.js
+    }
+
+    do-start {
+        type: javascript
+        path: truck-start-method.js
+    }
+}
+
+telemetry {
+
+    simulation-frequency: 10 seconds
+
+    message: '{
+        "speed": $(get-truck-speed.value),
+        "geolocation": $(get-truck-location.value),
+        "speed_unit": "mph"
+    }'
+
+    message-schema {
+
+        name: truck;v1
+        format: JSON
+
+        fields: {
+            speed: number
+            geolocation: text
+            speed_unit: text
+        }
+    }
+}
+
+cloud-to-device-methods {
+
+    start {
+        actions [ $(do-start) ]
+    }
+}

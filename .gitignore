@@ -9,6 +9,7 @@ _dev/
 *.bck
 envvars.sh
 .cache/**
+target/**
 
 
 ### MacOS

@@ -36,6 +36,12 @@
     <LangVersion>Default</LangVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Akka.Hocon, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\packages\Akka.Hocon.0.3.0\lib\net45\Akka.Hocon.dll</HintPath>
+    </Reference>
+    <Reference Include="jint, Version=2.10.4.0, Culture=neutral, PublicKeyToken=2e92ba9c8d81157f">
+      <HintPath>..\packages\jint.2.10.4\lib\net45\jint.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Azure.Amqp, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35">
       <HintPath>..\packages\Microsoft.Azure.Amqp.2.0.3\lib\net45\Microsoft.Azure.Amqp.dll</HintPath>
     </Reference>
@@ -80,16 +86,37 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DeviceTypes.cs" />
     <Compile Include="Exceptions\InvalidInputException.cs" />
+    <Compile Include="Models\DeviceType.cs" />
+    <Compile Include="Models\IoTHubProtocol.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Runtime\ServicesConfig.cs" />
+    <Compile Include="ScriptingEngine.cs" />
+    <Compile Include="Simulations.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="data\DeviceTypes\chiller.devicetype">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="data\DeviceTypes\elevator.devicetype">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="data\DeviceTypes\README.md" />
+    <Content Include="data\DeviceTypes\truck.devicetype">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="data\Javascript\a-function.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Models\README.md" />
     <Content Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="data" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

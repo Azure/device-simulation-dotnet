@@ -33,7 +33,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
 
             this.ServicesConfig = new ServicesConfig
             {
-                HubConnString = config.GetString(Namespace + Application + "iothub.connstring")
+                HubConnString = config.GetString(Namespace + Application + "iothub.connstring"),
+                DataFolder = config.GetString(Namespace + Application + "iothub.data-folder")
             };
         }
 

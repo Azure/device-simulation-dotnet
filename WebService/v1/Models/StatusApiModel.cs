@@ -11,6 +11,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
     {
         private const string DateFormat = "yyyy-MM-dd'T'HH:mm:sszzz";
 
+        [JsonProperty(PropertyName = "Name", Order = 10)]
+        public string Name => "DeviceSimulation";
+
         [JsonProperty(PropertyName = "Status", Order = 10)]
         public string Status { get; set; }
 
@@ -27,26 +30,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         [JsonProperty(PropertyName = "Properties", Order = 50)]
         public Dictionary<string, string> Properties => new Dictionary<string, string>
         {
-            { "Foo", "Bar" },
-            { "Simulation", "on" },
-            { "Region", "US" },
-            { "DebugMode", "off" }
+            { "Simulation", "on|off" }
         };
 
         /// <summary>A property bag with details about the internal dependencies</summary>
         [JsonProperty(PropertyName = "Dependencies", Order = 60)]
         public Dictionary<string, string> Dependencies => new Dictionary<string, string>
         {
-            { "IoTHub", "OK:...msg..." },
-            { "Storage", "OK:timeout after 3 secs" },
-            { "Auth", "ERROR:certificate expired" }
+            { "IoTHubManagerAPI", "OK|ERROR:...msg..." },
+            { "StorageAPI", "OK|ERROR:timeout after 3 secs" },
         };
 
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public Dictionary<string, string> Metadata => new Dictionary<string, string>
         {
-            { "$type", "Status;" + Version.Name },
-            { "$uri", "/" + Version.Name + "/status" }
+            { "$type", "Status;" + Version.Number },
+            { "$uri", "/" + Version.Path + "/status" }
         };
 
         public StatusApiModel(bool isOk, string msg)
