@@ -142,6 +142,5 @@ Some quick notes about the project code style:
    reviews and command line editors.
 2. Code blocks indentation with 4 spaces. The tab char should be avoided.
 3. Text files use Unix end of line format (LF).
-4. Dependency Injection is managed with
-   [Unity](https://msdn.microsoft.com/library/dn223671.aspx).
+4. Dependency Injection is managed with [Autofac](https://autofac.org).
 5. Web service APIs fields are CamelCased (except for metadata).
