@@ -10,7 +10,4 @@ Service layer models
 
 ## Conventions
 
-* Add the "ServiceModel" suffix to the models in this folder. This allows to
-  distinguish these classes from the classes in the SDK and in the
-  webservice.
 * For DateTime fields use System.DateTimeOffset.

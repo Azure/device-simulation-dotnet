@@ -90,15 +90,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Runtime\Uptime.cs" />
-    <Compile Include="v1\Controllers\DeviceTypesController.cs" />
-    <Compile Include="v1\Controllers\SimulationsController.cs" />
     <Compile Include="v1\Controllers\StatusController.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Runtime\Config.cs" />
     <Compile Include="Startup.cs" />
-    <Compile Include="v1\Models\DeviceTypeApiModel.cs" />
-    <Compile Include="v1\Models\DeviceTypeListApiModel.cs" />
     <Compile Include="v1\Models\StatusApiModel.cs" />
     <Compile Include="v1\Version.cs" />
   </ItemGroup>
