@@ -4,6 +4,8 @@ set -e
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && cd .. && pwd )/"
 source "$APP_HOME/scripts/git/.functions.sh"
 
+SANDBOX_MODE="$1"
+
 cd $APP_HOME
 echo "Current folder: `pwd`"
 
@@ -97,11 +99,17 @@ verify_build() {
     header "Verifying build..."
 
     cd $APP_HOME/scripts
-    ./build
+    if [[ "$SANDBOX_MODE" == "--with-sandbox" ]]; then
+        ./build-in-sandbox
+    else
+        ./build
+    fi
 
     if [ $? -ne 0 ]; then
         error "Some tests failed."
         exit 1
+    else
+        header "All tests passed"
     fi
 }
 
@@ -109,3 +117,5 @@ check_filenames
 check_whitespaces
 check_do_not_commit
 verify_build
+
+set +e

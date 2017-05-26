@@ -2,8 +2,8 @@
 [![Issues][issues-badge]][issues-url]
 [![Gitter][gitter-badge]][gitter-url]
 
-IoT Device Simulation
-=====================
+Device Simulation
+=================
 
 ... project description ...
 
@@ -37,8 +37,8 @@ Edge cases
 Other documents
 ===============
 
-* [Contributing and development setup](CONTRIBUTING.md)
-
+* [Contributing and Development setup](CONTRIBUTING.md)
+* [Development setup, scripts and tools](DEVELOPMENT.md)
 
 [build-badge]: https://img.shields.io/travis/Azure/device-simulation-dotnet.svg
 [build-url]: https://travis-ci.org/Azure/device-simulation-dotnet

@@ -6,54 +6,42 @@ CONFIGURATION=Release
 set -e
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )/"
 source "$APP_HOME/scripts/.functions.sh"
-cd $APP_HOME
-
-check_dependencies() {
-    set +e
-
-    TEST=$(which nuget)
-    if [[ -z "$TEST" ]]; then
-        echo "ERROR: 'nuget' command not found. Install Mono 5.x first (http://www.mono-project.com/docs/about-mono/releases/5.0.0)."
-        exit 1
-    fi
-
-    TEST=$(which msbuild)
-    if [[ -z "$TEST" ]]; then
-        echo "ERROR: 'msbuild' command not found. Install Mono 5.x first (http://www.mono-project.com/docs/about-mono/releases/5.0.0)."
-        exit 1
-    fi
-
-    TEST=$(which dotnet)
-    if [[ -z "$TEST" ]]; then
-        echo "ERROR: 'dotnet' command not found. Install .NET Core first (https://dotnet.github.io)."
-        exit 1
-    fi
-
-    TEST=$(which mono)
-    if [[ -z "$TEST" ]]; then
-        echo "ERROR: 'mono' command not found. Install Mono 5.x first (http://www.mono-project.com/docs/about-mono/releases/5.0.0)."
-        exit 1
-    fi
-    set -e
-}
-
-failed() {
-    echo "Build failed"
-    exit 1
-}
 
 compile() {
+    check_dependency_nuget
+    check_dependency_msbuild
+
+    cd $APP_HOME
+    header "Downloading dependencies..."
     nuget restore
-    msbuild /m /p:Configuration=$CONFIGURATION
+
+    header "Compiling code..."
+    msbuild /p:Configuration=$CONFIGURATION
 }
 
 run_tests() {
+    check_dependency_dotnet
+    check_dependency_mono
+
+    cd $APP_HOME
+    header "Running tests..."
     PROJECTS=$(dotnet sln list | grep 'csproj$' | grep '\.Test'| sed s#/.*##)
     for PROJ in $PROJECTS; do
+        echo "-- $PROJ"
         mono ./packages/xunit.runner.console.2.2.0/tools/xunit.console.exe $PROJ/bin/Release/$PROJ.dll
     done
 }
 
-check_dependencies
-compile
-run_tests
+build_in_sandbox() {
+    cd $APP_HOME
+    ./scripts/build-in-sandbox
+}
+
+if [[ "$1" == "--in-sandbox" || "$1" == "-s" ]]; then
+    build_in_sandbox
+else
+    compile
+    run_tests
+fi
+
+set +e

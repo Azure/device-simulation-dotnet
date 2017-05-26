@@ -1,21 +1,17 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
 using System.Web.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
+using Microsoft.Web.Http;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers
 {
-    [RoutePrefix(Version.Name)]
-    public class StatusController : ApiController
+    [ApiVersion(Version.Number)]
+    public sealed class StatusController : ApiController
     {
-        public StatusModel Get()
+        public StatusApiModel Get()
         {
-            return new StatusModel
-            {
-                Message = "OK",
-                CurrentTime = DateTime.UtcNow
-            };
+            return new StatusApiModel(true, "Alive and well");
         }
     }
 }

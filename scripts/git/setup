@@ -3,17 +3,48 @@
 set -e
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && cd .. && pwd )/"
 
+usage() {
+    echo "ERROR: sandboxing mode not specified."
+    echo ""
+    echo "The pre-commit hook can run in two different modes:"
+    echo "  With sandbox: the build script runs inside a Docker container so you need to install only Docker"
+    echo "  Without sandbox: the build script runs using binaries like Mono, MSBuild and Nuget from your workstation"
+    echo ""
+    echo "Usage:"
+    echo "./scripts/git/setup --with-sandbox"
+    echo "./scripts/git/setup --no-sandbox"
+}
+
 failed() {
     echo "Git hooks setup failed"
     exit 1
 }
 
-cd $APP_HOME/.git || failed
-mkdir -p hooks || failed
-cd hooks || failed
+install_precommit_hook() {
+    echo "Adding pre-commit hook..."
 
-echo "Adding pre-commit hook..."
-rm -f pre-commit
-cp -p $APP_HOME/scripts/git/pre-commit-runner.sh ./pre-commit || failed
+    cd $APP_HOME/.git || failed
+    mkdir -p hooks || failed
+    cd hooks || failed
+    rm -f pre-commit
 
-echo "Done."
+    if [[ "$SANDBOX_MODE" == "--no-sandbox" ]]; then
+        cp -p $APP_HOME/scripts/git/pre-commit-runner-no-sandbox.sh ./pre-commit || failed
+    fi
+
+    if [[ "$SANDBOX_MODE" == "--with-sandbox" ]]; then
+        cp -p $APP_HOME/scripts/git/pre-commit-runner-with-sandbox.sh ./pre-commit || failed
+    fi
+
+    chmod 755 ./pre-commit
+    echo "Done."
+}
+
+SANDBOX_MODE="$1"
+if [[ "$SANDBOX_MODE" == "--no-sandbox" || "$SANDBOX_MODE" == "--with-sandbox" ]]; then
+    install_precommit_hook
+else
+    usage
+fi
+
+set +e

@@ -4,14 +4,33 @@
 CONFIGURATION=Release
 
 set -e
-
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )/"
-cd $APP_HOME
+source "$APP_HOME/scripts/.functions.sh"
 
-echo "Building..."
-nuget restore
-msbuild /m /p:Configuration=$CONFIGURATION /verbosity:quiet
+run() {
+    check_dependency_nuget
+    check_dependency_msbuild
+    check_dependency_mono
 
-echo "Starting web service..."
-cd $APP_HOME/WebService/bin/$CONFIGURATION/
-mono Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.exe
+    cd $APP_HOME
+    echo "Building..."
+    nuget restore
+    msbuild /m /p:Configuration=$CONFIGURATION /verbosity:quiet
+
+    echo "Starting web service..."
+    cd $APP_HOME/WebService/bin/$CONFIGURATION/
+    mono Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.exe
+}
+
+run_in_sandbox() {
+    cd $APP_HOME
+    ./scripts/run-in-sandbox
+}
+
+if [[ "$1" == "--in-sandbox" || "$1" == "-s" ]]; then
+    run_in_sandbox
+else
+    run
+fi
+
+set +e

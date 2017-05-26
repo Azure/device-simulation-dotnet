@@ -6,14 +6,14 @@ using Microsoft.Owin.Hosting;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 {
+    /// <summary>Application entry point</summary>
     public class Program
     {
         static readonly IConfig config = new Config();
 
         static void Main(string[] args)
         {
-            // TODO: remove workaround and support all versions
-            var options = new StartOptions("http://*:" + config.Port + "/" + v1.Version.Name);
+            var options = new StartOptions("http://*:" + config.Port);
             using (WebApp.Start<Startup>(options))
             {
                 Console.WriteLine("Server listening at http://*:" + config.Port);
