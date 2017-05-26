@@ -65,8 +65,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
-        /// For user convenience and reduce verbosity, the JSON configuration is
-        /// denormalized. This method normalizes the data for easier internal
+        /// For user convenience and reduced verbosity, the JSON configuration
+        /// is denormalized. This method normalizes the data for easier internal
         /// processing.
         /// </summary>
         /// <param name="deviceType"></param>
