@@ -122,7 +122,7 @@ The `message` property contains a template and may contain placeholders,
 referencing functions listed under `DeviceBehavior`. References use the
 following format:
 
-`$(` + `function name` + `.` + `output value name` + `)`
+`${` + `function name` + `.` + `output value name` + `}`
 
 The name of the output value depends on the function used. For example a
 function with the following return statement:
