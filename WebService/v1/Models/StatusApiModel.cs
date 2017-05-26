@@ -11,7 +11,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
     {
         private const string DateFormat = "yyyy-MM-dd'T'HH:mm:sszzz";
 
-        [JsonProperty(PropertyName = "Name", Order = 10)]
+        [JsonProperty(PropertyName = "Name", Order = 5)]
         public string Name => "DeviceSimulation";
 
         [JsonProperty(PropertyName = "Status", Order = 10)]
