@@ -45,8 +45,8 @@ customizing or creating new function, see the "Javascript" folder.
 
 The functions are listed with distinct names under `DeviceBehavior`, and
 referenced later in the file, using the `${<name>...}` syntax. By convention,
-functions returning data start with `get-`, and functions executing actions
-start with `do-`:
+functions returning data start with `get_`, and functions executing actions
+start with `do_`:
 ```json
 "DeviceBehavior": {
     "get_random_temperature": {
