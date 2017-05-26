@@ -1,0 +1,45 @@
+{
+    "SchemaVersion": "1.0.0",
+    "Id": "8dd272c0-514e-4a87-a1ad-be12a0b2809c",
+    "Version": "0.0.1",
+    "Name": "Elevator",
+    "Description": "Simulated Elevator with floor number sensor",
+    "Protocol": "HTTP",
+    "DeviceBehavior": {
+        "get_current_floor": {
+            "Type": "javascript",
+            "Path": "elevator-position-sensor.js"
+        },
+        "do_elevator_go_down": {
+            "Type": "javascript",
+            "Path": "elevator-go-down-method.js"
+        },
+        "do_elevator_go_up": {
+            "Type": "javascript",
+            "Path": "elevator-go-up-method.js"
+        }
+    },
+    "Telemetry": {
+        "Messages": [
+            {
+                "Interval": "00:00:01",
+                "Message":
+                    "{\"current_floor\": ${get_current_floor.value}}",
+                "MessageSchema": {
+                    "Name": "elevator;v1",
+                    "Format": "JSON",
+                    "Fields": {
+                        "current_floor": "integer"
+                    }
+                }
+            }
+        ]
+    },
+    "CloudToDeviceMethods": {
+        "Start": {
+            "Actions": [
+                "${do_start}"
+            ]
+        }
+    }
+}

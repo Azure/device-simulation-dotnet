@@ -24,6 +24,7 @@ cleanup_tmp_files() {
     header "Removing temporary folders and files..."
 
     rm -fR packages
+    rm -fR target
 
     PROJECTS=$(dotnet sln list | grep 'csproj$')
     for PROJ in $PROJECTS; do
