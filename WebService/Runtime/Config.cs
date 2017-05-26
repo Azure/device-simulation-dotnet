@@ -8,6 +8,9 @@ using System.Text.RegularExpressions;
 using Akka.Configuration;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
+// TODO: tests
+// TODO: handle errors
+// TODO: use JSON?
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
 {
     public interface IConfig
@@ -31,10 +34,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
 
             this.Port = config.GetInt(Namespace + Application + "webservice-port");
 
+            // TODO: test
             this.ServicesConfig = new ServicesConfig
             {
                 HubConnString = config.GetString(Namespace + Application + "iothub.connstring"),
-                DataFolder = config.GetString(Namespace + Application + "iothub.data-folder")
+                DataFolder = config.GetString(Namespace + Application + "data-folder")
             };
         }
 

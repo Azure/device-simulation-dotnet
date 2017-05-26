@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
 using Newtonsoft.Json;
 
+// TODO: complete
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 {
     public sealed class StatusApiModel

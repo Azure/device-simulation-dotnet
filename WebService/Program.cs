@@ -13,7 +13,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
         static void Main(string[] args)
         {
-            // TODO: remove workaround and support all versions
             var options = new StartOptions("http://*:" + config.Port);
             using (WebApp.Start<Startup>(options))
             {
