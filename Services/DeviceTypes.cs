@@ -69,7 +69,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// is denormalized. This method normalizes the data for easier internal
         /// processing.
         /// </summary>
-        /// <param name="deviceType"></param>
         private void NormalizeObject(DeviceType deviceType)
         {
             // The function Key is the function Name
