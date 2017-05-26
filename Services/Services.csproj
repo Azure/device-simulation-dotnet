@@ -70,7 +70,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="data" />
-    <Folder Include="data\Javascript" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

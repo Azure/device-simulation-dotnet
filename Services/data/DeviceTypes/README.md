@@ -1,8 +1,8 @@
 Each **Simulated Device** belongs to a specific **Device Type**, which defines
 the simulation behavior, for example how frequently telemetry is sent, what
-kind of messages to send, which commands are supported, etc.
+kind of messages to send, which methods are supported, etc.
 
-Device types are defined using configuration JSON files. Follows a description
+Device types are defined using JSON configuration files. Follows a description
 of all the properties found in a typical device type definition file.
 
 #### File schema
