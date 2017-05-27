@@ -6,6 +6,7 @@ using Autofac;
 using Autofac.Integration.WebApi;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Web.Http.Routing;
 using Owin;
 
@@ -17,6 +18,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         public void Configuration(IAppBuilder app)
         {
             var config = new HttpConfiguration();
+            config.Filters.Add(new ExceptionsFilterAttribute());
 
             SetupDependencyInjection(app, config);
 

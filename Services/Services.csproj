@@ -47,10 +47,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Concurrency\Etags.cs" />
+    <Compile Include="Exceptions\ConflictingResourceException.cs" />
+    <Compile Include="Exceptions\ResourceNotFoundException.cs" />
+    <Compile Include="Exceptions\ResourceOutOfDateException.cs" />
+    <Compile Include="Models\SimulationPatch.cs" />
+    <Compile Include="Simulations.cs" />
     <Compile Include="DeviceTypes.cs" />
     <Compile Include="Exceptions\InvalidConfigurationException.cs" />
     <Compile Include="Models\DeviceType.cs" />
     <Compile Include="Models\IoTHubProtocol.cs" />
+    <Compile Include="Models\Simulation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Runtime\ServicesConfig.cs" />
   </ItemGroup>
@@ -67,9 +74,6 @@
     </Content>
     <Content Include="Models\README.md" />
     <Content Include="README.md" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="data" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
