@@ -97,6 +97,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Runtime\Config.cs" />
     <Compile Include="Startup.cs" />
+    <Compile Include="v1\Exceptions\BadRequestException.cs" />
     <Compile Include="v1\Filters\ExceptionsFilter.cs" />
     <Compile Include="v1\Models\DeviceTypeApiModel.cs" />
     <Compile Include="v1\Models\DeviceTypeListApiModel.cs" />

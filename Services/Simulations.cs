@@ -6,7 +6,6 @@ using System.IO;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Newtonsoft.Json;
 
 // TODO: use real storage
@@ -16,7 +15,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     {
         IList<Simulation> GetList();
         Simulation Get(string id);
-        Simulation Create(Simulation simulation);
+        Simulation Insert(Simulation simulation);
+        Simulation Upsert(Simulation simulation);
         Simulation Merge(SimulationPatch patch);
     }
 
@@ -26,14 +26,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     /// </summary>
     public class Simulations : ISimulations
     {
-        private const string TempStorageFile = "tempstorage.json";
-        private readonly string tempStoragePath;
+        private const string TempStorageFile = "simulations-storage.json";
+        private string tempStoragePath;
 
-        public Simulations(IServicesConfig config)
+        public Simulations()
         {
-            this.tempStoragePath = config.StorageFolder +
-                                  Path.DirectorySeparatorChar +
-                                  TempStorageFile;
+            this.SetupTempStoragePath();
             this.CreateStorageIfMissing();
         }
 
@@ -54,7 +52,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             throw new ResourceNotFoundException();
         }
 
-        public Simulation Create(Simulation simulation)
+        public Simulation Insert(Simulation simulation)
+        {
+            var simulations = this.GetList();
+
+            // Only one simulation per deployment
+            if (simulations.Count > 0)
+            {
+                throw new ConflictingResourceException(
+                    "There is already a simulation. Only one simulation can be created.");
+            }
+
+            simulation.Id = Guid.NewGuid().ToString();
+
+            this.WriteToStorage(simulation);
+
+            return simulation;
+        }
+
+        public Simulation Upsert(Simulation simulation)
         {
             var simulations = this.GetList();
 
@@ -74,9 +90,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
             }
 
+            // TODO: complete validation
             if (string.IsNullOrEmpty(simulation.Id))
             {
-                simulation.Id = Guid.NewGuid().ToString();
+                throw new InvalidInputException("Missing ID");
             }
 
             this.WriteToStorage(simulation);
@@ -90,7 +107,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             if (simulations.Count == 0 || simulations[0].Id != patch.Id)
             {
-                throw new ResourceNotFoundException();
+                throw new ResourceNotFoundException("The simulation doesn't exist.");
             }
 
             if (simulations[0].Etag != patch.Etag)
@@ -121,6 +138,33 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             simulation.Etag = Etags.NewEtag();
             var data = new List<Simulation> { simulation };
             File.WriteAllText(this.tempStoragePath, JsonConvert.SerializeObject(data));
+        }
+
+        /// <summary>
+        /// While working within an IDE we need to share the data used by the
+        /// web service and the data used by the simulation agent, i.e. when
+        /// running the web service and the simulation agent from the IDE there
+        /// are two "Services/data" folders, one in each entry point. Thus the
+        /// simulation agent would not see the temporary storage written by the
+        /// web service. By use the user/system temp folder, we make sure the
+        /// storage is shared by the two processes when using an IDE.
+        /// </summary>
+        private void SetupTempStoragePath()
+        {
+            var tempFolder = Path.GetTempPath();
+
+            // In some cases GetTempPath returns a path under "/var/folders/"
+            // in which case we opt for /tmp/. Note: this is temporary until
+            // we use a real storage service.
+            if (Path.DirectorySeparatorChar == '/' && Directory.Exists("/tmp/"))
+            {
+                tempFolder = "/tmp/";
+            }
+
+            this.tempStoragePath = (tempFolder + Path.DirectorySeparatorChar + TempStorageFile)
+                .Replace(Path.DirectorySeparatorChar.ToString() + Path.DirectorySeparatorChar,
+                    Path.DirectorySeparatorChar.ToString());
+            Console.WriteLine("Temporary simulations storage: " + this.tempStoragePath);
         }
 
         private void CreateStorageIfMissing()

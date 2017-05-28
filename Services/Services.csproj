@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="Concurrency\Etags.cs" />
     <Compile Include="Exceptions\ConflictingResourceException.cs" />
+    <Compile Include="Exceptions\InvalidInputException.cs" />
     <Compile Include="Exceptions\ResourceNotFoundException.cs" />
     <Compile Include="Exceptions\ResourceOutOfDateException.cs" />
     <Compile Include="Models\SimulationPatch.cs" />

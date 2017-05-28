@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft. All rights reserved.
+
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
@@ -59,8 +61,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         }
 
         /// <summary>Map an API model to the corresponding service model</summary>
-        public Services.Models.Simulation ToServiceModel()
+        public Services.Models.Simulation ToServiceModel(string id = "")
         {
+            this.Id = id;
+
             var result = new Services.Models.Simulation
             {
                 Etag = this.Etag,

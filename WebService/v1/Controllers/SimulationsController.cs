@@ -2,6 +2,7 @@
 
 using System.Web.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
 using Microsoft.Web.Http;
 
@@ -27,16 +28,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             return new SimulationApiModel(this.simulationsService.Get(id));
         }
 
-        public SimulationApiModel Put(SimulationApiModel simulation)
+        public SimulationApiModel Post(SimulationApiModel simulation)
         {
+            if (simulation == null) throw new BadRequestException("No data or invalid data provided.");
+
             return new SimulationApiModel(
-                this.simulationsService.Create(simulation.ToServiceModel()));
+                this.simulationsService.Insert(simulation.ToServiceModel("")));
         }
 
-        public SimulationApiModel Patch(SimulationPatchApiModel patch)
+        public SimulationApiModel Put(string id, SimulationApiModel simulation)
         {
+            if (simulation == null) throw new BadRequestException("No data or invalid data provided.");
+
             return new SimulationApiModel(
-                this.simulationsService.Merge(patch.ToServiceModel()));
+                this.simulationsService.Upsert(simulation.ToServiceModel(id)));
+        }
+
+        public SimulationApiModel Patch(string id, SimulationPatchApiModel patch)
+        {
+            if (patch == null) throw new BadRequestException("No data or invalid data provided");
+
+            return new SimulationApiModel(
+                this.simulationsService.Merge(patch.ToServiceModel(id)));
         }
     }
 }

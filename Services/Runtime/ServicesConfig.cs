@@ -6,13 +6,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
     {
         string DeviceTypesFolder { get; set; }
         string DeviceTypesBehaviorFolder { get; set; }
-        string StorageFolder { get; set; }
     }
 
     public class ServicesConfig : IServicesConfig
     {
         public string DeviceTypesFolder { get; set; }
         public string DeviceTypesBehaviorFolder { get; set; }
-        public string StorageFolder { get; set; }
     }
 }
