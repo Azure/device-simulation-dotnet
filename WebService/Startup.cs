@@ -90,8 +90,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterInstance(config.ServicesConfig).As<IServicesConfig>().SingleInstance();
 
             // By default Autofac uses a request lifetime, creating new objects
-            // object for each request, which is good to reduce the risk of
-            // memory leaks, but not so good for the overall performance.
+            // for each request, which is good to reduce the risk of memory
+            // leaks, but not so good for the overall performance.
             // TODO: revisit when migrating to ASP.NET Core.
             builder.RegisterType<Simulations>().As<ISimulations>().SingleInstance();
             builder.RegisterType<DeviceTypes>().As<IDeviceTypes>().SingleInstance();
