@@ -18,6 +18,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             {
                 Console.WriteLine("Server listening at http://*:" + config.Port);
                 Console.WriteLine("Health check: http://127.0.0.1:" + config.Port + "/v1/status");
+                Console.WriteLine("Process ID:" + Uptime.ProcessId);
                 Console.WriteLine("Press [Enter] to quit...");
                 Console.ReadLine();
             }

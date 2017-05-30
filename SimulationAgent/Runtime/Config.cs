@@ -11,7 +11,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 // TODO: tests
 // TODO: handle errors
 // TODO: use JSON?
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Agent
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
 {
     public interface IConfig
     {
