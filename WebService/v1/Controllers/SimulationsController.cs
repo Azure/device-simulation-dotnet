@@ -33,7 +33,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             if (simulation == null) throw new BadRequestException("No data or invalid data provided.");
 
             return new SimulationApiModel(
-                this.simulationsService.Insert(simulation.ToServiceModel("")));
+                this.simulationsService.Insert(simulation.ToServiceModel()));
         }
 
         public SimulationApiModel Put(string id, SimulationApiModel simulation)

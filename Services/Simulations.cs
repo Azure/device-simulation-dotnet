@@ -37,6 +37,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public IList<Simulation> GetList()
         {
+            this.CreateStorageIfMissing();
             var json = File.ReadAllText(this.tempStoragePath);
             return JsonConvert.DeserializeObject<List<Simulation>>(json);
         }
@@ -64,6 +65,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             simulation.Id = Guid.NewGuid().ToString();
+            simulation.Created = DateTimeOffset.UtcNow;
+            simulation.Modified = DateTimeOffset.UtcNow;
+            simulation.Version = 1;
 
             this.WriteToStorage(simulation);
 
@@ -96,6 +100,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 throw new InvalidInputException("Missing ID");
             }
 
+            simulation.Modified = DateTimeOffset.UtcNow;
+            simulation.Version += 1;
+
             this.WriteToStorage(simulation);
 
             return simulation;
@@ -127,6 +134,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             if (resourceChanged)
             {
+                simulation.Modified = DateTimeOffset.UtcNow;
+                simulation.Version += 1;
                 this.WriteToStorage(simulation);
             }
 
@@ -146,7 +155,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// running the web service and the simulation agent from the IDE there
         /// are two "Services/data" folders, one in each entry point. Thus the
         /// simulation agent would not see the temporary storage written by the
-        /// web service. By use the user/system temp folder, we make sure the
+        /// web service. By using the user/system temp folder, we make sure the
         /// storage is shared by the two processes when using an IDE.
         /// </summary>
         private void SetupTempStoragePath()

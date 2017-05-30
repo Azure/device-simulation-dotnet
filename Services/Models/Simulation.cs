@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using System.Collections.Generic;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
@@ -10,6 +11,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public string Id { get; set; }
         public bool Enabled { get; set; }
         public IList<DeviceTypeRef> DeviceTypes { get; set; }
+        public DateTimeOffset Created { get; set; }
+        public DateTimeOffset Modified { get; set; }
+        public long Version { get; set; }
 
         public Simulation()
         {

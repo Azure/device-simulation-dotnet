@@ -29,15 +29,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters
             {
                 context.Response = this.GetResponse(HttpStatusCode.NotFound, context.Exception);
             }
-            else if (context.Exception is BadRequestException)
+            else if (context.Exception is ConflictingResourceException
+                     || context.Exception is ResourceOutOfDateException)
             {
                 context.Response = this.GetResponse(HttpStatusCode.Conflict, context.Exception);
             }
-            else if (context.Exception is ResourceOutOfDateException)
-            {
-                context.Response = this.GetResponse(HttpStatusCode.Conflict, context.Exception);
-            }
-            else if (context.Exception is BadRequestException)
+            else if (context.Exception is BadRequestException
+                     || context.Exception is InvalidInputException)
             {
                 context.Response = this.GetResponse(HttpStatusCode.BadRequest, context.Exception);
             }
