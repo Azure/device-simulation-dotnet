@@ -15,8 +15,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     {
         IList<Simulation> GetList();
         Simulation Get(string id);
-        Simulation Insert(Simulation simulation);
-        Simulation Upsert(Simulation simulation);
+        Simulation Insert(Simulation simulation, string template = "");
+        Simulation Upsert(Simulation simulation, string template = "");
         Simulation Merge(SimulationPatch patch);
     }
 
@@ -26,11 +26,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     /// </summary>
     public class Simulations : ISimulations
     {
-        private const string TempStorageFile = "simulations-storage.json";
+        private string tempStorageFile = "simulations-storage.json";
         private string tempStoragePath;
 
-        public Simulations()
+        private readonly IDeviceTypes deviceTypes;
+
+        public Simulations(IDeviceTypes deviceTypes)
         {
+            this.deviceTypes = deviceTypes;
+
+            this.SetupTempStoragePath();
+            this.CreateStorageIfMissing();
+        }
+
+        // TODO: remove this method and use mocks when we have a storage service
+        public void ChangeStorageFile(string filename)
+        {
+            this.tempStorageFile = filename;
             this.SetupTempStoragePath();
             this.CreateStorageIfMissing();
         }
@@ -53,8 +65,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             throw new ResourceNotFoundException();
         }
 
-        public Simulation Insert(Simulation simulation)
+        public Simulation Insert(Simulation simulation, string template = "")
         {
+            // TODO: complete validation
+            if (!string.IsNullOrEmpty(template) && template.ToLowerInvariant() != "default")
+                throw new InvalidInputException("Unknown template name. Try 'default'.");
+
             var simulations = this.GetList();
 
             // Only one simulation per deployment
@@ -64,40 +80,61 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     "There is already a simulation. Only one simulation can be created.");
             }
 
-            simulation.Id = Guid.NewGuid().ToString();
+            // The ID is not empty when using PUT
+            if (string.IsNullOrEmpty(simulation.Id))
+            {
+                simulation.Id = Guid.NewGuid().ToString();
+            }
+
             simulation.Created = DateTimeOffset.UtcNow;
-            simulation.Modified = DateTimeOffset.UtcNow;
+            simulation.Modified = simulation.Created;
             simulation.Version = 1;
+
+            // Create default simulation
+            if (!string.IsNullOrEmpty(template) && template.ToLowerInvariant() == "default")
+            {
+                var types = this.deviceTypes.GetList();
+                simulation.DeviceTypes = new List<Simulation.DeviceTypeRef>();
+                foreach (var type in types)
+                {
+                    simulation.DeviceTypes.Add(new Simulation.DeviceTypeRef
+                    {
+                        Id = type.Id,
+                        Count = 2
+                    });
+                }
+            }
 
             this.WriteToStorage(simulation);
 
             return simulation;
         }
 
-        public Simulation Upsert(Simulation simulation)
+        public Simulation Upsert(Simulation simulation, string template = "")
         {
-            var simulations = this.GetList();
-
-            // Only one simulation per deployment
-            if (simulations.Count > 0)
-            {
-                if (simulations[0].Id != simulation.Id)
-                {
-                    throw new ConflictingResourceException(
-                        "There is already a simulation. Only one simulation can be created.");
-                }
-
-                if (simulations[0].Etag != simulation.Etag)
-                {
-                    throw new ResourceOutOfDateException(
-                        "Etag mismatch: the resource has been updated by another client.");
-                }
-            }
-
             // TODO: complete validation
             if (string.IsNullOrEmpty(simulation.Id))
             {
                 throw new InvalidInputException("Missing ID");
+            }
+
+            var simulations = this.GetList();
+            if (simulations.Count == 0)
+            {
+                return this.Insert(simulation, template);
+            }
+
+            // Note: only one simulation per deployment
+            if (simulations[0].Id != simulation.Id)
+            {
+                throw new ConflictingResourceException(
+                    "There is already a simulation. Only one simulation can be created.");
+            }
+
+            if (simulations[0].Etag != simulation.Etag)
+            {
+                throw new ResourceOutOfDateException(
+                    "Etag mismatch: the resource has been updated by another client.");
             }
 
             simulation.Modified = DateTimeOffset.UtcNow;
@@ -170,7 +207,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 tempFolder = "/tmp/";
             }
 
-            this.tempStoragePath = (tempFolder + Path.DirectorySeparatorChar + TempStorageFile)
+            this.tempStoragePath = (tempFolder + Path.DirectorySeparatorChar + this.tempStorageFile)
                 .Replace(Path.DirectorySeparatorChar.ToString() + Path.DirectorySeparatorChar,
                     Path.DirectorySeparatorChar.ToString());
             Console.WriteLine("Temporary simulations storage: " + this.tempStoragePath);

@@ -21,7 +21,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         public string Id { get; set; }
 
         [JsonProperty(PropertyName = "Enabled")]
-        public bool Enabled { get; set; }
+        public bool? Enabled { get; set; }
 
         [JsonProperty(PropertyName = "DeviceTypes")]
         public List<DeviceTypeRef> DeviceTypes { get; set; }
@@ -84,7 +84,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             {
                 Etag = this.Etag,
                 Id = this.Id,
-                Enabled = this.Enabled
+
+                // When unspecified, a simulation is enabled
+                Enabled = this.Enabled ?? true
             };
 
             foreach (var x in this.DeviceTypes)

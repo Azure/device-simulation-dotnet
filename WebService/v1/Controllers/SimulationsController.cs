@@ -1,5 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System;
+using System.Linq;
+using System.Net.Http;
 using System.Web.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
@@ -28,20 +31,37 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             return new SimulationApiModel(this.simulationsService.Get(id));
         }
 
-        public SimulationApiModel Post(SimulationApiModel simulation)
+        public SimulationApiModel Post(
+            SimulationApiModel simulation,
+            [FromUri(Name = "template")] string template = "")
         {
-            if (simulation == null) throw new BadRequestException("No data or invalid data provided.");
+            if (simulation == null)
+            {
+                if (string.IsNullOrEmpty(template))
+                    throw new BadRequestException("No data or invalid data provided.");
+
+                simulation = new SimulationApiModel();
+            }
 
             return new SimulationApiModel(
-                this.simulationsService.Insert(simulation.ToServiceModel()));
+                this.simulationsService.Insert(simulation.ToServiceModel(), template));
         }
 
-        public SimulationApiModel Put(string id, SimulationApiModel simulation)
+        public SimulationApiModel Put(
+            SimulationApiModel simulation,
+            string id = "",
+            [FromUri(Name = "template")] string template = "")
         {
-            if (simulation == null) throw new BadRequestException("No data or invalid data provided.");
+            if (simulation == null)
+            {
+                if (string.IsNullOrEmpty(template))
+                    throw new BadRequestException("No data or invalid data provided.");
+
+                simulation = new SimulationApiModel();
+            }
 
             return new SimulationApiModel(
-                this.simulationsService.Upsert(simulation.ToServiceModel(id)));
+                this.simulationsService.Upsert(simulation.ToServiceModel(id), template));
         }
 
         public SimulationApiModel Patch(string id, SimulationPatchApiModel patch)
