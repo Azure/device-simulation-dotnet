@@ -75,6 +75,10 @@ ProjectSection(SolutionItems) = preProject
 	scripts\docker\run.cmd = scripts\docker\run.cmd
 EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimulationAgent", "SimulationAgent\SimulationAgent.csproj", "{3739A325-246D-48C7-A59F-A355BEA0E6DF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimulationAgent.Test", "SimulationAgent.Test\SimulationAgent.Test.csproj", "{EF2B3E7D-4FFA-4B63-9E36-BDE17273D38B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +101,14 @@ Global
 		{1BC54189-1DF9-448E-AE5F-66EB2EF51D82}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1BC54189-1DF9-448E-AE5F-66EB2EF51D82}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1BC54189-1DF9-448E-AE5F-66EB2EF51D82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3739A325-246D-48C7-A59F-A355BEA0E6DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3739A325-246D-48C7-A59F-A355BEA0E6DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3739A325-246D-48C7-A59F-A355BEA0E6DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3739A325-246D-48C7-A59F-A355BEA0E6DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF2B3E7D-4FFA-4B63-9E36-BDE17273D38B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF2B3E7D-4FFA-4B63-9E36-BDE17273D38B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF2B3E7D-4FFA-4B63-9E36-BDE17273D38B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF2B3E7D-4FFA-4B63-9E36-BDE17273D38B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

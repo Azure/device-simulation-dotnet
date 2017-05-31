@@ -37,7 +37,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             // TODO: test
             this.ServicesConfig = new ServicesConfig
             {
-                DataFolder = config.GetString(Namespace + Application + "data-folder")
+                DeviceTypesFolder = config.GetString(Namespace + Application + "device-types-folder"),
+                DeviceTypesBehaviorFolder = config.GetString(Namespace + Application + "device-types-behavior-folder"),
             };
         }
 
