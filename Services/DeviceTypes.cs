@@ -94,6 +94,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             if (this.deviceTypeFiles != null) return this.deviceTypeFiles;
 
             var fileEntries = Directory.GetFiles(this.config.DeviceTypesFolder);
+
             this.deviceTypeFiles = fileEntries.Where(fileName => fileName.EndsWith(Ext)).ToList();
 
             return this.deviceTypeFiles;
