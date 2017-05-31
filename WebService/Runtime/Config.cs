@@ -6,13 +6,20 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Akka.Configuration;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
+// TODO: tests
+// TODO: handle errors
+// TODO: use JSON?
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
 {
     public interface IConfig
     {
         /// <summary>Web service listening port</summary>
         int Port { get; }
+
+        /// <summary>Service layer configuration</summary>
+        IServicesConfig ServicesConfig { get; }
     }
 
     /// <summary>Web service configuration</summary>
@@ -26,10 +33,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             var config = ConfigurationFactory.ParseString(GetHoconConfiguration("application.conf"));
 
             this.Port = config.GetInt(Namespace + Application + "webservice-port");
+
+            // TODO: test
+            this.ServicesConfig = new ServicesConfig
+            {
+                DataFolder = config.GetString(Namespace + Application + "data-folder")
+            };
         }
 
         /// <summary>Web service listening port</summary>
         public int Port { get; }
+
+        /// <summary>Service layer configuration</summary>
+        public IServicesConfig ServicesConfig { get; }
 
         /// <summary>
         /// Read the `application.conf` HOCON file, enabling substitutions
