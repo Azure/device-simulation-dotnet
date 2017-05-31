@@ -25,6 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         {
             lock (this.running)
             {
+                // Nothing to do is already running
                 if (this.running.FirstOrDefault()) return;
 
                 Console.WriteLine($"Starting simulation {simulation.Id}...");
@@ -42,11 +43,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         {
             lock (this.running)
             {
+                // Nothing to do if not running
                 if (!this.running.FirstOrDefault()) return;
 
                 Console.WriteLine("Stopping simulation...");
                 this.running[0] = false;
-                throw new NotImplementedException();
             }
         }
     }
