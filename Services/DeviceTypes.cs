@@ -61,7 +61,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public DeviceType Get(string id)
         {
             var list = this.GetList();
-            return list.FirstOrDefault(x => x.Id == id);
+            foreach (var x in list)
+            {
+                if (x.Id == id) return x;
+            }
+
+            throw new ResourceNotFoundException();
         }
 
         /// <summary>
@@ -88,7 +93,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.deviceTypeFiles != null) return this.deviceTypeFiles;
 
-            var fileEntries = Directory.GetFiles(this.config.DataFolder);
+            var fileEntries = Directory.GetFiles(this.config.DeviceTypesFolder);
+
             this.deviceTypeFiles = fileEntries.Where(fileName => fileName.EndsWith(Ext)).ToList();
 
             return this.deviceTypeFiles;

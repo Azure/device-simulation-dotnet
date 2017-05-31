@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -91,13 +91,19 @@
   <ItemGroup>
     <Compile Include="Runtime\Uptime.cs" />
     <Compile Include="v1\Controllers\DeviceTypesController.cs" />
+    <Compile Include="v1\Controllers\SimulationsController.cs" />
     <Compile Include="v1\Controllers\StatusController.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Runtime\Config.cs" />
     <Compile Include="Startup.cs" />
+    <Compile Include="v1\Exceptions\BadRequestException.cs" />
+    <Compile Include="v1\Filters\ExceptionsFilter.cs" />
     <Compile Include="v1\Models\DeviceTypeApiModel.cs" />
     <Compile Include="v1\Models\DeviceTypeListApiModel.cs" />
+    <Compile Include="v1\Models\SimulationApiModel.cs" />
+    <Compile Include="v1\Models\SimulationListApiModel.cs" />
+    <Compile Include="v1\Models\SimulationPatchApiModel.cs" />
     <Compile Include="v1\Models\StatusApiModel.cs" />
     <Compile Include="v1\Version.cs" />
   </ItemGroup>

@@ -24,6 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             this.Items = new List<DeviceTypeApiModel>();
         }
 
+        /// <summary>Map a service model to the corresponding API model</summary>
         public DeviceTypeListApiModel(IEnumerable<Services.Models.DeviceType> deviceTypes)
         {
             this.Items = new List<DeviceTypeApiModel>();
