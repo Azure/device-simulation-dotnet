@@ -32,6 +32,7 @@ git update-index --chmod=+x ./scripts/clean-up
 git update-index --chmod=+x ./scripts/setup-env-vars
 git update-index --chmod=+x ./scripts/docker/build
 git update-index --chmod=+x ./scripts/docker/run
+git update-index --chmod=+x ./scripts/docker/content/*.sh
 git update-index --chmod=+x ./scripts/git/*.sh
 git update-index --chmod=+x ./scripts/iothub/*.sh
 

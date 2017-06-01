@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Threading;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
 using Microsoft.Owin.Hosting;
 
@@ -24,7 +23,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
                 // Production mode: keep the service alive until killed
                 if (args.Length > 0 && args[0] == "--background")
                 {
-                    while (true) Thread.Sleep(600 * 1000);
+                    while (true) Console.ReadLine();
                 }
 
                 // Development mode: keep the service alive until Enter is pressed

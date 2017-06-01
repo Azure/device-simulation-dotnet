@@ -6,5 +6,5 @@
 #  * https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-csharp-csharp-getstarted
 #
 
-# see: Shared access policies ⇒ key name ⇒ Connection string
+# see: Shared access policies => key name => Connection string
 # export IOTHUB_CONN_STRING="..."
