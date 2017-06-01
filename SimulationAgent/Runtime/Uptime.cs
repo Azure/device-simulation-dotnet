@@ -2,7 +2,7 @@
 
 using System;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
 {
     /// <summary>Helper capturing runtime information.</summary>
     public static class Uptime
@@ -14,6 +14,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         public static TimeSpan Duration => DateTimeOffset.UtcNow.Subtract(Start);
 
         /// <summary>A randomly generated ID used to identify the process in the logs</summary>
-        public static string ProcessId { get; } = "WebService." + Guid.NewGuid();
+        public static string ProcessId { get; } = "Agent." + Guid.NewGuid();
     }
 }

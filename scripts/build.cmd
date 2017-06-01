@@ -10,18 +10,18 @@ SET APP_HOME=%APP_HOME:~0,-9%
 cd %APP_HOME%
 
 :: Check dependencies
-nuget 2> NUL
-IF NOT ERRORLEVEL 0 GOTO MISSING_NUGET
-msbuild /version 2> NUL
-IF NOT ERRORLEVEL 0 GOTO MISSING_MSBUILD
+nuget > NUL 2>&1
+IF %ERRORLEVEL% NEQ 0 GOTO MISSING_NUGET
+msbuild /version > NUL 2>&1
+IF %ERRORLEVEL% NEQ 0 GOTO MISSING_MSBUILD
 
 :: Restore nuget packages and compile the application
 echo Downloading dependencies...
 call nuget restore
-IF NOT ERRORLEVEL 0 GOTO FAIL
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 echo Compiling code...
 call msbuild /m /p:Configuration=%CONFIGURATION%;Platform="Any CPU"
-IF NOT ERRORLEVEL 0 GOTO FAIL
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: Find all the test assemblies and run the tests with XUnit runner
 echo Running tests...
@@ -31,7 +31,7 @@ for /r %%i in (*.Test.dll) do (
     IF !ERRORLEVEL! EQU 0 (
         echo === %%i
         .\packages\xunit.runner.console.2.2.0\tools\xunit.console.exe %%i -verbose -nologo -noshadow -parallel all
-        IF ERRORLEVEL 1 GOTO FAIL
+        IF %ERRORLEVEL% EQU 1 GOTO FAIL
     )
 )
 

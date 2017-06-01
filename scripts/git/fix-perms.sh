@@ -18,6 +18,7 @@ chmod ugo+x ./scripts/clean-up
 chmod ugo+x ./scripts/setup-env-vars
 chmod ugo+x ./scripts/docker/build
 chmod ugo+x ./scripts/docker/run
+chmod ugo+x ./scripts/docker/content/*.sh
 chmod ugo+x ./scripts/git/*.sh
 chmod ugo+x ./scripts/iothub/*.sh
 
@@ -31,6 +32,7 @@ git update-index --chmod=+x ./scripts/clean-up
 git update-index --chmod=+x ./scripts/setup-env-vars
 git update-index --chmod=+x ./scripts/docker/build
 git update-index --chmod=+x ./scripts/docker/run
+git update-index --chmod=+x ./scripts/docker/content/*.sh
 git update-index --chmod=+x ./scripts/git/*.sh
 git update-index --chmod=+x ./scripts/iothub/*.sh
 

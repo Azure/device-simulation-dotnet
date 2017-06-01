@@ -13,25 +13,33 @@ SET APP_HOME=%APP_HOME:~0,-16%
 cd %APP_HOME%
 
 :: Check dependencies
-nuget 2> NUL
-IF NOT ERRORLEVEL 0 GOTO MISSING_NUGET
-msbuild /version 2> NUL
-IF NOT ERRORLEVEL 0 GOTO MISSING_MSBUILD
-docker version > NUL
-IF NOT ERRORLEVEL 0 GOTO MISSING_DOCKER
+nuget > NUL 2>&1
+IF %ERRORLEVEL% NEQ 0 GOTO MISSING_NUGET
+msbuild /version > NUL 2>&1
+IF %ERRORLEVEL% NEQ 0 GOTO MISSING_MSBUILD
+docker version > NUL 2>&1
+IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOCKER
 
 :: Restore packages and build the application
 call nuget restore
-IF NOT ERRORLEVEL 0 GOTO FAIL
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 call msbuild /m /p:Configuration=%CONFIGURATION%;Platform="Any CPU"
-IF NOT ERRORLEVEL 0 GOTO FAIL
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: Build the container image
-copy scripts\docker\.dockerignore WebService\bin\%CONFIGURATION%\
-copy scripts\docker\Dockerfile WebService\bin\%CONFIGURATION%\
-cd WebService\bin\%CONFIGURATION%
+rmdir /s /q out\docker
+mkdir out\docker\webservice
+mkdir out\docker\simulationagent
+
+xcopy /s WebService\bin\%CONFIGURATION%\*       out\docker\webservice\
+xcopy /s SimulationAgent\bin\%CONFIGURATION%\*  out\docker\simulationagent\
+copy scripts\docker\.dockerignore               out\docker\
+copy scripts\docker\Dockerfile                  out\docker\
+copy scripts\docker\content\run.sh              out\docker\
+
+cd out\docker\
 docker build --tag %DOCKER_IMAGE% --squash --compress --label "Tags=azure,iot,pcs,.NET" .
-IF NOT ERRORLEVEL 0 GOTO FAIL
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: - - - - - - - - - - - - - -
 goto :END

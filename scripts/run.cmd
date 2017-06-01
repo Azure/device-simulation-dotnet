@@ -10,21 +10,25 @@ SET APP_HOME=%APP_HOME:~0,-9%
 cd %APP_HOME%
 
 :: Check dependencies
-nuget 2> NUL
-IF NOT ERRORLEVEL 0 GOTO MISSING_NUGET
-msbuild /version 2> NUL
-IF NOT ERRORLEVEL 0 GOTO MISSING_MSBUILD
+nuget > NUL 2>&1
+IF %ERRORLEVEL% NEQ 0 GOTO MISSING_NUGET
+msbuild /version > NUL 2>&1
+IF %ERRORLEVEL% NEQ 0 GOTO MISSING_MSBUILD
 
 :: Restore nuget packages and compile the application
 call nuget restore
-IF NOT ERRORLEVEL 0 GOTO FAIL
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 call msbuild /m /p:Configuration=%CONFIGURATION%;Platform="Any CPU"
-IF NOT ERRORLEVEL 0 GOTO FAIL
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: Run with elevated privileges
 copy .\scripts\run.vbs .\WebService\bin\%CONFIGURATION%
 cd WebService\bin\%CONFIGURATION%
-call cscript run.vbs "Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.exe"
+call cscript run.vbs "Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.exe --background"
+
+copy .\scripts\run.vbs .\SimulationAgent\bin\%CONFIGURATION%
+cd SimulationAgent\bin\%CONFIGURATION%
+call cscript run.vbs "Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.exe"
 
 :: - - - - - - - - - - - - - -
 goto :END

@@ -1,17 +1,15 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-using System;
-using System.Linq;
-using System.Net.Http;
 using System.Web.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
 using Microsoft.Web.Http;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers
 {
-    [ApiVersion(Version.Number)]
+    [ApiVersion(Version.Number), ExceptionsFilter]
     public class SimulationsController : ApiController
     {
         private readonly ISimulations simulationsService;

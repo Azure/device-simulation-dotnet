@@ -16,8 +16,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             var options = new StartOptions("http://*:" + config.Port);
             using (WebApp.Start<Startup>(options))
             {
-                Console.WriteLine("Server listening at http://*:" + config.Port);
-                Console.WriteLine("Health check: http://127.0.0.1:" + config.Port + "/v1/status");
+                Console.WriteLine("Web service started, process ID: " + Uptime.ProcessId);
+                Console.WriteLine($"[{Uptime.ProcessId}] Listening at http://*:" + config.Port);
+                Console.WriteLine($"[{Uptime.ProcessId}] Health check: http://127.0.0.1:" + config.Port + "/" + v1.Version.Path + "/status");
+
+                // Production mode: keep the service alive until killed
+                if (args.Length > 0 && args[0] == "--background")
+                {
+                    while (true) Console.ReadLine();
+                }
+
+                // Development mode: keep the service alive until Enter is pressed
                 Console.WriteLine("Press [Enter] to quit...");
                 Console.ReadLine();
             }

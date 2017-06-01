@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web.Http;
 using System.Web.Http.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
@@ -43,6 +44,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters
             {
                 context.Response = this.GetResponse(HttpStatusCode.InternalServerError, context.Exception);
             }
+            else if (context.Exception is HttpResponseException)
+            {
+                context.Response = ((HttpResponseException) context.Exception).Response;
+            }
             else if (context.Exception != null)
             {
                 context.Response = this.GetResponse(HttpStatusCode.InternalServerError, context.Exception, true);
@@ -71,7 +76,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters
         {
         }
 
-        private HttpResponseMessage GetResponse(HttpStatusCode code, Exception e, bool stackTrace = false)
+        private HttpResponseMessage GetResponse(
+            HttpStatusCode code,
+            Exception e,
+            bool stackTrace = false)
         {
             var error = new Dictionary<string, object>
             {

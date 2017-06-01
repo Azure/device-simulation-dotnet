@@ -7,4 +7,4 @@
 ::
 
 :: see: Shared access policies ⇒ key name ⇒ Connection string
-SET IOTHUB_CONN_STRING = "..."
+:: SET IOTHUB_CONN_STRING = "..."

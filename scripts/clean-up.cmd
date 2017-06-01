@@ -12,16 +12,25 @@ if "%APP_HOME:~20%" == "" (
 :: Clean up folders containing temporary files
 echo Removing temporary folders and files...
 cd %APP_HOME%
-IF NOT ERRORLEVEL 0 GOTO FAIL
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
+
 rmdir /s /q .\packages
+rmdir /s /q .\target
+
 rmdir /s /q .\Services\bin
 rmdir /s /q .\Services\obj
 rmdir /s /q .\Services.Test\bin
 rmdir /s /q .\Services.Test\obj
+
 rmdir /s /q .\WebService\bin
 rmdir /s /q .\WebService\obj
 rmdir /s /q .\WebService.Test\bin
 rmdir /s /q .\WebService.Test\obj
+
+rmdir /s /q .\SimulationAgent\bin
+rmdir /s /q .\SimulationAgent\obj
+rmdir /s /q .\SimulationAgent.Test\bin
+rmdir /s /q .\SimulationAgent.Test\obj
 
 :: Clean up .cache
 rmdir /s /q .\.cache

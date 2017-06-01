@@ -7,18 +7,18 @@ SET APP_HOME=%APP_HOME:~0,-9%
 cd %APP_HOME%
 
 :: Check dependencies
-nuget 2> NUL
-IF NOT ERRORLEVEL 0 GOTO MISSING_NUGET
-msbuild /version 2> NUL
-IF NOT ERRORLEVEL 0 GOTO MISSING_MSBUILD
+nuget > NUL 2>&1
+IF %ERRORLEVEL% NEQ 0 GOTO MISSING_NUGET
+msbuild /version > NUL 2>&1
+IF %ERRORLEVEL% NEQ 0 GOTO MISSING_MSBUILD
 
 :: Restore nuget packages and compile the application with both Debug and Release configurations
 call nuget restore
-IF NOT ERRORLEVEL 0 GOTO FAIL
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 call msbuild /m /p:Configuration=Debug;Platform="Any CPU"
-IF NOT ERRORLEVEL 0 GOTO FAIL
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 call msbuild /m /p:Configuration=Release;Platform="Any CPU"
-IF NOT ERRORLEVEL 0 GOTO FAIL
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: - - - - - - - - - - - - - -
 goto :END

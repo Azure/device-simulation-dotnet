@@ -7,8 +7,8 @@ SET APP_HOME=%APP_HOME:~0,-9%
 cd %APP_HOME%
 
 :: Check dependencies
-docker version > NUL
-IF NOT ERRORLEVEL 0 GOTO MISSING_DOCKER
+docker version > NUL 2>&1
+IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOCKER
 
 :: Create cache folders to speed up future executions
 mkdir .cache\sandbox\.config 2>NUL
@@ -24,8 +24,8 @@ docker run -it ^
     azureiotpcs/code-builder-dotnet:1.0 /opt/scripts/run
 
 :: Error 125 typically triggers on Windows if the drive is not shared
-IF ERRORLEVEL 125 GOTO DOCKER_SHARE
-IF NOT ERRORLEVEL 0 GOTO FAIL
+IF %ERRORLEVEL% EQU 125 GOTO DOCKER_SHARE
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: - - - - - - - - - - - - - -
 goto :END

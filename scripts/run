@@ -17,9 +17,12 @@ run() {
     nuget restore
     msbuild /m /p:Configuration=$CONFIGURATION /verbosity:quiet
 
-    echo "Starting web service..."
-    cd $APP_HOME/WebService/bin/$CONFIGURATION/
-    mono Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.exe
+    echo "Starting simulation agent and web service..."
+    cd $APP_HOME/SimulationAgent/bin/$CONFIGURATION/ && \
+        mono Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.exe & \
+        cd $APP_HOME/WebService/bin/$CONFIGURATION/ && \
+        mono Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.exe --background && \
+        fg
 }
 
 run_in_sandbox() {

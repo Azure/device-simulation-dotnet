@@ -79,6 +79,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimulationAgent", "Simulati
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimulationAgent.Test", "SimulationAgent.Test\SimulationAgent.Test.csproj", "{EF2B3E7D-4FFA-4B63-9E36-BDE17273D38B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "content", "content", "{47397605-F212-4576-9F63-AC35405DC3B6}"
+ProjectSection(SolutionItems) = preProject
+	scripts\docker\content\run.sh = scripts\docker\content\run.sh
+EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -128,5 +133,6 @@ Global
 		{FE64576E-E29D-4463-ABDA-93DB429A5F2F} = {7357A079-B54D-490F-AA91-1B7BDAFE5E3F}
 		{62782BA5-0E78-4354-9962-B5F2CF3B5204} = {7357A079-B54D-490F-AA91-1B7BDAFE5E3F}
 		{DB8AF4E5-71A1-4650-A881-9F08FCB53DAA} = {7357A079-B54D-490F-AA91-1B7BDAFE5E3F}
+		{47397605-F212-4576-9F63-AC35405DC3B6} = {DB8AF4E5-71A1-4650-A881-9F08FCB53DAA}
 	EndGlobalSection
 EndGlobal
