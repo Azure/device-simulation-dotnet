@@ -10,7 +10,7 @@ IF NOT ERRORLEVEL 0 GOTO MISSING_DOCKER
 
 :: Start the application
 echo Starting microservice...
-docker run -it -p %EXT_PORT%:8080 -e PCS_IOTHUB_CONN_STRING=%PCS_IOTHUB_CONN_STRING% %DOCKER_IMAGE%
+docker run -it -p %EXT_PORT%:8080 %DOCKER_IMAGE%
 
 :: - - - - - - - - - - - - - -
 goto :END

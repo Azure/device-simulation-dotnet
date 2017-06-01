@@ -14,6 +14,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         public static TimeSpan Duration => DateTimeOffset.UtcNow.Subtract(Start);
 
         /// <summary>A randomly generated ID used to identify the process in the logs</summary>
-        public static string ProcessId { get; } = Guid.NewGuid().ToString();
+        public static string ProcessId { get; } = "WS." + Guid.NewGuid();
     }
 }

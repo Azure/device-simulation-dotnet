@@ -12,10 +12,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Starting simulation agent");
-            Console.WriteLine("Process ID:" + Uptime.ProcessId);
+            Console.WriteLine("Simulation agent started, process ID: " + Uptime.ProcessId);
+            Console.WriteLine($"[{Uptime.ProcessId}] Press [CTRL+C] to quit...");
 
-            var container = DependencyInjection.GetContainer();
+            var container = DependencyResolution.Setup();
             container.Resolve<ISimulation>().Run();
         }
     }

@@ -27,9 +27,17 @@ call msbuild /m /p:Configuration=%CONFIGURATION%;Platform="Any CPU"
 IF NOT ERRORLEVEL 0 GOTO FAIL
 
 :: Build the container image
-copy scripts\docker\.dockerignore WebService\bin\%CONFIGURATION%\
-copy scripts\docker\Dockerfile WebService\bin\%CONFIGURATION%\
-cd WebService\bin\%CONFIGURATION%
+rmdir /s /q out\docker
+mkdir out\docker\webservice
+mkdir out\docker\simulationagent
+
+xcopy /s WebService\bin\%CONFIGURATION%\*       out\docker\webservice\
+xcopy /s SimulationAgent\bin\%CONFIGURATION%\*  out\docker\simulationagent\
+copy scripts\docker\.dockerignore               out\docker\
+copy scripts\docker\Dockerfile                  out\docker\
+copy scripts\docker\content\run.sh              out\docker\
+
+cd out\docker\
 docker build --tag %DOCKER_IMAGE% --squash --compress --label "Tags=azure,iot,pcs,.NET" .
 IF NOT ERRORLEVEL 0 GOTO FAIL
 

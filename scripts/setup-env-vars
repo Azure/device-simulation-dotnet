@@ -7,4 +7,4 @@
 #
 
 # see: Shared access policies ⇒ key name ⇒ Connection string
-export IOTHUB_CONN_STRING="..."
+# export IOTHUB_CONN_STRING="..."

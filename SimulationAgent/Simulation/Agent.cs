@@ -17,11 +17,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private const int CheckInterval = 3000;
 
         private readonly ISimulations simulations;
-        private readonly IRunner runner;
+        private readonly ISimulationRunner runner;
 
         public Simulation(
             ISimulations simulations,
-            IRunner runner)
+            ISimulationRunner runner)
         {
             this.simulations = simulations;
             this.runner = runner;

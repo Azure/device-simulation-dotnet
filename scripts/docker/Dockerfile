@@ -4,7 +4,7 @@ MAINTAINER Devis Lucato (https://github.com/dluc)
 
 EXPOSE 8080
 
-ENTRYPOINT ["mono", "Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.exe"]
+ENTRYPOINT ["/bin/bash", "/app/run.sh"]
 
 COPY . /app/
 WORKDIR /app

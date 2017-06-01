@@ -7,4 +7,4 @@
 #
 
 # see: Shared access policies ⇒ key name ⇒ Connection string
-$env:IOTHUB_CONN_STRING = '...'
+# $env:IOTHUB_CONN_STRING = '...'

@@ -17,6 +17,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
     {
         /// <summary>Service layer configuration</summary>
         IServicesConfig ServicesConfig { get; }
+
+        Akka.Configuration.Config AkkaConfig { get; }
     }
 
     /// <summary>Web service configuration</summary>
@@ -27,18 +29,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
 
         public Config()
         {
-            var config = ConfigurationFactory.ParseString(GetHoconConfiguration("application.conf"));
+            this.AkkaConfig = ConfigurationFactory.ParseString(GetHoconConfiguration("application.conf"));
 
             // TODO: test
             this.ServicesConfig = new ServicesConfig
             {
-                DeviceTypesFolder = config.GetString(Namespace + Application + "device-types-folder"),
-                DeviceTypesBehaviorFolder = config.GetString(Namespace + Application + "device-types-behavior-folder"),
+                DeviceTypesFolder = this.AkkaConfig.GetString(Namespace + Application + "device-types-folder"),
+                DeviceTypesBehaviorFolder = this.AkkaConfig.GetString(Namespace + Application + "device-types-behavior-folder"),
             };
         }
 
         /// <summary>Service layer configuration</summary>
         public IServicesConfig ServicesConfig { get; }
+
+        public Akka.Configuration.Config AkkaConfig { get; }
 
         /// <summary>
         /// Read the `application.conf` HOCON file, enabling substitutions

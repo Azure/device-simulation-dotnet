@@ -24,7 +24,11 @@ IF NOT ERRORLEVEL 0 GOTO FAIL
 :: Run with elevated privileges
 copy .\scripts\run.vbs .\WebService\bin\%CONFIGURATION%
 cd WebService\bin\%CONFIGURATION%
-call cscript run.vbs "Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.exe"
+call cscript run.vbs "Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.exe --no-stop"
+
+copy .\scripts\run.vbs .\SimulationAgent\bin\%CONFIGURATION%
+cd SimulationAgent\bin\%CONFIGURATION%
+call cscript run.vbs "Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.exe"
 
 :: - - - - - - - - - - - - - -
 goto :END

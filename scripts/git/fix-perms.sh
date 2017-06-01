@@ -18,6 +18,7 @@ chmod ugo+x ./scripts/clean-up
 chmod ugo+x ./scripts/setup-env-vars
 chmod ugo+x ./scripts/docker/build
 chmod ugo+x ./scripts/docker/run
+chmod ugo+x ./scripts/docker/content/*.sh
 chmod ugo+x ./scripts/git/*.sh
 chmod ugo+x ./scripts/iothub/*.sh
 
