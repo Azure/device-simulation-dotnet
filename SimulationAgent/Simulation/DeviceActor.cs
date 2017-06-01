@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Generic;
 using Akka.Actor;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 
@@ -13,44 +14,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private DeviceType deviceType;
         private IoTHubProtocol protocol;
         private bool isRunning;
-        private ICancelable scheduleCancel;
-
-        public class Setup
-        {
-            public DeviceType DeviceType { get; }
-            public int Position { get; }
-
-            public Setup(int position, DeviceType deviceType)
-            {
-                this.Position = position;
-                this.DeviceType = deviceType;
-            }
-        }
-
-        public class Start
-        {
-        }
-
-        public class Stop
-        {
-        }
-
-        public class SendTelemetry
-        {
-            public DeviceType.DeviceTypeMessage Message { get; }
-
-            public SendTelemetry(DeviceType.DeviceTypeMessage message)
-            {
-                this.Message = message;
-            }
-        }
+        private List<ICancelable> tasks;
 
         public DeviceActor()
         {
-            this.Receive<Setup>(msg => this.DoSetup(msg.Position, msg.DeviceType));
-            this.Receive<Start>(msg => this.DoStart());
-            this.Receive<Stop>(msg => this.DoStop());
-            this.Receive<SendTelemetry>(msg => this.DoSendTelemetry(msg.Message));
+            this.tasks = new List<ICancelable>();
+            this.Receive<DeviceActorMessages.Setup>(msg => this.DoSetup(msg.Position, msg.DeviceType));
+            this.Receive<DeviceActorMessages.Start>(msg => this.DoStart());
+            this.Receive<DeviceActorMessages.Stop>(msg => this.DoStop());
+            this.Receive<DeviceActorMessages.SendTelemetry>(msg => this.DoSendTelemetry(msg.Message));
         }
 
         private void DoSetup(int position, DeviceType deviceType)
@@ -71,19 +43,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             // Schedule telemetry sender
             foreach (var message in this.deviceType.Telemetry.Messages)
             {
-                var telemetryMsg = new SendTelemetry(message);
-                this.scheduleCancel = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
+                var telemetryMsg = new DeviceActorMessages.SendTelemetry(message);
+                var task = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
                     TimeSpan.Zero, message.Interval, this.Self, telemetryMsg, this.Self);
+                this.tasks.Add(task);
             }
         }
 
         private void DoStop()
         {
             if (!this.isRunning) return;
-            this.isRunning = false;
 
-            // Stop telemetry sender
-            this.scheduleCancel.Cancel();
+            foreach (var task in this.tasks)
+            {
+                task.Cancel();
+            }
+
+            this.isRunning = false;
         }
 
         private void DoSendTelemetry(DeviceType.DeviceTypeMessage message)

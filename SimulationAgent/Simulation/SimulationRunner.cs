@@ -20,7 +20,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private readonly IDeviceTypes deviceTypes;
         private readonly IActorRefFactory actorSystem;
         private readonly List<bool> running;
-        private readonly List<IActorRef> actors;
+        private List<IActorRef> actors;
 
         public SimulationRunner(
             IDeviceTypes deviceTypes,
@@ -33,6 +33,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.actors = new List<IActorRef>();
         }
 
+        /// <summary>
+        /// For each device type create a set of indipendent actors.
+        /// Each actor takes care of simulating a device.
+        /// </summary>
         public void Start(Services.Models.Simulation simulation)
         {
             lock (this.running)
@@ -52,13 +56,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                         var actor = this.actorSystem.ActorOf<DeviceActor>();
                         this.actors.Add(actor);
 
-                        actor.Tell(new DeviceActor.Setup(i, deviceType));
-                        actor.Tell(new DeviceActor.Start());
+                        actor.Tell(new DeviceActorMessages.Setup(i, deviceType));
+                        actor.Tell(new DeviceActorMessages.Start());
                     }
                 }
             }
         }
 
+        /// <summary>
+        /// Send a message to all the actors asking to stop running
+        /// </summary>
         public void Stop()
         {
             lock (this.running)
@@ -67,12 +74,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 if (!this.running.FirstOrDefault()) return;
 
                 Console.WriteLine("Stopping simulation...");
-                this.running[0] = false;
 
+                // TODO: use Akka pubsub
+                /* This approach to stop the actors works fine and keeps
+                the logs clean, however it doesnt scale when there are
+                thousands/millions of actors. TO DO: (1) organize the actors
+                under few master nodes, (2) use pubsub to tell the cluster to
+                stop, and (3) kill the master nodes after few seconds. */
                 foreach (var actor in this.actors)
                 {
-                    actor.Tell(new DeviceActor.Stop());
+                    actor.Tell(new DeviceActorMessages.Stop());
+                    actor.GracefulStop(TimeSpan.FromSeconds(10));
                 }
+
+                this.actors = new List<IActorRef>();
+                this.running[0] = false;
             }
         }
     }

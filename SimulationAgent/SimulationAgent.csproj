@@ -53,6 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Simulation\DeviceActor.cs" />
+    <Compile Include="Simulation\DeviceActorMessages.cs" />
     <Compile Include="Simulation\SimulationRunner.cs" />
     <Compile Include="Simulation\Agent.cs" />
     <Compile Include="DependencyResolution.cs" />
