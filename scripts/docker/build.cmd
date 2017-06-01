@@ -14,17 +14,17 @@ cd %APP_HOME%
 
 :: Check dependencies
 nuget 2> NUL
-IF NOT ERRORLEVEL 0 GOTO MISSING_NUGET
+IF %ERRORLEVEL% NEQ 0 GOTO MISSING_NUGET
 msbuild /version 2> NUL
-IF NOT ERRORLEVEL 0 GOTO MISSING_MSBUILD
+IF %ERRORLEVEL% NEQ 0 GOTO MISSING_MSBUILD
 docker version > NUL
-IF NOT ERRORLEVEL 0 GOTO MISSING_DOCKER
+IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOCKER
 
 :: Restore packages and build the application
 call nuget restore
-IF NOT ERRORLEVEL 0 GOTO FAIL
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 call msbuild /m /p:Configuration=%CONFIGURATION%;Platform="Any CPU"
-IF NOT ERRORLEVEL 0 GOTO FAIL
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: Build the container image
 rmdir /s /q out\docker
@@ -39,7 +39,7 @@ copy scripts\docker\content\run.sh              out\docker\
 
 cd out\docker\
 docker build --tag %DOCKER_IMAGE% --squash --compress --label "Tags=azure,iot,pcs,.NET" .
-IF NOT ERRORLEVEL 0 GOTO FAIL
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: - - - - - - - - - - - - - -
 goto :END

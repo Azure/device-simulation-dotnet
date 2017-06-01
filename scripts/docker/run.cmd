@@ -6,7 +6,7 @@ SET EXT_PORT=8080
 
 :: Check dependencies
 docker version > NUL
-IF NOT ERRORLEVEL 0 GOTO MISSING_DOCKER
+IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOCKER
 
 :: Start the application
 echo Starting microservice...

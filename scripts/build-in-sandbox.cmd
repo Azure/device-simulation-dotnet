@@ -8,7 +8,7 @@ cd %APP_HOME%
 
 :: Check dependencies
 docker version > NUL
-IF NOT ERRORLEVEL 0 GOTO MISSING_DOCKER
+IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOCKER
 
 :: Create cache folders to speed up future executions
 mkdir .cache\sandbox\.config 2>NUL
@@ -25,7 +25,7 @@ docker run ^
 
 :: Error 125 typically triggers on Windows if the drive is not shared
 IF ERRORLEVEL 125 GOTO DOCKER_SHARE
-IF NOT ERRORLEVEL 0 GOTO FAIL
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: - - - - - - - - - - - - - -
 goto :END

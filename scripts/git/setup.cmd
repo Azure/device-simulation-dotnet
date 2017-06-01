@@ -18,7 +18,7 @@ goto :USAGE
     mkdir .git\hooks\ 2> nul
     del /F .git\hooks\pre-commit 2> nul
     copy scripts\git\pre-commit-runner-with-sandbox.sh .git\hooks\pre-commit
-    IF NOT ERRORLEVEL 0 GOTO FAIL
+    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
     echo Done.
     goto :END
 
@@ -27,7 +27,7 @@ goto :USAGE
     mkdir .git\hooks\ 2> nul
     del /F .git\hooks\pre-commit 2> nul
     copy scripts\git\pre-commit-runner-no-sandbox.sh .git\hooks\pre-commit
-    IF NOT ERRORLEVEL 0 GOTO FAIL
+    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
     echo Done.
     goto :END
 

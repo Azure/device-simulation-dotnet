@@ -12,7 +12,7 @@ if "%APP_HOME:~20%" == "" (
 :: Clean up folders containing temporary files
 echo Removing temporary folders and files...
 cd %APP_HOME%
-IF NOT ERRORLEVEL 0 GOTO FAIL
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 rmdir /s /q .\packages
 
 rmdir /s /q .\Services\bin
