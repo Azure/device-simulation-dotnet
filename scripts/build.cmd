@@ -10,9 +10,9 @@ SET APP_HOME=%APP_HOME:~0,-9%
 cd %APP_HOME%
 
 :: Check dependencies
-nuget 2> NUL
+nuget > NUL 2>&1
 IF %ERRORLEVEL% NEQ 0 GOTO MISSING_NUGET
-msbuild /version 2> NUL
+msbuild /version > NUL 2>&1
 IF %ERRORLEVEL% NEQ 0 GOTO MISSING_MSBUILD
 
 :: Restore nuget packages and compile the application

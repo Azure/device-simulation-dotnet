@@ -5,7 +5,7 @@ SET DOCKER_IMAGE="azureiotpcs/device-simulation-dotnet:0.1-SNAPSHOT"
 SET EXT_PORT=8080
 
 :: Check dependencies
-docker version > NUL
+docker version > NUL 2>&1
 IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOCKER
 
 :: Start the application

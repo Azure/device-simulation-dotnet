@@ -15,8 +15,8 @@ goto :USAGE
 
 :WITH_SANDBOX
     echo Adding pre-commit hook (via Docker sandbox)...
-    mkdir .git\hooks\ 2> nul
-    del /F .git\hooks\pre-commit 2> nul
+    mkdir .git\hooks\ > NUL 2>&1
+    del /F .git\hooks\pre-commit > NUL 2>&1
     copy scripts\git\pre-commit-runner-with-sandbox.sh .git\hooks\pre-commit
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
     echo Done.
@@ -24,8 +24,8 @@ goto :USAGE
 
 :WITHOUT_SANDBOX
     echo Adding pre-commit hook...
-    mkdir .git\hooks\ 2> nul
-    del /F .git\hooks\pre-commit 2> nul
+    mkdir .git\hooks\ > NUL 2>&1
+    del /F .git\hooks\pre-commit > NUL 2>&1
     copy scripts\git\pre-commit-runner-no-sandbox.sh .git\hooks\pre-commit
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
     echo Done.

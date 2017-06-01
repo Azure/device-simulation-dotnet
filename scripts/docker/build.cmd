@@ -13,11 +13,11 @@ SET APP_HOME=%APP_HOME:~0,-16%
 cd %APP_HOME%
 
 :: Check dependencies
-nuget 2> NUL
+nuget > NUL 2>&1
 IF %ERRORLEVEL% NEQ 0 GOTO MISSING_NUGET
-msbuild /version 2> NUL
+msbuild /version > NUL 2>&1
 IF %ERRORLEVEL% NEQ 0 GOTO MISSING_MSBUILD
-docker version > NUL
+docker version > NUL 2>&1
 IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOCKER
 
 :: Restore packages and build the application

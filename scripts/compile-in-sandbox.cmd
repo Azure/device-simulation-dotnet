@@ -7,7 +7,7 @@ SET APP_HOME=%APP_HOME:~0,-9%
 cd %APP_HOME%
 
 :: Check dependencies
-docker version > NUL
+docker version > NUL 2>&1
 IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOCKER
 
 :: Create cache folders to speed up future executions
