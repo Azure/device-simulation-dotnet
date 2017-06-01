@@ -9,7 +9,7 @@ docker version > NUL 2>&1
 IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOCKER
 
 :: Start the application
-echo Starting microservice...
+echo Web service listening on port %EXT_PORT%
 docker run -it -p %EXT_PORT%:8080 %DOCKER_IMAGE%
 
 :: - - - - - - - - - - - - - -

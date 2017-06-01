@@ -11,9 +11,9 @@ docker version > NUL 2>&1
 IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOCKER
 
 :: Create cache folders to speed up future executions
-mkdir .cache\sandbox\.config 2>NUL
-mkdir .cache\sandbox\.dotnet 2>NUL
-mkdir .cache\sandbox\.nuget 2>NUL
+mkdir .cache\sandbox\.config > NUL 2>&1
+mkdir .cache\sandbox\.dotnet > NUL 2>&1
+mkdir .cache\sandbox\.nuget > NUL 2>&1
 
 :: Start the sandbox and execute the compilation script
 docker run -it ^
@@ -24,7 +24,7 @@ docker run -it ^
     azureiotpcs/code-builder-dotnet:1.0 /opt/scripts/compile
 
 :: Error 125 typically triggers on Windows if the drive is not shared
-IF ERRORLEVEL 125 GOTO DOCKER_SHARE
+IF %ERRORLEVEL% EQU 125 GOTO DOCKER_SHARE
 IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: - - - - - - - - - - - - - -

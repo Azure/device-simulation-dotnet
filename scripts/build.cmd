@@ -31,7 +31,7 @@ for /r %%i in (*.Test.dll) do (
     IF !ERRORLEVEL! EQU 0 (
         echo === %%i
         .\packages\xunit.runner.console.2.2.0\tools\xunit.console.exe %%i -verbose -nologo -noshadow -parallel all
-        IF ERRORLEVEL 1 GOTO FAIL
+        IF %ERRORLEVEL% EQU 1 GOTO FAIL
     )
 )
 

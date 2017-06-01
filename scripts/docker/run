@@ -10,7 +10,7 @@ source "$APP_HOME/scripts/.functions.sh"
 
 run_container() {
     check_dependency_docker
-    echo "Simulation web service at port $EXT_PORT"
+    echo "Web service listening on port $EXT_PORT"
     docker run -it -p $EXT_PORT:8080 "$DOCKER_IMAGE"
 }
 

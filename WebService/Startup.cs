@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System.Web.Http;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Web.Http.Routing;
 using Owin;
 
@@ -13,7 +12,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         public void Configuration(IAppBuilder app)
         {
             var config = new HttpConfiguration();
-            config.Filters.Add(new ExceptionsFilterAttribute());
 
             DependencyResolution.Setup(app, config);
 
@@ -34,10 +32,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
                 routeTemplate: "v{apiVersion}/{controller}/{id}",
                 defaults: new { id = RouteParameter.Optional },
                 constraints: new { apiVersion = new ApiVersionRouteConstraint() });
-
-            var js = config.Formatters.JsonFormatter;
-            config.Formatters.Clear();
-            config.Formatters.Add(js);
 
             app.UseWebApi(config);
         }
