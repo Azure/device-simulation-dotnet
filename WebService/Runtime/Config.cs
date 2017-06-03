@@ -29,7 +29,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
 
         public Config(IConfigData configData)
         {
-            this.Port = configData.GetInt(Application + "webservice-port");
+            this.Port = configData.GetInt(Application + "webservice.port");
 
             this.ServicesConfig = new ServicesConfig
             {

@@ -30,6 +30,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
 
         private static string ReplaceEnvironmentVariables(string value)
         {
+            if (string.IsNullOrEmpty(value)) return value;
+
             // Extract the name of all the substitutions required
             // using the following pattern, e.g. ${VAR_NAME}
             const string pattern = @"\${(?'key'[a-zA-Z_][a-zA-Z0-9_]*)}";
