@@ -9,7 +9,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
     /// <summary>Application entry point</summary>
     public class Program
     {
-        static readonly IConfig config = new Config();
+        static readonly IConfig config = new Config(new ConfigData());
 
         static void Main(string[] args)
         {
