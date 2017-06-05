@@ -7,4 +7,13 @@
 ::
 
 :: see: Shared access policies ⇒ key name ⇒ Connection string
-:: SET IOTHUB_CONN_STRING = "..."
+SET IOTHUB_CONN_STRING = "..."
+
+:: The host where IoT Hub Manager web service is listening
+SET PCS_IOTHUBMANAGER_WEBSERVICE_HOST = "127.0.0.1"
+
+:: The port where IoT Hub Manager web service is listening
+SET PCS_IOTHUBMANAGER_WEBSERVICE_PORT = "9001"
+
+:: The port where Device Simulation web service is listening
+SET PCS_SIMULATION_WEBSERVICE_PORT = "9002"
