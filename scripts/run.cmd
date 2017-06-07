@@ -21,6 +21,10 @@ IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 call msbuild /m /p:Configuration=%CONFIGURATION%;Platform="Any CPU"
 IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
+:: Check settings
+call .\scripts\env-vars-check.cmd
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
+
 :: Run with elevated privileges
 copy .\scripts\run.vbs .\WebService\bin\%CONFIGURATION%
 cd WebService\bin\%CONFIGURATION%

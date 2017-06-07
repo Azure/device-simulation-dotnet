@@ -40,9 +40,9 @@ ProjectSection(SolutionItems) = preProject
 	scripts\compile-in-sandbox.cmd = scripts\compile-in-sandbox.cmd
 	scripts\run-in-sandbox = scripts\run-in-sandbox
 	scripts\run-in-sandbox.cmd = scripts\run-in-sandbox.cmd
-	scripts\setup-env-vars = scripts\setup-env-vars
-	scripts\setup-env-vars.cmd = scripts\setup-env-vars.cmd
-	scripts\setup-env-vars.ps1 = scripts\setup-env-vars.ps1
+	scripts\env-vars-check = scripts\env-vars-check
+	scripts\env-vars-check.cmd = scripts\env-vars-check.cmd
+	scripts\env-vars-setup = scripts\env-vars-setup
 EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "git", "git", "{FE64576E-E29D-4463-ABDA-93DB429A5F2F}"
