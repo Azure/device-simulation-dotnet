@@ -27,6 +27,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
             {
                 DeviceTypesFolder = configData.GetString(Application + "device-types-folder"),
                 DeviceTypesBehaviorFolder = configData.GetString(Application + "device-types-behavior-folder"),
+                IoTHubManagerApiHost = configData.GetString("iothubmanager.webservice.host"),
+                IoTHubManagerApiPort = configData.GetInt("iothubmanager.webservice.port")
             };
         }
     }
