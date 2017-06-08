@@ -17,6 +17,8 @@ run() {
     nuget restore
     msbuild /m /p:Configuration=$CONFIGURATION /verbosity:quiet
 
+    ./scripts/env-vars-check
+
     echo "Starting simulation agent and web service..."
     cd $APP_HOME/SimulationAgent/bin/$CONFIGURATION/ && \
         mono Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.exe & \

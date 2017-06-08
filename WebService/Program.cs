@@ -16,7 +16,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             var options = new StartOptions("http://*:" + config.Port);
             using (WebApp.Start<Startup>(options))
             {
-                Console.WriteLine("Web service started, process ID: " + Uptime.ProcessId);
+                Console.WriteLine($"[{Uptime.ProcessId}] Web service started, process ID: " + Uptime.ProcessId);
                 Console.WriteLine($"[{Uptime.ProcessId}] Listening at http://*:" + config.Port);
                 Console.WriteLine($"[{Uptime.ProcessId}] Health check: http://127.0.0.1:" + config.Port + "/" + v1.Version.Path + "/status");
 

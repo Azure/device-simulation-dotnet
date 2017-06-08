@@ -25,6 +25,7 @@ cleanup_tmp_files() {
 
     rm -fR packages
     rm -fR target
+    rm -fR out
 
     PROJECTS=$(dotnet sln list | grep 'csproj$')
     for PROJ in $PROJECTS; do

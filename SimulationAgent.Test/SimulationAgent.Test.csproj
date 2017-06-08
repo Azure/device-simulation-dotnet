@@ -37,6 +37,18 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Castle.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc">
+      <HintPath>..\packages\Castle.Core.4.0.0\lib\net45\Castle.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Moq, Version=4.7.25.0, Culture=neutral, PublicKeyToken=69f491c39445e920">
+      <HintPath>..\packages\Moq.4.7.25\lib\net45\Moq.dll</HintPath>
+    </Reference>
+    <Reference Include="Moq.InvocationOrder, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\packages\Moq.InvocationOrder.2.0.0\lib\net462\Moq.InvocationOrder.dll</HintPath>
+    </Reference>
+    <Reference Include="MoqExtensions, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\packages\MoqExtensions.0.0.2\lib\net45\MoqExtensions.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />

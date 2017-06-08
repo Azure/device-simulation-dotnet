@@ -33,9 +33,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Akka.Hocon, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\packages\Akka.Hocon.0.3.0\lib\net45\Akka.Hocon.dll</HintPath>
-    </Reference>
     <Reference Include="Autofac, Version=4.6.0.0, Culture=neutral, PublicKeyToken=17863af14b0044da">
       <HintPath>..\packages\Autofac.4.6.0\lib\net45\Autofac.dll</HintPath>
     </Reference>

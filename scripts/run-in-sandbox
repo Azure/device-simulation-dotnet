@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-EXT_PORT=8080
-
 set -e
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )/"
 source "$APP_HOME/scripts/.functions.sh"
@@ -25,8 +23,14 @@ run_in_sandbox() {
     set -e
     if [[ -z "$IS_WINDOWS" ]]; then
         check_dependency_docker
+
+        ./scripts/env-vars-check
+
         docker run -it \
-            -p $EXT_PORT:8080 \
+            -p $PCS_SIMULATION_WEBSERVICE_PORT:8080 \
+            -e "PCS_SIMULATION_WEBSERVICE_PORT=8080" \
+            -e "PCS_IOTHUBMANAGER_WEBSERVICE_HOST=$PCS_IOTHUBMANAGER_WEBSERVICE_HOST" \
+            -e "PCS_IOTHUBMANAGER_WEBSERVICE_PORT=$PCS_IOTHUBMANAGER_WEBSERVICE_PORT" \
             -v "$APP_HOME/.cache/sandbox/.config:/root/.config" \
             -v "$APP_HOME/.cache/sandbox/.dotnet:/root/.dotnet" \
             -v "$APP_HOME/.cache/sandbox/.nuget:/root/.nuget" \

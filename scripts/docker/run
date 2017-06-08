@@ -2,7 +2,6 @@
 
 # Note: use lowercase names for the Docker images
 DOCKER_IMAGE="azureiotpcs/device-simulation-dotnet:0.1-SNAPSHOT"
-EXT_PORT=8080
 
 set -e
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && cd .. && pwd )/"
@@ -10,8 +9,15 @@ source "$APP_HOME/scripts/.functions.sh"
 
 run_container() {
     check_dependency_docker
-    echo "Web service listening on port $EXT_PORT"
-    docker run -it -p $EXT_PORT:8080 "$DOCKER_IMAGE"
+
+    $APP_HOME/scripts/env-vars-check
+
+    echo "Starting Device Simulation ..."
+    docker run -it -p $PCS_SIMULATION_WEBSERVICE_PORT:8080 \
+        -e "PCS_SIMULATION_WEBSERVICE_PORT=8080" \
+        -e "PCS_IOTHUBMANAGER_WEBSERVICE_HOST=$PCS_IOTHUBMANAGER_WEBSERVICE_HOST" \
+        -e "PCS_IOTHUBMANAGER_WEBSERVICE_PORT=$PCS_IOTHUBMANAGER_WEBSERVICE_PORT" \
+        "$DOCKER_IMAGE"
 }
 
 run_container

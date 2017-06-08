@@ -16,6 +16,7 @@ IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 rmdir /s /q .\packages
 rmdir /s /q .\target
+rmdir /s /q .\out
 
 rmdir /s /q .\Services\bin
 rmdir /s /q .\Services\obj
