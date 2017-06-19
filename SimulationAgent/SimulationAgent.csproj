@@ -18,4 +18,9 @@
     <ProjectReference Include="..\Services\Services.csproj">
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="appsettings.ini">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

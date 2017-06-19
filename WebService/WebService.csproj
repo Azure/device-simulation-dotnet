@@ -11,9 +11,8 @@
     <LangVersion>6</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Folder Include="wwwroot\" />
-  </ItemGroup>
-  <ItemGroup>
+    <PackageReference Include="Autofac" Version="4.6.0" />
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.1.0" />
     <PackageReference Include="Microsoft.AspNetCore" Version="1.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="1.1.3" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="1.1.2" />
@@ -22,8 +21,11 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Services\Services.csproj">
-      <Project>{1856b3a0-3ff0-4e2b-9f82-6bd8260c4f40}</Project>
-      <Name>Services</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="appsettings.ini">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>

@@ -9,4 +9,15 @@
     <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.2.13" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="data\DeviceTypes\chiller.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="data\DeviceTypes\elevator.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="data\DeviceTypes\truck.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
