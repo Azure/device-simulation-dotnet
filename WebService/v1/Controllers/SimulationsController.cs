@@ -1,16 +1,15 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-using System.Web.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
-using Microsoft.Web.Http;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers
 {
-    [ApiVersion(Version.Number), ExceptionsFilter]
-    public class SimulationsController : ApiController
+    [Route(Version.Path + "/[controller]"), ExceptionsFilter]
+    public class SimulationsController : Controller
     {
         private readonly ISimulations simulationsService;
 
@@ -19,19 +18,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             this.simulationsService = simulationsService;
         }
 
+        [HttpGet]
         public SimulationListApiModel Get()
         {
             return new SimulationListApiModel(this.simulationsService.GetList());
         }
 
+        [HttpGet("{id}")]
         public SimulationApiModel Get(string id)
         {
             return new SimulationApiModel(this.simulationsService.Get(id));
         }
 
+        [HttpPost]
         public SimulationApiModel Post(
-            SimulationApiModel simulation,
-            [FromUri(Name = "template")] string template = "")
+            [FromBody] SimulationApiModel simulation,
+            [FromQuery(Name = "template")] string template = "")
         {
             if (simulation == null)
             {
@@ -45,10 +47,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 this.simulationsService.Insert(simulation.ToServiceModel(), template));
         }
 
+        [HttpPut("{id}")]
         public SimulationApiModel Put(
-            SimulationApiModel simulation,
+            [FromBody] SimulationApiModel simulation,
             string id = "",
-            [FromUri(Name = "template")] string template = "")
+            [FromQuery(Name = "template")] string template = "")
         {
             if (simulation == null)
             {
@@ -62,7 +65,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 this.simulationsService.Upsert(simulation.ToServiceModel(id), template));
         }
 
-        public SimulationApiModel Patch(string id, SimulationPatchApiModel patch)
+        [HttpPatch("{id}")]
+        public SimulationApiModel Patch(
+            string id, 
+            [FromBody] SimulationPatchApiModel patch)
         {
             if (patch == null) throw new BadRequestException("No data or invalid data provided");
 
