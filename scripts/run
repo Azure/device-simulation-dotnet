@@ -8,22 +8,18 @@ APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )/"
 source "$APP_HOME/scripts/.functions.sh"
 
 run() {
-    check_dependency_nuget
-    check_dependency_msbuild
-    check_dependency_mono
+    check_dependency_dotnet
 
     cd $APP_HOME
     echo "Building..."
-    nuget restore
-    msbuild /m /p:Configuration=$CONFIGURATION /verbosity:quiet
+    dotnet restore --verbosity=quiet
+    dotnet build --configuration $CONFIGURATION --verbosity=quiet
 
     ./scripts/env-vars-check
 
     echo "Starting simulation agent and web service..."
-    cd $APP_HOME/SimulationAgent/bin/$CONFIGURATION/ && \
-        mono Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.exe & \
-        cd $APP_HOME/WebService/bin/$CONFIGURATION/ && \
-        mono Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.exe --background && \
+    dotnet run --configuration $CONFIGURATION --project SimulationAgent/*.csproj & \
+        dotnet run --configuration $CONFIGURATION --project WebService/*.csproj --background && \
         fg
 }
 

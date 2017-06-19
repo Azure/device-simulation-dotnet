@@ -1,6 +1,6 @@
 language: csharp
-mono: beta
-dotnet: 1.0.1
+mono: latest
+dotnet: 1.0.3
 dist: trusty
 sudo: false
 cache:
