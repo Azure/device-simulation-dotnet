@@ -1,9 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using Autofac;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
@@ -16,7 +14,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             Console.WriteLine($"[{Uptime.ProcessId}] Press [CTRL+C] to quit...");
 
             var container = DependencyResolution.Setup();
-            container.Resolve<ISimulation>().Run();
+            
+            // TODO: re-enable after migration to .NET Core
+            //container.Resolve<Simulation.ISimulation>().Run();
         }
     }
 }
