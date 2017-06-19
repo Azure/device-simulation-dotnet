@@ -1,35 +1,28 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
-using Microsoft.Owin.Hosting;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 {
-    /// <summary>Application entry point</summary>
     public class Program
     {
-        static readonly IConfig config = new Config(new ConfigData());
-
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
-            var options = new StartOptions("http://*:" + config.Port);
-            using (WebApp.Start<Startup>(options))
-            {
-                Console.WriteLine($"[{Uptime.ProcessId}] Web service started, process ID: " + Uptime.ProcessId);
-                Console.WriteLine($"[{Uptime.ProcessId}] Listening at http://*:" + config.Port);
-                Console.WriteLine($"[{Uptime.ProcessId}] Health check: http://127.0.0.1:" + config.Port + "/" + v1.Version.Path + "/status");
+            var config = new Config(new ConfigData());
 
-                // Production mode: keep the service alive until killed
-                if (args.Length > 0 && args[0] == "--background")
-                {
-                    while (true) Console.ReadLine();
-                }
+            /*
+            Kestrel is a cross-platform HTTP server based on libuv, a cross-platform asynchronous I/O library.
+            https://docs.microsoft.com/en-us/aspnet/core/fundamentals/servers/
+            */
+            var host = new WebHostBuilder()
+                .UseUrls("http://*:" + config.Port)
+                .UseKestrel(options => { options.AddServerHeader = false; })
+                .UseIISIntegration()
+                .UseStartup<Startup>()
+                .Build();
 
-                // Development mode: keep the service alive until Enter is pressed
-                Console.WriteLine("Press [Enter] to quit...");
-                Console.ReadLine();
-            }
+            host.Run();
         }
     }
 }
