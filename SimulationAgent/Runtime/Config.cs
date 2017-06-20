@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
+using System.IO;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
 // TODO: tests
@@ -25,11 +27,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
         {
             this.ServicesConfig = new ServicesConfig
             {
-                DeviceTypesFolder = configData.GetString(Application + "device_types_folder"),
-                DeviceTypesBehaviorFolder = configData.GetString(Application + "device_types_behavior_folder"),
+                DeviceTypesFolder = MapRelativePath(configData.GetString(Application + "device_types_folder")),
+                DeviceTypesBehaviorFolder = MapRelativePath(configData.GetString(Application + "device_types_behavior_folder")),
                 IoTHubManagerApiHost = configData.GetString("iothubmanager:webservice_host"),
                 IoTHubManagerApiPort = configData.GetInt("iothubmanager:webservice_port")
             };
+        }
+
+        private static string MapRelativePath(string path)
+        {
+            if (path.StartsWith(".")) return AppContext.BaseDirectory + Path.DirectorySeparatorChar + path;
+            return path;
         }
     }
 }

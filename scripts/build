@@ -23,10 +23,10 @@ run_tests() {
 
     cd $APP_HOME
     header "Running tests..."
-    PROJECTS=$(dotnet sln list | grep 'csproj$' | grep '\.Test'| sed s#/.*##)
+    PROJECTS=$(dotnet sln list | grep 'csproj$' | grep '\.Test')
     for PROJ in $PROJECTS; do
         echo "-- $PROJ"
-        dotnet test $PROJ/*.csproj
+        dotnet test $PROJ
     done
 }
 

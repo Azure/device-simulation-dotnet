@@ -37,7 +37,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
 
             this.ServicesConfig = new ServicesConfig
             {
-                DeviceTypesFolder = MapRelativePath( configData.GetString(Application + "device_types_folder")),
+                DeviceTypesFolder = MapRelativePath(configData.GetString(Application + "device_types_folder")),
                 DeviceTypesBehaviorFolder = MapRelativePath(configData.GetString(Application + "device_types_behavior_folder")),
                 IoTHubManagerApiHost = configData.GetString("iothubmanager:webservice_host"),
                 IoTHubManagerApiPort = configData.GetInt("iothubmanager:webservice_port")
@@ -46,7 +46,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
 
         private static string MapRelativePath(string path)
         {
-            if (path.StartsWith(".")) return AppContext.BaseDirectory + "/" + path;
+            if (path.StartsWith(".")) return AppContext.BaseDirectory + Path.DirectorySeparatorChar + path;
             return path;
         }
     }
