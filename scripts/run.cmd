@@ -10,44 +10,34 @@ SET APP_HOME=%APP_HOME:~0,-9%
 cd %APP_HOME%
 
 :: Check dependencies
-nuget > NUL 2>&1
-IF %ERRORLEVEL% NEQ 0 GOTO MISSING_NUGET
-msbuild /version > NUL 2>&1
-IF %ERRORLEVEL% NEQ 0 GOTO MISSING_MSBUILD
-
-:: Restore nuget packages and compile the application
-call nuget restore
-IF %ERRORLEVEL% NEQ 0 GOTO FAIL
-call msbuild /m /p:Configuration=%CONFIGURATION%;Platform="Any CPU"
-IF %ERRORLEVEL% NEQ 0 GOTO FAIL
+dotnet --version > NUL 2>&1
+IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOTNET
 
 :: Check settings
 call .\scripts\env-vars-check.cmd
 IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
-:: Run with elevated privileges
-copy .\scripts\run.vbs .\WebService\bin\%CONFIGURATION%
-cd WebService\bin\%CONFIGURATION%
-call cscript run.vbs "Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.exe --background"
+:: Restore nuget packages and compile the application
+call dotnet restore
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
+call dotnet build --configuration %CONFIGURATION%
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
-copy .\scripts\run.vbs .\SimulationAgent\bin\%CONFIGURATION%
-cd SimulationAgent\bin\%CONFIGURATION%
-call cscript run.vbs "Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.exe"
+cd %APP_HOME%
+cd WebService\bin\%CONFIGURATION%\netcoreapp1.1\
+start /B dotnet Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.dll --background
+
+cd %APP_HOME%
+cd SimulationAgent\bin\%CONFIGURATION%\netcoreapp1.1\\
+call dotnet Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.dll
 
 :: - - - - - - - - - - - - - -
 goto :END
 
-:MISSING_NUGET
-    echo ERROR: 'nuget' command not found.
-    echo Install Nuget CLI and make sure the 'nuget' command is in the PATH.
-    echo Nuget installation: https://docs.microsoft.com/en-us/nuget/guides/install-nuget
-    exit /B 1
-
-:MISSING_MSBUILD
-    echo ERROR: 'msbuild' command not found.
-    echo Install Visual Studio IDE and make sure the 'msbuild' command is in the PATH.
-    echo Visual Studio installation: https://docs.microsoft.com/visualstudio/install
-    echo MSBuild installation without Visual Studio: http://stackoverflow.com/questions/42696948
+:MISSING_DOTNET
+    echo ERROR: 'dotnet' command not found.
+    echo Install .NET Core 1.1.2 and make sure the 'dotnet' command is in the PATH.
+    echo Nuget installation: https://dotnet.github.io/
     exit /B 1
 
 :FAIL
