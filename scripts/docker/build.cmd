@@ -13,26 +13,31 @@ SET APP_HOME=%APP_HOME:~0,-16%
 cd %APP_HOME%
 
 :: Check dependencies
-nuget > NUL 2>&1
-IF %ERRORLEVEL% NEQ 0 GOTO MISSING_NUGET
-msbuild /version > NUL 2>&1
-IF %ERRORLEVEL% NEQ 0 GOTO MISSING_MSBUILD
+dotnet --version > NUL 2>&1
+IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOTNET
 docker version > NUL 2>&1
 IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOCKER
 
 :: Restore packages and build the application
-call nuget restore
+call dotnet restore
 IF %ERRORLEVEL% NEQ 0 GOTO FAIL
-call msbuild /m /p:Configuration=%CONFIGURATION%;Platform="Any CPU"
+call dotnet build --configuration %CONFIGURATION%
 IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: Build the container image
 rmdir /s /q out\docker
+rmdir /s /q WebService\bin\Docker
+rmdir /s /q SimulationAgent\bin\Docker
+
 mkdir out\docker\webservice
 mkdir out\docker\simulationagent
 
-xcopy /s WebService\bin\%CONFIGURATION%\*       out\docker\webservice\
-xcopy /s SimulationAgent\bin\%CONFIGURATION%\*  out\docker\simulationagent\
+dotnet publish WebService      --configuration %CONFIGURATION% --output bin\Docker
+dotnet publish SimulationAgent --configuration %CONFIGURATION% --output bin\Docker
+
+xcopy /s WebService\bin\Docker\*       out\docker\webservice\
+xcopy /s SimulationAgent\bin\Docker\*  out\docker\simulationagent\
+
 copy scripts\docker\.dockerignore               out\docker\
 copy scripts\docker\Dockerfile                  out\docker\
 copy scripts\docker\content\run.sh              out\docker\
@@ -44,17 +49,10 @@ IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 :: - - - - - - - - - - - - - -
 goto :END
 
-:MISSING_NUGET
-    echo ERROR: 'nuget' command not found.
-    echo Install Nuget CLI and make sure the 'nuget' command is in the PATH.
-    echo Nuget installation: https://docs.microsoft.com/en-us/nuget/guides/install-nuget
-    exit /B 1
-
-:MISSING_MSBUILD
-    echo ERROR: 'msbuild' command not found.
-    echo Install Visual Studio IDE and make sure the 'msbuild' command is in the PATH.
-    echo Visual Studio installation: https://docs.microsoft.com/visualstudio/install
-    echo MSBuild installation without Visual Studio: http://stackoverflow.com/questions/42696948
+:MISSING_DOTNET
+    echo ERROR: 'dotnet' command not found.
+    echo Install .NET Core 1.1.2 and make sure the 'dotnet' command is in the PATH.
+    echo Nuget installation: https://dotnet.github.io/
     exit /B 1
 
 :MISSING_DOCKER

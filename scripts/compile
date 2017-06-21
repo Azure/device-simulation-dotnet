@@ -5,13 +5,12 @@ APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )/"
 source "$APP_HOME/scripts/.functions.sh"
 
 compile() {
-    check_dependency_nuget
-    check_dependency_msbuild
+    check_dependency_dotnet
 
     cd $APP_HOME
-    nuget restore
-    msbuild /m /p:Configuration=Debug
-    msbuild /m /p:Configuration=Release
+    dotnet restore
+    dotnet build --configuration Debug
+    dotnet build --configuration Release
 }
 
 compile_in_sandbox() {

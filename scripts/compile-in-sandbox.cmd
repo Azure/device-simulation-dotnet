@@ -21,7 +21,7 @@ docker run -it ^
     -v %APP_HOME%\.cache\sandbox\.dotnet:/root/.dotnet ^
     -v %APP_HOME%\.cache\sandbox\.nuget:/root/.nuget ^
     -v %APP_HOME%:/opt/code ^
-    azureiotpcs/code-builder-dotnet:1.0 /opt/scripts/compile
+    azureiotpcs/code-builder-dotnet:1.0-dotnetcore /opt/scripts/compile
 
 :: Error 125 typically triggers on Windows if the drive is not shared
 IF %ERRORLEVEL% EQU 125 GOTO DOCKER_SHARE

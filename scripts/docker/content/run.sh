@@ -2,6 +2,6 @@
 
 cd /app/
 
-cd webservice && mono Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.exe --background & \
-    cd simulationagent && mono Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.exe && \
+cd webservice && dotnet Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.dll --background & \
+    cd simulationagent && dotnet Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.dll && \
     fg

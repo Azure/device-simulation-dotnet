@@ -1,87 +1,23 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{786A5B9B-98EE-4B73-9FE3-2080B70007AF}</ProjectGuid>
-    <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Microsoft.Azure.IoTSolutions.DeviceSimulation.Services</RootNamespace>
+    <TargetFramework>netstandard1.6</TargetFramework>
+    <LangVersion>6</LangVersion>
     <AssemblyName>Microsoft.Azure.IoTSolutions.DeviceSimulation.Services</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <LangVersion>6</LangVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>anycpu</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <LangVersion>6</LangVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <LangVersion>Default</LangVersion>
+    <RootNamespace>Microsoft.Azure.IoTSolutions.DeviceSimulation.Services</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.CSharp, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed">
-      <HintPath>..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.2.13" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Concurrency\Etags.cs" />
-    <Compile Include="Exceptions\ConflictingResourceException.cs" />
-    <Compile Include="Exceptions\InvalidInputException.cs" />
-    <Compile Include="Exceptions\ResourceNotFoundException.cs" />
-    <Compile Include="Exceptions\ResourceOutOfDateException.cs" />
-    <Compile Include="Models\SimulationPatch.cs" />
-    <Compile Include="Simulations.cs" />
-    <Compile Include="DeviceTypes.cs" />
-    <Compile Include="Exceptions\InvalidConfigurationException.cs" />
-    <Compile Include="Models\DeviceType.cs" />
-    <Compile Include="Models\IoTHubProtocol.cs" />
-    <Compile Include="Models\Simulation.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Runtime\ServicesConfig.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="data\DeviceTypes\chiller.json">
+    <None Update="data\DeviceTypes\chiller.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="data\DeviceTypes\elevator.json">
+    </None>
+    <None Update="data\DeviceTypes\elevator.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="data\DeviceTypes\README.md" />
-    <Content Include="data\DeviceTypes\truck.json">
+    </None>
+    <None Update="data\DeviceTypes\truck.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Models\README.md" />
-    <Content Include="packages.config" />
-    <Content Include="README.md" />
+    </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="data" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

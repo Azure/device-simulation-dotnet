@@ -28,7 +28,7 @@ build_in_sandbox() {
             -v "$APP_HOME/.cache/sandbox/.dotnet:/root/.dotnet" \
             -v "$APP_HOME/.cache/sandbox/.nuget:/root/.nuget" \
             -v "$APP_HOME:/opt/code" \
-            azureiotpcs/code-builder-dotnet:1.0 /opt/scripts/build
+            azureiotpcs/code-builder-dotnet:1.0-dotnetcore /opt/scripts/build
     else
         cmd.exe /c ".\scripts\build-in-sandbox.cmd"
     fi

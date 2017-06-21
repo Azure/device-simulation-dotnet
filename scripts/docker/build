@@ -11,24 +11,31 @@ APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && cd .. && pwd )/"
 source "$APP_HOME/scripts/.functions.sh"
 
 compile() {
-    check_dependency_nuget
-    check_dependency_msbuild
+    check_dependency_dotnet
 
     cd $APP_HOME
-    nuget restore
-    msbuild /m /p:Configuration=$CONFIGURATION
+    dotnet restore
+    dotnet build --configuration $CONFIGURATION
 }
 
 build_docker_image() {
     check_dependency_docker
 
     cd $APP_HOME
+
     rm -fR out/docker
+    rm -fR WebService/bin/Docker
+    rm -fR SimulationAgent/bin/Docker
+
     mkdir -p out/docker/webservice
     mkdir -p out/docker/simulationagent
 
-    cp -pR WebService/bin/$CONFIGURATION/*       out/docker/webservice/
-    cp -pR SimulationAgent/bin/$CONFIGURATION/*  out/docker/simulationagent/
+    dotnet publish WebService      --configuration $CONFIGURATION --output bin/Docker
+    dotnet publish SimulationAgent --configuration $CONFIGURATION --output bin/Docker
+
+    cp -pR WebService/bin/Docker/*       out/docker/webservice/
+    cp -pR SimulationAgent/bin/Docker/*  out/docker/simulationagent/
+
     cp scripts/docker/.dockerignore              out/docker/
     cp scripts/docker/Dockerfile                 out/docker/
     cp scripts/docker/content/run.sh             out/docker/

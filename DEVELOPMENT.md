@@ -20,9 +20,9 @@ The [scripts](scripts) folder includes some scripts for frequent tasks:
 ### Sandbox
 
 Most of the scripts assume you have configured your development environment,
-with tools like MSBuild, Nuget, .NET Core, Mono and Docker. You can avoid
-installing all of these tools, and install only Docker, and use the scripts
-with `-in-sandbox` suffix:
+with tools like .NET Core and Docker. You can avoid installing .NET Core,
+and install only Docker, and use the scripts with `-in-sandbox` suffix,
+for example:
 
 * `build-in-sandbox`: like `build` but executes the task inside of a Docker
    container.
@@ -70,18 +70,11 @@ Development setup
 
 ## .NET setup
 
-The project workflow is managed via .NET Framework 4.6.2+ and Mono 5.x.
-We recommend to install Mono also in Windows, where Mono is used for the
-Git pre-commit hook.
+The project workflow is managed via .NET Core 1.0.4.
+We recommend to install .NET Core in your environment, so that you can
+run all the scripts and ensure that your IDE works as expected.
 
-On the other hand you can install just Docker and rely on the builder
-sandbox if you don't want to install all these dependencies.
-
-Some scripts also require .NET Core, where we are migrating the solution.
-
-* [.NET for Windows](https://support.microsoft.com/help/3151802/the-.net-framework-4.6.2-web-installer-for-windows)
-* [Mono 5](http://www.mono-project.com/download)
-* [.NET Core](https://dotnet.github.io/)
+* [.NET Core](https://dotnet.github.io)
 
 We provide also a
 [Java version](https://github.com/Azure/device-simulation-java)
@@ -93,8 +86,8 @@ Here are some IDE that you can use to work on Azure IoT PCS:
 
 * [Visual Studio](https://www.visualstudio.com/)
 * [IntelliJ Rider](https://www.jetbrains.com/rider)
-* [Visual Studio Code](https://code.visualstudio.com/)
 * [Visual Studio for Mac](https://www.visualstudio.com/vs/visual-studio-mac)
+* [Visual Studio Code](https://code.visualstudio.com/)
 
 ## Git setup
 
@@ -119,8 +112,8 @@ setup --with-sandbox
 
 #### Pre-commit hook without sandbox
 
-Note: the hook requires [Mono 5](http://www.mono-project.com/download),
-Nuget and MSBuild in the system PATH.
+Note: the hook without sandbox requires [.NET Core](https://dotnet.github.io)
+in the system PATH.
 
 To setup the included hooks, open a Windows/Linux/MacOS console and execute:
 
@@ -128,6 +121,14 @@ To setup the included hooks, open a Windows/Linux/MacOS console and execute:
 cd PROJECT-FOLDER
 cd scripts/git
 setup --no-sandbox
+```
+
+To setup the precommit hook using the Docker sandbox instead:
+
+```
+cd PROJECT-FOLDER
+cd scripts/git
+setup --with-sandbox
 ```
 
 ## Code style

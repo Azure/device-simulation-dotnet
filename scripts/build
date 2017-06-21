@@ -8,27 +8,25 @@ APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )/"
 source "$APP_HOME/scripts/.functions.sh"
 
 compile() {
-    check_dependency_nuget
-    check_dependency_msbuild
+    check_dependency_dotnet
 
     cd $APP_HOME
     header "Downloading dependencies..."
-    nuget restore
+    dotnet restore
 
     header "Compiling code..."
-    msbuild /p:Configuration=$CONFIGURATION
+    dotnet build --configuration $CONFIGURATION
 }
 
 run_tests() {
     check_dependency_dotnet
-    check_dependency_mono
 
     cd $APP_HOME
     header "Running tests..."
-    PROJECTS=$(dotnet sln list | grep 'csproj$' | grep '\.Test'| sed s#/.*##)
+    PROJECTS=$(dotnet sln list | grep 'csproj$' | grep '\.Test')
     for PROJ in $PROJECTS; do
         echo "-- $PROJ"
-        mono ./packages/xunit.runner.console.2.2.0/tools/xunit.console.exe $PROJ/bin/Release/$PROJ.dll
+        dotnet test $PROJ
     done
 }
 

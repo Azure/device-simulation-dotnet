@@ -1,15 +1,14 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-using System.Web.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
-using Microsoft.Web.Http;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers
 {
-    [ApiVersion(Version.Number), ExceptionsFilter]
-    public class DeviceTypesController : ApiController
+    [Route(Version.Path + "/[controller]"), ExceptionsFilter]
+    public class DeviceTypesController : Controller
     {
         private readonly IDeviceTypes deviceTypesService;
 
@@ -18,11 +17,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             this.deviceTypesService = deviceTypesService;
         }
 
+        [HttpGet]
         public DeviceTypeListApiModel Get()
         {
             return new DeviceTypeListApiModel(this.deviceTypesService.GetList());
         }
 
+        [HttpGet("{id}")]
         public DeviceTypeApiModel Get(string id)
         {
             return new DeviceTypeApiModel(this.deviceTypesService.Get(id));

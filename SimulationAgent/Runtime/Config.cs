@@ -1,10 +1,12 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
+using System.IO;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
 // TODO: tests
 // TODO: handle errors
-// TODO: use JSON?
+// TODO: use binding
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
 {
     public interface IConfig
@@ -16,7 +18,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
     /// <summary>Web service configuration</summary>
     public class Config : IConfig
     {
-        private const string Application = "device-simulation.";
+        private const string Application = "devicesimulation:";
 
         /// <summary>Service layer configuration</summary>
         public IServicesConfig ServicesConfig { get; }
@@ -25,11 +27,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
         {
             this.ServicesConfig = new ServicesConfig
             {
-                DeviceTypesFolder = configData.GetString(Application + "device-types-folder"),
-                DeviceTypesBehaviorFolder = configData.GetString(Application + "device-types-behavior-folder"),
-                IoTHubManagerApiHost = configData.GetString("iothubmanager.webservice.host"),
-                IoTHubManagerApiPort = configData.GetInt("iothubmanager.webservice.port")
+                DeviceTypesFolder = MapRelativePath(configData.GetString(Application + "device_types_folder")),
+                DeviceTypesBehaviorFolder = MapRelativePath(configData.GetString(Application + "device_types_behavior_folder")),
+                IoTHubManagerApiHost = configData.GetString("iothubmanager:webservice_host"),
+                IoTHubManagerApiPort = configData.GetInt("iothubmanager:webservice_port")
             };
+        }
+
+        private static string MapRelativePath(string path)
+        {
+            if (path.StartsWith(".")) return AppContext.BaseDirectory + Path.DirectorySeparatorChar + path;
+            return path;
         }
     }
 }
