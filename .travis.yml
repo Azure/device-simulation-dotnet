@@ -7,6 +7,7 @@ cache:
   - "$HOME/.nuget/"
 before_install:
 - set -e
+- apt-get install dotnet-sharedframework-microsoft.netcore.app-1.1.2
 script:
 - "bash ./$CODEBASE/scripts/build"
 notifications:
