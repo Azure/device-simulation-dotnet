@@ -26,11 +26,18 @@ IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: Build the container image
 rmdir /s /q out\docker
+rmdir /s /q WebService\bin\Docker
+rmdir /s /q SimulationAgent\bin\Docker
+
 mkdir out\docker\webservice
 mkdir out\docker\simulationagent
 
-xcopy /s WebService\bin\%CONFIGURATION%\*       out\docker\webservice\
-xcopy /s SimulationAgent\bin\%CONFIGURATION%\*  out\docker\simulationagent\
+dotnet publish WebService      --configuration %CONFIGURATION% --output bin\Docker
+dotnet publish SimulationAgent --configuration %CONFIGURATION% --output bin\Docker
+
+xcopy /s WebService\bin\Docker\*       out\docker\webservice\
+xcopy /s SimulationAgent\bin\Docker\*  out\docker\simulationagent\
+
 copy scripts\docker\.dockerignore               out\docker\
 copy scripts\docker\Dockerfile                  out\docker\
 copy scripts\docker\content\run.sh              out\docker\
