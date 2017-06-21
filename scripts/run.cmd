@@ -20,16 +20,12 @@ IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 :: Restore nuget packages and compile the application
 call dotnet restore
 IF %ERRORLEVEL% NEQ 0 GOTO FAIL
-call dotnet build --configuration %CONFIGURATION%
+
+start "" dotnet run --configuration %CONFIGURATION% --project SimulationAgent/SimulationAgent.csproj
 IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
-cd %APP_HOME%
-cd WebService\bin\%CONFIGURATION%\netcoreapp1.1\
-start /B dotnet Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.dll --background
-
-cd %APP_HOME%
-cd SimulationAgent\bin\%CONFIGURATION%\netcoreapp1.1\\
-call dotnet Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.dll
+start "" dotnet run --configuration %CONFIGURATION% --project WebService/WebService.csproj --background
+IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: - - - - - - - - - - - - - -
 goto :END

@@ -10,12 +10,11 @@ source "$APP_HOME/scripts/.functions.sh"
 run() {
     check_dependency_dotnet
 
-    cd $APP_HOME
-    echo "Building..."
-    dotnet restore --verbosity=quiet
-    dotnet build --configuration $CONFIGURATION --verbosity=quiet
-
     ./scripts/env-vars-check
+
+    cd $APP_HOME
+
+    dotnet restore --verbosity=quiet
 
     echo "Starting simulation agent and web service..."
     dotnet run --configuration $CONFIGURATION --project SimulationAgent/*.csproj & \

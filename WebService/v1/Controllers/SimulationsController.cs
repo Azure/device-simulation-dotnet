@@ -67,7 +67,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
         [HttpPatch("{id}")]
         public SimulationApiModel Patch(
-            string id, 
+            string id,
             [FromBody] SimulationPatchApiModel patch)
         {
             if (patch == null) throw new BadRequestException("No data or invalid data provided");

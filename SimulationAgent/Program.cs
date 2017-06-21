@@ -14,9 +14,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             Console.WriteLine($"[{Uptime.ProcessId}] Press [CTRL+C] to quit...");
 
             var container = DependencyResolution.Setup();
-            
+
             // TODO: re-enable after migration to .NET Core
             //container.Resolve<Simulation.ISimulation>().Run();
+            while (true)
+            {
+                Console.ReadLine();
+            }
         }
     }
 }

@@ -22,7 +22,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
 
         public ConfigData()
         {
-            // More info about configuration at 
+            // More info about configuration at
             // https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration
 
             var configurationBuilder = new ConfigurationBuilder();
