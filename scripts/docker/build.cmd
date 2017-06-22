@@ -43,7 +43,7 @@ copy scripts\docker\Dockerfile                  out\docker\
 copy scripts\docker\content\run.sh              out\docker\
 
 cd out\docker\
-docker build --tag %DOCKER_IMAGE% --squash --compress --label "Tags=azure,iot,pcs,.NET" .
+docker build --tag %DOCKER_IMAGE% --squash --compress --label "Tags=azure,iot,pcs,simulation,.NET" .
 IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: - - - - - - - - - - - - - -

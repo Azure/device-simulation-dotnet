@@ -25,7 +25,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{7357
 		scripts\compile.cmd = scripts\compile.cmd
 		scripts\run = scripts\run
 		scripts\run.cmd = scripts\run.cmd
-		scripts\run.vbs = scripts\run.vbs
 		scripts\build-in-sandbox = scripts\build-in-sandbox
 		scripts\build-in-sandbox.cmd = scripts\build-in-sandbox.cmd
 		scripts\compile-in-sandbox = scripts\compile-in-sandbox

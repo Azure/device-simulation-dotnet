@@ -21,7 +21,7 @@ echo Compiling code...
 call dotnet build --configuration %CONFIGURATION%
 IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
-:: Find all the test assemblies and run the tests with XUnit runner
+:: Find all the test assemblies and run the tests
 echo Running tests...
 for /d %%i in (*.Test) do (
 	dotnet test %%i\%%i.csproj
