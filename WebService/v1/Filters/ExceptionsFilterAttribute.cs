@@ -11,8 +11,6 @@ using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Newtonsoft.Json;
-//using System.Web.Http;
-//using System.Web.Http.Filters;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters
 {
@@ -68,11 +66,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters
                 return base.OnExceptionAsync(context);
             }
 
-            return Task.FromResult(new VoidTask());
-        }
-
-        private struct VoidTask
-        {
+            return Task.FromResult(new object());
         }
 
         private ObjectResult GetResponse(

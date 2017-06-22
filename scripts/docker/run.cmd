@@ -17,7 +17,7 @@ call .\scripts\env-vars-check.cmd
 IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: Start the application
-echo Web service listening on port %EXT_PORT%
+echo Starting Device Simulation ...
 docker run -it -p %PCS_SIMULATION_WEBSERVICE_PORT%:8080 ^
     -e PCS_SIMULATION_WEBSERVICE_PORT=8080 ^
     -e PCS_IOTHUBMANAGER_WEBSERVICE_HOST=%PCS_IOTHUBMANAGER_WEBSERVICE_HOST% ^

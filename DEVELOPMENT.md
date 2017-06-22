@@ -37,16 +37,10 @@ The Docker images used for the sandbox is hosted on Docker Hub
 Configuration
 =============
 
-The service configuration is stored using Akka's
-[HOCON](http://getakka.net/docs/concepts/configuration)
-format in `application.conf`.
-
-The HOCON format is a human readable format, very close to JSON, with some
-useful features:
-
-* Ability to write comments
-* Support for substitutions, e.g. referencing environment variables
-* Supports JSON notation
+The service configuration is stored using ASP.NET Core configuration
+adapters, in `appsettings.ini`. The INI format allows to store values in a
+readable format, with comments. The application also supports inserting
+environment variables, such as credentials and networking details.
 
 Azure IoT Hub setup
 ===================
@@ -84,10 +78,10 @@ of this project and other Azure IoT PCS components.
 
 Here are some IDE that you can use to work on Azure IoT PCS:
 
-* [Visual Studio](https://www.visualstudio.com/)
-* [IntelliJ Rider](https://www.jetbrains.com/rider)
+* [Visual Studio](https://www.visualstudio.com)
 * [Visual Studio for Mac](https://www.visualstudio.com/vs/visual-studio-mac)
-* [Visual Studio Code](https://code.visualstudio.com/)
+* [IntelliJ Rider](https://www.jetbrains.com/rider)
+* [Visual Studio Code](https://code.visualstudio.com)
 
 ## Git setup
 
@@ -110,6 +104,10 @@ cd scripts/git
 setup --with-sandbox
 ```
 
+With this configuration, when checking in files, git will verify that the
+application passes all the tests, running the build and the tests inside
+a Docker container configured with all the development requirements.
+
 #### Pre-commit hook without sandbox
 
 Note: the hook without sandbox requires [.NET Core](https://dotnet.github.io)
@@ -123,13 +121,9 @@ cd scripts/git
 setup --no-sandbox
 ```
 
-To setup the precommit hook using the Docker sandbox instead:
-
-```
-cd PROJECT-FOLDER
-cd scripts/git
-setup --with-sandbox
-```
+With this configuration, when checking in files, git will verify that the
+application passes all the tests, running the build and the tests in your
+workstation, using the tools installed in your OS.
 
 ## Code style
 

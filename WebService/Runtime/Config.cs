@@ -2,8 +2,6 @@
 
 using System;
 using System.IO;
-using System.Reflection;
-using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
 // TODO: tests
