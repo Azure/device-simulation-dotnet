@@ -1,0 +1,78 @@
+﻿// Copyright (c) Microsoft. All rights reserved.
+
+using System;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.Azure.Devices.Client;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
+{
+    public interface IDeviceClient
+    {
+        //Azure.Devices.Client.DeviceClient GetClient();
+        Task SendMessageAsync(DeviceType.DeviceTypeMessage message);
+
+        Task SendRawMessageAsync(Message message);
+    }
+
+    public class DeviceClient : IDeviceClient
+    {
+        private const string DateFormat = "yyyy-MM-dd'T'HH:mm:sszzz";
+
+        // See also https://github.com/Azure/toketi-iothubreact/blob/master/src/main/scala/com/microsoft/azure/iot/iothubreact/MessageFromDevice.scala
+        private const string CreationTimeProperty = "$$CreationTimeUtc";
+
+        private const string MessageSchemaProperty = "$$MessageSchema";
+        private const string ContentProperty = "$$ContentType";
+
+        private readonly Azure.Devices.Client.DeviceClient client;
+        private readonly ILogger log;
+        private readonly IoTHubProtocol protocol;
+
+        public DeviceClient(
+            Azure.Devices.Client.DeviceClient client,
+            IoTHubProtocol protocol,
+            ILogger logger)
+        {
+            this.client = client;
+            this.log = logger;
+            this.protocol = protocol;
+        }
+
+        //        public Azure.Devices.Client.DeviceClient GetClient()
+        //        {
+        //            return this.client;
+        //        }
+
+        public async Task SendMessageAsync(DeviceType.DeviceTypeMessage message)
+        {
+            var eventMessage = new Message(Encoding.UTF8.GetBytes(message.Message));
+            eventMessage.Properties.Add(CreationTimeProperty, DateTimeOffset.UtcNow.ToString(DateFormat));
+            eventMessage.Properties.Add(MessageSchemaProperty, message.MessageSchema.Name);
+            eventMessage.Properties.Add(ContentProperty, "JSON");
+
+            await this.SendRawMessageAsync(eventMessage);
+        }
+
+        public async Task SendRawMessageAsync(Message message)
+        {
+            try
+            {
+                await this.client.SendEventAsync(message);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Message delivery failed",
+                    () => new
+                    {
+                        Protocol = this.protocol.ToString(),
+                        ExceptionMessage = e.Message,
+                        Exception = e.GetType().FullName,
+                        e.InnerException
+                    });
+            }
+        }
+    }
+}
