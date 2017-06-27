@@ -51,7 +51,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             IApplicationLifetime appLifetime)
         {
             loggerFactory.AddConsole(this.Configuration.GetSection("Logging"));
-            loggerFactory.AddDebug();
 
             app.UseMvc();
 

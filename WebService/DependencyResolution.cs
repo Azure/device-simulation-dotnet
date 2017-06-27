@@ -4,6 +4,7 @@ using System.Reflection;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,6 +37,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         {
             var assembly = Assembly.GetEntryAssembly();
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
+
+            // Auto-wire additional assemblies
+            assembly = typeof(IServicesConfig).GetTypeInfo().Assembly;
+            builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
         }
 
         /// <summary>Setup Custom rules overriding autowired ones.</summary>
@@ -49,10 +54,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             // prepare the instance here.
             builder.RegisterInstance(config.ServicesConfig).As<IServicesConfig>().SingleInstance();
 
-            // By default Autofac uses a request lifetime, creating new objects
-            // for each request, which is good to reduce the risk of memory
-            // leaks, but not so good for the overall performance.
-            // TODO: revisit when migrating to ASP.NET Core.
+            // Instantiate only one logger
+            // TODO: read log level from configuration
+            var logger = new Logger(Uptime.ProcessId, LogLevel.Debug);
+            builder.RegisterInstance(logger).As<ILogger>().SingleInstance();
+
+            // By default the DI container create new objects when injecting
+            // dependencies. To improve performance we reuse some instances,
+            // for example to reuse IoT Hub connections, as opposed to creating
+            // a new connection every time.
             builder.RegisterType<Simulations>().As<ISimulations>().SingleInstance();
             builder.RegisterType<DeviceTypes>().As<IDeviceTypes>().SingleInstance();
         }
