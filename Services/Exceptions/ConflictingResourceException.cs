@@ -20,7 +20,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
         {
         }
 
-        public ConflictingResourceException(string message, Exception innerException) : base(message, innerException)
+        public ConflictingResourceException(string message, Exception innerException)
+            : base(message, innerException)
         {
         }
     }
