@@ -2,6 +2,7 @@
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
@@ -12,10 +13,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
     public class SimulationsController : Controller
     {
         private readonly ISimulations simulationsService;
+        private readonly ILogger log;
 
-        public SimulationsController(ISimulations simulationsService)
+        public SimulationsController(
+            ISimulations simulationsService,
+            ILogger logger)
         {
             this.simulationsService = simulationsService;
+            this.log = logger;
         }
 
         [HttpGet]
@@ -38,7 +43,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             if (simulation == null)
             {
                 if (string.IsNullOrEmpty(template))
+                {
+                    this.log.Warn("No data or invalid data provided",
+                        () => new { simulation, template });
                     throw new BadRequestException("No data or invalid data provided.");
+                }
 
                 simulation = new SimulationApiModel();
             }
@@ -56,7 +65,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             if (simulation == null)
             {
                 if (string.IsNullOrEmpty(template))
+                {
+                    this.log.Warn("No data or invalid data provided",
+                        () => new { id, simulation, template });
                     throw new BadRequestException("No data or invalid data provided.");
+                }
 
                 simulation = new SimulationApiModel();
             }
@@ -70,7 +83,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             string id,
             [FromBody] SimulationPatchApiModel patch)
         {
-            if (patch == null) throw new BadRequestException("No data or invalid data provided");
+            if (patch == null)
+            {
+                this.log.Warn("NULL patch provided", () => new { id });
+                throw new BadRequestException("No data or invalid data provided");
+            }
 
             return new SimulationApiModel(
                 this.simulationsService.Merge(patch.ToServiceModel(id)));
