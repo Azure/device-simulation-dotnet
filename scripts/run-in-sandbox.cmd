@@ -21,10 +21,9 @@ IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: Start the sandbox and run the application
 docker run -it ^
-    -p %PCS_SIMULATION_WEBSERVICE_PORT%:8080 ^
-    -e "PCS_SIMULATION_WEBSERVICE_PORT=8080" ^
-    -e "PCS_IOTHUBMANAGER_WEBSERVICE_HOST=%PCS_IOTHUBMANAGER_WEBSERVICE_HOST%" ^
-    -e "PCS_IOTHUBMANAGER_WEBSERVICE_PORT=%PCS_IOTHUBMANAGER_WEBSERVICE_PORT%" ^
+    -p %PCS_DEVICESIMULATION_WEBSERVICE_PORT%:8080 ^
+    -e "PCS_DEVICESIMULATION_WEBSERVICE_PORT=8080" ^
+    -e "PCS_IOTHUBMANAGER_WEBSERVICE_URL=%PCS_IOTHUBMANAGER_WEBSERVICE_URL%" ^
     -v %APP_HOME%\.cache\sandbox\.config:/root/.config ^
     -v %APP_HOME%\.cache\sandbox\.dotnet:/root/.dotnet ^
     -v %APP_HOME%\.cache\sandbox\.nuget:/root/.nuget ^

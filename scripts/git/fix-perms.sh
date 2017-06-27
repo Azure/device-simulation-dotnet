@@ -17,6 +17,7 @@ chmod ugo+x ./scripts/run-in-sandbox
 chmod ugo+x ./scripts/clean-up
 chmod ugo+x ./scripts/env-vars-check
 chmod ugo+x ./scripts/env-vars-setup
+chmod ugo+x ./scripts/travis
 chmod ugo+x ./scripts/docker/build
 chmod ugo+x ./scripts/docker/run
 chmod ugo+x ./scripts/docker/content/*.sh
@@ -32,6 +33,7 @@ git update-index --chmod=+x ./scripts/run-in-sandbox
 git update-index --chmod=+x ./scripts/clean-up
 git update-index --chmod=+x ./scripts/env-vars-check
 git update-index --chmod=+x ./scripts/env-vars-setup
+git update-index --chmod=+x ./scripts/travis
 git update-index --chmod=+x ./scripts/docker/build
 git update-index --chmod=+x ./scripts/docker/run
 git update-index --chmod=+x ./scripts/docker/content/*.sh

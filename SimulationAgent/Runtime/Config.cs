@@ -18,7 +18,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
     /// <summary>Web service configuration</summary>
     public class Config : IConfig
     {
-        private const string Application = "devicesimulation:";
+        private const string ApplicationKey = "devicesimulation:";
+        private const string DeviceTypesFolderKey = ApplicationKey + "device_types_folder";
+        private const string DeviceTypesBehaviorFolderKey = ApplicationKey + "device_types_behavior_folder";
+
+        private const string IoTHubManagerKey = "iothubmanager:";
+        private const string IoTHubManagerApiUrlKey = IoTHubManagerKey + "webservice_url";
+        private const string IoTHubManagerApiTimeoutKey = IoTHubManagerKey + "webservice_timeout";
 
         /// <summary>Service layer configuration</summary>
         public IServicesConfig ServicesConfig { get; }
@@ -27,10 +33,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
         {
             this.ServicesConfig = new ServicesConfig
             {
-                DeviceTypesFolder = MapRelativePath(configData.GetString(Application + "device_types_folder")),
-                DeviceTypesBehaviorFolder = MapRelativePath(configData.GetString(Application + "device_types_behavior_folder")),
-                IoTHubManagerApiHost = configData.GetString("iothubmanager:webservice_host"),
-                IoTHubManagerApiPort = configData.GetInt("iothubmanager:webservice_port")
+                DeviceTypesFolder = MapRelativePath(configData.GetString(DeviceTypesFolderKey)),
+                DeviceTypesBehaviorFolder = MapRelativePath(configData.GetString(DeviceTypesBehaviorFolderKey)),
+                IoTHubManagerApiUrl = configData.GetString(IoTHubManagerApiUrlKey),
+                IoTHubManagerApiTimeout = configData.GetInt(IoTHubManagerApiTimeoutKey)
             };
         }
 
