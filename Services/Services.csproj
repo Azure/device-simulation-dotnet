@@ -6,10 +6,6 @@
     <RootNamespace>Microsoft.Azure.IoTSolutions.DeviceSimulation.Services</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.2.13" />
-    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
-  </ItemGroup>
-  <ItemGroup>
     <None Update="data\DeviceTypes\chiller.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -19,5 +15,9 @@
     <None Update="data\DeviceTypes\truck.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.2.13" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
   </ItemGroup>
 </Project>
