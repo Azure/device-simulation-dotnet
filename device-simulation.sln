@@ -36,12 +36,6 @@ ProjectSection(SolutionItems) = preProject
 	scripts\compile-in-sandbox = scripts\compile-in-sandbox
 	scripts\compile-in-sandbox.cmd = scripts\compile-in-sandbox.cmd
 	scripts\compile.cmd = scripts\compile.cmd
-	scripts\docker\Dockerfile = scripts\docker\Dockerfile
-	scripts\docker\build = scripts\docker\build
-	scripts\docker\build.cmd = scripts\docker\build.cmd
-	scripts\docker\content\run.sh = scripts\docker\content\run.sh
-	scripts\docker\run = scripts\docker\run
-	scripts\docker\run.cmd = scripts\docker\run.cmd
 	scripts\env-vars-check = scripts\env-vars-check
 	scripts\env-vars-check.cmd = scripts\env-vars-check.cmd
 	scripts\env-vars-setup = scripts\env-vars-setup
@@ -61,9 +55,9 @@ ProjectSection(SolutionItems) = preProject
 	scripts\docker\build = scripts\docker\build
 	scripts\docker\build.cmd = scripts\docker\build.cmd
 	scripts\docker\Dockerfile = scripts\docker\Dockerfile
-	scripts\docker\run = scripts\docker\run
 	scripts\docker\run.cmd = scripts\docker\run.cmd
 	scripts\docker\.dockerignore = scripts\docker\.dockerignore
+	scripts\docker\run = scripts\docker\run
 EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "git", "git", "{4C88469C-C551-435D-AE2C-36C58EE686A5}"
