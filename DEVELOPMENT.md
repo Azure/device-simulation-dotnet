@@ -21,15 +21,15 @@ The [scripts](scripts) folder includes some scripts for frequent tasks:
 
 Most of the scripts assume you have configured your development environment,
 with tools like .NET Core and Docker. You can avoid installing .NET Core,
-and install only Docker, and use the scripts with `-in-sandbox` suffix,
-for example:
+and install only Docker, and use the command line parameter `--in-sandbox`
+(or the short form `-s`), for example:
 
-* `build-in-sandbox`: like `build` but executes the task inside of a Docker
-   container.
-* `compile-in-sandbox`: like `compile` but executes the task inside of a
-   Docker container.
-* `run-in-sandbox`: like `run` but executes the task inside of a Docker
-   container.
+* `build --in-sandbox`: executes the build task inside of a Docker
+    container (short form `build -s`).
+* `compile --in-sandbox`: executes the compilation task inside of a Docker
+    container (short form `compile -s`).
+* `run --in-sandbox`: starts the service inside of a Docker container
+    (short form `run -s`).
 
 The Docker images used for the sandbox is hosted on Docker Hub
 [here](https://hub.docker.com/r/azureiotpcs/code-builder-dotnet).

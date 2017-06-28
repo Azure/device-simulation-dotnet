@@ -11,10 +11,9 @@ fi
 
 reset_cache() {
     cd $APP_HOME
-    rm -fR .cache
-    mkdir -p .cache/sandbox/.config
-    mkdir -p .cache/sandbox/.dotnet
-    mkdir -p .cache/sandbox/.nuget
+    if [ -d ".cache" ]; then
+        rm -fR .cache
+    fi
 }
 
 cleanup_tmp_files() {

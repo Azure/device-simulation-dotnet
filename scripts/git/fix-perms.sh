@@ -9,11 +9,8 @@ APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && cd .. && pwd )/"
 cd $APP_HOME
 
 chmod ugo+x ./scripts/build
-chmod ugo+x ./scripts/build-in-sandbox
 chmod ugo+x ./scripts/compile
-chmod ugo+x ./scripts/compile-in-sandbox
 chmod ugo+x ./scripts/run
-chmod ugo+x ./scripts/run-in-sandbox
 chmod ugo+x ./scripts/clean-up
 chmod ugo+x ./scripts/env-vars-check
 chmod ugo+x ./scripts/env-vars-setup
@@ -25,11 +22,8 @@ chmod ugo+x ./scripts/git/*.sh
 chmod ugo+x ./scripts/iothub/*.sh
 
 git update-index --chmod=+x ./scripts/build
-git update-index --chmod=+x ./scripts/build-in-sandbox
 git update-index --chmod=+x ./scripts/compile
-git update-index --chmod=+x ./scripts/compile-in-sandbox
 git update-index --chmod=+x ./scripts/run
-git update-index --chmod=+x ./scripts/run-in-sandbox
 git update-index --chmod=+x ./scripts/clean-up
 git update-index --chmod=+x ./scripts/env-vars-check
 git update-index --chmod=+x ./scripts/env-vars-setup
