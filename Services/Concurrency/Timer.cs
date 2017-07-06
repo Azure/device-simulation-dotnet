@@ -6,14 +6,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
-    public class TimerNotInitializedException : Exception
-    {
-        public TimerNotInitializedException()
-            : base("Timer object not initialized. Call 'Setup()' first.")
-        {
-        }
-    }
-
     public interface ITimer
     {
         Timer Start();
@@ -51,7 +43,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         {
             if (this.timer == null)
             {
-                this.log.Error("The actor is not initialized", () => { });
+                this.log.Error("The timer is not initialized", () => { });
                 throw new TimerNotInitializedException();
             }
 
