@@ -1,5 +1,4 @@
-@ECHO off
-setlocal enableextensions enabledelayedexpansion
+@ECHO off & setlocal enableextensions enabledelayedexpansion
 
 IF "%PCS_DEVICESIMULATION_WEBSERVICE_PORT%" == "" (
     echo Error: the PCS_DEVICESIMULATION_WEBSERVICE_PORT environment variable is not defined.

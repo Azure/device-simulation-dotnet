@@ -1,5 +1,4 @@
-@ECHO off
-setlocal
+@ECHO off & setlocal enableextensions enabledelayedexpansion
 
 :: strlen("\scripts\") => 9
 SET APP_HOME=%~dp0
@@ -32,9 +31,6 @@ rmdir /s /q .\SimulationAgent\bin
 rmdir /s /q .\SimulationAgent\obj
 rmdir /s /q .\SimulationAgent.Test\bin
 rmdir /s /q .\SimulationAgent.Test\obj
-
-:: Clean up .cache
-rmdir /s /q .\.cache
 
 echo Done.
 

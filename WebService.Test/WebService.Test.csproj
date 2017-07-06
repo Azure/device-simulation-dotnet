@@ -15,4 +15,10 @@
     <Folder Include="helpers\Http" />
     <Folder Include="IntegrationTests" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\WebService\WebService.csproj">
+      <Project>{21feac28-bb2d-4827-b62a-0476bf44d602}</Project>
+      <Name>WebService</Name>
+    </ProjectReference>
+  </ItemGroup>
 </Project>

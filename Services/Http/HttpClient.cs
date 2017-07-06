@@ -86,15 +86,40 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http
 
                 this.log.Debug("Sending request", () => new { httpMethod, request.Uri, request.Options });
 
-                using (var response = await client.SendAsync(httpRequest))
+                try
                 {
-                    if (request.Options.EnsureSuccess) response.EnsureSuccessStatusCode();
+                    using (var response = await client.SendAsync(httpRequest))
+                    {
+                        if (request.Options.EnsureSuccess) response.EnsureSuccessStatusCode();
+
+                        return new HttpResponse
+                        {
+                            StatusCode = response.StatusCode,
+                            Headers = response.Headers,
+                            Content = await response.Content.ReadAsStringAsync(),
+                        };
+                    }
+                }
+                catch (HttpRequestException e)
+                {
+                    var errorMessage = e.Message;
+                    if (e.InnerException != null)
+                    {
+                        errorMessage += " - " + e.InnerException.Message;
+                    }
+
+                    this.log.Error("Request failed", () => new
+                    {
+                        ExceptionMessage = e.Message,
+                        InnerExceptionType = e.InnerException != null ? e.InnerException.GetType().FullName : "",
+                        InnerExceptionMessage = e.InnerException != null ? e.InnerException.Message : "",
+                        errorMessage
+                    });
 
                     return new HttpResponse
                     {
-                        StatusCode = response.StatusCode,
-                        Headers = response.Headers,
-                        Content = await response.Content.ReadAsStringAsync(),
+                        StatusCode = 0,
+                        Content = errorMessage
                     };
                 }
             }

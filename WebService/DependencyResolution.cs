@@ -65,6 +65,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             // a new connection every time.
             builder.RegisterType<Simulations>().As<ISimulations>().SingleInstance();
             builder.RegisterType<DeviceTypes>().As<IDeviceTypes>().SingleInstance();
+            builder.RegisterType<Services.Devices>().As<IDevices>().SingleInstance();
+            builder.RegisterType<IoTHubManager>().As<IIoTHubManager>().SingleInstance();
         }
 
         private static void RegisterFactory(IContainer container)

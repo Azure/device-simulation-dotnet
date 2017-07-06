@@ -1,5 +1,9 @@
-@ECHO off
-setlocal enableextensions enabledelayedexpansion
+@ECHO off & setlocal enableextensions enabledelayedexpansion
+
+:: Usage:
+:: Compile the project in the local environment:  scripts\compile
+:: Compile the project inside a Docker container: scripts\compile -s
+:: Compile the project inside a Docker container: scripts\compile --in-sandbox
 
 :: strlen("\scripts\") => 9
 SET APP_HOME=%~dp0
@@ -10,7 +14,7 @@ IF "%1"=="-s" GOTO :RunInSandbox
 IF "%1"=="--in-sandbox" GOTO :RunInSandbox
 
 
-:RunHere
+:RunLocally
 
     :: Check dependencies
     dotnet --version > NUL 2>&1
@@ -19,6 +23,7 @@ IF "%1"=="--in-sandbox" GOTO :RunInSandbox
     :: Restore nuget packages and compile the application with both Debug and Release configurations
     call dotnet restore
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
+
     call dotnet build --configuration Debug
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
     call dotnet build --configuration Release
@@ -29,20 +34,25 @@ IF "%1"=="--in-sandbox" GOTO :RunInSandbox
 
 :RunInSandbox
 
+    :: Folder where PCS sandboxes cache data. Reuse the same folder to speed up the
+    :: sandbox and to save disk space.
+    :: Use PCS_CACHE="%APP_HOME%\.cache" to cache inside the project folder
+    SET PCS_CACHE="%TMP%\azure\iotpcs\.cache"
+
     :: Check dependencies
     docker version > NUL 2>&1
     IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOCKER
 
     :: Create cache folders to speed up future executions
-    mkdir .cache\sandbox\.config > NUL 2>&1
-    mkdir .cache\sandbox\.dotnet > NUL 2>&1
-    mkdir .cache\sandbox\.nuget > NUL 2>&1
+    mkdir %PCS_CACHE%\sandbox\.config > NUL 2>&1
+    mkdir %PCS_CACHE%\sandbox\.dotnet > NUL 2>&1
+    mkdir %PCS_CACHE%\sandbox\.nuget > NUL 2>&1
 
     :: Start the sandbox and execute the compilation script
     docker run -it ^
-        -v %APP_HOME%\.cache\sandbox\.config:/root/.config ^
-        -v %APP_HOME%\.cache\sandbox\.dotnet:/root/.dotnet ^
-        -v %APP_HOME%\.cache\sandbox\.nuget:/root/.nuget ^
+        -v %PCS_CACHE%\sandbox\.config:/root/.config ^
+        -v %PCS_CACHE%\sandbox\.dotnet:/root/.dotnet ^
+        -v %PCS_CACHE%\sandbox\.nuget:/root/.nuget ^
         -v %APP_HOME%:/opt/code ^
         azureiotpcs/code-builder-dotnet:1.0-dotnetcore /opt/scripts/compile
 

@@ -4,6 +4,10 @@
 # Run the service in the local environment:  ./scripts/run
 # Run the service inside a Docker container: ./scripts/run -s
 # Run the service inside a Docker container: ./scripts/run --in-sandbox
+# Run only the web service:                  ./scripts/run --webservice
+# Run only the simulation:                   ./scripts/run --simulation
+# Show how to use this script:               ./scripts/run -h
+# Show how to use this script:               ./scripts/run --help
 
 # Debug|Release
 CONFIGURATION=Release
@@ -17,19 +21,13 @@ source "$APP_HOME/scripts/.functions.sh"
 # Use PCS_CACHE="$APP_HOME/.cache" to cache inside the project folder
 PCS_CACHE="/tmp/azure/iotpcs/.cache"
 
-run() {
-    check_dependency_dotnet
-
-    ./scripts/env-vars-check
-
-    cd $APP_HOME
-
-    dotnet restore --verbosity=quiet
-
-    echo "Starting simulation agent and web service..."
-    dotnet run --configuration $CONFIGURATION --project SimulationAgent/*.csproj & \
-        dotnet run --configuration $CONFIGURATION --project WebService/*.csproj --background && \
-        fg
+help() {
+    echo "Usage:"
+    echo "  Run the service in the local environment:  ./scripts/run"
+    echo "  Run the service inside a Docker container: ./scripts/run -s|--in-sandbox"
+    echo "  Run only the web service:                  ./scripts/run --webservice"
+    echo "  Run only the simulation:                   ./scripts/run --simulation"
+    echo "  Show how to use this script:               ./scripts/run -h|--help"
 }
 
 setup_sandbox_cache() {
@@ -56,8 +54,8 @@ run_in_sandbox() {
         ./scripts/env-vars-check
 
         docker run -it \
-            -p $PCS_DEVICESIMULATION_WEBSERVICE_PORT:8080 \
-            -e "PCS_DEVICESIMULATION_WEBSERVICE_PORT=8080" \
+            -p $PCS_DEVICESIMULATION_WEBSERVICE_PORT:9003 \
+            -e "PCS_DEVICESIMULATION_WEBSERVICE_PORT=9003" \
             -e "PCS_IOTHUBMANAGER_WEBSERVICE_URL=$PCS_IOTHUBMANAGER_WEBSERVICE_URL" \
             -v "$PCS_CACHE/sandbox/.config:/root/.config" \
             -v "$PCS_CACHE/sandbox/.dotnet:/root/.dotnet" \
@@ -70,10 +68,49 @@ run_in_sandbox() {
     fi
 }
 
+prepare_for_run() {
+    check_dependency_dotnet
+    cd $APP_HOME
+
+    ./scripts/env-vars-check
+
+    dotnet restore --verbosity=quiet
+}
+
+run_all() {
+    echo "Starting simulation agent and web service..."
+    dotnet run --configuration $CONFIGURATION --project SimulationAgent/*.csproj & \
+        dotnet run --configuration $CONFIGURATION --project WebService/*.csproj && \
+        fg
+}
+
+run_webservice() {
+    echo "Starting web service..."
+    dotnet run --configuration $CONFIGURATION --project WebService/*.csproj
+}
+
+run_simulation() {
+    echo "Starting simulation agent and web service..."
+    dotnet run --configuration $CONFIGURATION --project SimulationAgent/*.csproj
+}
+
+if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    help && set +e && exit 0
+fi
+
 if [[ "$1" == "--in-sandbox" || "$1" == "-s" ]]; then
     run_in_sandbox
 else
-    run
+    prepare_for_run
+    if [[ "$1" == "" ]]; then
+        run_all
+    fi
+    if [[ "$1" == "--webservice" ]]; then
+        run_webservice
+    fi
+    if [[ "$1" == "--simulation" ]]; then
+        run_simulation
+    fi
 fi
 
 set +e

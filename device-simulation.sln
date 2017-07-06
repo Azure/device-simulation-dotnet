@@ -15,12 +15,17 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimulationAgent.Test", "Sim
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{71787873-D1A0-4D9E-BC84-942E0FB3841E}"
 ProjectSection(SolutionItems) = preProject
+	.gitattributes = .gitattributes
+	.gitconfig = .gitconfig
+	.gitignore = .gitignore
+	.travis.yml = .travis.yml
 	CONTRIBUTING.md = CONTRIBUTING.md
 	DEVELOPMENT.md = DEVELOPMENT.md
 	device-simulation.sln.DotSettings = device-simulation.sln.DotSettings
 	envvars.sh = envvars.sh
 	LICENSE = LICENSE
 	README.md = README.md
+	version = version
 EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{2B58D756-04D5-427F-9161-E1B45D35682A}"
@@ -51,6 +56,9 @@ ProjectSection(SolutionItems) = preProject
 	scripts\docker\run.cmd = scripts\docker\run.cmd
 	scripts\docker\.dockerignore = scripts\docker\.dockerignore
 	scripts\docker\run = scripts\docker\run
+	scripts\docker\docker-compose.yml = scripts\docker\docker-compose.yml
+	scripts\docker\publish = scripts\docker\publish
+	scripts\docker\publish.cmd = scripts\docker\publish.cmd
 EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "git", "git", "{4C88469C-C551-435D-AE2C-36C58EE686A5}"

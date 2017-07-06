@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Note: use lowercase names for the Docker images
-DOCKER_IMAGE="azureiotpcs/device-simulation-dotnet:0.1-SNAPSHOT"
+DOCKER_IMAGE="azureiotpcs/device-simulation-dotnet"
 
 # Debug|Release
 CONFIGURATION=Release
@@ -9,6 +9,9 @@ CONFIGURATION=Release
 set -e
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && cd .. && pwd )/"
 source "$APP_HOME/scripts/.functions.sh"
+
+# To avoid hardcoding the version in multiple places, it's stored in a file
+APP_VERSION=$(cat "$APP_HOME/version")
 
 compile() {
     check_dependency_dotnet
@@ -41,7 +44,7 @@ build_docker_image() {
     cp scripts/docker/content/run.sh             out/docker/
 
     cd out/docker/
-    docker build --tag "$DOCKER_IMAGE" --squash --compress --label "Tags=azure,iot,pcs,simulation,.NET" .
+    docker build --tag "$DOCKER_IMAGE:$APP_VERSION" --squash --compress --label "Tags=azure,iot,pcs,simulation,.NET" .
 }
 
 compile

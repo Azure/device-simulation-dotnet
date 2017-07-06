@@ -1,7 +1,7 @@
-@ECHO off
+@ECHO off & setlocal enableextensions enabledelayedexpansion
 
 :: Note: use lowercase names for the Docker images
-SET DOCKER_IMAGE="azureiotpcs/device-simulation-dotnet:0.1-SNAPSHOT"
+SET DOCKER_IMAGE="azureiotpcs/device-simulation-dotnet"
 
 :: strlen("\scripts\docker\") => 16
 SET APP_HOME=%~dp0
@@ -18,10 +18,10 @@ IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: Start the application
 echo Starting Device Simulation ...
-docker run -it -p %PCS_DEVICESIMULATION_WEBSERVICE_PORT%:8080 ^
-    -e PCS_DEVICESIMULATION_WEBSERVICE_PORT=8080 ^
+docker run -it -p %PCS_DEVICESIMULATION_WEBSERVICE_PORT%:9003 ^
+    -e PCS_DEVICESIMULATION_WEBSERVICE_PORT=9003 ^
     -e PCS_IOTHUBMANAGER_WEBSERVICE_URL=%PCS_IOTHUBMANAGER_WEBSERVICE_URL% ^
-    %DOCKER_IMAGE%
+    %DOCKER_IMAGE%:%APP_VERSION%
 
 :: - - - - - - - - - - - - - -
 goto :END

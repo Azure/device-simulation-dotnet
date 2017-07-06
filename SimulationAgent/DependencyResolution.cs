@@ -69,6 +69,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // a new connection every time.
             builder.RegisterType<Simulations>().As<ISimulations>().SingleInstance();
             builder.RegisterType<DeviceTypes>().As<IDeviceTypes>().SingleInstance();
+            builder.RegisterType<Services.Devices>().As<IDevices>().SingleInstance();
         }
 
         private static void RegisterFactory(IContainer container)

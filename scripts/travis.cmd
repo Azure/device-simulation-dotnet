@@ -1,5 +1,4 @@
-@ECHO off
-setlocal enableextensions enabledelayedexpansion
+@ECHO off & setlocal enableextensions enabledelayedexpansion
 
 :: Example usage (see "travis help" for more information:
 ::  travis help

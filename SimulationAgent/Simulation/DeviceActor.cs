@@ -6,17 +6,10 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation
 {
-    public class DeviceActorNotNotInitializedException : Exception
-    {
-        public DeviceActorNotNotInitializedException()
-            : base("DeviceActor object not initialized. Call 'Setup()' first.")
-        {
-        }
-    }
-
     public interface IDeviceActor
     {
         IDeviceActor Setup(
@@ -36,7 +29,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private readonly DependencyResolution.IFactory factory;
 
         private DeviceType deviceType;
-        private int position;
         private string deviceId;
         private DeviceType.DeviceTypeMessage message;
 
@@ -44,9 +36,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private Device device;
         private bool isConnected;
         private bool isStarted;
-        //private bool isBusy;
-
-        //private IDeviceClient client;
 
         public DeviceActor(
             ILogger logger,
@@ -59,7 +48,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
             this.isConnected = false;
             this.isStarted = false;
-            //this.isBusy = false;
         }
 
         public IDeviceActor Setup(
@@ -68,7 +56,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             DeviceType.DeviceTypeMessage message)
         {
             this.deviceType = deviceType;
-            this.position = position;
             this.deviceId = "Simulated." + deviceType.Name + "." + position;
             this.message = message;
 
@@ -82,13 +69,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             {
                 this.log.Error("The actor is not initialized",
                     () => new { this.deviceId });
-                throw new DeviceActorNotNotInitializedException();
+                throw new DeviceActorNotInitializedException();
             }
 
             this.log.Debug("Connect...", () => { });
 
             this.device = await this.devices.GetOrCreateAsync(this.deviceId);
-            //this.client = this.devices.GetClient(this.device, this.deviceType.Protocol);
             this.isConnected = true;
 
             this.log.Debug("Connect complete", () => { });
@@ -100,7 +86,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             if (this.deviceType == null || this.message == null)
             {
                 this.log.Error("The actor is not initialized", () => { });
-                throw new DeviceActorNotNotInitializedException();
+                throw new DeviceActorNotInitializedException();
             }
 
             this.log.Debug("Start...",
@@ -113,20 +99,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 throw new Exception("The actor is not ready, wait for ConnectAsync to complete");
             }
 
-
-            //Initialize the timer to not start automatically...
-            var period = 5 * 1000;
-            //            this.timer = new Timer(SendTelemetry, this, Timeout.Infinite, period);
-            //
-            //            //Manually start the timer...
-            //            this.timer.Change(0, 1000);
-            //
-            //            //Manually stop the timer...
-            //
-            //            this.timer.Change(Timeout.Infinite, Timeout.Infinite);
-
             this.timer = this.factory.Resolve<ITimer>();
-            this.timer.Setup(SendTelemetry, this, period);
+            this.timer.Setup(SendTelemetry, this, (int)this.message.Interval.TotalMilliseconds);
             this.timer.Start();
 
             this.isStarted = true;
@@ -143,7 +117,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 () => new { this.deviceId, MessageSchema = this.message.MessageSchema.Name });
 
             this.timer.Stop();
-            //this.timer.Change(Timeout.Infinite, Timeout.Infinite);
 
             this.isStarted = false;
 
@@ -161,7 +134,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             if (!actor.isConnected) return;
             if (!actor.isStarted) return;
 
-            //this.log.Debug("Sending telemetry", () => new { this.message.Message });
             var client = actor.devices.GetClient(actor.device, actor.deviceType.Protocol);
             client.SendMessageAsync(actor.message).Wait();
 

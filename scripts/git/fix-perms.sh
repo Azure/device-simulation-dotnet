@@ -17,7 +17,9 @@ chmod ugo+x ./scripts/env-vars-setup
 chmod ugo+x ./scripts/travis
 chmod ugo+x ./scripts/docker/build
 chmod ugo+x ./scripts/docker/run
+chmod ugo+x ./scripts/docker/publish
 chmod ugo+x ./scripts/docker/content/*.sh
+chmod ugo+x ./scripts/git/setup
 chmod ugo+x ./scripts/git/*.sh
 chmod ugo+x ./scripts/iothub/*.sh
 
@@ -30,7 +32,9 @@ git update-index --chmod=+x ./scripts/env-vars-setup
 git update-index --chmod=+x ./scripts/travis
 git update-index --chmod=+x ./scripts/docker/build
 git update-index --chmod=+x ./scripts/docker/run
+git update-index --chmod=+x ./scripts/docker/publish
 git update-index --chmod=+x ./scripts/docker/content/*.sh
+git update-index --chmod=+x ./scripts/git/setup
 git update-index --chmod=+x ./scripts/git/*.sh
 git update-index --chmod=+x ./scripts/iothub/*.sh
 

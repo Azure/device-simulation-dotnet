@@ -1,8 +1,7 @@
-@ECHO off
-setlocal
+@ECHO off & setlocal enableextensions enabledelayedexpansion
 
 :: Note: use lowercase names for the Docker images
-SET DOCKER_IMAGE="azureiotpcs/device-simulation-dotnet:0.1-SNAPSHOT"
+SET DOCKER_IMAGE="azureiotpcs/device-simulation-dotnet"
 
 :: Debug|Release
 SET CONFIGURATION=Release
@@ -43,7 +42,7 @@ copy scripts\docker\Dockerfile                  out\docker\
 copy scripts\docker\content\run.sh              out\docker\
 
 cd out\docker\
-docker build --tag %DOCKER_IMAGE% --squash --compress --label "Tags=azure,iot,pcs,simulation,.NET" .
+docker build --tag %DOCKER_IMAGE%:%APP_VERSION% --squash --compress --label "Tags=azure,iot,pcs,simulation,.NET" .
 IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: - - - - - - - - - - - - - -

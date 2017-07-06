@@ -36,7 +36,7 @@ run_tests() {
     PROJECTS=$(dotnet sln list | grep 'csproj$' | grep '\.Test')
     for PROJ in $PROJECTS; do
         echo "-- $PROJ"
-        dotnet test $PROJ
+        dotnet test --configuration $CONFIGURATION $PROJ
     done
 }
 
@@ -52,6 +52,8 @@ build_in_sandbox() {
 
     cd $APP_HOME
 
+    echo "Note: caching .NET files in $PCS_CACHE"
+
     # On Windows this script should use docker.exe, in which case
     # the parameters syntax is different, e.g. volumes path
     # (i.e. C:\path\path\... vs /c/path/path/...).
@@ -63,6 +65,7 @@ build_in_sandbox() {
     if [[ -z "$IS_WINDOWS" ]]; then
         check_dependency_docker
         docker run \
+            -e "PCS_IOTHUBMANAGER_WEBSERVICE_URL=$PCS_IOTHUBMANAGER_WEBSERVICE_URL" \
             -v "$PCS_CACHE/sandbox/.config:/root/.config" \
             -v "$PCS_CACHE/sandbox/.dotnet:/root/.dotnet" \
             -v "$PCS_CACHE/sandbox/.nuget:/root/.nuget" \
@@ -77,6 +80,9 @@ build_in_sandbox() {
 if [[ "$1" == "--in-sandbox" || "$1" == "-s" ]]; then
     build_in_sandbox
 else
+	# workaround for https://github.com/dotnet/cli/issues/3995
+	unset home
+
     compile
     run_tests
 fi

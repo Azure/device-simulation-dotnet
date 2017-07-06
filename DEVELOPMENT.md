@@ -3,23 +3,31 @@
 * [Azure IoT Hub setup](#azure-iot-hub-setup)
 * [Development setup](#development-setup)
 
-Build, Run locally and with Docker
-==================================
+Run and Debug with Visual Studio
+================================
 
-The [scripts](scripts) folder includes some scripts for frequent tasks:
+Visual Studio lets you quickly open the application without using a command
+prompt, without configuring anything outside of the IDE.
+
+Steps using Visual Studio 2017:
+
+* From Visual Studio, open the "project-name-here.sln" file.
+* Right click on "Webservice" and mark it as the starting project
+* Press F5
+
+Build and Run from the command line
+===================================
+
+The [scripts](scripts) folder contains some scripts for frequent tasks:
 
 * `build`: compile all the projects and run the tests.
 * `compile`: compile all the projects.
 * `run`: compile the projects and run the service. This will prompt for
   elevated privileges in Windows to run the web service.
-* `docker/build`: build a Docker container and store the image in the local
-  registry.
-* `docker/run`: run the Docker container from the image stored in the local
-  registry.
 
 ### Sandbox
 
-Most of the scripts assume you have configured your development environment,
+The scripts assume that you configured your development environment,
 with tools like .NET Core and Docker. You can avoid installing .NET Core,
 and install only Docker, and use the command line parameter `--in-sandbox`
 (or the short form `-s`), for example:
@@ -33,6 +41,17 @@ and install only Docker, and use the command line parameter `--in-sandbox`
 
 The Docker images used for the sandbox is hosted on Docker Hub
 [here](https://hub.docker.com/r/azureiotpcs/code-builder-dotnet).
+
+Package the application to a Docker image
+=========================================
+
+The `scripts` folder includes a [docker](scripts/docker) subfolder with the files
+required to package the service into a Docker image:
+
+* `Dockerfile`: docker images specifications
+* `build`: build a Docker container and store the image in the local registry
+* `run`: run the Docker container from the image stored in the local registry
+* `content`: a folder with files copied into the image, including the entry point script
 
 Configuration
 =============
@@ -64,9 +83,9 @@ Development setup
 
 ## .NET setup
 
-The project workflow is managed via .NET Core 1.0.4.
-We recommend to install .NET Core in your environment, so that you can
-run all the scripts and ensure that your IDE works as expected.
+The project workflow is managed via .NET Core 1.0.4, which you need
+to install in your environment, so that you can run all the scripts
+and ensure that your IDE works as expected.
 
 * [.NET Core](https://dotnet.github.io)
 

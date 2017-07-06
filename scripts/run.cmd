@@ -1,10 +1,9 @@
-:: Usage:
-:: Run the service in the local environment:     .\scripts\run
-:: Run the service in inside a Docker container: .\scripts\run -s
-:: Run the service in inside a Docker container: .\scripts\run --in-sandbox
+@ECHO off & setlocal enableextensions enabledelayedexpansion
 
-@ECHO off
-setlocal
+:: Usage:
+:: Run the service in the local environment:  scripts\run
+:: Run the service inside a Docker container: scripts\run -s
+:: Run the service inside a Docker container: scripts\run --in-sandbox
 
 :: Debug|Release
 SET CONFIGURATION=Release
@@ -18,7 +17,8 @@ IF "%1"=="-s" GOTO :RunInSandbox
 IF "%1"=="--in-sandbox" GOTO :RunInSandbox
 
 
-:RunHere
+:RunLocally
+
     :: Check dependencies
     dotnet --version > NUL 2>&1
     IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOTNET
@@ -34,21 +34,27 @@ IF "%1"=="--in-sandbox" GOTO :RunInSandbox
     start "" dotnet run --configuration %CONFIGURATION% --project SimulationAgent/SimulationAgent.csproj
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
-    start "" dotnet run --configuration %CONFIGURATION% --project WebService/WebService.csproj --background
+    start "" dotnet run --configuration %CONFIGURATION% --project WebService/WebService.csproj
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
     goto :END
 
 
 :RunInSandbox
+
+    :: Folder where PCS sandboxes cache data. Reuse the same folder to speed up the
+    :: sandbox and to save disk space.
+    :: Use PCS_CACHE="%APP_HOME%\.cache" to cache inside the project folder
+    SET PCS_CACHE="%TMP%\azure\iotpcs\.cache"
+
     :: Check dependencies
     docker version > NUL 2>&1
     IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOCKER
 
     :: Create cache folders to speed up future executions
-    mkdir .cache\sandbox\.config 2>NUL
-    mkdir .cache\sandbox\.dotnet 2>NUL
-    mkdir .cache\sandbox\.nuget 2>NUL
+    mkdir %PCS_CACHE%\sandbox\.config > NUL 2>&1
+    mkdir %PCS_CACHE%\sandbox\.dotnet > NUL 2>&1
+    mkdir %PCS_CACHE%\sandbox\.nuget > NUL 2>&1
 
     :: Check settings
     call .\scripts\env-vars-check.cmd
@@ -56,12 +62,12 @@ IF "%1"=="--in-sandbox" GOTO :RunInSandbox
 
     :: Start the sandbox and run the application
     docker run -it ^
-        -p %PCS_DEVICESIMULATION_WEBSERVICE_PORT%:8080 ^
-        -e "PCS_DEVICESIMULATION_WEBSERVICE_PORT=8080" ^
+        -p %PCS_DEVICESIMULATION_WEBSERVICE_PORT%:9003 ^
+        -e "PCS_DEVICESIMULATION_WEBSERVICE_PORT=9003" ^
         -e "PCS_IOTHUBMANAGER_WEBSERVICE_URL=%PCS_IOTHUBMANAGER_WEBSERVICE_URL%" ^
-        -v %APP_HOME%\.cache\sandbox\.config:/root/.config ^
-        -v %APP_HOME%\.cache\sandbox\.dotnet:/root/.dotnet ^
-        -v %APP_HOME%\.cache\sandbox\.nuget:/root/.nuget ^
+        -v %PCS_CACHE%\sandbox\.config:/root/.config ^
+        -v %PCS_CACHE%\sandbox\.dotnet:/root/.dotnet ^
+        -v %PCS_CACHE%\sandbox\.nuget:/root/.nuget ^
         -v %APP_HOME%:/opt/code ^
         azureiotpcs/code-builder-dotnet:1.0-dotnetcore /opt/scripts/run
 

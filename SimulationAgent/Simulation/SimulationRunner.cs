@@ -1,11 +1,15 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 
+// TODO: resilience to IoT Hub manager failures
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation
 {
     public interface ISimulationRunner
@@ -18,19 +22,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     {
         private readonly ILogger log;
         private readonly IDeviceTypes deviceTypes;
-        private readonly IDevices devices;
         private readonly DependencyResolution.IFactory factory;
         private readonly List<bool> running;
         private List<IDeviceActor> actors;
 
         public SimulationRunner(
             ILogger logger,
-            IDevices devices,
             IDeviceTypes deviceTypes,
             DependencyResolution.IFactory factory)
         {
             this.log = logger;
-            this.devices = devices;
             this.deviceTypes = deviceTypes;
             this.factory = factory;
 
@@ -57,9 +58,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                         foreach (DeviceType.DeviceTypeMessage message in deviceType.Telemetry.Messages)
                         {
                             var actor = this.factory.Resolve<IDeviceActor>();
-                            actor.Setup(deviceType, i, message).ConnectAsync().Wait();
-                            actor.Start();
-                            this.actors.Add(actor);
+
+                            try
+                            {
+                                WaitFor(actor.Setup(deviceType, i, message).ConnectAsync());
+                                actor.Start();
+                                this.actors.Add(actor);
+                            }
+                            catch (ExternalDependencyException e)
+                            {
+                                this.log.Error($"Cannot start actor {i} for {deviceType.Name}", () => new { e.Message });
+                            }
                         }
                     }
                 }
@@ -82,6 +91,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 this.actors = new List<IDeviceActor>();
                 this.running[0] = false;
+            }
+        }
+
+        /// <summary>
+        /// A simple helper to wait for a task and expose the exception,
+        /// similarly to what await does
+        /// </summary>
+        private static void WaitFor(Task task)
+        {
+            try
+            {
+                task.Wait();
+            }
+            catch (AggregateException e)
+            {
+                throw e.InnerExceptions.First();
             }
         }
     }

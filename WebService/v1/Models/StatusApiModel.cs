@@ -41,11 +41,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 
         /// <summary>A property bag with details about the internal dependencies</summary>
         [JsonProperty(PropertyName = "Dependencies", Order = 80)]
-        public Dictionary<string, string> Dependencies = new Dictionary<string, string>
-        {
-            { "IoTHubManagerAPI", "OK|ERROR:...msg..." },
-            { "StorageAPI", "OK|ERROR:timeout after 3 secs" },
-        };
+        public Dictionary<string, string> Dependencies = new Dictionary<string, string>();
 
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public Dictionary<string, string> Metadata = new Dictionary<string, string>
