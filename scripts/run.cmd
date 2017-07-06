@@ -62,8 +62,8 @@ IF "%1"=="--in-sandbox" GOTO :RunInSandbox
 
     :: Start the sandbox and run the application
     docker run -it ^
-        -p %PCS_DEVICESIMULATION_WEBSERVICE_PORT%:9003 ^
-        -e "PCS_DEVICESIMULATION_WEBSERVICE_PORT=9003" ^
+        -p %PCS_DEVICESIMULATION_WEBSERVICE_PORT%:%PCS_DEVICESIMULATION_WEBSERVICE_PORT% ^
+        -e "PCS_DEVICESIMULATION_WEBSERVICE_PORT=%PCS_DEVICESIMULATION_WEBSERVICE_PORT%" ^
         -e "PCS_IOTHUBMANAGER_WEBSERVICE_URL=%PCS_IOTHUBMANAGER_WEBSERVICE_URL%" ^
         -v %PCS_CACHE%\sandbox\.config:/root/.config ^
         -v %PCS_CACHE%\sandbox\.dotnet:/root/.dotnet ^
