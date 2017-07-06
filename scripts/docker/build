@@ -10,7 +10,7 @@ set -e
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && cd .. && pwd )/"
 source "$APP_HOME/scripts/.functions.sh"
 
-# To avoid hardcoding the version in multiple places, it's stored in a file
+# The version is stored in a file, to avoid hardcoding it in multiple places
 APP_VERSION=$(cat "$APP_HOME/version")
 
 compile() {

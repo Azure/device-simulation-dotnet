@@ -11,6 +11,9 @@ SET APP_HOME=%~dp0
 SET APP_HOME=%APP_HOME:~0,-16%
 cd %APP_HOME%
 
+:: The version is stored in a file, to avoid hardcoding it in multiple places
+set /P APP_VERSION=<%APP_HOME%/version
+
 :: Check dependencies
 dotnet --version > NUL 2>&1
 IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOTNET
