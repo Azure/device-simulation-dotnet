@@ -21,7 +21,6 @@ chmod ugo+x ./scripts/docker/publish
 chmod ugo+x ./scripts/docker/content/*.sh
 chmod ugo+x ./scripts/git/setup
 chmod ugo+x ./scripts/git/*.sh
-chmod ugo+x ./scripts/iothub/*.sh
 
 git update-index --chmod=+x ./scripts/build
 git update-index --chmod=+x ./scripts/compile
@@ -36,6 +35,5 @@ git update-index --chmod=+x ./scripts/docker/publish
 git update-index --chmod=+x ./scripts/docker/content/*.sh
 git update-index --chmod=+x ./scripts/git/setup
 git update-index --chmod=+x ./scripts/git/*.sh
-git update-index --chmod=+x ./scripts/iothub/*.sh
 
 set +e

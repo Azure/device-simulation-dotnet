@@ -11,9 +11,58 @@ prompt, without configuring anything outside of the IDE.
 
 Steps using Visual Studio 2017:
 
-* From Visual Studio, open the "project-name-here.sln" file.
-* Right click on "Webservice" and mark it as the starting project
-* Press F5
+1. Open the solution using the `device-simulation.sln` file.
+1. When the solution is loaded, right click on the `WebService` project,
+   select `Properties` and go to the `Debug` section.
+1. Add a new environment variable with name
+   `PCS_DEVICESIMULATION_WEBSERVICE_PORT` and value `9003`.
+1. Add a new environment variable with name
+   `PCS_IOTHUBMANAGER_WEBSERVICE_URL` and value `http://127.0.0.1:9002/v1`.
+1. In the same section set the `App URL` to
+   `http://localhost:9003/v1/status`
+1. Right click on the "WebService" project and "Set as StartUp Project".
+1. The toolbar should switch automatically to "WebService" and "IIS Express",
+   otherwise change these manually.
+1. Press F5, or the Run icon. VisualStudio should open your browser showing
+   the service status in JSON format.
+
+Dependencies
+============
+
+The Device Simulation service depends on
+[IoT Hub Manager](https://github.com/Azure/iothub-manager-dotnet).
+In order to run simulations, you need to start the IoT Hub manager:
+
+Bash console:
+```
+docker run -p 9002:9002 -e PCS_IOTHUBMANAGER_WEBSERVICE_PORT=9002 \
+    -e PCS_IOTHUB_CONN_STRING=$PCS_IOTHUB_CONN_STRING \
+    azureiotpcs/iothubmanager-dotnet::0.1-SNAPSHOT
+```
+
+Windows console:
+```
+docker run -p 9002:9002 -e PCS_IOTHUBMANAGER_WEBSERVICE_PORT=9002 ^
+    -e PCS_IOTHUB_CONN_STRING=%PCS_IOTHUB_CONN_STRING% ^
+    azureiotpcs/iothubmanager-dotnet::0.1-SNAPSHOT
+```
+
+Run and Debug with IntelliJ Rider
+=================================
+
+1. Open the solution using the `device-simulation.sln` file.
+1. When the solution is loaded, got to `Run -> Edit Configurations` and
+   create a new `.NET Project` configuration.
+1. In the configuration select the WebService project
+1. Add a new environment variable with name
+   `PCS_DEVICESIMULATION_WEBSERVICE_PORT` and value `9003`.
+1. Add a new environment variable with name
+   `PCS_IOTHUBMANAGER_WEBSERVICE_URL` and value `http://127.0.0.1:9002/v1`.
+1. Save the settings and run the configuration just created, from the IDE
+   toolbar.
+1. You should see the service bootstrap messages in IntelliJ Run window,
+   with details such as the URL where the web service is running, plus
+   the service logs.
 
 Build and Run from the command line
 ===================================
@@ -39,7 +88,7 @@ and install only Docker, and use the command line parameter `--in-sandbox`
 * `run --in-sandbox`: starts the service inside of a Docker container
     (short form `run -s`).
 
-The Docker images used for the sandbox is hosted on Docker Hub
+The Docker images used for the sandbox are hosted on Docker Hub
 [here](https://hub.docker.com/r/azureiotpcs/code-builder-dotnet).
 
 Package the application to a Docker image
@@ -53,6 +102,18 @@ required to package the service into a Docker image:
 * `run`: run the Docker container from the image stored in the local registry
 * `content`: a folder with files copied into the image, including the entry point script
 
+You can also start Device Simulation and its dependency IoT Hub Manager
+in one simple step, using Docker Compose with the
+[docker-compose.yml](scripts/docker/docker-compose.yml) file in the project:
+
+```
+cd scripts/docker
+docker-compose up
+```
+
+The Docker compose configuration requires some environment variables,
+similarly to the steps described above.
+
 Configuration
 =============
 
@@ -60,23 +121,6 @@ The service configuration is stored using ASP.NET Core configuration
 adapters, in `appsettings.ini`. The INI format allows to store values in a
 readable format, with comments. The application also supports inserting
 environment variables, such as credentials and networking details.
-
-Azure IoT Hub setup
-===================
-
-At some point you will probably want to setup your Azure IoT Hub, for
-development and integration tests.
-
-The project includes some Bash scripts to help you with this setup:
-
-* Create new IoT Hub: `./scripts/iothub/create-hub.sh`
-* List existing hubs: `./scripts/iothub/list-hubs.sh`
-* Show IoT Hub details (e.g. keys): `./scripts/iothub/show-hub.sh`
-
-and in case you had multiple Azure subscriptions:
-
-* Show subscriptions list: `./scripts/iothub/list-subscriptions.sh`
-* Change current subscription: `./scripts/iothub/select-subscription.sh`
 
 Development setup
 =================
