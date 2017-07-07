@@ -58,7 +58,7 @@ IF "%1"=="--in-sandbox" GOTO :RunInSandbox
     mkdir %PCS_CACHE%\sandbox\.nuget > NUL 2>&1
 
     :: Start the sandbox and execute the build script
-    docker run ^
+    docker run -it ^
         -e "PCS_IOTHUBMANAGER_WEBSERVICE_URL=%PCS_IOTHUBMANAGER_WEBSERVICE_URL%" ^
         -e "PCS_IOTHUB_CONN_STRING=%PCS_IOTHUB_CONN_STRING%" ^
         -v %PCS_CACHE%\sandbox\.config:/root/.config ^
