@@ -11,10 +11,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface IDeviceClient
     {
-        //Azure.Devices.Client.DeviceClient GetClient();
         Task SendMessageAsync(DeviceType.DeviceTypeMessage message);
 
         Task SendRawMessageAsync(Message message);
+
+        Task DisconnectAsync();
     }
 
     public class DeviceClient : IDeviceClient
@@ -40,11 +41,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log = logger;
             this.protocol = protocol;
         }
-
-        //        public Azure.Devices.Client.DeviceClient GetClient()
-        //        {
-        //            return this.client;
-        //        }
 
         public async Task SendMessageAsync(DeviceType.DeviceTypeMessage message)
         {
@@ -72,6 +68,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         Exception = e.GetType().FullName,
                         e.InnerException
                     });
+            }
+        }
+
+        public async Task DisconnectAsync()
+        {
+            if (this.client != null)
+            {
+                await this.client.CloseAsync();
+                this.client.Dispose();
             }
         }
     }

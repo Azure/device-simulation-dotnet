@@ -3,11 +3,8 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
-using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Newtonsoft.Json;
 

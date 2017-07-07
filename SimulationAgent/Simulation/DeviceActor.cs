@@ -45,6 +45,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private readonly ILogger log;
         private readonly IDevices devices;
         private readonly DependencyResolution.IFactory factory;
+        private IDeviceClient client;
 
         private DeviceType deviceType;
         private string deviceId;
@@ -132,6 +133,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             lock (this.timer)
             {
                 this.StopTimers();
+                this.client?.DisconnectAsync().Wait(connectionTimeout);
                 this.state = State.Ready;
                 this.log.Debug("Stopped", () => new { this.deviceId });
             }
@@ -157,7 +159,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                         var task = actor.devices.GetOrCreateAsync(actor.deviceId);
                         task.Wait(connectionTimeout);
                         actor.device = task.Result;
+                        actor.log.Debug("Device credentials retrieved", () => new { actor.deviceId });
+
+                        actor.client = actor.devices.GetClient(actor.device, actor.deviceType.Protocol);
                         actor.log.Debug("Connection successful", () => new { actor.deviceId });
+
                         actor.MoveNext();
                     }
                     catch (Exception e)
@@ -182,11 +188,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 actor.log.Debug("SendTelemetry...",
                     () => new { actor.deviceId, MessageSchema = actor.message.MessageSchema.Name });
 
-                var client = actor.devices.GetClient(actor.device, actor.deviceType.Protocol);
-
                 try
                 {
-                    client.SendMessageAsync(actor.message).Wait(connectionTimeout);
+                    actor.client.SendMessageAsync(actor.message).Wait(connectionTimeout);
                 }
                 catch (Exception e)
                 {
