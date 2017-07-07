@@ -1,9 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -61,7 +59,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                             try
                             {
-                                WaitFor(actor.Setup(deviceType, i, message).ConnectAsync());
+                                actor.Setup(deviceType, i, message);
                                 actor.Start();
                                 this.actors.Add(actor);
                             }
@@ -91,22 +89,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 this.actors = new List<IDeviceActor>();
                 this.running[0] = false;
-            }
-        }
-
-        /// <summary>
-        /// A simple helper to wait for a task and expose the exception,
-        /// similarly to what await does
-        /// </summary>
-        private static void WaitFor(Task task)
-        {
-            try
-            {
-                task.Wait();
-            }
-            catch (AggregateException e)
-            {
-                throw e.InnerExceptions.First();
             }
         }
     }

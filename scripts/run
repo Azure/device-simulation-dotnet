@@ -90,7 +90,7 @@ run_webservice() {
 }
 
 run_simulation() {
-    echo "Starting simulation agent and web service..."
+    echo "Starting simulation..."
     dotnet run --configuration $CONFIGURATION --project SimulationAgent/*.csproj
 }
 
