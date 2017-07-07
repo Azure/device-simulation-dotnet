@@ -53,7 +53,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         public Timer Stop()
         {
-            this.timer.Change(Timeout.Infinite, Timeout.Infinite);
+            this.timer?.Change(Timeout.Infinite, Timeout.Infinite);
             return this;
         }
     }
