@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -22,7 +23,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private readonly IDeviceTypes deviceTypes;
         private readonly DependencyResolution.IFactory factory;
         private readonly List<bool> running;
-        private List<IDeviceActor> actors;
+        private CancellationTokenSource cancellationToken;
 
         public SimulationRunner(
             ILogger logger,
@@ -34,9 +35,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.factory = factory;
 
             this.running = new List<bool> { false };
-            this.actors = new List<IDeviceActor>();
         }
 
+        /// <summary>
+        /// For each device type in the simulation, create a 'Count'
+        /// number of actors, which individually connects and starts
+        /// sending messages.
+        /// </summary>
         public void Start(Services.Models.Simulation simulation)
         {
             lock (this.running)
@@ -44,32 +49,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 // Nothing to do if already running
                 if (this.running.FirstOrDefault()) return;
 
-                this.log.Info("Starting simulation", () => new { simulation.Id });
-                this.running[0] = true;
+                this.log.Info("Starting simulation...", () => new { simulation.Id });
+                this.cancellationToken = new CancellationTokenSource();
 
                 foreach (var dt in simulation.DeviceTypes)
                 {
                     var deviceType = this.deviceTypes.Get(dt.Id);
-
                     for (int i = 0; i < dt.Count; i++)
                     {
-                        foreach (DeviceType.DeviceTypeMessage message in deviceType.Telemetry.Messages)
+                        foreach (var message in deviceType.Telemetry.Messages)
                         {
                             var actor = this.factory.Resolve<IDeviceActor>();
-
-                            try
-                            {
-                                actor.Setup(deviceType, i, message);
-                                actor.Start();
-                                this.actors.Add(actor);
-                            }
-                            catch (ExternalDependencyException e)
-                            {
-                                this.log.Error($"Cannot start actor {i} for {deviceType.Name}", () => new { e.Message });
-                            }
+                            actor.Setup(deviceType, i, message).Start(this.cancellationToken.Token);
                         }
                     }
                 }
+
+                this.running[0] = true;
             }
         }
 
@@ -80,14 +76,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 // Nothing to do if not running
                 if (!this.running.FirstOrDefault()) return;
 
-                this.log.Info("Stopping simulation", () => { });
-
-                foreach (var actor in this.actors)
-                {
-                    actor.Stop();
-                }
-
-                this.actors = new List<IDeviceActor>();
+                this.log.Info("Stopping simulation...", () => { });
+                this.cancellationToken.Cancel();
                 this.running[0] = false;
             }
         }

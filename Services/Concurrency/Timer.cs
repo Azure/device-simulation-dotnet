@@ -10,6 +10,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
     {
         Timer Start();
         Timer Stop();
+        Timer Setup(Action<object> action, object context, TimeSpan frequency);
         Timer Setup(Action<object> action, object context, int frequency);
     }
 
@@ -26,6 +27,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         {
             this.log = logger;
             this.frequency = 0;
+        }
+
+        public Timer Setup(Action<object> action, object context, TimeSpan frequency)
+        {
+            return this.Setup(action, context, (int)frequency.TotalMilliseconds);
         }
 
         public Timer Setup(Action<object> action, object context, int frequency)

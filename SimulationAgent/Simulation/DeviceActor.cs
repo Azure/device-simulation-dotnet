@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Threading.Tasks;
+using System.Threading;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -17,19 +17,29 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             int position,
             DeviceType.DeviceTypeMessage message);
 
-        void Start();
+        void Start(CancellationToken cancellationToken);
         void Stop();
     }
 
     public class DeviceActor : IDeviceActor
     {
+        // When the actor fails to connect, it retries every 10 seconds
+        private static readonly TimeSpan retryConnectingFrequency = TimeSpan.FromSeconds(10);
+
+        // When connecting or sending a message, timeout after 5 seconds
+        private static readonly TimeSpan connectionTimeout = TimeSpan.FromSeconds(5);
+
+        // Used to make sure the actor checks at least every 10 seconds
+        // if it has to stop
+        private static readonly TimeSpan checkCancelationFrequency = TimeSpan.FromSeconds(10);
+
+        // Possible states of the actor
         private enum State
         {
             None = 0,
             Ready = 1,
             Connecting = 2,
-            Connected = 3,
-            Sending = 4
+            Connected = 3
         }
 
         private readonly ILogger log;
@@ -41,8 +51,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private DeviceType.DeviceTypeMessage message;
 
         private State state;
-        private readonly ITimer timer;
         private Device device;
+        private readonly ITimer timer;
+        private readonly ITimer cancelationCheckTimer;
+        private CancellationToken cancellationToken;
 
         public DeviceActor(
             ILogger logger,
@@ -56,6 +68,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.state = State.None;
 
             this.timer = this.factory.Resolve<ITimer>();
+            this.cancelationCheckTimer = this.factory.Resolve<ITimer>();
         }
 
         public IDeviceActor Setup(
@@ -65,45 +78,148 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         {
             if (this.state != State.None)
             {
-                this.log.Error("The actor is already initialized", () => { });
+                this.log.Error("The actor is already initialized",
+                    () => new
+                    {
+                        CurrentDeviceId = this.deviceId,
+                        NewMessageSchema = message.MessageSchema.Name,
+                        NewDeviceType = deviceType.Name,
+                        NewPosition = position
+                    });
                 throw new DeviceActorAlreadyInitializedException();
             }
 
             this.deviceType = deviceType;
             this.deviceId = "Simulated." + deviceType.Name + "." + position;
             this.message = message;
+
+            this.log.Debug("Setup complete",
+                () => new
+                {
+                    this.deviceId,
+                    MessageSchema = this.message.MessageSchema.Name,
+                    DeviceTypeName = deviceType.Name,
+                    Position = position
+                });
+
             this.MoveNext();
 
             return this;
         }
 
-        public void Start()
+        public void Start(CancellationToken cancellationToken)
         {
-            if (this.state == State.None)
+            switch (this.state)
             {
-                this.log.Error("The actor is not initialized", () => { });
-                throw new DeviceActorNotInitializedException();
-            }
+                case State.None:
+                    this.log.Error("The actor is not initialized", () => { });
+                    throw new DeviceActorNotInitializedException();
 
-            if (this.state == State.Ready)
-            {
-                this.log.Debug("Start...",
-                    () => new { this.deviceId, MessageSchema = this.message.MessageSchema.Name });
+                case State.Ready:
+                    this.cancellationToken = cancellationToken;
+                    this.log.Debug("Starting...", () => new { this.deviceId });
+                    this.MoveNext();
+                    break;
 
-                this.MoveNext();
+                default:
+                    this.log.Debug("The actor already started", () => new { this.deviceId });
+                    break;
             }
         }
 
         public void Stop()
         {
-            this.log.Debug("Stop...",
-                () => new { this.deviceId, MessageSchema = this.message.MessageSchema.Name });
+            lock (this.timer)
+            {
+                this.StopTimers();
+                this.state = State.Ready;
+                this.log.Debug("Stopped", () => new { this.deviceId });
+            }
+        }
 
+        private static void Connect(object context)
+        {
+            var actor = (DeviceActor) context;
+            if (actor.cancellationToken.IsCancellationRequested)
+            {
+                actor.Stop();
+                return;
+            }
+
+            lock (actor.timer)
+            {
+                if (actor.state == State.Connecting)
+                {
+                    actor.log.Debug("Connecting...", () => { });
+
+                    try
+                    {
+                        var task = actor.devices.GetOrCreateAsync(actor.deviceId);
+                        task.Wait(connectionTimeout);
+                        actor.device = task.Result;
+                        actor.log.Debug("Connection successful", () => new { actor.deviceId });
+                        actor.MoveNext();
+                    }
+                    catch (Exception e)
+                    {
+                        actor.log.Error("Connection failed", () => new { actor.deviceId, e.Message, Error = e.GetType().FullName });
+                    }
+                }
+            }
+        }
+
+        private static void SendTelemetry(object context)
+        {
+            var actor = (DeviceActor) context;
+            if (actor.cancellationToken.IsCancellationRequested)
+            {
+                actor.Stop();
+                return;
+            }
+
+            lock (actor.timer)
+            {
+                actor.log.Debug("SendTelemetry...",
+                    () => new { actor.deviceId, MessageSchema = actor.message.MessageSchema.Name });
+
+                var client = actor.devices.GetClient(actor.device, actor.deviceType.Protocol);
+
+                try
+                {
+                    client.SendMessageAsync(actor.message).Wait(connectionTimeout);
+                }
+                catch (Exception e)
+                {
+                    actor.log.Error("Send failed", () => new { actor.deviceId, e.Message, Error = e.GetType().FullName });
+                }
+
+                actor.log.Debug("SendTelemetry complete",
+                    () => new { actor.deviceId, MessageSchema = actor.message.MessageSchema.Name });
+            }
+        }
+
+        private static void CancelationCheck(object context)
+        {
+            var actor = (DeviceActor) context;
+            if (actor.cancellationToken.IsCancellationRequested)
+            {
+                actor.Stop();
+            }
+        }
+
+        private void ScheduleCancelationCheckIfRequired(TimeSpan curr)
+        {
+            if (curr > checkCancelationFrequency)
+            {
+                this.cancelationCheckTimer.Setup(CancelationCheck, this, checkCancelationFrequency);
+                this.cancelationCheckTimer.Start();
+            }
+        }
+
+        private void StopTimers()
+        {
             this.timer.Stop();
-            this.state = State.Ready;
-
-            this.log.Debug("Stop complete",
-                () => new { this.deviceId, MessageSchema = this.message.MessageSchema.Name });
+            this.cancelationCheckTimer.Stop();
         }
 
         private void MoveNext()
@@ -118,69 +234,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                     case State.Ready:
                         this.state = State.Connecting;
-                        this.timer.Stop();
-                        // Retry connecting every 10 seconds
-                        this.timer.Setup(Connect, this, 10 * 1000);
+                        this.StopTimers();
+                        this.timer.Setup(Connect, this, retryConnectingFrequency);
                         this.timer.Start();
+                        this.ScheduleCancelationCheckIfRequired(retryConnectingFrequency);
                         break;
 
                     case State.Connecting:
                         this.state = State.Connected;
-                        this.timer.Stop();
-                        this.timer.Setup(SendTelemetry, this, (int) this.message.Interval.TotalMilliseconds);
+                        this.StopTimers();
+                        this.timer.Setup(SendTelemetry, this, this.message.Interval);
                         this.timer.Start();
-                        break;
-
-                    case State.Sending:
+                        this.ScheduleCancelationCheckIfRequired(this.message.Interval);
                         break;
                 }
             }
-        }
-
-        private static void Connect(object context)
-        {
-            var actor = (DeviceActor) context;
-
-            if (actor.state == State.Connecting)
-            {
-                actor.log.Debug("Connecting...", () => { });
-
-                try
-                {
-                    var task = actor.devices.GetOrCreateAsync(actor.deviceId);
-                    task.Wait(TimeSpan.FromSeconds(5));
-                    actor.device = task.Result;
-                    actor.log.Debug("Connection complete", () => { });
-                    actor.MoveNext();
-                }
-                catch (Exception e)
-                {
-                    actor.log.Error("Connection failed", () => new { actor.deviceId, e.Message, Error = e.GetType().FullName });
-                }
-            }
-        }
-
-        private static void SendTelemetry(object context)
-        {
-            var actor = (DeviceActor) context;
-            actor.state = State.Sending;
-
-            actor.log.Debug("SendTelemetry...",
-                () => new { actor.deviceId, MessageSchema = actor.message.MessageSchema.Name });
-
-            var client = actor.devices.GetClient(actor.device, actor.deviceType.Protocol);
-
-            try
-            {
-                client.SendMessageAsync(actor.message).Wait(TimeSpan.FromSeconds(5));
-            }
-            catch (Exception e)
-            {
-                actor.log.Error("Send failed", () => new { actor.deviceId, e.Message, Error = e.GetType().FullName });
-            }
-
-            actor.log.Debug("SendTelemetry complete",
-                () => new { actor.deviceId, MessageSchema = actor.message.MessageSchema.Name });
         }
     }
 }
