@@ -1,16 +1,11 @@
 #!/usr/bin/env bash
 
-if [[ -z "$PCS_SIMULATION_WEBSERVICE_PORT" ]]; then
-    echo "Error: the PCS_SIMULATION_WEBSERVICE_PORT environment variable is not defined."
+if [[ -z "$PCS_DEVICESIMULATION_WEBSERVICE_PORT" ]]; then
+    echo "Error: the PCS_DEVICESIMULATION_WEBSERVICE_PORT environment variable is not defined."
     exit -1
 fi
 
-if [[ -z "$PCS_IOTHUBMANAGER_WEBSERVICE_HOST" ]]; then
-    echo "Error: the PCS_IOTHUBMANAGER_WEBSERVICE_HOST environment variable is not defined."
-    exit -1
-fi
-
-if [[ -z "$PCS_IOTHUBMANAGER_WEBSERVICE_PORT" ]]; then
-    echo "Error: the PCS_IOTHUBMANAGER_WEBSERVICE_PORT environment variable is not defined."
+if [[ -z "$PCS_IOTHUBMANAGER_WEBSERVICE_URL" ]]; then
+    echo "Error: the PCS_IOTHUBMANAGER_WEBSERVICE_URL environment variable is not defined."
     exit -1
 fi

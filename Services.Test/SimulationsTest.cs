@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Moq;
@@ -19,7 +20,8 @@ namespace Services.Test
 
         private readonly Mock<IDeviceTypes> deviceTypes;
         private readonly Simulations target;
-        private List<DeviceType> types;
+        private readonly List<DeviceType> types;
+        private readonly Mock<ILogger> logger;
 
         public SimulationsTest(ITestOutputHelper log)
         {
@@ -29,6 +31,7 @@ namespace Services.Test
             this.log.WriteLine("Temporary simulations storage: " + tempStorage);
 
             this.deviceTypes = new Mock<IDeviceTypes>();
+            this.logger = new Mock<ILogger>();
 
             this.types = new List<DeviceType>
             {
@@ -38,7 +41,7 @@ namespace Services.Test
                 new DeviceType { Id = "AA" }
             };
 
-            this.target = new Simulations(this.deviceTypes.Object);
+            this.target = new Simulations(this.deviceTypes.Object, this.logger.Object);
             this.target.ChangeStorageFile(tempStorage);
         }
 

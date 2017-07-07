@@ -100,7 +100,7 @@ verify_build() {
 
     cd $APP_HOME/scripts
     if [[ "$SANDBOX_MODE" == "--with-sandbox" ]]; then
-        ./build-in-sandbox
+        ./build --in-sandbox
     else
         ./build
     fi

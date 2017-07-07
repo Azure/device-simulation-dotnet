@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 
 # Note: use lowercase names for the Docker images
-DOCKER_IMAGE="azureiotpcs/device-simulation-dotnet:0.1-SNAPSHOT"
+DOCKER_IMAGE="azureiotpcs/device-simulation-dotnet"
 
 set -e
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && cd .. && pwd )/"
 source "$APP_HOME/scripts/.functions.sh"
+
+# The version is stored in a file, to avoid hardcoding it in multiple places
+APP_VERSION=$(cat "$APP_HOME/version")
 
 run_container() {
     check_dependency_docker
@@ -13,11 +16,10 @@ run_container() {
     $APP_HOME/scripts/env-vars-check
 
     echo "Starting Device Simulation ..."
-    docker run -it -p $PCS_SIMULATION_WEBSERVICE_PORT:8080 \
-        -e "PCS_SIMULATION_WEBSERVICE_PORT=8080" \
-        -e "PCS_IOTHUBMANAGER_WEBSERVICE_HOST=$PCS_IOTHUBMANAGER_WEBSERVICE_HOST" \
-        -e "PCS_IOTHUBMANAGER_WEBSERVICE_PORT=$PCS_IOTHUBMANAGER_WEBSERVICE_PORT" \
-        "$DOCKER_IMAGE"
+    docker run -it -p $PCS_DEVICESIMULATION_WEBSERVICE_PORT:$PCS_DEVICESIMULATION_WEBSERVICE_PORT \
+        -e "PCS_DEVICESIMULATION_WEBSERVICE_PORT=$PCS_DEVICESIMULATION_WEBSERVICE_PORT" \
+        -e "PCS_IOTHUBMANAGER_WEBSERVICE_URL=$PCS_IOTHUBMANAGER_WEBSERVICE_URL" \
+        "$DOCKER_IMAGE:$APP_VERSION"
 }
 
 run_container

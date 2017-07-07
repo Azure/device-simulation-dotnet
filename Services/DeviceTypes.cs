@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
@@ -22,14 +23,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public class DeviceTypes : IDeviceTypes
     {
         private const string Ext = ".json";
+
         private readonly IServicesConfig config;
+        private readonly ILogger log;
 
         private List<string> deviceTypeFiles;
         private List<DeviceType> deviceTypes;
 
-        public DeviceTypes(IServicesConfig config)
+        public DeviceTypes(
+            IServicesConfig config,
+            ILogger logger)
         {
             this.config = config;
+            this.log = logger;
             this.deviceTypeFiles = null;
             this.deviceTypes = null;
         }
@@ -52,6 +58,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
+                this.log.Error("Unable to load Device Type configuration",
+                    () => new { e.Message, Exception = e });
+
                 throw new InvalidConfigurationException("Unable to load Device Type configuration: " + e.Message, e);
             }
 
@@ -65,6 +74,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 if (x.Id == id) return x;
             }
+
+            this.log.Warn("Device type not found", () => new { id });
 
             throw new ResourceNotFoundException();
         }
@@ -93,9 +104,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.deviceTypeFiles != null) return this.deviceTypeFiles;
 
+            this.log.Debug("Device types folder", () => new { this.config.DeviceTypesFolder });
+
             var fileEntries = Directory.GetFiles(this.config.DeviceTypesFolder);
 
             this.deviceTypeFiles = fileEntries.Where(fileName => fileName.EndsWith(Ext)).ToList();
+
+            this.log.Debug("Device type files", () => new { this.deviceTypeFiles });
 
             return this.deviceTypeFiles;
         }

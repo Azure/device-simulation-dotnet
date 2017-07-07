@@ -10,6 +10,7 @@ _dev/
 envvars.sh
 .cache/**
 target/**
+.travis
 
 
 ### MacOS

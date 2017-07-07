@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Extensions.Configuration;
 
 // TODO: tests
@@ -38,7 +39,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
 
         public int GetInt(string key)
         {
-            return Convert.ToInt32(this.GetString(key));
+            try
+            {
+                return Convert.ToInt32(this.GetString(key));
+            }
+            catch (Exception e)
+            {
+                throw new InvalidConfigurationException($"Unable to load configuration value for '{key}'", e);
+            }
         }
 
         private static string ReplaceEnvironmentVariables(string value)

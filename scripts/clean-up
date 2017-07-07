@@ -9,14 +9,6 @@ if [[ ${#APP_HOME} -lt 20 ]]; then
     exit 1
 fi
 
-reset_cache() {
-    cd $APP_HOME
-    rm -fR .cache
-    mkdir -p .cache/sandbox/.config
-    mkdir -p .cache/sandbox/.dotnet
-    mkdir -p .cache/sandbox/.nuget
-}
-
 cleanup_tmp_files() {
     check_dependency_dotnet
 
@@ -40,6 +32,5 @@ cleanup_tmp_files() {
 }
 
 cleanup_tmp_files
-reset_cache
 
 set +e

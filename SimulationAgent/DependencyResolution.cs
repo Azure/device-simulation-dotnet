@@ -3,6 +3,7 @@
 using System.Reflection;
 using Autofac;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime;
 
@@ -27,14 +28,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             return container;
         }
 
-        /// <summary>Autowire interfaces to classes from all the assemblies</summary>
+        /// <summary>
+        /// Autowire interfaces to classes from all the assemblies, to avoid
+        /// manual configuration. Note that autowiring works only for interfaces
+        /// with just one implementation.
+        /// </summary>
         private static void AutowireAssemblies(ContainerBuilder builder)
         {
             var assembly = Assembly.GetEntryAssembly();
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
+
+            // Auto-wire additional assemblies
+            assembly = typeof(IServicesConfig).GetTypeInfo().Assembly;
+            builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
         }
 
-        /// <summary>Setup Custom rules overriding autowired ones.</summary>
+        /// <summary>
+        /// Setup custom rules overriding autowired ones, for example in cases
+        /// where an interface has multiple implementations, and cases where
+        /// a singleton is preferred to new instances.
+        /// </summary>
         private static void SetupCustomRules(ContainerBuilder builder)
         {
             // Make sure the configuration is read only once.
@@ -45,9 +58,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // prepare the instance here.
             builder.RegisterInstance(config.ServicesConfig).As<IServicesConfig>().SingleInstance();
 
-            // Reusable instances (singletons)
+            // Instantiate only one logger
+            // TODO: read log level from configuration
+            var logger = new Logger(Uptime.ProcessId, LogLevel.Debug);
+            builder.RegisterInstance(logger).As<ILogger>().SingleInstance();
+
+            // By default the DI container create new objects when injecting
+            // dependencies. To improve performance we reuse some instances,
+            // for example to reuse IoT Hub connections, as opposed to creating
+            // a new connection every time.
             builder.RegisterType<Simulations>().As<ISimulations>().SingleInstance();
             builder.RegisterType<DeviceTypes>().As<IDeviceTypes>().SingleInstance();
+            builder.RegisterType<Services.Devices>().As<IDevices>().SingleInstance();
         }
 
         private static void RegisterFactory(IContainer container)
@@ -61,7 +83,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         /// How to use:
         /// <code>
         /// class MyClass : IMyClass {
-        ///     public MyClass(DependencyInjection.IFactory factory) {
+        ///     public MyClass(DependencyResolution.IFactory factory) {
         ///         this.factory = factory;
         ///     }
         ///     public SomeMethod() {
@@ -88,6 +110,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             public T Resolve<T>()
             {
+                container.Resolve<T>();
                 return container.Resolve<T>();
             }
         }

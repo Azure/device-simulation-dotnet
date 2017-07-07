@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+# Note: use lowercase names for the Docker images
+DOCKER_IMAGE="azureiotpcs/device-simulation-dotnet"
+
+set -e
+APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && cd .. && pwd )/"
+
+# The version is stored in a file, to avoid hardcoding it in multiple places
+APP_VERSION=$(cat "$APP_HOME/version")
+
+docker push $DOCKER_IMAGE:$APP_VERSION
+
+set +e
