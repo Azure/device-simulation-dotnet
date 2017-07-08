@@ -7,7 +7,7 @@ _dev/
 *.tar
 *.exe
 *.bck
-envvars.sh
+*_.sh
 .cache/**
 target/**
 .travis

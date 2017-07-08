@@ -18,7 +18,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             DeviceType.DeviceTypeMessage message);
 
         void Start(CancellationToken cancellationToken);
-        void Stop();
     }
 
     public class DeviceActor : IDeviceActor
@@ -56,15 +55,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private readonly ITimer timer;
         private readonly ITimer cancelationCheckTimer;
         private CancellationToken cancellationToken;
+        private IMessageGenerator messageGenerator;
 
         public DeviceActor(
             ILogger logger,
             IDevices devices,
-            DependencyResolution.IFactory factory)
+            DependencyResolution.IFactory factory,
+            IMessageGenerator messageGenerator)
         {
             this.log = logger;
             this.devices = devices;
             this.factory = factory;
+            this.messageGenerator = messageGenerator;
 
             this.state = State.None;
 
@@ -72,6 +74,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.cancelationCheckTimer = this.factory.Resolve<ITimer>();
         }
 
+        /// <summary>
+        /// Invoke this method before calling Start(), to initialize the actor
+        /// with details like the device type and message type to simulate.
+        /// If this method is not called before Start(), the application will
+        /// thrown an exception.
+        /// Setup() should be called only once, typically after the constructor.
+        /// </summary>
         public IDeviceActor Setup(
             DeviceType deviceType,
             int position,
@@ -108,6 +117,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             return this;
         }
 
+        /// <summary>
+        /// Call this method to start the simulated device, e.g. sending
+        /// messages and responding to method calls.
+        /// Pass a cancellation token, possibly the same to all the actors in
+        /// the simulation, so it's easy to stop the entire simulation
+        /// cancelling just one common token.
+        /// </summary>
         public void Start(CancellationToken cancellationToken)
         {
             switch (this.state)
@@ -128,17 +144,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             }
         }
 
-        public void Stop()
+        /// <summary>
+        /// An optional method to stop the device actor, instead of using the
+        /// cancellation token.
+        /// </summary>
+        private void Stop()
         {
-            lock (this.timer)
-            {
-                this.StopTimers();
-                this.client?.DisconnectAsync().Wait(connectionTimeout);
-                this.state = State.Ready;
-                this.log.Debug("Stopped", () => new { this.deviceId });
-            }
+            this.StopTimers();
+            this.client?.DisconnectAsync().Wait(connectionTimeout);
+            this.state = State.Ready;
+            this.log.Debug("Stopped", () => new { this.deviceId });
         }
 
+        /// <summary>
+        /// Logic executed after Start(), to establish a connection to IoT Hub.
+        /// If the connection fails, the actor retries automatically after some
+        /// seconds.
+        /// </summary>
+        /// <param name="context">The actor instance (i.e. 'this')</param>
         private static void Connect(object context)
         {
             var actor = (DeviceActor) context;
@@ -148,32 +171,33 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 return;
             }
 
-            lock (actor.timer)
+            if (actor.state == State.Connecting)
             {
-                if (actor.state == State.Connecting)
+                actor.log.Debug("Connecting...", () => { });
+
+                try
                 {
-                    actor.log.Debug("Connecting...", () => { });
+                    var task = actor.devices.GetOrCreateAsync(actor.deviceId);
+                    task.Wait(connectionTimeout);
+                    actor.device = task.Result;
+                    actor.log.Debug("Device credentials retrieved", () => new { actor.deviceId });
 
-                    try
-                    {
-                        var task = actor.devices.GetOrCreateAsync(actor.deviceId);
-                        task.Wait(connectionTimeout);
-                        actor.device = task.Result;
-                        actor.log.Debug("Device credentials retrieved", () => new { actor.deviceId });
+                    actor.client = actor.devices.GetClient(actor.device, actor.deviceType.Protocol);
+                    actor.log.Debug("Connection successful", () => new { actor.deviceId });
 
-                        actor.client = actor.devices.GetClient(actor.device, actor.deviceType.Protocol);
-                        actor.log.Debug("Connection successful", () => new { actor.deviceId });
-
-                        actor.MoveNext();
-                    }
-                    catch (Exception e)
-                    {
-                        actor.log.Error("Connection failed", () => new { actor.deviceId, e.Message, Error = e.GetType().FullName });
-                    }
+                    actor.MoveNext();
+                }
+                catch (Exception e)
+                {
+                    actor.log.Error("Connection failed", () => new { actor.deviceId, e.Message, Error = e.GetType().FullName });
                 }
             }
         }
 
+        /// <summary>
+        /// Logic executed after Connect() succeeds, to send telemetry.
+        /// </summary>
+        /// <param name="context">The actor instance (i.e. 'this')</param>
         private static void SendTelemetry(object context)
         {
             var actor = (DeviceActor) context;
@@ -183,25 +207,35 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 return;
             }
 
-            lock (actor.timer)
+            var message = actor.messageGenerator.Generate(actor.deviceType, actor.message);
+
+            actor.log.Debug("SendTelemetry...",
+                () => new
+                {
+                    actor.deviceId,
+                    MessageSchema = actor.message.MessageSchema.Name,
+                    message
+                });
+
+            try
             {
-                actor.log.Debug("SendTelemetry...",
-                    () => new { actor.deviceId, MessageSchema = actor.message.MessageSchema.Name });
-
-                try
-                {
-                    actor.client.SendMessageAsync(actor.message).Wait(connectionTimeout);
-                }
-                catch (Exception e)
-                {
-                    actor.log.Error("Send failed", () => new { actor.deviceId, e.Message, Error = e.GetType().FullName });
-                }
-
-                actor.log.Debug("SendTelemetry complete",
-                    () => new { actor.deviceId, MessageSchema = actor.message.MessageSchema.Name });
+                actor.client.SendMessageAsync(actor.message).Wait(connectionTimeout);
             }
+            catch (Exception e)
+            {
+                actor.log.Error("Send failed", () => new { actor.deviceId, e.Message, Error = e.GetType().FullName });
+            }
+
+            actor.log.Debug("SendTelemetry complete",
+                () => new { actor.deviceId, MessageSchema = actor.message.MessageSchema.Name });
         }
 
+        /// <summary>
+        /// When the telemetry is sent very not very often, for example once
+        /// every 5 minutes, this method is executed more frequently, to check
+        /// whether the user has asked to stop the simulation.
+        /// </summary>
+        /// <param name="context">The actor instance (i.e. 'this')</param>
         private static void CancelationCheck(object context)
         {
             var actor = (DeviceActor) context;
@@ -211,6 +245,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             }
         }
 
+        /// <summary>
+        /// Check whether a second timer is required, to periodically check if
+        /// the user asks to stop the simulation. This happens when the actor
+        /// remains inactive for long periods, for example when sending
+        /// telemetry every 5 minutes.
+        /// </summary>
+        /// <param name="curr"></param>
         private void ScheduleCancelationCheckIfRequired(TimeSpan curr)
         {
             if (curr > checkCancelationFrequency)
@@ -226,32 +267,33 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.cancelationCheckTimer.Stop();
         }
 
+        /// <summary>
+        /// State machine flow. Change the internal state and schedule the
+        /// execution of the new corresponding logic.
+        /// </summary>
         private void MoveNext()
         {
-            lock (this.timer)
+            switch (this.state)
             {
-                switch (this.state)
-                {
-                    case State.None:
-                        this.state = State.Ready;
-                        break;
+                case State.None:
+                    this.state = State.Ready;
+                    break;
 
-                    case State.Ready:
-                        this.state = State.Connecting;
-                        this.StopTimers();
-                        this.timer.Setup(Connect, this, retryConnectingFrequency);
-                        this.timer.Start();
-                        this.ScheduleCancelationCheckIfRequired(retryConnectingFrequency);
-                        break;
+                case State.Ready:
+                    this.state = State.Connecting;
+                    this.StopTimers();
+                    this.timer.Setup(Connect, this, retryConnectingFrequency);
+                    this.timer.Start();
+                    this.ScheduleCancelationCheckIfRequired(retryConnectingFrequency);
+                    break;
 
-                    case State.Connecting:
-                        this.state = State.Connected;
-                        this.StopTimers();
-                        this.timer.Setup(SendTelemetry, this, this.message.Interval);
-                        this.timer.Start();
-                        this.ScheduleCancelationCheckIfRequired(this.message.Interval);
-                        break;
-                }
+                case State.Connecting:
+                    this.state = State.Connected;
+                    this.StopTimers();
+                    this.timer.Setup(SendTelemetry, this, this.message.Interval);
+                    this.timer.Start();
+                    this.ScheduleCancelationCheckIfRequired(this.message.Interval);
+                    break;
             }
         }
     }
