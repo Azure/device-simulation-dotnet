@@ -33,7 +33,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private static readonly TimeSpan checkCancelationFrequency = TimeSpan.FromSeconds(10);
 
         // Possible states of the actor
-        private enum State
+        private enum Status
         {
             None = 0,
             Ready = 1,
@@ -44,18 +44,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private readonly ILogger log;
         private readonly IDevices devices;
         private readonly DependencyResolution.IFactory factory;
-        private IDeviceClient client;
+        private readonly IMessageGenerator messageGenerator;
 
+        private IDeviceClient client;
         private DeviceType deviceType;
         private string deviceId;
         private DeviceType.DeviceTypeMessage message;
-
-        private State state;
+        private Status status;
         private Device device;
         private readonly ITimer timer;
         private readonly ITimer cancelationCheckTimer;
         private CancellationToken cancellationToken;
-        private IMessageGenerator messageGenerator;
 
         public DeviceActor(
             ILogger logger,
@@ -67,9 +66,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.devices = devices;
             this.factory = factory;
             this.messageGenerator = messageGenerator;
-
-            this.state = State.None;
-
+            this.status = Status.None;
             this.timer = this.factory.Resolve<ITimer>();
             this.cancelationCheckTimer = this.factory.Resolve<ITimer>();
         }
@@ -86,7 +83,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             int position,
             DeviceType.DeviceTypeMessage message)
         {
-            if (this.state != State.None)
+            if (this.status != Status.None)
             {
                 this.log.Error("The actor is already initialized",
                     () => new
@@ -126,13 +123,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         /// </summary>
         public void Start(CancellationToken cancellationToken)
         {
-            switch (this.state)
+            switch (this.status)
             {
-                case State.None:
+                case Status.None:
                     this.log.Error("The actor is not initialized", () => { });
                     throw new DeviceActorNotInitializedException();
 
-                case State.Ready:
+                case Status.Ready:
                     this.cancellationToken = cancellationToken;
                     this.log.Debug("Starting...", () => new { this.deviceId });
                     this.MoveNext();
@@ -152,7 +149,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         {
             this.StopTimers();
             this.client?.DisconnectAsync().Wait(connectionTimeout);
-            this.state = State.Ready;
+            this.status = Status.Ready;
             this.log.Debug("Stopped", () => new { this.deviceId });
         }
 
@@ -171,7 +168,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 return;
             }
 
-            if (actor.state == State.Connecting)
+            if (actor.status == Status.Connecting)
             {
                 actor.log.Debug("Connecting...", () => { });
 
@@ -273,22 +270,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         /// </summary>
         private void MoveNext()
         {
-            switch (this.state)
+            switch (this.status)
             {
-                case State.None:
-                    this.state = State.Ready;
+                case Status.None:
+                    this.status = Status.Ready;
                     break;
 
-                case State.Ready:
-                    this.state = State.Connecting;
+                case Status.Ready:
+                    this.status = Status.Connecting;
                     this.StopTimers();
                     this.timer.Setup(Connect, this, retryConnectingFrequency);
                     this.timer.Start();
                     this.ScheduleCancelationCheckIfRequired(retryConnectingFrequency);
                     break;
 
-                case State.Connecting:
-                    this.state = State.Connected;
+                case Status.Connecting:
+                    this.status = Status.Connected;
                     this.StopTimers();
                     this.timer.Setup(SendTelemetry, this, this.message.Interval);
                     this.timer.Start();
