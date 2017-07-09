@@ -15,8 +15,33 @@
     <None Update="data\DeviceTypes\truck.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="data\DeviceBehavior\chiller-power-sensors.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="data\DeviceBehavior\example_1_random_number.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="data\DeviceBehavior\example_2_status_by_device_id.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="data\DeviceBehavior\example_3_status_by_day_of_week.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="data\DeviceBehavior\example_4_increasing_number.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="data\DeviceBehavior\example_5_multiple_values.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="data\DeviceBehavior\random-percentage-sensor.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="data\DeviceBehavior\random-temperature-celsius-sensor.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="jint" Version="2.10.4" />
     <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.2.13" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
   </ItemGroup>

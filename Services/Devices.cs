@@ -130,7 +130,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public IDeviceClient GetClient(Device device, IoTHubProtocol protocol)
         {
             var connectionString = $"HostName={device.IoTHubHostName};DeviceId={device.Id};SharedAccessKey={device.AuthPrimaryKey}";
-            this.log.Debug(connectionString, () => { });
 
             Azure.Devices.Client.DeviceClient sdkClient;
             switch (protocol)
