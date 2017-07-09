@@ -53,7 +53,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public class DeviceTypeMessage
         {
             public TimeSpan Interval { get; set; }
-            public string Message { get; set; }
+            public string MessageTemplate { get; set; }
             public DeviceTypeMessageSchema MessageSchema { get; set; }
         }
 

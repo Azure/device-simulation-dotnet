@@ -23,8 +23,7 @@
         "Messages": [
             {
                 "Interval": "00:00:01",
-                "Message":
-                    "{\"current_floor\": ${get_current_floor.value}}",
+                "MessageTemplate": "{\"current_floor\": ${get_current_floor.value}}",
                 "MessageSchema": {
                     "Name": "elevator;v1",
                     "Format": "JSON",

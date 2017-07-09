@@ -23,7 +23,7 @@
         "Messages": [
             {
                 "Interval": "00:00:10",
-                "Message":
+                "MessageTemplate":
                     "{\"speed\":${get_truck_speed.value},\"geolocation\":\"${get_truck_location.value}\",\"speed_unit\":\"mph\"}",
                 "MessageSchema": {
                     "Name": "truck;v1",

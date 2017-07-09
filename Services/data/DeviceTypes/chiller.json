@@ -31,7 +31,7 @@
         "Messages": [
             {
                 "Interval": "00:00:15",
-                "Message":
+                "MessageTemplate":
                     "{\"temperature\": ${get_random_temperature.value},\"t_unit\":\"C\",\"humidity\": ${get_random_percentage.value},\"h_unit\":\"%\",\"voltage\": ${get_power_source.voltage},\"v_unit\":\"${get_power_source.voltage_unit}\",\"power\": ${get_power_source.power},\"p_unit\":\"${get_power_source.power_unit}\"}",
                 "MessageSchema": {
                     "Name": "chiller;v1",

@@ -6,6 +6,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation
@@ -15,7 +16,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         IDeviceActor Setup(
             DeviceType deviceType,
             int position,
-            DeviceType.DeviceTypeMessage message);
+            DeviceType.DeviceTypeMessage messageTemplate);
 
         void Start(CancellationToken cancellationToken);
     }
@@ -49,9 +50,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private IDeviceClient client;
         private DeviceType deviceType;
         private string deviceId;
-        private DeviceType.DeviceTypeMessage message;
         private Status status;
         private Device device;
+        private DeviceType.DeviceTypeMessage msgTemplate;
+        private string lastTelemetryMessage;
         private readonly ITimer timer;
         private readonly ITimer cancelationCheckTimer;
         private CancellationToken cancellationToken;
@@ -81,7 +83,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         public IDeviceActor Setup(
             DeviceType deviceType,
             int position,
-            DeviceType.DeviceTypeMessage message)
+            DeviceType.DeviceTypeMessage messageTemplate)
         {
             if (this.status != Status.None)
             {
@@ -89,7 +91,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     () => new
                     {
                         CurrentDeviceId = this.deviceId,
-                        NewMessageSchema = message.MessageSchema.Name,
+                        NewMessageSchema = messageTemplate.MessageSchema.Name,
                         NewDeviceType = deviceType.Name,
                         NewPosition = position
                     });
@@ -98,13 +100,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
             this.deviceType = deviceType;
             this.deviceId = "Simulated." + deviceType.Name + "." + position;
-            this.message = message;
+            this.msgTemplate = messageTemplate;
 
             this.log.Debug("Setup complete",
                 () => new
                 {
                     this.deviceId,
-                    MessageSchema = this.message.MessageSchema.Name,
+                    MessageSchema = this.msgTemplate.MessageSchema.Name,
                     DeviceTypeName = deviceType.Name,
                     Position = position
                 });
@@ -136,7 +138,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     break;
 
                 default:
-                    this.log.Debug("The actor already started", () => new { this.deviceId });
+                    this.log.Debug("The actor already started",
+                        () => new { this.deviceId });
                     break;
             }
         }
@@ -177,16 +180,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     var task = actor.devices.GetOrCreateAsync(actor.deviceId);
                     task.Wait(connectionTimeout);
                     actor.device = task.Result;
-                    actor.log.Debug("Device credentials retrieved", () => new { actor.deviceId });
+                    actor.log.Debug("Device credentials retrieved",
+                        () => new { actor.deviceId });
 
-                    actor.client = actor.devices.GetClient(actor.device, actor.deviceType.Protocol);
-                    actor.log.Debug("Connection successful", () => new { actor.deviceId });
+                    actor.client = actor.devices.GetClient(
+                        actor.device,
+                        actor.deviceType.Protocol);
+                    actor.log.Debug("Connection successful",
+                        () => new { actor.deviceId });
 
                     actor.MoveNext();
                 }
                 catch (Exception e)
                 {
-                    actor.log.Error("Connection failed", () => new { actor.deviceId, e.Message, Error = e.GetType().FullName });
+                    actor.log.Error("Connection failed",
+                        () => new { actor.deviceId, e.Message, Error = e.GetType().FullName });
                 }
             }
         }
@@ -204,27 +212,36 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 return;
             }
 
-            var message = actor.messageGenerator.Generate(actor.deviceType, actor.message);
+            actor.lastTelemetryMessage = actor.messageGenerator.Generate(
+                actor.deviceType,
+                actor.msgTemplate.MessageTemplate,
+                actor.lastTelemetryMessage,
+                actor.deviceId);
 
             actor.log.Debug("SendTelemetry...",
                 () => new
                 {
                     actor.deviceId,
-                    MessageSchema = actor.message.MessageSchema.Name,
-                    message
+                    MessageSchema = actor.msgTemplate.MessageSchema.Name,
+                    actor.lastTelemetryMessage
                 });
 
             try
             {
-                actor.client.SendMessageAsync(actor.message).Wait(connectionTimeout);
+                actor.client
+                    .SendMessageAsync(
+                        actor.lastTelemetryMessage,
+                        actor.msgTemplate.MessageSchema)
+                    .Wait(connectionTimeout);
             }
             catch (Exception e)
             {
-                actor.log.Error("Send failed", () => new { actor.deviceId, e.Message, Error = e.GetType().FullName });
+                actor.log.Error("SendTelemetry failed",
+                    () => new { actor.deviceId, e.Message, Error = e.GetType().FullName });
             }
 
             actor.log.Debug("SendTelemetry complete",
-                () => new { actor.deviceId, MessageSchema = actor.message.MessageSchema.Name });
+                () => new { actor.deviceId, MessageSchema = actor.msgTemplate.MessageSchema.Name });
         }
 
         /// <summary>
@@ -253,7 +270,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         {
             if (curr > checkCancelationFrequency)
             {
-                this.cancelationCheckTimer.Setup(CancelationCheck, this, checkCancelationFrequency);
+                this.cancelationCheckTimer.Setup(
+                    CancelationCheck, this, checkCancelationFrequency);
                 this.cancelationCheckTimer.Start();
             }
         }
@@ -287,9 +305,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 case Status.Connecting:
                     this.status = Status.Connected;
                     this.StopTimers();
-                    this.timer.Setup(SendTelemetry, this, this.message.Interval);
+                    this.timer.Setup(SendTelemetry, this, this.msgTemplate.Interval);
                     this.timer.Start();
-                    this.ScheduleCancelationCheckIfRequired(this.message.Interval);
+                    this.ScheduleCancelationCheckIfRequired(this.msgTemplate.Interval);
                     break;
             }
         }

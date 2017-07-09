@@ -139,7 +139,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
                 if (message == null) return;
 
                 this.Interval = Convert.ToInt64(message.Interval.TotalMilliseconds);
-                this.Message = message.Message;
+                this.Message = message.MessageTemplate;
                 this.MessageSchema = new DeviceTypeMessageSchema(message.MessageSchema);
             }
 

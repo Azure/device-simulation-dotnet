@@ -57,10 +57,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     var deviceType = this.deviceTypes.Get(dt.Id);
                     for (int i = 0; i < dt.Count; i++)
                     {
-                        foreach (var message in deviceType.Telemetry.Messages)
+                        foreach (var messageTemplate in deviceType.Telemetry.Messages)
                         {
                             var actor = this.factory.Resolve<IDeviceActor>();
-                            actor.Setup(deviceType, i, message).Start(this.cancellationToken.Token);
+                            actor.Setup(deviceType, i, messageTemplate).Start(this.cancellationToken.Token);
                         }
                     }
                 }
