@@ -14,5 +14,7 @@ function main() {
     var value = Math.floor((Math.random() * 10) + 1);
 
     // Note: "rnd" is the key used in the message template, e.g. ${foo.rnd}
-    return {rnd: value};
+    return {
+        rnd: value
+    };
 }

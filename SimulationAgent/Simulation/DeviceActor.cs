@@ -53,7 +53,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private Status status;
         private Device device;
         private DeviceType.DeviceTypeMessage msgTemplate;
-        private string lastTelemetryMessage;
         private readonly ITimer timer;
         private readonly ITimer cancelationCheckTimer;
         private CancellationToken cancellationToken;
@@ -101,6 +100,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.deviceType = deviceType;
             this.deviceId = "Simulated." + deviceType.Name + "." + position;
             this.msgTemplate = messageTemplate;
+
+            this.messageGenerator.Setup(
+                deviceType,
+                messageTemplate.MessageTemplate,
+                this.deviceId);
 
             this.log.Debug("Setup complete",
                 () => new
@@ -212,25 +216,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 return;
             }
 
-            actor.lastTelemetryMessage = actor.messageGenerator.Generate(
-                actor.deviceType,
-                actor.msgTemplate.MessageTemplate,
-                actor.lastTelemetryMessage,
-                actor.deviceId);
+            var message = actor.messageGenerator.GetNext();
 
             actor.log.Debug("SendTelemetry...",
                 () => new
                 {
                     actor.deviceId,
                     MessageSchema = actor.msgTemplate.MessageSchema.Name,
-                    actor.lastTelemetryMessage
+                    message
                 });
 
             try
             {
                 actor.client
                     .SendMessageAsync(
-                        actor.lastTelemetryMessage,
+                        message,
                         actor.msgTemplate.MessageSchema)
                     .Wait(connectionTimeout);
             }

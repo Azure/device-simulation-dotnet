@@ -23,5 +23,7 @@ function main(context) {
     }
 
     // Note: "status" is the key used in the message template, e.g. ${foo.status}
-    return {status: result};
+    return {
+        status: result
+    };
 }

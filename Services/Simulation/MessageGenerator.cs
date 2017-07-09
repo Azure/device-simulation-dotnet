@@ -11,11 +11,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 {
     public interface IMessageGenerator
     {
-        string Generate(
+        /// <summary>
+        /// Each simulated device has a dedicated message generator,
+        /// that needs to be prepared once.
+        /// </summary>
+        void Setup(
             DeviceType deviceType,
             string template,
-            string previousMessage,
             string deviceId);
+
+        string GetNext();
     }
 
     public class MessageGenerator : IMessageGenerator
@@ -32,6 +37,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         private readonly IJavascriptInterpreter jsInterpreter;
         private readonly ILogger log;
 
+        private DeviceType deviceType;
+        private string template;
+        private string deviceId;
+        private string[] placeholders;
+        private IDictionary<string, string[]> functions;
+        private Dictionary<string, Dictionary<string, string>> functionsResult;
+
         public MessageGenerator(
             IJavascriptInterpreter jsInterpreter,
             ILogger logger)
@@ -41,32 +53,98 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         }
 
         /// <summary>
-        /// Generate messages from a template.
+        /// Each simulated device has a dedicated message generator,
+        /// that needs to be prepared once.
+        /// </summary>
+        public void Setup(
+            DeviceType deviceType,
+            string template,
+            string deviceId)
+        {
+            this.deviceType = deviceType;
+            this.template = template;
+            this.deviceId = deviceId;
+
+            this.placeholders = ExtractPlaceholders(template);
+            this.functions = ExtractFunctions(this.placeholders);
+
+            // Initialize the functions results table with empty data
+            this.functionsResult = new Dictionary<string, Dictionary<string, string>>();
+            foreach (var f in this.functions)
+            {
+                if (!this.deviceType.DeviceBehavior.ContainsKey(f.Key))
+                {
+                    this.log.Error("The message template references an unknown function",
+                        () => new { Function = f.Key, this.deviceId });
+                    throw new NotSupportedException(
+                        $"The message template references an unknown function `{f.Key}`.");
+                }
+
+                this.functionsResult.Add(f.Key, null);
+            }
+        }
+
+        /// <summary>
+        /// Generate messages from a template, replacing placeholders with
+        /// values provided by external functions.
+        ///
         /// Template examples::
         /// "{\"speed\":${get_truck_speed.value},\"geolocation\":\"${get_truck_location.value}\",\"speed_unit\":\"mph\"}"
         /// "{\"current_floor\": ${get_current_floor.value}}"
         /// </summary>
-        public string Generate(
-            DeviceType deviceType,
-            string template,
-            string previousMessage,
-            string deviceId)
+        public string GetNext()
         {
-            var result = template;
+            this.InvokeFunctions();
 
-            var placeholders = this.ExtractPlaceholders(template);
-            var functions = this.ExtractFunctions(placeholders);
-            var data = this.InvokeFunctions(functions, deviceType.DeviceBehavior, deviceId);
-
-            // TODO
+            var result = this.template;
+            foreach (var function in this.functionsResult)
+            {
+                var functionName = function.Key;
+                foreach (var resultField in function.Value)
+                {
+                    result = result.Replace("${" + functionName + "." + resultField.Key + "}", resultField.Value);
+                }
+            }
 
             return result;
         }
 
         /// <summary>
+        /// Invoke all the functions required to render the template.
+        /// For each function call, the function receives in input some
+        /// context details, like the current time and the Device Id, plus
+        /// the output from the previous call. The previous result can be
+        /// useful for the function to maintain some internal state.
+        /// </summary>
+        private void InvokeFunctions()
+        {
+            foreach (var f in this.functions)
+            {
+                var function = this.deviceType.DeviceBehavior[f.Key];
+
+                switch (function.Type.ToLowerInvariant())
+                {
+                    case "javascript":
+                        this.functionsResult[f.Key] = this.jsInterpreter.Invoke(
+                            function.Path,
+                            this.deviceId,
+                            DateTimeOffset.UtcNow,
+                            this.functionsResult[f.Key]);
+                        break;
+
+                    default:
+                        this.log.Error("The device type behavior is of an unknown type",
+                            () => new { function.Type, this.deviceId });
+                        throw new NotSupportedException(
+                            $"The device type behavior is of an unknown type `${function.Type}`.");
+                }
+            }
+        }
+
+        /// <summary>
         /// Extract all the placeholders from the message template
         /// </summary>
-        private string[] ExtractPlaceholders(string template)
+        private static string[] ExtractPlaceholders(string template)
         {
             return (from Match m
                         in Regex.Matches(template, PlaceholderPattern)
@@ -79,7 +157,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         /// The value is a list of placeholders that will use the function output.
         /// Note: functions are called only once, and only if needed.
         /// </summary>
-        private IDictionary<string, string[]> ExtractFunctions(string[] placeholders)
+        private static IDictionary<string, string[]> ExtractFunctions(string[] placeholders)
         {
             var result = new Dictionary<string, string[]>();
 
@@ -97,43 +175,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 {
                     result[functionName] = new[] { p };
                 }
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Invoke all the functions required and returns a table mapping
-        /// a placeholder to a value.
-        /// </summary>
-        private IDictionary<string, string> InvokeFunctions(
-            IDictionary<string, string[]> functions,
-            IDictionary<string, DeviceType.DeviceTypeFunction> behavior,
-            string deviceId)
-        {
-            var result = new Dictionary<string, string>();
-
-            foreach (var f in functions)
-            {
-                if (!behavior.ContainsKey(f.Key))
-                {
-                    this.log.Error("The message template references an unknown function",
-                        () => new { Function = f.Key, deviceId });
-                    throw new NotSupportedException(
-                        $"The message template references an unknown function `{f.Key}`.");
-                }
-
-                var function = behavior[f.Key];
-                if (function.Type.ToLowerInvariant() != "javascript")
-                {
-                    this.log.Error("The device type behavior is of an unknown type",
-                        () => new { function.Type, deviceId });
-                    throw new NotSupportedException(
-                        $"The device type behavior is of an unknown type `${function.Type}`.");
-                }
-
-                var data = this.jsInterpreter.Invoke(
-                    function.Path, deviceId, DateTimeOffset.UtcNow);
             }
 
             return result;

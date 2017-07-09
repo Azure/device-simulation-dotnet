@@ -1,51 +1,43 @@
 {
     "SchemaVersion": "1.0.0",
-    "Id": "c84aaaac-0ba0-4e52-a103-ebb8a9b7f8f9",
+    "Id": "8dd272c0-514e-4a87-a1ad-be12a0b2809c",
     "Version": "0.0.1",
-    "Name": "Truck",
-    "Description": "Simulated Truck with speed and geolocation sensors",
-    "Protocol": "MQTT",
+    "Name": "Elevator",
+    "Description": "Simulated Elevator with floor number sensor",
+    "Protocol": "HTTP",
     "DeviceBehavior": {
-        "get_truck_speed": {
+        "get_current_floor": {
             "Type": "javascript",
-            "Path": "truck-speed-sensor.js"
+            "Path": "elevator-position-sensor.js"
         },
-        "get_truck_location": {
+        "do_elevator_go_down": {
             "Type": "javascript",
-            "Path": "truck-geolocation-sensor.js"
+            "Path": "elevator-go-down-method.js"
         },
-        "do_start": {
+        "do_elevator_go_up": {
             "Type": "javascript",
-            "Path": "truck-start-method.js"
+            "Path": "elevator-go-up-method.js"
         }
     },
     "Telemetry": {
         "Messages": [
             {
-                "Interval": "00:00:10",
-                "MessageTemplate":
-                    "{\"speed\":${get_truck_speed.value},\"geolocation\":\"${get_truck_location.value}\",\"speed_unit\":\"mph\"}",
+                "Interval": "00:00:01",
+                "MessageTemplate": "{\"current_floor\": ${get_current_floor.value}}",
                 "MessageSchema": {
-                    "Name": "truck;v1",
+                    "Name": "elevator;v1",
                     "Format": "JSON",
                     "Fields": {
-                        "speed": "integer",
-                        "geolocation": "text",
-                        "speed_unit": "text"
+                        "current_floor": "integer"
                     }
                 }
             }
         ]
     },
     "CloudToDeviceMethods": {
-        "GoDownOneFloor": {
+        "Start": {
             "Actions": [
-                "${do_elevator_go_down}"
-            ]
-        },
-        "GoUpOneFloor": {
-            "Actions": [
-                "${do_elevator_go_up}"
+                "${do_start}"
             ]
         }
     }
