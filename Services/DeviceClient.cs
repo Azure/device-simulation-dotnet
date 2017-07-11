@@ -11,10 +11,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface IDeviceClient
     {
-        //Azure.Devices.Client.DeviceClient GetClient();
-        Task SendMessageAsync(DeviceType.DeviceTypeMessage message);
+        Task SendMessageAsync(string message, DeviceType.DeviceTypeMessageSchema schema);
 
         Task SendRawMessageAsync(Message message);
+
+        Task DisconnectAsync();
     }
 
     public class DeviceClient : IDeviceClient
@@ -41,16 +42,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.protocol = protocol;
         }
 
-        //        public Azure.Devices.Client.DeviceClient GetClient()
-        //        {
-        //            return this.client;
-        //        }
-
-        public async Task SendMessageAsync(DeviceType.DeviceTypeMessage message)
+        public async Task SendMessageAsync(string message, DeviceType.DeviceTypeMessageSchema schema)
         {
-            var eventMessage = new Message(Encoding.UTF8.GetBytes(message.Message));
+            var eventMessage = new Message(Encoding.UTF8.GetBytes(message));
             eventMessage.Properties.Add(CreationTimeProperty, DateTimeOffset.UtcNow.ToString(DateFormat));
-            eventMessage.Properties.Add(MessageSchemaProperty, message.MessageSchema.Name);
+            eventMessage.Properties.Add(MessageSchemaProperty, schema.Name);
             eventMessage.Properties.Add(ContentProperty, "JSON");
 
             await this.SendRawMessageAsync(eventMessage);
@@ -72,6 +68,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         Exception = e.GetType().FullName,
                         e.InnerException
                     });
+            }
+        }
+
+        public async Task DisconnectAsync()
+        {
+            if (this.client != null)
+            {
+                await this.client.CloseAsync();
+                this.client.Dispose();
             }
         }
     }

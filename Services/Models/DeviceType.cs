@@ -5,6 +5,18 @@ using System.Collections.Generic;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 {
+    public class Script
+    {
+        public string Type { get; set; }
+        public string Path { get; set; }
+
+        public Script()
+        {
+            this.Type = "javascript";
+            this.Path = "scripts" + System.IO.Path.DirectorySeparatorChar;
+        }
+    }
+
     public class DeviceType
     {
         public string Id { get; set; }
@@ -12,61 +24,61 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public string Name { get; set; }
         public string Description { get; set; }
         public IoTHubProtocol Protocol { get; set; }
-        public IDictionary<string, DeviceTypeFunction> DeviceBehavior { get; set; }
-        public DeviceTypeTelemetry Telemetry { get; set; }
-        public IDictionary<string, DeviceTypeMethod> CloudToDeviceMethods { get; set; }
+        public InternalState DeviceState { get; set; }
+        public IList<DeviceTypeMessage> Telemetry { get; set; }
+        public IDictionary<string, Script> CloudToDeviceMethods { get; set; }
 
         public DeviceType()
         {
-            this.DeviceBehavior = new Dictionary<string, DeviceTypeFunction>();
-            this.CloudToDeviceMethods = new Dictionary<string, DeviceTypeMethod>();
+            this.Id = string.Empty;
+            this.Version = "0.0.0";
+            this.Name = string.Empty;
+            this.Description = string.Empty;
+            this.Protocol = IoTHubProtocol.AMQP;
+            this.DeviceState = new InternalState();
+            this.Telemetry = new List<DeviceTypeMessage>();
         }
 
-        public class DeviceTypeFunction
+        public class InternalState
         {
-            public string Name { get; set; }
-            public string Type { get; set; }
-            public string Path { get; set; }
-        }
+            public Dictionary<string, object> Initial { get; set; }
+            public TimeSpan SimulationInterval { get; set; }
+            public Script SimulationScript { get; set; }
 
-        public class DeviceTypeMethod
-        {
-            public DeviceTypeMethod()
+            public InternalState()
             {
-                this.Actions = new List<string>();
+                this.Initial = new Dictionary<string, object>();
+                this.SimulationInterval = TimeSpan.Zero;
+                this.SimulationScript = new Script();
             }
-
-            public string Name { get; set; }
-            public IList<string> Actions { get; set; }
-        }
-
-        public class DeviceTypeTelemetry
-        {
-            public DeviceTypeTelemetry()
-            {
-                this.Messages = new List<DeviceTypeMessage>();
-            }
-
-            public IList<DeviceTypeMessage> Messages { get; set; }
         }
 
         public class DeviceTypeMessage
         {
             public TimeSpan Interval { get; set; }
-            public string Message { get; set; }
+            public string MessageTemplate { get; set; }
             public DeviceTypeMessageSchema MessageSchema { get; set; }
+
+            public DeviceTypeMessage()
+            {
+                this.Interval = TimeSpan.Zero;
+                this.MessageTemplate = string.Empty;
+                this.MessageSchema = new DeviceTypeMessageSchema();
+            }
         }
 
         public class DeviceTypeMessageSchema
         {
-            public DeviceTypeMessageSchema()
-            {
-                this.Fields = new Dictionary<string, DeviceTypeMessageSchemaType>();
-            }
-
             public string Name { get; set; }
             public DeviceTypeMessageSchemaFormat Format { get; set; }
             public IDictionary<string, DeviceTypeMessageSchemaType> Fields { get; set; }
+
+            public DeviceTypeMessageSchema()
+            {
+                this.Name = string.Empty;
+                this.Format = DeviceTypeMessageSchemaFormat.JSON;
+                this.Fields = new Dictionary<string, DeviceTypeMessageSchemaType>();
+            }
         }
 
         public enum DeviceTypeMessageSchemaFormat

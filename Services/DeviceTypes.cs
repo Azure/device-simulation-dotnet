@@ -52,7 +52,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 foreach (var f in files)
                 {
                     var c = JsonConvert.DeserializeObject<DeviceType>(File.ReadAllText(f));
-                    this.NormalizeObject(c);
                     this.deviceTypes.Add(c);
                 }
             }
@@ -78,26 +77,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log.Warn("Device type not found", () => new { id });
 
             throw new ResourceNotFoundException();
-        }
-
-        /// <summary>
-        /// For user convenience and reduced verbosity, the JSON configuration
-        /// is denormalized. This method normalizes the data for easier internal
-        /// processing.
-        /// </summary>
-        private void NormalizeObject(DeviceType deviceType)
-        {
-            // The function Key is the function Name
-            foreach (var x in deviceType.DeviceBehavior)
-            {
-                x.Value.Name = x.Key;
-            }
-
-            // The method Key is the method Name
-            foreach (var x in deviceType.CloudToDeviceMethods)
-            {
-                x.Value.Name = x.Key;
-            }
         }
 
         private List<string> GetDeviceTypeFiles()

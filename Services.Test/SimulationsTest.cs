@@ -10,6 +10,7 @@ using Moq;
 using Services.Test.helpers;
 using Xunit;
 using Xunit.Abstractions;
+using SimulationModel = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 
 namespace Services.Test
 {
@@ -49,7 +50,7 @@ namespace Services.Test
         public void InitialListIsEmpty()
         {
             // Act
-            IList<Simulation> list = this.target.GetList();
+            IList<SimulationModel> list = this.target.GetList();
 
             // Assert
             Assert.Equal(0, list.Count);
@@ -62,7 +63,7 @@ namespace Services.Test
             this.deviceTypes.Setup(x => x.GetList()).Returns(this.types);
 
             // Act
-            Simulation result = this.target.Insert(new Simulation(), "default");
+            SimulationModel result = this.target.Insert(new SimulationModel(), "default");
 
             // Assert
             Assert.Equal(1, result.Version);
@@ -77,7 +78,7 @@ namespace Services.Test
             this.deviceTypes.Setup(x => x.GetList()).Returns(this.types);
 
             // Act
-            Simulation result = this.target.Insert(new Simulation(), "default");
+            SimulationModel result = this.target.Insert(new SimulationModel(), "default");
 
             // Assert
             Assert.Equal(this.types.Count, result.DeviceTypes.Count);
@@ -95,7 +96,7 @@ namespace Services.Test
             this.deviceTypes.Setup(x => x.GetList()).Returns(this.types);
 
             // Act
-            Simulation result = this.target.Insert(new Simulation(), "default");
+            SimulationModel result = this.target.Insert(new SimulationModel(), "default");
 
             // Assert
             Assert.NotEmpty(result.Id);
@@ -108,8 +109,8 @@ namespace Services.Test
             this.deviceTypes.Setup(x => x.GetList()).Returns(this.types);
 
             // Act
-            var simulation = new Simulation { Id = "123" };
-            Simulation result = this.target.Insert(simulation, "default");
+            var simulation = new SimulationModel { Id = "123" };
+            SimulationModel result = this.target.Insert(simulation, "default");
 
             // Assert
             Assert.Equal(simulation.Id, result.Id);
@@ -119,7 +120,7 @@ namespace Services.Test
         public void CreateWithInvalidTemplate()
         {
             // Act + Assert
-            Assert.Throws<InvalidInputException>(() => this.target.Insert(new Simulation(), "foo"));
+            Assert.Throws<InvalidInputException>(() => this.target.Insert(new SimulationModel(), "foo"));
         }
 
         [Fact, Trait(Constants.Type, Constants.UnitTest)]
@@ -127,10 +128,10 @@ namespace Services.Test
         {
             // Arrange
             this.deviceTypes.Setup(x => x.GetList()).Returns(this.types);
-            this.target.Insert(new Simulation(), "default");
+            this.target.Insert(new SimulationModel(), "default");
 
             // Act + Assert
-            var s = new Simulation { Id = Guid.NewGuid().ToString(), Enabled = false };
+            var s = new SimulationModel { Id = Guid.NewGuid().ToString(), Enabled = false };
             Assert.Throws<ConflictingResourceException>(() => this.target.Insert(s));
             Assert.Throws<ConflictingResourceException>(() => this.target.Upsert(s));
         }
@@ -142,7 +143,7 @@ namespace Services.Test
             this.deviceTypes.Setup(x => x.GetList()).Returns(this.types);
 
             // Act
-            var simulation = new Simulation { Id = Guid.NewGuid().ToString(), Enabled = false };
+            var simulation = new SimulationModel { Id = Guid.NewGuid().ToString(), Enabled = false };
             this.target.Insert(simulation, "default");
             var result = this.target.Get(simulation.Id);
 
@@ -158,7 +159,7 @@ namespace Services.Test
             this.deviceTypes.Setup(x => x.GetList()).Returns(this.types);
 
             // Act
-            var simulation = new Simulation { Id = Guid.NewGuid().ToString(), Enabled = false };
+            var simulation = new SimulationModel { Id = Guid.NewGuid().ToString(), Enabled = false };
             this.target.Upsert(simulation, "default");
             var result = this.target.Get(simulation.Id);
 
@@ -171,8 +172,8 @@ namespace Services.Test
         public void UpsertRequiresIdWhileInsertDoesNot()
         {
             // Act
-            var s1 = new Simulation();
-            var s2 = new Simulation();
+            var s1 = new SimulationModel();
+            var s2 = new SimulationModel();
             this.target.Insert(s1);
 
             // Act + Assert
@@ -186,11 +187,11 @@ namespace Services.Test
             this.deviceTypes.Setup(x => x.GetList()).Returns(this.types);
 
             var id = Guid.NewGuid().ToString();
-            var s1 = new Simulation { Id = id, Enabled = false };
+            var s1 = new SimulationModel { Id = id, Enabled = false };
             this.target.Upsert(s1);
 
             // Act + Assert
-            var s1updated = new Simulation { Id = id, Enabled = true };
+            var s1updated = new SimulationModel { Id = id, Enabled = true };
             Assert.Throws<ResourceOutOfDateException>(() => this.target.Upsert(s1updated));
         }
     }

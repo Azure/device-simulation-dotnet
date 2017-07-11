@@ -15,11 +15,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface ISimulations
     {
-        IList<Simulation> GetList();
-        Simulation Get(string id);
-        Simulation Insert(Simulation simulation, string template = "");
-        Simulation Upsert(Simulation simulation, string template = "");
-        Simulation Merge(SimulationPatch patch);
+        IList<Models.Simulation> GetList();
+        Models.Simulation Get(string id);
+        Models.Simulation Insert(Models.Simulation simulation, string template = "");
+        Models.Simulation Upsert(Models.Simulation simulation, string template = "");
+        Models.Simulation Merge(SimulationPatch patch);
     }
 
     /// <summary>
@@ -53,14 +53,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.CreateStorageIfMissing();
         }
 
-        public IList<Simulation> GetList()
+        public IList<Models.Simulation> GetList()
         {
             this.CreateStorageIfMissing();
             var json = File.ReadAllText(this.tempStoragePath);
-            return JsonConvert.DeserializeObject<List<Simulation>>(json);
+            return JsonConvert.DeserializeObject<List<Models.Simulation>>(json);
         }
 
-        public Simulation Get(string id)
+        public Models.Simulation Get(string id)
         {
             var simulations = this.GetList();
             foreach (var s in simulations)
@@ -73,7 +73,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             throw new ResourceNotFoundException();
         }
 
-        public Simulation Insert(Simulation simulation, string template = "")
+        public Models.Simulation Insert(Models.Simulation simulation, string template = "")
         {
             // TODO: complete validation
             if (!string.IsNullOrEmpty(template) && template.ToLowerInvariant() != "default")
@@ -108,10 +108,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             if (!string.IsNullOrEmpty(template) && template.ToLowerInvariant() == "default")
             {
                 var types = this.deviceTypes.GetList();
-                simulation.DeviceTypes = new List<Simulation.DeviceTypeRef>();
+                simulation.DeviceTypes = new List<Models.Simulation.DeviceTypeRef>();
                 foreach (var type in types)
                 {
-                    simulation.DeviceTypes.Add(new Simulation.DeviceTypeRef
+                    simulation.DeviceTypes.Add(new Models.Simulation.DeviceTypeRef
                     {
                         Id = type.Id,
                         Count = 2
@@ -124,7 +124,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return simulation;
         }
 
-        public Simulation Upsert(Simulation simulation, string template = "")
+        public Models.Simulation Upsert(Models.Simulation simulation, string template = "")
         {
             // TODO: complete validation
             if (string.IsNullOrEmpty(simulation.Id))
@@ -164,7 +164,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return simulation;
         }
 
-        public Simulation Merge(SimulationPatch patch)
+        public Models.Simulation Merge(SimulationPatch patch)
         {
             var simulations = this.GetList();
 
@@ -202,10 +202,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return simulation;
         }
 
-        private void WriteToStorage(Simulation simulation)
+        private void WriteToStorage(Models.Simulation simulation)
         {
             simulation.Etag = Etags.NewEtag();
-            var data = new List<Simulation> { simulation };
+            var data = new List<Models.Simulation> { simulation };
             File.WriteAllText(this.tempStoragePath, JsonConvert.SerializeObject(data));
         }
 
@@ -241,7 +241,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (!File.Exists(this.tempStoragePath))
             {
-                var data = new List<Simulation>();
+                var data = new List<Models.Simulation>();
                 File.WriteAllText(this.tempStoragePath, JsonConvert.SerializeObject(data));
             }
         }

@@ -1,52 +1,37 @@
 {
     "SchemaVersion": "1.0.0",
-    "Id": "c84aaaac-0ba0-4e52-a103-ebb8a9b7f8f9",
+    "Id": "8dd272c0-514e-4a87-a1ad-be12a0b2809c",
     "Version": "0.0.1",
-    "Name": "Truck",
-    "Description": "Simulated Truck with speed and geolocation sensors",
-    "Protocol": "MQTT",
-    "DeviceBehavior": {
-        "get_truck_speed": {
-            "Type": "javascript",
-            "Path": "truck-speed-sensor.js"
+    "Name": "Elevator",
+    "Description": "Simulated Elevator with floor number sensor",
+    "Protocol": "HTTP",
+    "DeviceState": {
+        "Initial": {
+            "floor": 1
         },
-        "get_truck_location": {
+        "SimulationInterval": "00:00:15",
+        "SimulationScript": {
             "Type": "javascript",
-            "Path": "truck-geolocation-sensor.js"
-        },
-        "do_start": {
-            "Type": "javascript",
-            "Path": "truck-start-method.js"
+            "Path": "elevator-state.js"
         }
     },
-    "Telemetry": {
-        "Messages": [
-            {
-                "Interval": "00:00:10",
-                "Message":
-                    "{\"speed\":${get_truck_speed.value},\"geolocation\":\"${get_truck_location.value}\",\"speed_unit\":\"mph\"}",
-                "MessageSchema": {
-                    "Name": "truck;v1",
-                    "Format": "JSON",
-                    "Fields": {
-                        "speed": "integer",
-                        "geolocation": "text",
-                        "speed_unit": "text"
-                    }
+    "Telemetry": [
+        {
+            "Interval": "00:00:01",
+            "MessageTemplate": "{\"current_floor\": ${floor}}",
+            "MessageSchema": {
+                "Name": "elevator;v1",
+                "Format": "JSON",
+                "Fields": {
+                    "current_floor": "integer"
                 }
             }
-        ]
-    },
+        }
+    ],
     "CloudToDeviceMethods": {
-        "GoDownOneFloor": {
-            "Actions": [
-                "${do_elevator_go_down}"
-            ]
-        },
-        "GoUpOneFloor": {
-            "Actions": [
-                "${do_elevator_go_up}"
-            ]
+        "Start": {
+            "Type": "javascript",
+            "Path": "TBD.js"
         }
     }
 }

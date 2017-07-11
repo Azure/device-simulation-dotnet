@@ -4,6 +4,11 @@
 :: Run the service in the local environment:  scripts\run
 :: Run the service inside a Docker container: scripts\run -s
 :: Run the service inside a Docker container: scripts\run --in-sandbox
+:: Run only the web service:                  scripts\run --webservice
+:: Run only the simulation:                   scripts\run --simulation
+:: Run the IoT Hub Manager Docker image:      scripts\run --iothubman
+:: Show how to use this script:               scripts\run -h
+:: Show how to use this script:               scripts\run --help
 
 :: Debug|Release
 SET CONFIGURATION=Release
@@ -13,8 +18,25 @@ SET APP_HOME=%~dp0
 SET APP_HOME=%APP_HOME:~0,-9%
 cd %APP_HOME%
 
+IF "%1"=="-h" GOTO :Help
+IF "%1"=="--help" GOTO :Help
 IF "%1"=="-s" GOTO :RunInSandbox
 IF "%1"=="--in-sandbox" GOTO :RunInSandbox
+IF "%1"=="--webservice" GOTO :RunWebService
+IF "%1"=="--simulation" GOTO :RunSimulation
+IF "%1"=="--iothubman" GOTO :RunIoTHubMan
+
+:Help
+
+    echo "Usage:"
+    echo "  Run the service in the local environment:  ./scripts/run"
+    echo "  Run the service inside a Docker container: ./scripts/run -s|--in-sandbox"
+    echo "  Run only the web service:                  ./scripts/run --webservice"
+    echo "  Run only the simulation:                   ./scripts/run --simulation"
+    echo "  Run the IoT Hub Manager Docker image:      ./scripts/run --iothubman"
+    echo "  Show how to use this script:               ./scripts/run -h|--help"
+
+    goto :END
 
 
 :RunLocally
@@ -35,6 +57,46 @@ IF "%1"=="--in-sandbox" GOTO :RunInSandbox
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
     start "" dotnet run --configuration %CONFIGURATION% --project WebService/WebService.csproj
+    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
+
+    goto :END
+
+
+:RunWebService
+
+    :: Check dependencies
+    dotnet --version > NUL 2>&1
+    IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOTNET
+
+    :: Check settings
+    call .\scripts\env-vars-check.cmd
+    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
+
+    :: Restore nuget packages and compile the application
+    call dotnet restore
+    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
+
+    dotnet run --configuration %CONFIGURATION% --project WebService/WebService.csproj
+    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
+
+    goto :END
+
+
+:RunSimulation
+
+    :: Check dependencies
+    dotnet --version > NUL 2>&1
+    IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOTNET
+
+    :: Check settings
+    call .\scripts\env-vars-check.cmd
+    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
+
+    :: Restore nuget packages and compile the application
+    call dotnet restore
+    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
+
+    dotnet run --configuration %CONFIGURATION% --project SimulationAgent/SimulationAgent.csproj
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
     goto :END
@@ -74,6 +136,21 @@ IF "%1"=="--in-sandbox" GOTO :RunInSandbox
     :: Error 125 typically triggers on Windows if the drive is not shared
     IF %ERRORLEVEL% EQU 125 GOTO DOCKER_SHARE
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
+
+    goto :END
+
+
+:RunIoTHubMan
+
+    :: Check dependencies
+    docker version > NUL 2>&1
+    IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOCKER
+
+    SET VERSION=latest
+    docker run -it -p %PCS_IOTHUBMANAGER_WEBSERVICE_PORT%:%PCS_IOTHUBMANAGER_WEBSERVICE_PORT% ^
+        -e PCS_IOTHUBMANAGER_WEBSERVICE_PORT=%PCS_IOTHUBMANAGER_WEBSERVICE_PORT% ^
+        -e PCS_IOTHUB_CONN_STRING=%PCS_IOTHUB_CONN_STRING% ^
+        azureiotpcs/iothubmanager-dotnet:%VERSION%
 
     goto :END
 

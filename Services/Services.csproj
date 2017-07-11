@@ -12,11 +12,27 @@
     <None Update="data\DeviceTypes\elevator.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="data\DeviceTypes\room.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="data\DeviceTypes\truck.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="data\DeviceTypes\Scripts\chiller-state.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="data\DeviceTypes\Scripts\elevator-state.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="data\DeviceTypes\Scripts\room-state.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="data\DeviceTypes\Scripts\truck-state.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="jint" Version="2.10.4" />
     <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.2.13" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
   </ItemGroup>

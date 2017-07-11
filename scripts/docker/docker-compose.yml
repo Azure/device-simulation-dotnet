@@ -7,7 +7,7 @@ version: "3"
 
 services:
   iothubmanager:
-    image: azureiotpcs/iothubmanager-dotnet:0.1-SNAPSHOT
+    image: azureiotpcs/iothubmanager-dotnet:latest
     ports:
       - "9002:9002"
     environment:

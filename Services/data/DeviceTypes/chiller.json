@@ -5,63 +5,50 @@
     "Name": "Chiller",
     "Description": "Simulated Chiller with temperature and humidity sensors",
     "Protocol": "AMQP",
-    "DeviceBehavior": {
-        "get_random_temperature": {
-            "Type": "javascript",
-            "Path": "random-temperature-celsius-sensor.js"
+    "DeviceState": {
+        "Initial": {
+            "temperature": 50.5,
+            "temperature_unit": "F",
+            "humidity": 50,
+            "voltage": 110.0,
+            "power": 3.0,
+            "power_unit": "kW"
         },
-        "get_random_percentage": {
+        "SimulationInterval": "00:00:15",
+        "SimulationScript": {
             "Type": "javascript",
-            "Path": "random-percentage-sensor.js"
-        },
-        "get_power_source": {
-            "Type": "javascript",
-            "Path": "chiller-power-sensors.js"
-        },
-        "do_reboot": {
-            "Type": "javascript",
-            "Path": "chiller-reboot-method.js"
-        },
-        "do_upgrade": {
-            "Type": "javascript",
-            "Path": "chiller-upgrade-method.js"
+            "Path": "chiller-state.js"
         }
     },
-    "Telemetry": {
-        "Messages": [
-            {
-                "Interval": "00:00:15",
-                "Message":
-                    "{\"temperature\": ${get_random_temperature.value},\"t_unit\":\"C\",\"humidity\": ${get_random_percentage.value},\"h_unit\":\"%\",\"voltage\": ${get_power_source.voltage},\"v_unit\":\"${get_power_source.voltage_unit}\",\"power\": ${get_power_source.power},\"p_unit\":\"${get_power_source.power_unit}\"}",
-                "MessageSchema": {
-                    "Name": "chiller;v1",
-                    "Format": "JSON",
-                    "Fields": {
-                        "temperature": "double",
-                        "humidity": "integer",
-                        "voltage": "double",
-                        "power": "double",
-                        "t_unit": "text",
-                        "h_unit": "text",
-                        "v_unit": "text",
-                        "p_unit": "text"
-                    }
+    "Telemetry": [
+        {
+            "Interval": "00:00:15",
+            "MessageTemplate":
+                "{\"temperature\": ${temperature},\"t_unit\":\"{temperature_unit}\",\"humidity\": ${humidity},\"h_unit\":\"%\",\"voltage\": ${voltage},\"v_unit\":\"V\",\"power\": ${power},\"p_unit\":\"${power_unit}\"}",
+            "MessageSchema": {
+                "Name": "chiller;v1",
+                "Format": "JSON",
+                "Fields": {
+                    "temperature": "double",
+                    "humidity": "integer",
+                    "voltage": "double",
+                    "power": "double",
+                    "t_unit": "text",
+                    "h_unit": "text",
+                    "v_unit": "text",
+                    "p_unit": "text"
                 }
             }
-        ]
-    },
+        }
+    ],
     "CloudToDeviceMethods": {
         "Reboot": {
-            "Actions": [
-                "${do_reboot}"
-            ]
+            "Type": "javascript",
+            "Path": "TBD.js"
         },
         "Upgrade": {
-            "Actions": [
-                "${do_reboot}",
-                "${do_upgrade}",
-                "${do_reboot}"
-            ]
+            "Type": "javascript",
+            "Path": "TBD.js"
         }
     }
 }
