@@ -8,10 +8,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
     public interface ITimer
     {
-        Timer Start();
-        Timer Stop();
-        Timer Setup(Action<object> action, object context, TimeSpan frequency);
-        Timer Setup(Action<object> action, object context, int frequency);
+        ITimer Start();
+        ITimer StartIn(TimeSpan delay);
+        ITimer Stop();
+        ITimer Setup(Action<object> action, object context, TimeSpan frequency);
+        ITimer Setup(Action<object> action, object context, int frequency);
     }
 
     public class Timer : ITimer
@@ -21,20 +22,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         private System.Threading.Timer timer;
         private int frequency;
 
-        public delegate void Action(object context);
-
         public Timer(ILogger logger)
         {
             this.log = logger;
             this.frequency = 0;
         }
 
-        public Timer Setup(Action<object> action, object context, TimeSpan frequency)
+        public ITimer Setup(Action<object> action, object context, TimeSpan frequency)
         {
             return this.Setup(action, context, (int)frequency.TotalMilliseconds);
         }
 
-        public Timer Setup(Action<object> action, object context, int frequency)
+        public ITimer Setup(Action<object> action, object context, int frequency)
         {
             this.frequency = frequency;
             this.timer = new System.Threading.Timer(
@@ -45,7 +44,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             return this;
         }
 
-        public Timer Start()
+        public ITimer Start()
+        {
+            return this.StartIn(TimeSpan.Zero);
+        }
+
+        public ITimer StartIn(TimeSpan delay)
         {
             if (this.timer == null)
             {
@@ -53,11 +57,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 throw new TimerNotInitializedException();
             }
 
-            this.timer.Change(0, this.frequency);
+            this.timer.Change((int)delay.TotalMilliseconds, this.frequency);
             return this;
         }
 
-        public Timer Stop()
+        public ITimer Stop()
         {
             this.timer?.Change(Timeout.Infinite, Timeout.Infinite);
             return this;
