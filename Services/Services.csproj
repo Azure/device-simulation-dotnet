@@ -12,40 +12,22 @@
     <None Update="data\DeviceTypes\elevator.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="data\DeviceTypes\room.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="data\DeviceTypes\truck.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="data\DeviceBehavior\chiller-power-sensors.js">
+    <None Update="data\DeviceTypes\Scripts\chiller-state.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="data\DeviceBehavior\elevator-position-sensor.js">
+    <None Update="data\DeviceTypes\Scripts\elevator-state.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="data\DeviceBehavior\example_1_random_number.js">
+    <None Update="data\DeviceTypes\Scripts\room-state.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="data\DeviceBehavior\example_2_status_by_device_id.js">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="data\DeviceBehavior\example_3_status_by_day_of_week.js">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="data\DeviceBehavior\example_4_increasing_number.js">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="data\DeviceBehavior\example_5_multiple_values.js">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="data\DeviceBehavior\random-percentage-sensor.js">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="data\DeviceBehavior\random-temperature-celsius-sensor.js">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="data\DeviceBehavior\truck-geolocation-sensor.js">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="data\DeviceBehavior\truck-speed-sensor.js">
+    <None Update="data\DeviceTypes\Scripts\truck-state.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

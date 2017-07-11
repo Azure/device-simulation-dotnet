@@ -5,48 +5,42 @@
     "Name": "Truck",
     "Description": "Simulated Truck with speed and geolocation sensors",
     "Protocol": "MQTT",
-    "DeviceBehavior": {
-        "get_truck_speed": {
-            "Type": "javascript",
-            "Path": "truck-speed-sensor.js"
+    "DeviceState": {
+        "Initial": {
+            "latitude": 44.898556,
+            "longitude": 10.043592,
+            "speed": 10
         },
-        "get_truck_location": {
+        "SimulationInterval": "00:00:05",
+        "SimulationScript": {
             "Type": "javascript",
-            "Path": "truck-geolocation-sensor.js"
-        },
-        "do_start": {
-            "Type": "javascript",
-            "Path": "truck-start-method.js"
+            "Path": "truck-state.js"
         }
     },
-    "Telemetry": {
-        "Messages": [
-            {
-                "Interval": "00:00:10",
-                "MessageTemplate":
-                    "{\"speed\":${get_truck_speed.value},\"geolocation\":\"${get_truck_location.value}\",\"speed_unit\":\"mph\"}",
-                "MessageSchema": {
-                    "Name": "truck;v1",
-                    "Format": "JSON",
-                    "Fields": {
-                        "speed": "integer",
-                        "geolocation": "text",
-                        "speed_unit": "text"
-                    }
+    "Telemetry": [
+        {
+            "Interval": "00:00:05",
+            "MessageTemplate":
+                "{\"geolocation\":\"${latitude},${longitude}\",\"speed\":${speed},\"speed_unit\":\"mph\"}",
+            "MessageSchema": {
+                "Name": "truck;v1",
+                "Format": "JSON",
+                "Fields": {
+                    "geolocation": "text",
+                    "speed": "integer",
+                    "speed_unit": "text"
                 }
             }
-        ]
-    },
+        }
+    ],
     "CloudToDeviceMethods": {
         "GoDownOneFloor": {
-            "Actions": [
-                "${do_elevator_go_down}"
-            ]
+            "Type": "javascript",
+            "Path": "TBD.js"
         },
         "GoUpOneFloor": {
-            "Actions": [
-                "${do_elevator_go_up}"
-            ]
+            "Type": "javascript",
+            "Path": "TBD.js"
         }
     }
 }
