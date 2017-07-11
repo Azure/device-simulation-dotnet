@@ -37,14 +37,14 @@ Bash console:
 ```
 docker run -it -p 9002:9002 -e PCS_IOTHUBMANAGER_WEBSERVICE_PORT=9002 \
     -e PCS_IOTHUB_CONN_STRING=$PCS_IOTHUB_CONN_STRING \
-    azureiotpcs/iothubmanager-dotnet:0.1-SNAPSHOT
+    azureiotpcs/iothubmanager-dotnet
 ```
 
 Windows console:
 ```
 docker run -it -p 9002:9002 -e PCS_IOTHUBMANAGER_WEBSERVICE_PORT=9002 ^
     -e PCS_IOTHUB_CONN_STRING=%PCS_IOTHUB_CONN_STRING% ^
-    azureiotpcs/iothubmanager-dotnet:0.1-SNAPSHOT
+    azureiotpcs/iothubmanager-dotnet
 ```
 
 Run and Debug with IntelliJ Rider

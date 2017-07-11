@@ -33,7 +33,7 @@ function main(context, previousState) {
 
     // Example: chiller 'Simulated.Chiller.0' has a different average temperature.
     if (context.deviceId === "Simulated.Chiller.0") {
-        // 19...31
+        // 19...21
         state.temperature = 19 + (Math.random() * 2);
     }
 
