@@ -5,7 +5,6 @@ using System.Collections.Generic;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 {
-
     public class Script
     {
         public string Type { get; set; }
@@ -17,7 +16,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.Path = "scripts" + System.IO.Path.DirectorySeparatorChar;
         }
     }
-    
+
     public class DeviceType
     {
         public string Id { get; set; }

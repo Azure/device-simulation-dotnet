@@ -40,7 +40,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                         () => new { script.Type });
                     throw new NotSupportedException(
                         $"The device type behavior is of an unknown type `${script.Type}`.");
-                    
+
                 case "javascript":
                     this.log.Debug("Invoking JS", () => new { script.Path, context, state });
                     var result = this.jsInterpreter.Invoke(script.Path, context, state);

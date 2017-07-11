@@ -25,7 +25,7 @@ function main(context, previousState) {
     // Restore the global state before generating the new telemetry, so that
     // the telemetry can apply changes using the previous function state.
     restoreState(previousState);
-    
+
     // Parse the date
     var now = new Date(context.currentTime);
     var hourOfTheDay = now.getHours();

@@ -18,7 +18,7 @@ var state = {
  * @param previousState  The device state since the last iteration
  */
 function main(context, previousState) {
-    
+
     // Restore the global state before generating the new telemetry, so that
     // the telemetry can apply changes using the previous function state.
     restoreState(previousState);

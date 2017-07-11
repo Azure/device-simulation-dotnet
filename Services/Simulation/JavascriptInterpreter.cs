@@ -3,12 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Jint;
 using Jint.Native;
-using Jint.Native.Object;
-using Jint.Runtime;
-using Jint.Runtime.Descriptors;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
@@ -57,7 +53,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             {
                 this.log.Debug("Executing JS function", () => new { filename });
 
-                JsValue output = engine.Execute(sourceCode).Invoke("main", context, state);;
+                JsValue output = engine.Execute(sourceCode).Invoke("main", context, state);
+
                 this.log.Debug("JS function output", () => new
                 {
                     output.GetType().FullName,

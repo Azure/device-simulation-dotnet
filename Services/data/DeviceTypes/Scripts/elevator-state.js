@@ -30,10 +30,10 @@ function main(context, previousState) {
         || (state.direction !== "up" && state.direction !== "down")) {
         state.direction = "up";
     }
-    
+
     // Floors in the building
     var floors = 10;
-    
+
     // Example: elevator 'Simulated.Elevator.1' travels to the 20th floor.
     if (context.deviceId === "Simulated.Elevator.1") floors = 20;
 

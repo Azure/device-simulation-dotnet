@@ -5,8 +5,6 @@ using System.Linq;
 using System.Threading;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 
 // TODO: resilience to IoT Hub manager failures
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation

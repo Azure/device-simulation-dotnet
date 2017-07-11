@@ -17,7 +17,7 @@ namespace Services.Test.Simulation
     {
         // Set to `true` to debug a failing test, e.g. capture more logs
         private readonly bool debug = false;
-        
+
         private readonly ITestOutputHelper log;
         private readonly Mock<IServicesConfig> config;
         private readonly Mock<ILogger> logger;
@@ -33,7 +33,7 @@ namespace Services.Test.Simulation
 
             this.logger = new Mock<ILogger>();
             this.CaptureApplicationLogs(this.logger);
-            
+
             this.target = new JavascriptInterpreter(this.config.Object, this.logger.Object);
         }
 
@@ -68,16 +68,16 @@ namespace Services.Test.Simulation
             Assert.IsType<string>(result["humidity_unit"]);
             Assert.IsType<bool>(result["lights_on"]);
         }
-        
+
         [Fact, Trait(Constants.Type, Constants.UnitTest)]
         public void TestJavascriptFiles()
         {
             // Arrange
             var files = new List<string>
             {
-                "chiller-state.js", 
-                "elevator-state.js", 
-                "room-state.js", 
+                "chiller-state.js",
+                "elevator-state.js",
+                "room-state.js",
                 "truck-state.js"
             };
             var context = new Dictionary<string, object>
@@ -86,8 +86,7 @@ namespace Services.Test.Simulation
                 ["deviceId"] = "device-123",
                 ["deviceType"] = "room"
             };
-            
-        
+
             // Act - Assert (no exception should occur)
             foreach (var file in files)
             {
@@ -99,19 +98,19 @@ namespace Services.Test.Simulation
         private void CaptureApplicationLogs(Mock<ILogger> l)
         {
             if (!this.debug) return;
-            
+
             l.Setup(x => x.Debug(It.IsAny<string>(), It.IsAny<Action>()))
                 .Callback((string s, Action a) => { this.log.WriteLine(s); });
-            
+
             l.Setup(x => x.Info(It.IsAny<string>(), It.IsAny<Action>()))
                 .Callback((string s, Action a) => { this.log.WriteLine(s); });
-            
+
             l.Setup(x => x.Warn(It.IsAny<string>(), It.IsAny<Action>()))
                 .Callback((string s, Action a) => { this.log.WriteLine(s); });
-            
+
             l.Setup(x => x.Error(It.IsAny<string>(), It.IsAny<Action>()))
                 .Callback((string s, Action a) => { this.log.WriteLine(s); });
-            
+
             l.Setup(x => x.Debug(It.IsAny<string>(), It.IsAny<Func<object>>()))
                 .Callback((string s, Func<object> f) =>
                 {
