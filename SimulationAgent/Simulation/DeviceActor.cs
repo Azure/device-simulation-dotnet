@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
@@ -8,15 +10,13 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
+using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation
 {
     public interface IDeviceActor
     {
-        IDeviceActor Setup(
-            DeviceType deviceType,
-            int position,
-            DeviceType.DeviceTypeMessage messageTemplate);
+        IDeviceActor Setup(DeviceType deviceType, int position);
 
         void Start(CancellationToken cancellationToken);
     }
@@ -39,37 +39,86 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             None = 0,
             Ready = 1,
             Connecting = 2,
-            Connected = 3
+            Connected = 3,
+            Running = 4
         }
 
         private readonly ILogger log;
         private readonly IDevices devices;
+        private readonly IScriptInterpreter scriptInterpreter;
         private readonly DependencyResolution.IFactory factory;
-        private readonly IMessageGenerator messageGenerator;
 
-        private IDeviceClient client;
-        private DeviceType deviceType;
-        private string deviceId;
+        /// <summary>
+        /// The status of this device simulation actor, e.g. whether
+        /// it's connecting, connected, sending, etc.
+        /// </summary>
         private Status status;
-        private Device device;
-        private DeviceType.DeviceTypeMessage msgTemplate;
+
+        /// <summary>IoT Hub client</summary>
+        private IDeviceClient client;
+
+        /// <summary>
+        /// All the information about the device type being simulated, like
+        /// IoT Hub protocol, intervals, templates, supported methods, etc.
+        /// </summary>
+        private DeviceType deviceType;
+
+        /// <summary>ID of the simulated device</summary>
+        private string deviceId;
+
+        /// <summary>
+        /// A timer used for the action of the current state. It's used to
+        /// retry connecting, and to keep refreshing the device state.
+        /// </summary>
         private readonly ITimer timer;
+
+        /// <summary>
+        /// A collection of timers used to send messages. Each simulated device
+        /// can send multiple messages, with different frequency.
+        /// </summary>
+        private List<ITimer> telemetryTimers;
+
+        /// <summary>
+        /// A timer used to check whether the simulation stopped and the actor
+        /// should stop running.
+        /// </summary>
         private readonly ITimer cancelationCheckTimer;
+
+        /// <summary>
+        /// A token used to signal the actor to stop when the simulation stops.
+        /// </summary>
         private CancellationToken cancellationToken;
+
+        /// <summary>The protocol used with Azure IoT Hub</summary>
+        private IoTHubProtocol ioTHubProtocol;
+
+        /// <summary>
+        /// The simulated state of the simulated device. The state is
+        /// periodically updated using an external script.
+        /// </summary>
+        private Dictionary<string, object> deviceState;
+
+        /// <summary>
+        /// How ofthen the simulated device state needs to be updated, i.e.
+        /// when to execute the external script.
+        /// </summary>
+        private TimeSpan deviceStateInterval;
 
         public DeviceActor(
             ILogger logger,
             IDevices devices,
-            DependencyResolution.IFactory factory,
-            IMessageGenerator messageGenerator)
+            IScriptInterpreter scriptInterpreter,
+            DependencyResolution.IFactory factory)
         {
             this.log = logger;
             this.devices = devices;
+            this.scriptInterpreter = scriptInterpreter;
             this.factory = factory;
-            this.messageGenerator = messageGenerator;
+
             this.status = Status.None;
             this.timer = this.factory.Resolve<ITimer>();
             this.cancelationCheckTimer = this.factory.Resolve<ITimer>();
+            this.telemetryTimers = new List<ITimer>();
         }
 
         /// <summary>
@@ -79,10 +128,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         /// thrown an exception.
         /// Setup() should be called only once, typically after the constructor.
         /// </summary>
-        public IDeviceActor Setup(
-            DeviceType deviceType,
-            int position,
-            DeviceType.DeviceTypeMessage messageTemplate)
+        public IDeviceActor Setup(DeviceType deviceType, int position)
         {
             if (this.status != Status.None)
             {
@@ -90,7 +136,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     () => new
                     {
                         CurrentDeviceId = this.deviceId,
-                        NewMessageSchema = messageTemplate.MessageSchema.Name,
                         NewDeviceType = deviceType.Name,
                         NewPosition = position
                     });
@@ -99,22 +144,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
             this.deviceType = deviceType;
             this.deviceId = "Simulated." + deviceType.Name + "." + position;
-            this.msgTemplate = messageTemplate;
+            this.ioTHubProtocol = deviceType.Protocol;
 
-            this.messageGenerator.Setup(
-                deviceType,
-                messageTemplate.MessageTemplate,
-                this.deviceId);
+            this.deviceStateInterval = deviceType.DeviceState.SimulationInterval;
+            this.deviceState = CloneObject(deviceType.DeviceState.Initial);
+            this.log.Debug("Initial device state", () => new { this.deviceId, this.deviceState });
 
-            this.log.Debug("Setup complete",
-                () => new
-                {
-                    this.deviceId,
-                    MessageSchema = this.msgTemplate.MessageSchema.Name,
-                    DeviceTypeName = deviceType.Name,
-                    Position = position
-                });
-
+            this.log.Debug("Setup complete", () => new { this.deviceId });
             this.MoveNext();
 
             return this;
@@ -127,23 +163,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         /// the simulation, so it's easy to stop the entire simulation
         /// cancelling just one common token.
         /// </summary>
-        public void Start(CancellationToken cancellationToken)
+        public void Start(CancellationToken token)
         {
             switch (this.status)
             {
+                default:
+                    this.log.Debug("The actor already started", () => new { this.deviceId });
+                    break;
+
                 case Status.None:
                     this.log.Error("The actor is not initialized", () => { });
                     throw new DeviceActorNotInitializedException();
 
                 case Status.Ready:
-                    this.cancellationToken = cancellationToken;
+                    this.cancellationToken = token;
                     this.log.Debug("Starting...", () => new { this.deviceId });
                     this.MoveNext();
-                    break;
-
-                default:
-                    this.log.Debug("The actor already started",
-                        () => new { this.deviceId });
                     break;
             }
         }
@@ -168,80 +203,120 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         /// <param name="context">The actor instance (i.e. 'this')</param>
         private static void Connect(object context)
         {
-            var actor = (DeviceActor) context;
-            if (actor.cancellationToken.IsCancellationRequested)
+            var self = (DeviceActor) context;
+            if (self.cancellationToken.IsCancellationRequested)
             {
-                actor.Stop();
+                self.Stop();
                 return;
             }
 
-            if (actor.status == Status.Connecting)
+            if (self.status == Status.Connecting)
             {
-                actor.log.Debug("Connecting...", () => { });
+                self.log.Debug("Connecting...", () => { });
 
                 try
                 {
-                    var task = actor.devices.GetOrCreateAsync(actor.deviceId);
+                    var task = self.devices.GetOrCreateAsync(self.deviceId);
                     task.Wait(connectionTimeout);
-                    actor.device = task.Result;
-                    actor.log.Debug("Device credentials retrieved",
-                        () => new { actor.deviceId });
+                    var device = task.Result;
+                    self.log.Debug("Device credentials retrieved", () => new { self.deviceId });
 
-                    actor.client = actor.devices.GetClient(
-                        actor.device,
-                        actor.deviceType.Protocol);
-                    actor.log.Debug("Connection successful",
-                        () => new { actor.deviceId });
+                    self.client = self.devices.GetClient(device, self.ioTHubProtocol);
+                    self.log.Debug("Connection successful", () => new { self.deviceId });
 
-                    actor.MoveNext();
+                    self.MoveNext();
                 }
                 catch (Exception e)
                 {
-                    actor.log.Error("Connection failed",
-                        () => new { actor.deviceId, e.Message, Error = e.GetType().FullName });
+                    self.log.Error("Connection failed",
+                        () => new { self.deviceId, e.Message, Error = e.GetType().FullName });
                 }
+            }
+        }
+
+        /// <summary>
+        /// Periodically update the device state (i.e. sensors data), executing
+        /// the script provided in the device type configuration.
+        /// </summary>
+        /// <param name="context">The actor instance (i.e. 'this')</param>
+        private static void UpdateDeviceState(object context)
+        {
+            var self = (DeviceActor) context;
+            if (self.cancellationToken.IsCancellationRequested)
+            {
+                self.Stop();
+                return;
+            }
+
+            var scriptContext = new Dictionary<string, object>
+            {
+                ["currentTime"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:sszzz"),
+                ["deviceId"] = self.deviceId,
+                ["deviceType"] = self.deviceType.Name
+            };
+
+            self.log.Debug("Updating device status", () => new { self.deviceId, self.deviceState });
+
+            lock (self.deviceState)
+            {
+                self.deviceState = self.scriptInterpreter.Invoke(
+                    self.deviceType.DeviceState.SimulationScript,
+                    scriptContext,
+                    self.deviceState);
+            }
+
+            self.log.Debug("New device status", () => new { self.deviceId, self.deviceState });
+
+            // Start sending telemetry messages
+            if (self.status == Status.Connected)
+            {
+                self.MoveNext();
             }
         }
 
         /// <summary>
         /// Logic executed after Connect() succeeds, to send telemetry.
         /// </summary>
-        /// <param name="context">The actor instance (i.e. 'this')</param>
+        /// <param name="context">The message to send and a reference to the
+        /// actor instance (i.e. 'this')</param>
         private static void SendTelemetry(object context)
         {
-            var actor = (DeviceActor) context;
-            if (actor.cancellationToken.IsCancellationRequested)
+            var callContext = (TelemetryContext) context;
+            var self = callContext.Self;
+            var message = callContext.Message;
+
+            if (self.cancellationToken.IsCancellationRequested)
             {
-                actor.Stop();
+                self.Stop();
                 return;
             }
 
-            var message = actor.messageGenerator.GetNext();
-
-            actor.log.Debug("SendTelemetry...",
-                () => new
-                {
-                    actor.deviceId,
-                    MessageSchema = actor.msgTemplate.MessageSchema.Name,
-                    message
-                });
-
+            // Send the telemetry message
             try
             {
-                actor.client
-                    .SendMessageAsync(
-                        message,
-                        actor.msgTemplate.MessageSchema)
+                // Inject the device state into the message template
+                var msg = message.MessageTemplate;
+                lock (self.deviceState)
+                {
+                    foreach (var value in self.deviceState)
+                    {
+                        msg = msg.Replace("${" + value.Key + "}", value.Value.ToString());
+                    }
+                }
+
+                self.log.Debug("SendTelemetry...",
+                    () => new { self.deviceId, MessageSchema = message.MessageSchema.Name, msg });
+                self.client
+                    .SendMessageAsync(msg, message.MessageSchema)
                     .Wait(connectionTimeout);
             }
             catch (Exception e)
             {
-                actor.log.Error("SendTelemetry failed",
-                    () => new { actor.deviceId, e.Message, Error = e.GetType().FullName });
+                self.log.Error("SendTelemetry failed",
+                    () => new { self.deviceId, e.Message, Error = e.GetType().FullName });
             }
 
-            actor.log.Debug("SendTelemetry complete",
-                () => new { actor.deviceId, MessageSchema = actor.msgTemplate.MessageSchema.Name });
+            self.log.Debug("SendTelemetry complete", () => new { self.deviceId });
         }
 
         /// <summary>
@@ -252,10 +327,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         /// <param name="context">The actor instance (i.e. 'this')</param>
         private static void CancelationCheck(object context)
         {
-            var actor = (DeviceActor) context;
-            if (actor.cancellationToken.IsCancellationRequested)
+            var self = (DeviceActor) context;
+            if (self.cancellationToken.IsCancellationRequested)
             {
-                actor.Stop();
+                self.Stop();
             }
         }
 
@@ -278,8 +353,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         private void StopTimers()
         {
+            this.log.Debug("Stopping timers", () => { });
             this.timer.Stop();
             this.cancelationCheckTimer.Stop();
+
+            foreach (var t in this.telemetryTimers) t.Stop();
+            this.telemetryTimers = new List<ITimer>();
         }
 
         /// <summary>
@@ -291,10 +370,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             switch (this.status)
             {
                 case Status.None:
+                    this.log.Debug("Moving actor state to Ready", () => new { this.deviceId });
                     this.status = Status.Ready;
                     break;
 
                 case Status.Ready:
+                    this.log.Debug("Moving actor state to Connecting", () => new { this.deviceId });
                     this.status = Status.Connecting;
                     this.StopTimers();
                     this.timer.Setup(Connect, this, retryConnectingFrequency);
@@ -303,13 +384,48 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     break;
 
                 case Status.Connecting:
+                    this.log.Debug("Moving actor state to Connected", () => new { this.deviceId });
                     this.status = Status.Connected;
                     this.StopTimers();
-                    this.timer.Setup(SendTelemetry, this, this.msgTemplate.Interval);
+                    this.timer.Setup(UpdateDeviceState, this, this.deviceStateInterval);
                     this.timer.Start();
-                    this.ScheduleCancelationCheckIfRequired(this.msgTemplate.Interval);
+                    this.ScheduleCancelationCheckIfRequired(this.deviceStateInterval);
+                    break;
+
+                case Status.Connected:
+                    this.log.Debug("Moving actor state to Running", () => new { this.deviceId });
+                    this.status = Status.Running;
+
+                    foreach (var message in this.deviceType.Telemetry)
+                    {
+                        var telemetryTimer = this.factory.Resolve<ITimer>();
+                        this.telemetryTimers.Add(telemetryTimer);
+                        var callContext = new TelemetryContext
+                        {
+                            Self = this,
+                            Message = message
+                        };
+
+                        this.log.Debug("Scheduling SendTelemetry", () =>
+                            new { message.Interval.TotalSeconds, message.MessageSchema.Name, message.MessageTemplate });
+
+                        telemetryTimer.Setup(SendTelemetry, callContext, message.Interval);
+                        telemetryTimer.StartIn(message.Interval);
+                    }
                     break;
             }
+        }
+
+        private static T CloneObject<T>(T source)
+        {
+            return JsonConvert.DeserializeObject<T>(
+                JsonConvert.SerializeObject(source));
+        }
+
+        private class TelemetryContext
+        {
+            public DeviceActor Self { get; set; }
+            public DeviceType.DeviceTypeMessage Message { get; set; }
         }
     }
 }

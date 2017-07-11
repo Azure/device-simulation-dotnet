@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
 using System.Collections.Generic;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json;
 
 // TODO: tests
@@ -10,31 +10,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 {
     public class DeviceTypeApiModel
     {
-        public DeviceTypeApiModel()
-        {
-            this.DeviceBehavior = new Dictionary<string, DeviceTypeFunction>();
-            this.Methods = new Dictionary<string, DeviceTypeMethod>();
-        }
-
-        /// <summary>Map a service model to the corresponding API model</summary>
-        public DeviceTypeApiModel(Services.Models.DeviceType type)
-        {
-            this.DeviceBehavior = new Dictionary<string, DeviceTypeFunction>();
-            this.Methods = new Dictionary<string, DeviceTypeMethod>();
-
-            if (type == null) return;
-
-            this.Id = type.Id;
-            this.Version = type.Version;
-            this.Name = type.Name;
-            this.Description = type.Description;
-            this.Protocol = type.Protocol.ToString();
-            this.Telemetry = new DeviceTypeTelemetry(type.Telemetry);
-
-            foreach (var x in type.CloudToDeviceMethods) this.Methods.Add(x.Key, new DeviceTypeMethod(x.Value));
-            foreach (var x in type.DeviceBehavior) this.DeviceBehavior.Add(x.Key, new DeviceTypeFunction(x.Value));
-        }
-
         [JsonProperty(PropertyName = "Id")]
         public string Id { get; set; }
 
@@ -50,14 +25,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         [JsonProperty(PropertyName = "Protocol")]
         public string Protocol { get; set; }
 
-        [JsonProperty(PropertyName = "DeviceBehavior")]
-        public IDictionary<string, DeviceTypeFunction> DeviceBehavior { get; set; }
+        [JsonProperty(PropertyName = "DeviceState")]
+        public InternalStateApiModel DeviceState { get; set; }
 
         [JsonProperty(PropertyName = "Telemetry")]
-        public DeviceTypeTelemetry Telemetry { get; set; }
+        public IList<DeviceTypeMessageApiModel> Telemetry { get; set; }
 
-        [JsonProperty(PropertyName = "Methods")]
-        public IDictionary<string, DeviceTypeMethod> Methods { get; set; }
+        [JsonProperty(PropertyName = "CloudToDeviceMethods")]
+        public IDictionary<string, ScriptApiModel> CloudToDeviceMethods { get; set; }
 
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
@@ -66,117 +41,151 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             { "$uri", "/" + v1.Version.Path + "/devicetypes/" + this.Id }
         };
 
-        public class DeviceTypeFunction
+        public DeviceTypeApiModel()
         {
-            public DeviceTypeFunction()
+            this.DeviceState = new InternalStateApiModel();
+            this.Telemetry = new List<DeviceTypeMessageApiModel>();
+            this.CloudToDeviceMethods = new Dictionary<string, ScriptApiModel>();
+        }
+
+        /// <summary>Map a service model to the corresponding API model</summary>
+        public DeviceTypeApiModel(DeviceType type) : this()
+        {
+            if (type == null) return;
+
+            this.Id = type.Id;
+            this.Version = type.Version;
+            this.Name = type.Name;
+            this.Description = type.Description;
+            this.Protocol = type.Protocol.ToString();
+            this.DeviceState = new InternalStateApiModel(type.DeviceState);
+
+            foreach (var message in type.Telemetry)
             {
+                this.Telemetry.Add(new DeviceTypeMessageApiModel(message));
+            }
+
+            foreach (var method in type.CloudToDeviceMethods)
+            {
+                this.CloudToDeviceMethods.Add(method.Key, new ScriptApiModel(method.Value));
+            }
+        }
+
+        public class InternalStateApiModel
+        {
+            [JsonProperty(PropertyName = "Initial")]
+            public Dictionary<string, object> Initial { get; set; }
+
+            [JsonProperty(PropertyName = "SimulationInterval")]
+            public string SimulationInterval { get; set; }
+
+            [JsonProperty(PropertyName = "SimulationScript")]
+            public ScriptApiModel SimulationScript { get; set; }
+
+            public InternalStateApiModel()
+            {
+                this.Initial = new Dictionary<string, object>();
+                this.SimulationInterval = "00:00:00";
+                this.SimulationScript = new ScriptApiModel();
             }
 
             /// <summary>Map a service model to the corresponding API model</summary>
-            public DeviceTypeFunction(Services.Models.DeviceType.DeviceTypeFunction function)
+            public InternalStateApiModel(DeviceType.InternalState state) : this()
             {
-                if (function == null) return;
+                if (state == null) return;
 
-                this.Type = function.Type;
-                this.Path = function.Path;
+                this.Initial = state.Initial;
+                //this.SimulationInterval = Convert.ToInt64(state.SimulationInterval);
+                this.SimulationInterval = state.SimulationInterval.ToString("c");
+                this.SimulationScript = new ScriptApiModel(state.SimulationScript);
             }
+        }
 
+        public class ScriptApiModel
+        {
             [JsonProperty(PropertyName = "Type")]
             public string Type { get; set; }
 
             [JsonProperty(PropertyName = "Path")]
             public string Path { get; set; }
-        }
 
-        public class DeviceTypeMethod
-        {
-            public DeviceTypeMethod()
+            public ScriptApiModel()
             {
+                this.Type = "javascript";
+                this.Path = "scripts" + System.IO.Path.DirectorySeparatorChar;
             }
 
             /// <summary>Map a service model to the corresponding API model</summary>
-            public DeviceTypeMethod(Services.Models.DeviceType.DeviceTypeMethod method)
+            public ScriptApiModel(Script script) : this()
             {
-                if (method == null) return;
+                if (script == null) return;
 
-                this.Actions = method.Actions;
+                this.Type = script.Type;
+                this.Path = script.Path;
             }
-
-            [JsonProperty(PropertyName = "Actions")]
-            public IList<string> Actions { get; set; }
         }
 
-        public class DeviceTypeTelemetry
+        public class DeviceTypeMessageApiModel
         {
-            public DeviceTypeTelemetry()
+            [JsonProperty(PropertyName = "Interval")]
+            public string Interval { get; set; }
+
+            [JsonProperty(PropertyName = "MessageTemplate")]
+            public string MessageTemplate { get; set; }
+
+            [JsonProperty(PropertyName = "MessageSchema")]
+            public DeviceTypeMessageSchemaApiModel MessageSchema { get; set; }
+
+            public DeviceTypeMessageApiModel()
             {
-                this.Messages = new List<DeviceTypeMessage>();
+                this.Interval = "00:00:00";
+                this.MessageTemplate = string.Empty;
+                this.MessageSchema = new DeviceTypeMessageSchemaApiModel();
             }
 
             /// <summary>Map a service model to the corresponding API model</summary>
-            public DeviceTypeTelemetry(Services.Models.DeviceType.DeviceTypeTelemetry telemetry)
-            {
-                this.Messages = new List<DeviceTypeMessage>();
-
-                if (telemetry == null) return;
-
-                foreach (var x in telemetry.Messages) this.Messages.Add(new DeviceTypeMessage(x));
-            }
-
-            [JsonProperty(PropertyName = "Messages")]
-            public IList<DeviceTypeMessage> Messages { get; set; }
-        }
-
-        public class DeviceTypeMessage
-        {
-            public DeviceTypeMessage()
-            {
-            }
-
-            /// <summary>Map a service model to the corresponding API model</summary>
-            public DeviceTypeMessage(Services.Models.DeviceType.DeviceTypeMessage message)
+            public DeviceTypeMessageApiModel(DeviceType.DeviceTypeMessage message) : this()
             {
                 if (message == null) return;
 
-                this.Interval = Convert.ToInt64(message.Interval.TotalMilliseconds);
-                this.Message = message.MessageTemplate;
-                this.MessageSchema = new DeviceTypeMessageSchema(message.MessageSchema);
+                //this.Interval = Convert.ToInt64(message.Interval);
+                this.Interval = message.Interval.ToString("c");
+                this.MessageTemplate = message.MessageTemplate;
+                this.MessageSchema = new DeviceTypeMessageSchemaApiModel(message.MessageSchema);
             }
-
-            [JsonProperty(PropertyName = "Interval")]
-            public long Interval { get; set; }
-
-            [JsonProperty(PropertyName = "Message")]
-            public string Message { get; set; }
-
-            [JsonProperty(PropertyName = "MessageSchema")]
-            public DeviceTypeMessageSchema MessageSchema { get; set; }
         }
 
-        public class DeviceTypeMessageSchema
+        public class DeviceTypeMessageSchemaApiModel
         {
-            public DeviceTypeMessageSchema()
-            {
-                this.Fields = new Dictionary<string, string>();
-            }
-
-            /// <summary>Map a service model to the corresponding API model</summary>
-            public DeviceTypeMessageSchema(Services.Models.DeviceType.DeviceTypeMessageSchema schema)
-            {
-                this.Fields = new Dictionary<string, string>();
-
-                if (schema == null) return;
-
-                this.Format = schema.Format.ToString();
-
-                foreach (var x in schema.Fields) this.Fields.Add(x.Key, x.Value.ToString());
-            }
+            [JsonProperty(PropertyName = "Name")]
+            public string Name { get; set; }
 
             [JsonProperty(PropertyName = "Format")]
             public string Format { get; set; }
 
             [JsonProperty(PropertyName = "Fields")]
             public IDictionary<string, string> Fields { get; set; }
+
+            public DeviceTypeMessageSchemaApiModel()
+            {
+                this.Name = string.Empty;
+                this.Format = "JSON";
+                this.Fields = new Dictionary<string, string>();
+            }
+
+            /// <summary>Map a service model to the corresponding API model</summary>
+            public DeviceTypeMessageSchemaApiModel(DeviceType.DeviceTypeMessageSchema schema) : this()
+            {
+                if (schema == null) return;
+
+                this.Name = schema.Name;
+                this.Format = schema.Format.ToString();
+
+                foreach (var field in schema.Fields)
+                {
+                    this.Fields.Add(field.Key, field.Value.ToString());
+                }
+            }
         }
     }
 }

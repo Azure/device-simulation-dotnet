@@ -7,6 +7,7 @@ using System.Linq;
 using Jint;
 using Jint.Native;
 using Jint.Native.Object;
+using Jint.Runtime;
 using Jint.Runtime.Descriptors;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
@@ -15,17 +16,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 {
     public interface IJavascriptInterpreter
     {
-        Dictionary<string, string> Invoke(
+        Dictionary<string, object> Invoke(
             string filename,
-            string deviceId,
-            DateTimeOffset utcNow,
-            Dictionary<string, string> previousResult);
+            Dictionary<string, object> context,
+            Dictionary<string, object> state);
     }
 
     public class JavascriptInterpreter : IJavascriptInterpreter
     {
-        private const string DateFormat = "yyyy-MM-dd'T'HH:mm:sszzz";
-
         private readonly ILogger log;
         private readonly string folder;
 
@@ -33,7 +31,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             IServicesConfig config,
             ILogger logger)
         {
-            this.folder = config.DeviceTypesBehaviorFolder;
+            this.folder = config.DeviceTypesScriptsFolder;
             this.log = logger;
         }
 
@@ -42,11 +40,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         /// context information and the output from the previous execution.
         /// Returns a map of values.
         /// </summary>
-        public Dictionary<string, string> Invoke(
+        public Dictionary<string, object> Invoke(
             string filename,
-            string deviceId,
-            DateTimeOffset utcNow,
-            Dictionary<string, string> previousResult)
+            Dictionary<string, object> context,
+            Dictionary<string, object> state)
         {
             var engine = new Engine();
 
@@ -54,30 +51,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             // logging into the service logs
             engine.SetValue("log", new Action<object>(this.JsLog));
 
-            var context = new Dictionary<string, string>
-            {
-                { "deviceId", deviceId },
-                { "currentTime", DateTimeOffset.UtcNow.ToString(DateFormat) }
-            };
-
             var sourceCode = this.LoadScript(filename);
-            var result = new Dictionary<string, string>();
+            var result = new Dictionary<string, object>();
             try
             {
                 this.log.Debug("Executing JS function", () => new { filename });
 
-                engine.Execute(sourceCode);
-                var jsResult = previousResult == null ?
-                    engine.Invoke("main", context) :
-                    engine.Invoke("main", context, previousResult);
+                JsValue output = engine.Execute(sourceCode).Invoke("main", context, state);;
+                this.log.Debug("JS function output", () => new
+                {
+                    output.GetType().FullName,
+                    ToObject = output.ToObject()
+                });
 
-                var output = jsResult.AsObject().GetOwnProperties();
-                result = output.ToDictionary(x => x.Key, x => x.Value.Value.ToString());
-                this.log.Debug("JS success", () => new { filename, result });
+                result = (Dictionary<string, object>) output.ToObject();
+
+                this.log.Debug("JS function success", () => new { filename, result });
             }
             catch (Exception e)
             {
-                this.log.Error("JS failure", () => new { e.Message, e.GetType().FullName });
+                this.log.Error("JS function failure", () => new { e.Message, e.GetType().FullName });
             }
 
             return result;
