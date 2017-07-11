@@ -7,7 +7,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
     public interface IServicesConfig
     {
         string DeviceTypesFolder { get; set; }
-        string DeviceTypesBehaviorFolder { get; set; }
+        string DeviceTypesScriptsFolder { get; set; }
         string IoTHubManagerApiUrl { get; set; }
         int IoTHubManagerApiTimeout { get; set; }
     }
@@ -24,7 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             set { this.dtf = this.NormalizePath(value); }
         }
 
-        public string DeviceTypesBehaviorFolder
+        public string DeviceTypesScriptsFolder
         {
             get { return this.dtbf; }
             set { this.dtbf = this.NormalizePath(value); }

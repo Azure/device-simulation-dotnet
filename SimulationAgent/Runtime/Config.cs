@@ -20,7 +20,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
     {
         private const string ApplicationKey = "devicesimulation:";
         private const string DeviceTypesFolderKey = ApplicationKey + "device_types_folder";
-        private const string DeviceTypesBehaviorFolderKey = ApplicationKey + "device_types_behavior_folder";
+        private const string DeviceTypesScriptsFolderKey = ApplicationKey + "device_types_scripts_folder";
 
         private const string IoTHubManagerKey = "iothubmanager:";
         private const string IoTHubManagerApiUrlKey = IoTHubManagerKey + "webservice_url";
@@ -34,7 +34,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
             this.ServicesConfig = new ServicesConfig
             {
                 DeviceTypesFolder = MapRelativePath(configData.GetString(DeviceTypesFolderKey)),
-                DeviceTypesBehaviorFolder = MapRelativePath(configData.GetString(DeviceTypesBehaviorFolderKey)),
+                DeviceTypesScriptsFolder = MapRelativePath(configData.GetString(DeviceTypesScriptsFolderKey)),
                 IoTHubManagerApiUrl = configData.GetString(IoTHubManagerApiUrlKey),
                 IoTHubManagerApiTimeout = configData.GetInt(IoTHubManagerApiTimeoutKey)
             };
