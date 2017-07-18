@@ -2,6 +2,11 @@
 [![Issues][issues-badge]][issues-url]
 [![Gitter][gitter-badge]][gitter-url]
 
+Work in progress:
+* Development notes: [DEVELOPMENT.md](DEVELOPMENT.md)
+* Wiki: https://github.com/Azure/device-simulation-dotnet/wiki
+* Simulation specs: https://github.com/Azure/device-simulation-dotnet/wiki/Device-Types
+
 Device Simulation
 =================
 
