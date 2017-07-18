@@ -44,6 +44,7 @@ setup_sandbox_cache() {
     mkdir -p $PCS_CACHE/sandbox/.config
     mkdir -p $PCS_CACHE/sandbox/.dotnet
     mkdir -p $PCS_CACHE/sandbox/.nuget
+    echo "Note: caching build files in $PCS_CACHE"
 }
 
 build_in_sandbox() {
@@ -52,9 +53,7 @@ build_in_sandbox() {
 
     cd $APP_HOME
 
-    echo "Note: caching .NET files in $PCS_CACHE"
-
-    # On Windows this script should use docker.exe, in which case
+    # In Windows this script should use docker.exe, in which case
     # the parameters syntax is different, e.g. volumes path
     # (i.e. C:\path\path\... vs /c/path/path/...).
     #
@@ -70,10 +69,11 @@ build_in_sandbox() {
             -v "$PCS_CACHE/sandbox/.dotnet:/root/.dotnet" \
             -v "$PCS_CACHE/sandbox/.nuget:/root/.nuget" \
             -v "$APP_HOME:/opt/code" \
-            azureiotpcs/code-builder-dotnet:1.0-dotnetcore /opt/scripts/build
+            azureiotpcs/code-builder-dotnet:1.0-dotnetcore /opt/code/scripts/build
     else
         # Note 'winpty' is required to provide a TTY to Docker
-        cmd.exe /c "winpty .\scripts\build.cmd" --in-sandbox
+        echo "Launching cmd.exe /c winpty ..."
+        cmd.exe /c "winpty .\scripts\build.cmd --in-sandbox"
     fi
 }
 

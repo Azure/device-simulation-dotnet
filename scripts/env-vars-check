@@ -2,10 +2,10 @@
 
 if [[ -z "$PCS_DEVICESIMULATION_WEBSERVICE_PORT" ]]; then
     echo "Error: the PCS_DEVICESIMULATION_WEBSERVICE_PORT environment variable is not defined."
-    exit -1
+    exit 1
 fi
 
 if [[ -z "$PCS_IOTHUBMANAGER_WEBSERVICE_URL" ]]; then
     echo "Error: the PCS_IOTHUBMANAGER_WEBSERVICE_URL environment variable is not defined."
-    exit -1
+    exit 1
 fi
