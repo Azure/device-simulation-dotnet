@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 
@@ -53,11 +54,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 foreach (var dt in simulation.DeviceTypes)
                 {
                     var deviceType = this.deviceTypes.Get(dt.Id);
-                    for (int i = 0; i < dt.Count; i++)
+                    Parallel.For(0, dt.Count, i =>
                     {
                         var actor = this.factory.Resolve<IDeviceActor>();
                         actor.Setup(deviceType, i).Start(this.cancellationToken.Token);
-                    }
+                    });
                 }
 
                 this.running[0] = true;
