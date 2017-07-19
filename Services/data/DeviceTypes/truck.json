@@ -21,12 +21,13 @@
         {
             "Interval": "00:00:05",
             "MessageTemplate":
-                "{\"geolocation\":\"${latitude},${longitude}\",\"speed\":${speed},\"speed_unit\":\"mph\"}",
+                "{\"latitude\":${latitude},\"longitude\":${longitude},\"speed\":${speed},\"speed_unit\":\"mph\"}",
             "MessageSchema": {
-                "Name": "truck;v1",
+                "Name": "truck;v2",
                 "Format": "JSON",
                 "Fields": {
-                    "geolocation": "text",
+                    "latitude": "double",
+                    "longitude": "double",
                     "speed": "integer",
                     "speed_unit": "text"
                 }
