@@ -27,7 +27,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
 
             var configurationBuilder = new ConfigurationBuilder();
             configurationBuilder.AddIniFile("appsettings.ini", optional: true, reloadOnChange: true);
-
             this.configuration = configurationBuilder.Build();
         }
 
@@ -52,20 +51,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private static string ReplaceEnvironmentVariables(string value)
         {
             if (string.IsNullOrEmpty(value)) return value;
+            return ProcessMandatoryPlaceholders(value);
+        }
 
-            // Extract the name of all the substitutions required
-            // using the following pattern, e.g. ${VAR_NAME}
-            const string pattern = @"\${(?'key'[a-zA-Z_][a-zA-Z0-9_]*)}";
-            var keys = (from Match m
-                        in Regex.Matches(value, pattern)
-                        select m.Groups[1].Value).ToArray();
+        private static string ProcessMandatoryPlaceholders(string value)
+        {
+            // Pattern for mandatory replacements: ${VAR_NAME}
+            const string pattern = @"\${([a-zA-Z_][a-zA-Z0-9_]*)}";
 
+            // Search
+            var keys = (from Match m in Regex.Matches(value, pattern)
+                        select m.Groups[1].Value).Distinct().ToArray();
+
+            // Replace
             foreach (DictionaryEntry x in Environment.GetEnvironmentVariables())
             {
                 if (keys.Contains(x.Key))
                 {
                     value = value.Replace("${" + x.Key + "}", x.Value.ToString());
                 }
+            }
+
+            // Non replaced placeholders cause an exception
+            keys = (from Match m in Regex.Matches(value, pattern)
+                    select m.Groups[1].Value).ToArray();
+            if (keys.Length > 0)
+            {
+                var varsNotFound = keys.Aggregate(", ", (current, k) => current + k);
+                throw new InvalidConfigurationException("Environment variables not found: " + varsNotFound);
             }
 
             return value;

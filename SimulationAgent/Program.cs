@@ -13,12 +13,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         static void Main(string[] args)
         {
             var container = DependencyResolution.Setup();
-            var logger = container.Resolve<ILogger>();
 
-            logger.Info("Simulation agent started", () => new { Uptime.ProcessId });
+            // Print some useful information at bootstrap time
+            PrintBootstrapInfo(container);
 
             // TODO: re-enable after migration to .NET Core
             container.Resolve<ISimulation>().Run();
+        }
+
+        private static void PrintBootstrapInfo(IContainer container)
+        {
+            var logger = container.Resolve<ILogger>();
+            var config = container.Resolve<IConfig>();
+            logger.Info("Simulation agent started", () => new { Uptime.ProcessId });
+            logger.Info("Device Types folder: " + config.ServicesConfig.DeviceTypesFolder, () => { });
+            logger.Info("Scripts folder:      " + config.ServicesConfig.DeviceTypesScriptsFolder, () => { });
+            logger.Info("IoT Hub manager URL: " + config.ServicesConfig.IoTHubManagerApiUrl, () => { });
         }
     }
 }

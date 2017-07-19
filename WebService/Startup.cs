@@ -5,6 +5,7 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -38,8 +39,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
             this.ApplicationContainer = DependencyResolution.Setup(services);
 
+            // Print some useful information at bootstrap time
+            this.PrintBootstrapInfo(this.ApplicationContainer);
+
             // Create the IServiceProvider based on the container
             return new AutofacServiceProvider(this.ApplicationContainer);
+        }
+
+        private void PrintBootstrapInfo(IContainer container)
+        {
+            var logger = container.Resolve<Services.Diagnostics.ILogger>();
+            var config = container.Resolve<IConfig>();
+            logger.Info("Web service started", () => new { Uptime.ProcessId });
+            logger.Info("Device Types folder: " + config.ServicesConfig.DeviceTypesFolder, () => { });
+            logger.Info("Scripts folder:      " + config.ServicesConfig.DeviceTypesScriptsFolder, () => { });
+            logger.Info("IoT Hub manager URL: " + config.ServicesConfig.IoTHubManagerApiUrl, () => { });
         }
 
         // This method is called by the runtime, after the ConfigureServices

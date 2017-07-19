@@ -1,0 +1,41 @@
+{
+    "SchemaVersion": "1.0.0",
+    "Id": "314d736a-022d-4ca1-aa9c-5da9c872d5da",
+    "Version": "0.0.1",
+    "Name": "Drone",
+    "Description": "Simulated Drone",
+    "Protocol": "AMQP",
+    "DeviceState": {
+        "Initial": {
+            "vertical_speed": 0.0,
+            "horizontal_speed": 0.0,
+            "compass": 0,
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "altitude": 0.0
+        },
+        "SimulationInterval": "00:00:01",
+        "SimulationScript": {
+            "Type": "javascript",
+            "Path": "drone-state.js"
+        }
+    },
+    "Telemetry": [
+        {
+            "Interval": "00:00:02",
+            "MessageTemplate":
+                "{\"v_speed\":${vertical_speed},\"h_speed\":${horizontal_speed},\"compass\":${compass},\"latitude\":${latitude},\"longitude\":${longitude}}",
+            "MessageSchema": {
+                "Name": "Drone;v1",
+                "Format": "JSON",
+                "Fields": {
+                    "v_speed": "double",
+                    "h_speed": "double",
+                    "compass": "double",
+                    "latitude": "double",
+                    "longitude": "double"
+                }
+            }
+        }
+    ]
+}
