@@ -12,8 +12,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             var config = new Config(new ConfigData());
 
             /*
-            Kestrel is a cross-platform HTTP server based on libuv, a cross-platform asynchronous I/O library.
-            https://docs.microsoft.com/en-us/aspnet/core/fundamentals/servers/
+            Kestrel is a cross-platform HTTP server based on libuv, a
+            cross-platform asynchronous I/O library.
+            https://docs.microsoft.com/en-us/aspnet/core/fundamentals/servers
             */
             var host = new WebHostBuilder()
                 .UseUrls("http://*:" + config.Port)

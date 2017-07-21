@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 #  Prepare the environment variables used by the application.
 #
 #  For more information about finding IoT Hub settings, more information here:

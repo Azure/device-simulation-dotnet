@@ -16,13 +16,11 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{71787873-D1A0-4D9E-BC84-942E0FB3841E}"
 ProjectSection(SolutionItems) = preProject
 	.gitattributes = .gitattributes
-	.gitconfig = .gitconfig
 	.gitignore = .gitignore
 	.travis.yml = .travis.yml
 	CONTRIBUTING.md = CONTRIBUTING.md
 	DEVELOPMENT.md = DEVELOPMENT.md
 	device-simulation.sln.DotSettings = device-simulation.sln.DotSettings
-	envvars.sh = envvars.sh
 	LICENSE = LICENSE
 	README.md = README.md
 	version = version
@@ -41,7 +39,6 @@ ProjectSection(SolutionItems) = preProject
 	scripts\env-vars-check.cmd = scripts\env-vars-check.cmd
 	scripts\env-vars-setup = scripts\env-vars-setup
 	scripts\env-vars-setup.cmd = scripts\env-vars-setup.cmd
-	scripts\env-vars-setup.ps1 = scripts\env-vars-setup.ps1
 	scripts\run = scripts\run
 	scripts\run.cmd = scripts\run.cmd
 	scripts\travis = scripts\travis
@@ -75,6 +72,18 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "content", "content", "{39EA50D7-B4CD-41C4-85EA-E53E89E9BC98}"
 ProjectSection(SolutionItems) = preProject
 	scripts\docker\content\run.sh = scripts\docker\content\run.sh
+EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample-volume", "sample-volume", "{1B6A5847-A864-4AC7-ACF5-E7921E387C16}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DeviceTypes", "DeviceTypes", "{67ACBCBE-7F7A-4DAB-A8D8-5F2456B41AF1}"
+ProjectSection(SolutionItems) = preProject
+	scripts\docker\sample-volume\DeviceTypes\drone.json = scripts\docker\sample-volume\DeviceTypes\drone.json
+EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{F9981C3F-DE64-42FE-8A19-A63CED68B942}"
+ProjectSection(SolutionItems) = preProject
+	scripts\docker\sample-volume\DeviceTypes\Scripts\drone-state.js = scripts\docker\sample-volume\DeviceTypes\Scripts\drone-state.js
 EndProjectSection
 EndProject
 Global
@@ -130,5 +139,8 @@ Global
 		{DEF8CFF7-B332-4BA3-AB0B-8F7AC3275054} = {2B58D756-04D5-427F-9161-E1B45D35682A}
 		{4C88469C-C551-435D-AE2C-36C58EE686A5} = {2B58D756-04D5-427F-9161-E1B45D35682A}
 		{39EA50D7-B4CD-41C4-85EA-E53E89E9BC98} = {DEF8CFF7-B332-4BA3-AB0B-8F7AC3275054}
+		{1B6A5847-A864-4AC7-ACF5-E7921E387C16} = {DEF8CFF7-B332-4BA3-AB0B-8F7AC3275054}
+		{67ACBCBE-7F7A-4DAB-A8D8-5F2456B41AF1} = {1B6A5847-A864-4AC7-ACF5-E7921E387C16}
+		{F9981C3F-DE64-42FE-8A19-A63CED68B942} = {67ACBCBE-7F7A-4DAB-A8D8-5F2456B41AF1}
 	EndGlobalSection
 EndGlobal

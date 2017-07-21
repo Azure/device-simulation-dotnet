@@ -37,6 +37,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.Protocol = IoTHubProtocol.AMQP;
             this.DeviceState = new InternalState();
             this.Telemetry = new List<DeviceTypeMessage>();
+            this.CloudToDeviceMethods = new Dictionary<string, Script>();
         }
 
         public class InternalState

@@ -18,7 +18,7 @@ chmod ugo+x ./scripts/travis
 chmod ugo+x ./scripts/docker/build
 chmod ugo+x ./scripts/docker/run
 chmod ugo+x ./scripts/docker/publish
-chmod ugo+x ./scripts/docker/content/*.sh
+chmod ugo+x ./scripts/docker/content/*.sh 2> /dev/null
 chmod ugo+x ./scripts/git/setup
 chmod ugo+x ./scripts/git/*.sh
 

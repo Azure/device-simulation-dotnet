@@ -9,6 +9,30 @@ APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && cd .. && pwd )/"
 # The version is stored in a file, to avoid hardcoding it in multiple places
 APP_VERSION=$(cat "$APP_HOME/version")
 
-docker push $DOCKER_IMAGE:$APP_VERSION
+# Whether to publish the "latest" tag of the Docker image
+PUBLISH_LATEST="no"
+
+confirm_version() {
+    echo "Version to publish: $APP_VERSION"
+    read -r -p "Do you want to publish also the 'latest' version? [y/N] " response
+    response=${response,,} # tolower
+    if [[ $response =~ ^(no|n| ) ]] | [ -z $response ]; then
+        PUBLISH_LATEST="no"
+    else
+        PUBLISH_LATEST="yes"
+    fi
+}
+
+publish() {
+    if [[ $PUBLISH_LATEST == "no" ]]; then
+        docker push $DOCKER_IMAGE:$APP_VERSION
+    else
+        docker push $DOCKER_IMAGE:$APP_VERSION
+        docker push $DOCKER_IMAGE:latest
+    fi
+}
+
+confirm_version
+publish
 
 set +e
