@@ -17,7 +17,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // Print some useful information at bootstrap time
             PrintBootstrapInfo(container);
 
-            // TODO: re-enable after migration to .NET Core
             container.Resolve<ISimulation>().Run();
         }
 

@@ -13,6 +13,20 @@ source "$APP_HOME/scripts/.functions.sh"
 # The version is stored in a file, to avoid hardcoding it in multiple places
 APP_VERSION=$(cat "$APP_HOME/version")
 
+# Whether to update the "latest" tag of the Docker image
+BUILD_LATEST="no"
+
+confirm_version() {
+    echo "Building version $APP_VERSION"
+    read -r -p "Do you want to update the 'latest' version too? [y/N] " response
+    response=${response,,} # tolower
+    if [[ $response =~ ^(no|n| ) ]] | [ -z $response ]; then
+        BUILD_LATEST="no"
+    else
+        BUILD_LATEST="yes"
+    fi
+}
+
 compile() {
     check_dependency_dotnet
 
@@ -44,9 +58,17 @@ build_docker_image() {
     cp scripts/docker/content/run.sh             out/docker/
 
     cd out/docker/
-    docker build --tag "$DOCKER_IMAGE:$APP_VERSION" --squash --compress --label "Tags=azure,iot,pcs,simulation,.NET" .
+
+    if [[ $BUILD_LATEST == "no" ]]; then
+        docker build --tag "$DOCKER_IMAGE:$APP_VERSION" --squash --compress --label "Tags=azure,iot,pcs,simulation,.NET" .
+    else
+        docker build --tag "$DOCKER_IMAGE:$APP_VERSION" --tag "$DOCKER_IMAGE:latest" --squash --compress --label "Tags=azure,iot,pcs,simulation,.NET" .
+    fi
+
+    echo "Run './scripts/docker/publish' to publish the image to the registry"
 }
 
+confirm_version
 compile
 build_docker_image
 
