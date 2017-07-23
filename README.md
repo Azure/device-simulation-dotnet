@@ -10,34 +10,11 @@ Work in progress:
 Device Simulation
 =================
 
-... project description ...
+This service allows to manage a pool of simulated devices, to test the end-to-end flow of device-to-cloud (D2C) telemetry, invoking cloud-to-device (C2D) commands, methods, etc.
 
-Overview
-========
+The microservice provides a RESTful endpoint to create a simulation (only one), to start and stop the simulation. Each simulation is composed by a set of virtual devices, of different types, sending telemetry and receiving commands.
 
-... quick demonstrative examples ...
-
-How to use it
-=============
-
-... steps to use this project ...
-... deployment notes ...
-
-Configuration
-=============
-
-... how to customize the service, settings, etc. ...
-
-Special notes
-=============
-
-... technical details ...
-
-Edge cases
-==========
-
-... things to take into consideration ...
-... known limitations ...
+The complete documentation is available in the wiki [here](https://github.com/Azure/device-simulation-dotnet/wiki).
 
 Other documents
 ===============
