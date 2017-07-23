@@ -9,13 +9,9 @@ This service allows to manage a pool of simulated devices, to test the end-to-en
 
 The microservice provides a RESTful endpoint to create a simulation (only one), to start and stop the simulation. Each simulation is composed by a set of virtual devices, of different types, sending telemetry and receiving commands.
 
-The complete documentation is available in the wiki [here](https://github.com/Azure/device-simulation-dotnet/wiki).
-
-Other documents
-===============
-
-* [Contributing and Development setup](CONTRIBUTING.md)
+* [Device Simulation Wiki](https://github.com/Azure/device-simulation-dotnet/wiki).
 * [Development setup, scripts and tools](DEVELOPMENT.md)
+* [Contributing and Development setup](CONTRIBUTING.md)
 
 [build-badge]: https://img.shields.io/travis/Azure/device-simulation-dotnet.svg
 [build-url]: https://travis-ci.org/Azure/device-simulation-dotnet
