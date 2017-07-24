@@ -62,12 +62,12 @@ After cloning the repository, follow these steps:
 1. Open the solution in Visual Studio
 1. Either in Visual Studio or in your system, define the following environment
    variables:
-    1. PCS_IOTHUB_CONN_STRING = {your Azure IoT Hub connection string}
-    1. PCS_IOTHUBMANAGER_WEBSERVICE_PORT = 9002
-    1. PCS_IOTHUBMANAGER_WEBSERVICE_URL = http://127.0.0.1:9002/v1
-    1. PCS_DEVICESIMULATION_WEBSERVICE_PORT = 9003
+    1. `PCS_IOTHUB_CONN_STRING` = {your Azure IoT Hub connection string}
+    1. `PCS_IOTHUBMANAGER_WEBSERVICE_PORT` = 9002
+    1. `PCS_IOTHUBMANAGER_WEBSERVICE_URL` = http://127.0.0.1:9002/v1
+    1. `PCS_DEVICESIMULATION_WEBSERVICE_PORT` = 9003
    For more information about environment variables, see the
-   [development notes][DEVELOPMENT.md#configuration-and-environment-variables].
+   [development notes](DEVELOPMENT.md#configuration-and-environment-variables).
 1. Open a terminal console into the `scripts` folder and start IoT Hub Manager
    executing `run --iothubman`
 1. In Visual Studio, start the WebService project
