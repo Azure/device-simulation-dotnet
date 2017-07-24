@@ -29,7 +29,7 @@ After cloning the repository, follow these steps:
 1. Create an instance of [Azure IoT Hub](https://azure.microsoft.com/services/iot-hub)
 1. Store the "IoT Hub Connection string" in the [env-vars-setup](scripts)
    script. For more information about environment variables, see the
-   [development notes][DEVELOPMENT.md#configuration-and-environment-variables].
+   [development notes](DEVELOPMENT.md#configuration-and-environment-variables).
 1. Open a terminal console into the project folder, and run these command to start
    the [IoT Hub Manager](https://github.com/Azure/iothub-manager-dotnet)
    and the Simulation services:
