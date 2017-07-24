@@ -3,6 +3,35 @@
 * [Azure IoT Hub setup](#azure-iot-hub-setup)
 * [Development setup](#development-setup)
 
+Configuration and Environment variables
+=======================================
+
+The service configuration is stored using ASP.NET Core configuration
+adapters, in [appsettings.ini](WebService/appsettings.ini). The INI
+format allows to store values in a readable format, with comments.
+The application also supports inserting environment variables, such as
+credentials and networking details.
+
+The configuration file in the repository references some environment
+variables that need to created at least once. Depending on your OS and
+the IDE, there are several ways to manage environment variables:
+
+* For Windows users, the [env-vars-setup.cmd](scripts/env-vars-setup.cmd)
+  script needs to be prepared and executed just once. When executed, the
+  settings will persist across terminal sessions and reboots.
+* For Linux and OSX environments, the [env-vars-setup](scripts/env-vars-setup)
+  script needs to be executed every time a new console is opened.
+  Depending on the OS and terminal, there are ways to persist values
+  globally, for more information these pages should help:
+  * https://stackoverflow.com/questions/13046624/how-to-permanently-export-a-variable-in-linux
+  * https://stackoverflow.com/questions/135688/setting-environment-variables-in-os-x
+  * https://help.ubuntu.com/community/EnvironmentVariables
+* Visual Studio: env. vars can be set also from Visual Studio, under Project
+  Properties, in the left pane select "Configuration Properties" and
+  "Environment", to get to a section where you can add multiple variables.
+* IntelliJ Rider: env. vars can be set in each Run Configuration, similarly to
+  IntelliJ IDEA (https://www.jetbrains.com/help/idea/run-debug-configuration-application.html)
+
 Run and Debug with Visual Studio
 ================================
 
@@ -113,14 +142,6 @@ docker-compose up
 
 The Docker compose configuration requires some environment variables,
 similarly to the steps described above.
-
-Configuration
-=============
-
-The service configuration is stored using ASP.NET Core configuration
-adapters, in `appsettings.ini`. The INI format allows to store values in a
-readable format, with comments. The application also supports inserting
-environment variables, such as credentials and networking details.
 
 Development setup
 =================
