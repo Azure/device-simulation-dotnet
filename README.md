@@ -16,7 +16,7 @@ each sending telemetry and replying to method calls.
 
 * [Device Simulation Wiki](https://github.com/Azure/device-simulation-dotnet/wiki)
 * [Development setup, scripts and tools](DEVELOPMENT.md)
-* [Contributing and Development setup](CONTRIBUTING.md)
+* [How to contribute to the project](CONTRIBUTING.md)
 
 How to use the microservice
 ===========================
