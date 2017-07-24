@@ -1,7 +1,9 @@
-* [Build, Run locally and with Docker](#build-run-locally-and-with-docker)
-* [Service configuration](#configuration)
-* [Azure IoT Hub setup](#azure-iot-hub-setup)
-* [Development setup](#development-setup)
+* [Configuration](#configuration-and-environment-variables)
+* [Service dependencies](#dependencies)
+* [Debugging with Visual Studio](#run-and-debug-with-visual-studio)
+* [Debugging with IntelliJ Rider](#run-and-debug-with-intellij-rider)
+* [Working with Docker](#package-the-application-to-a-docker-image)
+* [Development system setup](#development-setup)
 
 Configuration and Environment variables
 =======================================
@@ -32,6 +34,27 @@ the IDE, there are several ways to manage environment variables:
 * IntelliJ Rider: env. vars can be set in each Run Configuration, similarly to
   IntelliJ IDEA (https://www.jetbrains.com/help/idea/run-debug-configuration-application.html)
 
+Dependencies
+============
+
+The Device Simulation service depends on
+[IoT Hub Manager](https://github.com/Azure/iothub-manager-dotnet).
+In order to run simulations, you need to start the IoT Hub manager:
+
+Bash console:
+```
+docker run -it -p 9002:9002 -e PCS_IOTHUBMANAGER_WEBSERVICE_PORT=9002 \
+    -e PCS_IOTHUB_CONN_STRING=$PCS_IOTHUB_CONN_STRING \
+    azureiotpcs/iothubmanager-dotnet
+```
+
+Windows console:
+```
+docker run -it -p 9002:9002 -e PCS_IOTHUBMANAGER_WEBSERVICE_PORT=9002 ^
+    -e PCS_IOTHUB_CONN_STRING=%PCS_IOTHUB_CONN_STRING% ^
+    azureiotpcs/iothubmanager-dotnet
+```
+
 Run and Debug with Visual Studio
 ================================
 
@@ -54,27 +77,6 @@ Steps using Visual Studio 2017:
    otherwise change these manually.
 1. Press F5, or the Run icon. VisualStudio should open your browser showing
    the service status in JSON format.
-
-Dependencies
-============
-
-The Device Simulation service depends on
-[IoT Hub Manager](https://github.com/Azure/iothub-manager-dotnet).
-In order to run simulations, you need to start the IoT Hub manager:
-
-Bash console:
-```
-docker run -it -p 9002:9002 -e PCS_IOTHUBMANAGER_WEBSERVICE_PORT=9002 \
-    -e PCS_IOTHUB_CONN_STRING=$PCS_IOTHUB_CONN_STRING \
-    azureiotpcs/iothubmanager-dotnet
-```
-
-Windows console:
-```
-docker run -it -p 9002:9002 -e PCS_IOTHUBMANAGER_WEBSERVICE_PORT=9002 ^
-    -e PCS_IOTHUB_CONN_STRING=%PCS_IOTHUB_CONN_STRING% ^
-    azureiotpcs/iothubmanager-dotnet
-```
 
 Run and Debug with IntelliJ Rider
 =================================
@@ -148,15 +150,9 @@ Development setup
 
 ## .NET setup
 
-The project workflow is managed via .NET Core 1.0.4, which you need
-to install in your environment, so that you can run all the scripts
-and ensure that your IDE works as expected.
-
-* [.NET Core](https://dotnet.github.io)
-
-We provide also a
-[Java version](https://github.com/Azure/device-simulation-java)
-of this project and other Azure IoT PCS components.
+The project workflow is managed via [.NET Core](https://dotnet.github.io)
+1.x, which you need to install in your environment, so that you can run
+all the scripts and ensure that your IDE works as expected.
 
 ## IDE
 
