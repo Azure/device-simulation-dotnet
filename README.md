@@ -66,6 +66,7 @@ After cloning the repository, follow these steps:
     1. `PCS_IOTHUBMANAGER_WEBSERVICE_PORT` = 9002
     1. `PCS_IOTHUBMANAGER_WEBSERVICE_URL` = http://127.0.0.1:9002/v1
     1. `PCS_DEVICESIMULATION_WEBSERVICE_PORT` = 9003
+   
    For more information about environment variables, see the
    [development notes](DEVELOPMENT.md#configuration-and-environment-variables).
 1. Open a terminal console into the `scripts` folder and start IoT Hub Manager
