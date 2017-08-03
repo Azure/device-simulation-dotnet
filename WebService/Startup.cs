@@ -90,6 +90,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             try
             {
                 model = JsonConvert.DeserializeObject<CorsWhitelistModel>(config.CorsWhitelist);
+                if (model == null)
+                {
+                    logger.Info("Invalid CORS whitelist. Ignored", () => new { config.CorsWhitelist });
+                    return;
+                }
             }
             catch (Exception ex)
             {
@@ -97,7 +102,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
                 return;
             }
 
-            if (model.Origins.Contains("*"))
+            if (model.Origins == null)
+            {
+                logger.Info("No setting for CORS origin policy was found, ignore", () => { });
+            }
+            else if (model.Origins.Contains("*"))
             {
                 logger.Info("CORS policy allowed any origin", () => { });
                 builder.AllowAnyOrigin();
@@ -108,7 +117,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
                 builder.WithOrigins(model.Origins);
             }
 
-            if (model.Methods.Contains("*"))
+            if (model.Origins == null)
+            {
+                logger.Info("No setting for CORS method policy was found, ignore", () => { });
+            }
+            else if (model.Methods.Contains("*"))
             {
                 logger.Info("CORS policy allowed any method", () => { });
                 builder.AllowAnyMethod();
@@ -119,7 +132,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
                 builder.WithMethods(model.Methods);
             }
 
-            if (model.Headers.Contains("*"))
+            if (model.Origins == null)
+            {
+                logger.Info("No setting for CORS header policy was found, ignore", () => { });
+            }
+            else if (model.Headers.Contains("*"))
             {
                 logger.Info("CORS policy allowed any header", () => { });
                 builder.AllowAnyHeader();
