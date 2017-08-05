@@ -95,7 +95,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
                 if (state == null) return;
 
                 this.Initial = state.Initial;
-                //this.SimulationInterval = Convert.ToInt64(state.SimulationInterval);
                 this.SimulationInterval = state.SimulationInterval.ToString("c");
                 this.SimulationScript = new ScriptApiModel(state.SimulationScript);
             }
@@ -148,7 +147,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             {
                 if (message == null) return;
 
-                //this.Interval = Convert.ToInt64(message.Interval);
                 this.Interval = message.Interval.ToString("c");
                 this.MessageTemplate = message.MessageTemplate;
                 this.MessageSchema = new DeviceTypeMessageSchemaApiModel(message.MessageSchema);

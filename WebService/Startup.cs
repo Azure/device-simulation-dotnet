@@ -53,7 +53,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             logger.Info("Web service started", () => new { Uptime.ProcessId });
             logger.Info("Device Types folder: " + config.ServicesConfig.DeviceTypesFolder, () => { });
             logger.Info("Scripts folder:      " + config.ServicesConfig.DeviceTypesScriptsFolder, () => { });
-            logger.Info("IoT Hub manager URL: " + config.ServicesConfig.IoTHubManagerApiUrl, () => { });
         }
 
         // This method is called by the runtime, after the ConfigureServices

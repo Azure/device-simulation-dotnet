@@ -8,8 +8,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
     {
         string DeviceTypesFolder { get; set; }
         string DeviceTypesScriptsFolder { get; set; }
-        string IoTHubManagerApiUrl { get; set; }
-        int IoTHubManagerApiTimeout { get; set; }
+        string IoTHubConnString { get; set; }
     }
 
     // TODO: test Windows/Linux folder separator
@@ -30,8 +29,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             set { this.dtbf = this.NormalizePath(value); }
         }
 
-        public string IoTHubManagerApiUrl { get; set; }
-        public int IoTHubManagerApiTimeout { get; set; }
+        public string IoTHubConnString { get; set; }
 
         private string NormalizePath(string path)
         {

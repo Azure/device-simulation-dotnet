@@ -10,7 +10,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
     {
         ITimer Start();
         ITimer StartIn(TimeSpan delay);
-        ITimer Stop();
+        void Stop();
         ITimer Setup(Action<object> action, object context, TimeSpan frequency);
         ITimer Setup(Action<object> action, object context, int frequency);
     }
@@ -61,10 +61,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             return this;
         }
 
-        public ITimer Stop()
+        public void Stop()
         {
             this.timer?.Change(Timeout.Infinite, Timeout.Infinite);
-            return this;
+            this.timer?.Dispose();
         }
     }
 }

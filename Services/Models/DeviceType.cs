@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 {
@@ -38,6 +39,100 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.DeviceState = new InternalState();
             this.Telemetry = new List<DeviceTypeMessage>();
             this.CloudToDeviceMethods = new Dictionary<string, Script>();
+        }
+
+        /// <summary>
+        /// If the simulated device has some geolocation properties, we publish
+        /// them also in the twin, so that the device can be shown in the map
+        /// even when it hasn't sent (or is not sending) telemetry.
+        /// </summary>
+        public JObject GetLocationReportedProperty()
+        {
+            // 3D
+            if (this.DeviceState.Initial.ContainsKey("latitude")
+                && this.DeviceState.Initial.ContainsKey("longitude")
+                && this.DeviceState.Initial.ContainsKey("altitude"))
+            {
+                return new JObject
+                {
+                    ["Latitude"] = this.DeviceState.Initial["latitude"].ToString(),
+                    ["Longitude"] = this.DeviceState.Initial["longitude"].ToString(),
+                    ["Altitude"] = this.DeviceState.Initial["altitude"].ToString()
+                };
+            }
+
+            // 2D
+            if (this.DeviceState.Initial.ContainsKey("latitude")
+                && this.DeviceState.Initial.ContainsKey("longitude"))
+            {
+                return new JObject
+                {
+                    ["Latitude"] = this.DeviceState.Initial["latitude"].ToString(),
+                    ["Longitude"] = this.DeviceState.Initial["longitude"].ToString()
+                };
+            }
+
+            // Geostationary
+            if (this.DeviceState.Initial.ContainsKey("longitude"))
+            {
+                return new JObject
+                {
+                    ["Longitude"] = this.DeviceState.Initial["longitude"].ToString()
+                };
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// This data is published in the device twin, so that the UI can
+        /// show information about a device.
+        /// </summary>
+        public JObject GetDeviceTypeReportedProperty()
+        {
+            return new JObject
+            {
+                ["Name"] = this.Name,
+                ["Version"] = this.Version
+            };
+        }
+
+        /// <summary>
+        /// This data is published in the device twin, so that clients
+        /// parsing the telemetry have information about the schema used,
+        /// e.g. whether the format is JSON or something else, the list of
+        /// fields and their type.
+        /// </summary>
+        public JObject GetTelemetryReportedProperty()
+        {
+            var result = new JObject();
+
+            foreach (var t in this.Telemetry)
+            {
+                var fields = new JObject();
+                foreach (var field in t.MessageSchema.Fields)
+                {
+                    fields[field.Key] = field.Value.ToString();
+                }
+
+                var schema = new JObject
+                {
+                    ["Name"] = t.MessageSchema.Name,
+                    ["Format"] = t.MessageSchema.Format.ToString(),
+                    ["Fields"] = fields
+                };
+
+                var message = new JObject
+                {
+                    ["Interval"] = t.Interval,
+                    ["MessageTemplate"] = t.MessageTemplate,
+                    ["MessageSchema"] = schema
+                };
+
+                result[t.MessageSchema.Name] = message;
+            }
+
+            return result;
         }
 
         public class InternalState

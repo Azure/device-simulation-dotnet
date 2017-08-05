@@ -30,15 +30,6 @@ After cloning the repository, follow these steps:
 1. Store the "IoT Hub Connection string" in the [env-vars-setup](scripts)
    script. For more information about environment variables, see the
    [development notes](DEVELOPMENT.md#configuration-and-environment-variables).
-1. Open a terminal console into the project folder, and run these command to start
-   the [IoT Hub Manager](https://github.com/Azure/iothub-manager-dotnet)
-   and the Simulation services:
-   ```
-   cd scripts
-   env-vars-setup      // (Bash users: ./env-vars-setup)
-   cd docker
-   docker-compose up
-   ```
 1. Using an HTTP client like [Postman](https://www.getpostman.com),
    use the
    [RESTful API](https://github.com/Azure/device-simulation-dotnet/wiki/%5BAPI-Specifications%5D-Simulations#create-default-simulation)
@@ -61,16 +52,11 @@ After cloning the repository, follow these steps:
 1. Create an instance of [Azure IoT Hub](https://azure.microsoft.com/services/iot-hub)
 1. Open the solution in Visual Studio
 1. Either in Visual Studio or in your system, define the following environment
-   variables:
-    1. `PCS_IOTHUB_CONN_STRING` = {your Azure IoT Hub connection string}
-    1. `PCS_IOTHUBMANAGER_WEBSERVICE_PORT` = 9002
-    1. `PCS_IOTHUBMANAGER_WEBSERVICE_URL` = http://127.0.0.1:9002/v1
-    1. `PCS_DEVICESIMULATION_WEBSERVICE_PORT` = 9003
-   
+   variable:
+    1. `PCS_IOTHUB_CONNSTRING` = {your Azure IoT Hub connection string}
+
    For more information about environment variables, see the
    [development notes](DEVELOPMENT.md#configuration-and-environment-variables).
-1. Open a terminal console into the `scripts` folder and start IoT Hub Manager
-   executing `run --iothubman`
 1. In Visual Studio, start the WebService project
 1. In Visual Studio, Start the SimulationAgent project
 1. Using an HTTP client like [Postman](https://www.getpostman.com),

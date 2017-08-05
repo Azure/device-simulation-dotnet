@@ -11,7 +11,9 @@
             "temperature_unit": "F",
             "humidity": 50,
             "humidity_unit": "%",
-            "lights_on": false
+            "lights_on": false,
+            "latitude": 47.642117,
+            "longitude": -122.136611
         },
         "SimulationInterval": "00:00:05",
         "SimulationScript": {
@@ -23,7 +25,7 @@
         {
             "Interval": "00:00:10",
             "MessageTemplate":
-                "{\"t\":${temperature},\"t_u\":\"${temperature_unit}\",\"h\":\"${humidity}\"}",
+                "{\"t\":${temperature},\"t_unit\":\"${temperature_unit}\",\"h\":\"${humidity}\"}",
             "MessageSchema": {
                 "Name": "RoomComfort;v1",
                 "Format": "JSON",

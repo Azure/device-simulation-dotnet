@@ -7,7 +7,9 @@
     "Protocol": "HTTP",
     "DeviceState": {
         "Initial": {
-            "floor": 1
+            "floor": 1,
+            "latitude": 47.642117,
+            "longitude": -122.136611
         },
         "SimulationInterval": "00:00:15",
         "SimulationScript": {
