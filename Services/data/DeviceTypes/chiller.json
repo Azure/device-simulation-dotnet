@@ -35,10 +35,10 @@
                     "humidity": "integer",
                     "voltage": "double",
                     "power": "double",
-                    "t_unit": "text",
-                    "h_unit": "text",
-                    "v_unit": "text",
-                    "p_unit": "text"
+                    "temperature_unit": "text",
+                    "humidity_unit": "text",
+                    "voltage_unit": "text",
+                    "power_unit": "text"
                 }
             }
         }
