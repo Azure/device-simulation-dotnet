@@ -80,18 +80,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             var azureTwin = await this.GetTwinAsync();
 
-            //            foreach (KeyValuePair<string, JToken> data in device.Twin.ReportedProperties)
-            //            {
-            //                this.log.Debug("New key", () => new { data.Key });
-            //
-            //                // If the key is already present, remove it
-            //                //                if (azureTwin.Properties.Reported.Contains(data.Key))
-            //                //                {
-            //                //                    this.log.Debug("Removing key", () => new { data.Key });
-            //                //                    device.Twin.ReportedProperties.Remove(data.Key);
-            //                //                }
-            //            }
-
             // Remove properties
             var props = azureTwin.Properties.Reported.GetEnumerator();
             while (props.MoveNext())
