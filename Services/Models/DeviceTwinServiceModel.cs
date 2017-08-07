@@ -9,6 +9,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 {
     public class DeviceTwinServiceModel
     {
+        // Simulated devices are marked with a tag "IsSimulated = Y"
         public const string SimulatedTagKey = "IsSimulated";
         public const string SimulatedTagValue = "Y";
 
@@ -32,6 +33,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             }
         }
 
+        /*
+        TODO: remove if not required
         public Twin ToAzureModel()
         {
             var properties = new TwinProperties
@@ -47,6 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
                 Properties = properties
             };
         }
+        */
 
         /*
         JValue:  string, integer, float, boolean
@@ -92,19 +96,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         {
             var result = new TwinCollection();
 
-            if (x != null)
+            if (x == null) return result;
+
+            foreach (KeyValuePair<string, JToken> item in x)
             {
-                foreach (KeyValuePair<string, JToken> item in x)
+                try
                 {
-                    try
-                    {
-                        result[item.Key] = item.Value;
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-                        throw;
-                    }
+                    result[item.Key] = item.Value;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
                 }
             }
 

@@ -63,7 +63,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             device.SetReportedProperty("Protocol", this.deviceType.Protocol.ToString());
             device.SetReportedProperty("SupportedMethods", string.Join(",", this.deviceType.CloudToDeviceMethods.Keys));
             device.SetReportedProperty("DeviceType", this.deviceType.GetDeviceTypeReportedProperty());
-            device.SetReportedProperty("Telemetry", this.deviceType.GetTelemetryReportedProperty());
+            device.SetReportedProperty("Telemetry", this.deviceType.GetTelemetryReportedProperty(this.log));
             device.SetReportedProperty("Location", this.deviceType.GetLocationReportedProperty());
 
             client.UpdateTwinAsync(device).Wait((int) connectionTimeout.TotalMilliseconds, token);

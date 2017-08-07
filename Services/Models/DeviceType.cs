@@ -2,6 +2,8 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
@@ -103,12 +105,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         /// e.g. whether the format is JSON or something else, the list of
         /// fields and their type.
         /// </summary>
-        public JObject GetTelemetryReportedProperty()
+        public JObject GetTelemetryReportedProperty(ILogger log)
         {
             var result = new JObject();
 
             foreach (var t in this.Telemetry)
             {
+                if (t == null)
+                {
+                    log.Error("The device type contains an invalid message definition",
+                        () => new { this.Id, this.Name });
+                    throw new InvalidConfigurationException("The device type contains an invalid message definition");
+                }
+
+                if (string.IsNullOrEmpty(t.MessageSchema.Name))
+                {
+                    log.Error("One of the device messages schema doesn't have a name specified",
+                        () => new { this.Id, this.Name, t });
+                    throw new InvalidConfigurationException("One of the device messages schema doesn't have a name specified");
+                }
+
                 var fields = new JObject();
                 foreach (var field in t.MessageSchema.Fields)
                 {
