@@ -14,6 +14,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         /// <summary>Web service listening port</summary>
         int Port { get; }
 
+        /// <summary>CORS whitelist, in form { 'origins': [], 'methods': [], 'headers': [] }</summary>
+        string CorsWhitelist { get; }
+
         /// <summary>Service layer configuration</summary>
         IServicesConfig ServicesConfig { get; }
     }
@@ -25,6 +28,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string PortKey = ApplicationKey + "webservice_port";
         private const string DeviceTypesFolderKey = ApplicationKey + "device_types_folder";
         private const string DeviceTypesScriptsFolderKey = ApplicationKey + "device_types_scripts_folder";
+        private const string CorsWhitelistKey = ApplicationKey + "cors_whitelist";
 
         private const string IoTHubManagerKey = "iothubmanager:";
         private const string IoTHubManagerApiUrlKey = IoTHubManagerKey + "webservice_url";
@@ -33,12 +37,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         /// <summary>Web service listening port</summary>
         public int Port { get; }
 
+        /// <summary>CORS whitelist, in form { 'origins': [], 'methods': [], 'headers': [] }</summary>
+        public string CorsWhitelist { get; }
+
         /// <summary>Service layer configuration</summary>
         public IServicesConfig ServicesConfig { get; }
 
         public Config(IConfigData configData)
         {
             this.Port = configData.GetInt(PortKey);
+            this.CorsWhitelist = configData.GetString(CorsWhitelistKey);
 
             this.ServicesConfig = new ServicesConfig
             {
