@@ -27,7 +27,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             logger.Info("Simulation agent started", () => new { Uptime.ProcessId });
             logger.Info("Device Types folder: " + config.ServicesConfig.DeviceTypesFolder, () => { });
             logger.Info("Scripts folder:      " + config.ServicesConfig.DeviceTypesScriptsFolder, () => { });
-            logger.Info("IoT Hub manager URL: " + config.ServicesConfig.IoTHubManagerApiUrl, () => { });
         }
     }
 }

@@ -1,133 +1,56 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Net;
 using System.Threading.Tasks;
-using Microsoft.Azure.Devices.Client;
+using Microsoft.Azure.Devices;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Newtonsoft.Json;
+using TransportType = Microsoft.Azure.Devices.Client.TransportType;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface IDevices
     {
-        Task<Device> GetOrCreateAsync(string deviceId);
-        Task<Device> GetAsync(string deviceId);
-        Task<Device> CreateAsync(Device device);
-        IDeviceClient GetClient(Device device, IoTHubProtocol protocol);
+        Task<Tuple<bool, string>> PingRegistryAsync();
+        IDeviceClient GetClient(DeviceServiceModel device, IoTHubProtocol protocol);
+        Task<DeviceServiceModel> GetOrCreateAsync(string deviceId);
+        Task<DeviceServiceModel> GetAsync(string deviceId);
+        Task<DeviceServiceModel> CreateAsync(string deviceId);
     }
 
     public class Devices : IDevices
     {
         private readonly ILogger log;
-        private readonly IHttpClient httpClient;
-        private readonly string iothubmanUri;
-        private readonly int iothubmanTimeout;
+        private readonly RegistryManager registry;
+        private readonly string ioTHubHostName;
 
         public Devices(
-            IServicesConfig config,
             ILogger logger,
-            IHttpClient httpClient)
+            IServicesConfig config)
         {
             this.log = logger;
-            this.httpClient = httpClient;
-            this.iothubmanTimeout = config.IoTHubManagerApiTimeout;
-            this.iothubmanUri = config.IoTHubManagerApiUrl + "/devices/";
-
-            this.log.Debug("Devices service instantiated",
-                () => new { this.iothubmanUri, this.iothubmanTimeout });
+            this.registry = RegistryManager.CreateFromConnectionString(config.IoTHubConnString);
+            this.ioTHubHostName = IotHubConnectionStringBuilder.Create(config.IoTHubConnString).HostName;
+            this.log.Debug("Devices service instantiated", () => new { this.ioTHubHostName });
         }
 
-        public async Task<Device> GetOrCreateAsync(string deviceId)
+        public async Task<Tuple<bool, string>> PingRegistryAsync()
         {
             try
             {
-                return await this.GetAsync(deviceId);
+                await this.registry.GetDeviceAsync("healthcheck");
+                return new Tuple<bool, string>(true, "OK");
             }
-            catch (ResourceNotFoundException)
+            catch (Exception e)
             {
-                var device = new Device
-                {
-                    Id = deviceId,
-                    Enabled = true
-                };
-
-                return await this.CreateAsync(device);
+                this.log.Error("Device registry test failed", () => new { e });
+                return new Tuple<bool, string>(false, e.Message);
             }
         }
 
-        public async Task<Device> GetAsync(string deviceId)
-        {
-            this.log.Info("Getting device", () => new { deviceId });
-
-            var request = new HttpRequest();
-            request.SetUriFromString(this.iothubmanUri + WebUtility.UrlDecode(deviceId));
-            request.Options.Timeout = this.iothubmanTimeout * 1000;
-            var response = await this.httpClient.GetAsync(request);
-
-            this.log.Debug("IoT Hub manager response", () => new { deviceId, response.StatusCode, response.Content });
-
-            switch (response.StatusCode)
-            {
-                case HttpStatusCode.OK:
-                    return JsonConvert.DeserializeObject<Device>(response.Content);
-                case HttpStatusCode.NotFound:
-                    this.log.Warn("The device doesn't exist", () => new { deviceId });
-                    throw new ResourceNotFoundException("The device doesn't exist.");
-                default:
-                    if (response.IsRetriableError)
-                    {
-                        this.log.Warn("Retriable error: unable to fetch the list of IoT devices", () => new { deviceId });
-                        throw new ExternalDependencyException(
-                            "Unable to fetch the list of IoT devices. Status code " + response.StatusCode + ". Please retry.");
-                    }
-
-                    this.log.Error("Unable to fetch the list of IoT devices", () => new { deviceId });
-                    throw new ExternalDependencyException(
-                        "Unable to fetch the list of IoT devices. Status code " + response.StatusCode + ".");
-            }
-        }
-
-        public async Task<Device> CreateAsync(Device device)
-        {
-            this.log.Info("Creating device", () => new { device.Id });
-
-            var request = new HttpRequest();
-            request.SetUriFromString(this.iothubmanUri);
-            request.Options.Timeout = this.iothubmanTimeout * 1000;
-            request.SetContent(device);
-            var response = await this.httpClient.PostAsync(request);
-
-            this.log.Debug("IoT Hub manager response",
-                () => new { device.Id, response.StatusCode, response.Content });
-
-            switch (response.StatusCode)
-            {
-                case HttpStatusCode.OK:
-                    return JsonConvert.DeserializeObject<Device>(response.Content);
-                default:
-                    if (response.IsRetriableError)
-                    {
-                        this.log.Warn("Retriable error: unable to create the IoT device",
-                            () => new { device.Id });
-
-                        throw new ExternalDependencyException(
-                            "Unable to create the IoT device. Status code " + response.StatusCode + ". Please retry.");
-                    }
-
-                    this.log.Error("Unable to create the IoT device",
-                        () => new { device.Id });
-
-                    throw new ExternalDependencyException(
-                        "Fatal error: unable to create the IoT device. Status code " + response.StatusCode);
-            }
-        }
-
-        public IDeviceClient GetClient(Device device, IoTHubProtocol protocol)
+        public IDeviceClient GetClient(DeviceServiceModel device, IoTHubProtocol protocol)
         {
             var connectionString = $"HostName={device.IoTHubHostName};DeviceId={device.Id};SharedAccessKey={device.AuthPrimaryKey}";
 
@@ -135,21 +58,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             switch (protocol)
             {
                 case IoTHubProtocol.AMQP:
-                    this.log.Info("Creating AMQP device client",
+                    this.log.Debug("Creating AMQP device client",
                         () => new { device.Id, device.IoTHubHostName });
 
                     sdkClient = Azure.Devices.Client.DeviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp_Tcp_Only);
                     break;
 
                 case IoTHubProtocol.MQTT:
-                    this.log.Info("Creating MQTT device client",
+                    this.log.Debug("Creating MQTT device client",
                         () => new { device.Id, device.IoTHubHostName });
 
                     sdkClient = Azure.Devices.Client.DeviceClient.CreateFromConnectionString(connectionString, TransportType.Mqtt_Tcp_Only);
                     break;
 
                 case IoTHubProtocol.HTTP:
-                    this.log.Info("Creating HTTP device client",
+                    this.log.Debug("Creating HTTP device client",
                         () => new { device.Id, device.IoTHubHostName });
 
                     sdkClient = Azure.Devices.Client.DeviceClient.CreateFromConnectionString(connectionString, TransportType.Http1);
@@ -163,6 +86,69 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             return new DeviceClient(sdkClient, protocol, this.log);
+        }
+
+        public async Task<DeviceServiceModel> GetOrCreateAsync(string deviceId)
+        {
+            try
+            {
+                return await this.GetAsync(deviceId);
+            }
+            catch (ResourceNotFoundException)
+            {
+                this.log.Debug("Device not found, will create", () => new { deviceId });
+                return await this.CreateAsync(deviceId);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unexpected error while retrieving the device", () => new { deviceId, e });
+                throw;
+            }
+        }
+
+        public async Task<DeviceServiceModel> GetAsync(string deviceId)
+        {
+            DeviceServiceModel result = null;
+
+            try
+            {
+                var device = this.registry.GetDeviceAsync(deviceId);
+                var twin = this.registry.GetTwinAsync(deviceId);
+                await Task.WhenAll(device, twin);
+
+                if (device.Result != null)
+                {
+                    result = new DeviceServiceModel(device.Result, twin.Result, this.ioTHubHostName);
+                }
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to fetch the IoT device", () => new { deviceId, e });
+                throw new ExternalDependencyException("Unable to fetch the IoT device.");
+            }
+
+            if (result == null)
+            {
+                throw new ResourceNotFoundException("The device doesn't exist.");
+            }
+
+            return result;
+        }
+
+        public async Task<DeviceServiceModel> CreateAsync(string deviceId)
+        {
+            this.log.Debug("Creating device", () => new { deviceId });
+            var device = new Device(deviceId);
+            var azureDevice = await this.registry.AddDeviceAsync(device);
+
+            this.log.Debug("Fetching device twin", () => new { azureDevice.Id });
+            var azureTwin = await this.registry.GetTwinAsync(azureDevice.Id);
+
+            this.log.Debug("Writing device twin", () => new { azureDevice.Id });
+            azureTwin.Tags[DeviceTwinServiceModel.SimulatedTagKey] = DeviceTwinServiceModel.SimulatedTagValue;
+            azureTwin = await this.registry.UpdateTwinAsync(azureDevice.Id, azureTwin, "*");
+
+            return new DeviceServiceModel(azureDevice, azureTwin, this.ioTHubHostName);
         }
     }
 }

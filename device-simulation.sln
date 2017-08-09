@@ -14,77 +14,77 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimulationAgent.Test", "SimulationAgent.Test\SimulationAgent.Test.csproj", "{DFE737E7-9FAA-4B08-A2B5-37F2E858FFAF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{71787873-D1A0-4D9E-BC84-942E0FB3841E}"
-ProjectSection(SolutionItems) = preProject
-	.gitattributes = .gitattributes
-	.gitignore = .gitignore
-	.travis.yml = .travis.yml
-	CONTRIBUTING.md = CONTRIBUTING.md
-	DEVELOPMENT.md = DEVELOPMENT.md
-	device-simulation.sln.DotSettings = device-simulation.sln.DotSettings
-	LICENSE = LICENSE
-	README.md = README.md
-	version = version
-EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		.travis.yml = .travis.yml
+		CONTRIBUTING.md = CONTRIBUTING.md
+		DEVELOPMENT.md = DEVELOPMENT.md
+		device-simulation.sln.DotSettings = device-simulation.sln.DotSettings
+		LICENSE = LICENSE
+		README.md = README.md
+		version = version
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{2B58D756-04D5-427F-9161-E1B45D35682A}"
-ProjectSection(SolutionItems) = preProject
-	scripts\.functions.sh = scripts\.functions.sh
-	scripts\build = scripts\build
-	scripts\build.cmd = scripts\build.cmd
-	scripts\clean-up = scripts\clean-up
-	scripts\clean-up.cmd = scripts\clean-up.cmd
-	scripts\compile = scripts\compile
-	scripts\compile.cmd = scripts\compile.cmd
-	scripts\env-vars-check = scripts\env-vars-check
-	scripts\env-vars-check.cmd = scripts\env-vars-check.cmd
-	scripts\env-vars-setup = scripts\env-vars-setup
-	scripts\env-vars-setup.cmd = scripts\env-vars-setup.cmd
-	scripts\run = scripts\run
-	scripts\run.cmd = scripts\run.cmd
-	scripts\travis = scripts\travis
-	scripts\travis.cmd = scripts\travis.cmd
-EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		scripts\.functions.sh = scripts\.functions.sh
+		scripts\build = scripts\build
+		scripts\build.cmd = scripts\build.cmd
+		scripts\clean-up = scripts\clean-up
+		scripts\clean-up.cmd = scripts\clean-up.cmd
+		scripts\compile = scripts\compile
+		scripts\compile.cmd = scripts\compile.cmd
+		scripts\env-vars-check = scripts\env-vars-check
+		scripts\env-vars-check.cmd = scripts\env-vars-check.cmd
+		scripts\env-vars-setup = scripts\env-vars-setup
+		scripts\env-vars-setup.cmd = scripts\env-vars-setup.cmd
+		scripts\run = scripts\run
+		scripts\run.cmd = scripts\run.cmd
+		scripts\travis = scripts\travis
+		scripts\travis.cmd = scripts\travis.cmd
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{DEF8CFF7-B332-4BA3-AB0B-8F7AC3275054}"
-ProjectSection(SolutionItems) = preProject
-	scripts\docker\build = scripts\docker\build
-	scripts\docker\build.cmd = scripts\docker\build.cmd
-	scripts\docker\Dockerfile = scripts\docker\Dockerfile
-	scripts\docker\run.cmd = scripts\docker\run.cmd
-	scripts\docker\.dockerignore = scripts\docker\.dockerignore
-	scripts\docker\run = scripts\docker\run
-	scripts\docker\docker-compose.yml = scripts\docker\docker-compose.yml
-	scripts\docker\publish = scripts\docker\publish
-	scripts\docker\publish.cmd = scripts\docker\publish.cmd
-EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		scripts\docker\build = scripts\docker\build
+		scripts\docker\build.cmd = scripts\docker\build.cmd
+		scripts\docker\Dockerfile = scripts\docker\Dockerfile
+		scripts\docker\run.cmd = scripts\docker\run.cmd
+		scripts\docker\.dockerignore = scripts\docker\.dockerignore
+		scripts\docker\run = scripts\docker\run
+		scripts\docker\docker-compose.yml = scripts\docker\docker-compose.yml
+		scripts\docker\publish = scripts\docker\publish
+		scripts\docker\publish.cmd = scripts\docker\publish.cmd
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "git", "git", "{4C88469C-C551-435D-AE2C-36C58EE686A5}"
-ProjectSection(SolutionItems) = preProject
-	scripts\git\.functions.sh = scripts\git\.functions.sh
-	scripts\git\fix-perms.sh = scripts\git\fix-perms.sh
-	scripts\git\pre-commit-runner-no-sandbox.sh = scripts\git\pre-commit-runner-no-sandbox.sh
-	scripts\git\pre-commit-runner-with-sandbox.sh = scripts\git\pre-commit-runner-with-sandbox.sh
-	scripts\git\pre-commit.sh = scripts\git\pre-commit.sh
-	scripts\git\setup = scripts\git\setup
-	scripts\git\setup.cmd = scripts\git\setup.cmd
-EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		scripts\git\.functions.sh = scripts\git\.functions.sh
+		scripts\git\fix-perms.sh = scripts\git\fix-perms.sh
+		scripts\git\pre-commit-runner-no-sandbox.sh = scripts\git\pre-commit-runner-no-sandbox.sh
+		scripts\git\pre-commit-runner-with-sandbox.sh = scripts\git\pre-commit-runner-with-sandbox.sh
+		scripts\git\pre-commit.sh = scripts\git\pre-commit.sh
+		scripts\git\setup = scripts\git\setup
+		scripts\git\setup.cmd = scripts\git\setup.cmd
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "content", "content", "{39EA50D7-B4CD-41C4-85EA-E53E89E9BC98}"
-ProjectSection(SolutionItems) = preProject
-	scripts\docker\content\run.sh = scripts\docker\content\run.sh
-EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		scripts\docker\content\run.sh = scripts\docker\content\run.sh
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample-volume", "sample-volume", "{1B6A5847-A864-4AC7-ACF5-E7921E387C16}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DeviceTypes", "DeviceTypes", "{67ACBCBE-7F7A-4DAB-A8D8-5F2456B41AF1}"
-ProjectSection(SolutionItems) = preProject
-	scripts\docker\sample-volume\DeviceTypes\drone.json = scripts\docker\sample-volume\DeviceTypes\drone.json
-EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		scripts\docker\sample-volume\DeviceTypes\drone.json = scripts\docker\sample-volume\DeviceTypes\drone.json
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{F9981C3F-DE64-42FE-8A19-A63CED68B942}"
-ProjectSection(SolutionItems) = preProject
-	scripts\docker\sample-volume\DeviceTypes\Scripts\drone-state.js = scripts\docker\sample-volume\DeviceTypes\Scripts\drone-state.js
-EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		scripts\docker\sample-volume\DeviceTypes\Scripts\drone-state.js = scripts\docker\sample-volume\DeviceTypes\Scripts\drone-state.js
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -92,10 +92,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{90A4CAAB-F071-4CF8-A87C-C7F094258F13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{90A4CAAB-F071-4CF8-A87C-C7F094258F13}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{90A4CAAB-F071-4CF8-A87C-C7F094258F13}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{90A4CAAB-F071-4CF8-A87C-C7F094258F13}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9DFE22E7-03DD-4F30-BCC1-33F69BA15192}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9DFE22E7-03DD-4F30-BCC1-33F69BA15192}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9DFE22E7-03DD-4F30-BCC1-33F69BA15192}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -112,10 +108,12 @@ Global
 		{93EBB353-A0B6-440F-BD34-17240C4F421B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{93EBB353-A0B6-440F-BD34-17240C4F421B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{93EBB353-A0B6-440F-BD34-17240C4F421B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{93EBB353-A0B6-440F-BD34-17240C4F421B}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
 		{21FEAC28-BB2D-4827-B62A-0476BF44D602}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{21FEAC28-BB2D-4827-B62A-0476BF44D602}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{21FEAC28-BB2D-4827-B62A-0476BF44D602}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{21FEAC28-BB2D-4827-B62A-0476BF44D602}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21FEAC28-BB2D-4827-B62A-0476BF44D602}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
 		{DFE737E7-9FAA-4B08-A2B5-37F2E858FFAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DFE737E7-9FAA-4B08-A2B5-37F2E858FFAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DFE737E7-9FAA-4B08-A2B5-37F2E858FFAF}.Release|Any CPU.ActiveCfg = Release|Any CPU

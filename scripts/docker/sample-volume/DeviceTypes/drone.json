@@ -1,11 +1,20 @@
 {
     "SchemaVersion": "1.0.0",
-    "Id": "314d736a-022d-4ca1-aa9c-5da9c872d5da",
+
+    "##": "The ID must to be unique - any alphanumeric string can be used",
+    "Id": "mydrone01",
+
     "Version": "0.0.1",
     "Name": "Drone",
     "Description": "Simulated Drone",
+
+    "########": "Available protocols: AMQP, MQTT, HTTP",
     "Protocol": "AMQP",
+
+    "###########": "The block below configures how the simulated device behaves",
     "DeviceState": {
+
+        "#######": "This defines the simulated device initial state",
         "Initial": {
             "vertical_speed": 0.0,
             "horizontal_speed": 0.0,
@@ -14,20 +23,36 @@
             "longitude": 0.0,
             "altitude": 0.0
         },
+
+        "##################": "How often the script below is invoked to update the simulated state",
         "SimulationInterval": "00:00:01",
+
+        "################": "This is the script executed evry X seconds to simulate the device behavior",
         "SimulationScript": {
             "Type": "javascript",
             "Path": "drone-state.js"
         }
     },
+
+    "#########": "The block below defines the messages sent by the simulated device to Azure IoT Hub",
     "Telemetry": [
         {
+            "########": "Send this message every 2 seconds",
             "Interval": "00:00:02",
-            "MessageTemplate":
-                "{\"v_speed\":${vertical_speed},\"h_speed\":${horizontal_speed},\"compass\":${compass},\"latitude\":${latitude},\"longitude\":${longitude}}",
+
+            "###############": "This is the message sent, with placeholders that are replaced with data copied from the 'device state'",
+            "MessageTemplate": "{\"v_speed\":${vertical_speed},\"h_speed\":${horizontal_speed},\"compass\":${compass},\"latitude\":${latitude},\"longitude\":${longitude}}",
+
+            "#############": "This schema represents the format of the message above. The information is useful for interpreting and visualizing the device telemetry",
             "MessageSchema": {
+
+                "####": "This information is attached to each message and used to deserialize the message",
                 "Name": "Drone;v1",
+
+                "######": "This information is attached to each message and used to deserialize the message",
                 "Format": "JSON",
+
+                "#######": "This information is written once into the Device Twin and used to interpret the telemetry messages",
                 "Fields": {
                     "v_speed": "double",
                     "h_speed": "double",

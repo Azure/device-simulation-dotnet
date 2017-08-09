@@ -34,27 +34,6 @@ the IDE, there are several ways to manage environment variables:
 * IntelliJ Rider: env. vars can be set in each Run Configuration, similarly to
   IntelliJ IDEA (https://www.jetbrains.com/help/idea/run-debug-configuration-application.html)
 
-Dependencies
-============
-
-The Device Simulation service depends on
-[IoT Hub Manager](https://github.com/Azure/iothub-manager-dotnet).
-In order to run simulations, you need to start the IoT Hub manager:
-
-Bash console:
-```
-docker run -it -p 9002:9002 -e PCS_IOTHUBMANAGER_WEBSERVICE_PORT=9002 \
-    -e PCS_IOTHUB_CONN_STRING=$PCS_IOTHUB_CONN_STRING \
-    azureiotpcs/iothubmanager-dotnet
-```
-
-Windows console:
-```
-docker run -it -p 9002:9002 -e PCS_IOTHUBMANAGER_WEBSERVICE_PORT=9002 ^
-    -e PCS_IOTHUB_CONN_STRING=%PCS_IOTHUB_CONN_STRING% ^
-    azureiotpcs/iothubmanager-dotnet
-```
-
 Run and Debug with Visual Studio
 ================================
 
@@ -66,15 +45,7 @@ Steps using Visual Studio 2017:
 1. Open the solution using the `device-simulation.sln` file.
 1. When the solution is loaded, right click on the `WebService` project,
    select `Properties` and go to the `Debug` section.
-1. Add a new environment variable with name
-   `PCS_DEVICESIMULATION_WEBSERVICE_PORT` and value `9003`.
-1. Add a new environment variable with name
-   `PCS_IOTHUBMANAGER_WEBSERVICE_URL` and value `http://127.0.0.1:9002/v1`.
-1. In the same section set the `App URL` to
-   `http://localhost:9003/v1/status`
-1. Right click on the "WebService" project and "Set as StartUp Project".
-1. The toolbar should switch automatically to "WebService" and "IIS Express",
-   otherwise change these manually.
+1. In the same section define the environment variables required.
 1. Press F5, or the Run icon. VisualStudio should open your browser showing
    the service status in JSON format.
 
@@ -86,9 +57,7 @@ Run and Debug with IntelliJ Rider
    create a new `.NET Project` configuration.
 1. In the configuration select the WebService project
 1. Add a new environment variable with name
-   `PCS_DEVICESIMULATION_WEBSERVICE_PORT` and value `9003`.
-1. Add a new environment variable with name
-   `PCS_IOTHUBMANAGER_WEBSERVICE_URL` and value `http://127.0.0.1:9002/v1`.
+   `PCS_IOTHUB_CONNSTRING` storing your Azure IoT Hub connection string.
 1. Save the settings and run the configuration just created, from the IDE
    toolbar.
 1. You should see the service bootstrap messages in IntelliJ Run window,
@@ -133,8 +102,8 @@ required to package the service into a Docker image:
 * `run`: run the Docker container from the image stored in the local registry
 * `content`: a folder with files copied into the image, including the entry point script
 
-You can also start Device Simulation and its dependency IoT Hub Manager
-in one simple step, using Docker Compose with the
+You can also start Device Simulation and its dependencies in one simple step,
+using Docker Compose with the
 [docker-compose.yml](scripts/docker/docker-compose.yml) file in the project:
 
 ```

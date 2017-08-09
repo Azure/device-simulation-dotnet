@@ -1,21 +1,28 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
+using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface IDeviceClient
     {
+        IoTHubProtocol Protocol { get; }
+
         Task SendMessageAsync(string message, DeviceType.DeviceTypeMessageSchema schema);
 
         Task SendRawMessageAsync(Message message);
 
         Task DisconnectAsync();
+
+        Task UpdateTwinAsync(DeviceServiceModel device);
     }
 
     public class DeviceClient : IDeviceClient
@@ -38,9 +45,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             ILogger logger)
         {
             this.client = client;
-            this.log = logger;
             this.protocol = protocol;
+            this.log = logger;
         }
+
+        public IoTHubProtocol Protocol { get { return this.protocol; } }
 
         public async Task SendMessageAsync(string message, DeviceType.DeviceTypeMessageSchema schema)
         {
@@ -71,6 +80,29 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
+        public async Task UpdateTwinAsync(DeviceServiceModel device)
+        {
+            var azureTwin = await this.GetTwinAsync();
+
+            // Remove properties
+            var props = azureTwin.Properties.Reported.GetEnumerator();
+            while (props.MoveNext())
+            {
+                var current = (KeyValuePair<string, object>)props.Current;
+
+                if (!device.Twin.ReportedProperties.ContainsKey(current.Key))
+                {
+                    this.log.Debug("Removing key", () => new { current.Key });
+                    azureTwin.Properties.Reported[current.Key] = null;
+                }
+            }
+
+            // Write properties
+            var reportedProperties = DictionaryToTwinCollection(device.Twin.ReportedProperties);
+
+            await this.client.UpdateReportedPropertiesAsync(reportedProperties);
+        }
+
         public async Task DisconnectAsync()
         {
             if (this.client != null)
@@ -78,6 +110,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 await this.client.CloseAsync();
                 this.client.Dispose();
             }
+        }
+
+        private async Task<Twin> GetTwinAsync()
+        {
+            return await this.client.GetTwinAsync();
+        }
+
+        private static TwinCollection DictionaryToTwinCollection(Dictionary<string, JToken> x)
+        {
+            var result = new TwinCollection();
+
+            if (x != null)
+            {
+                foreach (KeyValuePair<string, JToken> item in x)
+                {
+                    try
+                    {
+                        result[item.Key] = item.Value;
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                        throw;
+                    }
+                }
+            }
+
+            return result;
         }
     }
 }

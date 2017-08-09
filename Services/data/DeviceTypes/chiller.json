@@ -12,7 +12,9 @@
             "humidity": 50,
             "voltage": 110.0,
             "power": 3.0,
-            "power_unit": "kW"
+            "power_unit": "kW",
+            "latitude": 47.642117,
+            "longitude": -122.136611
         },
         "SimulationInterval": "00:00:15",
         "SimulationScript": {
@@ -24,7 +26,7 @@
         {
             "Interval": "00:00:15",
             "MessageTemplate":
-                "{\"temperature\": ${temperature},\"t_unit\":\"{temperature_unit}\",\"humidity\": ${humidity},\"h_unit\":\"%\",\"voltage\": ${voltage},\"v_unit\":\"V\",\"power\": ${power},\"p_unit\":\"${power_unit}\"}",
+                "{\"temperature\": ${temperature},\"temperature_unit\":\"{temperature_unit}\",\"humidity\": ${humidity},\"humidity_unit\":\"%\",\"voltage\": ${voltage},\"voltage_unit\":\"V\",\"power\": ${power},\"power_unit\":\"${power_unit}\"}",
             "MessageSchema": {
                 "Name": "chiller;v1",
                 "Format": "JSON",
@@ -33,10 +35,10 @@
                     "humidity": "integer",
                     "voltage": "double",
                     "power": "double",
-                    "t_unit": "text",
-                    "h_unit": "text",
-                    "v_unit": "text",
-                    "p_unit": "text"
+                    "temperature_unit": "text",
+                    "humidity_unit": "text",
+                    "voltage_unit": "text",
+                    "power_unit": "text"
                 }
             }
         }

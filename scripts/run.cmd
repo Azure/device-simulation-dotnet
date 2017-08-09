@@ -6,7 +6,6 @@
 :: Run the service inside a Docker container: scripts\run --in-sandbox
 :: Run only the web service:                  scripts\run --webservice
 :: Run only the simulation:                   scripts\run --simulation
-:: Run the IoT Hub Manager Docker image:      scripts\run --iothubman
 :: Show how to use this script:               scripts\run -h
 :: Show how to use this script:               scripts\run --help
 
@@ -24,7 +23,6 @@ IF "%1"=="-s" GOTO :RunInSandbox
 IF "%1"=="--in-sandbox" GOTO :RunInSandbox
 IF "%1"=="--webservice" GOTO :RunWebService
 IF "%1"=="--simulation" GOTO :RunSimulation
-IF "%1"=="--iothubman" GOTO :RunIoTHubMan
 
 :Help
 
@@ -33,7 +31,6 @@ IF "%1"=="--iothubman" GOTO :RunIoTHubMan
     echo "  Run the service inside a Docker container: ./scripts/run -s|--in-sandbox"
     echo "  Run only the web service:                  ./scripts/run --webservice"
     echo "  Run only the simulation:                   ./scripts/run --simulation"
-    echo "  Run the IoT Hub Manager Docker image:      ./scripts/run --iothubman"
     echo "  Show how to use this script:               ./scripts/run -h|--help"
 
     goto :END
@@ -125,9 +122,8 @@ IF "%1"=="--iothubman" GOTO :RunIoTHubMan
 
     :: Start the sandbox and run the application
     docker run -it ^
-        -p %PCS_DEVICESIMULATION_WEBSERVICE_PORT%:%PCS_DEVICESIMULATION_WEBSERVICE_PORT% ^
-        -e "PCS_DEVICESIMULATION_WEBSERVICE_PORT=%PCS_DEVICESIMULATION_WEBSERVICE_PORT%" ^
-        -e "PCS_IOTHUBMANAGER_WEBSERVICE_URL=%PCS_IOTHUBMANAGER_WEBSERVICE_URL%" ^
+        -p 9003:9003 ^
+        -e "PCS_IOTHUB_CONNSTRING=%PCS_IOTHUB_CONNSTRING%" ^
         -v %PCS_CACHE%\sandbox\.config:/root/.config ^
         -v %PCS_CACHE%\sandbox\.dotnet:/root/.dotnet ^
         -v %PCS_CACHE%\sandbox\.nuget:/root/.nuget ^
@@ -140,30 +136,6 @@ IF "%1"=="--iothubman" GOTO :RunIoTHubMan
 
     goto :END
 
-
-:RunIoTHubMan
-
-    :: Check dependencies
-    docker version > NUL 2>&1
-    IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOCKER
-
-    IF "%PCS_IOTHUBMANAGER_WEBSERVICE_PORT%" == "" (
-        echo Error: the PCS_IOTHUBMANAGER_WEBSERVICE_PORT environment variable is not defined.
-        exit /B 1
-    )
-
-    IF "%PCS_IOTHUB_CONN_STRING%" == "" (
-        echo Error: the PCS_IOTHUB_CONN_STRING environment variable is not defined.
-        exit /B 1
-    )
-
-    SET VERSION=latest
-    docker run -it -p %PCS_IOTHUBMANAGER_WEBSERVICE_PORT%:%PCS_IOTHUBMANAGER_WEBSERVICE_PORT% ^
-        -e PCS_IOTHUBMANAGER_WEBSERVICE_PORT=%PCS_IOTHUBMANAGER_WEBSERVICE_PORT% ^
-        -e PCS_IOTHUB_CONN_STRING=%PCS_IOTHUB_CONN_STRING% ^
-        azureiotpcs/iothubmanager-dotnet:%VERSION%
-
-    goto :END
 
 
 :: - - - - - - - - - - - - - -
