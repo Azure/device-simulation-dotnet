@@ -21,6 +21,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         IDeviceClient Client { get; set; }
 
         /// <summary>
+        /// Azure IoT Hub client used by DeviceBootstrap
+        /// This extra client is required only because Device Twins require a
+        /// MQTT connection. If the main client already uses MQTT, the logic
+        /// won't open a new connection, and reuse the existing one instead.
+        /// </summary>
+        IDeviceClient BootstrapClient { get; set; }
+
+        /// <summary>
         /// The virtual state of the simulated device. The state is
         /// periodically updated using an external script. The value
         /// is shared by UpdateDeviceState and SendTelemetry.
@@ -111,9 +119,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         // DI factory used to instantiate timers
         private readonly DependencyResolution.IFactory factory;
 
+        // Ensure that setup is called only once, to keep the actor thread safe
+        private bool setupDone = false;
+
         // State machine logic, each of the following has a Run() method
         private readonly Connect connectLogic;
-
         private readonly UpdateDeviceState updateDeviceStateLogic;
         private readonly DeviceBootstrap deviceBootstrapLogic;
         private readonly SendTelemetry sendTelemetryLogic;
@@ -122,6 +132,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         /// Azure IoT Hub client shared by Connect and SendTelemetry
         /// </summary>
         public IDeviceClient Client { get; set; }
+
+        /// <summary>
+        /// Azure IoT Hub client used by DeviceBootstrap
+        /// This extra client is required only because Device Twins require a
+        /// MQTT connection. If the main client already uses MQTT, the logic
+        /// won't open a new connection, and reuse the existing one instead.
+        /// </summary>
+        public IDeviceClient BootstrapClient { get; set; }
 
         /// <summary>
         /// The virtual state of the simulated device. The state is
@@ -168,7 +186,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         /// </summary>
         public IDeviceActor Setup(DeviceType deviceType, int position)
         {
-            if (this.ActorStatus != Status.None)
+            if (this.ActorStatus != Status.None || this.setupDone)
             {
                 this.log.Error("The actor is already initialized",
                     () => new
@@ -179,6 +197,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     });
                 throw new DeviceActorAlreadyInitializedException();
             }
+
+            this.setupDone = true;
 
             this.deviceId = "Simulated." + deviceType.Name + "." + position;
             this.messages = deviceType.Telemetry;
@@ -233,6 +253,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         {
             this.StopTimers();
             this.Client?.DisconnectAsync().Wait(connectionTimeout);
+            this.BootstrapClient?.DisconnectAsync().Wait(connectionTimeout);
             this.ActorStatus = Status.Ready;
             this.log.Debug("Stopped", () => new { this.deviceId });
         }
@@ -245,7 +266,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         {
             var nextStatus = this.ActorStatus + 1;
             this.log.Debug("Changing actor state to " + nextStatus,
-                () => new { this.deviceId, this.ActorStatus, nextStatus });
+                () => new { this.deviceId, ActorStatus = this.ActorStatus.ToString(), nextStatus = nextStatus.ToString() });
 
             switch (nextStatus)
             {
@@ -256,6 +277,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 case Status.Connecting:
                     this.ActorStatus = nextStatus;
                     this.StopTimers();
+                    this.log.Debug("Scheduling connectLogic", () => new { this.deviceId });
                     this.timer.Setup(this.connectLogic.Run, this, retryConnectingFrequency);
                     this.timer.Start();
                     this.ScheduleCancellationCheckIfRequired(retryConnectingFrequency);
@@ -264,6 +286,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 case Status.BootstrappingDevice:
                     this.ActorStatus = nextStatus;
                     this.StopTimers();
+                    this.log.Debug("Scheduling deviceBootstrapLogic", () => new { this.deviceId });
                     this.timer.Setup(this.deviceBootstrapLogic.Run, this, retryConnectingFrequency);
                     this.timer.Start();
                     this.ScheduleCancellationCheckIfRequired(retryConnectingFrequency);
@@ -272,6 +295,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 case Status.UpdatingDeviceState:
                     this.ActorStatus = nextStatus;
                     this.StopTimers();
+                    this.log.Debug("Scheduling updateDeviceStateLogic", () => new { this.deviceId });
                     this.timer.Setup(this.updateDeviceStateLogic.Run, this, this.deviceStateInterval);
                     this.timer.Start();
                     this.ScheduleCancellationCheckIfRequired(this.deviceStateInterval);
@@ -289,7 +313,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                             Message = message
                         };
 
-                        this.log.Debug("Scheduling SendTelemetry", () =>
+                        this.log.Debug("Scheduling sendTelemetryLogic", () =>
                             new { this.deviceId, message.Interval.TotalSeconds, message.MessageSchema.Name, message.MessageTemplate });
 
                         telemetryTimer.Setup(this.sendTelemetryLogic.Run, callContext, message.Interval);

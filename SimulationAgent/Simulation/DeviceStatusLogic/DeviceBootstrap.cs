@@ -5,6 +5,7 @@ using System.Threading;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic
 {
@@ -18,21 +19,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private string deviceId;
         private DeviceType deviceType;
 
-        public DeviceBootstrap(ILogger logger, IDevices devices)
+        // Ensure that setup is called once and only once (which helps also detecting thread safety issues)
+        private bool setupDone = false;
+
+        public DeviceBootstrap(
+            IDevices devices,
+            ILogger logger)
         {
-            this.log = logger;
             this.devices = devices;
+            this.log = logger;
         }
 
         public void Setup(string deviceId, DeviceType deviceType)
         {
+            if (this.setupDone)
+            {
+                this.log.Error("Setup has already been invoked, are you sharing this instance with multiple devices?",
+                    () => new { this.deviceId });
+                throw new DeviceActorAlreadyInitializedException();
+            }
+
+            this.setupDone = true;
             this.deviceId = deviceId;
             this.deviceType = deviceType;
         }
 
         public void Run(object context)
         {
-            this.SetupRequired();
+            this.ValidateSetup();
 
             try
             {
@@ -46,7 +60,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 var device = this.GetDevice(actor.CancellationToken);
                 if (IsTwinNotUpdated(device))
                 {
-                    this.UpdateTwin(device, actor.Client, actor.CancellationToken);
+                    this.UpdateTwin(device, actor.BootstrapClient, actor.CancellationToken);
                 }
 
                 actor.MoveNext();
@@ -86,11 +100,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             return task.Result;
         }
 
-        private void SetupRequired()
+        private void ValidateSetup()
         {
-            if (this.deviceId == null)
+            if (!this.setupDone)
             {
-                throw new Exception("Application error: Setup() must be invoked before Run().");
+                this.log.Error("Application error: Setup() must be invoked before Run().",
+                    () => new { this.deviceId });
+                throw new DeviceActorAlreadyInitializedException();
             }
         }
     }

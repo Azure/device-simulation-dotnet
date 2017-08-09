@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic
 {
@@ -18,14 +19,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         // When connecting or sending a message, timeout after 5 seconds
         private static readonly TimeSpan connectionTimeout = TimeSpan.FromSeconds(5);
 
-        private readonly ILogger log;
         private readonly IDevices devices;
+        private readonly ILogger log;
         private string deviceId;
         private IoTHubProtocol? protocol;
 
+        // Ensure that setup is called once and only once (which helps also detecting thread safety issues)
+        private bool setupDone = false;
+
         public Connect(
-            ILogger logger,
-            IDevices devices)
+            IDevices devices,
+            ILogger logger)
         {
             this.log = logger;
             this.devices = devices;
@@ -33,13 +37,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         public void Setup(string deviceId, DeviceType deviceType)
         {
+            if (this.setupDone)
+            {
+                this.log.Error("Setup has already been invoked, are you sharing this instance with multiple devices?",
+                    () => new { this.deviceId });
+                throw new DeviceActorAlreadyInitializedException();
+            }
+
+            this.setupDone = true;
             this.deviceId = deviceId;
             this.protocol = deviceType.Protocol;
         }
 
         public void Run(object context)
         {
-            this.SetupRequired();
+            this.ValidateSetup();
 
             var actor = (IDeviceActor) context;
             if (actor.CancellationToken.IsCancellationRequested)
@@ -50,21 +62,33 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
             if (actor.ActorStatus == Status.Connecting)
             {
-                this.log.Debug("Connecting...", () => { });
+                this.log.Debug("Connecting...", () => new { this.deviceId });
 
                 try
                 {
                     lock (actor)
                     {
-                        this.log.Info("Connect.Run calling this.devices.GetOrCreateAsync", () => new { this.deviceId });
+                        this.log.Debug("Connect.Run calling this.devices.GetOrCreateAsync", () => new { this.deviceId, connectionTimeout.TotalMilliseconds });
 
                         var task = this.devices.GetOrCreateAsync(this.deviceId);
-                        task.Wait((int)connectionTimeout.TotalMilliseconds, actor.CancellationToken);
+                        task.Wait((int) connectionTimeout.TotalMilliseconds, actor.CancellationToken);
                         var device = task.Result;
 
                         this.log.Debug("Device credentials retrieved", () => new { this.deviceId });
 
                         actor.Client = this.devices.GetClient(device, this.protocol.Value);
+
+                        // Device Twin properties can be set only over MQTT, so we need a dedicated client
+                        // for the bootstrap
+                        if (actor.Client.Protocol == IoTHubProtocol.MQTT)
+                        {
+                            actor.BootstrapClient = actor.Client;
+                        }
+                        else
+                        {
+                            actor.BootstrapClient = this.devices.GetClient(device, IoTHubProtocol.MQTT);
+                        }
+
                         this.log.Debug("Connection successful", () => new { this.deviceId });
 
                         actor.MoveNext();
@@ -78,11 +102,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             }
         }
 
-        private void SetupRequired()
+        private void ValidateSetup()
         {
-            if (this.deviceId == null || this.protocol == null)
+            if (!this.setupDone)
             {
-                throw new Exception("Application error: Setup() must be invoked before Run().");
+                this.log.Error("Application error: Setup() must be invoked before Run().",
+                    () => new { this.deviceId, this.protocol });
+                throw new DeviceActorAlreadyInitializedException();
             }
         }
     }

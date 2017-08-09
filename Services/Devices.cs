@@ -58,21 +58,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             switch (protocol)
             {
                 case IoTHubProtocol.AMQP:
-                    this.log.Info("Creating AMQP device client",
+                    this.log.Debug("Creating AMQP device client",
                         () => new { device.Id, device.IoTHubHostName });
 
                     sdkClient = Azure.Devices.Client.DeviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp_Tcp_Only);
                     break;
 
                 case IoTHubProtocol.MQTT:
-                    this.log.Info("Creating MQTT device client",
+                    this.log.Debug("Creating MQTT device client",
                         () => new { device.Id, device.IoTHubHostName });
 
                     sdkClient = Azure.Devices.Client.DeviceClient.CreateFromConnectionString(connectionString, TransportType.Mqtt_Tcp_Only);
                     break;
 
                 case IoTHubProtocol.HTTP:
-                    this.log.Info("Creating HTTP device client",
+                    this.log.Debug("Creating HTTP device client",
                         () => new { device.Id, device.IoTHubHostName });
 
                     sdkClient = Azure.Devices.Client.DeviceClient.CreateFromConnectionString(connectionString, TransportType.Http1);
@@ -96,7 +96,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (ResourceNotFoundException)
             {
-                this.log.Info("Device not found, will create", () => { });
+                this.log.Debug("Device not found, will create", () => new { deviceId });
                 return await this.CreateAsync(deviceId);
             }
             catch (Exception e)
@@ -137,14 +137,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task<DeviceServiceModel> CreateAsync(string deviceId)
         {
-            this.log.Info("Creating device", () => new { deviceId });
+            this.log.Debug("Creating device", () => new { deviceId });
             var device = new Device(deviceId);
             var azureDevice = await this.registry.AddDeviceAsync(device);
 
-            this.log.Info("Fetching device twin", () => new { azureDevice.Id });
+            this.log.Debug("Fetching device twin", () => new { azureDevice.Id });
             var azureTwin = await this.registry.GetTwinAsync(azureDevice.Id);
 
-            this.log.Info("Writing device twin", () => new { azureDevice.Id });
+            this.log.Debug("Writing device twin", () => new { azureDevice.Id });
             azureTwin.Tags[DeviceTwinServiceModel.SimulatedTagKey] = DeviceTwinServiceModel.SimulatedTagValue;
             azureTwin = await this.registry.UpdateTwinAsync(azureDevice.Id, azureTwin, "*");
 

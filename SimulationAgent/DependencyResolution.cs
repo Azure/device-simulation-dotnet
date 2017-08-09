@@ -73,10 +73,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             builder.RegisterType<Services.Devices>().As<IDevices>().SingleInstance();
 
             // Registrations required by Autofac, these classes all implement the same interface
-            builder.RegisterType<DeviceBootstrap>().As<DeviceBootstrap>().SingleInstance();
-            builder.RegisterType<Connect>().As<Connect>().SingleInstance();
-            builder.RegisterType<UpdateDeviceState>().As<UpdateDeviceState>().SingleInstance();
-            builder.RegisterType<SendTelemetry>().As<SendTelemetry>().SingleInstance();
+            builder.RegisterType<DeviceBootstrap>().As<DeviceBootstrap>();
+            builder.RegisterType<Connect>().As<Connect>();
+            builder.RegisterType<UpdateDeviceState>().As<UpdateDeviceState>();
+            builder.RegisterType<SendTelemetry>().As<SendTelemetry>();
         }
 
         private static void RegisterFactory(IContainer container)

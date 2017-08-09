@@ -30,7 +30,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         public ITimer Setup(Action<object> action, object context, TimeSpan frequency)
         {
-            return this.Setup(action, context, (int)frequency.TotalMilliseconds);
+            return this.Setup(action, context, (int) frequency.TotalMilliseconds);
         }
 
         public ITimer Setup(Action<object> action, object context, int frequency)
@@ -57,7 +57,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 throw new TimerNotInitializedException();
             }
 
-            this.timer.Change((int)delay.TotalMilliseconds, this.frequency);
+            this.timer.Change((int) delay.TotalMilliseconds, this.frequency);
             return this;
         }
 
