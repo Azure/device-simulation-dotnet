@@ -1,10 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Threading.Tasks;
-using Microsoft.Azure.Amqp;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic
 {
@@ -19,6 +18,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private readonly ILogger log;
         private string deviceId;
 
+        // Ensure that setup is called once and only once (which helps also detecting thread safety issues)
+        private bool setupDone = false;
+
         public SendTelemetry(ILogger logger)
         {
             this.log = logger;
@@ -26,12 +28,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         public void Setup(string deviceId, DeviceType deviceType)
         {
+            if (this.setupDone)
+            {
+                this.log.Error("Setup has already been invoked, are you sharing this instance with multiple devices?",
+                    () => new { this.deviceId });
+                throw new DeviceActorAlreadyInitializedException();
+            }
+
+            this.setupDone = true;
             this.deviceId = deviceId;
         }
 
         public void Run(object context)
         {
-            this.SetupRequired();
+            this.ValidateSetup();
 
             var callContext = (SendTelemetryContext) context;
             var actor = callContext.Self;
@@ -71,11 +81,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.log.Debug("SendTelemetry complete", () => new { this.deviceId });
         }
 
-        private void SetupRequired()
+        private void ValidateSetup()
         {
-            if (this.deviceId == null)
+            if (!this.setupDone)
             {
-                throw new Exception("Application error: Setup() must be invoked before Run().");
+                this.log.Error("Application error: Setup() must be invoked before Run().",
+                    () => new { this.deviceId });
+                throw new DeviceActorAlreadyInitializedException();
             }
         }
     }

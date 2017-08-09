@@ -14,6 +14,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface IDeviceClient
     {
+        IoTHubProtocol Protocol { get; }
+
         Task SendMessageAsync(string message, DeviceType.DeviceTypeMessageSchema schema);
 
         Task SendRawMessageAsync(Message message);
@@ -43,9 +45,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             ILogger logger)
         {
             this.client = client;
-            this.log = logger;
             this.protocol = protocol;
+            this.log = logger;
         }
+
+        public IoTHubProtocol Protocol { get { return this.protocol; } }
 
         public async Task SendMessageAsync(string message, DeviceType.DeviceTypeMessageSchema schema)
         {
@@ -84,7 +88,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var props = azureTwin.Properties.Reported.GetEnumerator();
             while (props.MoveNext())
             {
-                var current = (KeyValuePair<string, object>) props.Current;
+                var current = (KeyValuePair<string, object>)props.Current;
 
                 if (!device.Twin.ReportedProperties.ContainsKey(current.Key))
                 {

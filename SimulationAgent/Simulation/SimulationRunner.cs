@@ -55,8 +55,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     var deviceType = this.deviceTypes.Get(dt.Id);
                     Parallel.For(0, dt.Count, i =>
                     {
-                        var actor = this.factory.Resolve<IDeviceActor>();
-                        actor.Setup(deviceType, i).Start(this.cancellationToken.Token);
+                        this.log.Debug("Starting device...", () => new { deviceType.Name, i });
+                        this.factory.Resolve<IDeviceActor>()
+                            .Setup(deviceType, i)
+                            .Start(this.cancellationToken.Token);
                     });
                 }
 

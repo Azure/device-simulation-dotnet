@@ -2,10 +2,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic
 {
@@ -15,28 +15,39 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     /// </summary>
     public class UpdateDeviceState : IDeviceStatusLogic
     {
-        private readonly ILogger log;
         private readonly IScriptInterpreter scriptInterpreter;
+        private readonly ILogger log;
         private string deviceId;
         private DeviceType deviceType;
 
+        // Ensure that setup is called once and only once (which helps also detecting thread safety issues)
+        private bool setupDone = false;
+
         public UpdateDeviceState(
-            ILogger logger,
-            IScriptInterpreter scriptInterpreter)
+            IScriptInterpreter scriptInterpreter,
+            ILogger logger)
         {
-            this.log = logger;
             this.scriptInterpreter = scriptInterpreter;
+            this.log = logger;
         }
 
         public void Setup(string deviceId, DeviceType deviceType)
         {
+            if (this.setupDone)
+            {
+                this.log.Error("Setup has already been invoked, are you sharing this instance with multiple devices?",
+                    () => new { this.deviceId });
+                throw new DeviceActorAlreadyInitializedException();
+            }
+
+            this.setupDone = true;
             this.deviceId = deviceId;
             this.deviceType = deviceType;
         }
 
         public void Run(object context)
         {
-            this.SetupRequired();
+            this.ValidateSetup();
 
             var actor = (IDeviceActor) context;
             if (actor.CancellationToken.IsCancellationRequested)
@@ -71,11 +82,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             }
         }
 
-        private void SetupRequired()
+        private void ValidateSetup()
         {
-            if (this.deviceId == null || this.deviceType == null)
+            if (!this.setupDone)
             {
-                throw new Exception("Application error: Setup() must be invoked before Run().");
+                this.log.Error("Application error: Setup() must be invoked before Run().",
+                    () => new { this.deviceId, this.deviceType });
+                throw new DeviceActorAlreadyInitializedException();
             }
         }
     }
