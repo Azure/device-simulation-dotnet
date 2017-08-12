@@ -6,6 +6,7 @@
 :: Run the service inside a Docker container: scripts\run --in-sandbox
 :: Run only the web service:                  scripts\run --webservice
 :: Run only the simulation:                   scripts\run --simulation
+:: Run only the simulation:                   scripts\run --storageadapter
 :: Show how to use this script:               scripts\run -h
 :: Show how to use this script:               scripts\run --help
 
@@ -23,15 +24,17 @@ IF "%1"=="-s" GOTO :RunInSandbox
 IF "%1"=="--in-sandbox" GOTO :RunInSandbox
 IF "%1"=="--webservice" GOTO :RunWebService
 IF "%1"=="--simulation" GOTO :RunSimulation
+IF "%1"=="--storageadapter" GOTO :RunStorageAdapter
 
 :Help
 
     echo "Usage:"
     echo "  Run the service in the local environment:  ./scripts/run"
-    echo "  Run the service inside a Docker container: ./scripts/run -s|--in-sandbox"
+    echo "  Run the service inside a Docker container: ./scripts/run -s | --in-sandbox"
     echo "  Run only the web service:                  ./scripts/run --webservice"
     echo "  Run only the simulation:                   ./scripts/run --simulation"
-    echo "  Show how to use this script:               ./scripts/run -h|--help"
+    echo "  Run the storage adapter dependency:        ./scripts/run --storageadapter"
+    echo "  Show how to use this script:               ./scripts/run -h | --help"
 
     goto :END
 
@@ -50,6 +53,7 @@ IF "%1"=="--simulation" GOTO :RunSimulation
     call dotnet restore
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
+    echo Starting simulation agent and web service...
     start "" dotnet run --configuration %CONFIGURATION% --project SimulationAgent/SimulationAgent.csproj
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
@@ -73,6 +77,7 @@ IF "%1"=="--simulation" GOTO :RunSimulation
     call dotnet restore
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
+    echo Starting web service...
     dotnet run --configuration %CONFIGURATION% --project WebService/WebService.csproj
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
@@ -93,6 +98,7 @@ IF "%1"=="--simulation" GOTO :RunSimulation
     call dotnet restore
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
+    echo Starting simulation agent...
     dotnet run --configuration %CONFIGURATION% --project SimulationAgent/SimulationAgent.csproj
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
@@ -129,6 +135,20 @@ IF "%1"=="--simulation" GOTO :RunSimulation
         -v %PCS_CACHE%\sandbox\.nuget:/root/.nuget ^
         -v %APP_HOME%:/opt/code ^
         azureiotpcs/code-builder-dotnet:1.0-dotnetcore /opt/code/scripts/run
+
+    :: Error 125 typically triggers in Windows if the drive is not shared
+    IF %ERRORLEVEL% EQU 125 GOTO DOCKER_SHARE
+    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
+
+    goto :END
+
+:RunStorageAdapter
+
+    echo Starting storage adapter...
+
+    docker run -it -p 9022:9022 ^
+            -e "PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING=%PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING%" ^
+            azureiotpcs/pcs-storage-adapter-dotnet
 
     :: Error 125 typically triggers in Windows if the drive is not shared
     IF %ERRORLEVEL% EQU 125 GOTO DOCKER_SHARE

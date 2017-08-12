@@ -17,7 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // Print some useful information at bootstrap time
             PrintBootstrapInfo(container);
 
-            container.Resolve<ISimulation>().Run();
+            container.Resolve<ISimulation>().RunAsync().Wait();
         }
 
         private static void PrintBootstrapInfo(IContainer container)

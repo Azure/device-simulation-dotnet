@@ -27,8 +27,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly string ioTHubHostName;
 
         public Devices(
-            ILogger logger,
-            IServicesConfig config)
+            IServicesConfig config,
+            ILogger logger)
         {
             this.log = logger;
             this.registry = RegistryManager.CreateFromConnectionString(config.IoTHubConnString);

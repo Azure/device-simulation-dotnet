@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -24,19 +25,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         }
 
         [HttpGet]
-        public SimulationListApiModel Get()
+        public async Task<SimulationListApiModel> GetAsync()
         {
-            return new SimulationListApiModel(this.simulationsService.GetList());
+            return new SimulationListApiModel(await this.simulationsService.GetListAsync());
         }
 
         [HttpGet("{id}")]
-        public SimulationApiModel Get(string id)
+        public async Task<SimulationApiModel> GetAsync(string id)
         {
-            return new SimulationApiModel(this.simulationsService.Get(id));
+            return new SimulationApiModel(await this.simulationsService.GetAsync(id));
         }
 
         [HttpPost]
-        public SimulationApiModel Post(
+        public async Task<SimulationApiModel> PostAsync(
             [FromBody] SimulationApiModel simulation,
             [FromQuery(Name = "template")] string template = "")
         {
@@ -44,8 +45,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             {
                 if (string.IsNullOrEmpty(template))
                 {
-                    this.log.Warn("No data or invalid data provided",
-                        () => new { simulation, template });
+                    this.log.Warn("No data or invalid data provided", () => new { simulation, template });
                     throw new BadRequestException("No data or invalid data provided.");
                 }
 
@@ -53,33 +53,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             return new SimulationApiModel(
-                this.simulationsService.Insert(simulation.ToServiceModel(), template));
+                await this.simulationsService.InsertAsync(simulation.ToServiceModel(), template));
         }
 
         [HttpPut("{id}")]
-        public SimulationApiModel Put(
+        public async Task<SimulationApiModel> PutAsync(
             [FromBody] SimulationApiModel simulation,
-            string id = "",
-            [FromQuery(Name = "template")] string template = "")
+            string id = "")
         {
             if (simulation == null)
             {
-                if (string.IsNullOrEmpty(template))
-                {
-                    this.log.Warn("No data or invalid data provided",
-                        () => new { id, simulation, template });
-                    throw new BadRequestException("No data or invalid data provided.");
-                }
-
-                simulation = new SimulationApiModel();
+                this.log.Warn("No data or invalid data provided", () => new { simulation });
+                throw new BadRequestException("No data or invalid data provided.");
             }
 
             return new SimulationApiModel(
-                this.simulationsService.Upsert(simulation.ToServiceModel(id), template));
+                await this.simulationsService.UpsertAsync(simulation.ToServiceModel(id)));
         }
 
         [HttpPatch("{id}")]
-        public SimulationApiModel Patch(
+        public async Task<SimulationApiModel> PatchAsync(
             string id,
             [FromBody] SimulationPatchApiModel patch)
         {
@@ -90,7 +83,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             return new SimulationApiModel(
-                this.simulationsService.Merge(patch.ToServiceModel(id)));
+                await this.simulationsService.MergeAsync(patch.ToServiceModel(id)));
         }
     }
 }

@@ -6,7 +6,9 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Moq;
+using Newtonsoft.Json;
 using Services.Test.helpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -19,19 +21,21 @@ namespace Services.Test
         /// <summary>The test logger</summary>
         private readonly ITestOutputHelper log;
 
+        private const string StorageCollection = "simulations";
+        private const string SimulationId = "1";
+
         private readonly Mock<IDeviceTypes> deviceTypes;
+        private readonly Mock<IStorageAdapterClient> storage;
+        private readonly Mock<ILogger> logger;
         private readonly Simulations target;
         private readonly List<DeviceType> types;
-        private readonly Mock<ILogger> logger;
 
         public SimulationsTest(ITestOutputHelper log)
         {
             this.log = log;
 
-            var tempStorage = Guid.NewGuid() + ".json";
-            this.log.WriteLine("Temporary simulations storage: " + tempStorage);
-
             this.deviceTypes = new Mock<IDeviceTypes>();
+            this.storage = new Mock<IStorageAdapterClient>();
             this.logger = new Mock<ILogger>();
 
             this.types = new List<DeviceType>
@@ -42,15 +46,17 @@ namespace Services.Test
                 new DeviceType { Id = "AA" }
             };
 
-            this.target = new Simulations(this.deviceTypes.Object, this.logger.Object);
-            this.target.ChangeStorageFile(tempStorage);
+            this.target = new Simulations(this.deviceTypes.Object, this.storage.Object, this.logger.Object);
         }
 
         [Fact, Trait(Constants.Type, Constants.UnitTest)]
         public void InitialListIsEmpty()
         {
+            // Arrange
+            this.ThereAreNoSimulationsInTheStorage();
+
             // Act
-            IList<SimulationModel> list = this.target.GetList();
+            var list = this.target.GetListAsync().Result;
 
             // Assert
             Assert.Equal(0, list.Count);
@@ -60,10 +66,11 @@ namespace Services.Test
         public void InitialMetadataAfterCreation()
         {
             // Arrange
-            this.deviceTypes.Setup(x => x.GetList()).Returns(this.types);
+            this.ThereAreNoSimulationsInTheStorage();
+            this.ThereAreSomeDeviceTypes();
 
             // Act
-            SimulationModel result = this.target.Insert(new SimulationModel(), "default");
+            SimulationModel result = this.target.InsertAsync(new SimulationModel(), "default").Result;
 
             // Assert
             Assert.Equal(1, result.Version);
@@ -75,10 +82,11 @@ namespace Services.Test
         {
             // Arrange
             const int defaultDeviceCount = 2;
-            this.deviceTypes.Setup(x => x.GetList()).Returns(this.types);
+            this.ThereAreNoSimulationsInTheStorage();
+            this.ThereAreSomeDeviceTypes();
 
             // Act
-            SimulationModel result = this.target.Insert(new SimulationModel(), "default");
+            SimulationModel result = this.target.InsertAsync(new SimulationModel(), "default").Result;
 
             // Assert
             Assert.Equal(this.types.Count, result.DeviceTypes.Count);
@@ -93,10 +101,11 @@ namespace Services.Test
         public void CreateSimulationWithoutId()
         {
             // Arrange
-            this.deviceTypes.Setup(x => x.GetList()).Returns(this.types);
+            this.ThereAreNoSimulationsInTheStorage();
+            this.ThereAreSomeDeviceTypes();
 
             // Act
-            SimulationModel result = this.target.Insert(new SimulationModel(), "default");
+            SimulationModel result = this.target.InsertAsync(new SimulationModel(), "default").Result;
 
             // Assert
             Assert.NotEmpty(result.Id);
@@ -106,11 +115,12 @@ namespace Services.Test
         public void CreateSimulationWithId()
         {
             // Arrange
-            this.deviceTypes.Setup(x => x.GetList()).Returns(this.types);
+            this.ThereAreSomeDeviceTypes();
+            this.ThereAreNoSimulationsInTheStorage();
 
             // Act
             var simulation = new SimulationModel { Id = "123" };
-            SimulationModel result = this.target.Insert(simulation, "default");
+            SimulationModel result = this.target.InsertAsync(simulation, "default").Result;
 
             // Assert
             Assert.Equal(simulation.Id, result.Id);
@@ -120,52 +130,58 @@ namespace Services.Test
         public void CreateWithInvalidTemplate()
         {
             // Act + Assert
-            Assert.Throws<InvalidInputException>(() => this.target.Insert(new SimulationModel(), "foo"));
+            Assert.ThrowsAsync<InvalidInputException>(
+                () => this.target.InsertAsync(new SimulationModel(), "mytemplate"));
         }
 
         [Fact, Trait(Constants.Type, Constants.UnitTest)]
         public void CreatingMultipleSimulationsIsNotAllowed()
         {
             // Arrange
-            this.deviceTypes.Setup(x => x.GetList()).Returns(this.types);
-            this.target.Insert(new SimulationModel(), "default");
+            this.ThereAreSomeDeviceTypes();
+            this.ThereIsAnEnabledSimulationInTheStorage();
 
             // Act + Assert
             var s = new SimulationModel { Id = Guid.NewGuid().ToString(), Enabled = false };
-            Assert.Throws<ConflictingResourceException>(() => this.target.Insert(s));
-            Assert.Throws<ConflictingResourceException>(() => this.target.Upsert(s));
+            Assert.ThrowsAsync<ConflictingResourceException>(() => this.target.InsertAsync(s));
+            Assert.ThrowsAsync<ConflictingResourceException>(() => this.target.UpsertAsync(s));
         }
 
         [Fact, Trait(Constants.Type, Constants.UnitTest)]
         public void CreatedSimulationsAreStored()
         {
             // Arrange
-            this.deviceTypes.Setup(x => x.GetList()).Returns(this.types);
+            this.ThereAreSomeDeviceTypes();
+            this.ThereAreNoSimulationsInTheStorage();
 
             // Act
             var simulation = new SimulationModel { Id = Guid.NewGuid().ToString(), Enabled = false };
-            this.target.Insert(simulation, "default");
-            var result = this.target.Get(simulation.Id);
+            this.target.InsertAsync(simulation, "default").Wait();
 
             // Assert
-            Assert.Equal(simulation.Id, result.Id);
-            Assert.Equal(simulation.Enabled, result.Enabled);
+            this.storage.Verify(
+                x => x.UpdateAsync(StorageCollection, SimulationId, It.IsAny<string>(), "*"));
         }
 
         [Fact, Trait(Constants.Type, Constants.UnitTest)]
         public void SimulationsCanBeUpserted()
         {
             // Arrange
-            this.deviceTypes.Setup(x => x.GetList()).Returns(this.types);
+            this.ThereAreSomeDeviceTypes();
+            this.ThereAreNoSimulationsInTheStorage();
 
             // Act
-            var simulation = new SimulationModel { Id = Guid.NewGuid().ToString(), Enabled = false };
-            this.target.Upsert(simulation, "default");
-            var result = this.target.Get(simulation.Id);
+            var simulation = new SimulationModel
+            {
+                Id = SimulationId,
+                Enabled = false,
+                Etag = "2345213461"
+            };
+            this.target.UpsertAsync(simulation).Wait();
 
             // Assert
-            Assert.Equal(simulation.Id, result.Id);
-            Assert.Equal(simulation.Enabled, result.Enabled);
+            this.storage.Verify(
+                x => x.UpdateAsync(StorageCollection, SimulationId, It.IsAny<string>(), simulation.Etag));
         }
 
         [Fact, Trait(Constants.Type, Constants.UnitTest)]
@@ -174,10 +190,10 @@ namespace Services.Test
             // Act
             var s1 = new SimulationModel();
             var s2 = new SimulationModel();
-            this.target.Insert(s1);
+            this.target.InsertAsync(s1);
 
             // Act + Assert
-            Assert.Throws<InvalidInputException>(() => this.target.Upsert(s2));
+            Assert.ThrowsAsync<InvalidInputException>(() => this.target.UpsertAsync(s2));
         }
 
         [Fact, Trait(Constants.Type, Constants.UnitTest)]
@@ -188,11 +204,45 @@ namespace Services.Test
 
             var id = Guid.NewGuid().ToString();
             var s1 = new SimulationModel { Id = id, Enabled = false };
-            this.target.Upsert(s1);
+            this.target.UpsertAsync(s1);
 
             // Act + Assert
             var s1updated = new SimulationModel { Id = id, Enabled = true };
-            Assert.Throws<ResourceOutOfDateException>(() => this.target.Upsert(s1updated));
+            Assert.ThrowsAsync<ResourceOutOfDateException>(() => this.target.UpsertAsync(s1updated));
+        }
+
+        private void ThereAreSomeDeviceTypes()
+        {
+            this.deviceTypes.Setup(x => x.GetList()).Returns(this.types);
+        }
+
+        private void ThereAreNoSimulationsInTheStorage()
+        {
+            this.storage.Setup(x => x.GetAllAsync(StorageCollection)).ReturnsAsync(new ValueListApiModel());
+        }
+
+        private void ThereIsAnEnabledSimulationInTheStorage()
+        {
+            var simulation = new SimulationModel
+            {
+                Id = SimulationId,
+                Created = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
+                Modified = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
+                Etag = "etag0",
+                Enabled = true,
+                Version = 1
+            };
+
+            var list = new ValueListApiModel();
+            var value = new ValueApiModel
+            {
+                Key = SimulationId,
+                Data = JsonConvert.SerializeObject(simulation),
+                ETag = simulation.Etag
+            };
+            list.Items.Add(value);
+
+            this.storage.Setup(x => x.GetAllAsync(StorageCollection)).ReturnsAsync(list);
         }
     }
 }

@@ -23,6 +23,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
         private const string DeviceTypesScriptsFolderKey = ApplicationKey + "device_types_scripts_folder";
         private const string IoTHubConnStringKey = ApplicationKey + "iothub_connstring";
 
+        private const string StorageAdapterKey = "storageadapter:";
+        private const string StorageAdapterApiUrlKey = StorageAdapterKey + "webservice_url";
+        private const string StorageAdapterApiTimeoutKey = StorageAdapterKey + "webservice_timeout";
+
         /// <summary>Service layer configuration</summary>
         public IServicesConfig ServicesConfig { get; }
 
@@ -50,7 +54,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
             {
                 DeviceTypesFolder = MapRelativePath(configData.GetString(DeviceTypesFolderKey)),
                 DeviceTypesScriptsFolder = MapRelativePath(configData.GetString(DeviceTypesScriptsFolderKey)),
-                IoTHubConnString = connstring
+                IoTHubConnString = connstring,
+                StorageAdapterApiUrl = configData.GetString(StorageAdapterApiUrlKey),
+                StorageAdapterApiTimeout = configData.GetInt(StorageAdapterApiTimeoutKey)
             };
         }
 

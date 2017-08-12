@@ -20,27 +20,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http
 
         HttpContent Content { get; }
 
-        void AddHeader(string name, string value);
+        IHttpRequest AddHeader(string name, string value);
 
-        void SetUriFromString(string uri);
+        IHttpRequest SetUriFromString(string uri);
 
-        void SetContent(string content);
+        IHttpRequest SetContent(string content);
 
-        void SetContent(string content, Encoding encoding);
+        IHttpRequest SetContent(string content, Encoding encoding);
 
-        void SetContent(string content, Encoding encoding, string mediaType);
+        IHttpRequest SetContent(string content, Encoding encoding, string mediaType);
 
-        void SetContent(string content, Encoding encoding, MediaTypeHeaderValue mediaType);
+        IHttpRequest SetContent(string content, Encoding encoding, MediaTypeHeaderValue mediaType);
 
-        void SetContent(StringContent stringContent);
+        IHttpRequest SetContent(StringContent stringContent);
 
-        void SetContent<T>(T sourceObject);
+        IHttpRequest SetContent<T>(T sourceObject);
 
-        void SetContent<T>(T sourceObject, Encoding encoding);
+        IHttpRequest SetContent<T>(T sourceObject, Encoding encoding);
 
-        void SetContent<T>(T sourceObject, Encoding encoding, string mediaType);
+        IHttpRequest SetContent<T>(T sourceObject, Encoding encoding, string mediaType);
 
-        void SetContent<T>(T sourceObject, Encoding encoding, MediaTypeHeaderValue mediaType);
+        IHttpRequest SetContent<T>(T sourceObject, Encoding encoding, MediaTypeHeaderValue mediaType);
     }
 
     public class HttpRequest : IHttpRequest
@@ -76,7 +76,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http
             this.SetUriFromString(uri);
         }
 
-        public void AddHeader(string name, string value)
+        public IHttpRequest AddHeader(string name, string value)
         {
             if (!this.Headers.TryAddWithoutValidation(name, value))
             {
@@ -87,60 +87,66 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http
 
                 this.ContentType = new MediaTypeHeaderValue(value);
             }
+
+            return this;
         }
 
-        public void SetUriFromString(string uri)
+        public IHttpRequest SetUriFromString(string uri)
         {
             this.Uri = new Uri(uri);
+            return this;
         }
 
-        public void SetContent(string content)
+        public IHttpRequest SetContent(string content)
         {
-            this.SetContent(content, this.defaultEncoding, this.defaultMediaType);
+            return this.SetContent(content, this.defaultEncoding, this.defaultMediaType);
         }
 
-        public void SetContent(string content, Encoding encoding)
+        public IHttpRequest SetContent(string content, Encoding encoding)
         {
-            this.SetContent(content, encoding, this.defaultMediaType);
+            return this.SetContent(content, encoding, this.defaultMediaType);
         }
 
-        public void SetContent(string content, Encoding encoding, string mediaType)
+        public IHttpRequest SetContent(string content, Encoding encoding, string mediaType)
         {
-            this.SetContent(content, encoding, new MediaTypeHeaderValue(mediaType));
+            return this.SetContent(content, encoding, new MediaTypeHeaderValue(mediaType));
         }
 
-        public void SetContent(string content, Encoding encoding, MediaTypeHeaderValue mediaType)
+        public IHttpRequest SetContent(string content, Encoding encoding, MediaTypeHeaderValue mediaType)
         {
             this.requestContent.Content = new StringContent(content, encoding, mediaType.MediaType);
             this.ContentType = mediaType;
+            return this;
         }
 
-        public void SetContent(StringContent stringContent)
+        public IHttpRequest SetContent(StringContent stringContent)
         {
             this.requestContent.Content = stringContent;
             this.ContentType = stringContent.Headers.ContentType;
+            return this;
         }
 
-        public void SetContent<T>(T sourceObject)
+        public IHttpRequest SetContent<T>(T sourceObject)
         {
-            this.SetContent(sourceObject, this.defaultEncoding, this.defaultMediaType);
+            return this.SetContent(sourceObject, this.defaultEncoding, this.defaultMediaType);
         }
 
-        public void SetContent<T>(T sourceObject, Encoding encoding)
+        public IHttpRequest SetContent<T>(T sourceObject, Encoding encoding)
         {
-            this.SetContent(sourceObject, encoding, this.defaultMediaType);
+            return this.SetContent(sourceObject, encoding, this.defaultMediaType);
         }
 
-        public void SetContent<T>(T sourceObject, Encoding encoding, string mediaType)
+        public IHttpRequest SetContent<T>(T sourceObject, Encoding encoding, string mediaType)
         {
-            this.SetContent(sourceObject, encoding, new MediaTypeHeaderValue(mediaType));
+            return this.SetContent(sourceObject, encoding, new MediaTypeHeaderValue(mediaType));
         }
 
-        public void SetContent<T>(T sourceObject, Encoding encoding, MediaTypeHeaderValue mediaType)
+        public IHttpRequest SetContent<T>(T sourceObject, Encoding encoding, MediaTypeHeaderValue mediaType)
         {
             var content = JsonConvert.SerializeObject(sourceObject, Formatting.None);
             this.requestContent.Content = new StringContent(content, encoding, mediaType.MediaType);
             this.ContentType = mediaType;
+            return this;
         }
     }
 }

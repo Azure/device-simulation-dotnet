@@ -63,8 +63,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         public void Stop()
         {
-            this.timer?.Change(Timeout.Infinite, Timeout.Infinite);
-            this.timer?.Dispose();
+            try
+            {
+                this.timer?.Change(Timeout.Infinite, Timeout.Infinite);
+                this.timer?.Dispose();
+            }
+            catch (ObjectDisposedException e)
+            {
+                this.log.Info("The timer was already disposed.", () => new { e });
+            }
         }
     }
 }
