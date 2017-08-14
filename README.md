@@ -11,7 +11,7 @@ cloud-to-device (C2D) commands, methods, etc.
 
 The microservice provides a RESTful endpoint to set the simulation details,
 to start and stop the simulation, to add and remove virtual devices. The
-simulation is composed by a set of virtual devices, of different types,
+simulation is composed by a set of virtual devices, of different models,
 each sending telemetry and replying to method calls.
 
 * [Device Simulation Wiki](https://github.com/Azure/device-simulation-dotnet/wiki)
@@ -37,12 +37,12 @@ After cloning the repository, follow these steps:
 
 By default, Docker Compose will start the service using the sample device
 types defined in [sample-volume](scripts/docker/sample-volume):
-* to load device types definitions from a different folder, edit the
+* to load device models definitions from a different folder, edit the
   [docker-compose.yml](scripts/docker/docker-compose.yml)
 * to add your custom simulations, add the JSON and Javascript files into the
   folder and restart the service. See the
   [wiki](https://github.com/Azure/device-simulation-dotnet/wiki)
-  for more information about device types and the API.
+  for more information about device models and the API.
 
 ## Working with Visual Studio
 

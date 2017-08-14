@@ -7,7 +7,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 {
-    public class DeviceTwinServiceModel
+    public class DeviceTwin
     {
         // Simulated devices are marked with a tag "IsSimulated = Y"
         public const string SimulatedTagKey = "IsSimulated";
@@ -20,7 +20,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public Dictionary<string, JToken> ReportedProperties { get; set; }
         public Dictionary<string, JToken> Tags { get; set; }
 
-        public DeviceTwinServiceModel(Twin twin)
+        public DeviceTwin(Twin twin)
         {
             if (twin != null)
             {

@@ -6,7 +6,7 @@
 # Run the service inside a Docker container: ./scripts/run --in-sandbox
 # Run only the web service:                  ./scripts/run --webservice
 # Run only the simulation:                   ./scripts/run --simulation
-# Run only the simulation:                   ./scripts/run --storageadapter
+# Run the storage dependency:                ./scripts/run --storage
 # Show how to use this script:               ./scripts/run -h
 # Show how to use this script:               ./scripts/run --help
 
@@ -28,7 +28,7 @@ help() {
     echo "  Run the service inside a Docker container: ./scripts/run -s | --in-sandbox"
     echo "  Run only the web service:                  ./scripts/run --webservice"
     echo "  Run only the simulation:                   ./scripts/run --simulation"
-    echo "  Run the storage adapter dependency:        ./scripts/run --storageadapter"
+    echo "  Run the storage dependency:                ./scripts/run --storage"
     echo "  Show how to use this script:               ./scripts/run -h | --help"
 }
 
@@ -117,7 +117,7 @@ elif [[ "$1" == "--webservice" ]]; then
 elif [[ "$1" == "--simulation" ]]; then
     prepare_for_run
     run_simulation
-elif [[ "$1" == "--storageadapter" ]]; then
+elif [[ "$1" == "--storage" ]]; then
     run_storageadapter
 fi
 

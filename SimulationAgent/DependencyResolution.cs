@@ -69,7 +69,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // for example to reuse IoT Hub connections, as opposed to creating
             // a new connection every time.
             builder.RegisterType<Simulations>().As<ISimulations>().SingleInstance();
-            builder.RegisterType<DeviceTypes>().As<IDeviceTypes>().SingleInstance();
+            builder.RegisterType<DeviceModels>().As<IDeviceModels>().SingleInstance();
             builder.RegisterType<Services.Devices>().As<IDevices>().SingleInstance();
 
             // Registrations required by Autofac, these classes all implement the same interface

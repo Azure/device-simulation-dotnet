@@ -50,12 +50,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         /// <summary>
         /// Invoke this method before calling Start(), to initialize the actor
-        /// with details like the device type and message type to simulate.
+        /// with details like the device model and message type to simulate.
         /// If this method is not called before Start(), the application will
         /// thrown an exception.
         /// Setup() should be called only once, typically after the constructor.
         /// </summary>
-        IDeviceActor Setup(DeviceType deviceType, int position);
+        IDeviceActor Setup(DeviceModel deviceModel, int position);
 
         /// <summary>
         /// Call this method to start the simulated device, e.g. sending
@@ -81,6 +81,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
     public class DeviceActor : IDeviceActor
     {
+        private const string DeviceIdPrefix = "Simulated.";
+
         // When the actor fails to connect to IoT Hub, it retries every 10 seconds
         private static readonly TimeSpan retryConnectingFrequency = TimeSpan.FromSeconds(10);
 
@@ -105,11 +107,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         // How often the simulated device state needs to be updated, i.e.
         // when to execute the external script. The value is configured in
-        // the device type.
+        // the device model.
         private TimeSpan deviceStateInterval;
 
         // Info about the messages to generate and send
-        private IList<DeviceType.DeviceTypeMessage> messages;
+        private IList<DeviceModel.DeviceModelMessage> messages;
 
         // ID of the simulated device, used with Azure IoT Hub
         private string deviceId;
@@ -179,12 +181,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         /// <summary>
         /// Invoke this method before calling Start(), to initialize the actor
-        /// with details like the device type and message type to simulate.
+        /// with details like the device model and message type to simulate.
         /// If this method is not called before Start(), the application will
         /// thrown an exception.
         /// Setup() should be called only once, typically after the constructor.
         /// </summary>
-        public IDeviceActor Setup(DeviceType deviceType, int position)
+        public IDeviceActor Setup(DeviceModel deviceModel, int position)
         {
             if (this.ActorStatus != Status.None || this.setupDone)
             {
@@ -192,7 +194,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     () => new
                     {
                         CurrentDeviceId = this.deviceId,
-                        NewDeviceType = deviceType.Name,
+                        NewDeviceModelName = deviceModel.Name,
+                        NewDeviceModelId = deviceModel.Id,
                         NewPosition = position
                     });
                 throw new DeviceActorAlreadyInitializedException();
@@ -200,17 +203,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
             this.setupDone = true;
 
-            this.deviceId = "Simulated." + deviceType.Name + "." + position;
-            this.messages = deviceType.Telemetry;
+            this.deviceId = DeviceIdPrefix + deviceModel.Id + "." + position;
+            this.messages = deviceModel.Telemetry;
 
-            this.deviceStateInterval = deviceType.DeviceState.SimulationInterval;
-            this.DeviceState = CloneObject(deviceType.DeviceState.Initial);
+            this.deviceStateInterval = deviceModel.Simulation.Script.Interval;
+            this.DeviceState = CloneObject(deviceModel.Simulation.InitialState);
             this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState });
 
-            this.connectLogic.Setup(this.deviceId, deviceType);
-            this.updateDeviceStateLogic.Setup(this.deviceId, deviceType);
-            this.deviceBootstrapLogic.Setup(this.deviceId, deviceType);
-            this.sendTelemetryLogic.Setup(this.deviceId, deviceType);
+            this.connectLogic.Setup(this.deviceId, deviceModel);
+            this.updateDeviceStateLogic.Setup(this.deviceId, deviceModel);
+            this.deviceBootstrapLogic.Setup(this.deviceId, deviceModel);
+            this.sendTelemetryLogic.Setup(this.deviceId, deviceModel);
 
             this.log.Debug("Setup complete", () => new { this.deviceId });
             this.MoveNext();
@@ -377,7 +380,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private class TelemetryContext
         {
             public DeviceActor Self { get; set; }
-            public DeviceType.DeviceTypeMessage Message { get; set; }
+            public DeviceModel.DeviceModelMessage Message { get; set; }
         }
     }
 }

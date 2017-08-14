@@ -1,0 +1,88 @@
+{
+    "SchemaVersion": "1.0.0",
+    "Id": "prototype-02",
+    "Version": "0.0.1",
+    "Name": "Faulty Prototyping Device",
+    "Description": "Prototyping device with temperature, pressure and GPS. Device is moving.",
+    "Protocol": "AMQP",
+    "Simulation": {
+        "InitialState": {
+            "online": true,
+            "temperature": 75.0,
+            "temperature_unit": "F",
+            "pressure": 150.0,
+            "pressure_unit": "psig",
+            "latitude": 47.620433,
+            "longitude": -122.350987
+        },
+        "Script": {
+            "Type": "javascript",
+            "Path": "prototype-02-state.js",
+            "Interval": "00:00:05"
+        }
+    },
+    "Properties": {
+        "Type": "Prototyping",
+        "Firmware": "1.0.0",
+        "FirmwareUpdateStatus": "",
+        "Location": "Field",
+        "Latitude": 47.620433,
+        "Longitude": -122.350987
+    },
+    "Telemetry": [
+        {
+            "Interval": "00:00:05",
+            "MessageTemplate": "{\"temperature\": ${temperature},\"temperature_unit\":\"{temperature_unit}\"}",
+            "MessageSchema": {
+                "Name": "prototype-temperature;v1",
+                "Format": "JSON",
+                "Fields": {
+                    "temperature": "double",
+                    "temperature_unit": "text"
+                }
+            }
+        },
+        {
+            "Interval": "00:00:05",
+            "MessageTemplate": "{\"pressure\": ${pressure},\"pressure_unit\":\"{pressure_unit}\"}",
+            "MessageSchema": {
+                "Name": "prototype-pressure;v1",
+                "Format": "JSON",
+                "Fields": {
+                    "pressure": "double",
+                    "pressure_unit": "text"
+                }
+            }
+        },
+        {
+            "Interval": "00:00:03",
+            "MessageTemplate": "{\"latitude\":${latitude},\"longitude\":{longitude}}",
+            "MessageSchema": {
+                "Name": "prototype-geolocation;v1",
+                "Format": "JSON",
+                "Fields": {
+                    "latitude": "double",
+                    "longitude": "double"
+                }
+            }
+        }
+    ],
+    "CloudToDeviceMethods": {
+        "Reboot": {
+            "Type": "javascript",
+            "Path": "TBD.js"
+        },
+        "UpdateFirmware": {
+            "Type": "javascript",
+            "Path": "TBD.js"
+        },
+        "DecreaseTemperature": {
+            "Type": "javascript",
+            "Path": "TBD.js"
+        },
+        "IncreaseTemperature": {
+            "Type": "javascript",
+            "Path": "TBD.js"
+        }
+    }
+}

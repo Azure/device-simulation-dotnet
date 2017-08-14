@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -14,15 +16,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
     public sealed class StatusController : Controller
     {
         private readonly IDevices devices;
+        private IStorageAdapterClient storage;
         private readonly ISimulations simulations;
         private readonly ILogger log;
 
         public StatusController(
             IDevices devices,
+            IStorageAdapterClient storage,
             ISimulations simulations,
             ILogger logger)
         {
             this.devices = devices;
+            this.storage = storage;
             this.simulations = simulations;
             this.log = logger;
         }
@@ -32,22 +37,50 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         {
             var statusIsOk = true;
             var statusMsg = "Alive and well";
+            var errors = new List<string>();
 
+            // Check access to Azure IoT Hub
             var iotHubStatus = await this.devices.PingRegistryAsync();
             if (!iotHubStatus.Item1)
             {
                 statusIsOk = false;
-                statusMsg = "Unable to use Azure IoT Hub service";
+                errors.Add("Unable to use Azure IoT Hub service");
             }
 
-            var simulation = (await this.simulations.GetListAsync()).FirstOrDefault();
-            var running = (simulation != null && simulation.Enabled);
+            // Check access to storage
+            var storageStatus = await this.storage.PingAsync();
+            if (!storageStatus.Item1)
+            {
+                statusIsOk = false;
+                errors.Add("Unable to use Storage");
+            }
 
+            // Check simulation status
+            bool? simulationRunning = null;
+            try
+            {
+                var simulation = (await this.simulations.GetListAsync()).FirstOrDefault();
+                simulationRunning = (simulation != null && simulation.Enabled);
+            }
+            catch (Exception e)
+            {
+                errors.Add("Unable to fetch simulation status");
+                this.log.Error("Unable to fetch simulation status", () => new { e });
+            }
+
+            // Prepare status message
+            if (!statusIsOk)
+            {
+                statusMsg = string.Join(";", errors);
+            }
+
+            // Prepare response
             var result = new StatusApiModel(statusIsOk, statusMsg);
-            result.Properties.Add("Simulation", running ? "on" : "off");
+            result.Properties.Add("Simulation", simulationRunning.HasValue ? (simulationRunning.Value ? "on" : "off") : "unknown");
             result.Dependencies.Add("IoTHub", iotHubStatus.Item2);
+            result.Dependencies.Add("Storage", storageStatus.Item2);
 
-            this.log.Info("Service status request", () => new { Healthy = statusIsOk, statusMsg, running });
+            this.log.Info("Service status request", () => new { Healthy = statusIsOk, statusMsg, running = simulationRunning });
 
             return result;
         }

@@ -7,28 +7,28 @@ using Newtonsoft.Json;
 // TODO: handle errors
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 {
-    public class DeviceTypeListApiModel
+    public class DeviceModelListApiModel
     {
         [JsonProperty(PropertyName = "Items")]
-        public List<DeviceTypeApiModel> Items { get; set; }
+        public List<DeviceModelApiModel> Items { get; set; }
 
         [JsonProperty(PropertyName = "$metadata")]
         public Dictionary<string, string> Metadata => new Dictionary<string, string>
         {
-            { "$type", "DeviceTypeList;" + Version.Number },
-            { "$uri", "/" + Version.Path + "/devicetypes" }
+            { "$type", "DeviceModelList;" + Version.Number },
+            { "$uri", "/" + Version.Path + "/devicemodels" }
         };
 
-        public DeviceTypeListApiModel()
+        public DeviceModelListApiModel()
         {
-            this.Items = new List<DeviceTypeApiModel>();
+            this.Items = new List<DeviceModelApiModel>();
         }
 
         /// <summary>Map a service model to the corresponding API model</summary>
-        public DeviceTypeListApiModel(IEnumerable<Services.Models.DeviceType> deviceTypes)
+        public DeviceModelListApiModel(IEnumerable<Services.Models.DeviceModel> deviceModels)
         {
-            this.Items = new List<DeviceTypeApiModel>();
-            foreach (var x in deviceTypes) this.Items.Add(new DeviceTypeApiModel(x));
+            this.Items = new List<DeviceModelApiModel>();
+            foreach (var x in deviceModels) this.Items.Add(new DeviceModelApiModel(x));
         }
     }
 }

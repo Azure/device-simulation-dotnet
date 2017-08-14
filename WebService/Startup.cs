@@ -57,8 +57,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             var logger = container.Resolve<Services.Diagnostics.ILogger>();
             var config = container.Resolve<IConfig>();
             logger.Info("Web service started", () => new { Uptime.ProcessId });
-            logger.Info("Device Types folder: " + config.ServicesConfig.DeviceTypesFolder, () => { });
-            logger.Info("Scripts folder:      " + config.ServicesConfig.DeviceTypesScriptsFolder, () => { });
+            logger.Info("Device Models folder: " + config.ServicesConfig.DeviceModelsFolder, () => { });
+            logger.Info("Scripts folder:      " + config.ServicesConfig.DeviceModelsScriptsFolder, () => { });
         }
 
         // This method is called by the runtime, after the ConfigureServices

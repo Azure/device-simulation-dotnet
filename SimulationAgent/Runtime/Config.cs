@@ -19,8 +19,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
     public class Config : IConfig
     {
         private const string ApplicationKey = "devicesimulation:";
-        private const string DeviceTypesFolderKey = ApplicationKey + "device_types_folder";
-        private const string DeviceTypesScriptsFolderKey = ApplicationKey + "device_types_scripts_folder";
+        private const string DeviceModelsFolderKey = ApplicationKey + "device_models_folder";
+        private const string DeviceModelsScriptsFolderKey = ApplicationKey + "device_models_scripts_folder";
         private const string IoTHubConnStringKey = ApplicationKey + "iothub_connstring";
 
         private const string StorageAdapterKey = "storageadapter:";
@@ -52,8 +52,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
 
             this.ServicesConfig = new ServicesConfig
             {
-                DeviceTypesFolder = MapRelativePath(configData.GetString(DeviceTypesFolderKey)),
-                DeviceTypesScriptsFolder = MapRelativePath(configData.GetString(DeviceTypesScriptsFolderKey)),
+                DeviceModelsFolder = MapRelativePath(configData.GetString(DeviceModelsFolderKey)),
+                DeviceModelsScriptsFolder = MapRelativePath(configData.GetString(DeviceModelsScriptsFolderKey)),
                 IoTHubConnString = connstring,
                 StorageAdapterApiUrl = configData.GetString(StorageAdapterApiUrlKey),
                 StorageAdapterApiTimeout = configData.GetInt(StorageAdapterApiTimeoutKey)

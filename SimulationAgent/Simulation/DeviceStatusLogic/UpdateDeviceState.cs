@@ -11,14 +11,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 {
     /// <summary>
     /// Periodically update the device state (i.e. sensors data), executing
-    /// the script provided in the device type configuration.
+    /// the script provided in the device model configuration.
     /// </summary>
     public class UpdateDeviceState : IDeviceStatusLogic
     {
         private readonly IScriptInterpreter scriptInterpreter;
         private readonly ILogger log;
         private string deviceId;
-        private DeviceType deviceType;
+        private DeviceModel deviceModel;
 
         // Ensure that setup is called once and only once (which helps also detecting thread safety issues)
         private bool setupDone = false;
@@ -31,7 +31,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.log = logger;
         }
 
-        public void Setup(string deviceId, DeviceType deviceType)
+        public void Setup(string deviceId, DeviceModel deviceModel)
         {
             if (this.setupDone)
             {
@@ -42,7 +42,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
             this.setupDone = true;
             this.deviceId = deviceId;
-            this.deviceType = deviceType;
+            this.deviceModel = deviceModel;
         }
 
         public void Run(object context)
@@ -60,7 +60,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             {
                 ["currentTime"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:sszzz"),
                 ["deviceId"] = this.deviceId,
-                ["deviceType"] = this.deviceType.Name
+                ["deviceModel"] = this.deviceModel.Name
             };
 
             this.log.Debug("Updating device status", () => new { this.deviceId, deviceState = actor.DeviceState });
@@ -68,7 +68,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             lock (actor.DeviceState)
             {
                 actor.DeviceState = this.scriptInterpreter.Invoke(
-                    this.deviceType.DeviceState.SimulationScript,
+                    this.deviceModel.Simulation.Script,
                     scriptContext,
                     actor.DeviceState);
             }
@@ -87,7 +87,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             if (!this.setupDone)
             {
                 this.log.Error("Application error: Setup() must be invoked before Run().",
-                    () => new { this.deviceId, this.deviceType });
+                    () => new { this.deviceId, this.deviceModel });
                 throw new DeviceActorAlreadyInitializedException();
             }
         }

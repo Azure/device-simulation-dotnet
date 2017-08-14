@@ -12,7 +12,7 @@ RUN \
     # Both web service and simulation agent have a copy of the "data" folder,
     # inherited from the Service project. This remove the two copies and move
     # the files in /app/data, which is the folder that can be mounted to
-    # provide custom device types and/or customized scripts.
+    # provide custom device models and/or customized scripts.
     mv /app/webservice/data /app && \
     cd /app/webservice && rm -fR data && ln -s /app/data && \
     cd /app/simulationagent && rm -fR data && ln -s /app/data && \

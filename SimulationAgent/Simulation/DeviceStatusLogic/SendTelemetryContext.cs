@@ -7,6 +7,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     internal class SendTelemetryContext
     {
         public IDeviceActor Self { get; set; }
-        public DeviceType.DeviceTypeMessage Message { get; set; }
+        public DeviceModel.DeviceModelMessage Message { get; set; }
     }
 }

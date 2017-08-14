@@ -7,6 +7,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Device = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Device;
 using TransportType = Microsoft.Azure.Devices.Client.TransportType;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
@@ -14,10 +15,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface IDevices
     {
         Task<Tuple<bool, string>> PingRegistryAsync();
-        IDeviceClient GetClient(DeviceServiceModel device, IoTHubProtocol protocol);
-        Task<DeviceServiceModel> GetOrCreateAsync(string deviceId);
-        Task<DeviceServiceModel> GetAsync(string deviceId);
-        Task<DeviceServiceModel> CreateAsync(string deviceId);
+        IDeviceClient GetClient(Device device, IoTHubProtocol protocol);
+        Task<Device> GetOrCreateAsync(string deviceId);
+        Task<Device> GetAsync(string deviceId);
+        Task<Device> CreateAsync(string deviceId);
     }
 
     public class Devices : IDevices
@@ -50,7 +51,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        public IDeviceClient GetClient(DeviceServiceModel device, IoTHubProtocol protocol)
+        public IDeviceClient GetClient(Device device, IoTHubProtocol protocol)
         {
             var connectionString = $"HostName={device.IoTHubHostName};DeviceId={device.Id};SharedAccessKey={device.AuthPrimaryKey}";
 
@@ -88,7 +89,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return new DeviceClient(sdkClient, protocol, this.log);
         }
 
-        public async Task<DeviceServiceModel> GetOrCreateAsync(string deviceId)
+        public async Task<Device> GetOrCreateAsync(string deviceId)
         {
             try
             {
@@ -106,9 +107,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        public async Task<DeviceServiceModel> GetAsync(string deviceId)
+        public async Task<Device> GetAsync(string deviceId)
         {
-            DeviceServiceModel result = null;
+            Device result = null;
 
             try
             {
@@ -118,7 +119,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 if (device.Result != null)
                 {
-                    result = new DeviceServiceModel(device.Result, twin.Result, this.ioTHubHostName);
+                    result = new Device(device.Result, twin.Result, this.ioTHubHostName);
                 }
             }
             catch (Exception e)
@@ -135,20 +136,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return result;
         }
 
-        public async Task<DeviceServiceModel> CreateAsync(string deviceId)
+        public async Task<Device> CreateAsync(string deviceId)
         {
             this.log.Debug("Creating device", () => new { deviceId });
-            var device = new Device(deviceId);
+            var device = new Azure.Devices.Device(deviceId);
             var azureDevice = await this.registry.AddDeviceAsync(device);
 
             this.log.Debug("Fetching device twin", () => new { azureDevice.Id });
             var azureTwin = await this.registry.GetTwinAsync(azureDevice.Id);
 
             this.log.Debug("Writing device twin", () => new { azureDevice.Id });
-            azureTwin.Tags[DeviceTwinServiceModel.SimulatedTagKey] = DeviceTwinServiceModel.SimulatedTagValue;
+            azureTwin.Tags[DeviceTwin.SimulatedTagKey] = DeviceTwin.SimulatedTagValue;
             azureTwin = await this.registry.UpdateTwinAsync(azureDevice.Id, azureTwin, "*");
 
-            return new DeviceServiceModel(azureDevice, azureTwin, this.ioTHubHostName);
+            return new Device(azureDevice, azureTwin, this.ioTHubHostName);
         }
     }
 }

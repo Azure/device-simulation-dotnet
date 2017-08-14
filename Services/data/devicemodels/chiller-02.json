@@ -1,0 +1,88 @@
+{
+    "SchemaVersion": "1.0.0",
+    "Id": "chiller-02",
+    "Version": "0.0.1",
+    "Name": "Faulty Chiller",
+    "Description": "Faulty chiller with wrong pressure sensor. Pressure too high.",
+    "Protocol": "AMQP",
+    "Simulation": {
+        "InitialState": {
+            "online": true,
+            "temperature": 75.0,
+            "temperature_unit": "F",
+            "humidity": 70.0,
+            "humidity_unit": "%",
+            "pressure": 250.0,
+            "pressure_unit": "psig"
+        },
+        "Script": {
+            "Type": "javascript",
+            "Path": "chiller-02-state.js",
+            "Interval": "00:00:05"
+        }
+    },
+    "Properties": {
+        "Type": "Chiller",
+        "Firmware": "1.0.0",
+        "FirmwareUpdateStatus": "",
+        "Location": "Building 92",
+        "Latitude": 47.642358,
+        "Longitude": -122.137156
+    },
+    "Telemetry": [
+        {
+            "Interval": "00:00:05",
+            "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"{temperature_unit}\"}",
+            "MessageSchema": {
+                "Name": "chiller-temperature;v1",
+                "Format": "JSON",
+                "Fields": {
+                    "temperature": "double",
+                    "temperature_unit": "text"
+                }
+            }
+        },
+        {
+            "Interval": "00:00:05",
+            "MessageTemplate": "{\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\"}",
+            "MessageSchema": {
+                "Name": "chiller-humidity;v1",
+                "Format": "JSON",
+                "Fields": {
+                    "humidity": "double",
+                    "humidity_unit": "text"
+                }
+            }
+        },
+        {
+            "Interval": "00:00:05",
+            "MessageTemplate": "{\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
+            "MessageSchema": {
+                "Name": "chiller-pressure;v1",
+                "Format": "JSON",
+                "Fields": {
+                    "pressure": "double",
+                    "pressure_unit": "text"
+                }
+            }
+        }
+    ],
+    "CloudToDeviceMethods": {
+        "Reboot": {
+            "Type": "javascript",
+            "Path": "TBD.js"
+        },
+        "FirmwareUpdate": {
+            "Type": "javascript",
+            "Path": "TBD.js"
+        },
+        "EmergencyValveRelease": {
+            "Type": "javascript",
+            "Path": "TBD.js"
+        },
+        "IncreasePressure": {
+            "Type": "javascript",
+            "Path": "TBD.js"
+        }
+    }
+}

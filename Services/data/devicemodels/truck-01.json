@@ -1,0 +1,78 @@
+{
+    "SchemaVersion": "1.0.0",
+    "Id": "truck-01",
+    "Version": "0.0.1",
+    "Name": "Truck",
+    "Description": "Truck with GPS, speed and cargo temperature sensors",
+    "Protocol": "AMQP",
+    "Simulation": {
+        "InitialState": {
+            "online": true,
+            "latitude": 47.445301,
+            "longitude": -122.296307,
+            "speed": 30.0,
+            "speed_unit": "mph",
+            "cargotemperature": 38.0,
+            "cargotemperature_unit": "F"
+        },
+        "Script": {
+            "Type": "javascript",
+            "Path": "truck-01-state.js",
+            "Interval": "00:00:05"
+        }
+    },
+    "Properties": {
+        "Type": "Truck",
+        "Location": "Field",
+        "Latitude": 47.445301,
+        "Longitude": -122.296307
+    },
+    "Telemetry": [
+        {
+            "Interval": "00:00:03",
+            "MessageTemplate": "{\"latitude\":${latitude},\"longitude\":{longitude}}",
+            "MessageSchema": {
+                "Name": "truck-geolocation;v1",
+                "Format": "JSON",
+                "Fields": {
+                    "latitude": "double",
+                    "longitude": "double"
+                }
+            }
+        },
+        {
+            "Interval": "00:00:05",
+            "MessageTemplate": "{\"speed\": ${speed},\"speed_unit\":\"{speed_unit}\"}",
+            "MessageSchema": {
+                "Name": "truck-speed;v1",
+                "Format": "JSON",
+                "Fields": {
+                    "speed": "double",
+                    "speed_unit": "text"
+                }
+            }
+        },
+        {
+            "Interval": "00:00:05",
+            "MessageTemplate": "{\"cargotemperature\": ${cargotemperature},\"cargotemperature_unit\":\"{cargotemperature_unit}\"}",
+            "MessageSchema": {
+                "Name": "truck-cargotemperature;v1",
+                "Format": "JSON",
+                "Fields": {
+                    "cargotemperature": "double",
+                    "cargotemperature_unit": "text"
+                }
+            }
+        }
+    ],
+    "CloudToDeviceMethods": {
+        "DecreaseCargoTemperature": {
+            "Type": "javascript",
+            "Path": "TBD.js"
+        },
+        "IncreaseCargoTemperature": {
+            "Type": "javascript",
+            "Path": "TBD.js"
+        }
+    }
+}

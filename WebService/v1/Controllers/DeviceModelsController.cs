@@ -8,25 +8,25 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers
 {
     [Route(Version.Path + "/[controller]"), ExceptionsFilter]
-    public class DeviceTypesController : Controller
+    public class DeviceModelsController : Controller
     {
-        private readonly IDeviceTypes deviceTypesService;
+        private readonly IDeviceModels deviceModelsService;
 
-        public DeviceTypesController(IDeviceTypes deviceTypesService)
+        public DeviceModelsController(IDeviceModels deviceModelsService)
         {
-            this.deviceTypesService = deviceTypesService;
+            this.deviceModelsService = deviceModelsService;
         }
 
         [HttpGet]
-        public DeviceTypeListApiModel Get()
+        public DeviceModelListApiModel Get()
         {
-            return new DeviceTypeListApiModel(this.deviceTypesService.GetList());
+            return new DeviceModelListApiModel(this.deviceModelsService.GetList());
         }
 
         [HttpGet("{id}")]
-        public DeviceTypeApiModel Get(string id)
+        public DeviceModelApiModel Get(string id)
         {
-            return new DeviceTypeApiModel(this.deviceTypesService.Get(id));
+            return new DeviceModelApiModel(this.deviceModelsService.Get(id));
         }
     }
 }

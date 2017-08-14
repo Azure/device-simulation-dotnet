@@ -6,7 +6,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 {
     public interface IDeviceStatusLogic
     {
-        void Setup(string deviceId, DeviceType deviceType);
+        void Setup(string deviceId, DeviceModel deviceModel);
         void Run(object context);
     }
 }

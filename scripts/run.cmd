@@ -6,7 +6,7 @@
 :: Run the service inside a Docker container: scripts\run --in-sandbox
 :: Run only the web service:                  scripts\run --webservice
 :: Run only the simulation:                   scripts\run --simulation
-:: Run only the simulation:                   scripts\run --storageadapter
+:: Run the storage dependency:                scripts\run --storage
 :: Show how to use this script:               scripts\run -h
 :: Show how to use this script:               scripts\run --help
 
@@ -24,7 +24,7 @@ IF "%1"=="-s" GOTO :RunInSandbox
 IF "%1"=="--in-sandbox" GOTO :RunInSandbox
 IF "%1"=="--webservice" GOTO :RunWebService
 IF "%1"=="--simulation" GOTO :RunSimulation
-IF "%1"=="--storageadapter" GOTO :RunStorageAdapter
+IF "%1"=="--storage" GOTO :RunStorageAdapter
 
 :Help
 
@@ -33,7 +33,7 @@ IF "%1"=="--storageadapter" GOTO :RunStorageAdapter
     echo "  Run the service inside a Docker container: ./scripts/run -s | --in-sandbox"
     echo "  Run only the web service:                  ./scripts/run --webservice"
     echo "  Run only the simulation:                   ./scripts/run --simulation"
-    echo "  Run the storage adapter dependency:        ./scripts/run --storageadapter"
+    echo "  Run the storage dependency:                ./scripts/run --storage"
     echo "  Show how to use this script:               ./scripts/run -h | --help"
 
     goto :END
