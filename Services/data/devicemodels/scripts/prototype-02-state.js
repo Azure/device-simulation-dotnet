@@ -11,7 +11,7 @@ var center_longitude = -122.350987;
 // Default state
 var state = {
     online: true,
-    temperature: 80.0,
+    temperature: 85.0,
     temperature_unit: "F",
     pressure: 150.0,
     pressure_unit: "psig",
@@ -57,8 +57,8 @@ function main(context, previousState) {
     // the telemetry can apply changes using the previous function state.
     restoreState(previousState);
 
-    // 80 +/- 25%,  Min 35, Max 100
-    state.temperature = vary(80, 25, 35, 100);
+    // 85 +/- 25%,  Min 35, Max 100
+    state.temperature = vary(85, 25, 35, 100);
 
     return state;
 }

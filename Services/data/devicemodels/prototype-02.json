@@ -8,7 +8,7 @@
     "Simulation": {
         "InitialState": {
             "online": true,
-            "temperature": 75.0,
+            "temperature": 85.0,
             "temperature_unit": "F",
             "pressure": 150.0,
             "pressure_unit": "psig",
