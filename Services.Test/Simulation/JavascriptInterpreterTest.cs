@@ -29,7 +29,7 @@ namespace Services.Test.Simulation
 
             this.config = new Mock<IServicesConfig>();
             this.config.SetupGet(x => x.DeviceModelsFolder).Returns("./data/devicemodels/");
-            this.config.SetupGet(x => x.DeviceModelsScriptsFolder).Returns("./data/deviceModels/scripts/");
+            this.config.SetupGet(x => x.DeviceModelsScriptsFolder).Returns("./data/devicemodels/scripts/");
 
             this.logger = new Mock<ILogger>();
             this.CaptureApplicationLogs(this.logger);
