@@ -40,7 +40,7 @@
         },
         {
             "Interval": "00:00:05",
-            "MessageTemplate": "{\"vibration\":${vibration},\"vibration_unit\":\"{vibration_unit}\"}",
+            "MessageTemplate": "{\"vibration\":${vibration},\"vibration_unit\":\"${vibration_unit}\"}",
             "MessageSchema": {
                 "Name": "elevator-vibration;v1",
                 "Format": "JSON",
@@ -52,7 +52,7 @@
         },
         {
             "Interval": "00:00:05",
-            "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"{temperature_unit}\"}",
+            "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\"}",
             "MessageSchema": {
                 "Name": "elevator-temperature;v1",
                 "Format": "JSON",

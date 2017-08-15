@@ -33,7 +33,7 @@
     "Telemetry": [
         {
             "Interval": "00:00:05",
-            "MessageTemplate": "{\"temperature\": ${temperature},\"temperature_unit\":\"{temperature_unit}\"}",
+            "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\"}",
             "MessageSchema": {
                 "Name": "prototype-temperature;v1",
                 "Format": "JSON",
@@ -45,7 +45,7 @@
         },
         {
             "Interval": "00:00:05",
-            "MessageTemplate": "{\"pressure\": ${pressure},\"pressure_unit\":\"{pressure_unit}\"}",
+            "MessageTemplate": "{\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
             "MessageSchema": {
                 "Name": "prototype-pressure;v1",
                 "Format": "JSON",
@@ -57,7 +57,7 @@
         },
         {
             "Interval": "00:00:03",
-            "MessageTemplate": "{\"latitude\":${latitude},\"longitude\":{longitude}}",
+            "MessageTemplate": "{\"latitude\":${latitude},\"longitude\":${longitude}}",
             "MessageSchema": {
                 "Name": "prototype-geolocation;v1",
                 "Format": "JSON",
