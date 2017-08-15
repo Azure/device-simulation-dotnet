@@ -96,7 +96,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http
                         {
                             StatusCode = response.StatusCode,
                             Headers = response.Headers,
-                            Content = await response.Content.ReadAsStringAsync(),
+                            Content = await response.Content.ReadAsStringAsync()
                         };
                     }
                 }
@@ -108,18 +108,32 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http
                         errorMessage += " - " + e.InnerException.Message;
                     }
 
-                    this.log.Error("Request failed", () => new
-                    {
-                        ExceptionMessage = e.Message,
-                        InnerExceptionType = e.InnerException != null ? e.InnerException.GetType().FullName : "",
-                        InnerExceptionMessage = e.InnerException != null ? e.InnerException.Message : "",
-                        errorMessage
-                    });
+                    this.log.Error("Request failed", () => new { errorMessage, e });
 
                     return new HttpResponse
                     {
                         StatusCode = 0,
                         Content = errorMessage
+                    };
+                }
+                catch (TaskCanceledException e)
+                {
+                    this.log.Error("Request failed", () => new { Message = e.Message + " The request timed out, the endpoint might be unreachable.", e });
+
+                    return new HttpResponse
+                    {
+                        StatusCode = 0,
+                        Content = e.Message + " The endpoint might be unreachable."
+                    };
+                }
+                catch (Exception e)
+                {
+                    this.log.Error("Request failed", () => new { e.Message, e });
+
+                    return new HttpResponse
+                    {
+                        StatusCode = 0,
+                        Content = e.Message
                     };
                 }
             }

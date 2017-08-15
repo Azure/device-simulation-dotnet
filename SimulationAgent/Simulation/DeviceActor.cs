@@ -373,5 +373,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             return JsonConvert.DeserializeObject<T>(
                 JsonConvert.SerializeObject(source));
         }
+
+        private class TelemetryContext
+        {
+            public DeviceActor Self { get; set; }
+            public DeviceType.DeviceTypeMessage Message { get; set; }
+        }
     }
 }

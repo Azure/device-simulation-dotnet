@@ -2,78 +2,67 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json;
 
-// TODO: use real storage
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface ISimulations
     {
-        IList<Models.Simulation> GetList();
-        Models.Simulation Get(string id);
-        Models.Simulation Insert(Models.Simulation simulation, string template = "");
-        Models.Simulation Upsert(Models.Simulation simulation, string template = "");
-        Models.Simulation Merge(SimulationPatch patch);
+        Task<IList<Models.Simulation>> GetListAsync();
+        Task<Models.Simulation> GetAsync(string id);
+        Task<Models.Simulation> InsertAsync(Models.Simulation simulation, string template = "");
+        Task<Models.Simulation> UpsertAsync(Models.Simulation simulation);
+        Task<Models.Simulation> MergeAsync(SimulationPatch patch);
     }
 
-    /// <summary>
-    /// Note: Since we don't have a configuration service yet, data is
-    /// stored to a JSON file.
-    /// </summary>
     public class Simulations : ISimulations
     {
-        private string tempStorageFile = "simulations-storage.json";
-        private string tempStoragePath;
+        private const string StorageCollection = "simulations";
+        private const string SimulationId = "1";
+        private const int DevicesPerTypeInDefaultTemplate = 2;
 
         private readonly IDeviceTypes deviceTypes;
+        private readonly IStorageAdapterClient storage;
         private readonly ILogger log;
 
         public Simulations(
             IDeviceTypes deviceTypes,
+            IStorageAdapterClient storage,
             ILogger logger)
         {
             this.deviceTypes = deviceTypes;
+            this.storage = storage;
             this.log = logger;
-
-            this.SetupTempStoragePath();
-            this.CreateStorageIfMissing();
         }
 
-        // TODO: remove this method and use mocks when we have a storage service
-        public void ChangeStorageFile(string filename)
+        public async Task<IList<Models.Simulation>> GetListAsync()
         {
-            this.tempStorageFile = filename;
-            this.SetupTempStoragePath();
-            this.CreateStorageIfMissing();
-        }
-
-        public IList<Models.Simulation> GetList()
-        {
-            this.CreateStorageIfMissing();
-            var json = File.ReadAllText(this.tempStoragePath);
-            return JsonConvert.DeserializeObject<List<Models.Simulation>>(json);
-        }
-
-        public Models.Simulation Get(string id)
-        {
-            var simulations = this.GetList();
-            foreach (var s in simulations)
+            var data = await this.storage.GetAllAsync(StorageCollection);
+            var result = new List<Models.Simulation>();
+            foreach (var item in data.Items)
             {
-                if (s.Id == id) return s;
+                var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
+                simulation.Etag = item.ETag;
+                result.Add(simulation);
             }
 
-            this.log.Warn("Simulation not found", () => new { id });
-
-            throw new ResourceNotFoundException();
+            return result;
         }
 
-        public Models.Simulation Insert(Models.Simulation simulation, string template = "")
+        public async Task<Models.Simulation> GetAsync(string id)
+        {
+            var item = await this.storage.GetAsync(StorageCollection, id);
+            var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
+            simulation.Etag = item.ETag;
+            return simulation;
+        }
+
+        public async Task<Models.Simulation> InsertAsync(Models.Simulation simulation, string template = "")
         {
             // TODO: complete validation
             if (!string.IsNullOrEmpty(template) && template.ToLowerInvariant() != "default")
@@ -82,24 +71,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 throw new InvalidInputException("Unknown template name. Try 'default'.");
             }
 
-            var simulations = this.GetList();
-
-            // Only one simulation per deployment
+            var simulations = await this.GetListAsync();
             if (simulations.Count > 0)
             {
-                this.log.Warn("There is already a simulation",
-                    () => new { Existing = simulations.First().Id });
-
+                this.log.Warn("There is already a simulation", () => { });
                 throw new ConflictingResourceException(
                     "There is already a simulation. Only one simulation can be created.");
             }
 
-            // The ID is not empty when using PUT
-            if (string.IsNullOrEmpty(simulation.Id))
-            {
-                simulation.Id = Guid.NewGuid().ToString();
-            }
-
+            // Note: forcing the ID because only one simulation can be created
+            simulation.Id = SimulationId;
             simulation.Created = DateTimeOffset.UtcNow;
             simulation.Modified = simulation.Created;
             simulation.Version = 1;
@@ -114,136 +95,97 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     simulation.DeviceTypes.Add(new Models.Simulation.DeviceTypeRef
                     {
                         Id = type.Id,
-                        Count = 2
+                        Count = DevicesPerTypeInDefaultTemplate
                     });
                 }
             }
 
-            this.WriteToStorage(simulation);
+            // Note: using UpdateAsync because the service generates the ID
+            await this.storage.UpdateAsync(
+                StorageCollection,
+                SimulationId,
+                JsonConvert.SerializeObject(simulation),
+                "*");
 
             return simulation;
-        }
-
-        public Models.Simulation Upsert(Models.Simulation simulation, string template = "")
-        {
-            // TODO: complete validation
-            if (string.IsNullOrEmpty(simulation.Id))
-            {
-                this.log.Warn("Missing ID", () => new { simulation });
-                throw new InvalidInputException("Missing ID");
-            }
-
-            var simulations = this.GetList();
-            if (simulations.Count == 0)
-            {
-                return this.Insert(simulation, template);
-            }
-
-            // Note: only one simulation per deployment
-            if (simulations[0].Id != simulation.Id)
-            {
-                this.log.Warn("There is already a simulation",
-                    () => new { Existing = simulations[0].Id, Provided = simulation.Id });
-                throw new ConflictingResourceException(
-                    "There is already a simulation. Only one simulation can be created.");
-            }
-
-            if (simulations[0].Etag != simulation.Etag)
-            {
-                this.log.Warn("Etag mismatch",
-                    () => new { Existing = simulations[0].Etag, Provided = simulation.Etag });
-                throw new ResourceOutOfDateException(
-                    "Etag mismatch: the resource has been updated by another client.");
-            }
-
-            simulation.Modified = DateTimeOffset.UtcNow;
-            simulation.Version += 1;
-
-            this.WriteToStorage(simulation);
-
-            return simulation;
-        }
-
-        public Models.Simulation Merge(SimulationPatch patch)
-        {
-            var simulations = this.GetList();
-
-            if (simulations.Count == 0 || simulations[0].Id != patch.Id)
-            {
-                this.log.Warn("The simulation doesn't exist.",
-                    () => new { ExistingSimulations = simulations.Count, IdProvided = patch.Id });
-                throw new ResourceNotFoundException("The simulation doesn't exist.");
-            }
-
-            if (simulations[0].Etag != patch.Etag)
-            {
-                this.log.Warn("Etag mismatch",
-                    () => new { Existing = simulations[0].Etag, Provided = patch.Etag });
-                throw new ResourceOutOfDateException(
-                    "Etag mismatch: the resource has been updated by another client.");
-            }
-
-            var simulation = simulations[0];
-
-            var resourceChanged = false;
-            if (patch.Enabled.HasValue && patch.Enabled.Value != simulation.Enabled)
-            {
-                simulation.Enabled = patch.Enabled.Value;
-                resourceChanged = true;
-            }
-
-            if (resourceChanged)
-            {
-                simulation.Modified = DateTimeOffset.UtcNow;
-                simulation.Version += 1;
-                this.WriteToStorage(simulation);
-            }
-
-            return simulation;
-        }
-
-        private void WriteToStorage(Models.Simulation simulation)
-        {
-            simulation.Etag = Etags.NewEtag();
-            var data = new List<Models.Simulation> { simulation };
-            File.WriteAllText(this.tempStoragePath, JsonConvert.SerializeObject(data));
         }
 
         /// <summary>
-        /// While working within an IDE we need to share the data used by the
-        /// web service and the data used by the simulation agent, i.e. when
-        /// running the web service and the simulation agent from the IDE there
-        /// are two "Services/data" folders, one in each entry point. Thus the
-        /// simulation agent would not see the temporary storage written by the
-        /// web service. By using the user/system temp folder, we make sure the
-        /// storage is shared by the two processes when using an IDE.
+        /// Upsert the simulation. The logic works under the assumption that
+        /// there is only one simulation with id "1".
         /// </summary>
-        private void SetupTempStoragePath()
+        public async Task<Models.Simulation> UpsertAsync(Models.Simulation simulation)
         {
-            var tempFolder = Path.GetTempPath();
-
-            // In some cases GetTempPath returns a path under "/var/folders/"
-            // in which case we opt for /tmp/. Note: this is temporary until
-            // we use a real storage service.
-            if (Path.DirectorySeparatorChar == '/' && Directory.Exists("/tmp/"))
+            if (simulation.Id != SimulationId)
             {
-                tempFolder = "/tmp/";
+                this.log.Warn("Invalid simulation ID. Only one simulation is allowed", () => { });
+                throw new InvalidInputException("Invalid simulation ID. Use ID '" + SimulationId + "'.");
             }
 
-            this.tempStoragePath = (tempFolder + Path.DirectorySeparatorChar + this.tempStorageFile)
-                .Replace(Path.DirectorySeparatorChar.ToString() + Path.DirectorySeparatorChar,
-                    Path.DirectorySeparatorChar.ToString());
+            var simulations = await this.GetListAsync();
+            if (simulations.Count > 0)
+            {
+                //simulation.Modified = DateTimeOffset.UtcNow;
+                //simulation.Version = simulations.First().Version + 1;
+                this.log.Error("Simulations cannot be modified via PUT. Use PATCH to start/stop the simulation.", () => { });
+                throw new InvalidInputException("Simulations cannot be modified via PUT. Use PATCH to start/stop the simulation.");
+            }
 
-            this.log.Info("Temporary simulations storage: " + this.tempStoragePath, () => { });
+            // Note: forcing the ID because only one simulation can be created
+            simulation.Id = SimulationId;
+            simulation.Created = DateTimeOffset.UtcNow;
+            simulation.Modified = simulation.Created;
+            simulation.Version = 1;
+
+            await this.storage.UpdateAsync(
+                StorageCollection,
+                SimulationId,
+                JsonConvert.SerializeObject(simulation),
+                simulation.Etag);
+
+            return simulation;
         }
 
-        private void CreateStorageIfMissing()
+        public async Task<Models.Simulation> MergeAsync(SimulationPatch patch)
         {
-            if (!File.Exists(this.tempStoragePath))
+            if (patch.Id != SimulationId)
             {
-                var data = new List<Models.Simulation>();
-                File.WriteAllText(this.tempStoragePath, JsonConvert.SerializeObject(data));
+                this.log.Warn("Invalid simulation ID.", () => new { patch.Id });
+                throw new InvalidInputException("Invalid simulation ID. Use ID '" + SimulationId + "'.");
             }
+
+            var item = await this.storage.GetAsync(StorageCollection, patch.Id);
+            var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
+            simulation.Etag = item.ETag;
+
+            // Even when there's nothing to do, verify the etag mismatch
+            if (patch.Etag != simulation.Etag)
+            {
+                this.log.Warn("Etag mismatch",
+                    () => new { Current = simulation.Etag, Provided = patch.Etag });
+                throw new ConflictingResourceException(
+                    $"The ETag provided doesn't match the current resource ETag ({simulation.Etag}).");
+            }
+
+            if (!patch.Enabled.HasValue || patch.Enabled.Value == simulation.Enabled)
+            {
+                // Nothing to do
+                return simulation;
+            }
+
+            simulation.Enabled = patch.Enabled.Value;
+            simulation.Modified = DateTimeOffset.UtcNow;
+            simulation.Version += 1;
+
+            item = await this.storage.UpdateAsync(
+                StorageCollection,
+                SimulationId,
+                JsonConvert.SerializeObject(simulation),
+                patch.Etag);
+
+            simulation.Etag = item.ETag;
+
+            return simulation;
         }
     }
 }

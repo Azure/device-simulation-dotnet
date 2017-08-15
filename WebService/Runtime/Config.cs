@@ -31,9 +31,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string IoTHubConnStringKey = ApplicationKey + "iothub_connstring";
         private const string CorsWhitelistKey = ApplicationKey + "cors_whitelist";
 
-        private const string IoTHubManagerKey = "iothubmanager:";
-        private const string IoTHubManagerApiUrlKey = IoTHubManagerKey + "webservice_url";
-        private const string IoTHubManagerApiTimeoutKey = IoTHubManagerKey + "webservice_timeout";
+        private const string StorageAdapterKey = "storageadapter:";
+        private const string StorageAdapterApiUrlKey = StorageAdapterKey + "webservice_url";
+        private const string StorageAdapterApiTimeoutKey = StorageAdapterKey + "webservice_timeout";
 
         /// <summary>Web service listening port</summary>
         public int Port { get; }
@@ -71,7 +71,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             {
                 DeviceTypesFolder = MapRelativePath(configData.GetString(DeviceTypesFolderKey)),
                 DeviceTypesScriptsFolder = MapRelativePath(configData.GetString(DeviceTypesScriptsFolderKey)),
-                IoTHubConnString = connstring
+                IoTHubConnString = connstring,
+                StorageAdapterApiUrl = configData.GetString(StorageAdapterApiUrlKey),
+                StorageAdapterApiTimeout = configData.GetInt(StorageAdapterApiTimeoutKey)
             };
         }
 

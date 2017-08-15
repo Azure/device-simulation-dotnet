@@ -23,6 +23,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
         {
         }
 
+        public ExternalDependencyException(Exception innerException)
+            : base("An unexpected error happened while using an external dependency.", innerException)
+        {
+        }
+
         public ExternalDependencyException(string message, Exception innerException)
             : base(message, innerException)
         {

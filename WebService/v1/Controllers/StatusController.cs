@@ -40,7 +40,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 statusMsg = "Unable to use Azure IoT Hub service";
             }
 
-            var simulation = this.simulations.GetList().FirstOrDefault();
+            var simulation = (await this.simulations.GetListAsync()).FirstOrDefault();
             var running = (simulation != null && simulation.Enabled);
 
             var result = new StatusApiModel(statusIsOk, statusMsg);
