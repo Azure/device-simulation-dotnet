@@ -12,91 +12,39 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
     {
         public string Type { get; set; }
         public string Path { get; set; }
+        public TimeSpan Interval { get; set; }
 
         public Script()
         {
             this.Type = "javascript";
             this.Path = "scripts" + System.IO.Path.DirectorySeparatorChar;
+            this.Interval = TimeSpan.Zero;
         }
     }
 
-    public class DeviceType
+    public class DeviceModel
     {
         public string Id { get; set; }
         public string Version { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
         public IoTHubProtocol Protocol { get; set; }
-        public InternalState DeviceState { get; set; }
-        public IList<DeviceTypeMessage> Telemetry { get; set; }
+        public StateSimulation Simulation { get; set; }
+        public Dictionary<string, object> Properties { get; set; }
+        public IList<DeviceModelMessage> Telemetry { get; set; }
         public IDictionary<string, Script> CloudToDeviceMethods { get; set; }
 
-        public DeviceType()
+        public DeviceModel()
         {
             this.Id = string.Empty;
             this.Version = "0.0.0";
             this.Name = string.Empty;
             this.Description = string.Empty;
             this.Protocol = IoTHubProtocol.AMQP;
-            this.DeviceState = new InternalState();
-            this.Telemetry = new List<DeviceTypeMessage>();
+            this.Simulation = new StateSimulation();
+            this.Properties = new Dictionary<string, object>();
+            this.Telemetry = new List<DeviceModelMessage>();
             this.CloudToDeviceMethods = new Dictionary<string, Script>();
-        }
-
-        /// <summary>
-        /// If the simulated device has some geolocation properties, we publish
-        /// them also in the twin, so that the device can be shown in the map
-        /// even when it hasn't sent (or is not sending) telemetry.
-        /// </summary>
-        public JObject GetLocationReportedProperty()
-        {
-            // 3D
-            if (this.DeviceState.Initial.ContainsKey("latitude")
-                && this.DeviceState.Initial.ContainsKey("longitude")
-                && this.DeviceState.Initial.ContainsKey("altitude"))
-            {
-                return new JObject
-                {
-                    ["Latitude"] = this.DeviceState.Initial["latitude"].ToString(),
-                    ["Longitude"] = this.DeviceState.Initial["longitude"].ToString(),
-                    ["Altitude"] = this.DeviceState.Initial["altitude"].ToString()
-                };
-            }
-
-            // 2D
-            if (this.DeviceState.Initial.ContainsKey("latitude")
-                && this.DeviceState.Initial.ContainsKey("longitude"))
-            {
-                return new JObject
-                {
-                    ["Latitude"] = this.DeviceState.Initial["latitude"].ToString(),
-                    ["Longitude"] = this.DeviceState.Initial["longitude"].ToString()
-                };
-            }
-
-            // Geostationary
-            if (this.DeviceState.Initial.ContainsKey("longitude"))
-            {
-                return new JObject
-                {
-                    ["Longitude"] = this.DeviceState.Initial["longitude"].ToString()
-                };
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// This data is published in the device twin, so that the UI can
-        /// show information about a device.
-        /// </summary>
-        public JObject GetDeviceTypeReportedProperty()
-        {
-            return new JObject
-            {
-                ["Name"] = this.Name,
-                ["Version"] = this.Version
-            };
         }
 
         /// <summary>
@@ -113,9 +61,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             {
                 if (t == null)
                 {
-                    log.Error("The device type contains an invalid message definition",
+                    log.Error("The device model contains an invalid message definition",
                         () => new { this.Id, this.Name });
-                    throw new InvalidConfigurationException("The device type contains an invalid message definition");
+                    throw new InvalidConfigurationException("The device model contains an invalid message definition");
                 }
 
                 if (string.IsNullOrEmpty(t.MessageSchema.Name))
@@ -151,56 +99,54 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             return result;
         }
 
-        public class InternalState
+        public class StateSimulation
         {
-            public Dictionary<string, object> Initial { get; set; }
-            public TimeSpan SimulationInterval { get; set; }
-            public Script SimulationScript { get; set; }
+            public Dictionary<string, object> InitialState { get; set; }
+            public Script Script { get; set; }
 
-            public InternalState()
+            public StateSimulation()
             {
-                this.Initial = new Dictionary<string, object>();
-                this.SimulationInterval = TimeSpan.Zero;
-                this.SimulationScript = new Script();
+                this.InitialState = new Dictionary<string, object>();
+                this.Script = new Script();
             }
         }
 
-        public class DeviceTypeMessage
+        public class DeviceModelMessage
         {
             public TimeSpan Interval { get; set; }
             public string MessageTemplate { get; set; }
-            public DeviceTypeMessageSchema MessageSchema { get; set; }
+            public DeviceModelMessageSchema MessageSchema { get; set; }
 
-            public DeviceTypeMessage()
+            public DeviceModelMessage()
             {
                 this.Interval = TimeSpan.Zero;
                 this.MessageTemplate = string.Empty;
-                this.MessageSchema = new DeviceTypeMessageSchema();
+                this.MessageSchema = new DeviceModelMessageSchema();
             }
         }
 
-        public class DeviceTypeMessageSchema
+        public class DeviceModelMessageSchema
         {
             public string Name { get; set; }
-            public DeviceTypeMessageSchemaFormat Format { get; set; }
-            public IDictionary<string, DeviceTypeMessageSchemaType> Fields { get; set; }
+            public DeviceModelMessageSchemaFormat Format { get; set; }
+            public IDictionary<string, DeviceModelMessageSchemaType> Fields { get; set; }
 
-            public DeviceTypeMessageSchema()
+            public DeviceModelMessageSchema()
             {
                 this.Name = string.Empty;
-                this.Format = DeviceTypeMessageSchemaFormat.JSON;
-                this.Fields = new Dictionary<string, DeviceTypeMessageSchemaType>();
+                this.Format = DeviceModelMessageSchemaFormat.JSON;
+                this.Fields = new Dictionary<string, DeviceModelMessageSchemaType>();
             }
         }
 
-        public enum DeviceTypeMessageSchemaFormat
+        public enum DeviceModelMessageSchemaFormat
         {
             Binary = 0,
             Text = 10,
             JSON = 20
         }
 
-        public enum DeviceTypeMessageSchemaType
+        public enum DeviceModelMessageSchemaType
         {
             Object = 0,
             Binary = 10,

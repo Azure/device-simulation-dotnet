@@ -24,18 +24,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     {
         private const string StorageCollection = "simulations";
         private const string SimulationId = "1";
-        private const int DevicesPerTypeInDefaultTemplate = 2;
+        private const int DevicesPerModelInDefaultTemplate = 2;
 
-        private readonly IDeviceTypes deviceTypes;
+        private readonly IDeviceModels deviceModels;
         private readonly IStorageAdapterClient storage;
         private readonly ILogger log;
 
         public Simulations(
-            IDeviceTypes deviceTypes,
+            IDeviceModels deviceModels,
             IStorageAdapterClient storage,
             ILogger logger)
         {
-            this.deviceTypes = deviceTypes;
+            this.deviceModels = deviceModels;
             this.storage = storage;
             this.log = logger;
         }
@@ -88,24 +88,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             // Create default simulation
             if (!string.IsNullOrEmpty(template) && template.ToLowerInvariant() == "default")
             {
-                var types = this.deviceTypes.GetList();
-                simulation.DeviceTypes = new List<Models.Simulation.DeviceTypeRef>();
+                var types = this.deviceModels.GetList();
+                simulation.DeviceModels = new List<Models.Simulation.DeviceModelRef>();
                 foreach (var type in types)
                 {
-                    simulation.DeviceTypes.Add(new Models.Simulation.DeviceTypeRef
+                    simulation.DeviceModels.Add(new Models.Simulation.DeviceModelRef
                     {
                         Id = type.Id,
-                        Count = DevicesPerTypeInDefaultTemplate
+                        Count = DevicesPerModelInDefaultTemplate
                     });
                 }
             }
 
             // Note: using UpdateAsync because the service generates the ID
-            await this.storage.UpdateAsync(
+            var result = await this.storage.UpdateAsync(
                 StorageCollection,
                 SimulationId,
                 JsonConvert.SerializeObject(simulation),
                 "*");
+
+            simulation.Etag = result.ETag;
 
             return simulation;
         }

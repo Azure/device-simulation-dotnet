@@ -29,7 +29,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             IServicesConfig config,
             ILogger logger)
         {
-            this.folder = config.DeviceTypesScriptsFolder;
+            this.folder = config.DeviceModelsScriptsFolder;
             this.log = logger;
         }
 

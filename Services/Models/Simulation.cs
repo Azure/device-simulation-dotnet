@@ -10,17 +10,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public string Etag { get; set; }
         public string Id { get; set; }
         public bool Enabled { get; set; }
-        public IList<DeviceTypeRef> DeviceTypes { get; set; }
+        public IList<DeviceModelRef> DeviceModels { get; set; }
         public DateTimeOffset Created { get; set; }
         public DateTimeOffset Modified { get; set; }
         public long Version { get; set; }
 
         public Simulation()
         {
-            this.DeviceTypes = new List<DeviceTypeRef>();
+            this.DeviceModels = new List<DeviceModelRef>();
         }
 
-        public class DeviceTypeRef
+        public class DeviceModelRef
         {
             public string Id { get; set; }
             public int Count { get; set; }

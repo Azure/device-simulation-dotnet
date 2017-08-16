@@ -35,7 +35,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.devices = devices;
         }
 
-        public void Setup(string deviceId, DeviceType deviceType)
+        public void Setup(string deviceId, DeviceModel deviceModel)
         {
             if (this.setupDone)
             {
@@ -46,7 +46,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
             this.setupDone = true;
             this.deviceId = deviceId;
-            this.protocol = deviceType.Protocol;
+            this.protocol = deviceModel.Protocol;
         }
 
         public void Run(object context)

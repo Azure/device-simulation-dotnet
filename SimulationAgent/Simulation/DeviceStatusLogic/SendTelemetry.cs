@@ -26,7 +26,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.log = logger;
         }
 
-        public void Setup(string deviceId, DeviceType deviceType)
+        public void Setup(string deviceId, DeviceModel deviceModel)
         {
             if (this.setupDone)
             {

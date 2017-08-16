@@ -6,8 +6,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 {
     public interface IServicesConfig
     {
-        string DeviceTypesFolder { get; set; }
-        string DeviceTypesScriptsFolder { get; set; }
+        string DeviceModelsFolder { get; set; }
+        string DeviceModelsScriptsFolder { get; set; }
         string IoTHubConnString { get; set; }
         string StorageAdapterApiUrl { get; set; }
         int StorageAdapterApiTimeout { get; set; }
@@ -19,13 +19,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         private string dtf = string.Empty;
         private string dtbf = string.Empty;
 
-        public string DeviceTypesFolder
+        public string DeviceModelsFolder
         {
             get { return this.dtf; }
             set { this.dtf = this.NormalizePath(value); }
         }
 
-        public string DeviceTypesScriptsFolder
+        public string DeviceModelsScriptsFolder
         {
             get { return this.dtbf; }
             set { this.dtbf = this.NormalizePath(value); }

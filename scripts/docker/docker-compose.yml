@@ -9,16 +9,17 @@ services:
   devicesimulation:
     image: azureiotpcs/device-simulation-dotnet:latest
     depends_on:
-#      - storageadapter
+      - storageadapter
     ports:
       - "9003:9003"
     environment:
       - PCS_IOTHUB_CONNSTRING
-    volumes:
-      - ./sample-volume:/app/data:ro
-#  storageadapter:
-#    image: azureiotpcs/pcs-storage-adapter-dotnet:latest
-#    ports:
-#      - "9022:9022"
-#    environment:
-#      - PCS_STORAGEADAPTER_CONTAINER_NAME
+      - PCS_STORAGEADAPTER_WEBSERVICE_URL=http://storageadapter:9022/v1
+    #volumes:
+    #  - ./sample-volume:/app/data:ro
+  storageadapter:
+    image: azureiotpcs/pcs-storage-adapter-dotnet:latest
+    ports:
+      - "9022:9022"
+    environment:
+      - PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING

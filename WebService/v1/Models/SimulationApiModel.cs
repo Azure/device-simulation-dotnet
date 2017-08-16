@@ -23,8 +23,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         [JsonProperty(PropertyName = "Enabled")]
         public bool? Enabled { get; set; }
 
-        [JsonProperty(PropertyName = "DeviceTypes")]
-        public List<DeviceTypeRef> DeviceTypes { get; set; }
+        [JsonProperty(PropertyName = "DeviceModels")]
+        public List<DeviceModelRef> DeviceModels { get; set; }
 
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
@@ -38,26 +38,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 
         public SimulationApiModel()
         {
-            this.DeviceTypes = new List<DeviceTypeRef>();
+            this.DeviceModels = new List<DeviceModelRef>();
         }
 
         /// <summary>Map a service model to the corresponding API model</summary>
         public SimulationApiModel(Simulation simulation)
         {
-            this.DeviceTypes = new List<DeviceTypeRef>();
+            this.DeviceModels = new List<DeviceModelRef>();
 
             this.Etag = simulation.Etag;
             this.Id = simulation.Id;
             this.Enabled = simulation.Enabled;
 
-            foreach (var x in simulation.DeviceTypes)
+            foreach (var x in simulation.DeviceModels)
             {
-                var dt = new DeviceTypeRef
+                var dt = new DeviceModelRef
                 {
                     Id = x.Id,
                     Count = x.Count
                 };
-                this.DeviceTypes.Add(dt);
+                this.DeviceModels.Add(dt);
             }
 
             this.version = simulation.Version;
@@ -65,7 +65,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             this.modified = simulation.Modified;
         }
 
-        public class DeviceTypeRef
+        public class DeviceModelRef
         {
             [JsonProperty(PropertyName = "Id")]
             public string Id { get; set; }
@@ -89,14 +89,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
                 Enabled = this.Enabled ?? true
             };
 
-            foreach (var x in this.DeviceTypes)
+            foreach (var x in this.DeviceModels)
             {
-                var dt = new Simulation.DeviceTypeRef
+                var dt = new Simulation.DeviceModelRef
                 {
                     Id = x.Id,
                     Count = x.Count
                 };
-                result.DeviceTypes.Add(dt);
+                result.DeviceModels.Add(dt);
             }
 
             return result;

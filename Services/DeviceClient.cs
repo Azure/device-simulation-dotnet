@@ -16,13 +16,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     {
         IoTHubProtocol Protocol { get; }
 
-        Task SendMessageAsync(string message, DeviceType.DeviceTypeMessageSchema schema);
+        Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema);
 
         Task SendRawMessageAsync(Message message);
 
         Task DisconnectAsync();
 
-        Task UpdateTwinAsync(DeviceServiceModel device);
+        Task UpdateTwinAsync(Device device);
     }
 
     public class DeviceClient : IDeviceClient
@@ -51,7 +51,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public IoTHubProtocol Protocol { get { return this.protocol; } }
 
-        public async Task SendMessageAsync(string message, DeviceType.DeviceTypeMessageSchema schema)
+        public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
         {
             var eventMessage = new Message(Encoding.UTF8.GetBytes(message));
             eventMessage.Properties.Add(CreationTimeProperty, DateTimeOffset.UtcNow.ToString(DateFormat));
@@ -80,7 +80,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        public async Task UpdateTwinAsync(DeviceServiceModel device)
+        public async Task UpdateTwinAsync(Device device)
         {
             var azureTwin = await this.GetTwinAsync();
 

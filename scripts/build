@@ -42,6 +42,37 @@ run_tests() {
     done
 }
 
+json_lint() {
+    cd $APP_HOME
+    set +e
+    TEST=$(which jsonlint)
+    set -e
+    if [[ ! -z "$TEST" ]]; then
+        for foo in Services/data/devicemodels/*.json; do
+            set +e
+            TEST=$(cat $foo | jsonlint -s 2> /dev/null)
+            if [[ -z "$TEST" ]]; then
+                error "$foo:"
+                cat $foo | jsonlint -s
+                exit 1
+            fi
+            set -e
+        done
+    fi
+}
+
+js_lint() {
+    cd $APP_HOME
+    set +e
+    TEST=$(which jslint4java)
+    set -e
+    if [[ ! -z "$TEST" ]]; then
+        for foo in Services/data/devicemodels/scripts/*.js; do
+            jslint4java $foo
+        done
+    fi
+}
+
 setup_sandbox_cache() {
     mkdir -p $PCS_CACHE/sandbox/.config
     mkdir -p $PCS_CACHE/sandbox/.dotnet
@@ -85,6 +116,8 @@ else
 	# workaround for https://github.com/dotnet/cli/issues/3995
 	unset home
 
+    json_lint
+    js_lint
     compile
     run_tests
 fi

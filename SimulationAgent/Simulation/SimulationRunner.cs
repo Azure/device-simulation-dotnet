@@ -18,25 +18,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     public class SimulationRunner : ISimulationRunner
     {
         private readonly ILogger log;
-        private readonly IDeviceTypes deviceTypes;
+        private readonly IDeviceModels deviceModels;
         private readonly DependencyResolution.IFactory factory;
         private readonly List<bool> running;
         private CancellationTokenSource cancellationToken;
 
         public SimulationRunner(
             ILogger logger,
-            IDeviceTypes deviceTypes,
+            IDeviceModels deviceModels,
             DependencyResolution.IFactory factory)
         {
             this.log = logger;
-            this.deviceTypes = deviceTypes;
+            this.deviceModels = deviceModels;
             this.factory = factory;
 
             this.running = new List<bool> { false };
         }
 
         /// <summary>
-        /// For each device type in the simulation, create a 'Count'
+        /// For each device model in the simulation, create a 'Count'
         /// number of actors, which individually connects and starts
         /// sending messages.
         /// </summary>
@@ -50,14 +50,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 this.log.Info("Starting simulation...", () => new { simulation.Id });
                 this.cancellationToken = new CancellationTokenSource();
 
-                foreach (var dt in simulation.DeviceTypes)
+                foreach (var dt in simulation.DeviceModels)
                 {
-                    var deviceType = this.deviceTypes.Get(dt.Id);
+                    var deviceModel = this.deviceModels.Get(dt.Id);
                     Parallel.For(0, dt.Count, i =>
                     {
-                        this.log.Debug("Starting device...", () => new { deviceType.Name, i });
+                        this.log.Debug("Starting device...",
+                            () => new { ModelName = deviceModel.Name, ModelId = dt.Id, i });
                         this.factory.Resolve<IDeviceActor>()
-                            .Setup(deviceType, i)
+                            .Setup(deviceModel, i)
                             .Start(this.cancellationToken.Token);
                     });
                 }

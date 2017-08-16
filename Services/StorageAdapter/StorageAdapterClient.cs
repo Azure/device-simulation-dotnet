@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -15,6 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface IStorageAdapterClient
     {
+        Task<Tuple<bool, string>> PingAsync();
         Task<ValueListApiModel> GetAllAsync(string collectionId);
         Task<ValueApiModel> GetAsync(string collectionId, string key);
         Task<ValueApiModel> CreateAsync(string collectionId, string value);
@@ -29,7 +32,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private const bool AllowInsecureSSLServer = true;
 
         private readonly IHttpClient httpClient;
-        private readonly ILogger logger;
+        private readonly ILogger log;
         private readonly string serviceUri;
         private readonly int timeout;
 
@@ -39,9 +42,37 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             ILogger logger)
         {
             this.httpClient = httpClient;
-            this.logger = logger;
+            this.log = logger;
             this.serviceUri = config.StorageAdapterApiUrl;
             this.timeout = config.StorageAdapterApiTimeout;
+        }
+
+        public async Task<Tuple<bool, string>> PingAsync()
+        {
+            var status = false;
+            var message = "";
+
+            try
+            {
+                var response = await httpClient.GetAsync(this.PrepareRequest($"status"));
+                if (response.IsError)
+                {
+                    message = "Status code: " + response.StatusCode;
+                }
+                else
+                {
+                    var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(response.Content);
+                    message = data["Status"].ToString();
+                    status = data["Status"].ToString().StartsWith("OK:");
+                }
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Storage adapter check failed", () => new { e });
+                message = e.Message;
+            }
+
+            return new Tuple<bool, string>(status, message);
         }
 
         public async Task<ValueListApiModel> GetAllAsync(string collectionId)

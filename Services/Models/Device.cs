@@ -9,7 +9,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 {
-    public class DeviceServiceModel
+    public class Device
     {
         public string Etag { get; set; }
         public string Id { get; set; }
@@ -18,11 +18,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public bool Connected { get; set; }
         public bool Enabled { get; set; }
         public DateTimeOffset LastStatusUpdated { get; set; }
-        public DeviceTwinServiceModel Twin { get; set; }
+        public DeviceTwin Twin { get; set; }
         public string IoTHubHostName { get; set; }
         public string AuthPrimaryKey { get; set; }
 
-        public DeviceServiceModel(
+        public Device(
             string etag,
             string id,
             int c2DMessageCount,
@@ -30,7 +30,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             bool connected,
             bool enabled,
             DateTimeOffset lastStatusUpdated,
-            DeviceTwinServiceModel twin,
+            DeviceTwin twin,
             string primaryKey,
             string ioTHubHostName)
         {
@@ -46,7 +46,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.AuthPrimaryKey = primaryKey;
         }
 
-        public DeviceServiceModel(Device azureDevice, DeviceTwinServiceModel twin, string ioTHubHostName) :
+        public Device(Azure.Devices.Device azureDevice, DeviceTwin twin, string ioTHubHostName) :
             this(
                 etag: azureDevice.ETag,
                 id: azureDevice.Id,
@@ -61,12 +61,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         {
         }
 
-        public DeviceServiceModel(Device azureDevice, Twin azureTwin, string ioTHubHostName) :
-            this(azureDevice, new DeviceTwinServiceModel(azureTwin), ioTHubHostName)
+        public Device(Azure.Devices.Device azureDevice, Twin azureTwin, string ioTHubHostName) :
+            this(azureDevice, new DeviceTwin(azureTwin), ioTHubHostName)
         {
         }
 
-        public DeviceServiceModel SetReportedProperty(string key, JToken value)
+        public Device SetReportedProperty(string key, JToken value)
         {
             this.Twin.ReportedProperties[key] = value;
             return this;

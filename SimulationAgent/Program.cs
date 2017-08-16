@@ -25,8 +25,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             var logger = container.Resolve<ILogger>();
             var config = container.Resolve<IConfig>();
             logger.Info("Simulation agent started", () => new { Uptime.ProcessId });
-            logger.Info("Device Types folder: " + config.ServicesConfig.DeviceTypesFolder, () => { });
-            logger.Info("Scripts folder:      " + config.ServicesConfig.DeviceTypesScriptsFolder, () => { });
+            logger.Info("Device Models folder: " + config.ServicesConfig.DeviceModelsFolder, () => { });
+            logger.Info("Scripts folder:      " + config.ServicesConfig.DeviceModelsScriptsFolder, () => { });
         }
     }
 }

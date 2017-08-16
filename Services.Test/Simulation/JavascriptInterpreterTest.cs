@@ -28,8 +28,8 @@ namespace Services.Test.Simulation
             this.log = log;
 
             this.config = new Mock<IServicesConfig>();
-            this.config.SetupGet(x => x.DeviceTypesFolder).Returns("./data/DeviceTypes/");
-            this.config.SetupGet(x => x.DeviceTypesScriptsFolder).Returns("./data/DeviceTypes/Scripts/");
+            this.config.SetupGet(x => x.DeviceModelsFolder).Returns("./data/devicemodels/");
+            this.config.SetupGet(x => x.DeviceModelsScriptsFolder).Returns("./data/devicemodels/scripts/");
 
             this.logger = new Mock<ILogger>();
             this.CaptureApplicationLogs(this.logger);
@@ -41,12 +41,12 @@ namespace Services.Test.Simulation
         public void ReturnedStateIsIntact()
         {
             // Arrange
-            var filename = "room-state.js";
+            var filename = "chiller-01-state.js";
             var context = new Dictionary<string, object>
             {
                 ["currentTime"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:sszzz"),
                 ["deviceId"] = "device-123",
-                ["deviceType"] = "room"
+                ["deviceModel"] = "room"
             };
             var state = new Dictionary<string, object>
             {
@@ -75,16 +75,22 @@ namespace Services.Test.Simulation
             // Arrange
             var files = new List<string>
             {
-                "chiller-state.js",
-                "elevator-state.js",
-                "room-state.js",
-                "truck-state.js"
+                "chiller-01-state.js",
+                "chiller-02-state.js",
+                "elevator-01-state.js",
+                "elevator-02-state.js",
+                "engine-01-state.js",
+                "engine-02-state.js",
+                "prototype-01-state.js",
+                "prototype-02-state.js",
+                "truck-01-state.js",
+                "truck-02-state.js"
             };
             var context = new Dictionary<string, object>
             {
                 ["currentTime"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:sszzz"),
                 ["deviceId"] = "device-123",
-                ["deviceType"] = "room"
+                ["deviceModel"] = "room"
             };
 
             // Act - Assert (no exception should occur)
