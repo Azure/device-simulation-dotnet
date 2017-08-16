@@ -49,29 +49,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task<Tuple<bool, string>> PingAsync()
         {
+            var status = false;
+            var message = "";
+
             try
             {
-                var response = await httpClient.GetAsync(
-                    this.PrepareRequest($"status"));
-
+                var response = await httpClient.GetAsync(this.PrepareRequest($"status"));
                 if (response.IsError)
                 {
-                    return new Tuple<bool, string>(false, "Status code: " + response.StatusCode);
+                    message = "Status code: " + response.StatusCode;
                 }
-
-                var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(response.Content);
-                if (data["Status"].ToString().StartsWith("OK:"))
+                else
                 {
-                    return new Tuple<bool, string>(true, data["Status"].ToString());
+                    var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(response.Content);
+                    message = data["Status"].ToString();
+                    status = data["Status"].ToString().StartsWith("OK:");
                 }
-
-                return new Tuple<bool, string>(false, data["Status"].ToString());
             }
             catch (Exception e)
             {
                 this.log.Error("Storage adapter check failed", () => new { e });
-                return new Tuple<bool, string>(false, e.Message);
+                message = e.Message;
             }
+
+            return new Tuple<bool, string>(status, message);
         }
 
         public async Task<ValueListApiModel> GetAllAsync(string collectionId)
