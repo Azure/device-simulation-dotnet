@@ -82,9 +82,8 @@ prepare_for_run() {
 
 run_all() {
     echo "Starting simulation agent and web service..."
-    dotnet run --configuration $CONFIGURATION --project SimulationAgent/*.csproj & \
-        dotnet run --configuration $CONFIGURATION --project WebService/*.csproj && \
-        fg
+    dotnet run --configuration $CONFIGURATION --project WebService/*.csproj & \
+        dotnet run --configuration $CONFIGURATION --project SimulationAgent/*.csproj
 }
 
 run_webservice() {
