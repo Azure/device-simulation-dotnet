@@ -81,7 +81,7 @@ namespace Services.Test
         public void CreateDefaultSimulation()
         {
             // Arrange
-            const int defaultDeviceCount = 2;
+            const int defaultDeviceCount = 1;
             this.ThereAreNoSimulationsInTheStorage();
             this.ThereAreSomeDeviceModels();
 

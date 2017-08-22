@@ -85,5 +85,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             return new SimulationApiModel(
                 await this.simulationsService.MergeAsync(patch.ToServiceModel(id)));
         }
+
+        [HttpDelete("{id}")]
+        public async Task DeleteAsync(string id)
+        {
+            await this.simulationsService.DeleteAsync(id);
+        }
     }
 }
