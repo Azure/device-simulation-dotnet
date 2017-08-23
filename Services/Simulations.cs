@@ -18,13 +18,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task<Models.Simulation> InsertAsync(Models.Simulation simulation, string template = "");
         Task<Models.Simulation> UpsertAsync(Models.Simulation simulation);
         Task<Models.Simulation> MergeAsync(SimulationPatch patch);
+        Task DeleteAsync(string id);
     }
 
     public class Simulations : ISimulations
     {
         private const string StorageCollection = "simulations";
         private const string SimulationId = "1";
-        private const int DevicesPerModelInDefaultTemplate = 2;
+        private const int DevicesPerModelInDefaultTemplate = 1;
 
         private readonly IDeviceModels deviceModels;
         private readonly IStorageAdapterClient storage;
@@ -188,6 +189,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             simulation.Etag = item.ETag;
 
             return simulation;
+        }
+
+
+        public async Task DeleteAsync(string id)
+        {
+            await this.storage.DeleteAsync(StorageCollection, id);
         }
     }
 }
