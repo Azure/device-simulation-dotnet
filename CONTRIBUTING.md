@@ -1,13 +1,15 @@
 We'll be glad to accept patches and contributions to the project. There are
 just few guidelines we ask to follow.
 
-# Contribution license Agreement
+Contribution license Agreement
+==============================
 
 If you want/plan to contribute, we ask you to sign a
 [CLA](https://cla.microsoft.com/) (Contribution license Agreement).
 A friendly bot will remind you about it when you submit a pull-request.
 
-# Submitting a contribution
+Submitting a contribution
+=========================
 
 It's generally best to start by
 [opening a new issue](https://help.github.com/articles/creating-an-issue)
@@ -42,6 +44,7 @@ Some quick notes about the project code style:
 ## Git setup for contributing to the solution
 
 ### Commits
+
 Do your best to have clear commit messages for each change, in order to keep
 consistency throughout the project. Reference the issue number (#num). A good
 commit message serves at least these purposes:
@@ -54,7 +57,12 @@ like this:
 ```
 $ git commit -m "A brief summary of the commit
 >
-> A paragraph describing what changed and its impact."
+> A paragraph describing what changed and its impact. Lorem ipsum dolor sit
+> amet consectetur adipiscing elit ligula, blandit diam cursus vitae potenti
+> egestas viverra volutpat sodales, etiam non pharetra hac sociosqu aenean
+> primis. Sodales fermentum cras scelerisque interdum cubilia molestie
+> convallis curabitur, augue habitasse per felis vitae parturient etiam nulla,
+> facilisi vehicula diam eleifend lacus natoque venenatis."
 ```
 
 Finally, push the commits to your fork, submit a pull request, wait for the
@@ -65,35 +73,18 @@ before merging the pull request.
 
 ### Git Hooks
 
-The project includes a Git hook, to automate some checks before accepting a
-code change. You can run the tests manually, or let the CI platform to run
-the tests. We use the following Git hook to automatically run all the tests
-before sending code changes to GitHub and speed up the development workflow.
+The project includes a pre-commit
+[git hook](https://git-scm.com/docs/githooks),
+to automate some checks before accepting a code change. You can run the tests
+manually, or let the CI platform to run the tests. We use the following git
+hook to automatically run all the tests before sending code changes to GitHub
+and speed up the development workflow.
 
-If at any point you want to remove the hook, simply delete the file installed
-under `.git/hooks`. You can also bypass the pre-commit hook using the
-`--no-verify` option.
+If at any point you want to remove the hook, simply delete the `pre-commit`
+file installed under `.git/hooks`. You can also bypass the pre-commit hook
+using the `--no-verify` option.
 
-### Pre-commit hook with sandbox
-
-To setup the included hooks, open a Windows/Linux/MacOS console and execute:
-
-```
-cd PROJECT-FOLDER
-cd scripts/git
-setup --with-sandbox
-```
-
-With this configuration, when checking in files, git will verify that the
-application passes all the tests, running the build and the tests inside
-a Docker container configured with all the development requirements.
-
-### Pre-commit hook without sandbox
-
-Note: the hook without sandbox requires [.NET Core](https://dotnet.github.io)
-in the system PATH.
-
-To setup the included hooks, open a Windows/Linux/MacOS console and execute:
+To setup the included git hook, open a Windows/Linux/MacOS console and execute:
 
 ```
 cd PROJECT-FOLDER
@@ -104,3 +95,8 @@ setup --no-sandbox
 With this configuration, when checking in files, git will verify that the
 application passes all the tests, running the build and the tests in your
 workstation, using the tools installed in your OS.
+
+Note: you will need [.NET Core](https://dotnet.github.io) installed and
+in the system PATH. If you don't want to install .NET Core, you can run
+`setup --with-sandbox` instead, so build and tests will run inside
+a pre-configured Docker container.
