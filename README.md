@@ -137,8 +137,7 @@ the IDE, there are several ways to manage environment variables:
   (https://www.jetbrains.com/help/idea/run-debug-configuration-application.html)
 
 # Contributing to the solution
-Please follow our [contribution guildelines](CONTRIBUTING.md) and the 
-following code style conventions.  We recommend using the Git setup defined below.
+Please follow our [contribution guildelines](CONTRIBUTING.md).  We love PRs too.
 
 # Troubleshooting
 
