@@ -8,28 +8,22 @@ be invoked and executed from a connected IoTHub.
 The microservice provides a RESTful endpoint to set the simulation details,
 to start and stop the simulation, to add and remove virtual devices. The
 simulation is composed by a set of virtual devices, of different models,
-each sending telemetry and replying to method calls.  The [Storage adapter microservice](https://github.com/Azure/pcs-storage-adapter-dotnet/README.md) is used by Simulation to store simulated devices configuration.
+each sending telemetry and replying to method calls.  
 
-This microservice contains the following:
-* **WebService.csproj** - C# web service exposing REST interface for Simulation
-functionality
-* **WebService.Test.csproj** - Unit tests for web services functionality
-* **Services.csproj** - C# assembly containining business logic for interacting 
-with Azure services (IoTHub, DocDb etc.)
-* **Services.Test.csproj** - Unit tests for services functionality
-* **SimulationAgent.csproj** - C# assembly that acts as the "controller" for 
-Simulations (creates simulation, simulated devices, etc.)
-* **SimulationAgent.Test.csproj** - Unit tests for services functionality
-* **Solution/scripts** - contains build scripts, docker container creation scripts, 
-and scripts for running the microservice from the command line
+# Dependencies
+The [Storage adapter microservice](https://github.com/Azure/pcs-storage-adapter-dotnet/README.md) 
+is used by Simulation to store simulated devices configuration.
 
 # How to use the microservice
 ## Quickstart - Running the service with Docker
 
 1. Install Docker Compose: https://docs.docker.com/compose/install
-1. Follow the [Storage quickstart instructions](https://github.com/Azure/pcs-storage-adapter-dotnet/README.md) for setting up the Storage Adapter microservice. Storage is used by Simulation to store simulated devices configuration in a DocDb instance.
+1. Follow the [Storage quickstart instructions](https://github.com/Azure/pcs-storage-adapter-dotnet/README.md) 
+for setting up the Storage Adapter microservice. Storage is used by Simulation to 
+store simulated devices configuration in a DocDb instance.
 1. Create an instance of [Azure IoT Hub](https://azure.microsoft.com/services/iot-hub)
-1. Find your IotHub connection string.  See [Understanding IoTHub Connection Strings](https://blogs.msdn.microsoft.com/iotdev/2017/05/09/understand-different-connection-strings-in-azure-iot-hub/) if you need help finding it.
+1. Find your IotHub connection string.  See [Understanding IoTHub Connection Strings](https://blogs.msdn.microsoft.com/iotdev/2017/05/09/understand-different-connection-strings-in-azure-iot-hub/) 
+if you need help finding it.
 1. Store the "IoT Hub Connection string" in the [env-vars-setup](scripts)
    script, then run the script.
 1. Run the Simulation service using docker compose [docker-compose up](scripts)
@@ -69,6 +63,22 @@ SimulationAgent projects:
    with details such as the URL where the web service is running, plus
    the service logs.
 
+## Project Structure
+
+This microservice contains the following projects:
+* **WebService.csproj** - C# web service exposing REST interface for Simulation
+functionality
+* **WebService.Test.csproj** - Unit tests for web services functionality
+* **Services.csproj** - C# assembly containining business logic for interacting 
+with Azure services (IoTHub, DocDb etc.)
+* **Services.Test.csproj** - Unit tests for services functionality
+* **SimulationAgent.csproj** - C# assembly that acts as the "controller" for 
+Simulations (creates simulation, simulated devices, etc.)
+* **SimulationAgent.Test.csproj** - Unit tests for services functionality
+* **Solution/scripts** - contains build scripts, docker container creation scripts, 
+and scripts for running the microservice from the command line
+
+
 ## Build and Run from the command line
 The [scripts](scripts) folder contains scripts for many frequent tasks:
 
@@ -76,24 +86,6 @@ The [scripts](scripts) folder contains scripts for many frequent tasks:
 * `compile`: compile all the projects.
 * `run`: compile the projects and run the service. This will prompt for
   elevated privileges in Windows to run the web service.
-
-### Sandbox
-
-The scripts assume that you configured your development environment,
-with tools like .NET Core and Docker. You can avoid installing .NET Core,
-and install only Docker, and use the command line parameter `--in-sandbox`
-(or the short form `-s`), for example:
-
-* `build --in-sandbox`: executes the build task inside of a Docker
-    container (short form `build -s`).
-* `compile --in-sandbox`: executes the compilation task inside of a Docker
-    container (short form `compile -s`).
-* `run --in-sandbox`: starts the service inside of a Docker container
-    (short form `run -s`).
-
-The Docker images used for the sandbox are hosted on Docker Hub
-[here](https://hub.docker.com/r/azureiotpcs/code-builder-dotnet).
-
 
 ## Updating the Docker image
 
@@ -144,66 +136,9 @@ the IDE, there are several ways to manage environment variables:
   IntelliJ IDEA 
   (https://www.jetbrains.com/help/idea/run-debug-configuration-application.html)
 
-## Contributing to the solution
+# Contributing to the solution
 Please follow our [contribution guildelines](CONTRIBUTING.md) and the 
 following code style conventions.  We recommend using the Git setup defined below.
-
-### Code style
-
-If you use ReSharper or Rider, you can load the code style settings from
-the repository, stored in
-[device-simulation.sln.DotSettings](device-simulation.sln.DotSettings)
-
-Some quick notes about the project code style:
-
-1. Where reasonable, lines length is limited to 80 chars max, to help code
-   reviews and command line editors.
-2. Code blocks indentation with 4 spaces. The tab char should be avoided.
-3. Text files use Unix end of line format (LF).
-4. Dependency Injection is managed with [Autofac](https://autofac.org).
-5. Web service APIs fields are CamelCased (except for metadata).
-
-### Git setup
-
-The project includes a Git hook, to automate some checks before accepting a
-code change. You can run the tests manually, or let the CI platform to run
-the tests. We use the following Git hook to automatically run all the tests
-before sending code changes to GitHub and speed up the development workflow.
-
-If at any point you want to remove the hook, simply delete the file installed
-under `.git/hooks`. You can also bypass the pre-commit hook using the
-`--no-verify` option.
-
-##### Pre-commit hook with sandbox
-
-To setup the included hooks, open a Windows/Linux/MacOS console and execute:
-
-```
-cd PROJECT-FOLDER
-cd scripts/git
-setup --with-sandbox
-```
-
-With this configuration, when checking in files, git will verify that the
-application passes all the tests, running the build and the tests inside
-a Docker container configured with all the development requirements.
-
-##### Pre-commit hook without sandbox
-
-Note: the hook without sandbox requires [.NET Core](https://dotnet.github.io)
-in the system PATH.
-
-To setup the included hooks, open a Windows/Linux/MacOS console and execute:
-
-```
-cd PROJECT-FOLDER
-cd scripts/git
-setup --no-sandbox
-```
-
-With this configuration, when checking in files, git will verify that the
-application passes all the tests, running the build and the tests in your
-workstation, using the tools installed in your OS.
 
 # Troubleshooting
 
