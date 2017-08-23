@@ -1,10 +1,5 @@
-[![Build][build-badge]][build-url]
-[![Issues][issues-badge]][issues-url]
-[![Gitter][gitter-badge]][gitter-url]
 
-# Device Simulation
-==========================
-## Overview
+# Device Simulation Overview 
 This service allow management of a pool of simulated devices.  The service helps 
 test the end-to-end flow of IoT applications.  The service simulates devices that
 send device-to-cloud (D2C) telemetry and allow cloud-to-device (C2D) methods to 
@@ -101,7 +96,6 @@ The Docker images used for the sandbox are hosted on Docker Hub
 
 
 ## Updating the Docker image
-=========================================
 
 The `scripts` folder includes a [docker](scripts/docker) subfolder with the files
 required to package the service into a Docker image:
@@ -211,12 +205,12 @@ With this configuration, when checking in files, git will verify that the
 application passes all the tests, running the build and the tests in your
 workstation, using the tools installed in your OS.
 
-## Troubleshooting
+# Troubleshooting
 
-## Feedback
+# Feedback
 Please enter issues, bugs, or suggestions as GitHub Issues here: https://github.com/Azure/device-simulation-dotnet/issues.
 
-## Related
+# Related
 
 * [build-badge](https://img.shields.io/travis/Azure/device-simulation-dotnet.svg)
 * [build-url](https://travis-ci.org/Azure/device-simulation-dotnet)
