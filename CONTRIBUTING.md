@@ -1,15 +1,13 @@
 We'll be glad to accept patches and contributions to the project. There are
 just few guidelines we ask to follow.
 
-Contribution license Agreement
-==============================
+# Contribution license Agreement
 
 If you want/plan to contribute, we ask you to sign a
 [CLA](https://cla.microsoft.com/) (Contribution license Agreement).
 A friendly bot will remind you about it when you submit a pull-request.
 
-Submitting a contribution
-=========================
+# Submitting a contribution
 
 It's generally best to start by
 [opening a new issue](https://help.github.com/articles/creating-an-issue)
@@ -26,10 +24,24 @@ includes the changes related to one issue.
 Any significant change should almost always be accompanied by tests. Look at
 the existing tests to see the testing approach and style used.
 
-Follow the project coding style, to ensure consistency and quick code reviews.
-For more information about the development workflow, have a look at
-[the development notes](DEVELOPMENT.md).
+## Code style
 
+If you use ReSharper or Rider, you can load the code style settings from
+the repository, stored in
+[device-simulation.sln.DotSettings](device-simulation.sln.DotSettings)
+
+Some quick notes about the project code style:
+
+1. Where reasonable, lines length is limited to 80 chars max, to help code
+   reviews and command line editors.
+2. Code blocks indentation with 4 spaces. The tab char should be avoided.
+3. Text files use Unix end of line format (LF).
+4. Dependency Injection is managed with [Autofac](https://autofac.org).
+5. Web service APIs fields are CamelCased (except for metadata).
+
+## Git setup for contributing to the solution
+
+### Commits
 Do your best to have clear commit messages for each change, in order to keep
 consistency throughout the project. Reference the issue number (#num). A good
 commit message serves at least these purposes:
@@ -50,3 +62,45 @@ automated feedback from Travis CI, and follow the code review progress. The
 team might ask for some
 [changes](https://help.github.com/articles/committing-changes-to-a-pull-request-branch-created-from-a-fork)
 before merging the pull request.
+
+### Git Hooks
+
+The project includes a Git hook, to automate some checks before accepting a
+code change. You can run the tests manually, or let the CI platform to run
+the tests. We use the following Git hook to automatically run all the tests
+before sending code changes to GitHub and speed up the development workflow.
+
+If at any point you want to remove the hook, simply delete the file installed
+under `.git/hooks`. You can also bypass the pre-commit hook using the
+`--no-verify` option.
+
+### Pre-commit hook with sandbox
+
+To setup the included hooks, open a Windows/Linux/MacOS console and execute:
+
+```
+cd PROJECT-FOLDER
+cd scripts/git
+setup --with-sandbox
+```
+
+With this configuration, when checking in files, git will verify that the
+application passes all the tests, running the build and the tests inside
+a Docker container configured with all the development requirements.
+
+### Pre-commit hook without sandbox
+
+Note: the hook without sandbox requires [.NET Core](https://dotnet.github.io)
+in the system PATH.
+
+To setup the included hooks, open a Windows/Linux/MacOS console and execute:
+
+```
+cd PROJECT-FOLDER
+cd scripts/git
+setup --no-sandbox
+```
+
+With this configuration, when checking in files, git will verify that the
+application passes all the tests, running the build and the tests in your
+workstation, using the tools installed in your OS.
