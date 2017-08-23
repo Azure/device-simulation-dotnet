@@ -1,6 +1,6 @@
 
 # Device Simulation Overview 
-This service allow management of a pool of simulated devices.  The service helps 
+This service allows management of a pool of simulated devices.  The service helps 
 test the end-to-end flow of IoT applications.  The service simulates devices that
 send device-to-cloud (D2C) telemetry and allow cloud-to-device (C2D) methods to 
 be invoked and executed from a connected IoTHub.
