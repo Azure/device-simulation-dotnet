@@ -47,7 +47,7 @@ How to use the microservice
    script, then run the script. In MacOS/Linux the environment variables
    need to be set in the same session where you run Docker Compose,
    every time a new session is created.
-1. Install Docker Compose: https://docs.docker.com/compose/install
+1. [Install Docker Compose][docker-compose-install-url]
 1. Start the Simulation service using docker compose:
    ```
    cd scripts
@@ -197,3 +197,4 @@ Please enter issues, bugs, or suggestions as GitHub Issues here: https://github.
 [vs-install-url]: https://www.visualstudio.com/downloads
 [dotnetcore-tools-url]: https://www.microsoft.com/net/core#windowsvs2017
 [windows-envvars-howto-url]: https://superuser.com/questions/949560/how-do-i-set-system-environment-variables-in-windows-10
+[docker-compose-install-url]: https://docs.docker.com/compose/install
