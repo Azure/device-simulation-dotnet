@@ -189,11 +189,11 @@ Please enter issues, bugs, or suggestions as GitHub Issues here: https://github.
 [issues-url](https://github.com/azure/device-simulation-dotnet/issues)
 [gitter-badge](https://img.shields.io/gitter/room/azure/iot-pcs.js.svg)
 [gitter-url](https://gitter.im/azure/iot-pcs)
-[iothub-url]: https://azure.microsoft.com/services/iot-hub
-[storageadapter-url]: https://github.com/Azure/pcs-storage-adapter-dotnet/blob/master/README.md
-[iothubconnstring-url]: https://blogs.msdn.microsoft.com/iotdev/2017/05/09/understand-different-connection-strings-in-azure-iot-hub
-[postman-url]: https://www.getpostman.com
-[wiki-createsim-url]: https://github.com/Azure/device-simulation-dotnet/wiki/%5BAPI-Specifications%5D-Simulations#create-default-simulation
-[vs-install-url]: https://www.visualstudio.com/downloads
-[dotnetcore-tools-url]: https://www.microsoft.com/net/core#windowsvs2017
-[windows-envvars-howto-url]: https://superuser.com/questions/949560/how-do-i-set-system-environment-variables-in-windows-10
+[iothub-url](https://azure.microsoft.com/services/iot-hub)
+[storageadapter-url](https://github.com/Azure/pcs-storage-adapter-dotnet/blob/master/README.md)
+[iothubconnstring-url](https://blogs.msdn.microsoft.com/iotdev/2017/05/09/understand-different-connection-strings-in-azure-iot-hub)
+[postman-url](https://www.getpostman.com)
+[wiki-createsim-url](https://github.com/Azure/device-simulation-dotnet/wiki/%5BAPI-Specifications%5D-Simulations#create-default-simulation)
+[vs-install-url](https://www.visualstudio.com/downloads)
+[dotnetcore-tools-url](https://www.microsoft.com/net/core#windowsvs2017)
+[windows-envvars-howto-url](https://superuser.com/questions/949560/how-do-i-set-system-environment-variables-in-windows-10)
