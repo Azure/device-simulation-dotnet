@@ -24,7 +24,7 @@ Dependencies
 
 The simulation service depends on:
 
-* [![Azure IoT Hub][iothub-url]] used to store virtual devices, to send
+* [![Azure IoT Hub][iothub-url] used to store virtual devices, to send
   telemetry and receive method calls
 * [Storage adapter microservice][storageadapter-url] used to store the
   simulation details
@@ -183,17 +183,17 @@ Please enter issues, bugs, or suggestions as GitHub Issues here: https://github.
 
 
 
-[build-badge](https://img.shields.io/travis/Azure/device-simulation-dotnet.svg)
-[build-url](https://travis-ci.org/Azure/device-simulation-dotnet)
-[issues-badge](https://img.shields.io/github/issues/azure/device-simulation-dotnet.svg)
-[issues-url](https://github.com/azure/device-simulation-dotnet/issues)
-[gitter-badge](https://img.shields.io/gitter/room/azure/iot-pcs.js.svg)
-[gitter-url](https://gitter.im/azure/iot-pcs)
-[iothub-url](https://azure.microsoft.com/services/iot-hub)
-[storageadapter-url](https://github.com/Azure/pcs-storage-adapter-dotnet/blob/master/README.md)
-[iothubconnstring-url](https://blogs.msdn.microsoft.com/iotdev/2017/05/09/understand-different-connection-strings-in-azure-iot-hub)
-[postman-url](https://www.getpostman.com)
-[wiki-createsim-url](https://github.com/Azure/device-simulation-dotnet/wiki/%5BAPI-Specifications%5D-Simulations#create-default-simulation)
-[vs-install-url](https://www.visualstudio.com/downloads)
-[dotnetcore-tools-url](https://www.microsoft.com/net/core#windowsvs2017)
-[windows-envvars-howto-url](https://superuser.com/questions/949560/how-do-i-set-system-environment-variables-in-windows-10)
+[build-badge]: https://img.shields.io/travis/Azure/device-simulation-dotnet.svg
+[build-url]: https://travis-ci.org/Azure/device-simulation-dotnet
+[issues-badge]: https://img.shields.io/github/issues/azure/device-simulation-dotnet.svg
+[issues-url]: https://github.com/azure/device-simulation-dotnet/issues
+[gitter-badge]: https://img.shields.io/gitter/room/azure/iot-pcs.js.svg
+[gitter-url]: https://gitter.im/azure/iot-pcs
+[iothub-url]: https://azure.microsoft.com/services/iot-hub
+[storageadapter-url]: https://github.com/Azure/pcs-storage-adapter-dotnet/blob/master/README.md
+[iothubconnstring-url]: https://blogs.msdn.microsoft.com/iotdev/2017/05/09/understand-different-connection-strings-in-azure-iot-hub
+[postman-url]: https://www.getpostman.com
+[wiki-createsim-url]: https://github.com/Azure/device-simulation-dotnet/wiki/%5BAPI-Specifications%5D-Simulations#create-default-simulation
+[vs-install-url]: https://www.visualstudio.com/downloads
+[dotnetcore-tools-url]: https://www.microsoft.com/net/core#windowsvs2017
+[windows-envvars-howto-url]: https://superuser.com/questions/949560/how-do-i-set-system-environment-variables-in-windows-10
