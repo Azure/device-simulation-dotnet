@@ -24,7 +24,7 @@ Dependencies
 
 The simulation service depends on:
 
-* [![Azure IoT Hub][iothub-url] used to store virtual devices, to send
+* [Azure IoT Hub][iothub-url] used to store virtual devices, to send
   telemetry and receive method calls
 * [Storage adapter microservice][storageadapter-url] used to store the
   simulation details
