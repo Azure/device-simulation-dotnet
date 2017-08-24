@@ -19,7 +19,7 @@ Each **device model** defines a distinct behavior, like the data generated
 by virtual sensors, frequency and format of the telemetry, network protocols,
 which methods are supported.
 
-![Overview](https://github.com/Azure/device-simulation-dotnet/blob/master/docs/overview.svg)
+<img src="https://github.com/Azure/device-simulation-dotnet/blob/master/docs/overview.svg">
 
 Dependencies
 ============
