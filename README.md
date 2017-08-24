@@ -136,7 +136,7 @@ store values in a readable format, with comments. The application also
 supports references to environment variables, which is used to import
 credentials and networking details.
 
-The configuration files in the repository references some environment
+The configuration files in the repository reference some environment
 variables that need to be created at least once. Depending on your OS and
 the IDE, there are several ways to manage environment variables:
 
