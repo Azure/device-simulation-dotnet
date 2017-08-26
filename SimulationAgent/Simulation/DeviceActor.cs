@@ -202,9 +202,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 throw new DeviceActorAlreadyInitializedException();
             }
 
-            //TODO: Give the actor the methods from deviceModel
-            //create a dictionary like above & copy the methods over.
-
             this.setupDone = true;
 
             this.deviceId = DeviceIdPrefix + deviceModel.Id + "." + position;
