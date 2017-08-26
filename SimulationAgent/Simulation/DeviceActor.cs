@@ -137,9 +137,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         /// <summary>
         /// Azure IoT Hub client used by DeviceBootstrap
-        /// This extra client is required only because Device Twins require a
-        /// MQTT connection. If the main client already uses MQTT, the logic
-        /// won't open a new connection, and reuse the existing one instead.
+        /// This extra client is required  because Device Twins and Device 
+        /// Methods require an MQTT connection. If the main client already 
+        /// uses MQTT, the logic won't open a new connection, and reuse the 
+        /// existing one instead.
         /// </summary>
         public IDeviceClient BootstrapClient { get; set; }
 
@@ -200,6 +201,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     });
                 throw new DeviceActorAlreadyInitializedException();
             }
+
+            //TODO: Give the actor the methods from deviceModel
+            //create a dictionary like above & copy the methods over.
 
             this.setupDone = true;
 

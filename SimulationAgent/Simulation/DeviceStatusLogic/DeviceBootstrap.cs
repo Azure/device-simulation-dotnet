@@ -20,6 +20,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private readonly IDevices devices;
         private string deviceId;
         private DeviceModel deviceModel;
+        private DeviceMethods methodBootstrap;
 
         // Ensure that setup is called once and only once (which helps also detecting thread safety issues)
         private bool setupDone = false;
@@ -64,6 +65,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 {
                     this.UpdateTwin(device, actor.BootstrapClient, actor.CancellationToken);
                 }
+
+                //register methods for device
+                methodBootstrap = new DeviceMethods(actor.BootstrapClient.HubDeviceClient, this.log, deviceModel.CloudToDeviceMethods);
 
                 actor.MoveNext();
             }

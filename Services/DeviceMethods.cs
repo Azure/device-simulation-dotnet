@@ -9,6 +9,8 @@ using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json.Linq;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
+using System.Net;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
@@ -19,37 +21,59 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     
     public class DeviceMethods : IDeviceMethods
     {
-        private const string DateFormat = "yyyy-MM-dd'T'HH:mm:sszzz";
-
         private readonly Azure.Devices.Client.DeviceClient client;
         private readonly ILogger log;
-        private readonly IoTHubProtocol protocol;
+        private readonly IScriptInterpreter scriptInterpreter;
+        IDictionary<string, Script> cloudToDeviceMethods;
 
         public DeviceMethods(
             Azure.Devices.Client.DeviceClient client,
-            IoTHubProtocol protocol,
-            ILogger logger)
+            ILogger logger,
+            IDictionary<string, Script> methods)
         {
             this.client = client;
-            this.protocol = protocol;
             this.log = logger;
+            this.cloudToDeviceMethods = methods;
+
+            SetupMethodCallbacksForDevice();
         }
 
-        public IoTHubProtocol Protocol { get { return this.protocol; } }
+        private void SetupMethodCallbacksForDevice()
+        {
+            this.log.Info("Setting up methods for device.", () => new {
+                this.cloudToDeviceMethods.Count
+            });
+
+            //walk this list and add a method handler for each method specified
+            foreach (var item in this.cloudToDeviceMethods)
+            {
+                this.log.Info("Setting up method for device.", () => new {
+                    item.Key
+                });
+                this.client.SetMethodHandlerAsync(item.Key, MethodExecution, null).Wait();
+            }
+        }
 
         public async Task<MethodResponse> MethodExecution(MethodRequest methodRequest, object userContext)
         {
-            Console.WriteLine();
-            Console.WriteLine("\t{0}", methodRequest.DataAsJson);
-            Console.WriteLine("\nI'm a simulated device and am executing a method: {0}", methodRequest.Name);
+            this.log.Info("Executing method with json payload.", () => new { methodRequest.Name,
+                                                                             methodRequest.DataAsJson });
 
-            string result = "'Someone called my method " + methodRequest.Name + " and I did something.  I am a simulated device.'";
+            //TODO: Use JavaScript engine to execute methods.
+            //lock (actor.DeviceState)
+            //{
+            //    actor.DeviceState = this.scriptInterpreter.Invoke(
+            //        this.deviceModel.Simulation.Script,
+            //        scriptContext,
+            //        actor.DeviceState);
+            //}
 
-            return new MethodResponse(Encoding.UTF8.GetBytes(result), 200);
+            string result = "'I am the simulator.  Someone called " + methodRequest.Name + ".'";
 
+            this.log.Info("Executed method.", () => new { methodRequest.Name});
+
+            byte[] resultEncoded = Encoding.UTF8.GetBytes(result);
+            return new MethodResponse(resultEncoded, (int)HttpStatusCode.OK);
         }
-
-
-
     }
 }

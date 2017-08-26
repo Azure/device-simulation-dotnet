@@ -16,6 +16,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     {
         IoTHubProtocol Protocol { get; }
 
+        Azure.Devices.Client.DeviceClient HubDeviceClient { get; }
+        
         Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema);
 
         Task SendRawMessageAsync(Message message);
@@ -50,6 +52,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         public IoTHubProtocol Protocol { get { return this.protocol; } }
+
+        public Azure.Devices.Client.DeviceClient HubDeviceClient { get { return this.client; } }
 
         public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
         {
