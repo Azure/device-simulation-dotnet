@@ -35,29 +35,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log = logger;
             this.cloudToDeviceMethods = methods;
 
-            SetupMethodCallbacksForDevice();
+            this.SetupMethodCallbacksForDevice();
         }
-
-        private void SetupMethodCallbacksForDevice()
-        {
-            this.log.Info("Setting up methods for device.", () => new {
-                this.cloudToDeviceMethods.Count
-            });
-
-            //walk this list and add a method handler for each method specified
-            foreach (var item in this.cloudToDeviceMethods)
-            {
-                this.log.Info("Setting up method for device.", () => new {
-                    item.Key
-                });
-                this.client.SetMethodHandlerAsync(item.Key, MethodExecution, null).Wait();
-            }
-        }
-
+        
         public async Task<MethodResponse> MethodExecution(MethodRequest methodRequest, object userContext)
         {
-            this.log.Info("Executing method with json payload.", () => new { methodRequest.Name,
-                                                                             methodRequest.DataAsJson });
+            this.log.Info("Executing method with json payload.", () => new {methodRequest.Name,
+                                                                            methodRequest.DataAsJson});
 
             //TODO: Use JavaScript engine to execute methods.
             //lock (actor.DeviceState)
@@ -70,10 +54,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             string result = "'I am the simulator.  Someone called " + methodRequest.Name + ".'";
 
-            this.log.Info("Executed method.", () => new { methodRequest.Name});
+            this.log.Info("Executed method.", () => new {methodRequest.Name});
 
             byte[] resultEncoded = Encoding.UTF8.GetBytes(result);
             return new MethodResponse(resultEncoded, (int)HttpStatusCode.OK);
+        }
+        
+        private void SetupMethodCallbacksForDevice()
+        {
+            this.log.Debug("Setting up methods for device.", () => new {
+                this.cloudToDeviceMethods.Count
+            });
+
+            //walk this list and add a method handler for each method specified
+            foreach (var item in this.cloudToDeviceMethods)
+            {
+                this.log.Debug("Setting up method for device.", () => new {
+                    item.Key
+                });
+                this.client.SetMethodHandlerAsync(item.Key, MethodExecution, null).Wait();
+            }
         }
     }
 }
