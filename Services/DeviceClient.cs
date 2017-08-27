@@ -16,8 +16,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     {
         IoTHubProtocol Protocol { get; }
 
-        Azure.Devices.Client.DeviceClient HubDeviceClient { get; }
-        
         Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema);
 
         Task SendRawMessageAsync(Message message);
@@ -25,6 +23,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task DisconnectAsync();
 
         Task UpdateTwinAsync(Device device);
+
+        void RegisterMethodsForDevice(IDictionary<string, Script> methods, string deviceId);
+
     }
 
     public class DeviceClient : IDeviceClient
@@ -41,6 +42,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly ILogger log;
         private readonly IoTHubProtocol protocol;
 
+        //used to hold method pointers for the device for the IoTHub to callback to
+        private DeviceMethods deviceMethods;
+        private bool methodsRegistered;
+
         public DeviceClient(
             Azure.Devices.Client.DeviceClient client,
             IoTHubProtocol protocol,
@@ -53,7 +58,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public IoTHubProtocol Protocol { get { return this.protocol; } }
 
-        public Azure.Devices.Client.DeviceClient HubDeviceClient { get { return this.client; } }
+        public void RegisterMethodsForDevice(IDictionary<string, Script> methods, string deviceId)
+        {
+
+            log.Debug("Attempting to setup methods for devivce", () => new 
+            {
+                deviceId,
+                methodsRegistered
+            });
+
+            //TODO: Investigate why this is getting called repeatedly when only one device is in the simulation
+            //Is the actor failing somewhere else then calling back in again?
+            if (!methodsRegistered)
+                deviceMethods = new DeviceMethods(this.client, log, methods, deviceId);
+
+            this.methodsRegistered = true;
+        }
 
         public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
         {

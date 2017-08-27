@@ -25,23 +25,29 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly ILogger log;
         private readonly IScriptInterpreter scriptInterpreter;
         IDictionary<string, Script> cloudToDeviceMethods;
+        private string deviceId;
 
         public DeviceMethods(
             Azure.Devices.Client.DeviceClient client,
             ILogger logger,
-            IDictionary<string, Script> methods)
+            IDictionary<string, Script> methods, string device)
         {
             this.client = client;
             this.log = logger;
             this.cloudToDeviceMethods = methods;
+            deviceId = device;
 
             this.SetupMethodCallbacksForDevice();
         }
         
         public async Task<MethodResponse> MethodExecution(MethodRequest methodRequest, object userContext)
         {
+            //TODO: exception handling needs added for this callback (it's on its own thread)
+
             this.log.Info("Executing method with json payload.", () => new {methodRequest.Name,
-                                                                            methodRequest.DataAsJson});
+                                                                            methodRequest.DataAsJson,
+                                                                            deviceId
+            });
 
             //TODO: Use JavaScript engine to execute methods.
             //lock (actor.DeviceState)
@@ -63,16 +69,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private void SetupMethodCallbacksForDevice()
         {
             this.log.Debug("Setting up methods for device.", () => new {
-                this.cloudToDeviceMethods.Count
+                this.cloudToDeviceMethods.Count,
+                deviceId
             });
 
             //walk this list and add a method handler for each method specified
             foreach (var item in this.cloudToDeviceMethods)
             {
                 this.log.Debug("Setting up method for device.", () => new {
-                    item.Key
+                    item.Key,
+                    deviceId
                 });
                 this.client.SetMethodHandlerAsync(item.Key, MethodExecution, null).Wait();
+
+                this.log.Debug("Method for device setup successfully.", () => new {
+                    item.Key,
+                    deviceId
+                });
             }
         }
     }
