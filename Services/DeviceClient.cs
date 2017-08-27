@@ -61,7 +61,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public void RegisterMethodsForDevice(IDictionary<string, Script> methods, string deviceId)
         {
 
-            log.Debug("Attempting to setup methods for devivce", () => new 
+            log.Debug("Attempting to setup methods for device", () => new 
             {
                 deviceId,
                 methodsRegistered
@@ -69,6 +69,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             //TODO: Investigate why this is getting called repeatedly when only one device is in the simulation
             //Is the actor failing somewhere else then calling back in again?
+            //TODO: Should DeviceClient or DeviceMethods own whether methods have been successfully registered
+            //TODO: Discuss potential threading issues - can an actor every call into here for the same client @ the same time?
             if (!methodsRegistered)
                 deviceMethods = new DeviceMethods(this.client, log, methods, deviceId);
 

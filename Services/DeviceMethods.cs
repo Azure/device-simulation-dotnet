@@ -42,30 +42,44 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         
         public async Task<MethodResponse> MethodExecution(MethodRequest methodRequest, object userContext)
         {
-            //TODO: exception handling needs added for this callback (it's on its own thread)
+            try
+            {
+                this.log.Info("Executing method with json payload.", () => new {methodRequest.Name,
+                                                                             methodRequest.DataAsJson,
+                                                                             this.deviceId
+                                                                           });
+            
+                //TODO: Use JavaScript engine to execute methods.
+                //lock (actor.DeviceState)
+                //{
+                //    actor.DeviceState = this.scriptInterpreter.Invoke(
+                //        this.deviceModel.Simulation.Script,
+                //        scriptContext,
+                //        actor.DeviceState);
+                //}
 
-            this.log.Info("Executing method with json payload.", () => new {methodRequest.Name,
-                                                                            methodRequest.DataAsJson,
-                                                                            deviceId
-            });
+                string result = "'I am the simulator.  Someone called " + methodRequest.Name + ".'";
 
-            //TODO: Use JavaScript engine to execute methods.
-            //lock (actor.DeviceState)
-            //{
-            //    actor.DeviceState = this.scriptInterpreter.Invoke(
-            //        this.deviceModel.Simulation.Script,
-            //        scriptContext,
-            //        actor.DeviceState);
-            //}
+                this.log.Info("Executed method.", () => new {methodRequest.Name});
 
-            string result = "'I am the simulator.  Someone called " + methodRequest.Name + ".'";
+                byte[] resultEncoded = Encoding.UTF8.GetBytes(result);
+                return new MethodResponse(resultEncoded, (int)HttpStatusCode.OK);
 
-            this.log.Info("Executed method.", () => new {methodRequest.Name});
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Error while executing method for device",
+                    () => new {
+                        methodRequest.Name,
+                        methodRequest.DataAsJson,
+                        this.deviceId,
+                        e
+                    });
+                return new MethodResponse(Encoding.UTF8.GetBytes("Error while executing method for device"), (int)HttpStatusCode.InternalServerError);
+            }
 
-            byte[] resultEncoded = Encoding.UTF8.GetBytes(result);
-            return new MethodResponse(resultEncoded, (int)HttpStatusCode.OK);
         }
-        
+
         private void SetupMethodCallbacksForDevice()
         {
             this.log.Debug("Setting up methods for device.", () => new {
@@ -80,7 +94,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     item.Key,
                     deviceId
                 });
-                this.client.SetMethodHandlerAsync(item.Key, MethodExecution, null).Wait();
+
+                try
+                {
+
+                    this.client.SetMethodHandlerAsync(item.Key, MethodExecution, null).Wait();
+                }
+                catch (Exception e)
+                {
+                    this.log.Error("Error setting method handlers with the IoTHub",
+                        () => new { this.deviceId, e });
+                    throw e;
+                }
 
                 this.log.Debug("Method for device setup successfully.", () => new {
                     item.Key,
