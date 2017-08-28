@@ -86,6 +86,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         // When the actor fails to connect to IoT Hub, it retries every 10 seconds
         private static readonly TimeSpan retryConnectingFrequency = TimeSpan.FromSeconds(10);
 
+        // When the actor fails to bootstrap (, it retries every 10 seconds
+        private static readonly TimeSpan retryBootstrappingFrequency = TimeSpan.FromSeconds(10);
+
         // When connecting or sending a message, timeout after 5 seconds
         private static readonly TimeSpan connectionTimeout = TimeSpan.FromSeconds(5);
 
@@ -291,7 +294,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     this.ActorStatus = nextStatus;
                     this.StopTimers();
                     this.log.Debug("Scheduling deviceBootstrapLogic", () => new { this.deviceId });
-                    this.timer.Setup(this.deviceBootstrapLogic.Run, this, retryConnectingFrequency);
+                    this.timer.Setup(this.deviceBootstrapLogic.Run, this, retryBootstrappingFrequency);
                     this.timer.Start();
                     this.ScheduleCancellationCheckIfRequired(retryConnectingFrequency);
                     break;

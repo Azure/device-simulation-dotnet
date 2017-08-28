@@ -44,7 +44,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         //used to hold method pointers for the device for the IoTHub to callback to
         private DeviceMethods deviceMethods;
-        private bool methodsRegistered;
 
         public DeviceClient(
             Azure.Devices.Client.DeviceClient client,
@@ -63,18 +62,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             log.Debug("Attempting to setup methods for device", () => new 
             {
-                deviceId,
-                methodsRegistered
+                deviceId                
             });
 
-            //TODO: Investigate why this is getting called repeatedly when only one device is in the simulation
-            //Is the actor failing somewhere else then calling back in again?
-            //TODO: Should DeviceClient or DeviceMethods own whether methods have been successfully registered
-            //TODO: Discuss potential threading issues - can an actor every call into here for the same client @ the same time?
-            if (!methodsRegistered)
-                deviceMethods = new DeviceMethods(this.client, log, methods, deviceId);
+            deviceMethods = new DeviceMethods(this.client, log, methods, deviceId);
 
-            this.methodsRegistered = true;
         }
 
         public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)

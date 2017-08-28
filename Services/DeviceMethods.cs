@@ -95,19 +95,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     deviceId
                 });
 
-                try
-                {
-
-                    this.client.SetMethodHandlerAsync(item.Key, MethodExecution, null).Wait();
+                //TODO: should there be retry logic here?  This would risk the actor state being corrupted if it takes > 10 sec.
+                //TODO: refactor retry count out of here if we keep it - make it part of config.
+                int retryCount = 5;
+                for (int i = 0;i< retryCount;i++)
+                { 
+                    try
+                    {
+                        this.client.SetMethodHandlerAsync(item.Key, MethodExecution, null).Wait();
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        this.log.Error("Error setting method handlers with the IoTHub for device",
+                            () => new { this.deviceId, e });
+                        if (i==retryCount-1)
+                            throw e;
+                    }
                 }
-                catch (Exception e)
-                {
-                    this.log.Error("Error setting method handlers with the IoTHub",
-                        () => new { this.deviceId, e });
-                    throw e;
-                }
 
-                this.log.Debug("Method for device setup successfully.", () => new {
+                this.log.Debug("Method for device setup successfully", () => new {
                     item.Key,
                     deviceId
                 });
