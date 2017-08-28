@@ -24,7 +24,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         Task UpdateTwinAsync(Device device);
 
-        void RegisterMethodsForDevice(IDictionary<string, Script> methods, string deviceId);
+        void RegisterMethodsForDevice(IDictionary<string, Script> methods);
+        
 
     }
 
@@ -41,6 +42,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly Azure.Devices.Client.DeviceClient client;
         private readonly ILogger log;
         private readonly IoTHubProtocol protocol;
+        private readonly string deviceId;
 
         //used to hold method pointers for the device for the IoTHub to callback to
         private DeviceMethods deviceMethods;
@@ -48,24 +50,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public DeviceClient(
             Azure.Devices.Client.DeviceClient client,
             IoTHubProtocol protocol,
-            ILogger logger)
+            ILogger logger, 
+            string deviceId)
         {
             this.client = client;
             this.protocol = protocol;
             this.log = logger;
+            this.deviceId = deviceId;
         }
 
         public IoTHubProtocol Protocol { get { return this.protocol; } }
 
-        public void RegisterMethodsForDevice(IDictionary<string, Script> methods, string deviceId)
+        public void RegisterMethodsForDevice(IDictionary<string, Script> methods)
         {
 
             log.Debug("Attempting to setup methods for device", () => new 
             {
-                deviceId                
+                this.deviceId                
             });
 
-            deviceMethods = new DeviceMethods(this.client, log, methods, deviceId);
+            deviceMethods = new DeviceMethods(this.client, log, methods, this.deviceId);
 
         }
 
@@ -77,6 +81,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             eventMessage.Properties.Add(ContentProperty, "JSON");
 
             await this.SendRawMessageAsync(eventMessage);
+
+            log.Debug("SendMessageAsync for device", () => new
+            {
+                this.deviceId
+            });
         }
 
         public async Task SendRawMessageAsync(Message message)
@@ -84,6 +93,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             try
             {
                 await this.client.SendEventAsync(message);
+
+                log.Debug("SendRawMessageAsync for device", () => new
+                {
+                    this.deviceId
+                });
             }
             catch (Exception e)
             {

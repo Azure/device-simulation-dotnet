@@ -66,7 +66,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 }
 
                 //register methods for the device
-                actor.BootstrapClient.RegisterMethodsForDevice(deviceModel.CloudToDeviceMethods, deviceId);
+                actor.BootstrapClient.RegisterMethodsForDevice(deviceModel.CloudToDeviceMethods);
 
                 actor.MoveNext();
             }

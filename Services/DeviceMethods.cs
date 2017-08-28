@@ -21,6 +21,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     
     public class DeviceMethods : IDeviceMethods
     {
+        private static readonly TimeSpan retryMethodCallbackRegistration = TimeSpan.FromSeconds(10);
+
         private readonly Azure.Devices.Client.DeviceClient client;
         private readonly ILogger log;
         private readonly IScriptInterpreter scriptInterpreter;
@@ -30,7 +32,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public DeviceMethods(
             Azure.Devices.Client.DeviceClient client,
             ILogger logger,
-            IDictionary<string, Script> methods, string device)
+            IDictionary<string, Script> methods, 
+            string device)
         {
             this.client = client;
             this.log = logger;
@@ -84,7 +87,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             this.log.Debug("Setting up methods for device.", () => new {
                 this.cloudToDeviceMethods.Count,
-                deviceId
+                this.deviceId
             });
 
             //walk this list and add a method handler for each method specified
@@ -92,31 +95,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 this.log.Debug("Setting up method for device.", () => new {
                     item.Key,
-                    deviceId
+                    this.deviceId
                 });
 
-                //TODO: should there be retry logic here?  This would risk the actor state being corrupted if it takes > 10 sec.
-                //TODO: refactor retry count out of here if we keep it - make it part of config.
-                int retryCount = 5;
-                for (int i = 0;i< retryCount;i++)
-                { 
-                    try
-                    {
-                        this.client.SetMethodHandlerAsync(item.Key, MethodExecution, null).Wait();
-                        break;
-                    }
-                    catch (Exception e)
-                    {
-                        this.log.Error("Error setting method handlers with the IoTHub for device",
-                            () => new { this.deviceId, e });
-                        if (i==retryCount-1)
-                            throw e;
-                    }
-                }
+                this.client.SetMethodHandlerAsync(item.Key, MethodExecution, null).Wait(retryMethodCallbackRegistration);
 
                 this.log.Debug("Method for device setup successfully", () => new {
                     item.Key,
-                    deviceId
+                    this.deviceId
                 });
             }
         }
