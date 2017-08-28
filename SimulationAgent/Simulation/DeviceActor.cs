@@ -87,7 +87,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private static readonly TimeSpan retryConnectingFrequency = TimeSpan.FromSeconds(10);
 
         // When the actor fails to bootstrap, it retries every 60 seconds - it is longer b/c in 
-        //bootstrap we're registering methods which have a 10 second timeout apiece
+        // bootstrap we're registering methods which have a 10 second timeout apiece
         private static readonly TimeSpan retryBootstrappingFrequency = TimeSpan.FromSeconds(60);
 
         // When connecting or sending a message, timeout after 5 seconds

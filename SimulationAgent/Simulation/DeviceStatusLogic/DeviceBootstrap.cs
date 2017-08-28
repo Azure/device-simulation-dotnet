@@ -65,7 +65,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     this.UpdateTwin(device, actor.BootstrapClient, actor.CancellationToken);
                 }
 
-                //register methods for the device
+                // register methods for the device
                 actor.BootstrapClient.RegisterMethodsForDevice(deviceModel.CloudToDeviceMethods);
 
                 actor.MoveNext();

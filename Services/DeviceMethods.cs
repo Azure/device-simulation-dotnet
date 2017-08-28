@@ -26,7 +26,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly Azure.Devices.Client.DeviceClient client;
         private readonly ILogger log;
         private readonly IScriptInterpreter scriptInterpreter;
-        IDictionary<string, Script> cloudToDeviceMethods;
+        private IDictionary<string, Script> cloudToDeviceMethods;
         private string deviceId;
 
         public DeviceMethods(
@@ -38,7 +38,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.client = client;
             this.log = logger;
             this.cloudToDeviceMethods = methods;
-            deviceId = device;
+            this.deviceId = device;
 
             this.SetupMethodCallbacksForDevice();
         }
@@ -48,9 +48,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             try
             {
                 this.log.Info("Executing method with json payload.", () => new {methodRequest.Name,
-                                                                             methodRequest.DataAsJson,
-                                                                             this.deviceId
-                                                                           });
+                    methodRequest.DataAsJson, this.deviceId});
             
                 //TODO: Use JavaScript engine to execute methods.
                 //lock (actor.DeviceState)
@@ -60,14 +58,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 //        scriptContext,
                 //        actor.DeviceState);
                 //}
-
                 string result = "'I am the simulator.  Someone called " + methodRequest.Name + ".'";
 
                 this.log.Info("Executed method.", () => new {methodRequest.Name});
-
                 byte[] resultEncoded = Encoding.UTF8.GetBytes(result);
                 return new MethodResponse(resultEncoded, (int)HttpStatusCode.OK);
-
             }
             catch (Exception e)
             {
@@ -78,7 +73,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         this.deviceId,
                         e
                     });
-                return new MethodResponse(Encoding.UTF8.GetBytes("Error while executing method for device"), (int)HttpStatusCode.InternalServerError);
+                return new MethodResponse(Encoding.UTF8.GetBytes("Error while executing method for device"), 
+                    (int)HttpStatusCode.InternalServerError);
             }
 
         }
@@ -89,16 +85,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.cloudToDeviceMethods.Count,
                 this.deviceId
             });
-
             //walk this list and add a method handler for each method specified
             foreach (var item in this.cloudToDeviceMethods)
             {
-                this.log.Debug("Setting up method for device.", () => new {
-                    item.Key,
-                    this.deviceId
-                });
+                this.log.Debug("Setting up method for device.", () => new {item.Key,this.deviceId});
 
-                this.client.SetMethodHandlerAsync(item.Key, MethodExecution, null).Wait(retryMethodCallbackRegistration);
+                this.client.SetMethodHandlerAsync(item.Key, MethodExecution, null). 
+                    Wait(retryMethodCallbackRegistration);
 
                 this.log.Debug("Method for device setup successfully", () => new {
                     item.Key,

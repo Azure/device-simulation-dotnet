@@ -44,7 +44,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IoTHubProtocol protocol;
         private readonly string deviceId;
 
-        //used to hold method pointers for the device for the IoTHub to callback to
+        //used to create method pointers for the device for the IoTHub to callback to
         private DeviceMethods deviceMethods;
 
         public DeviceClient(
@@ -63,14 +63,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public void RegisterMethodsForDevice(IDictionary<string, Script> methods)
         {
-
             log.Debug("Attempting to setup methods for device", () => new 
             {
                 this.deviceId                
             });
-
             deviceMethods = new DeviceMethods(this.client, log, methods, this.deviceId);
-
         }
 
         public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
