@@ -86,6 +86,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         // When the actor fails to connect to IoT Hub, it retries every 10 seconds
         private static readonly TimeSpan retryConnectingFrequency = TimeSpan.FromSeconds(10);
 
+        // When the actor fails to bootstrap, it retries every 60 seconds - it is longer b/c in 
+        // bootstrap we're registering methods which have a 10 second timeout apiece
+        private static readonly TimeSpan retryBootstrappingFrequency = TimeSpan.FromSeconds(60);
+
         // When connecting or sending a message, timeout after 5 seconds
         private static readonly TimeSpan connectionTimeout = TimeSpan.FromSeconds(5);
 
@@ -137,9 +141,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         /// <summary>
         /// Azure IoT Hub client used by DeviceBootstrap
-        /// This extra client is required only because Device Twins require a
-        /// MQTT connection. If the main client already uses MQTT, the logic
-        /// won't open a new connection, and reuse the existing one instead.
+        /// This extra client is required  because Device Twins and Device 
+        /// Methods require an MQTT connection. If the main client already 
+        /// uses MQTT, the logic won't open a new connection, and reuse the 
+        /// existing one instead.
         /// </summary>
         public IDeviceClient BootstrapClient { get; set; }
 
@@ -290,9 +295,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     this.ActorStatus = nextStatus;
                     this.StopTimers();
                     this.log.Debug("Scheduling deviceBootstrapLogic", () => new { this.deviceId });
-                    this.timer.Setup(this.deviceBootstrapLogic.Run, this, retryConnectingFrequency);
+                    this.timer.Setup(this.deviceBootstrapLogic.Run, this, retryBootstrappingFrequency);
                     this.timer.Start();
-                    this.ScheduleCancellationCheckIfRequired(retryConnectingFrequency);
+                    this.ScheduleCancellationCheckIfRequired(retryBootstrappingFrequency);
                     break;
 
                 case Status.UpdatingDeviceState:
@@ -347,7 +352,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         /// <summary>
         /// Check whether a second timer is required, to periodically check if
-        /// the user asks to stop the simulation. The extra time is needed
+        /// the user asks to stop the simulation. The extra timer is needed
         /// when the actor remains inactive for long periods, for example when
         /// sending telemetry every 5 minutes.
         /// </summary>

@@ -86,7 +86,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     throw new Exception($"Unable to create a client for the given protocol ({protocol})");
             }
 
-            return new DeviceClient(sdkClient, protocol, this.log);
+            return new DeviceClient(sdkClient, protocol, this.log, device.Id);
         }
 
         public async Task<Device> GetOrCreateAsync(string deviceId)
