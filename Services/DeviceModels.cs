@@ -68,11 +68,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public DeviceModel Get(string id)
         {
+
             var list = this.GetList();
-            foreach (var x in list)
-            {
-                if (x.Id == id) return x;
-            }
+            var item = list.FirstOrDefault(i => i.Id == id);
+            if (item != null)
+                return item;
 
             this.log.Warn("Device model not found", () => new { id });
 

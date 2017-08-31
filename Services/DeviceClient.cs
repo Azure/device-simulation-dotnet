@@ -61,7 +61,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public IoTHubProtocol Protocol { get { return this.protocol; } }
 
-        public void RegisterMethodsForDevice(Dictionary<string, object> deviceState, IDictionary<string, Script> methods, IScriptInterpreter scriptInterpreter)
+        public void RegisterMethodsForDevice(Dictionary<string, object> deviceState, IDictionary<string, 
+            Script> methods, IScriptInterpreter scriptInterpreter)
 
         {
             log.Debug("Attempting to setup methods for device", () => new 
@@ -69,7 +70,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.deviceId                
             });
 
-            deviceMethods = new DeviceMethods(this.client, log, methods, deviceState, this.deviceId, scriptInterpreter);
+            deviceMethods = new DeviceMethods(this.client, log, methods, deviceState, this.deviceId, 
+                scriptInterpreter);
 
         }
 

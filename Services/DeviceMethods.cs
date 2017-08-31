@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
-
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
@@ -37,7 +36,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             Dictionary<string, object> deviceState, 
             string device,
             IScriptInterpreter scriptInterpreter)
-
         {
             this.client = client;
             this.log = logger;
@@ -63,7 +61,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.log.Debug("Executing method for device", () => new { this.deviceId,
                     deviceState = this.deviceState, methodRequest.Name });
 
-                //ignore the return state - state updates are handled by callbacks from the script
+                // ignore the return state - state updates are handled by callbacks from the script
                 this.scriptInterpreter.Invoke(
                     this.cloudToDeviceMethods[methodRequest.Name],
                     scriptContext,

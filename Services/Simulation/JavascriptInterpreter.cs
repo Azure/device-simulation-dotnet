@@ -11,7 +11,6 @@ using Jint.Runtime.Descriptors;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
-
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 {
     public interface IJavascriptInterpreter

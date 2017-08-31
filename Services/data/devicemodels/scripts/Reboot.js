@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 /*global log*/
+/*global UpdateState(state)*/
 /*jslint node: true*/
 
 "use strict";
@@ -30,17 +31,6 @@ function restoreState(previousState) {
     }
 }
 
-/**
- * Simple formula generating a random value around the average
- * in between min and max
- */
-function vary(avg, percentage, min, max) {
-    var value = avg * (1 + ((percentage / 100) * (2 * Math.random() - 1)));
-    value = Math.max(value, min);
-    value = Math.min(value, max);
-    return value;
-}
-
 function sleep(delay) {
     //TODO: There must be a sleep function that doesn't spin the CPU?
     var start = new Date().getTime();
@@ -56,7 +46,7 @@ function sleep(delay) {
 /*jslint unparam: true*/
 function main(context, previousState) {
 
-    //Reboot - devices goes offline and comes online after 20 seconds
+    // Reboot - devices goes offline and comes online after 20 seconds
     log("Executing reboot simulation function.");
 
     // Restore the global state before generating the new telemetry, so that
@@ -65,14 +55,14 @@ function main(context, previousState) {
 
     state.online = "False";
 
-    //update the state to offline
+    // update the state to offline
     UpdateState(state);
 
-    //Sleep for 20 seconds
+    // Sleep for 20 seconds
     sleep(20000);
 
     state.online = "True";
-    //update the state back to online
+    // update the state back to online
     UpdateState(state);
     
     return state;
