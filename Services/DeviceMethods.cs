@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
+
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
@@ -23,6 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         private readonly Azure.Devices.Client.DeviceClient client;
         private readonly ILogger log;
+
         private IScriptInterpreter scriptInterpreter;
         private IDictionary<string, Script> cloudToDeviceMethods;
         private Dictionary<string, object> deviceState;
@@ -35,6 +37,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             Dictionary<string, object> deviceState, 
             string device,
             IScriptInterpreter scriptInterpreter)
+
         {
             this.client = client;
             this.log = logger;
@@ -42,7 +45,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.deviceId = device;
             this.deviceState = deviceState;
             this.scriptInterpreter = scriptInterpreter;
-
             this.SetupMethodCallbacksForDevice();
         }
         
@@ -52,7 +54,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 this.log.Info("Executing method with json payload.", () => new {methodRequest.Name,
                     methodRequest.DataAsJson, this.deviceId});
-
                 var scriptContext = new Dictionary<string, object>
                 {
                     ["currentTime"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:sszzz"),
@@ -93,8 +94,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     (int)HttpStatusCode.InternalServerError);
             }
         }
-
-
 
         private void SetupMethodCallbacksForDevice()
         {

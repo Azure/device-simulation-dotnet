@@ -26,7 +26,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task UpdateTwinAsync(Device device);
 
         void RegisterMethodsForDevice(Dictionary<string, object> deviceState, IDictionary<string, Script> methods, IScriptInterpreter scriptInterpreter);
-        
 
     }
 
@@ -63,12 +62,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public IoTHubProtocol Protocol { get { return this.protocol; } }
 
         public void RegisterMethodsForDevice(Dictionary<string, object> deviceState, IDictionary<string, Script> methods, IScriptInterpreter scriptInterpreter)
+
         {
             log.Debug("Attempting to setup methods for device", () => new 
             {
                 this.deviceId                
             });
+
             deviceMethods = new DeviceMethods(this.client, log, methods, deviceState, this.deviceId, scriptInterpreter);
+
         }
 
         public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
