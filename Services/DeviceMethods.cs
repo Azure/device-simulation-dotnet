@@ -14,7 +14,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface IDeviceMethods
     {
-        Task<MethodResponse> MethodExecution(MethodRequest methodRequest, object userContext);
+        Task<MethodResponse> MethodExecutionAsync(MethodRequest methodRequest, object userContext);
     }
     
     public class DeviceMethods : IDeviceMethods
@@ -46,7 +46,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.SetupMethodCallbacksForDevice();
         }
         
-        public async Task<MethodResponse> MethodExecution(MethodRequest methodRequest, object userContext)
+        public async Task<MethodResponse> MethodExecutionAsync(MethodRequest methodRequest, object userContext)
         {
             try
             {
@@ -105,7 +105,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 this.log.Debug("Setting up method for device.", () => new {item.Key,this.deviceId});
 
-                this.client.SetMethodHandlerAsync(item.Key, MethodExecution, null). 
+                this.client.SetMethodHandlerAsync(item.Key, MethodExecutionAsync, null). 
                     Wait(retryMethodCallbackRegistration);
 
                 this.log.Debug("Method for device setup successfully", () => new {

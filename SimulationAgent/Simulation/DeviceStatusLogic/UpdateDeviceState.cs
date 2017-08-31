@@ -64,44 +64,54 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 return;
             }
 
-            var scriptContext = new Dictionary<string, object>
+            // Send the telemetry message
+            try
             {
-                ["currentTime"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:sszzz"),
-                ["deviceId"] = this.deviceId,
-                ["deviceModel"] = this.deviceModel.Name
-            };
 
-            this.log.Debug("Updating device status", () => new { this.deviceId, deviceState = actor.DeviceState });
+                var scriptContext = new Dictionary<string, object>
+                {
+                    ["currentTime"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:sszzz"),
+                    ["deviceId"] = this.deviceId,
+                    ["deviceModel"] = this.deviceModel.Name
+                };
 
-            lock (actor.DeviceState)
-            {
-                actor.DeviceState = this.scriptInterpreter.Invoke(
-                    this.deviceModel.Simulation.Script,
-                    scriptContext,
-                    actor.DeviceState);
-            }
+                this.log.Debug("Updating device status", () => new { this.deviceId, deviceState = actor.DeviceState });
 
-            this.log.Debug("New device status", () => new { this.deviceId, deviceState = actor.DeviceState });
+                lock (actor.DeviceState)
+                {
+                    actor.DeviceState = this.scriptInterpreter.Invoke(
+                        this.deviceModel.Simulation.Script,
+                        scriptContext,
+                        actor.DeviceState);
+                }
 
-            this.log.Debug("Checking for desired property updates", () => new { this.deviceId, deviceState = actor.DeviceState });
+                this.log.Debug("New device status", () => new { this.deviceId, deviceState = actor.DeviceState });
+
+                this.log.Debug("Checking for desired property updates", () => new { this.deviceId, deviceState = actor.DeviceState });
             
-            // Get device
-            var device = this.GetDevice(actor.CancellationToken);
+                // Get device
+                var device = this.GetDevice(actor.CancellationToken);
             
-            lock (actor.DeviceState)
-            {
-                // check for differences between reported/desired properties, update device and local state
-                if (ChangePropertiesToMatchDesired(device, this.deviceModel))
-                    actor.BootstrapClient.UpdateTwinAsync(device).Wait((int)connectionTimeout.TotalMilliseconds);
+                lock (actor.DeviceState)
+                {
+                    // check for differences between reported/desired properties, update device and local state
+                    if (ChangePropertiesToMatchDesired(device, this.deviceModel))
+                        actor.BootstrapClient.UpdateTwinAsync(device).Wait((int)connectionTimeout.TotalMilliseconds);
+                }
+
+                // Start sending telemetry messages
+                if (actor.ActorStatus == Status.UpdatingDeviceState)
+                {
+                    actor.MoveNext();
+                } else
+                    this.log.Debug("Already sending telemetry, running local simulation and watching desired property changes", () => new { this.deviceId});
+
             }
-
-            // Start sending telemetry messages
-            if (actor.ActorStatus == Status.UpdatingDeviceState)
+            catch (Exception e)
             {
-                actor.MoveNext();
-            } else
-                this.log.Debug("Already sending telemetry, running local simulation and watching desired property changes", () => new { this.deviceId});
-
+                this.log.Error("UpdateDeviceState failed",
+                    () => new { this.deviceId, e.Message, Error = e.GetType().FullName });
+            }
         }
 
         private bool ChangePropertiesToMatchDesired(Device device, DeviceModel deviceModel)
