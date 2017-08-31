@@ -8,6 +8,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using Newtonsoft.Json.Linq;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic
 {
@@ -20,16 +21,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private readonly IDevices devices;
         private string deviceId;
         private DeviceModel deviceModel;
+        private readonly IScriptInterpreter scriptInterpreter;
 
         // Ensure that setup is called once and only once (which helps also detecting thread safety issues)
         private bool setupDone = false;
 
         public DeviceBootstrap(
             IDevices devices,
-            ILogger logger)
+            ILogger logger,
+            IScriptInterpreter scriptInterpreter)
         {
             this.devices = devices;
             this.log = logger;
+            this.scriptInterpreter = scriptInterpreter;
         }
 
         public void Setup(string deviceId, DeviceModel deviceModel)
@@ -40,8 +44,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     () => new { this.deviceId });
                 throw new DeviceActorAlreadyInitializedException();
             }
-
             this.setupDone = true;
+
             this.deviceId = deviceId;
             this.deviceModel = deviceModel;
         }
@@ -66,8 +70,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 }
 
                 // register methods for the device
-                actor.BootstrapClient.RegisterMethodsForDevice(deviceModel.CloudToDeviceMethods);
-
+                actor.BootstrapClient.RegisterMethodsForDevice(actor.DeviceState, deviceModel.CloudToDeviceMethods, this.scriptInterpreter);
+                
                 actor.MoveNext();
             }
             catch (Exception e)
@@ -76,7 +80,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     () => new { this.deviceId, e });
             }
         }
-
+                
         private void UpdateTwin(Device device, IDeviceClient client, CancellationToken token)
         {
             // Generate some properties using the device model specs

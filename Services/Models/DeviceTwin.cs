@@ -32,26 +32,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
                 this.IsSimulated = this.Tags.ContainsKey(SimulatedTagKey) && this.Tags[SimulatedTagKey].ToString() == SimulatedTagValue;
             }
         }
-
-        /*
-        TODO: remove if not required
-        public Twin ToAzureModel()
-        {
-            var properties = new TwinProperties
-            {
-                Desired = DictionaryToTwinCollection(this.DesiredProperties),
-                Reported = DictionaryToTwinCollection(this.ReportedProperties),
-            };
-
-            return new Twin(this.DeviceId)
-            {
-                ETag = this.Etag,
-                Tags = DictionaryToTwinCollection(this.Tags),
-                Properties = properties
-            };
-        }
-        */
-
+        
         /*
         JValue:  string, integer, float, boolean
         JArray:  list, array

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Threading;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,6 +10,7 @@ using Jint.Native;
 using Jint.Runtime.Descriptors;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 {
@@ -24,6 +26,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
     {
         private readonly ILogger log;
         private readonly string folder;
+        private Dictionary<string, object> deviceState;
 
         public JavascriptInterpreter(
             IServicesConfig config,
@@ -43,11 +46,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             Dictionary<string, object> context,
             Dictionary<string, object> state)
         {
+            this.deviceState = state;
             var engine = new Engine();
 
             // Inject the logger in the JS context, to allow the JS function
             // logging into the service logs
             engine.SetValue("log", new Action<object>(this.JsLog));
+
+            //register callback for state updates 
+            engine.SetValue("UpdateState", new Action<JsValue>(this.UpdateState));
 
             var sourceCode = this.LoadScript(filename);
             this.log.Debug("Executing JS function", () => new { filename });
@@ -134,5 +141,40 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         {
             this.log.Debug("Log from JS", () => new { data });
         }
+
+        private void Sleep(int timeInMs)
+        {
+            //TODO:Implement sleep function and pass it into Javascript files for use in simulating reboot, etc.
+            //System.Threading.Tasks.thread
+            //Thread.Sleep(timeInMs);
+        }
+
+        private void UpdateState(JsValue data)
+        {
+            string key;
+            string value;
+            Dictionary<string, object> stateChanges;
+
+            this.log.Debug("Updating state from the script", () => new { data, this.deviceState});
+
+            stateChanges = JsValueToDictionary((JsValue)data);
+            
+            //Update device state with the script data passed
+            lock (this.deviceState)
+            {
+                for (int i = 0;i<stateChanges.Count;i++)
+                {
+                    key = stateChanges.Keys.ElementAt(i).ToString();
+                    value = stateChanges.Values.ElementAt(i).ToString();
+                    if (deviceState.ContainsKey(key))
+                    {
+                        this.log.Debug("state change", () => new { key, value });
+                        deviceState[key] = value;
+                    }
+
+                }
+            }
+        }
+
     }
 }

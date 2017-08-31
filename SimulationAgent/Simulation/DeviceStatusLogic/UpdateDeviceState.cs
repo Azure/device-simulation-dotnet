@@ -6,6 +6,8 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using System.Threading;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic
 {
@@ -15,20 +17,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     /// </summary>
     public class UpdateDeviceState : IDeviceStatusLogic
     {
+        // When connecting to IoT Hub, timeout after 10 seconds
+        private static readonly TimeSpan connectionTimeout = TimeSpan.FromSeconds(10);
+
         private readonly IScriptInterpreter scriptInterpreter;
         private readonly ILogger log;
         private string deviceId;
         private DeviceModel deviceModel;
+        private IDevices devices;
 
         // Ensure that setup is called once and only once (which helps also detecting thread safety issues)
         private bool setupDone = false;
 
         public UpdateDeviceState(
+            IDevices devices,
             IScriptInterpreter scriptInterpreter,
             ILogger logger)
         {
             this.scriptInterpreter = scriptInterpreter;
             this.log = logger;
+            this.devices = devices;
         }
 
         public void Setup(string deviceId, DeviceModel deviceModel)
@@ -75,11 +83,57 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
             this.log.Debug("New device status", () => new { this.deviceId, deviceState = actor.DeviceState });
 
+            this.log.Debug("Checking for desired property updates", () => new { this.deviceId, deviceState = actor.DeviceState });
+            
+            // Get device
+            var device = this.GetDevice(actor.CancellationToken);
+            
+            lock (actor.DeviceState)
+            {
+                // check for differences between reported/desired properties, update device and local state
+                if (ChangePropertiesToMatchDesired(device, this.deviceModel))
+                    actor.BootstrapClient.UpdateTwinAsync(device).Wait((int)connectionTimeout.TotalMilliseconds);
+            }
+
             // Start sending telemetry messages
             if (actor.ActorStatus == Status.UpdatingDeviceState)
             {
                 actor.MoveNext();
+            } else
+                this.log.Debug("Already sending telemetry, running local simulation and watching desired property changes", () => new { this.deviceId});
+
+        }
+
+        private bool ChangePropertiesToMatchDesired(Device device, DeviceModel deviceModel)
+        {
+            bool differences = false;
+
+            foreach(var item in device.Twin.DesiredProperties)
+            {
+                if (device.Twin.ReportedProperties.ContainsKey(item.Key))
+                {
+                    if (device.Twin.ReportedProperties[item.Key].ToString() != device.Twin.DesiredProperties[item.Key].ToString())
+                    {
+                        //match reported properties
+                        device.Twin.ReportedProperties[item.Key] = device.Twin.DesiredProperties[item.Key];
+
+                        //match local properties
+                        if (deviceModel.Properties.ContainsKey(item.Key))
+                            deviceModel.Properties[item.Key] = device.Twin.DesiredProperties[item.Key];
+
+                        differences = true;
+                    }
+                }
             }
+
+            return differences;
+        }
+
+        private Device GetDevice(CancellationToken token)
+        {
+            var task = this.devices.GetAsync(this.deviceId);
+            task.Wait((int)connectionTimeout.TotalMilliseconds, token);
+            return task.Result;
         }
 
         private void ValidateSetup()
