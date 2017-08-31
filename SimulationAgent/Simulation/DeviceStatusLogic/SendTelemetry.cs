@@ -75,7 +75,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                         .Wait(connectionTimeout);
                     
                 } else
-                    //device could be rebooting, updating firmware, etc.
+                    // device could be rebooting, updating firmware, etc.
                     this.log.Debug("The device is not online, no will be sent telemetry will be sent...",
                             () => new { this.deviceId, actor.DeviceState });
             }
