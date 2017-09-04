@@ -25,7 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         Task UpdateTwinAsync(Device device);
 
-        void RegisterMethodsForDevice(Dictionary<string, object> deviceState, IDictionary<string, Script> methods, IScriptInterpreter scriptInterpreter);
+        void RegisterMethodsForDevice(Dictionary<string, object> deviceState, IDictionary<string, Script> methods);
 
     }
 
@@ -43,6 +43,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly ILogger log;
         private readonly IoTHubProtocol protocol;
         private readonly string deviceId;
+        private readonly IScriptInterpreter scriptInterpreter;
 
         //used to create method pointers for the device for the IoTHub to callback to
         private DeviceMethods deviceMethods;
@@ -51,18 +52,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             Azure.Devices.Client.DeviceClient client,
             IoTHubProtocol protocol,
             ILogger logger, 
-            string deviceId)
+            string deviceId,
+            IScriptInterpreter scriptInterpreter = null)
         {
             this.client = client;
             this.protocol = protocol;
             this.log = logger;
             this.deviceId = deviceId;
+            this.scriptInterpreter = scriptInterpreter;
         }
 
         public IoTHubProtocol Protocol { get { return this.protocol; } }
 
         public void RegisterMethodsForDevice(Dictionary<string, object> deviceState, IDictionary<string, 
-            Script> methods, IScriptInterpreter scriptInterpreter)
+            Script> methods)
 
         {
             log.Debug("Attempting to setup methods for device", () => new 
@@ -70,8 +73,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.deviceId                
             });
 
-            deviceMethods = new DeviceMethods(this.client, log, methods, deviceState, this.deviceId, 
-                scriptInterpreter);
+            if (this.scriptInterpreter == null)
+            {
+                log.Error("No script interpreter was found for registering methods.", () => 
+                    new{this.deviceId});
+                //todo throw
+            }
+
+            //TODO: Inject through the constructor instead
+            this.deviceMethods = new DeviceMethods(this.client, log, methods, deviceState, this.deviceId, 
+                this.scriptInterpreter);
 
         }
 

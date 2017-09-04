@@ -6,6 +6,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic
 {
@@ -23,16 +24,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private readonly ILogger log;
         private string deviceId;
         private IoTHubProtocol? protocol;
+        private readonly IScriptInterpreter scriptInterpreter;
 
         // Ensure that setup is called once and only once (which helps also detecting thread safety issues)
         private bool setupDone = false;
 
         public Connect(
             IDevices devices,
-            ILogger logger)
+            ILogger logger,
+            IScriptInterpreter scriptInterpreter)
         {
             this.log = logger;
             this.devices = devices;
+            this.scriptInterpreter = scriptInterpreter;
         }
 
         public void Setup(string deviceId, DeviceModel deviceModel)
@@ -70,13 +74,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     {
                         this.log.Debug("Connect.Run calling this.devices.GetOrCreateAsync", () => new { this.deviceId, connectionTimeout.TotalMilliseconds });
 
-                        var task = this.devices.GetOrCreateAsync(this.deviceId);
+                        var task = this.devices.GetOrCreateAsync(this.deviceId, this.scriptInterpreter);
                         task.Wait((int) connectionTimeout.TotalMilliseconds, actor.CancellationToken);
                         var device = task.Result;
 
                         this.log.Debug("Device credentials retrieved", () => new { this.deviceId });
 
-                        actor.Client = this.devices.GetClient(device, this.protocol.Value);
+                        actor.Client = this.devices.GetClient(device, this.protocol.Value, this.scriptInterpreter);
 
                         // Device Twin properties can be set only over MQTT, so we need a dedicated client
                         // for the bootstrap
@@ -86,7 +90,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                         }
                         else
                         {
-                            actor.BootstrapClient = this.devices.GetClient(device, IoTHubProtocol.MQTT);
+                            // bootstrap client is used  call methods and must have a script interpreter associated w/it.
+                            actor.BootstrapClient = this.devices.GetClient(device, IoTHubProtocol.MQTT, this.scriptInterpreter);
                         }
 
                         this.log.Debug("Connection successful", () => new { this.deviceId });
