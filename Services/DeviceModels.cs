@@ -68,7 +68,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public DeviceModel Get(string id)
         {
-
             var list = this.GetList();
             var item = list.FirstOrDefault(i => i.Id == id);
             if (item != null)

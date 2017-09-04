@@ -56,7 +56,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             // Send the telemetry message
             try
             {
-                if (actor.DeviceState["online"].ToString() == "True")
+                if ((bool)actor.DeviceState["online"])
                 {
                     // Inject the device state into the message template
                     var msg = message.MessageTemplate;

@@ -73,7 +73,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 this.log.Debug("Invoked method for device", () => new { this.deviceId, methodRequest.Name });
 
-                string result = "Method " + methodRequest.Name + " successfully executed.";
+                string result = "'Method " + methodRequest.Name + " successfully executed.'";
 
                 this.log.Info("Executed method.", () => new {methodRequest.Name});
                 byte[] resultEncoded = Encoding.UTF8.GetBytes(result);
@@ -88,7 +88,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         this.deviceId,
                         e
                     });
-                return new MethodResponse(Encoding.UTF8.GetBytes("Error while executing method for device"), 
+                return new MethodResponse(Encoding.UTF8.GetBytes("Error while executing " + methodRequest.Name + " for device"), 
                     (int)HttpStatusCode.InternalServerError);
             }
         }

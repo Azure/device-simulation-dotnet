@@ -53,7 +53,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             engine.SetValue("log", new Action<object>(this.JsLog));
 
             //register callback for state updates 
-            engine.SetValue("UpdateState", new Action<JsValue>(this.UpdateState));
+            engine.SetValue("updateState", new Action<JsValue>(this.UpdateState));
 
             var sourceCode = this.LoadScript(filename);
             this.log.Debug("Executing JS function", () => new { filename });
@@ -151,7 +151,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         private void UpdateState(JsValue data)
         {
             string key;
-            string value;
+            object value;
             Dictionary<string, object> stateChanges;
 
             this.log.Debug("Updating state from the script", () => new { data, this.deviceState});
@@ -163,14 +163,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             {
                 for (int i = 0;i<stateChanges.Count;i++)
                 {
-                    key = stateChanges.Keys.ElementAt(i).ToString();
-                    value = stateChanges.Values.ElementAt(i).ToString();
+                    key = stateChanges.Keys.ElementAt(i);
+                    value = stateChanges.Values.ElementAt(i);
                     if (deviceState.ContainsKey(key))
                     {
                         this.log.Debug("state change", () => new { key, value });
                         deviceState[key] = value;
                     }
-
                 }
             }
         }

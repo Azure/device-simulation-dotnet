@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 /*global log*/
-/*global UpdateState(state)*/
+/*global updateState(state)*/
 /*jslint node: true*/
 
 "use strict";
@@ -53,17 +53,17 @@ function main(context, previousState) {
     // the telemetry can apply changes using the previous function state.
     restoreState(previousState);
 
-    state.online = "False";
+    state.online = false;
 
     // update the state to offline
-    UpdateState(state);
+    updateState(state);
 
     // Sleep for 20 seconds
     sleep(20000);
 
-    state.online = "True";
+    state.online = true;
     // update the state back to online
-    UpdateState(state);
+    updateState(state);
     
     return state;
 }
