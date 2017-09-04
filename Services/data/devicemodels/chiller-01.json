@@ -78,7 +78,7 @@
         },
         "EmergencyValveRelease": {
           "Type": "javascript",
-          "Path": "EmergencyValveRelease-method.js"
+          "Path": "DecreasePressure-method.js"
         },
         "IncreasePressure": {
           "Type": "javascript",

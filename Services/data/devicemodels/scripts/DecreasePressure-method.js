@@ -8,13 +8,7 @@
 
 // Default state
 var state = {
-    online: true,
-    temperature: 75.0,
-    temperature_unit: "F",
-    humidity: 70.0,
-    humidity_unit: "%",
     pressure: 250.0,
-    pressure_unit: "psig"
 };
 
 /**
@@ -25,7 +19,8 @@ var state = {
 function restoreState(previousState) {
     // If the previous state is null, force a default state
     if (previousState !== undefined && previousState !== null) {
-        state = previousState;
+        // copy, individual values
+        state.pressure = previousState.pressure;
     } else {
         log("Using default state");
     }
@@ -47,23 +42,10 @@ function sleep(delay) {
 function main(context, previousState) {
 
     // Reboot - devices goes offline and comes online after 20 seconds
-    log("Executing reboot simulation function.");
-
-    // Restore the global state before generating the new telemetry, so that
-    // the telemetry can apply changes using the previous function state.
-    restoreState(previousState);
-
-    state.online = "False";
-
-    // update the state to offline
-    UpdateState(state);
-
-    // Sleep for 20 seconds
-    sleep(20000);
-
-    state.online = "True";
-    // update the state back to online
-    UpdateState(state);
+    log("Executing DecreasePressure simulation function.");
+    state.pressure = 150;
+    // update the state to 150
+    updateState(state);
     
     return state;
 }

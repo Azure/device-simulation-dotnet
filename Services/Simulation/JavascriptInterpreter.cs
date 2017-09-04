@@ -168,11 +168,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                     value = stateChanges.Values.ElementAt(i);
                     if (deviceState.ContainsKey(key))
                     {
-                        if(deviceState[key] != value)
-                        { 
-                            this.log.Debug("state change", () => new { key, value });
-                            deviceState[key] = value;
-                        }
+                        this.log.Debug("state change", () => new { key, value });
+                        deviceState[key] = value;
                     }
                 }
             }
