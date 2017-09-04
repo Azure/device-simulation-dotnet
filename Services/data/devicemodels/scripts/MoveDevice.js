@@ -1,15 +1,20 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 /*global log*/
-/*global updateState(state)*/
+/*global UpdateState(state)*/
 /*jslint node: true*/
 
 "use strict";
 
 // Default state
 var state = {
-    // reboot just changes whether the device is on or offline
-    online: true
+    online: true,
+    temperature: 75.0,
+    temperature_unit: "F",
+    humidity: 70.0,
+    humidity_unit: "%",
+    pressure: 250.0,
+    pressure_unit: "psig"
 };
 
 /**
@@ -20,17 +25,14 @@ var state = {
 function restoreState(previousState) {
     // If the previous state is null, force a default state
     if (previousState !== undefined && previousState !== null) {
-        // previousState is a pointer to the actual device state
-        // it needs copied - if it is set = to the previousState object passed in it 
-        // will be a pointer to the state object passed and will be modified directly
-        state.online = previousState.online;
+        state = previousState;
     } else {
         log("Using default state");
     }
 }
 
 function sleep(delay) {
-    //TODO: Need a sleep function that doesn't spin the CPU.
+    //TODO: There must be a sleep function that doesn't spin the CPU?
     var start = new Date().getTime();
     while (new Date().getTime() < start + delay);
 }
@@ -51,17 +53,17 @@ function main(context, previousState) {
     // the telemetry can apply changes using the previous function state.
     restoreState(previousState);
 
-    state.online = false;
+    state.online = "False";
 
     // update the state to offline
-    updateState(state);
+    UpdateState(state);
 
     // Sleep for 20 seconds
     sleep(20000);
 
-    state.online = true;
+    state.online = "True";
     // update the state back to online
-    updateState(state);
+    UpdateState(state);
     
     return state;
 }

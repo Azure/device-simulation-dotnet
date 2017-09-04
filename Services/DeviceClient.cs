@@ -72,14 +72,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 this.deviceId                
             });
-
-            if (this.scriptInterpreter == null)
-            {
-                log.Error("No script interpreter was found for registering methods.", () => 
-                    new{this.deviceId});
-                //todo throw
-            }
-
+            
             //TODO: Inject through the constructor instead
             this.deviceMethods = new DeviceMethods(this.client, log, methods, deviceState, this.deviceId, 
                 this.scriptInterpreter);

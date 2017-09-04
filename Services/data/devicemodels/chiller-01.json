@@ -4,7 +4,7 @@
     "Version": "0.0.1",
     "Name": "Chiller",
     "Description": "Chiller with external temperature, humidity and pressure sensors.",
-    "Protocol": "MQTT",
+    "Protocol": "AMQP",
     "Simulation": {
         "InitialState": {
             "online": true,
@@ -22,12 +22,12 @@
         }
     },
     "Properties": {
-        "Type": "Chiller",
-        "Firmware": "1.0.0",
-        "FirmwareUpdateStatus": "",
-        "Location": "Building 43",
-        "Latitude": 47.638928,
-        "Longitude": -122.13476
+      "Type": "Chiller",
+      "Firmware": "1.0.0",
+      "DeviceMethodStatus": "",
+      "Location": "Building 43",
+      "Latitude": 47.638928,
+      "Longitude": -122.13476
     },
     "Telemetry": [
         {
@@ -70,19 +70,19 @@
     "CloudToDeviceMethods": {
         "Reboot": {
             "Type": "javascript",
-            "Path": "TBD.js"
+            "Path": "Reboot-method.js"
         },
         "FirmwareUpdate": {
-            "Type": "javascript",
-            "Path": "TBD.js"
+          "Type": "javascript",
+          "Path": "FirmwareUpdate-method.js"
         },
         "EmergencyValveRelease": {
-            "Type": "javascript",
-            "Path": "TBD.js"
+          "Type": "javascript",
+          "Path": "EmergencyValveRelease-method.js"
         },
         "IncreasePressure": {
-            "Type": "javascript",
-            "Path": "TBD.js"
+          "Type": "javascript",
+          "Path": "IncreasePressure-method.js"
         }
     }
 }

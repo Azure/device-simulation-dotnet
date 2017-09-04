@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "SimulationAgent": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "PCS_STORAGEADAPTER_WEBSERVICE_URL": "http://localhost:9022/v1",
+        "PCS_IOTHUB_CONNSTRING": "HostName=timtesthub2.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=pSAzi1uz7o5SdW/Ppt5UEHpyXHeHkmWt2QxVGuDWlU4="
+      }
+    }
+  }
+}
