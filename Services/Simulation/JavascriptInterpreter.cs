@@ -46,6 +46,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             Dictionary<string, object> state)
         {
             this.deviceState = state;
+
             var engine = new Engine();
 
             // Inject the logger in the JS context, to allow the JS function
@@ -60,7 +61,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 
             try
             {
-                var output = engine.Execute(sourceCode).Invoke("main", context, state);
+                var output = engine.Execute(sourceCode).Invoke("main", context, this.deviceState);
                 var result = this.JsValueToDictionary(output);
                 this.log.Debug("JS function success", () => new { filename, result });
                 return result;
@@ -167,8 +168,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                     value = stateChanges.Values.ElementAt(i);
                     if (deviceState.ContainsKey(key))
                     {
-                        this.log.Debug("state change", () => new { key, value });
-                        deviceState[key] = value;
+                        if(deviceState[key] != value)
+                        { 
+                            this.log.Debug("state change", () => new { key, value });
+                            deviceState[key] = value;
+                        }
                     }
                 }
             }

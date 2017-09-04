@@ -64,7 +64,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 return;
             }
 
-            // Send the telemetry message
+            // Update the device state.
             try
             {
 
@@ -76,7 +76,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 };
 
                 this.log.Debug("Updating device status", () => new { this.deviceId, deviceState = actor.DeviceState });
-
                 lock (actor.DeviceState)
                 {
                     actor.DeviceState = this.scriptInterpreter.Invoke(
@@ -84,14 +83,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                         scriptContext,
                         actor.DeviceState);
                 }
-
                 this.log.Debug("New device status", () => new { this.deviceId, deviceState = actor.DeviceState });
 
                 this.log.Debug("Checking for desired property updates", () => new { this.deviceId, deviceState = actor.DeviceState });
-            
                 // Get device
                 var device = this.GetDevice(actor.CancellationToken);
-            
                 lock (actor.DeviceState)
                 {
                     // check for differences between reported/desired properties, update device and local state

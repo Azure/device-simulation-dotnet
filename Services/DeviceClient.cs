@@ -53,7 +53,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IoTHubProtocol protocol,
             ILogger logger, 
             string deviceId,
-            IScriptInterpreter scriptInterpreter = null)
+            IScriptInterpreter scriptInterpreter)
         {
             this.client = client;
             this.protocol = protocol;
