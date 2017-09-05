@@ -70,19 +70,19 @@
     "CloudToDeviceMethods": {
         "Reboot": {
             "Type": "javascript",
-            "Path": "TBD.js"
+            "Path": "Reboot-method.js"
         },
         "FirmwareUpdate": {
-            "Type": "javascript",
-            "Path": "TBD.js"
+          "Type": "javascript",
+          "Path": "FirmwareUpdate-method.js"
         },
         "EmergencyValveRelease": {
-            "Type": "javascript",
-            "Path": "TBD.js"
+          "Type": "javascript",
+          "Path": "DecreasePressure-method.js"
         },
-        "IncreasePressure": {
-            "Type": "javascript",
-            "Path": "TBD.js"
-        }
+      "IncreasePressure": {
+        "Type": "javascript",
+        "Path": "IncreasePressure-method.js"
+      }
     }
 }

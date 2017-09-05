@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Threading;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,6 +9,7 @@ using Jint.Native;
 using Jint.Runtime.Descriptors;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using System.Threading.Tasks;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 {
@@ -55,6 +55,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 
             //register callback for state updates 
             engine.SetValue("updateState", new Action<JsValue>(this.UpdateState));
+            
+            //register sleep function for javascript use 
+            engine.SetValue("sleep", new Action<int>(this.Sleep));
 
             var sourceCode = this.LoadScript(filename);
             this.log.Debug("Executing JS function", () => new { filename });
@@ -144,11 +147,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 
         private void Sleep(int timeInMs)
         {
-            //TODO:Implement sleep function and pass it into Javascript files for use in simulating reboot, etc.
-            //System.Threading.Tasks.thread
-            //Thread.Sleep(timeInMs);
+            Task.Delay(timeInMs).Wait();
         }
 
+        //TODO:Move this out of the scriptinterpreter class into DeviceClient to keep this class stateless
         private void UpdateState(JsValue data)
         {
             string key;
@@ -174,6 +176,5 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 }
             }
         }
-
     }
 }

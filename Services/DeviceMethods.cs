@@ -9,12 +9,14 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using System.Net;
+using System.IO;
+using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface IDeviceMethods
     {
-        Task<MethodResponse> MethodExecutionAsync(MethodRequest methodRequest, object userContext);
+        Task<MethodResponse> MethodHandlerAsync(MethodRequest methodRequest, object userContext);
     }
     
     public class DeviceMethods : IDeviceMethods
@@ -46,20 +48,45 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.SetupMethodCallbacksForDevice();
         }
         
-        public async Task<MethodResponse> MethodExecutionAsync(MethodRequest methodRequest, object userContext)
+        public async Task<MethodResponse> MethodHandlerAsync(MethodRequest methodRequest, object userContext)
+        {
+            this.log.Info("Creating task to execute method with json payload.", () => new
+            {
+                methodRequest.Name,
+                methodRequest.DataAsJson,
+                this.deviceId
+            });
+
+            // kick the method off on a separate thread & immediately return
+            // not immediately returning blocks the client connection to the hub
+            var t = Task.Run(() => MethodExecution(methodRequest));
+            return new MethodResponse(Encoding.UTF8.GetBytes("Executed Method:" + methodRequest.Name), (int)HttpStatusCode.OK);
+        }
+
+        private void MethodExecution(MethodRequest methodRequest)
         {
             try
             {
-                this.log.Info("Executing method with json payload.", () => new {methodRequest.Name,
-                    methodRequest.DataAsJson, this.deviceId});
+                this.log.Info("Executing method with json payload.", () => new
+                {
+                    methodRequest.Name,
+                    methodRequest.DataAsJson,
+                    this.deviceId
+                });
                 var scriptContext = new Dictionary<string, object>
                 {
                     ["currentTime"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:sszzz"),
-                    ["deviceId"] = this.deviceId
+                    ["deviceId"] = this.deviceId,
                 };
+                if(methodRequest.DataAsJson != "null")
+                    AddPayloadToContext(methodRequest.DataAsJson, scriptContext);
 
-                this.log.Debug("Executing method for device", () => new { this.deviceId,
-                    deviceState = this.deviceState, methodRequest.Name });
+                this.log.Debug("Executing method for device", () => new
+                {
+                    this.deviceId,
+                    deviceState = this.deviceState,
+                    methodRequest.Name
+                });
 
                 // ignore the return state - state updates are handled by callbacks from the script
                 this.scriptInterpreter.Invoke(
@@ -71,26 +98,29 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 //for Firmware update (FirmwareUpdateStatus) device needs to update status to 
                 //command sent, image downloaded, applying firmware, complete, rebooting, ... then set to blank
 
-                this.log.Debug("Invoked method for device", () => new { this.deviceId, methodRequest.Name });
+                this.log.Debug("Executed method for device", () => new { this.deviceId, methodRequest.Name });
+                return;
 
-                string result = "'Method " + methodRequest.Name + " successfully executed.'";
-
-                this.log.Info("Executed method.", () => new {methodRequest.Name});
-                byte[] resultEncoded = Encoding.UTF8.GetBytes(result);
-                return new MethodResponse(resultEncoded, (int)HttpStatusCode.OK);
             }
             catch (Exception e)
             {
                 this.log.Error("Error while executing method for device",
-                    () => new {
+                    () => new
+                    {
                         methodRequest.Name,
                         methodRequest.DataAsJson,
                         this.deviceId,
                         e
                     });
-                return new MethodResponse(Encoding.UTF8.GetBytes("Error while executing " + methodRequest.Name + " for device"), 
-                    (int)HttpStatusCode.InternalServerError);
+                return;
             }
+        }
+
+        private void AddPayloadToContext(string dataAsJson, Dictionary<string, object> scriptContext)
+        {
+            var values = JsonConvert.DeserializeObject<Dictionary<string, string>>(dataAsJson);
+            foreach (var item in values)
+                scriptContext.Add(item.Key, item.Value);
         }
 
         private void SetupMethodCallbacksForDevice()
@@ -105,7 +135,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 this.log.Debug("Setting up method for device.", () => new {item.Key,this.deviceId});
 
-                this.client.SetMethodHandlerAsync(item.Key, MethodExecutionAsync, null). 
+                this.client.SetMethodHandlerAsync(item.Key, MethodHandlerAsync, null). 
                     Wait(retryMethodCallbackRegistration);
 
                 this.log.Debug("Method for device setup successfully", () => new {

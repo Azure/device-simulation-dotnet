@@ -2,6 +2,7 @@
 
 /*global log*/
 /*global UpdateState(state)*/
+/*global sleep(ms)*/
 /*jslint node: true*/
 
 "use strict";
@@ -24,12 +25,6 @@ function restoreState(previousState) {
     } else {
         log("Using default state");
     }
-}
-
-function sleep(delay) {
-    //TODO: There must be a sleep function that doesn't spin the CPU?
-    var start = new Date().getTime();
-    while (new Date().getTime() < start + delay);
 }
 
 /**

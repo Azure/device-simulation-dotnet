@@ -212,7 +212,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.messages = deviceModel.Telemetry;
 
             this.deviceStateInterval = deviceModel.Simulation.Script.Interval;
-            this.DeviceState = CloneObject(deviceModel.Simulation.InitialState);
+            this.DeviceState = SetupTelemetryAndProperties(deviceModel);
             this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState });
 
             this.connectLogic.Setup(this.deviceId, deviceModel);
@@ -224,6 +224,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.MoveNext();
 
             return this;
+        }
+
+        private Dictionary<string, object> SetupTelemetryAndProperties(DeviceModel deviceModel)
+        {
+            // put telemetry properties in state
+            Dictionary <string, object> state = CloneObject(deviceModel.Simulation.InitialState);
+
+            //TODO: think about whether these should be pulled from the hub instead of disk
+            //(the device model)
+            // put reported properties from device model into state
+            foreach (var property in deviceModel.Properties)
+                state.Add(property.Key, property.Value);
+
+            return state;
+
         }
 
         /// <summary>

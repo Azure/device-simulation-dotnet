@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 /*global log*/
-/*global UpdateState(state)*/
+/*global updateState(state)*/
+/*global sleep(ms)*/
 /*jslint node: true*/
 
 "use strict";
@@ -9,33 +10,9 @@
 // Default state
 var state = {
     online: true,
-    temperature: 75.0,
-    temperature_unit: "F",
-    humidity: 70.0,
-    humidity_unit: "%",
-    pressure: 250.0,
-    pressure_unit: "psig"
+    Firmware: "1.0.0",
+    DeviceMethodStatus: "Updating Firmware"
 };
-
-/**
- * Restore the global state using data from the previous iteration.
- *
- * @param previousState The output of main() from the previous iteration
- */
-function restoreState(previousState) {
-    // If the previous state is null, force a default state
-    if (previousState !== undefined && previousState !== null) {
-        state = previousState;
-    } else {
-        log("Using default state");
-    }
-}
-
-function sleep(delay) {
-    //TODO: There must be a sleep function that doesn't spin the CPU?
-    var start = new Date().getTime();
-    while (new Date().getTime() < start + delay);
-}
 
 /**
  * Entry point function called by the simulation engine.
@@ -47,23 +24,38 @@ function sleep(delay) {
 function main(context, previousState) {
 
     // Reboot - devices goes offline and comes online after 20 seconds
-    log("Executing reboot simulation function.");
+    log("Executing firmware update simulation function, firmware version passed:" + context.Firmware);
 
-    // Restore the global state before generating the new telemetry, so that
-    // the telemetry can apply changes using the previous function state.
-    restoreState(previousState);
+    // update the state to offline & firmware updating
+    state.online = false;
+    var status = "Command received, updating firmware version to ";
+    status = status.concat(context.Firmware);
+    state.DeviceMethodStatus = status;
+    updateState(state);
+    sleep(5000);
 
-    state.online = "False";
+    log("Image Downloading...");
+    state.DeviceMethodStatus = "Image Downloading...";
+    updateState(state);
+    sleep(10000);
 
-    // update the state to offline
-    UpdateState(state);
+    log("Executing firmware update simulation function, firmware version passed:" + context.Firmware);
+    state.DeviceMethodStatus = "Downloaded, applying firmware...";
+    updateState(state);
+    sleep(5000);
 
-    // Sleep for 20 seconds
-    sleep(20000);
+    state.DeviceMethodStatus = "Rebooting...";
+    updateState(state);
+    sleep(5000);
 
-    state.online = "True";
-    // update the state back to online
-    UpdateState(state);
+    state.DeviceMethodStatus = "Firmware Updated."
+    state.Firmware = context.Firmware;
+    updateState(state);
+    sleep(5000);
+
+    state.DeviceMethodStatus = ""
+    state.online = true;
+    updateState(state);
     
     return state;
 }
