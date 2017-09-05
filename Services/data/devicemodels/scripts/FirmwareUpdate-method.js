@@ -53,7 +53,6 @@ function main(context, previousState) {
     updateState(state);
     sleep(5000);
 
-    state.DeviceMethodStatus = ""
     state.online = true;
     updateState(state);
     
