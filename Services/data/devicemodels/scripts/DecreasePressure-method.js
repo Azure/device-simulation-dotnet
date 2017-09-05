@@ -10,6 +10,7 @@
 // Default state
 var state = {
     pressure: 250.0,
+    CalculateRandomizedTelemetry: false
 };
 
 /**
@@ -39,6 +40,7 @@ function main(context, previousState) {
     // Reboot - devices goes offline and comes online after 20 seconds
     log("Executing DecreasePressure simulation function.");
     state.pressure = 150;
+    state.CalculateRandomizedTelemetry = true;
     // update the state to 150
     updateState(state);
     

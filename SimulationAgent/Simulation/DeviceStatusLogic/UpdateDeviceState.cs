@@ -78,15 +78,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 //TODO: Stop updating device telemetry where a method or desired property has written to it
                 //until the correlating function has been called; e.g. when increasepressure is called, don't write
                 //telemetry until decreasepressure is called for that property.
-                this.log.Debug("Updating device telemetry data", () => new { this.deviceId, deviceState = actor.DeviceState });
-                lock (actor.DeviceState)
+                if ((bool)actor.DeviceState["CalculateRandomizedTelemetry"])
                 {
-                    actor.DeviceState = this.scriptInterpreter.Invoke(
-                        this.deviceModel.Simulation.Script,
-                        scriptContext,
-                        actor.DeviceState);
-                }
-                this.log.Debug("New device telemetry data", () => new { this.deviceId, deviceState = actor.DeviceState });
+                    this.log.Debug("Updating device telemetry data", () => new { this.deviceId, deviceState = actor.DeviceState });
+                    lock (actor.DeviceState)
+                    {
+                        actor.DeviceState = this.scriptInterpreter.Invoke(
+                            this.deviceModel.Simulation.Script,
+                            scriptContext,
+                            actor.DeviceState);
+                    }
+                    this.log.Debug("New device telemetry data", () => new { this.deviceId, deviceState = actor.DeviceState });
+                } else
+                    this.log.Debug("Random telemetry generation is turned off for the actor", 
+                        () => new { this.deviceId, deviceState = actor.DeviceState });
 
                 this.log.Debug("Checking for desired property updates & updated reported properties", () => new
                     { this.deviceId, deviceState = actor.DeviceState });

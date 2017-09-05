@@ -237,6 +237,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             foreach (var property in deviceModel.Properties)
                 state.Add(property.Key, property.Value);
 
+            //TODO:This is used to control whether telemetry is caculated in UpdateDeviceState.  
+            //methods can turn telemetry off/on; e.g. setting temp high- turnoff, set low, turn on
+            //it would be better to do this at the telemetry item level - we should add this in the future
+            state.Add("CalculateRandomizedTelemetry", true);
+
             return state;
 
         }
