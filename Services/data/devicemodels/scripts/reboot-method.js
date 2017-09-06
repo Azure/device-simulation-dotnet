@@ -33,6 +33,7 @@ function main(context, previousState) {
     // Sleep for 20 seconds
     sleep(20000);
 
+    state.DeviceMethodStatus = "Successfully rebooted device.";
     state.online = true;
     // update the state back to online
     updateState(state);

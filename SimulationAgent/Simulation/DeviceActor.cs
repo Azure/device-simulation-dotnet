@@ -232,12 +232,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             Dictionary <string, object> state = CloneObject(deviceModel.Simulation.InitialState);
 
             //TODO: think about whether these should be pulled from the hub instead of disk
-            //(the device model)
+            //(the device model); i.e. what if someone has modified the hub twin directly
             // put reported properties from device model into state
             foreach (var property in deviceModel.Properties)
                 state.Add(property.Key, property.Value);
 
-            //TODO:This is used to control whether telemetry is caculated in UpdateDeviceState.  
+            //TODO:This is used to control whether telemetry is calculated in UpdateDeviceState.  
             //methods can turn telemetry off/on; e.g. setting temp high- turnoff, set low, turn on
             //it would be better to do this at the telemetry item level - we should add this in the future
             state.Add("CalculateRandomizedTelemetry", true);
