@@ -74,7 +74,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     {
                         this.log.Debug("Connect.Run calling this.devices.GetOrCreateAsync", () => new { this.deviceId, connectionTimeout.TotalMilliseconds });
 
-                        var task = this.devices.GetOrCreateAsync(this.deviceId, this.scriptInterpreter);
+                        var task = this.devices.GetOrCreateAsync(this.deviceId);
                         task.Wait((int) connectionTimeout.TotalMilliseconds, actor.CancellationToken);
                         var device = task.Result;
 

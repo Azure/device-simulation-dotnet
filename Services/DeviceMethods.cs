@@ -13,12 +13,8 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
-    public interface IDeviceMethods
-    {
-        Task<MethodResponse> MethodHandlerAsync(MethodRequest methodRequest, object userContext);
-    }
 
-    public class DeviceMethods : IDeviceMethods
+    public class DeviceMethods
     {
         private static readonly TimeSpan retryMethodCallbackRegistration = TimeSpan.FromSeconds(10);
 
@@ -74,11 +70,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     methodName = methodRequest.Name,
                     methodRequest.DataAsJson
                 });
-                // TODO: add "deviceModel" so that the method scripts can use it like the "state" scripts
+
                 var scriptContext = new Dictionary<string, object>
                 {
                     ["currentTime"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:sszzz"),
-                    ["deviceId"] = this.deviceId
+                    ["deviceId"] = this.deviceId,
+                    // TODO: add "deviceModel" so that the method scripts can use it like the "state" scripts
+                    //["deviceModel"] = this.device.
                 };
                 if (methodRequest.DataAsJson != "null")
                     this.AddPayloadToContext(methodRequest.DataAsJson, scriptContext);
@@ -95,11 +93,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     this.cloudToDeviceMethods[methodRequest.Name],
                     scriptContext,
                     this.deviceState);
-
-                //TODO: Implement all other Javascript methods across all devices
-                //for Firmware update (FirmwareUpdateStatus) device needs to update status to 
-                //command sent, image downloaded, applying firmware, complete, rebooting, ... then set to blank
-
+                
                 this.log.Debug("Executed method for device", () => new { this.deviceId, methodRequest.Name });
             }
             catch (Exception e)
