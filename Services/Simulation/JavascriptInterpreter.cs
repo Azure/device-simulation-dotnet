@@ -159,7 +159,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 
             this.log.Debug("Updating state from the script", () => new { data, this.deviceState });
 
-            stateChanges = JsValueToDictionary((JsValue) data);
+            stateChanges = this.JsValueToDictionary((JsValue) data);
 
             //Update device state with the script data passed
             lock (this.deviceState)
@@ -168,10 +168,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 {
                     key = stateChanges.Keys.ElementAt(i);
                     value = stateChanges.Values.ElementAt(i);
-                    if (deviceState.ContainsKey(key))
+                    if (this.deviceState.ContainsKey(key))
                     {
                         this.log.Debug("state change", () => new { key, value });
-                        deviceState[key] = value;
+                        this.deviceState[key] = value;
                     }
                 }
             }
