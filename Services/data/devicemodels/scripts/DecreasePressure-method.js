@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 /*global log*/
-/*global UpdateState(state)*/
-/*global sleep(ms)*/
+/*global updateState*/
+/*global sleep*/
 /*jslint node: true*/
 
 "use strict";
@@ -43,6 +43,6 @@ function main(context, previousState) {
     state.CalculateRandomizedTelemetry = true;
     // update the state to 150
     updateState(state);
-    
+
     return state;
 }

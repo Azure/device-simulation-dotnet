@@ -81,7 +81,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
     public class DeviceActor : IDeviceActor
     {
-        private const string DeviceIdPrefix = "Simulated.";
+        private const string DEVICE_ID_PREFIX = "Simulated.";
 
         // When the actor fails to connect to IoT Hub, it retries every 10 seconds
         private static readonly TimeSpan retryConnectingFrequency = TimeSpan.FromSeconds(10);
@@ -130,6 +130,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         // State machine logic, each of the following has a Run() method
         private readonly Connect connectLogic;
+
         private readonly UpdateDeviceState updateDeviceStateLogic;
         private readonly DeviceBootstrap deviceBootstrapLogic;
         private readonly SendTelemetry sendTelemetryLogic;
@@ -208,7 +209,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
             this.setupDone = true;
 
-            this.deviceId = DeviceIdPrefix + deviceModel.Id + "." + position;
+            this.deviceId = DEVICE_ID_PREFIX + deviceModel.Id + "." + position;
             this.messages = deviceModel.Telemetry;
 
             this.deviceStateInterval = deviceModel.Simulation.Script.Interval;
@@ -229,7 +230,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private Dictionary<string, object> SetupTelemetryAndProperties(DeviceModel deviceModel)
         {
             // put telemetry properties in state
-            Dictionary <string, object> state = CloneObject(deviceModel.Simulation.InitialState);
+            Dictionary<string, object> state = CloneObject(deviceModel.Simulation.InitialState);
 
             //TODO: think about whether these should be pulled from the hub instead of disk
             //(the device model)
@@ -243,7 +244,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             state.Add("CalculateRandomizedTelemetry", true);
 
             return state;
-
         }
 
         /// <summary>

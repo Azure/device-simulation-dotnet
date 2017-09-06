@@ -7,9 +7,9 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Device = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Device;
 using TransportType = Microsoft.Azure.Devices.Client.TransportType;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
@@ -17,8 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     {
         Task<Tuple<bool, string>> PingRegistryAsync();
         Task<Device> GetOrCreateAsync(string deviceId, IScriptInterpreter scriptInterpreter);
-        IDeviceClient GetClient(Device device, IoTHubProtocol protocol, 
-            IScriptInterpreter scriptInterpreter);
+        IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter);
         Task<Device> GetAsync(string deviceId);
         Task<Device> CreateAsync(string deviceId);
     }
@@ -116,7 +115,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var azureTwin = await this.registry.GetTwinAsync(azureDevice.Id);
 
             this.log.Debug("Writing device twin", () => new { azureDevice.Id });
-            azureTwin.Tags[DeviceTwin.SimulatedTagKey] = DeviceTwin.SimulatedTagValue;
+            azureTwin.Tags[DeviceTwin.SIMULATED_TAG_KEY] = DeviceTwin.SIMULATED_TAG_VALUE;
             azureTwin = await this.registry.UpdateTwinAsync(azureDevice.Id, azureTwin, "*");
 
             return new Device(azureDevice, azureTwin, this.ioTHubHostName);
@@ -159,6 +158,5 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             return sdkClient;
         }
-
     }
 }

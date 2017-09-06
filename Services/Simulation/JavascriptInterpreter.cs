@@ -4,12 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Jint;
 using Jint.Native;
 using Jint.Runtime.Descriptors;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using System.Threading.Tasks;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 {
@@ -55,7 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 
             //register callback for state updates 
             engine.SetValue("updateState", new Action<JsValue>(this.UpdateState));
-            
+
             //register sleep function for javascript use 
             engine.SetValue("sleep", new Action<int>(this.Sleep));
 
@@ -157,14 +157,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             object value;
             Dictionary<string, object> stateChanges;
 
-            this.log.Debug("Updating state from the script", () => new { data, this.deviceState});
+            this.log.Debug("Updating state from the script", () => new { data, this.deviceState });
 
-            stateChanges = JsValueToDictionary((JsValue)data);
-            
+            stateChanges = JsValueToDictionary((JsValue) data);
+
             //Update device state with the script data passed
             lock (this.deviceState)
             {
-                for (int i = 0;i<stateChanges.Count;i++)
+                for (int i = 0; i < stateChanges.Count; i++)
                 {
                     key = stateChanges.Keys.ElementAt(i);
                     value = stateChanges.Values.ElementAt(i);

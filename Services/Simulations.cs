@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -23,9 +22,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
     public class Simulations : ISimulations
     {
-        private const string StorageCollection = "simulations";
-        private const string SimulationId = "1";
-        private const int DevicesPerModelInDefaultTemplate = 1;
+        private const string STORAGE_COLLECTION = "simulations";
+        private const string SIMULATION_ID = "1";
+        private const int DEVICES_PER_MODEL_IN_DEFAULT_TEMPLATE = 1;
 
         private readonly IDeviceModels deviceModels;
         private readonly IStorageAdapterClient storage;
@@ -43,7 +42,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task<IList<Models.Simulation>> GetListAsync()
         {
-            var data = await this.storage.GetAllAsync(StorageCollection);
+            var data = await this.storage.GetAllAsync(STORAGE_COLLECTION);
             var result = new List<Models.Simulation>();
             foreach (var item in data.Items)
             {
@@ -57,7 +56,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task<Models.Simulation> GetAsync(string id)
         {
-            var item = await this.storage.GetAsync(StorageCollection, id);
+            var item = await this.storage.GetAsync(STORAGE_COLLECTION, id);
             var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
             simulation.Etag = item.ETag;
             return simulation;
@@ -81,7 +80,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             // Note: forcing the ID because only one simulation can be created
-            simulation.Id = SimulationId;
+            simulation.Id = SIMULATION_ID;
             simulation.Created = DateTimeOffset.UtcNow;
             simulation.Modified = simulation.Created;
             simulation.Version = 1;
@@ -96,15 +95,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     simulation.DeviceModels.Add(new Models.Simulation.DeviceModelRef
                     {
                         Id = type.Id,
-                        Count = DevicesPerModelInDefaultTemplate
+                        Count = DEVICES_PER_MODEL_IN_DEFAULT_TEMPLATE
                     });
                 }
             }
 
             // Note: using UpdateAsync because the service generates the ID
             var result = await this.storage.UpdateAsync(
-                StorageCollection,
-                SimulationId,
+                STORAGE_COLLECTION,
+                SIMULATION_ID,
                 JsonConvert.SerializeObject(simulation),
                 "*");
 
@@ -119,10 +118,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<Models.Simulation> UpsertAsync(Models.Simulation simulation)
         {
-            if (simulation.Id != SimulationId)
+            if (simulation.Id != SIMULATION_ID)
             {
                 this.log.Warn("Invalid simulation ID. Only one simulation is allowed", () => { });
-                throw new InvalidInputException("Invalid simulation ID. Use ID '" + SimulationId + "'.");
+                throw new InvalidInputException("Invalid simulation ID. Use ID '" + SIMULATION_ID + "'.");
             }
 
             var simulations = await this.GetListAsync();
@@ -135,14 +134,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             // Note: forcing the ID because only one simulation can be created
-            simulation.Id = SimulationId;
+            simulation.Id = SIMULATION_ID;
             simulation.Created = DateTimeOffset.UtcNow;
             simulation.Modified = simulation.Created;
             simulation.Version = 1;
 
             await this.storage.UpdateAsync(
-                StorageCollection,
-                SimulationId,
+                STORAGE_COLLECTION,
+                SIMULATION_ID,
                 JsonConvert.SerializeObject(simulation),
                 simulation.Etag);
 
@@ -151,13 +150,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task<Models.Simulation> MergeAsync(SimulationPatch patch)
         {
-            if (patch.Id != SimulationId)
+            if (patch.Id != SIMULATION_ID)
             {
                 this.log.Warn("Invalid simulation ID.", () => new { patch.Id });
-                throw new InvalidInputException("Invalid simulation ID. Use ID '" + SimulationId + "'.");
+                throw new InvalidInputException("Invalid simulation ID. Use ID '" + SIMULATION_ID + "'.");
             }
 
-            var item = await this.storage.GetAsync(StorageCollection, patch.Id);
+            var item = await this.storage.GetAsync(STORAGE_COLLECTION, patch.Id);
             var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
             simulation.Etag = item.ETag;
 
@@ -181,8 +180,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             simulation.Version += 1;
 
             item = await this.storage.UpdateAsync(
-                StorageCollection,
-                SimulationId,
+                STORAGE_COLLECTION,
+                SIMULATION_ID,
                 JsonConvert.SerializeObject(simulation),
                 patch.Etag);
 
@@ -191,10 +190,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return simulation;
         }
 
-
         public async Task DeleteAsync(string id)
         {
-            await this.storage.DeleteAsync(StorageCollection, id);
+            await this.storage.DeleteAsync(STORAGE_COLLECTION, id);
         }
     }
 }

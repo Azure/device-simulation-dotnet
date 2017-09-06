@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 /*global log*/
-/*global UpdateState(state)*/
+/*global updateState*/
+/*global sleep*/
 /*jslint node: true*/
 
 "use strict";
@@ -34,7 +35,7 @@ function restoreState(previousState) {
 function sleep(delay) {
     //TODO: There must be a sleep function that doesn't spin the CPU?
     var start = new Date().getTime();
-    while (new Date().getTime() < start + delay);
+    while (new Date().getTime() < (start + delay));
 }
 
 /**
@@ -56,14 +57,14 @@ function main(context, previousState) {
     state.online = "False";
 
     // update the state to offline
-    UpdateState(state);
+    updateState(state);
 
     // Sleep for 20 seconds
     sleep(20000);
 
     state.online = "True";
     // update the state back to online
-    UpdateState(state);
-    
+    updateState(state);
+
     return state;
 }

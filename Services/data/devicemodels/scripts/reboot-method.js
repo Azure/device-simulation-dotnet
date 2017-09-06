@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 /*global log*/
-/*global updateState(state)*/
-/*global sleep(ms)*/
+/*global updateState*/
+/*global sleep*/
 /*jslint node: true*/
 
 "use strict";
@@ -36,6 +36,6 @@ function main(context, previousState) {
     state.online = true;
     // update the state back to online
     updateState(state);
-    
+
     return state;
 }

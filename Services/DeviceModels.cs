@@ -22,7 +22,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
     public class DeviceModels : IDeviceModels
     {
-        private const string Ext = ".json";
+        private const string EXT = ".json";
 
         private readonly IServicesConfig config;
         private readonly ILogger log;
@@ -86,7 +86,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             var fileEntries = Directory.GetFiles(this.config.DeviceModelsFolder);
 
-            this.deviceModelFiles = fileEntries.Where(fileName => fileName.EndsWith(Ext)).ToList();
+            this.deviceModelFiles = fileEntries.Where(fileName => fileName.EndsWith(EXT)).ToList();
 
             this.log.Debug("Device model files", () => new { this.deviceModelFiles });
 
