@@ -16,8 +16,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface IDevices
     {
         Task<Tuple<bool, string>> PingRegistryAsync();
-        Task<Device> GetOrCreateAsync(string deviceId, IScriptInterpreter scriptInterpreter);
         IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter);
+        Task<Device> GetOrCreateAsync(string deviceId, IScriptInterpreter scriptInterpreter);
         Task<Device> GetAsync(string deviceId);
         Task<Device> CreateAsync(string deviceId);
     }
@@ -54,7 +54,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter)
         {
-            Azure.Devices.Client.DeviceClient sdkClient = GetDeviceSDKClient(device, protocol);
+            Azure.Devices.Client.DeviceClient sdkClient = this.GetDeviceSDKClient(device, protocol);
             return new DeviceClient(sdkClient, protocol, this.log, device.Id, scriptInterpreter);
         }
 
