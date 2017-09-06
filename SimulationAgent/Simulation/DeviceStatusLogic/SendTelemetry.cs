@@ -56,7 +56,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             // Send the telemetry message
             try
             {
-                if ((bool)actor.DeviceState["online"])
+                if ((bool) actor.DeviceState["online"])
                 {
                     // Inject the device state into the message template
                     var msg = message.MessageTemplate;
@@ -73,11 +73,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     actor.Client
                         .SendMessageAsync(msg, message.MessageSchema)
                         .Wait(connectionTimeout);
-                    
-                } else
+                }
+                else
+                {
                     // device could be rebooting, updating firmware, etc.
                     this.log.Debug("The device is not online, no will be sent telemetry will be sent...",
-                            () => new { this.deviceId, actor.DeviceState });
+                        () => new { this.deviceId, actor.DeviceState });
+                }
             }
             catch (Exception e)
             {

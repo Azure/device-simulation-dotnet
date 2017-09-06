@@ -8,8 +8,8 @@ using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Newtonsoft.Json.Linq;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
@@ -26,18 +26,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task UpdateTwinAsync(Device device);
 
         void RegisterMethodsForDevice(Dictionary<string, object> deviceState, IDictionary<string, Script> methods);
-
     }
 
     public class DeviceClient : IDeviceClient
     {
-        private const string DateFormat = "yyyy-MM-dd'T'HH:mm:sszzz";
+        private const string DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:sszzz";
 
         // See also https://github.com/Azure/toketi-iothubreact/blob/master/src/main/scala/com/microsoft/azure/iot/iothubreact/MessageFromDevice.scala
-        private const string CreationTimeProperty = "$$CreationTimeUtc";
+        private const string CREATION_TIME_PROPERTY = "$$CreationTimeUtc";
 
-        private const string MessageSchemaProperty = "$$MessageSchema";
-        private const string ContentProperty = "$$ContentType";
+        private const string MESSAGE_SCHEMA_PROPERTY = "$$MessageSchema";
+        private const string CONTENT_PROPERTY = "$$ContentType";
 
         private readonly Azure.Devices.Client.DeviceClient client;
         private readonly ILogger log;
@@ -51,7 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public DeviceClient(
             Azure.Devices.Client.DeviceClient client,
             IoTHubProtocol protocol,
-            ILogger logger, 
+            ILogger logger,
             string deviceId,
             IScriptInterpreter scriptInterpreter)
         {
@@ -62,29 +61,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.scriptInterpreter = scriptInterpreter;
         }
 
-        public IoTHubProtocol Protocol { get { return this.protocol; } }
-
-        public void RegisterMethodsForDevice(Dictionary<string, object> deviceState, IDictionary<string, 
-            Script> methods)
-
+        public IoTHubProtocol Protocol
         {
-            log.Debug("Attempting to setup methods for device", () => new 
-            {
-                this.deviceId                
-            });
-            
-            //TODO: Inject through the constructor instead
-            this.deviceMethods = new DeviceMethods(this.client, log, methods, deviceState, this.deviceId, 
-                this.scriptInterpreter);
+            get { return this.protocol; }
+        }
 
+        public void RegisterMethodsForDevice(
+            Dictionary<string, object> deviceState, IDictionary<string, Script> methods)
+        {
+            log.Debug("Attempting to setup methods for device", () => new
+            {
+                this.deviceId
+            });
+
+            //TODO: Inject through the constructor instead
+            this.deviceMethods = new DeviceMethods(this.client, log, methods, deviceState, this.deviceId,
+                this.scriptInterpreter);
         }
 
         public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
         {
             var eventMessage = new Message(Encoding.UTF8.GetBytes(message));
-            eventMessage.Properties.Add(CreationTimeProperty, DateTimeOffset.UtcNow.ToString(DateFormat));
-            eventMessage.Properties.Add(MessageSchemaProperty, schema.Name);
-            eventMessage.Properties.Add(ContentProperty, "JSON");
+            eventMessage.Properties.Add(CREATION_TIME_PROPERTY, DateTimeOffset.UtcNow.ToString(DATE_FORMAT));
+            eventMessage.Properties.Add(MESSAGE_SCHEMA_PROPERTY, schema.Name);
+            eventMessage.Properties.Add(CONTENT_PROPERTY, "JSON");
 
             await this.SendRawMessageAsync(eventMessage);
 
@@ -126,7 +126,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var props = azureTwin.Properties.Reported.GetEnumerator();
             while (props.MoveNext())
             {
-                var current = (KeyValuePair<string, object>)props.Current;
+                var current = (KeyValuePair<string, object>) props.Current;
 
                 if (!device.Twin.ReportedProperties.ContainsKey(current.Key))
                 {

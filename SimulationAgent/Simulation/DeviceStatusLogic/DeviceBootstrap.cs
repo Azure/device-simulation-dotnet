@@ -8,7 +8,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using Newtonsoft.Json.Linq;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic
 {
@@ -76,7 +75,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     () => new { this.deviceId, e });
             }
         }
-                
+
         private void UpdateTwin(Device device, IDeviceClient client, CancellationToken token)
         {
             // Generate some properties using the device model specs

@@ -2,12 +2,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
-using System.Threading;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic
 {
@@ -67,7 +67,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             // Compute new telemetry, find updated desired properties, push new reported property values.
             try
             {
-
                 var scriptContext = new Dictionary<string, object>
                 {
                     ["currentTime"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:sszzz"),
@@ -78,7 +77,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 //TODO: Stop updating device telemetry where a method or desired property has written to it
                 //until the correlating function has been called; e.g. when increasepressure is called, don't write
                 //telemetry until decreasepressure is called for that property.
-                if ((bool)actor.DeviceState["CalculateRandomizedTelemetry"])
+                if ((bool) actor.DeviceState["CalculateRandomizedTelemetry"])
                 {
                     this.log.Debug("Updating device telemetry data", () => new { this.deviceId, deviceState = actor.DeviceState });
                     lock (actor.DeviceState)
@@ -89,30 +88,40 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                             actor.DeviceState);
                     }
                     this.log.Debug("New device telemetry data", () => new { this.deviceId, deviceState = actor.DeviceState });
-                } else
-                    this.log.Debug("Random telemetry generation is turned off for the actor", 
+                }
+                else
+                {
+                    this.log.Debug(
+                        "Random telemetry generation is turned off for the actor",
                         () => new { this.deviceId, deviceState = actor.DeviceState });
+                }
 
-                this.log.Debug("Checking for desired property updates & updated reported properties", () => new
-                    { this.deviceId, deviceState = actor.DeviceState });
+                this.log.Debug(
+                    "Checking for desired property updates & updated reported properties",
+                    () => new { this.deviceId, deviceState = actor.DeviceState });
+
                 // Get device
                 var device = this.GetDevice(actor.CancellationToken);
                 lock (actor.DeviceState)
                 {
                     // check for differences between reported/desired properties, 
                     // update reported properties with any state changes (either from desired prop changes, methods, etc.)
-                    if (ChangeTwinPropertiesToMatchDesired(device, actor.DeviceState) 
-                            || ChangeTwinPropertiesToMatchActorState(device, actor.DeviceState))
-                        actor.BootstrapClient.UpdateTwinAsync(device).Wait((int)connectionTimeout.TotalMilliseconds);
+                    if (ChangeTwinPropertiesToMatchDesired(device, actor.DeviceState)
+                        || ChangeTwinPropertiesToMatchActorState(device, actor.DeviceState))
+                        actor.BootstrapClient.UpdateTwinAsync(device).Wait((int) connectionTimeout.TotalMilliseconds);
                 }
 
                 // Start sending telemetry messages
                 if (actor.ActorStatus == Status.UpdatingDeviceState)
                 {
                     actor.MoveNext();
-                } else
-                    this.log.Debug("Already sending telemetry, running local simulation and watching desired property changes", () => new { this.deviceId});
-
+                }
+                else
+                {
+                    this.log.Debug(
+                        "Already sending telemetry, running local simulation and watching desired property changes",
+                        () => new { this.deviceId });
+                }
             }
             catch (Exception e)
             {
@@ -145,7 +154,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         {
             bool differences = false;
 
-            foreach(var item in device.Twin.DesiredProperties)
+            foreach (var item in device.Twin.DesiredProperties)
             {
                 if (device.Twin.ReportedProperties.ContainsKey(item.Key))
                 {
@@ -169,7 +178,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private Device GetDevice(CancellationToken token)
         {
             var task = this.devices.GetAsync(this.deviceId);
-            task.Wait((int)connectionTimeout.TotalMilliseconds, token);
+            task.Wait((int) connectionTimeout.TotalMilliseconds, token);
             return task.Result;
         }
 
