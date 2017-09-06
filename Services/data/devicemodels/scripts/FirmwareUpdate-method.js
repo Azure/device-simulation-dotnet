@@ -48,13 +48,13 @@ function main(context, previousState) {
     updateState(state);
     sleep(5000);
 
-    state.DeviceMethodStatus = "Firmware Updated."
+    state.DeviceMethodStatus = "Firmware Updated.";
     state.Firmware = context.Firmware;
     updateState(state);
     sleep(5000);
 
     state.online = true;
     updateState(state);
-    
+
     return state;
 }

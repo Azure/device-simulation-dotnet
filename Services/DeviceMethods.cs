@@ -24,11 +24,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         private readonly Azure.Devices.Client.DeviceClient client;
         private readonly ILogger log;
-
         private readonly IScriptInterpreter scriptInterpreter;
         private readonly IDictionary<string, Script> cloudToDeviceMethods;
         private readonly Dictionary<string, object> deviceState;
-        private string deviceId;
+        private readonly string deviceId;
 
         public DeviceMethods(
             Azure.Devices.Client.DeviceClient client,

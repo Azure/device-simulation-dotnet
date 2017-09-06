@@ -32,12 +32,6 @@ function restoreState(previousState) {
     }
 }
 
-function sleep(delay) {
-    //TODO: There must be a sleep function that doesn't spin the CPU?
-    var start = new Date().getTime();
-    while (new Date().getTime() < start + delay);
-}
-
 /**
  * Entry point function called by the simulation engine.
  *
@@ -54,7 +48,7 @@ function main(context, previousState) {
     // the telemetry can apply changes using the previous function state.
     restoreState(previousState);
 
-    state.online = "False";
+    state.online = false;
 
     // update the state to offline
     updateState(state);
@@ -62,9 +56,9 @@ function main(context, previousState) {
     // Sleep for 20 seconds
     sleep(20000);
 
-    state.online = "True";
+    state.online = true;
     // update the state back to online
     updateState(state);
-    
+
     return state;
 }
