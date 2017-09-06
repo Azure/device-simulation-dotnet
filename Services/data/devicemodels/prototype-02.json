@@ -31,7 +31,7 @@
     },
     "Telemetry": [
         {
-            "Interval": "00:00:05",
+            "Interval": "00:00:10",
             "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\"}",
             "MessageSchema": {
                 "Name": "prototype-temperature;v1",
@@ -43,7 +43,7 @@
             }
         },
         {
-            "Interval": "00:00:05",
+            "Interval": "00:00:10",
             "MessageTemplate": "{\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
             "MessageSchema": {
                 "Name": "prototype-pressure;v1",
@@ -55,7 +55,7 @@
             }
         },
         {
-            "Interval": "00:00:03",
+            "Interval": "00:00:06",
             "MessageTemplate": "{\"latitude\":${latitude},\"longitude\":${longitude}}",
             "MessageSchema": {
                 "Name": "prototype-geolocation;v1",
