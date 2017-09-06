@@ -26,6 +26,7 @@ function main(context, previousState) {
     log("Executing reboot simulation function.");
 
     state.DeviceMethodStatus = "Rebooting device...";
+    state.CalculateRandomizedTelemetry = false;
     state.online = false;
     // update the state to offline
     updateState(state);
@@ -34,9 +35,9 @@ function main(context, previousState) {
     sleep(20000);
 
     state.DeviceMethodStatus = "Successfully rebooted device.";
+    state.CalculateRandomizedTelemetry = true;
     state.online = true;
     // update the state back to online
     updateState(state);
 
-    return state;
 }

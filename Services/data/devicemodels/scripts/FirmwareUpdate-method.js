@@ -17,8 +17,8 @@ var state = {
 /**
  * Entry point function called by the simulation engine.
  *
- * @param context        The context contains current time, device model and id
- * @param previousState  The device state since the last iteration
+ * @param context        The context contains current time, device model and id, not used
+ * @param previousState  The device state since the last iteration, not used
  */
 /*jslint unparam: true*/
 function main(context, previousState) {
@@ -28,6 +28,7 @@ function main(context, previousState) {
 
     // update the state to offline & firmware updating
     state.online = false;
+    state.CalculateRandomizedTelemetry = false;
     var status = "Command received, updating firmware version to ";
     status = status.concat(context.Firmware);
     state.DeviceMethodStatus = status;
@@ -53,8 +54,8 @@ function main(context, previousState) {
     updateState(state);
     sleep(5000);
 
+    state.CalculateRandomizedTelemetry = true;
     state.online = true;
     updateState(state);
 
-    return state;
 }
