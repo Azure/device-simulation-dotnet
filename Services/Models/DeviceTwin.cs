@@ -10,8 +10,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
     public class DeviceTwin
     {
         // Simulated devices are marked with a tag "IsSimulated = Y"
-        public const string SimulatedTagKey = "IsSimulated";
-        public const string SimulatedTagValue = "Y";
+        public const string SIMULATED_TAG_KEY = "IsSimulated";
+
+        public const string SIMULATED_TAG_VALUE = "Y";
 
         public string Etag { get; set; }
         public string DeviceId { get; set; }
@@ -29,28 +30,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
                 this.Tags = TwinCollectionToDictionary(twin.Tags);
                 this.DesiredProperties = TwinCollectionToDictionary(twin.Properties.Desired);
                 this.ReportedProperties = TwinCollectionToDictionary(twin.Properties.Reported);
-                this.IsSimulated = this.Tags.ContainsKey(SimulatedTagKey) && this.Tags[SimulatedTagKey].ToString() == SimulatedTagValue;
+                this.IsSimulated = this.Tags.ContainsKey(SIMULATED_TAG_KEY) && this.Tags[SIMULATED_TAG_KEY].ToString() == SIMULATED_TAG_VALUE;
             }
         }
-
-        /*
-        TODO: remove if not required
-        public Twin ToAzureModel()
-        {
-            var properties = new TwinProperties
-            {
-                Desired = DictionaryToTwinCollection(this.DesiredProperties),
-                Reported = DictionaryToTwinCollection(this.ReportedProperties),
-            };
-
-            return new Twin(this.DeviceId)
-            {
-                ETag = this.Etag,
-                Tags = DictionaryToTwinCollection(this.Tags),
-                Properties = properties
-            };
-        }
-        */
 
         /*
         JValue:  string, integer, float, boolean
@@ -75,7 +57,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
                 {
                     if (twin.Value is JToken)
                     {
-                        result.Add(twin.Key, (JToken)twin.Value);
+                        result.Add(twin.Key, (JToken) twin.Value);
                     }
                     else
                     {

@@ -19,7 +19,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{71
 		.gitignore = .gitignore
 		.travis.yml = .travis.yml
 		CONTRIBUTING.md = CONTRIBUTING.md
-		DEVELOPMENT.md = DEVELOPMENT.md
 		device-simulation.sln.DotSettings = device-simulation.sln.DotSettings
 		LICENSE = LICENSE
 		README.md = README.md

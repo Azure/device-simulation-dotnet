@@ -16,7 +16,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
     public class Simulation : ISimulation
     {
-        private const int CheckInterval = 3000;
+        private const int CHECK_INTERVAL = 3000;
 
         private readonly ILogger log;
         private readonly ISimulations simulations;
@@ -59,7 +59,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     this.runner.Stop();
                 }
 
-                Thread.Sleep(CheckInterval);
+                Thread.Sleep(CHECK_INTERVAL);
             }
         }
     }

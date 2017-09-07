@@ -36,8 +36,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             switch (script.Type.ToLowerInvariant())
             {
                 default:
-                    this.log.Error("Unknowne script type", () => new { script.Type });
-                    throw new NotSupportedException($"Unknowne script type `${script.Type}`.");
+                    this.log.Error("Unknown script type", () => new { script.Type });
+                    throw new NotSupportedException($"Unknown script type `${script.Type}`.");
 
                 case "javascript":
                     this.log.Debug("Invoking JS", () => new { script.Path, context, state });

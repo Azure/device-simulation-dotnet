@@ -56,29 +56,39 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             // Send the telemetry message
             try
             {
-                // Inject the device state into the message template
-                var msg = message.MessageTemplate;
-                lock (actor.DeviceState)
+                this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
+                if ((bool) actor.DeviceState["online"])
                 {
-                    foreach (var value in actor.DeviceState)
+                    // Inject the device state into the message template
+                    var msg = message.MessageTemplate;
+                    lock (actor.DeviceState)
                     {
-                        msg = msg.Replace("${" + value.Key + "}", value.Value.ToString());
+                        foreach (var value in actor.DeviceState)
+                        {
+                            msg = msg.Replace("${" + value.Key + "}", value.Value.ToString());
+                        }
                     }
-                }
 
-                this.log.Debug("SendTelemetry...",
-                    () => new { this.deviceId, MessageSchema = message.MessageSchema.Name, msg });
-                actor.Client
-                    .SendMessageAsync(msg, message.MessageSchema)
-                    .Wait(connectionTimeout);
+                    this.log.Debug("SendTelemetry...",
+                        () => new { this.deviceId, MessageSchema = message.MessageSchema.Name, msg });
+                    actor.Client
+                        .SendMessageAsync(msg, message.MessageSchema)
+                        .Wait(connectionTimeout);
+
+                    this.log.Debug("SendTelemetry complete", () => new { this.deviceId });
+                }
+                else
+                {
+                    // device could be rebooting, updating firmware, etc.
+                    this.log.Debug("No telemetry will be sent as the device is not online...",
+                        () => new { this.deviceId, actor.DeviceState });
+                }
             }
             catch (Exception e)
             {
                 this.log.Error("SendTelemetry failed",
                     () => new { this.deviceId, e.Message, Error = e.GetType().FullName });
             }
-
-            this.log.Debug("SendTelemetry complete", () => new { this.deviceId });
         }
 
         private void ValidateSetup()

@@ -40,8 +40,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     () => new { this.deviceId });
                 throw new DeviceActorAlreadyInitializedException();
             }
-
             this.setupDone = true;
+
             this.deviceId = deviceId;
             this.deviceModel = deviceModel;
         }
@@ -66,8 +66,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 }
 
                 // register methods for the device
-                actor.BootstrapClient.RegisterMethodsForDevice(deviceModel.CloudToDeviceMethods);
-
+                actor.BootstrapClient.RegisterMethodsForDevice(this.deviceModel.CloudToDeviceMethods, actor.DeviceState);
                 actor.MoveNext();
             }
             catch (Exception e)

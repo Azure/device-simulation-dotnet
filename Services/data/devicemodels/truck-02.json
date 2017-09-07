@@ -29,7 +29,7 @@
     },
     "Telemetry": [
         {
-            "Interval": "00:00:03",
+            "Interval": "00:00:06",
             "MessageTemplate": "{\"latitude\":${latitude},\"longitude\":${longitude}}",
             "MessageSchema": {
                 "Name": "truck-geolocation;v1",
@@ -41,7 +41,7 @@
             }
         },
         {
-            "Interval": "00:00:05",
+            "Interval": "00:00:10",
             "MessageTemplate": "{\"speed\": ${speed},\"speed_unit\":\"${speed_unit}\"}",
             "MessageSchema": {
                 "Name": "truck-speed;v1",
@@ -53,7 +53,7 @@
             }
         },
         {
-            "Interval": "00:00:05",
+            "Interval": "00:00:10",
             "MessageTemplate": "{\"cargotemperature\":${cargotemperature},\"cargotemperature_unit\":\"${cargotemperature_unit}\"}",
             "MessageSchema": {
                 "Name": "truck-cargotemperature;v1",

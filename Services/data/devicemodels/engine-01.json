@@ -29,7 +29,7 @@
     },
     "Telemetry": [
         {
-            "Interval": "00:00:05",
+            "Interval": "00:00:10",
             "MessageTemplate": "{\"fuellevel\":${fuellevel},\"fuellevel_unit\":\"${fuellevel_unit}\"}",
             "MessageSchema": {
                 "Name": "engine-fuellevel;v1",
@@ -41,7 +41,7 @@
             }
         },
         {
-            "Interval": "00:00:05",
+            "Interval": "00:00:10",
             "MessageTemplate": "{\"coolant\":${coolant},\"coolant_unit\":\"${coolant_unit}\"}",
             "MessageSchema": {
                 "Name": "engine-coolant;v1",
@@ -53,7 +53,7 @@
             }
         },
         {
-            "Interval": "00:00:03",
+            "Interval": "00:00:06",
             "MessageTemplate": "{\"vibration\":${vibration},\"vibration_unit\":\"${vibration_unit}\"}",
             "MessageSchema": {
                 "Name": "engine-vibration;v1",

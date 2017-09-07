@@ -81,7 +81,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
     public class DeviceActor : IDeviceActor
     {
-        private const string DeviceIdPrefix = "Simulated.";
+        private const string DEVICE_ID_PREFIX = "Simulated.";
 
         // When the actor fails to connect to IoT Hub, it retries every 10 seconds
         private static readonly TimeSpan retryConnectingFrequency = TimeSpan.FromSeconds(10);
@@ -130,6 +130,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         // State machine logic, each of the following has a Run() method
         private readonly Connect connectLogic;
+
         private readonly UpdateDeviceState updateDeviceStateLogic;
         private readonly DeviceBootstrap deviceBootstrapLogic;
         private readonly SendTelemetry sendTelemetryLogic;
@@ -208,11 +209,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
             this.setupDone = true;
 
-            this.deviceId = DeviceIdPrefix + deviceModel.Id + "." + position;
+            this.deviceId = DEVICE_ID_PREFIX + deviceModel.Id + "." + position;
             this.messages = deviceModel.Telemetry;
 
             this.deviceStateInterval = deviceModel.Simulation.Script.Interval;
-            this.DeviceState = CloneObject(deviceModel.Simulation.InitialState);
+            this.DeviceState = this.SetupTelemetryAndProperties(deviceModel);
             this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState });
 
             this.connectLogic.Setup(this.deviceId, deviceModel);
@@ -224,6 +225,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.MoveNext();
 
             return this;
+        }
+
+        private Dictionary<string, object> SetupTelemetryAndProperties(DeviceModel deviceModel)
+        {
+            // put telemetry properties in state
+            Dictionary<string, object> state = CloneObject(deviceModel.Simulation.InitialState);
+
+            //TODO: think about whether these should be pulled from the hub instead of disk
+            //(the device model); i.e. what if someone has modified the hub twin directly
+            // put reported properties from device model into state
+            foreach (var property in deviceModel.Properties)
+                state.Add(property.Key, property.Value);
+
+            //TODO:This is used to control whether telemetry is calculated in UpdateDeviceState.  
+            //methods can turn telemetry off/on; e.g. setting temp high- turnoff, set low, turn on
+            //it would be better to do this at the telemetry item level - we should add this in the future
+            state.Add("CalculateRandomizedTelemetry", true);
+
+            return state;
         }
 
         /// <summary>

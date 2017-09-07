@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Jint;
 using Jint.Native;
 using Jint.Runtime.Descriptors;
@@ -24,6 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
     {
         private readonly ILogger log;
         private readonly string folder;
+        private Dictionary<string, object> deviceState;
 
         public JavascriptInterpreter(
             IServicesConfig config,
@@ -43,18 +45,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             Dictionary<string, object> context,
             Dictionary<string, object> state)
         {
+            this.deviceState = state;
+
             var engine = new Engine();
 
             // Inject the logger in the JS context, to allow the JS function
             // logging into the service logs
             engine.SetValue("log", new Action<object>(this.JsLog));
 
+            //register callback for state updates 
+            engine.SetValue("updateState", new Action<JsValue>(this.UpdateState));
+
+            //register sleep function for javascript use 
+            engine.SetValue("sleep", new Action<int>(this.Sleep));
+
             var sourceCode = this.LoadScript(filename);
             this.log.Debug("Executing JS function", () => new { filename });
 
             try
             {
-                var output = engine.Execute(sourceCode).Invoke("main", context, state);
+                var output = engine.Execute(sourceCode).Invoke("main", context, this.deviceState);
                 var result = this.JsValueToDictionary(output);
                 this.log.Debug("JS function success", () => new { filename, result });
                 return result;
@@ -133,6 +143,39 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         private void JsLog(object data)
         {
             this.log.Debug("Log from JS", () => new { data });
+        }
+
+        private void Sleep(int timeInMs)
+        {
+            Task.Delay(timeInMs).Wait();
+        }
+
+        // TODO:Move this out of the scriptinterpreter class into DeviceClient to keep this class stateless
+        // https://github.com/Azure/device-simulation-dotnet/issues/45
+        private void UpdateState(JsValue data)
+        {
+            string key;
+            object value;
+            Dictionary<string, object> stateChanges;
+
+            this.log.Debug("Updating state from the script", () => new { data, this.deviceState });
+
+            stateChanges = this.JsValueToDictionary((JsValue) data);
+
+            //Update device state with the script data passed
+            lock (this.deviceState)
+            {
+                for (int i = 0; i < stateChanges.Count; i++)
+                {
+                    key = stateChanges.Keys.ElementAt(i);
+                    value = stateChanges.Values.ElementAt(i);
+                    if (this.deviceState.ContainsKey(key))
+                    {
+                        this.log.Debug("state change", () => new { key, value });
+                        this.deviceState[key] = value;
+                    }
+                }
+            }
         }
     }
 }

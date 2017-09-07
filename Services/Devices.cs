@@ -7,6 +7,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Device = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Device;
 using TransportType = Microsoft.Azure.Devices.Client.TransportType;
 
@@ -15,7 +16,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface IDevices
     {
         Task<Tuple<bool, string>> PingRegistryAsync();
-        IDeviceClient GetClient(Device device, IoTHubProtocol protocol);
+        IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter);
         Task<Device> GetOrCreateAsync(string deviceId);
         Task<Device> GetAsync(string deviceId);
         Task<Device> CreateAsync(string deviceId);
@@ -51,42 +52,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        public IDeviceClient GetClient(Device device, IoTHubProtocol protocol)
+        public IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter)
         {
-            var connectionString = $"HostName={device.IoTHubHostName};DeviceId={device.Id};SharedAccessKey={device.AuthPrimaryKey}";
-
-            Azure.Devices.Client.DeviceClient sdkClient;
-            switch (protocol)
-            {
-                case IoTHubProtocol.AMQP:
-                    this.log.Debug("Creating AMQP device client",
-                        () => new { device.Id, device.IoTHubHostName });
-
-                    sdkClient = Azure.Devices.Client.DeviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp_Tcp_Only);
-                    break;
-
-                case IoTHubProtocol.MQTT:
-                    this.log.Debug("Creating MQTT device client",
-                        () => new { device.Id, device.IoTHubHostName });
-
-                    sdkClient = Azure.Devices.Client.DeviceClient.CreateFromConnectionString(connectionString, TransportType.Mqtt_Tcp_Only);
-                    break;
-
-                case IoTHubProtocol.HTTP:
-                    this.log.Debug("Creating HTTP device client",
-                        () => new { device.Id, device.IoTHubHostName });
-
-                    sdkClient = Azure.Devices.Client.DeviceClient.CreateFromConnectionString(connectionString, TransportType.Http1);
-                    break;
-
-                default:
-                    this.log.Error("Unable to create a client for the given protocol",
-                        () => new { protocol });
-
-                    throw new Exception($"Unable to create a client for the given protocol ({protocol})");
-            }
-
-            return new DeviceClient(sdkClient, protocol, this.log, device.Id);
+            Azure.Devices.Client.DeviceClient sdkClient = this.GetDeviceSDKClient(device, protocol);
+            return new DeviceClient(sdkClient, protocol, this.log, device.Id, scriptInterpreter);
         }
 
         public async Task<Device> GetOrCreateAsync(string deviceId)
@@ -146,10 +115,48 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var azureTwin = await this.registry.GetTwinAsync(azureDevice.Id);
 
             this.log.Debug("Writing device twin", () => new { azureDevice.Id });
-            azureTwin.Tags[DeviceTwin.SimulatedTagKey] = DeviceTwin.SimulatedTagValue;
+            azureTwin.Tags[DeviceTwin.SIMULATED_TAG_KEY] = DeviceTwin.SIMULATED_TAG_VALUE;
             azureTwin = await this.registry.UpdateTwinAsync(azureDevice.Id, azureTwin, "*");
 
             return new Device(azureDevice, azureTwin, this.ioTHubHostName);
+        }
+
+        private Azure.Devices.Client.DeviceClient GetDeviceSDKClient(Device device, IoTHubProtocol protocol)
+        {
+            var connectionString = $"HostName={device.IoTHubHostName};DeviceId={device.Id};SharedAccessKey={device.AuthPrimaryKey}";
+
+            Azure.Devices.Client.DeviceClient sdkClient;
+            switch (protocol)
+            {
+                case IoTHubProtocol.AMQP:
+                    this.log.Debug("Creating AMQP device client",
+                        () => new { device.Id, device.IoTHubHostName });
+
+                    sdkClient = Azure.Devices.Client.DeviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp_Tcp_Only);
+                    break;
+
+                case IoTHubProtocol.MQTT:
+                    this.log.Debug("Creating MQTT device client",
+                        () => new { device.Id, device.IoTHubHostName });
+
+                    sdkClient = Azure.Devices.Client.DeviceClient.CreateFromConnectionString(connectionString, TransportType.Mqtt_Tcp_Only);
+                    break;
+
+                case IoTHubProtocol.HTTP:
+                    this.log.Debug("Creating HTTP device client",
+                        () => new { device.Id, device.IoTHubHostName });
+
+                    sdkClient = Azure.Devices.Client.DeviceClient.CreateFromConnectionString(connectionString, TransportType.Http1);
+                    break;
+
+                default:
+                    this.log.Error("Unable to create a client for the given protocol",
+                        () => new { protocol });
+
+                    throw new Exception($"Unable to create a client for the given protocol ({protocol})");
+            }
+
+            return sdkClient;
         }
     }
 }
