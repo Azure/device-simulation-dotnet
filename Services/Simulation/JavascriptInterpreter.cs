@@ -150,7 +150,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             Task.Delay(timeInMs).Wait();
         }
 
-        //TODO:Move this out of the scriptinterpreter class into DeviceClient to keep this class stateless
+        // TODO:Move this out of the scriptinterpreter class into DeviceClient to keep this class stateless
+        // https://github.com/Azure/device-simulation-dotnet/issues/45
         private void UpdateState(JsValue data)
         {
             string key;
