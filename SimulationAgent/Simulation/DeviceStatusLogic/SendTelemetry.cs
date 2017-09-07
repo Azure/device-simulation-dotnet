@@ -80,7 +80,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 else
                 {
                     // device could be rebooting, updating firmware, etc.
-                    this.log.Debug("The device is not online, no will be sent telemetry will be sent...",
+                    this.log.Debug("No telemetry will be sent as the device is not online...",
                         () => new { this.deviceId, actor.DeviceState });
                 }
             }

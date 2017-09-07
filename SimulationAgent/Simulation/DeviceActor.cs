@@ -213,7 +213,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.messages = deviceModel.Telemetry;
 
             this.deviceStateInterval = deviceModel.Simulation.Script.Interval;
-            this.DeviceState = SetupTelemetryAndProperties(deviceModel);
+            this.DeviceState = this.SetupTelemetryAndProperties(deviceModel);
             this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState });
 
             this.connectLogic.Setup(this.deviceId, deviceModel);

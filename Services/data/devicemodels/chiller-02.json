@@ -80,9 +80,9 @@
           "Type": "javascript",
           "Path": "DecreasePressure-method.js"
         },
-      "IncreasePressure": {
-        "Type": "javascript",
-        "Path": "IncreasePressure-method.js"
-      }
+        "IncreasePressure": {
+          "Type": "javascript",
+          "Path": "IncreasePressure-method.js"
+        }
     }
 }

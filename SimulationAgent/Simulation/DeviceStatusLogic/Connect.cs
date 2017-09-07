@@ -90,7 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                         }
                         else
                         {
-                            // bootstrap client is used  call methods and must have a script interpreter associated w/it.
+                            // bootstrap client is used to call methods and must have a script interpreter associated w/ it.
                             actor.BootstrapClient = this.devices.GetClient(device, IoTHubProtocol.MQTT, this.scriptInterpreter);
                         }
 

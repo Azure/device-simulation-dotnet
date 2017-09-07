@@ -74,9 +74,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     ["deviceModel"] = this.deviceModel.Name
                 };
 
-                //TODO: Stop updating device telemetry where a method or desired property has written to it
-                //until the correlating function has been called; e.g. when increasepressure is called, don't write
-                //telemetry until decreasepressure is called for that property.
+                // until the correlating function has been called; e.g. when increasepressure is called, don't write
+                // telemetry until decreasepressure is called for that property.
+                // TODO: make this property a constant
+                // https://github.com/Azure/device-simulation-dotnet/issues/46
                 if ((bool) actor.DeviceState["CalculateRandomizedTelemetry"])
                 {
                     this.log.Debug("Updating device telemetry data", () => new { this.deviceId, deviceState = actor.DeviceState });
@@ -104,10 +105,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 var device = this.GetDevice(actor.CancellationToken);
                 lock (actor.DeviceState)
                 {
+                    // TODO: the device state update should be an in-memory task without network access, so we should move this 
+                    // logic out to a separate task/thread - https://github.com/Azure/device-simulation-dotnet/issues/47
                     // check for differences between reported/desired properties, 
                     // update reported properties with any state changes (either from desired prop changes, methods, etc.)
-                    if (ChangeTwinPropertiesToMatchDesired(device, actor.DeviceState)
-                        || ChangeTwinPropertiesToMatchActorState(device, actor.DeviceState))
+                    if (this.ChangeTwinPropertiesToMatchDesired(device, actor.DeviceState)
+                        || this.ChangeTwinPropertiesToMatchActorState(device, actor.DeviceState))
                         actor.BootstrapClient.UpdateTwinAsync(device).Wait((int) connectionTimeout.TotalMilliseconds);
                 }
 

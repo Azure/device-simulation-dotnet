@@ -25,7 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         Task UpdateTwinAsync(Device device);
 
-        void RegisterMethodsForDevice(Dictionary<string, object> deviceState, IDictionary<string, Script> methods);
+        void RegisterMethodsForDevice(IDictionary<string, Script> methods, Dictionary<string, object> deviceState);
     }
 
     public class DeviceClient : IDeviceClient
@@ -66,16 +66,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             get { return this.protocol; }
         }
 
-        public void RegisterMethodsForDevice(
-            Dictionary<string, object> deviceState, IDictionary<string, Script> methods)
+        public void RegisterMethodsForDevice(IDictionary<string, Script> methods,
+            Dictionary<string, object> deviceState)
         {
-            log.Debug("Attempting to setup methods for device", () => new
+            this.log.Debug("Attempting to setup methods for device", () => new
             {
                 this.deviceId
             });
 
-            //TODO: Inject through the constructor instead
-            this.deviceMethods = new DeviceMethods(this.client, log, methods, deviceState, this.deviceId,
+            // TODO: Inject through the constructor instead
+            this.deviceMethods = new DeviceMethods(this.client, this.log, methods, deviceState, this.deviceId,
                 this.scriptInterpreter);
         }
 
