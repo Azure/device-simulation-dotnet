@@ -279,7 +279,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         /// </summary>
         public void Stop()
         {
-            //TODO: I see this not exiting cleanly sometimes int eh logs (it throws)
+            //TODO: I see this not exiting cleanly sometimes in the logs (it throws)
             //      need to track down why.
             this.log.Debug("Stopping actor", () => { });
             this.StopTimers();
