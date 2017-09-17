@@ -65,14 +65,18 @@
             }
         }
     ],
-    "CloudToDeviceMethods": {
-        "DecreaseCargoTemperature": {
-            "Type": "javascript",
-            "Path": "TBD.js"
-        },
-        "IncreaseCargoTemperature": {
-            "Type": "javascript",
-            "Path": "TBD.js"
-        }
-    }
+  "CloudToDeviceMethods": {
+      "FirmwareUpdate": {
+        "Type": "javascript",
+        "Path": "FirmwareUpdate-method.js"
+      },
+      "DecreaseCargoTemperature": {
+        "Type": "javascript",
+        "Path": "TBD.js"
+      },
+      "IncreaseCargoTemperature": {
+        "Type": "javascript",
+        "Path": "TBD.js"
+      }
+  }
 }
