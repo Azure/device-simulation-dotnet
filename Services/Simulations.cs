@@ -127,18 +127,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var simulations = await this.GetListAsync();
             if (simulations.Count > 0)
             {
-                //simulation.Modified = DateTimeOffset.UtcNow;
-                //simulation.Version = simulations.First().Version + 1;
-                this.log.Error("Simulations cannot be modified via PUT. Use PATCH to start/stop the simulation.", () => { });
-                throw new InvalidInputException("Simulations cannot be modified via PUT. Use PATCH to start/stop the simulation.");
+                this.log.Info("Modifying simulation via PUT.", () => { });
+
+                if (simulation.Etag != simulations[0].Etag)
+                    throw new InvalidInputException("Invalid Etag. Running simulation Etag is:'" + simulations[0].Etag + "'.");
+
+                simulation.Created = simulations[0].Created;
+                simulation.Modified = DateTimeOffset.UtcNow;
+                simulation.Version = simulations[0].Version+1;
+            }
+            else
+            {
+                this.log.Info("Creating new simulation via PUT.", () => { });
+                // new simulation
+                simulation.Created = DateTimeOffset.UtcNow;
+                simulation.Modified = simulation.Created;
+                simulation.Version = 1;
             }
 
             // Note: forcing the ID because only one simulation can be created
             simulation.Id = SIMULATION_ID;
-            simulation.Created = DateTimeOffset.UtcNow;
-            simulation.Modified = simulation.Created;
-            simulation.Version = 1;
-
             await this.storage.UpdateAsync(
                 STORAGE_COLLECTION,
                 SIMULATION_ID,

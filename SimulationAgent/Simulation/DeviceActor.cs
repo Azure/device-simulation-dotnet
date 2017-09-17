@@ -279,6 +279,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         /// </summary>
         public void Stop()
         {
+            this.log.Debug("Stopping actor", () => { });
             this.StopTimers();
             this.Client?.DisconnectAsync().Wait(connectionTimeout);
             this.BootstrapClient?.DisconnectAsync().Wait(connectionTimeout);
