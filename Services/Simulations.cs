@@ -129,12 +129,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 this.log.Info("Modifying simulation via PUT.", () => { });
 
-                if (simulation.Etag != simulations[0].Etag)
+                if (simulation.Etag != simulations[0].Etag) {
+                    this.log.Error("Invalid Etag. Running simulation Etag is:'" + simulations[0].Etag, () => { });
                     throw new InvalidInputException("Invalid Etag. Running simulation Etag is:'" + simulations[0].Etag + "'.");
+                }
 
                 simulation.Created = simulations[0].Created;
                 simulation.Modified = DateTimeOffset.UtcNow;
-                simulation.Version = simulations[0].Version+1;
+                simulation.Version = simulations[0].Version + 1;
             }
             else
             {

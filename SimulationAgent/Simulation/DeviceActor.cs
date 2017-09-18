@@ -279,8 +279,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         /// </summary>
         public void Stop()
         {
-            //TODO: I see this not exiting cleanly sometimes in the logs (it throws)
-            //      need to track down why.
+            // TODO: I see this not exiting cleanly sometimes in the logs (it throws)
+            //       https://github.com/Azure/device-simulation-dotnet/issues/56
             this.log.Debug("Stopping actor", () => { });
             this.StopTimers();
             this.Client?.DisconnectAsync().Wait(connectionTimeout);
