@@ -78,18 +78,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             }
         }
 
-        private void CheckForStopOrStartToSimulation()
+        private void CheckForDeletedSimulation(Services.Models.Simulation newSimulation)
         {
-            // stopped
-            if (this.simulation != null && this.simulation.Enabled == false)
+            if (newSimulation == null && this.simulation != null)
             {
                 this.runner.Stop();
+                this.simulation = null;
+                this.log.Info("No simulation found in storage...", () => { });
             }
+        }
 
-            // started
-            if (this.simulation != null && this.simulation.Enabled == true)
+        private void CheckForChangedSimulation(Services.Models.Simulation newSimulation)
+        {
+            if (newSimulation != null && this.simulation != null &&
+                newSimulation.Modified != this.simulation.Modified)
             {
-                this.runner.Start(this.simulation);
+                this.log.Debug("The simulation has been modified, stopping the current " +
+                               "simulation and starting the new one", () => { });
+                this.runner.Stop();
+
+                this.simulation = newSimulation;
+                if (this.simulation.Enabled)
+                {
+                    this.runner.Start(this.simulation);
+                    this.log.Debug("----Started new simulation ------", () => this.simulation);
+                }
             }
         }
 
@@ -103,31 +116,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             }
         }
 
-        private void CheckForDeletedSimulation(Services.Models.Simulation newSimulation)
+        private void CheckForStopOrStartToSimulation()
         {
-            if (newSimulation == null && this.simulation != null)
+            // stopped
+            if (this.simulation != null && this.simulation.Enabled == false)
             {
                 this.runner.Stop();
-                this.simulation = null;
-                this.log.Info("No simulation found in storage...", () => { });
             }
-        }
 
-        private void CheckForChangedSimulation(Services.Models.Simulation newSimulation)
-        {
-            if (newSimulation != null && this.simulation != null && 
-                newSimulation.Modified != this.simulation.Modified)
+            // started
+            if (this.simulation != null && this.simulation.Enabled == true)
             {
-                this.log.Debug("The simulation has been modified, stopping the current " +
-                               "simulation and starting the new one", () => { });
-                this.runner.Stop();
-
-                this.simulation = newSimulation;
-                if (this.simulation.Enabled)
-                {
-                    this.runner.Start(this.simulation);
-                    this.log.Debug("----Started new simulation ------", () => this.simulation);
-                }
+                this.runner.Start(this.simulation);
             }
         }
         
