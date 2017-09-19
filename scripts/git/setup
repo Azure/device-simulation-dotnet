@@ -52,7 +52,7 @@ git_setup() {
 
     git config --local alias.branches 'branch -v -a'
     git config --local alias.lg 'log --graph --pretty=format:'\''%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset'\'' --abbrev-commit --date=relative'
-    git config --local alias.lg1 'log --pretty=oneline'
+    git config --local alias.lg1 'log --reverse --pretty=oneline'
     git config --local alias.lgx 'log --stat'
     git config --local alias.lgt 'log --graph --pretty=oneline --oneline --all'
     git config --local alias.stashdiff 'stash show --patience'
