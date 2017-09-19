@@ -77,11 +77,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task<ValueListApiModel> GetAllAsync(string collectionId)
         {
-            var response = await httpClient.GetAsync(
+
+
+            var response = await this.httpClient.GetAsync(
                 this.PrepareRequest($"collections/{collectionId}/values"));
 
-            ThrowIfError(response, collectionId, "");
-
+            this.ThrowIfError(response, collectionId, "");
+                   
             return JsonConvert.DeserializeObject<ValueListApiModel>(response.Content);
         }
 

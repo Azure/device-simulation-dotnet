@@ -68,13 +68,13 @@
         }
     ],
     "CloudToDeviceMethods": {
-        "Reboot": {
+       "Reboot": {
             "Type": "javascript",
-            "Path": "TBD.js"
+            "Path": "Reboot-method.js"
         },
-        "UpdateFirmware": {
-            "Type": "javascript",
-            "Path": "TBD.js"
+        "FirmwareUpdate": {
+          "Type": "javascript",
+          "Path": "FirmwareUpdate-method.js"
         },
         "DecreaseTemperature": {
             "Type": "javascript",

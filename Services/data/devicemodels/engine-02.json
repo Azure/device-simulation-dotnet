@@ -65,18 +65,22 @@
             }
         }
     ],
-    "CloudToDeviceMethods": {
-        "Restart": {
-            "Type": "javascript",
-            "Path": "TBD.js"
-        },
-        "EmptyTank": {
-            "Type": "javascript",
-            "Path": "TBD.js"
-        },
-        "FillTank": {
-            "Type": "javascript",
-            "Path": "TBD.js"
-        }
-    }
+  "CloudToDeviceMethods": {
+      "FirmwareUpdate": {
+        "Type": "javascript",
+        "Path": "FirmwareUpdate-method.js"
+      },
+      "Restart": {
+        "Type": "javascript",
+        "Path": "TBD.js"
+      },
+      "EmptyTank": {
+        "Type": "javascript",
+        "Path": "TBD.js"
+      },
+      "FillTank": {
+        "Type": "javascript",
+        "Path": "TBD.js"
+      }
+  }
 }
