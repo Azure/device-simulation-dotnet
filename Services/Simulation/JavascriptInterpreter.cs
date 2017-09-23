@@ -53,10 +53,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             // logging into the service logs
             engine.SetValue("log", new Action<object>(this.JsLog));
 
-            //register callback for state updates 
+            //register callback for state updates
             engine.SetValue("updateState", new Action<JsValue>(this.UpdateState));
 
-            //register sleep function for javascript use 
+            //register sleep function for javascript use
             engine.SetValue("sleep", new Action<int>(this.Sleep));
 
             var sourceCode = this.LoadScript(filename);

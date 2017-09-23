@@ -86,7 +86,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         // When the actor fails to connect to IoT Hub, it retries every 10 seconds
         private static readonly TimeSpan retryConnectingFrequency = TimeSpan.FromSeconds(10);
 
-        // When the actor fails to bootstrap, it retries every 60 seconds - it is longer b/c in 
+        // When the actor fails to bootstrap, it retries every 60 seconds - it is longer b/c in
         // bootstrap we're registering methods which have a 10 second timeout apiece
         private static readonly TimeSpan retryBootstrappingFrequency = TimeSpan.FromSeconds(60);
 
@@ -142,9 +142,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         /// <summary>
         /// Azure IoT Hub client used by DeviceBootstrap
-        /// This extra client is required  because Device Twins and Device 
-        /// Methods require an MQTT connection. If the main client already 
-        /// uses MQTT, the logic won't open a new connection, and reuse the 
+        /// This extra client is required  because Device Twins and Device
+        /// Methods require an MQTT connection. If the main client already
+        /// uses MQTT, the logic won't open a new connection, and reuse the
         /// existing one instead.
         /// </summary>
         public IDeviceClient BootstrapClient { get; set; }
@@ -238,7 +238,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             foreach (var property in deviceModel.Properties)
                 state.Add(property.Key, property.Value);
 
-            //TODO:This is used to control whether telemetry is calculated in UpdateDeviceState.  
+            //TODO:This is used to control whether telemetry is calculated in UpdateDeviceState.
             //methods can turn telemetry off/on; e.g. setting temp high- turnoff, set low, turn on
             //it would be better to do this at the telemetry item level - we should add this in the future
             state.Add("CalculateRandomizedTelemetry", true);

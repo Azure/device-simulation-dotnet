@@ -3,7 +3,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
 {
     public class ValueApiModel
     {

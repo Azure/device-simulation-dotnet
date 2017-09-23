@@ -49,11 +49,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     // if the simulation is removed from storage & we're running stop simulation.
                     this.CheckForDeletedSimulation(newSimulation);
 
-                    // if there's a new simulation and it's different from the current one 
+                    // if there's a new simulation and it's different from the current one
                     // stop the current one from running & start the new one if it's enabled
                     this.CheckForChangedSimulation(newSimulation);
 
-                    // if there's no simulation running but there's one from storage start it 
+                    // if there's no simulation running but there's one from storage start it
                     this.CheckForNewSimulation(newSimulation);
 
                     // if the current simulation was asked to stop, stop it.
@@ -130,6 +130,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 this.runner.Start(this.simulation);
             }
         }
-        
+
     }
 }

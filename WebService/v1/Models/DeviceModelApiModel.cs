@@ -40,8 +40,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
         {
-            { "$type", "DeviceModel;" + v1.Version.Number },
-            { "$uri", "/" + v1.Version.Path + "/devicemodels/" + this.Id }
+            { "$type", "DeviceModel;" + v1.Version.NUMBER },
+            { "$uri", "/" + v1.Version.PATH + "/devicemodels/" + this.Id }
         };
 
         public DeviceModelApiModel()

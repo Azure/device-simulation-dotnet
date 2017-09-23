@@ -54,7 +54,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter)
         {
-            Azure.Devices.Client.DeviceClient sdkClient = this.GetDeviceSDKClient(device, protocol);
+            Azure.Devices.Client.DeviceClient sdkClient = this.GetDeviceSdkClient(device, protocol);
             return new DeviceClient(sdkClient, protocol, this.log, device.Id, scriptInterpreter);
         }
 
@@ -121,7 +121,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return new Device(azureDevice, azureTwin, this.ioTHubHostName);
         }
 
-        private Azure.Devices.Client.DeviceClient GetDeviceSDKClient(Device device, IoTHubProtocol protocol)
+        private Azure.Devices.Client.DeviceClient GetDeviceSdkClient(Device device, IoTHubProtocol protocol)
         {
             var connectionString = $"HostName={device.IoTHubHostName};DeviceId={device.Id};SharedAccessKey={device.AuthPrimaryKey}";
 

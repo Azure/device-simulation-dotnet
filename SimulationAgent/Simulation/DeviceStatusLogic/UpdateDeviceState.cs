@@ -105,9 +105,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 var device = this.GetDevice(actor.CancellationToken);
                 lock (actor.DeviceState)
                 {
-                    // TODO: the device state update should be an in-memory task without network access, so we should move this 
+                    // TODO: the device state update should be an in-memory task without network access, so we should move this
                     // logic out to a separate task/thread - https://github.com/Azure/device-simulation-dotnet/issues/47
-                    // check for differences between reported/desired properties, 
+                    // check for differences between reported/desired properties,
                     // update reported properties with any state changes (either from desired prop changes, methods, etc.)
                     if (this.ChangeTwinPropertiesToMatchDesired(device, actor.DeviceState)
                         || this.ChangeTwinPropertiesToMatchActorState(device, actor.DeviceState))

@@ -37,7 +37,7 @@ namespace Services.Test.Simulation
             this.target = new JavascriptInterpreter(this.config.Object, this.logger.Object);
         }
 
-        [Fact, Trait(Constants.Type, Constants.UnitTest)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ReturnedStateIsIntact()
         {
             // Arrange
@@ -69,7 +69,7 @@ namespace Services.Test.Simulation
             Assert.IsType<bool>(result["lights_on"]);
         }
 
-        [Fact, Trait(Constants.Type, Constants.UnitTest)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void TestJavascriptFiles()
         {
             // Arrange

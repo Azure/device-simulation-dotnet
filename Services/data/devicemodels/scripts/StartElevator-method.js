@@ -4,6 +4,7 @@
 /*global updateState*/
 /*global sleep*/
 /*jslint node: true*/
+/*jslint todo: true*/
 
 "use strict";
 
@@ -14,5 +15,4 @@ function main(context, previousState) {
 
     // TODO: This method is not implemented
     // https://github.com/Azure/device-simulation-dotnet/issues/44
-
 }

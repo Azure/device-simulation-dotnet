@@ -28,7 +28,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http
 
     public class HttpResponse : IHttpResponse
     {
-        private const int TooManyRequests = 429;
+        private const int TOO_MANY_REQUESTS = 429;
 
         public HttpResponse()
         {
@@ -60,11 +60,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http
             }
         }
 
-        public bool IsNonRetriableError => IsError && !IsRetriableError;
+        public bool IsNonRetriableError => this.IsError && !this.IsRetriableError;
 
         public bool IsRetriableError => this.StatusCode == HttpStatusCode.NotFound ||
                                         this.StatusCode == HttpStatusCode.RequestTimeout ||
-                                        (int) this.StatusCode == TooManyRequests;
+                                        (int) this.StatusCode == TOO_MANY_REQUESTS;
 
         public bool IsBadRequest => (int) this.StatusCode == 400;
         public bool IsUnauthorized => (int) this.StatusCode == 401;

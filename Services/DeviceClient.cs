@@ -61,10 +61,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.scriptInterpreter = scriptInterpreter;
         }
 
-        public IoTHubProtocol Protocol
-        {
-            get { return this.protocol; }
-        }
+        public IoTHubProtocol Protocol => this.protocol;
 
         public void RegisterMethodsForDevice(IDictionary<string, Script> methods,
             Dictionary<string, object> deviceState)
@@ -88,7 +85,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             await this.SendRawMessageAsync(eventMessage);
 
-            log.Debug("SendMessageAsync for device", () => new
+            this.log.Debug("SendMessageAsync for device", () => new
             {
                 this.deviceId
             });
@@ -100,7 +97,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 await this.client.SendEventAsync(message);
 
-                log.Debug("SendRawMessageAsync for device", () => new
+                this.log.Debug("SendRawMessageAsync for device", () => new
                 {
                     this.deviceId
                 });
