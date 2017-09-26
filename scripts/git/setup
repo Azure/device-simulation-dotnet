@@ -28,7 +28,7 @@ install_precommit_hook() {
     cd hooks || failed
     rm -f pre-commit
 
-    if [[ "$SANDBOX_MODE" == "--no-sandbox" ]]; then
+    if [[ "$SANDBOX_MODE" == "" || "$SANDBOX_MODE" == "--no-sandbox" ]]; then
         cp -p $APP_HOME/scripts/git/pre-commit-runner-no-sandbox.sh ./pre-commit || failed
     fi
 
@@ -59,7 +59,7 @@ git_setup() {
 }
 
 SANDBOX_MODE="$1"
-if [[ "$SANDBOX_MODE" == "--no-sandbox" || "$SANDBOX_MODE" == "--with-sandbox" ]]; then
+if [[ "$SANDBOX_MODE" == "" || "$SANDBOX_MODE" == "--no-sandbox" || "$SANDBOX_MODE" == "--with-sandbox" ]]; then
     install_precommit_hook
 else
     usage

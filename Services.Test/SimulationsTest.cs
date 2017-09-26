@@ -81,7 +81,7 @@ namespace Services.Test
         public void CreateDefaultSimulation()
         {
             // Arrange
-            const int defaultDeviceCount = 1;
+            const int DEFAULT_DEVICE_COUNT = 1;
             this.ThereAreNoSimulationsInTheStorage();
             this.ThereAreSomeDeviceModels();
 
@@ -93,7 +93,7 @@ namespace Services.Test
             for (var i = 0; i < this.models.Count; i++)
             {
                 Assert.Equal(this.models[i].Id, result.DeviceModels[i].Id);
-                Assert.Equal(defaultDeviceCount, result.DeviceModels[i].Count);
+                Assert.Equal(DEFAULT_DEVICE_COUNT, result.DeviceModels[i].Count);
             }
         }
 

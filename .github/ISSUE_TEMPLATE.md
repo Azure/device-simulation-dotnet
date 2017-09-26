@@ -2,7 +2,7 @@
 <!-- Please put an `x` (e.g. [x]) in all the boxes that apply: -->
 - [ ] Bug
 - [ ] New feature
-- [ ] Improvement
+- [ ] Enhancement
 
 # Description
 <!-- Please provide a succinct description -->
