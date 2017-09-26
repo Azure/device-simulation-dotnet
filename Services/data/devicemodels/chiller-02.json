@@ -4,7 +4,7 @@
     "Version": "0.0.1",
     "Name": "Faulty Chiller",
     "Description": "Faulty chiller with wrong pressure sensor. Pressure too high.",
-    "Protocol": "AMQP",
+    "Protocol": "MQTT",
     "Simulation": {
         "InitialState": {
             "online": true,
