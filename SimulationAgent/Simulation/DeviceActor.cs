@@ -281,12 +281,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         {
             // TODO: I see this not exiting cleanly sometimes in the logs (it throws)
             //       https://github.com/Azure/device-simulation-dotnet/issues/56
-            this.log.Debug("Stopping actor", () => { });
-            this.StopTimers();
-            this.Client?.DisconnectAsync().Wait(connectionTimeout);
-            this.BootstrapClient?.DisconnectAsync().Wait(connectionTimeout);
-            this.ActorStatus = Status.Ready;
-            this.log.Debug("Stopped", () => new { this.deviceId });
+            try
+            {
+                this.log.Debug("Stopping actor", () => { });
+                this.StopTimers();
+                this.Client?.DisconnectAsync().Wait(connectionTimeout);
+                this.BootstrapClient?.DisconnectAsync().Wait(connectionTimeout);
+                this.ActorStatus = Status.Ready;
+                this.log.Debug("Stopped", () => new { this.deviceId });
+            }
+            catch (Exception e)
+            {
+                this.log.Error("An error occurred stopping the device actor", () => new { e });
+            }
         }
 
         /// <summary>

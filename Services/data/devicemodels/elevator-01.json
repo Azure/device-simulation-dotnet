@@ -4,7 +4,7 @@
     "Version": "0.0.1",
     "Name": "Elevator",
     "Description": "Elevator with floor, vibration and temperature sensors.",
-    "Protocol": "AMQP",
+    "Protocol": "MQTT",
     "Simulation": {
         "InitialState": {
             "online": true,
