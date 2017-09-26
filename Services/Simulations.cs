@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services

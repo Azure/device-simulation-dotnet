@@ -9,7 +9,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 {
     public class SimulationApiModel
     {
-        private const string DateFormat = "yyyy-MM-dd'T'HH:mm:sszzz";
+        private const string DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:sszzz";
         private readonly long version;
         private DateTimeOffset created;
         private DateTimeOffset modified;
@@ -29,11 +29,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
         {
-            { "$type", "Simulation;" + Version.Number },
-            { "$uri", "/" + Version.Path + "/simulations/" + this.Id },
+            { "$type", "Simulation;" + Version.NUMBER },
+            { "$uri", "/" + Version.PATH + "/simulations/" + this.Id },
             { "$version", this.version.ToString() },
-            { "$created", this.created.ToString(DateFormat) },
-            { "$modified", this.modified.ToString(DateFormat) }
+            { "$created", this.created.ToString(DATE_FORMAT) },
+            { "$modified", this.modified.ToString(DATE_FORMAT) }
         };
 
         public SimulationApiModel()

@@ -93,7 +93,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     this.cloudToDeviceMethods[methodRequest.Name],
                     scriptContext,
                     this.deviceState);
-                
+
                 this.log.Debug("Executed method for device", () => new { this.deviceId, methodRequest.Name });
             }
             catch (Exception e)

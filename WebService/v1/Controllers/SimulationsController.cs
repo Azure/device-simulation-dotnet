@@ -10,7 +10,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers
 {
-    [Route(Version.Path + "/[controller]"), ExceptionsFilter]
+    [Route(Version.PATH + "/[controller]"), ExceptionsFilter]
     public class SimulationsController : Controller
     {
         private readonly ISimulations simulationsService;

@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp1.1</TargetFramework>
-    <LangVersion>6</LangVersion>
+    <LangVersion>7</LangVersion>
     <AssemblyName>Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent</AssemblyName>
     <RootNamespace>Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent</RootNamespace>
   </PropertyGroup>

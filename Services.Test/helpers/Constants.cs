@@ -8,11 +8,11 @@ namespace Services.Test.helpers
     /// </summary>
     public class Constants
     {
-        public const string Type = "Type";
-        public const string UnitTest = "UnitTest";
-        public const string IntegrationTest = "IntegrationTest";
+        public const string TYPE = "Type";
+        public const string UNIT_TEST = "UnitTest";
+        public const string INTEGRATION_TEST = "IntegrationTest";
 
-        public const string Speed = "Speed";
-        public const string SlowTest = "SlowTest";
+        public const string SPEED = "Speed";
+        public const string SLOW_TEST = "SlowTest";
     }
 }

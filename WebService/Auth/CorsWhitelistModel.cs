@@ -1,6 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft. All rights reserved.
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
 {
     class CorsWhitelistModel
     {

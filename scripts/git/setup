@@ -28,7 +28,7 @@ install_precommit_hook() {
     cd hooks || failed
     rm -f pre-commit
 
-    if [[ "$SANDBOX_MODE" == "--no-sandbox" ]]; then
+    if [[ "$SANDBOX_MODE" == "" || "$SANDBOX_MODE" == "--no-sandbox" ]]; then
         cp -p $APP_HOME/scripts/git/pre-commit-runner-no-sandbox.sh ./pre-commit || failed
     fi
 
@@ -52,14 +52,14 @@ git_setup() {
 
     git config --local alias.branches 'branch -v -a'
     git config --local alias.lg 'log --graph --pretty=format:'\''%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset'\'' --abbrev-commit --date=relative'
-    git config --local alias.lg1 'log --pretty=oneline'
+    git config --local alias.lg1 'log --reverse --pretty=oneline'
     git config --local alias.lgx 'log --stat'
     git config --local alias.lgt 'log --graph --pretty=oneline --oneline --all'
     git config --local alias.stashdiff 'stash show --patience'
 }
 
 SANDBOX_MODE="$1"
-if [[ "$SANDBOX_MODE" == "--no-sandbox" || "$SANDBOX_MODE" == "--with-sandbox" ]]; then
+if [[ "$SANDBOX_MODE" == "" || "$SANDBOX_MODE" == "--no-sandbox" || "$SANDBOX_MODE" == "--with-sandbox" ]]; then
     install_precommit_hook
 else
     usage

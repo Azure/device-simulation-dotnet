@@ -25,7 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
             // To avoid flooding the logs and logging exceptions, filter
             // exceptions' data and log only what's useful
-            foreach (var data in o.GetType().GetProperties())
+            foreach (PropertyInfo data in o.GetType().GetRuntimeProperties())
             {
                 var name = data.Name;
                 var value = data.GetValue(o, index: null);

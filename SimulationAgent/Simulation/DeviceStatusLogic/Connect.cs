@@ -1,12 +1,11 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic
 {

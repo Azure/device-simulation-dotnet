@@ -21,8 +21,8 @@ namespace Services.Test
         /// <summary>The test logger</summary>
         private readonly ITestOutputHelper log;
 
-        private const string StorageCollection = "simulations";
-        private const string SimulationId = "1";
+        private const string STORAGE_COLLECTION = "simulations";
+        private const string SIMULATION_ID = "1";
 
         private readonly Mock<IDeviceModels> deviceModels;
         private readonly Mock<IStorageAdapterClient> storage;
@@ -49,7 +49,7 @@ namespace Services.Test
             this.target = new Simulations(this.deviceModels.Object, this.storage.Object, this.logger.Object);
         }
 
-        [Fact, Trait(Constants.Type, Constants.UnitTest)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void InitialListIsEmpty()
         {
             // Arrange
@@ -62,7 +62,7 @@ namespace Services.Test
             Assert.Equal(0, list.Count);
         }
 
-        [Fact, Trait(Constants.Type, Constants.UnitTest)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void InitialMetadataAfterCreation()
         {
             // Arrange
@@ -77,11 +77,11 @@ namespace Services.Test
             Assert.Equal(result.Created, result.Modified);
         }
 
-        [Fact, Trait(Constants.Type, Constants.UnitTest)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void CreateDefaultSimulation()
         {
             // Arrange
-            const int defaultDeviceCount = 1;
+            const int DEFAULT_DEVICE_COUNT = 1;
             this.ThereAreNoSimulationsInTheStorage();
             this.ThereAreSomeDeviceModels();
 
@@ -93,11 +93,11 @@ namespace Services.Test
             for (var i = 0; i < this.models.Count; i++)
             {
                 Assert.Equal(this.models[i].Id, result.DeviceModels[i].Id);
-                Assert.Equal(defaultDeviceCount, result.DeviceModels[i].Count);
+                Assert.Equal(DEFAULT_DEVICE_COUNT, result.DeviceModels[i].Count);
             }
         }
 
-        [Fact, Trait(Constants.Type, Constants.UnitTest)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void CreateSimulationWithoutId()
         {
             // Arrange
@@ -111,7 +111,7 @@ namespace Services.Test
             Assert.NotEmpty(result.Id);
         }
 
-        [Fact, Trait(Constants.Type, Constants.UnitTest)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void CreateSimulationWithId()
         {
             // Arrange
@@ -126,7 +126,7 @@ namespace Services.Test
             Assert.Equal(simulation.Id, result.Id);
         }
 
-        [Fact, Trait(Constants.Type, Constants.UnitTest)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void CreateWithInvalidTemplate()
         {
             // Act + Assert
@@ -134,7 +134,7 @@ namespace Services.Test
                 () => this.target.InsertAsync(new SimulationModel(), "mytemplate"));
         }
 
-        [Fact, Trait(Constants.Type, Constants.UnitTest)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void CreatingMultipleSimulationsIsNotAllowed()
         {
             // Arrange
@@ -147,7 +147,7 @@ namespace Services.Test
             Assert.ThrowsAsync<ConflictingResourceException>(() => this.target.UpsertAsync(s));
         }
 
-        [Fact, Trait(Constants.Type, Constants.UnitTest)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void CreatedSimulationsAreStored()
         {
             // Arrange
@@ -160,10 +160,10 @@ namespace Services.Test
 
             // Assert
             this.storage.Verify(
-                x => x.UpdateAsync(StorageCollection, SimulationId, It.IsAny<string>(), "*"));
+                x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.IsAny<string>(), "*"));
         }
 
-        [Fact, Trait(Constants.Type, Constants.UnitTest)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void SimulationsCanBeUpserted()
         {
             // Arrange
@@ -173,7 +173,7 @@ namespace Services.Test
             // Act
             var simulation = new SimulationModel
             {
-                Id = SimulationId,
+                Id = SIMULATION_ID,
                 Enabled = false,
                 Etag = "2345213461"
             };
@@ -181,10 +181,10 @@ namespace Services.Test
 
             // Assert
             this.storage.Verify(
-                x => x.UpdateAsync(StorageCollection, SimulationId, It.IsAny<string>(), simulation.Etag));
+                x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.IsAny<string>(), simulation.Etag));
         }
 
-        [Fact, Trait(Constants.Type, Constants.UnitTest)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void UpsertRequiresIdWhileInsertDoesNot()
         {
             // Act
@@ -196,7 +196,7 @@ namespace Services.Test
             Assert.ThrowsAsync<InvalidInputException>(() => this.target.UpsertAsync(s2));
         }
 
-        [Fact, Trait(Constants.Type, Constants.UnitTest)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void UpsertUsesOptimisticConcurrency()
         {
             // Arrange
@@ -207,8 +207,8 @@ namespace Services.Test
             this.target.UpsertAsync(s1);
 
             // Act + Assert
-            var s1updated = new SimulationModel { Id = id, Enabled = true };
-            Assert.ThrowsAsync<ResourceOutOfDateException>(() => this.target.UpsertAsync(s1updated));
+            var s1Updated = new SimulationModel { Id = id, Enabled = true };
+            Assert.ThrowsAsync<ResourceOutOfDateException>(() => this.target.UpsertAsync(s1Updated));
         }
 
         private void ThereAreSomeDeviceModels()
@@ -218,17 +218,17 @@ namespace Services.Test
 
         private void ThereAreNoSimulationsInTheStorage()
         {
-            this.storage.Setup(x => x.GetAllAsync(StorageCollection)).ReturnsAsync(new ValueListApiModel());
+            this.storage.Setup(x => x.GetAllAsync(STORAGE_COLLECTION)).ReturnsAsync(new ValueListApiModel());
             // In case the test inserts a record, return a valid storage object
-            this.storage.Setup(x => x.UpdateAsync(StorageCollection, SimulationId, It.IsAny<string>(), "*"))
-                .ReturnsAsync(new ValueApiModel { Key = SimulationId, Data = "{}", ETag = "someEtag" });
+            this.storage.Setup(x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.IsAny<string>(), "*"))
+                .ReturnsAsync(new ValueApiModel { Key = SIMULATION_ID, Data = "{}", ETag = "someEtag" });
         }
 
         private void ThereIsAnEnabledSimulationInTheStorage()
         {
             var simulation = new SimulationModel
             {
-                Id = SimulationId,
+                Id = SIMULATION_ID,
                 Created = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 Modified = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 Etag = "etag0",
@@ -239,13 +239,13 @@ namespace Services.Test
             var list = new ValueListApiModel();
             var value = new ValueApiModel
             {
-                Key = SimulationId,
+                Key = SIMULATION_ID,
                 Data = JsonConvert.SerializeObject(simulation),
                 ETag = simulation.Etag
             };
             list.Items.Add(value);
 
-            this.storage.Setup(x => x.GetAllAsync(StorageCollection)).ReturnsAsync(list);
+            this.storage.Setup(x => x.GetAllAsync(STORAGE_COLLECTION)).ReturnsAsync(list);
         }
     }
 }

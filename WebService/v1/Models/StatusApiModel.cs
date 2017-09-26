@@ -10,7 +10,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 {
     public sealed class StatusApiModel
     {
-        private const string DateFormat = "yyyy-MM-dd'T'HH:mm:sszzz";
+        private const string DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:sszzz";
 
         [JsonProperty(PropertyName = "Name", Order = 10)]
         public string Name => "DeviceSimulation";
@@ -19,10 +19,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         public string Status { get; set; }
 
         [JsonProperty(PropertyName = "CurrentTime", Order = 30)]
-        public string CurrentTime => DateTimeOffset.UtcNow.ToString(DateFormat);
+        public string CurrentTime => DateTimeOffset.UtcNow.ToString(DATE_FORMAT);
 
         [JsonProperty(PropertyName = "StartTime", Order = 40)]
-        public string StartTime => Uptime.Start.ToString(DateFormat);
+        public string StartTime => Uptime.Start.ToString(DATE_FORMAT);
 
         [JsonProperty(PropertyName = "UpTime", Order = 50)]
         public long UpTime => Convert.ToInt64(Uptime.Duration.TotalSeconds);
@@ -46,8 +46,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public Dictionary<string, string> Metadata = new Dictionary<string, string>
         {
-            { "$type", "Status;" + Version.Number },
-            { "$uri", "/" + Version.Path + "/status" }
+            { "$type", "Status;" + Version.NUMBER },
+            { "$uri", "/" + Version.PATH + "/status" }
         };
 
         public StatusApiModel(bool isOk, string msg)
