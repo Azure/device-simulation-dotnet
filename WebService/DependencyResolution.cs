@@ -64,6 +64,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             var logger = new Logger(Uptime.ProcessId, LogLevel.Debug);
             builder.RegisterInstance(logger).As<ILogger>().SingleInstance();
 
+            // Auth and CORS setup
+            Auth.Startup.SetupDependencies(builder, config);
+
             // By default the DI container create new objects when injecting
             // dependencies. To improve performance we reuse some instances,
             // for example to reuse IoT Hub connections, as opposed to creating

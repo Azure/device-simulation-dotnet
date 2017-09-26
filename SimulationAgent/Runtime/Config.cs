@@ -4,35 +4,31 @@ using System;
 using System.IO;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
-// TODO: tests
-// TODO: handle errors
-// TODO: use binding
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
 {
     public interface IConfig
     {
-        /// <summary>Service layer configuration</summary>
+        // Service layer configuration
         IServicesConfig ServicesConfig { get; }
     }
 
-    /// <summary>Web service configuration</summary>
+    /// <summary>Simulation agent configuration</summary>
     public class Config : IConfig
     {
-        private const string APPLICATION_KEY = "devicesimulation:";
+        private const string APPLICATION_KEY = "DeviceSimulationService:";
         private const string DEVICE_MODELS_FOLDER_KEY = APPLICATION_KEY + "device_models_folder";
         private const string DEVICE_MODELS_SCRIPTS_FOLDER_KEY = APPLICATION_KEY + "device_models_scripts_folder";
-        private const string IO_T_HUB_CONN_STRING_KEY = APPLICATION_KEY + "iothub_connstring";
+        private const string IOTHUB_CONNSTRING_KEY = APPLICATION_KEY + "iothub_connstring";
 
-        private const string STORAGE_ADAPTER_KEY = "storageadapter:";
+        private const string STORAGE_ADAPTER_KEY = "StorageAdapterService:";
         private const string STORAGE_ADAPTER_API_URL_KEY = STORAGE_ADAPTER_KEY + "webservice_url";
         private const string STORAGE_ADAPTER_API_TIMEOUT_KEY = STORAGE_ADAPTER_KEY + "webservice_timeout";
 
-        /// <summary>Service layer configuration</summary>
         public IServicesConfig ServicesConfig { get; }
 
         public Config(IConfigData configData)
         {
-            var connstring = configData.GetString(IO_T_HUB_CONN_STRING_KEY);
+            var connstring = configData.GetString(IOTHUB_CONNSTRING_KEY);
             if (connstring.ToLowerInvariant().Contains("your azure iot hub"))
             {
                 // In order to connect to Azure IoT Hub, the service requires a connection
