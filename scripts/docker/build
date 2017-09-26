@@ -19,10 +19,7 @@ BUILD_LATEST="no"
 confirm_version() {
     echo "Building version $APP_VERSION"
     read -r -p "Do you want to update the 'latest' version too? [y/N] " response
-    response=${response,,} # tolower
-    if [[ $response =~ ^(no|n| ) ]] | [ -z $response ]; then
-        BUILD_LATEST="no"
-    else
+    if [[ $response =~ ^[Yy] ]]; then
         BUILD_LATEST="yes"
     fi
 }
@@ -60,9 +57,9 @@ build_docker_image() {
     cd out/docker/
 
     if [[ $BUILD_LATEST == "no" ]]; then
-        docker build --tag "$DOCKER_IMAGE:$APP_VERSION" --squash --compress --label "Tags=azure,iot,pcs,simulation,.NET" .
+        docker build --tag "$DOCKER_IMAGE:$APP_VERSION" --squash --compress --label "Tags=Azure,IoT,Solutions,simulation,.NET" .
     else
-        docker build --tag "$DOCKER_IMAGE:$APP_VERSION" --tag "$DOCKER_IMAGE:latest" --squash --compress --label "Tags=azure,iot,pcs,simulation,.NET" .
+        docker build --tag "$DOCKER_IMAGE:$APP_VERSION" --tag "$DOCKER_IMAGE:latest" --squash --compress --label "Tags=Azure,IoT,Solutions,simulation,.NET" .
     fi
 
     echo "Run './scripts/docker/publish' to publish the image to the registry"
