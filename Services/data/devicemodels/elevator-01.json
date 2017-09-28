@@ -29,34 +29,14 @@
     "Telemetry": [
         {
             "Interval": "00:00:10",
-            "MessageTemplate": "{\"floor\":${floor}}",
+            "MessageTemplate": "{\"floor\":${floor},\"vibration\":${vibration},\"vibration_unit\":\"${vibration_unit}\",\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\"}",
             "MessageSchema": {
-                "Name": "elevator-floor;v1",
+                "Name": "elevator-sensors;v1",
                 "Format": "JSON",
                 "Fields": {
-                    "floor": "integer"
-                }
-            }
-        },
-        {
-            "Interval": "00:00:10",
-            "MessageTemplate": "{\"vibration\":${vibration},\"vibration_unit\":\"${vibration_unit}\"}",
-            "MessageSchema": {
-                "Name": "elevator-vibration;v1",
-                "Format": "JSON",
-                "Fields": {
+                    "floor": "integer",
                     "vibration": "double",
-                    "vibration_unit": "text"
-                }
-            }
-        },
-        {
-            "Interval": "00:00:10",
-            "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\"}",
-            "MessageSchema": {
-                "Name": "elevator-temperature;v1",
-                "Format": "JSON",
-                "Fields": {
+                    "vibration_unit": "text",
                     "temperature": "double",
                     "temperature_unit": "text"
                 }

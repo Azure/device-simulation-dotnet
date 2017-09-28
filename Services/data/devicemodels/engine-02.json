@@ -30,35 +30,15 @@
     "Telemetry": [
         {
             "Interval": "00:00:10",
-            "MessageTemplate": "{\"fuellevel\":${fuellevel},\"fuellevel_unit\":\"${fuellevel_unit}\"}",
+            "MessageTemplate": "{\"fuellevel\":${fuellevel},\"fuellevel_unit\":\"${fuellevel_unit}\",\"coolant\":${coolant},\"coolant_unit\":\"${coolant_unit}\",\"vibration\":${vibration},\"vibration_unit\":\"${vibration_unit}\"}",
             "MessageSchema": {
-                "Name": "engine-fuellevel;v1",
+                "Name": "engine-sensors;v1",
                 "Format": "JSON",
                 "Fields": {
                     "fuellevel": "double",
-                    "fuellevel_unit": "text"
-                }
-            }
-        },
-        {
-            "Interval": "00:00:10",
-            "MessageTemplate": "{\"coolant\":${coolant},\"coolant_unit\":\"${coolant_unit}\"}",
-            "MessageSchema": {
-                "Name": "engine-coolant;v1",
-                "Format": "JSON",
-                "Fields": {
+                    "fuellevel_unit": "text",
                     "coolant": "double",
-                    "coolant_unit": "text"
-                }
-            }
-        },
-        {
-            "Interval": "00:00:06",
-            "MessageTemplate": "{\"vibration\":${vibration},\"vibration_unit\":\"${vibration_unit}\"}",
-            "MessageSchema": {
-                "Name": "engine-vibration;v1",
-                "Format": "JSON",
-                "Fields": {
+                    "coolant_unit": "text",
                     "vibration": "double",
                     "vibration_unit": "text"
                 }

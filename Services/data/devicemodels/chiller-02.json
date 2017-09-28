@@ -32,35 +32,15 @@
     "Telemetry": [
         {
             "Interval": "00:00:10",
-            "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\"}",
+            "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
             "MessageSchema": {
-                "Name": "chiller-temperature;v1",
+                "Name": "chiller-sensors;v1",
                 "Format": "JSON",
                 "Fields": {
                     "temperature": "double",
-                    "temperature_unit": "text"
-                }
-            }
-        },
-        {
-            "Interval": "00:00:10",
-            "MessageTemplate": "{\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\"}",
-            "MessageSchema": {
-                "Name": "chiller-humidity;v1",
-                "Format": "JSON",
-                "Fields": {
+                    "temperature_unit": "text",
                     "humidity": "double",
-                    "humidity_unit": "text"
-                }
-            }
-        },
-        {
-            "Interval": "00:00:10",
-            "MessageTemplate": "{\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
-            "MessageSchema": {
-                "Name": "chiller-pressure;v1",
-                "Format": "JSON",
-                "Fields": {
+                    "humidity_unit": "text",
                     "pressure": "double",
                     "pressure_unit": "text"
                 }
