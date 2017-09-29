@@ -189,8 +189,9 @@ Please enter issues, bugs, or suggestions as GitHub Issues here: https://github.
 [build-url]: https://travis-ci.org/Azure/device-simulation-dotnet
 [issues-badge]: https://img.shields.io/github/issues/azure/device-simulation-dotnet.svg
 [issues-url]: https://github.com/azure/device-simulation-dotnet/issues
-[gitter-badge]: https://img.shields.io/gitter/room/azure/iot-pcs.js.svg
-[gitter-url]: https://gitter.im/azure/iot-pcs
+[gitter-badge]: https://img.shields.io/gitter/room/azure/iot-solutions.js.svg
+[gitter-url]: https://gitter.im/azure/iot-solutions
+
 [iothub-url]: https://azure.microsoft.com/services/iot-hub
 [storageadapter-url]: https://github.com/Azure/pcs-storage-adapter-dotnet/blob/master/README.md
 [iothubconnstring-url]: https://blogs.msdn.microsoft.com/iotdev/2017/05/09/understand-different-connection-strings-in-azure-iot-hub
