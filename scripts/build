@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash -e
 
 # Usage:
 # Build the project in the local environment:  ./scripts/build
@@ -8,7 +8,6 @@
 # Debug|Release
 CONFIGURATION=Release
 
-set -e
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )/"
 source "$APP_HOME/scripts/.functions.sh"
 
@@ -97,7 +96,7 @@ build_in_sandbox() {
     if [[ -z "$IS_WINDOWS" ]]; then
         check_dependency_docker
         docker run -it \
-            -e "PCS_IOTHUB_CONNSTRING=$PCS_IOTHUB_CONNSTRING" \
+            -e PCS_IOTHUB_CONNSTRING \
             -v "$PCS_CACHE/sandbox/.config:/root/.config" \
             -v "$PCS_CACHE/sandbox/.dotnet:/root/.dotnet" \
             -v "$PCS_CACHE/sandbox/.nuget:/root/.nuget" \

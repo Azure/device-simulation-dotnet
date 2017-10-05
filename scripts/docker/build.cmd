@@ -1,7 +1,9 @@
 @ECHO off & setlocal enableextensions enabledelayedexpansion
 
 :: Note: use lowercase names for the Docker images
-SET DOCKER_IMAGE="azureiotpcs/device-simulation-dotnet"
+SET DOCKER_IMAGE=azureiotpcs/device-simulation-dotnet
+:: "testing" is the latest dev build, usually matching the code in the "master" branch
+SET DOCKER_TAG=%DOCKER_IMAGE%:testing
 
 :: Debug|Release
 SET CONFIGURATION=Release
@@ -11,42 +13,47 @@ SET APP_HOME=%~dp0
 SET APP_HOME=%APP_HOME:~0,-16%
 cd %APP_HOME%
 
-:: The version is stored in a file, to avoid hardcoding it in multiple places
-set /P APP_VERSION=<%APP_HOME%/version
-
 :: Check dependencies
-dotnet --version > NUL 2>&1
-IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOTNET
-docker version > NUL 2>&1
-IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOCKER
+    dotnet --version > NUL 2>&1
+    IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOTNET
+    docker version > NUL 2>&1
+    IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOCKER
+    git version > NUL 2>&1
+    IF %ERRORLEVEL% NEQ 0 GOTO MISSING_GIT
 
 :: Restore packages and build the application
-call dotnet restore
-IF %ERRORLEVEL% NEQ 0 GOTO FAIL
-call dotnet build --configuration %CONFIGURATION%
-IF %ERRORLEVEL% NEQ 0 GOTO FAIL
+    call dotnet restore
+    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
+    call dotnet build --configuration %CONFIGURATION%
+    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: Build the container image
-rmdir /s /q out\docker
-rmdir /s /q WebService\bin\Docker
-rmdir /s /q SimulationAgent\bin\Docker
+    git log --pretty=format:%%H -n 1 > tmpfile.tmp
+    SET /P COMMIT=<tmpfile.tmp
+    DEL tmpfile.tmp
+    SET DOCKER_LABEL2=Commit=%COMMIT%
 
-mkdir out\docker\webservice
-mkdir out\docker\simulationagent
+    rmdir /s /q out\docker
+    rmdir /s /q WebService\bin\Docker
+    rmdir /s /q SimulationAgent\bin\Docker
 
-dotnet publish WebService      --configuration %CONFIGURATION% --output bin\Docker
-dotnet publish SimulationAgent --configuration %CONFIGURATION% --output bin\Docker
+    mkdir out\docker\webservice
+    mkdir out\docker\simulationagent
 
-xcopy /s WebService\bin\Docker\*       out\docker\webservice\
-xcopy /s SimulationAgent\bin\Docker\*  out\docker\simulationagent\
+    dotnet publish WebService      --configuration %CONFIGURATION% --output bin\Docker
+    dotnet publish SimulationAgent --configuration %CONFIGURATION% --output bin\Docker
 
-copy scripts\docker\.dockerignore               out\docker\
-copy scripts\docker\Dockerfile                  out\docker\
-copy scripts\docker\content\run.sh              out\docker\
+    xcopy /s WebService\bin\Docker\*       out\docker\webservice\
+    xcopy /s SimulationAgent\bin\Docker\*  out\docker\simulationagent\
 
-cd out\docker\
-docker build --tag %DOCKER_IMAGE%:%APP_VERSION% --squash --compress --label "Tags=azure,iot,pcs,simulation,.NET" .
-IF %ERRORLEVEL% NEQ 0 GOTO FAIL
+    copy scripts\docker\.dockerignore               out\docker\
+    copy scripts\docker\Dockerfile                  out\docker\
+    copy scripts\docker\content\run.sh              out\docker\
+
+    cd out\docker\
+    docker build --squash --compress --tag %DOCKER_TAG% --label "%DOCKER_LABEL2%" .
+
+    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
 :: - - - - - - - - - - - - - -
 goto :END
@@ -61,6 +68,12 @@ goto :END
     echo ERROR: 'docker' command not found.
     echo Install Docker and make sure the 'docker' command is in the PATH.
     echo Docker installation: https://www.docker.com/community-edition#/download
+    exit /B 1
+
+:MISSING_GIT
+    echo ERROR: 'git' command not found.
+    echo Install Git and make sure the 'git' command is in the PATH.
+    echo Git installation: https://git-scm.com
     exit /B 1
 
 :FAIL

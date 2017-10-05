@@ -58,7 +58,7 @@ run_in_sandbox() {
 
         docker run -it \
             -p 9003:9003 \
-            -e "PCS_IOTHUB_CONNSTRING=$PCS_IOTHUB_CONNSTRING" \
+            -e PCS_IOTHUB_CONNSTRING \
             -v "$PCS_CACHE/sandbox/.config:/root/.config" \
             -v "$PCS_CACHE/sandbox/.dotnet:/root/.dotnet" \
             -v "$PCS_CACHE/sandbox/.nuget:/root/.nuget" \
@@ -99,7 +99,7 @@ run_simulation() {
 run_storageadapter() {
     echo "Starting storage adapter..."
     docker run -it -p 9022:9022 \
-        -e "PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING=$PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING" \
+        -e PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING \
         azureiotpcs/pcs-storage-adapter-dotnet
 }
 

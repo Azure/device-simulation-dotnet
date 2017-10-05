@@ -1,14 +1,10 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash -e
 
 # Note: use lowercase names for the Docker images
 DOCKER_IMAGE="azureiotpcs/device-simulation-dotnet"
 
-set -e
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && cd .. && pwd )/"
 source "$APP_HOME/scripts/.functions.sh"
-
-# The version is stored in a file, to avoid hardcoding it in multiple places
-APP_VERSION=$(cat "$APP_HOME/version")
 
 run_container() {
     check_dependency_docker
@@ -17,11 +13,9 @@ run_container() {
 
     echo "Starting Device Simulation ..."
     docker run -it -p 9003:9003 \
-        -e "PCS_IOTHUB_CONNSTRING=$PCS_IOTHUB_CONNSTRING" \
-        -e "PCS_STORAGEADAPTER_WEBSERVICE_URL=$PCS_STORAGEADAPTER_WEBSERVICE_URL" \
-        "$DOCKER_IMAGE:$APP_VERSION"
+        -e PCS_IOTHUB_CONNSTRING \
+        -e PCS_STORAGEADAPTER_WEBSERVICE_URL \
+        "$DOCKER_IMAGE:testing"
 }
 
 run_container
-
-set +e

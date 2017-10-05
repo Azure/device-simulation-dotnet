@@ -64,7 +64,7 @@ IF "%1"=="--in-sandbox" GOTO :RunInSandbox
 
     :: Start the sandbox and execute the build script
     docker run -it ^
-        -e "PCS_IOTHUB_CONNSTRING=%PCS_IOTHUB_CONNSTRING%" ^
+        -e PCS_IOTHUB_CONNSTRING ^
         -v %PCS_CACHE%\sandbox\.config:/root/.config ^
         -v %PCS_CACHE%\sandbox\.dotnet:/root/.dotnet ^
         -v %PCS_CACHE%\sandbox\.nuget:/root/.nuget ^

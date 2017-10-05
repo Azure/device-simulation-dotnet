@@ -129,7 +129,7 @@ IF "%1"=="--storage" GOTO :RunStorageAdapter
     :: Start the sandbox and run the application
     docker run -it ^
         -p 9003:9003 ^
-        -e "PCS_IOTHUB_CONNSTRING=%PCS_IOTHUB_CONNSTRING%" ^
+        -e PCS_IOTHUB_CONNSTRING ^
         -v %PCS_CACHE%\sandbox\.config:/root/.config ^
         -v %PCS_CACHE%\sandbox\.dotnet:/root/.dotnet ^
         -v %PCS_CACHE%\sandbox\.nuget:/root/.nuget ^
@@ -147,7 +147,7 @@ IF "%1"=="--storage" GOTO :RunStorageAdapter
     echo Starting storage adapter...
 
     docker run -it -p 9022:9022 ^
-            -e "PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING=%PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING%" ^
+            -e PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING ^
             azureiotpcs/pcs-storage-adapter-dotnet
 
     :: Error 125 typically triggers in Windows if the drive is not shared

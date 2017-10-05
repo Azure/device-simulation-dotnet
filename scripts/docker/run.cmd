@@ -8,9 +8,6 @@ SET APP_HOME=%~dp0
 SET APP_HOME=%APP_HOME:~0,-16%
 cd %APP_HOME%
 
-:: The version is stored in a file, to avoid hardcoding it in multiple places
-set /P APP_VERSION=<%APP_HOME%/version
-
 :: Check dependencies
 docker version > NUL 2>&1
 IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOCKER
@@ -22,9 +19,9 @@ IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 :: Start the application
 echo Starting Device Simulation ...
 docker run -it -p 9003:9003 ^
-    -e PCS_IOTHUB_CONNSTRING=%PCS_IOTHUB_CONNSTRING% ^
-    -e PCS_STORAGEADAPTER_WEBSERVICE_URL=%PCS_STORAGEADAPTER_WEBSERVICE_URL% ^
-    %DOCKER_IMAGE%:%APP_VERSION%
+    -e PCS_IOTHUB_CONNSTRING ^
+    -e PCS_STORAGEADAPTER_WEBSERVICE_URL ^
+    %DOCKER_IMAGE%:testing
 
 :: - - - - - - - - - - - - - -
 goto :END

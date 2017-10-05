@@ -2,7 +2,7 @@
     "SchemaVersion": "1.0.0",
     "Id": "elevator-02",
     "Version": "0.0.1",
-    "Name": "Elevator",
+    "Name": "Faulty Elevator",
     "Description": "Elevator with floor, vibration and temperature sensors. Elevator blocked on 4th floor.",
     "Protocol": "MQTT",
     "Simulation": {
