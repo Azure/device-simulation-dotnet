@@ -82,6 +82,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     public class DeviceActor : IDeviceActor
     {
         private const string DEVICE_ID_PREFIX = "Simulated.";
+        private const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
 
         // When the actor fails to connect to IoT Hub, it retries every 10 seconds
         private static readonly TimeSpan retryConnectingFrequency = TimeSpan.FromSeconds(10);
@@ -134,6 +135,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private readonly UpdateDeviceState updateDeviceStateLogic;
         private readonly DeviceBootstrap deviceBootstrapLogic;
         private readonly SendTelemetry sendTelemetryLogic;
+        private readonly UpdateReportedProperties updateReportedProperties;
 
         /// <summary>
         /// Azure IoT Hub client shared by Connect and SendTelemetry
@@ -177,6 +179,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.connectLogic = factory.Resolve<Connect>();
             this.updateDeviceStateLogic = factory.Resolve<UpdateDeviceState>();
             this.sendTelemetryLogic = factory.Resolve<SendTelemetry>();
+            this.updateReportedProperties = factory.Resolve<UpdateReportedProperties>();
             this.factory = factory;
 
             this.ActorStatus = Status.None;
@@ -220,6 +223,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.updateDeviceStateLogic.Setup(this.deviceId, deviceModel);
             this.deviceBootstrapLogic.Setup(this.deviceId, deviceModel);
             this.sendTelemetryLogic.Setup(this.deviceId, deviceModel);
+            this.updateReportedProperties.Setup(this.deviceId, deviceModel);
 
             this.log.Debug("Setup complete", () => new { this.deviceId });
             this.MoveNext();
@@ -232,16 +236,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             // put telemetry properties in state
             Dictionary<string, object> state = CloneObject(deviceModel.Simulation.InitialState);
 
-            //TODO: think about whether these should be pulled from the hub instead of disk
-            //(the device model); i.e. what if someone has modified the hub twin directly
+            // TODO: think about whether these should be pulled from the hub instead of disk
+            // (the device model); i.e. what if someone has modified the hub twin directly
             // put reported properties from device model into state
             foreach (var property in deviceModel.Properties)
                 state.Add(property.Key, property.Value);
 
-            //TODO:This is used to control whether telemetry is calculated in UpdateDeviceState.
-            //methods can turn telemetry off/on; e.g. setting temp high- turnoff, set low, turn on
-            //it would be better to do this at the telemetry item level - we should add this in the future
-            state.Add("CalculateRandomizedTelemetry", true);
+            // TODO:This is used to control whether telemetry is calculated in UpdateDeviceState.
+            // methods can turn telemetry off/on; e.g. setting temp high- turnoff, set low, turn on
+            // it would be better to do this at the telemetry item level - we should add this in the future
+            state.Add(CALC_TELEMETRY, true);
 
             return state;
         }
@@ -335,6 +339,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     this.StopTimers();
                     this.log.Debug("Scheduling updateDeviceStateLogic", () => new { this.deviceId });
                     this.timer.Setup(this.updateDeviceStateLogic.Run, this, this.deviceStateInterval);
+                    this.timer.Start();
+                    this.ScheduleCancellationCheckIfRequired(this.deviceStateInterval);
+                    break;
+
+                case Status.UpdatingReportedProperties:
+                    this.ActorStatus = nextStatus;
+                    this.StopTimers();
+                    this.log.Debug("Scheduling Reported Property updates", () => new { this.deviceId });
+                    this.timer.Setup(this.updateReportedProperties.Run, this, this.deviceStateInterval);
                     this.timer.Start();
                     this.ScheduleCancellationCheckIfRequired(this.deviceStateInterval);
                     break;

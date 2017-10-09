@@ -17,9 +17,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     /// </summary>
     public class UpdateDeviceState : IDeviceStatusLogic
     {
-        // When connecting to IoT Hub, timeout after 10 seconds
-        private static readonly TimeSpan connectionTimeout = TimeSpan.FromSeconds(10);
-
         private readonly IScriptInterpreter scriptInterpreter;
         private readonly ILogger log;
         private string deviceId;
@@ -97,22 +94,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                         () => new { this.deviceId, deviceState = actor.DeviceState });
                 }
 
-                this.log.Debug(
-                    "Checking for desired property updates & updated reported properties",
-                    () => new { this.deviceId, deviceState = actor.DeviceState });
-
-                // Get device
-                var device = this.GetDevice(actor.CancellationToken);
-                lock (actor.DeviceState)
-                {
-                    // TODO: the device state update should be an in-memory task without network access, so we should move this
-                    // logic out to a separate task/thread - https://github.com/Azure/device-simulation-dotnet/issues/47
-                    // check for differences between reported/desired properties,
-                    // update reported properties with any state changes (either from desired prop changes, methods, etc.)
-                    if (this.ChangeTwinPropertiesToMatchDesired(device, actor.DeviceState)
-                        || this.ChangeTwinPropertiesToMatchActorState(device, actor.DeviceState))
-                        actor.BootstrapClient.UpdateTwinAsync(device).Wait((int) connectionTimeout.TotalMilliseconds);
-                }
 
                 // Start sending telemetry messages
                 if (actor.ActorStatus == Status.UpdatingDeviceState)
@@ -133,57 +114,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             }
         }
 
-        private bool ChangeTwinPropertiesToMatchActorState(Device device, Dictionary<string, object> actorState)
-        {
-            bool differences = false;
-
-            foreach (var item in actorState)
-            {
-                if (device.Twin.ReportedProperties.ContainsKey(item.Key))
-                {
-                    if (device.Twin.ReportedProperties[item.Key].ToString() != actorState[item.Key].ToString())
-                    {
-                        // Update the Hub twin to match the actor state
-                        device.Twin.ReportedProperties[item.Key] = actorState[item.Key].ToString();
-                        differences = true;
-                    }
-                }
-            }
-
-            return differences;
-        }
-
-        private bool ChangeTwinPropertiesToMatchDesired(Device device, Dictionary<string, object> actorState)
-        {
-            bool differences = false;
-
-            foreach (var item in device.Twin.DesiredProperties)
-            {
-                if (device.Twin.ReportedProperties.ContainsKey(item.Key))
-                {
-                    if (device.Twin.ReportedProperties[item.Key].ToString() != device.Twin.DesiredProperties[item.Key].ToString())
-                    {
-                        // update the hub reported property to match match hub desired property
-                        device.Twin.ReportedProperties[item.Key] = device.Twin.DesiredProperties[item.Key];
-
-                        // update actor state property to match hub desired changes
-                        if (actorState.ContainsKey(item.Key))
-                            actorState[item.Key] = device.Twin.DesiredProperties[item.Key];
-
-                        differences = true;
-                    }
-                }
-            }
-
-            return differences;
-        }
-
-        private Device GetDevice(CancellationToken token)
-        {
-            var task = this.devices.GetAsync(this.deviceId);
-            task.Wait((int) connectionTimeout.TotalMilliseconds, token);
-            return task.Result;
-        }
 
         private void ValidateSetup()
         {
