@@ -1,33 +1,29 @@
-# Type of issue
-<!-- Please put an `x` (e.g. [x]) in all the boxes that apply: -->
+# Type of issue <!-- [x] all the boxes that apply -->
+
 - [ ] Bug
 - [ ] New feature
 - [ ] Enhancement
 
-# Description
-<!-- Please provide a succinct description -->
+# Description <!-- Please provide a succinct description -->
+
 ...
 
-# Steps to reproduce
-<!-- Please provide the steps required to reproduce the issue -->
+# Steps to reproduce <!-- How can we reproduce the issue? -->
+
 1. [First step]
 2. [Second step]
 3. [and so on...]
 
-# Expected behavior
-<!-- Please provide a description of the behavior you expect -->
+# Expected behavior <!-- The behavior you're expecting -->
 ...
 
-# Current behavior
-<!-- Please provide a description of the actual behavior you observe -->
+# Current behavior <!-- The actual behavior observed --
 ...
 
-# Known workarounds
-<!-- Please provide a description of any known workarounds -->
+# Known workarounds <!-- If any, please share here -->
 ...
 
-# Possible solution
-<!-- If you have a suggestion please describe how the issue could be solved -->
+# Possible solution <!-- If you have a suggestion, how the issue could be solved -->
 ...
 
 # Context and Environment
@@ -35,8 +31,7 @@
 * GitHub branch: ...
 * .NET Runtime: ...
 
-# Code to reproduce the bug
-<!-- Possibly include a test to reproduce the issue -->
+# Code to reproduce the bug <!-- Possibly include a test to reproduce the issue -->
 ```
 using Xunit;
 
