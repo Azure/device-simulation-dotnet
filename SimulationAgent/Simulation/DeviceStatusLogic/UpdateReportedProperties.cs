@@ -54,15 +54,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 // Get device
                 var device = this.GetDevice(actor.CancellationToken);
+                var differences = false;
                 lock (actor.DeviceState)
                 {
-                    // check for differences between reported/desired properties,
-                    // update reported properties with any state changes (either from desired prop changes, methods, etc.)
-                    if (this.ChangeTwinPropertiesToMatchDesired(device, actor.DeviceState)
-                        || this.ChangeTwinPropertiesToMatchActorState(device, actor.DeviceState))
-                        actor.BootstrapClient.UpdateTwinAsync(device).Wait((int)connectionTimeout.TotalMilliseconds);
-                }
+                    // TODO: the device model should define whether the local state or the 
+                    //       desired state wins, i.e.where is the master value
+                    // https://github.com/Azure/device-simulation-dotnet/issues/76
 
+                    // update reported properties with any state changes (either from desired prop 
+                    // changes, methods, etc.)
+                    if (this.ChangeTwinPropertiesToMatchDesired(device, actor.DeviceState))
+                        differences = true;
+
+                    // check for differences between reported/desired properties, update reported
+                    // properties with desired property values
+                    if (this.ChangeTwinPropertiesToMatchActorState(device, actor.DeviceState))
+                        differences = true;
+                }
+                if(differences)
+                    actor.BootstrapClient.UpdateTwinAsync(device).Wait((int)connectionTimeout.TotalMilliseconds);
 
                 // Move state machine forward to start sending telemetry messages if needed
                 if (actor.ActorStatus == Status.UpdatingReportedProperties)
@@ -80,7 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             catch (Exception e)
             {
                 this.log.Error("UpdateReportedProperties failed",
-                    () => new { this.deviceId, e.Message, Error = e.GetType().FullName});
+                    () => new { this.deviceId, e});
             }
             finally
             {
@@ -110,6 +120,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private bool ChangeTwinPropertiesToMatchActorState(Device device, Dictionary<string, object> actorState)
         {
             bool differences = false;
+
+            // TODO: revisit how twin props are stored, e.g.rather than looping actorState, have a dedicated propertybag
+            // https://github.com/Azure/device-simulation-dotnet/issues/77
 
             foreach (var item in actorState)
             {

@@ -92,7 +92,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private static readonly TimeSpan retryBootstrappingFrequency = TimeSpan.FromSeconds(60);
 
         // Property Update frequency
-        private static readonly TimeSpan desiredPropertyUpdateFrequency = TimeSpan.FromSeconds(30);
+        private static readonly TimeSpan reportedPropertyUpdateFrequency = TimeSpan.FromSeconds(30);
 
         // When connecting or sending a message, timeout after 5 seconds
         private static readonly TimeSpan connectionTimeout = TimeSpan.FromSeconds(5);
@@ -140,7 +140,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private readonly UpdateDeviceState updateDeviceStateLogic;
         private readonly DeviceBootstrap deviceBootstrapLogic;
         private readonly SendTelemetry sendTelemetryLogic;
-        private readonly UpdateReportedProperties updateReportedProperties;
+        private readonly UpdateReportedProperties updateReportedPropertiesLogic;
 
         /// <summary>
         /// Azure IoT Hub client shared by Connect and SendTelemetry
@@ -184,7 +184,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.connectLogic = factory.Resolve<Connect>();
             this.updateDeviceStateLogic = factory.Resolve<UpdateDeviceState>();
             this.sendTelemetryLogic = factory.Resolve<SendTelemetry>();
-            this.updateReportedProperties = factory.Resolve<UpdateReportedProperties>();
+            this.updateReportedPropertiesLogic = factory.Resolve<UpdateReportedProperties>();
             this.factory = factory;
 
             this.ActorStatus = Status.None;
@@ -229,7 +229,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.updateDeviceStateLogic.Setup(this.deviceId, deviceModel);
             this.deviceBootstrapLogic.Setup(this.deviceId, deviceModel);
             this.sendTelemetryLogic.Setup(this.deviceId, deviceModel);
-            this.updateReportedProperties.Setup(this.deviceId, deviceModel);
+            this.updateReportedPropertiesLogic.Setup(this.deviceId, deviceModel);
 
             this.log.Debug("Setup complete", () => new { this.deviceId });
             this.MoveNext();
@@ -353,9 +353,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     // UpdateState Timer is not stopped as UpdatingDeviceState needs to continue to generate random telemetry for the device
                     this.ActorStatus = nextStatus;
                     this.log.Debug("Scheduling Reported Property updates", () => new { this.deviceId });
-                    this.propertyTimer.Setup(this.updateReportedProperties.Run, this, desiredPropertyUpdateFrequency);
+                    this.propertyTimer.Setup(this.updateReportedPropertiesLogic.Run, this, reportedPropertyUpdateFrequency);
                     this.propertyTimer.Start();
-                    this.ScheduleCancellationCheckIfRequired(desiredPropertyUpdateFrequency);
+                    this.ScheduleCancellationCheckIfRequired(reportedPropertyUpdateFrequency);
                     break;
 
                 case Status.SendingTelemetry:

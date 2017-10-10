@@ -23,19 +23,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private readonly ILogger log;
         private string deviceId;
         private DeviceModel deviceModel;
-        private IDevices devices;
 
         // Ensure that setup is called once and only once (which helps also detecting thread safety issues)
         private bool setupDone = false;
 
         public UpdateDeviceState(
-            IDevices devices,
             IScriptInterpreter scriptInterpreter,
             ILogger logger)
         {
             this.scriptInterpreter = scriptInterpreter;
             this.log = logger;
-            this.devices = devices;
         }
 
         public void Setup(string deviceId, DeviceModel deviceModel)

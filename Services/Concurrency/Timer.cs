@@ -21,7 +21,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         private System.Threading.Timer timer;
         private int frequency;
-        private TimeSpan delay;
 
         public Timer(ILogger logger)
         {
@@ -58,9 +57,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 throw new TimerNotInitializedException();
             }
 
-            this.delay = delay;
-
-            this.timer.Change((int)this.delay.TotalMilliseconds, this.frequency);
+            this.timer.Change((int)delay.TotalMilliseconds, this.frequency);
             return this;
         }
 
@@ -75,16 +72,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             {
                 this.log.Info("The timer was already disposed.", () => new { e });
             }
-        }
-
-        public void PauseTimer()
-        {
-            this.timer?.Change(Timeout.Infinite, Timeout.Infinite);
-        }
-
-        public void UnPauseTimer()
-        {
-            this.StartIn(this.delay);
         }
     }
 }
