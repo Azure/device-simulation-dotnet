@@ -91,6 +91,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         // bootstrap we're registering methods which have a 10 second timeout apiece
         private static readonly TimeSpan retryBootstrappingFrequency = TimeSpan.FromSeconds(60);
 
+        // Property Update frequency
+        private static readonly TimeSpan desiredPropertyUpdateFrequency = TimeSpan.FromSeconds(20);
+
         // When connecting or sending a message, timeout after 5 seconds
         private static readonly TimeSpan connectionTimeout = TimeSpan.FromSeconds(5);
 
@@ -101,6 +104,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         // A timer used for the action of the current state. It's used to
         // retry connecting, and to keep refreshing the device state.
         private readonly ITimer timer;
+        // Time used to check for desired/reported property changes
+        private readonly ITimer propertyTimer;
 
         // A collection of timers used to send messages. Each simulated device
         // can send multiple messages, with different frequency.
@@ -114,7 +119,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         // when to execute the external script. The value is configured in
         // the device model.
         private TimeSpan deviceStateInterval;
-
+        
         // Info about the messages to generate and send
         private IList<DeviceModel.DeviceModelMessage> messages;
 
@@ -184,6 +189,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
             this.ActorStatus = Status.None;
             this.timer = this.factory.Resolve<ITimer>();
+            this.propertyTimer = this.factory.Resolve<ITimer>();
             this.cancellationCheckTimer = this.factory.Resolve<ITimer>();
             this.telemetryTimers = new List<ITimer>();
         }
@@ -344,12 +350,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     break;
 
                 case Status.UpdatingReportedProperties:
+                    // UpdateState Timer is not stopped as UpdatingDeviceState needs to continue to generate random telemetry for the device
                     this.ActorStatus = nextStatus;
-                    this.StopTimers();
                     this.log.Debug("Scheduling Reported Property updates", () => new { this.deviceId });
-                    this.timer.Setup(this.updateReportedProperties.Run, this, this.deviceStateInterval);
-                    this.timer.Start();
-                    this.ScheduleCancellationCheckIfRequired(this.deviceStateInterval);
+                    this.propertyTimer.Setup(this.updateReportedProperties.Run, this, desiredPropertyUpdateFrequency);
+                    this.propertyTimer.Start();
+                    this.ScheduleCancellationCheckIfRequired(desiredPropertyUpdateFrequency);
                     break;
 
                 case Status.SendingTelemetry:
@@ -412,6 +418,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         {
             this.log.Debug("Stopping timers", () => new { this.deviceId });
             this.timer.Stop();
+            this.propertyTimer.Stop();
             this.cancellationCheckTimer.Stop();
 
             foreach (var t in this.telemetryTimers) t.Stop();

@@ -17,6 +17,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     /// </summary>
     public class UpdateDeviceState : IDeviceStatusLogic
     {
+
+        private const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
         private readonly IScriptInterpreter scriptInterpreter;
         private readonly ILogger log;
         private string deviceId;
@@ -61,7 +63,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 return;
             }
 
-            // Compute new telemetry, find updated desired properties, push new reported property values.
+            this.log.Debug("Checking for the need to compute new telemetry", () => new { this.deviceId, deviceState = actor.DeviceState });
+
+            // Compute new telemetry.
             try
             {
                 var scriptContext = new Dictionary<string, object>
@@ -73,9 +77,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 // until the correlating function has been called; e.g. when increasepressure is called, don't write
                 // telemetry until decreasepressure is called for that property.
-                // TODO: make this property a constant
-                // https://github.com/Azure/device-simulation-dotnet/issues/46
-                if ((bool) actor.DeviceState["CalculateRandomizedTelemetry"])
+                if ((bool) actor.DeviceState[CALC_TELEMETRY])
                 {
                     this.log.Debug("Updating device telemetry data", () => new { this.deviceId, deviceState = actor.DeviceState });
                     lock (actor.DeviceState)
@@ -85,7 +87,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                             scriptContext,
                             actor.DeviceState);
                     }
-                    this.log.Debug("New device telemetry data", () => new { this.deviceId, deviceState = actor.DeviceState });
+                    this.log.Debug("New device telemetry data calculated", () => new { this.deviceId, deviceState = actor.DeviceState });
                 }
                 else
                 {
@@ -95,7 +97,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 }
 
 
-                // Start sending telemetry messages
+                // Move state machine forward to update properties and start sending telemetry messages
                 if (actor.ActorStatus == Status.UpdatingDeviceState)
                 {
                     actor.MoveNext();
@@ -103,7 +105,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 else
                 {
                     this.log.Debug(
-                        "Already sending telemetry, running local simulation and watching desired property changes",
+                        "Already moved state machine forward, running local simulation to generate new property values",
                         () => new { this.deviceId });
                 }
             }

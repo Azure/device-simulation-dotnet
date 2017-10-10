@@ -34,35 +34,59 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         public void Run(object context)
         {
-            this.ValidateSetup();
+            try { 
 
-            var actor = (IDeviceActor)context;
-            if (actor.CancellationToken.IsCancellationRequested)
-            {
-                actor.Stop();
-                return;
+                this.ValidateSetup();
+
+                var actor = (IDeviceActor)context;
+                if (actor.CancellationToken.IsCancellationRequested)
+                {
+                    actor.Stop();
+                    return;
+                }
+
+                //TODO: Here we should pause the timer in case the device takes too long to pull from the hub
+
+                this.log.Debug(
+                    "Checking for desired property updates & updated reported properties",
+                    () => new { this.deviceId, deviceState = actor.DeviceState
+                    });
+
+                // Get device
+                var device = this.GetDevice(actor.CancellationToken);
+                lock (actor.DeviceState)
+                {
+                    // check for differences between reported/desired properties,
+                    // update reported properties with any state changes (either from desired prop changes, methods, etc.)
+                    if (this.ChangeTwinPropertiesToMatchDesired(device, actor.DeviceState)
+                        || this.ChangeTwinPropertiesToMatchActorState(device, actor.DeviceState))
+                        actor.BootstrapClient.UpdateTwinAsync(device).Wait((int)connectionTimeout.TotalMilliseconds);
+                }
+
+
+                // Move state machine forward to start sending telemetry messages if needed
+                if (actor.ActorStatus == Status.UpdatingReportedProperties)
+                {
+                    actor.MoveNext();
+                }
+                else
+                {
+                    this.log.Debug(
+                        "Already moved state machine forward, continuing to check for desired property changes",
+                        () => new { this.deviceId });
+                }
+
             }
-            //TODO: Here we should pause the timer in case the device takes too long to pull from the hub
-
-            this.log.Debug(
-                "Checking for desired property updates & updated reported properties",
-                () => new { this.deviceId, deviceState = actor.DeviceState
-                });
-
-            // Get device
-            var device = this.GetDevice(actor.CancellationToken);
-            lock (actor.DeviceState)
+            catch (Exception e)
             {
-                // TODO: the device state update should be an in-memory task without network access, so we should move this
-                // logic out to a separate task/thread - https://github.com/Azure/device-simulation-dotnet/issues/47
-                // check for differences between reported/desired properties,
-                // update reported properties with any state changes (either from desired prop changes, methods, etc.)
-                if (this.ChangeTwinPropertiesToMatchDesired(device, actor.DeviceState)
-                    || this.ChangeTwinPropertiesToMatchActorState(device, actor.DeviceState))
-                    actor.BootstrapClient.UpdateTwinAsync(device).Wait((int)connectionTimeout.TotalMilliseconds);
+                this.log.Error("UpdateReportedProperties failed",
+                    () => new { this.deviceId, e.Message, Error = e.GetType().FullName});
             }
-            
-            //TODO: Here we should unpause the timer 
+            finally
+            {
+                //TODO: Here we should unpause the timer - this same thing should be done in all state machine methods
+
+            }
 
         }
 
