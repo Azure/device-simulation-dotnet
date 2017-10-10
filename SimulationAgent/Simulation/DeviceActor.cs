@@ -92,7 +92,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private static readonly TimeSpan retryBootstrappingFrequency = TimeSpan.FromSeconds(60);
 
         // Property Update frequency
-        private static readonly TimeSpan desiredPropertyUpdateFrequency = TimeSpan.FromSeconds(20);
+        private static readonly TimeSpan desiredPropertyUpdateFrequency = TimeSpan.FromSeconds(30);
 
         // When connecting or sending a message, timeout after 5 seconds
         private static readonly TimeSpan connectionTimeout = TimeSpan.FromSeconds(5);
