@@ -22,7 +22,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{71
 		device-simulation.sln.DotSettings = device-simulation.sln.DotSettings
 		LICENSE = LICENSE
 		README.md = README.md
-		version = version
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{2B58D756-04D5-427F-9161-E1B45D35682A}"

@@ -120,7 +120,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             public T Resolve<T>()
             {
-                container.Resolve<T>();
                 return container.Resolve<T>();
             }
         }
