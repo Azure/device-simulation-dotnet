@@ -9,6 +9,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         Connecting = 2,
         BootstrappingDevice = 3,
         UpdatingDeviceState = 4,
-        SendingTelemetry = 5
+        UpdatingReportedProperties = 5,
+        SendingTelemetry = 6
     }
 }

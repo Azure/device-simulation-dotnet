@@ -17,26 +17,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     /// </summary>
     public class UpdateDeviceState : IDeviceStatusLogic
     {
-        // When connecting to IoT Hub, timeout after 10 seconds
-        private static readonly TimeSpan connectionTimeout = TimeSpan.FromSeconds(10);
 
+        private const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
         private readonly IScriptInterpreter scriptInterpreter;
         private readonly ILogger log;
         private string deviceId;
         private DeviceModel deviceModel;
-        private IDevices devices;
 
         // Ensure that setup is called once and only once (which helps also detecting thread safety issues)
         private bool setupDone = false;
 
         public UpdateDeviceState(
-            IDevices devices,
             IScriptInterpreter scriptInterpreter,
             ILogger logger)
         {
             this.scriptInterpreter = scriptInterpreter;
             this.log = logger;
-            this.devices = devices;
         }
 
         public void Setup(string deviceId, DeviceModel deviceModel)
@@ -64,7 +60,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 return;
             }
 
-            // Compute new telemetry, find updated desired properties, push new reported property values.
+            this.log.Debug("Checking for the need to compute new telemetry", () => new { this.deviceId, deviceState = actor.DeviceState });
+
+            // Compute new telemetry.
             try
             {
                 var scriptContext = new Dictionary<string, object>
@@ -76,9 +74,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 // until the correlating function has been called; e.g. when increasepressure is called, don't write
                 // telemetry until decreasepressure is called for that property.
-                // TODO: make this property a constant
-                // https://github.com/Azure/device-simulation-dotnet/issues/46
-                if ((bool) actor.DeviceState["CalculateRandomizedTelemetry"])
+                if ((bool) actor.DeviceState[CALC_TELEMETRY])
                 {
                     this.log.Debug("Updating device telemetry data", () => new { this.deviceId, deviceState = actor.DeviceState });
                     lock (actor.DeviceState)
@@ -88,7 +84,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                             scriptContext,
                             actor.DeviceState);
                     }
-                    this.log.Debug("New device telemetry data", () => new { this.deviceId, deviceState = actor.DeviceState });
+                    this.log.Debug("New device telemetry data calculated", () => new { this.deviceId, deviceState = actor.DeviceState });
                 }
                 else
                 {
@@ -97,24 +93,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                         () => new { this.deviceId, deviceState = actor.DeviceState });
                 }
 
-                this.log.Debug(
-                    "Checking for desired property updates & updated reported properties",
-                    () => new { this.deviceId, deviceState = actor.DeviceState });
 
-                // Get device
-                var device = this.GetDevice(actor.CancellationToken);
-                lock (actor.DeviceState)
-                {
-                    // TODO: the device state update should be an in-memory task without network access, so we should move this
-                    // logic out to a separate task/thread - https://github.com/Azure/device-simulation-dotnet/issues/47
-                    // check for differences between reported/desired properties,
-                    // update reported properties with any state changes (either from desired prop changes, methods, etc.)
-                    if (this.ChangeTwinPropertiesToMatchDesired(device, actor.DeviceState)
-                        || this.ChangeTwinPropertiesToMatchActorState(device, actor.DeviceState))
-                        actor.BootstrapClient.UpdateTwinAsync(device).Wait((int) connectionTimeout.TotalMilliseconds);
-                }
-
-                // Start sending telemetry messages
+                // Move state machine forward to update properties and start sending telemetry messages
                 if (actor.ActorStatus == Status.UpdatingDeviceState)
                 {
                     actor.MoveNext();
@@ -122,7 +102,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 else
                 {
                     this.log.Debug(
-                        "Already sending telemetry, running local simulation and watching desired property changes",
+                        "Already moved state machine forward, running local simulation to generate new property values",
                         () => new { this.deviceId });
                 }
             }
@@ -133,57 +113,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             }
         }
 
-        private bool ChangeTwinPropertiesToMatchActorState(Device device, Dictionary<string, object> actorState)
-        {
-            bool differences = false;
-
-            foreach (var item in actorState)
-            {
-                if (device.Twin.ReportedProperties.ContainsKey(item.Key))
-                {
-                    if (device.Twin.ReportedProperties[item.Key].ToString() != actorState[item.Key].ToString())
-                    {
-                        // Update the Hub twin to match the actor state
-                        device.Twin.ReportedProperties[item.Key] = actorState[item.Key].ToString();
-                        differences = true;
-                    }
-                }
-            }
-
-            return differences;
-        }
-
-        private bool ChangeTwinPropertiesToMatchDesired(Device device, Dictionary<string, object> actorState)
-        {
-            bool differences = false;
-
-            foreach (var item in device.Twin.DesiredProperties)
-            {
-                if (device.Twin.ReportedProperties.ContainsKey(item.Key))
-                {
-                    if (device.Twin.ReportedProperties[item.Key].ToString() != device.Twin.DesiredProperties[item.Key].ToString())
-                    {
-                        // update the hub reported property to match match hub desired property
-                        device.Twin.ReportedProperties[item.Key] = device.Twin.DesiredProperties[item.Key];
-
-                        // update actor state property to match hub desired changes
-                        if (actorState.ContainsKey(item.Key))
-                            actorState[item.Key] = device.Twin.DesiredProperties[item.Key];
-
-                        differences = true;
-                    }
-                }
-            }
-
-            return differences;
-        }
-
-        private Device GetDevice(CancellationToken token)
-        {
-            var task = this.devices.GetAsync(this.deviceId);
-            task.Wait((int) connectionTimeout.TotalMilliseconds, token);
-            return task.Result;
-        }
 
         private void ValidateSetup()
         {
