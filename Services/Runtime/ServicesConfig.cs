@@ -11,13 +11,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         string IoTHubConnString { get; set; }
         string StorageAdapterApiUrl { get; set; }
         int StorageAdapterApiTimeout { get; set; }
+        IRateLimitingConfiguration RateLimiting { get; set; }
     }
 
     // TODO: test Windows/Linux folder separator
     public class ServicesConfig : IServicesConfig
     {
-        private string dtf = string.Empty;
-        private string dtbf = string.Empty;
+        private string dtf;
+        private string dtbf;
+
+        public ServicesConfig()
+        {
+            this.dtf = string.Empty;
+            this.dtbf = string.Empty;
+            this.RateLimiting = new RateLimitingConfiguration();
+        }
 
         public string DeviceModelsFolder
         {
@@ -36,6 +44,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         public string StorageAdapterApiUrl { get; set; }
 
         public int StorageAdapterApiTimeout { get; set; }
+
+        public IRateLimitingConfiguration RateLimiting { get; set; }
 
         private string NormalizePath(string path)
         {

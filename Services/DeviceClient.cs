@@ -45,6 +45,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IScriptInterpreter scriptInterpreter;
 
         //used to create method pointers for the device for the IoTHub to callback to
+        // ReSharper disable once NotAccessedField.Local
         private DeviceMethods deviceMethods;
 
         public DeviceClient(
