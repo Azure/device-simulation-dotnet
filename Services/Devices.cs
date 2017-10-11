@@ -3,6 +3,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -25,13 +26,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public class Devices : IDevices
     {
         private readonly ILogger log;
+        private readonly IRateLimiting rateLimiting;
         private readonly RegistryManager registry;
         private readonly string ioTHubHostName;
 
         public Devices(
+            IRateLimiting rateLimiting,
             IServicesConfig config,
             ILogger logger)
         {
+            this.rateLimiting = rateLimiting;
             this.log = logger;
             this.registry = RegistryManager.CreateFromConnectionString(config.IoTHubConnString);
             this.ioTHubHostName = IotHubConnectionStringBuilder.Create(config.IoTHubConnString).HostName;
@@ -42,7 +46,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             try
             {
-                await this.registry.GetDeviceAsync("healthcheck");
+                await this.rateLimiting.LimitRegistryOperationsAsync(
+                    () => this.registry.GetDeviceAsync("healthcheck"));
+                //await this.registry.GetDeviceAsync("healthcheck");
                 return new Tuple<bool, string>(true, "OK");
             }
             catch (Exception e)
@@ -82,8 +88,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             try
             {
-                var device = this.registry.GetDeviceAsync(deviceId);
-                var twin = this.registry.GetTwinAsync(deviceId);
+                var device = this.rateLimiting.LimitRegistryOperationsAsync(
+                    () => this.registry.GetDeviceAsync(deviceId));
+                //var device = this.registry.GetDeviceAsync(deviceId);
+
+                var twin = this.rateLimiting.LimitTwinReadOperationsAsync(
+                    () => this.registry.GetTwinAsync(deviceId));
+                //var twin = this.registry.GetTwinAsync(deviceId);
+
                 await Task.WhenAll(device, twin);
 
                 if (device.Result != null)
@@ -109,16 +121,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             this.log.Debug("Creating device", () => new { deviceId });
             var device = new Azure.Devices.Device(deviceId);
-            var azureDevice = await this.registry.AddDeviceAsync(device);
+
+            var azureDevice = await this.rateLimiting.LimitRegistryOperationsAsync(
+                () => this.registry.AddDeviceAsync(device));
+            //var azureDevice = await this.registry.AddDeviceAsync(device);
 
             this.log.Debug("Fetching device twin", () => new { azureDevice.Id });
-            var azureTwin = await this.registry.GetTwinAsync(azureDevice.Id);
+            var azureTwin = await this.rateLimiting.LimitTwinReadOperationsAsync(
+                () => this.registry.GetTwinAsync(azureDevice.Id));
+            //var azureTwin = await this.registry.GetTwinAsync(azureDevice.Id);
 
             this.log.Debug("Writing device twin", () => new { azureDevice.Id });
             azureTwin.Tags[DeviceTwin.SIMULATED_TAG_KEY] = DeviceTwin.SIMULATED_TAG_VALUE;
-            azureTwin = await this.registry.UpdateTwinAsync(azureDevice.Id, azureTwin, "*");
+            azureTwin = await this.rateLimiting.LimitTwinWriteOperationsAsync(
+                () => this.registry.UpdateTwinAsync(azureDevice.Id, azureTwin, "*"));
+            //azureTwin = await this.registry.UpdateTwinAsync(azureDevice.Id, azureTwin, "*");
 
             return new Device(azureDevice, azureTwin, this.ioTHubHostName);
+        }
+
+        private async Task<T> FooAsync<T>(Func<Task<T>> func)
+        {
+            return await func.Invoke();
         }
 
         private Azure.Devices.Client.DeviceClient GetDeviceSdkClient(Device device, IoTHubProtocol protocol)
