@@ -119,7 +119,7 @@ namespace Services.Test.Concurrency
          * starts slowing down the caller. The 41st event falls in the
          * 3rd second which would allow for 60 events. The 41st event is
          * used to force the test to run for at least 2 second, because
-         * the events from 21 to 40 will go through as a burst, without pausing.
+         * the events from 21 to 40 will go through as a burst, without pauses.
          * When calculating the speed obtained, ignore the 41st event
          * and verify that the speed is between 19 and 20 events per second.
          */
@@ -184,6 +184,12 @@ namespace Services.Test.Concurrency
             Assert.InRange(actualSpeed, EVENTS * 0.9, EVENTS);
         }
 
+        /**
+         * Another "realistic" scenario, where 1 event happens every 250 msecs
+         * as if there was some I/O. Differently then other tests, this
+         * avoid bursts on purpose to make sure the internal logic of the
+         * rating logic is keeping the internal queue status correct.
+         */
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItWorksWhenNoThrottlingIsNeeded()
         {
@@ -191,14 +197,15 @@ namespace Services.Test.Concurrency
             var target = new PerSecondCounter(10, "test", this.targetLogger);
 
             // Act
-            for (int i = 0; i < 10; i++)
+            var paused = false;
+            for (var i = 0; i < 10; i++)
             {
-                target.RateAsync().Wait(TEST_TIMEOUT);
+                paused = paused || target.RateAsync().Result;
                 Task.Delay(250).Wait();
             }
 
-            // Assert
-
+            // Assert - nothing happened
+            Assert.False(paused);
         }
 
         /**

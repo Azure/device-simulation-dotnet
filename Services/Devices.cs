@@ -48,7 +48,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 await this.rateLimiting.LimitRegistryOperationsAsync(
                     () => this.registry.GetDeviceAsync("healthcheck"));
-                //await this.registry.GetDeviceAsync("healthcheck");
                 return new Tuple<bool, string>(true, "OK");
             }
             catch (Exception e)
@@ -133,11 +132,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 () => this.registry.UpdateTwinAsync(azureDevice.Id, azureTwin, "*"));
 
             return new Device(azureDevice, azureTwin, this.ioTHubHostName);
-        }
-
-        private async Task<T> FooAsync<T>(Func<Task<T>> func)
-        {
-            return await func.Invoke();
         }
 
         private Azure.Devices.Client.DeviceClient GetDeviceSdkClient(Device device, IoTHubProtocol protocol)

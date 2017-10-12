@@ -27,11 +27,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             logger.Info("Simulation agent started", () => new { Uptime.ProcessId });
             logger.Info("Device Models folder: " + config.ServicesConfig.DeviceModelsFolder, () => { });
             logger.Info("Scripts folder:       " + config.ServicesConfig.DeviceModelsScriptsFolder, () => { });
+
             logger.Info("Connections per sec:  " + config.ServicesConfig.RateLimiting.ConnectionsPerSecond, () => { });
-            logger.Info("Messages per day:     " + config.ServicesConfig.RateLimiting.MessagesPerDay, () => { });
             logger.Info("Registry ops per sec: " + config.ServicesConfig.RateLimiting.RegistryOperationsPerMinute, () => { });
             logger.Info("Twin reads per sec:   " + config.ServicesConfig.RateLimiting.TwinReadsPerSecond, () => { });
             logger.Info("Twin writes per sec:  " + config.ServicesConfig.RateLimiting.TwinWritesPerSecond, () => { });
+
+            // Uncomment when implemented
+            //logger.Info("Messages per day:     " + config.ServicesConfig.RateLimiting.MessagesPerDay, () => { });
         }
     }
 }
