@@ -20,7 +20,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
         private const string DEVICE_MODELS_SCRIPTS_FOLDER_KEY = APPLICATION_KEY + "device_models_scripts_folder";
         private const string IOTHUB_CONNSTRING_KEY = APPLICATION_KEY + "iothub_connstring";
 
-        private const string IOTHUB_LIMITS_KEY = APPLICATION_KEY + ":RateLimiting:";
+        private const string IOTHUB_LIMITS_KEY = APPLICATION_KEY + "RateLimits:";
         private const string CONNECTIONS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "device_connections_per_second";
         private const string REGISTRYOPS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "registry_operations_per_minute";
         private const string MESSAGES_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "messages_per_day";

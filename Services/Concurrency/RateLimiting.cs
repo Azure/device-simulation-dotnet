@@ -2,16 +2,13 @@
 
 using System;
 using System.Threading.Tasks;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
     public interface IRateLimiting
     {
-        //Task<bool> LimitRegistryOperationsAsync();
-        //Task<bool> LimitTwinReadOperationsAsync();
-        //Task<bool> LimitTwinWriteOperationsAsync();
-
         Task<T> LimitRegistryOperationsAsync<T>(Func<Task<T>> func);
         Task<T> LimitTwinReadOperationsAsync<T>(Func<Task<T>> func);
         Task<T> LimitTwinWriteOperationsAsync<T>(Func<Task<T>> func);
@@ -19,20 +16,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
     public class RateLimiting : IRateLimiting
     {
-        private static string instanceId = "";
+        // Use separate objects to reduce internal contentions on the lock statement
 
-        // Use separate objects to reduce contentions
         private readonly PerMinuteCounter registryOperations;
-
         private readonly PerSecondCounter twinReadOperations;
         private readonly PerSecondCounter twinWriteOperations;
 
-        public RateLimiting(IRateLimitingConfiguration config)
+        public RateLimiting(
+            IRateLimitingConfiguration config,
+            ILogger log)
         {
-            MustBeSingleton();
-            this.registryOperations = new PerMinuteCounter(config.RegistryOperationsPerMinute);
-            this.twinReadOperations = new PerSecondCounter(config.TwinReadsPerSecond);
-            this.twinWriteOperations = new PerSecondCounter(config.TwinWritesPerSecond);
+            this.registryOperations = new PerMinuteCounter(
+                config.RegistryOperationsPerMinute, "Registry operations", log);
+
+            this.twinReadOperations = new PerSecondCounter(
+                config.TwinReadsPerSecond, "Twin reads", log);
+
+            this.twinWriteOperations = new PerSecondCounter(
+                config.TwinWritesPerSecond, "Twin writes", log);
+
+            // The class should be a singleton, if this appears more than once
+            // something is not setup correctly and the rating won't work.
+            // TODO: enforce the single instance, compatibly with the use of
+            //       Parallel.For in the simulation runner.
+            log.Info("Rate limiting started. This message should appear only once in the logs.", () => { });
         }
 
         public async Task<T> LimitRegistryOperationsAsync<T>(Func<Task<T>> func)
@@ -51,24 +58,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         {
             await this.twinWriteOperations.RateAsync();
             return await func.Invoke();
-        }
-
-        private static void MustBeSingleton()
-        {
-            CheckSingleton();
-            lock (instanceId)
-            {
-                CheckSingleton();
-                instanceId = Guid.NewGuid().ToString();
-            }
-        }
-
-        private static void CheckSingleton()
-        {
-            if (!string.IsNullOrEmpty(instanceId))
-            {
-                throw new ConcurrencyException("Only one instance of this class can be instantiated.");
-            }
         }
     }
 }
