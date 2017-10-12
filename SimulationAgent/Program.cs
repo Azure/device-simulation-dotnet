@@ -7,14 +7,14 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
-    /// <summary>Application entry point</summary>
+    // Application entry point
     public class Program
     {
         static void Main(string[] args)
         {
             var container = DependencyResolution.Setup();
 
-            // Print some useful information at bootstrap time
+            // Print some useful information
             PrintBootstrapInfo(container);
 
             container.Resolve<ISimulation>().RunAsync().Wait();
@@ -32,9 +32,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             logger.Info("Registry ops per sec: " + config.ServicesConfig.RateLimiting.RegistryOperationsPerMinute, () => { });
             logger.Info("Twin reads per sec:   " + config.ServicesConfig.RateLimiting.TwinReadsPerSecond, () => { });
             logger.Info("Twin writes per sec:  " + config.ServicesConfig.RateLimiting.TwinWritesPerSecond, () => { });
-
-            // Uncomment when implemented
-            //logger.Info("Messages per day:     " + config.ServicesConfig.RateLimiting.MessagesPerDay, () => { });
+            logger.Info("Messages per day:     " + config.ServicesConfig.RateLimiting.MessagesPerDay, () => { });
         }
     }
 }

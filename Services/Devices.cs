@@ -3,6 +3,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
+using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -18,9 +19,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     {
         Task<Tuple<bool, string>> PingRegistryAsync();
         IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter);
-        Task<Device> GetOrCreateAsync(string deviceId);
-        Task<Device> GetAsync(string deviceId);
-        Task<Device> CreateAsync(string deviceId);
+        Task<Device> GetOrCreateAsync(string deviceId, bool loadTwin);
+        Task<Device> GetAsync(string deviceId, bool loadTwin);
     }
 
     public class Devices : IDevices
@@ -59,15 +59,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter)
         {
-            Azure.Devices.Client.DeviceClient sdkClient = this.GetDeviceSdkClient(device, protocol);
-            return new DeviceClient(sdkClient, protocol, this.log, device.Id, scriptInterpreter);
+            return new DeviceClient(
+                this.GetDeviceSdkClient(device, protocol),
+                protocol,
+                this.rateLimiting,
+                this.log,
+                device.Id,
+                scriptInterpreter);
         }
 
-        public async Task<Device> GetOrCreateAsync(string deviceId)
+        public async Task<Device> GetOrCreateAsync(string deviceId, bool loadTwin)
         {
             try
             {
-                return await this.GetAsync(deviceId);
+                return await this.GetAsync(deviceId, loadTwin);
             }
             catch (ResourceNotFoundException)
             {
@@ -81,23 +86,37 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        public async Task<Device> GetAsync(string deviceId)
+        public async Task<Device> GetAsync(string deviceId, bool loadTwin)
         {
             Device result = null;
 
             try
             {
-                var device = this.rateLimiting.LimitRegistryOperationsAsync(
-                    () => this.registry.GetDeviceAsync(deviceId));
+                Azure.Devices.Device device = null;
+                Twin twin = null;
 
-                var twin = this.rateLimiting.LimitTwinReadOperationsAsync(
-                    () => this.registry.GetTwinAsync(deviceId));
-
-                await Task.WhenAll(device, twin);
-
-                if (device.Result != null)
+                if (loadTwin)
                 {
-                    result = new Device(device.Result, twin.Result, this.ioTHubHostName);
+                    var deviceTask = this.rateLimiting.LimitRegistryOperationsAsync(
+                        () => this.registry.GetDeviceAsync(deviceId));
+
+                    var twinTask = this.rateLimiting.LimitTwinReadsAsync(
+                        () => this.registry.GetTwinAsync(deviceId));
+
+                    await Task.WhenAll(deviceTask, twinTask);
+
+                    device = deviceTask.Result;
+                    twin = twinTask.Result;
+                }
+                else
+                {
+                    device = await this.rateLimiting.LimitRegistryOperationsAsync(
+                        () => this.registry.GetDeviceAsync(deviceId));
+                }
+
+                if (device != null)
+                {
+                    result = new Device(device, twin, this.ioTHubHostName);
                 }
             }
             catch (Exception e)
@@ -114,24 +133,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return result;
         }
 
-        public async Task<Device> CreateAsync(string deviceId)
+        private async Task<Device> CreateAsync(string deviceId)
         {
             this.log.Debug("Creating device", () => new { deviceId });
             var device = new Azure.Devices.Device(deviceId);
-
-            var azureDevice = await this.rateLimiting.LimitRegistryOperationsAsync(
+            device = await this.rateLimiting.LimitRegistryOperationsAsync(
                 () => this.registry.AddDeviceAsync(device));
 
-            this.log.Debug("Fetching device twin", () => new { azureDevice.Id });
-            var azureTwin = await this.rateLimiting.LimitTwinReadOperationsAsync(
-                () => this.registry.GetTwinAsync(azureDevice.Id));
+            // TODO: is there a way to set the id on creation, so we save one Read and one Write operation?
+            this.log.Debug("Fetching device twin", () => new { device.Id });
+            var twin = await this.rateLimiting.LimitTwinReadsAsync(
+                () => this.registry.GetTwinAsync(device.Id));
 
-            this.log.Debug("Writing device twin", () => new { azureDevice.Id });
-            azureTwin.Tags[DeviceTwin.SIMULATED_TAG_KEY] = DeviceTwin.SIMULATED_TAG_VALUE;
-            azureTwin = await this.rateLimiting.LimitTwinWriteOperationsAsync(
-                () => this.registry.UpdateTwinAsync(azureDevice.Id, azureTwin, "*"));
+            this.log.Debug("Writing device twin", () => new { device.Id });
+            twin.Tags[DeviceTwin.SIMULATED_TAG_KEY] = DeviceTwin.SIMULATED_TAG_VALUE;
+            twin = await this.rateLimiting.LimitTwinWritesAsync(
+                () => this.registry.UpdateTwinAsync(device.Id, twin, "*"));
 
-            return new Device(azureDevice, azureTwin, this.ioTHubHostName);
+            return new Device(device, twin, this.ioTHubHostName);
         }
 
         private Azure.Devices.Client.DeviceClient GetDeviceSdkClient(Device device, IoTHubProtocol protocol)

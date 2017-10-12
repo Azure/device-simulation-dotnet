@@ -94,6 +94,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.log.Debug("Simulated device properties updated", () => { });
         }
 
+        // TODO: we should set this on creation, so we save one Read and one Write operation
         private static bool IsTwinNotUpdated(Device device)
         {
             return !device.Twin.ReportedProperties.ContainsKey("Protocol")
@@ -103,7 +104,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         private Device GetDevice(CancellationToken token)
         {
-            var task = this.devices.GetAsync(this.deviceId);
+            var task = this.devices.GetAsync(this.deviceId, true);
             task.Wait((int) connectionTimeout.TotalMilliseconds, token);
             return task.Result;
         }

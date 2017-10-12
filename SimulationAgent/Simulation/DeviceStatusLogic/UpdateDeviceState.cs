@@ -22,9 +22,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         private readonly IScriptInterpreter scriptInterpreter;
         private readonly ILogger log;
+        private readonly IDevices devices;
         private string deviceId;
         private DeviceModel deviceModel;
-        private IDevices devices;
 
         // Ensure that setup is called once and only once (which helps also detecting thread safety issues)
         private bool setupDone = false;
@@ -180,7 +180,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         private Device GetDevice(CancellationToken token)
         {
-            var task = this.devices.GetAsync(this.deviceId);
+            var task = this.devices.GetAsync(this.deviceId, true);
             task.Wait((int) connectionTimeout.TotalMilliseconds, token);
             return task.Result;
         }

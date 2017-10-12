@@ -73,13 +73,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     {
                         this.log.Debug("Connect.Run calling this.devices.GetOrCreateAsync", () => new { this.deviceId, connectionTimeout.TotalMilliseconds });
 
-                        var task = this.devices.GetOrCreateAsync(this.deviceId);
+                        var task = this.devices.GetOrCreateAsync(this.deviceId, false);
                         task.Wait((int) connectionTimeout.TotalMilliseconds, actor.CancellationToken);
                         var device = task.Result;
 
                         this.log.Debug("Device credentials retrieved", () => new { this.deviceId });
 
                         actor.Client = this.devices.GetClient(device, this.protocol.Value, this.scriptInterpreter);
+                        actor.Client.ConnectAsync().Wait(connectionTimeout);
 
                         // Device Twin properties can be set only over MQTT, so we need a dedicated client
                         // for the bootstrap
@@ -91,6 +92,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                         {
                             // bootstrap client is used to call methods and must have a script interpreter associated w/ it.
                             actor.BootstrapClient = this.devices.GetClient(device, IoTHubProtocol.MQTT, this.scriptInterpreter);
+                            actor.BootstrapClient.ConnectAsync().Wait(connectionTimeout);
                         }
 
                         this.log.Debug("Connection successful", () => new { this.deviceId });
