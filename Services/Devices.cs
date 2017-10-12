@@ -25,6 +25,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
     public class Devices : IDevices
     {
+        // Whether to discard the twin created by the service when a device is created
+        // When discarding the twin, we save one Twin Read operation (i.e. don't need to fetch the ETag)
+        // TODO: when not discarding the twin, use the right ETag and manage conflicts
+        private const bool DISCARD_TWIN_ON_CREATION = true;
+
         private readonly ILogger log;
         private readonly IRateLimiting rateLimiting;
         private readonly RegistryManager registry;
@@ -140,13 +145,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             device = await this.rateLimiting.LimitRegistryOperationsAsync(
                 () => this.registry.AddDeviceAsync(device));
 
-            // TODO: is there a way to set the id on creation, so we save one Read and one Write operation?
-            this.log.Debug("Fetching device twin", () => new { device.Id });
-            var twin = await this.rateLimiting.LimitTwinReadsAsync(
-                () => this.registry.GetTwinAsync(device.Id));
+            var twin = new Twin();
+            if (!DISCARD_TWIN_ON_CREATION)
+            {
+                this.log.Debug("Fetching device twin", () => new { device.Id });
+                twin = await this.rateLimiting.LimitTwinReadsAsync(() => this.registry.GetTwinAsync(device.Id));
+            }
 
-            this.log.Debug("Writing device twin", () => new { device.Id });
+            this.log.Debug("Writing device twin an adding the `IsSimulated` Tag",
+                () => new { device.Id, DeviceTwin.SIMULATED_TAG_KEY, DeviceTwin.SIMULATED_TAG_VALUE });
             twin.Tags[DeviceTwin.SIMULATED_TAG_KEY] = DeviceTwin.SIMULATED_TAG_VALUE;
+
+            // TODO: when not discarding the twin, use the right ETag and manage conflicts
             twin = await this.rateLimiting.LimitTwinWritesAsync(
                 () => this.registry.UpdateTwinAsync(device.Id, twin, "*"));
 

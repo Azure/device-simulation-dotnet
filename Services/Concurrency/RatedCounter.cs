@@ -24,7 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         }
     }
 
-    // TODO: optimize the memory usage for this counter
+    // TODO: optimize the memory usage for this counter (see Queue<long> usage)
     public class PerDayCounter : RatedCounter
     {
         public PerDayCounter(double rate, string name, ILogger logger)
@@ -71,14 +71,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         {
             if (rate < MIN_RATE)
             {
-                var msg = "The counter rate value must be greater or equal to " + MIN_RATE;
+                var msg = "The counter rate value must be greater than or equal to " + MIN_RATE;
                 this.log.Error(msg, () => new { name, rate, timeUnitLength });
                 throw new InvalidConfigurationException(msg);
             }
 
             if (timeUnitLength < MIN_TIME_UNIT)
             {
-                var msg = "The counter time unit value must be greater or equal to " + MIN_TIME_UNIT;
+                var msg = "The counter time unit value must be greater than or equal to " + MIN_TIME_UNIT;
                 this.log.Error(msg, () => new { name, rate, timeUnitLength });
                 throw new InvalidConfigurationException(msg);
             }
@@ -98,6 +98,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             this.log.Debug("New counter", () => new { name, rate, timeUnitLength });
         }
 
+        // Increase the counter, taking a pause if the caller is going too fast.
+        // Return a boolean indicating whether a pause was required.
         public async Task<bool> IncreaseAsync()
         {
             long pause = 0;
@@ -115,7 +117,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 }
 
                 // How many events happened in the last time unit, and how many
-                // will happen (the queue can contain future timestamps)
+                // will happen next (the queue can contain future timestamps)
                 var count = this.timestamps.Count;
                 if (count < this.eventsPerTimeUnit)
                 {
@@ -132,12 +134,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 this.timestamps.Enqueue(nextTime);
             }
 
-            this.log.Debug("Pausing", () => new { this.name, millisecs = pause });
+            // The caller is send too many events, if this happens you
+            // should consider redesigning the simulation logic to run
+            // slower, rather than relying purley on the counter
             if (pause > 5000)
             {
                 if (pause > 60000)
                 {
-                    this.log.Error("The pause will last more than a minute",
+                    this.log.Warn("The pause will last more than a minute",
                         () => new { this.name, seconds = pause / 1000 });
                 }
                 else
@@ -147,6 +151,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 }
             }
 
+            this.log.Debug("Pausing", () => new { this.name, millisecs = pause });
             await Task.Delay((int) pause);
 
             return true;
