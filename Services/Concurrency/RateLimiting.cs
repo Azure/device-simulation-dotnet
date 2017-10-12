@@ -63,61 +63,61 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         public async Task<T> LimitConnectionsAsync<T>(Func<Task<T>> func)
         {
-            await this.connections.RateAsync();
+            await this.connections.IncreaseAsync();
             return await func.Invoke();
         }
 
         public async Task LimitConnectionsAsync(Func<Task> func)
         {
-            await this.connections.RateAsync();
+            await this.connections.IncreaseAsync();
             await func.Invoke();
         }
 
         public async Task<T> LimitRegistryOperationsAsync<T>(Func<Task<T>> func)
         {
-            await this.registryOperations.RateAsync();
+            await this.registryOperations.IncreaseAsync();
             return await func.Invoke();
         }
 
         public async Task LimitRegistryOperationsAsync(Func<Task> func)
         {
-            await this.registryOperations.RateAsync();
+            await this.registryOperations.IncreaseAsync();
             await func.Invoke();
         }
 
         public async Task<T> LimitTwinReadsAsync<T>(Func<Task<T>> func)
         {
-            await this.twinReads.RateAsync();
+            await this.twinReads.IncreaseAsync();
             return await func.Invoke();
         }
 
         public async Task LimitTwinReadsAsync(Func<Task> func)
         {
-            await this.twinReads.RateAsync();
+            await this.twinReads.IncreaseAsync();
             await func.Invoke();
         }
 
         public async Task<T> LimitTwinWritesAsync<T>(Func<Task<T>> func)
         {
-            await this.twinWrites.RateAsync();
+            await this.twinWrites.IncreaseAsync();
             return await func.Invoke();
         }
 
         public async Task LimitTwinWritesAsync(Func<Task> func)
         {
-            await this.twinWrites.RateAsync();
+            await this.twinWrites.IncreaseAsync();
             await func.Invoke();
         }
 
         public async Task<T> LimitMessagesAsync<T>(Func<Task<T>> func)
         {
-            await this.messaging.RateAsync();
+            await this.messaging.IncreaseAsync();
             return await func.Invoke();
         }
 
         public async Task LimitMessagesAsync(Func<Task> func)
         {
-            await this.messaging.RateAsync();
+            await this.messaging.IncreaseAsync();
             await func.Invoke();
         }
     }

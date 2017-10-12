@@ -42,7 +42,7 @@ namespace Services.Test.Concurrency
             var paused = false;
             for (var i = 0; i < EVENTS; i++)
             {
-                paused = paused || target.RateAsync().Result;
+                paused = paused || target.IncreaseAsync().Result;
             }
 
             // Assert
@@ -68,7 +68,7 @@ namespace Services.Test.Concurrency
             var paused = false;
             for (var i = 0; i < EVENTS; i++)
             {
-                paused = target.RateAsync().Result;
+                paused = target.IncreaseAsync().Result;
             }
 
             // Assert
@@ -100,7 +100,7 @@ namespace Services.Test.Concurrency
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             for (var i = 0; i < EVENTS; i++)
             {
-                target.RateAsync().Wait(TEST_TIMEOUT);
+                target.IncreaseAsync().Wait(TEST_TIMEOUT);
                 Thread.Sleep(100);
             }
 
@@ -140,7 +140,7 @@ namespace Services.Test.Concurrency
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             for (var i = 0; i < EVENTS; i++)
             {
-                target.RateAsync().Wait(TEST_TIMEOUT);
+                target.IncreaseAsync().Wait(TEST_TIMEOUT);
             }
 
             // Assert
@@ -173,7 +173,7 @@ namespace Services.Test.Concurrency
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             for (var i = 0; i < EVENTS; i++)
             {
-                target.RateAsync().Wait(TEST_TIMEOUT);
+                target.IncreaseAsync().Wait(TEST_TIMEOUT);
             }
 
             // Assert
@@ -200,7 +200,7 @@ namespace Services.Test.Concurrency
             var paused = false;
             for (var i = 0; i < 10; i++)
             {
-                paused = paused || target.RateAsync().Result;
+                paused = paused || target.IncreaseAsync().Result;
                 Task.Delay(250).Wait();
             }
 
@@ -232,7 +232,7 @@ namespace Services.Test.Concurrency
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             for (var i = 0; i < EVENTS; i++)
             {
-                target.RateAsync().Wait(TEST_TIMEOUT);
+                target.IncreaseAsync().Wait(TEST_TIMEOUT);
             }
 
             // Assert - the test should take ~5 seconds

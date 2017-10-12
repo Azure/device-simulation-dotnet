@@ -39,7 +39,7 @@ namespace Services.Test.Concurrency
             var paused = false;
             for (int i = 0; i < CALLS; i++)
             {
-                paused = paused || target.RateAsync().Result;
+                paused = paused || target.IncreaseAsync().Result;
             }
 
             // Assert - The counter never throttled the call
@@ -66,7 +66,7 @@ namespace Services.Test.Concurrency
             var pauses = 0;
             for (int i = 0; i < CALLS; i++)
             {
-                pauses += target.RateAsync().Result ? 1 : 0;
+                pauses += target.IncreaseAsync().Result ? 1 : 0;
             }
 
             // Assert - The counter throttled the call once

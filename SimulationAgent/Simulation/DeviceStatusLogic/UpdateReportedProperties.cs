@@ -1,15 +1,15 @@
-﻿using System;
+﻿// Copyright (c) Microsoft. All rights reserved.
+
+using System;
 using System.Collections.Generic;
-using System.Text;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using System.Threading;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic
 {
-
     public class UpdateReportedProperties : IDeviceStatusLogic
     {
         // When connecting to IoT Hub, timeout after 10 seconds
@@ -34,11 +34,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         public void Run(object context)
         {
-            try { 
-
+            try
+            {
                 this.ValidateSetup();
 
-                var actor = (IDeviceActor)context;
+                var actor = (IDeviceActor) context;
                 if (actor.CancellationToken.IsCancellationRequested)
                 {
                     actor.Stop();
@@ -49,7 +49,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 this.log.Debug(
                     "Checking for desired property updates & updated reported properties",
-                    () => new { this.deviceId, deviceState = actor.DeviceState
+                    () => new
+                    {
+                        this.deviceId,
+                        deviceState = actor.DeviceState
                     });
 
                 // Get device
@@ -71,8 +74,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     if (this.ChangeTwinPropertiesToMatchActorState(device, actor.DeviceState))
                         differences = true;
                 }
-                if(differences)
-                    actor.BootstrapClient.UpdateTwinAsync(device).Wait((int)connectionTimeout.TotalMilliseconds);
+                if (differences)
+                {
+                    actor.BootstrapClient.UpdateTwinAsync(device).Wait((int) connectionTimeout.TotalMilliseconds);
+                }
 
                 // Move state machine forward to start sending telemetry messages if needed
                 if (actor.ActorStatus == Status.UpdatingReportedProperties)
@@ -85,25 +90,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                         "Already moved state machine forward, continuing to check for desired property changes",
                         () => new { this.deviceId });
                 }
-
             }
             catch (Exception e)
             {
                 this.log.Error("UpdateReportedProperties failed",
-                    () => new { this.deviceId, e});
+                    () => new { this.deviceId, e });
             }
             finally
             {
                 //TODO: Here we should unpause the timer - this same thing should be done in all state machine methods
-
             }
-
         }
-
 
         public void Setup(string deviceId, DeviceModel deviceModel)
         {
-
             if (this.setupDone)
             {
                 this.log.Error("Setup has already been invoked, are you sharing this instance with multiple devices?",
@@ -114,7 +114,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.setupDone = true;
             this.deviceId = deviceId;
             this.deviceModel = deviceModel;
-
         }
 
         private bool ChangeTwinPropertiesToMatchActorState(Device device, Dictionary<string, object> actorState)
@@ -166,8 +165,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         private Device GetDevice(CancellationToken token)
         {
-            var task = this.devices.GetAsync(this.deviceId);
-            task.Wait((int)connectionTimeout.TotalMilliseconds, token);
+            var task = this.devices.GetAsync(this.deviceId, true);
+            task.Wait((int) connectionTimeout.TotalMilliseconds, token);
             return task.Result;
         }
 
@@ -181,5 +180,4 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             }
         }
     }
-
 }

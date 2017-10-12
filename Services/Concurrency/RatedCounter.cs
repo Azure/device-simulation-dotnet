@@ -98,7 +98,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             this.log.Debug("New counter", () => new { name, rate, timeUnitLength });
         }
 
-        public async Task<bool> RateAsync()
+        public async Task<bool> IncreaseAsync()
         {
             long pause = 0;
 
