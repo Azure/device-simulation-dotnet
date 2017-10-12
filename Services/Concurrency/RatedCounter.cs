@@ -8,19 +8,27 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
-    public class PerMinuteCounter : RatedCounter
-    {
-        //
-        public PerMinuteCounter(double rate, string name, ILogger logger)
-            : base(rate, 60000, name, logger)
-        {
-        }
-    }
-
     public class PerSecondCounter : RatedCounter
     {
         public PerSecondCounter(double rate, string name, ILogger logger)
             : base(rate, 1000, name, logger)
+        {
+        }
+    }
+
+    public class PerMinuteCounter : RatedCounter
+    {
+        public PerMinuteCounter(double rate, string name, ILogger logger)
+            : base(rate, 60 * 1000, name, logger)
+        {
+        }
+    }
+
+    // TODO: optimize the memory usage for this counter
+    public class PerDayCounter : RatedCounter
+    {
+        public PerDayCounter(double rate, string name, ILogger logger)
+            : base(rate, 86400 * 1000, name, logger)
         {
         }
     }
