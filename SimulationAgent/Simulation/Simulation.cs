@@ -58,7 +58,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                     // if the current simulation was asked to stop, stop it.
                     this.CheckForStopOrStartToSimulation();
-
                 }
                 catch (Exception e)
                 {
@@ -70,7 +69,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     this.log.Debug("----Current simulation being run------", () => { });
                     foreach (var model in this.simulation.DeviceModels)
                     {
-                        this.log.Debug("Device model:", () => model );
+                        this.log.Debug("Device model", () => new { model });
                     }
                 }
 
@@ -101,7 +100,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 if (this.simulation.Enabled)
                 {
                     this.runner.Start(this.simulation);
-                    this.log.Debug("----Started new simulation ------", () => this.simulation);
+                    this.log.Debug("----Started new simulation ------", () => new { this.simulation });
                 }
             }
         }
@@ -130,6 +129,5 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 this.runner.Start(this.simulation);
             }
         }
-
     }
 }

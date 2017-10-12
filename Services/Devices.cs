@@ -90,11 +90,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var device = this.rateLimiting.LimitRegistryOperationsAsync(
                     () => this.registry.GetDeviceAsync(deviceId));
-                //var device = this.registry.GetDeviceAsync(deviceId);
 
                 var twin = this.rateLimiting.LimitTwinReadOperationsAsync(
                     () => this.registry.GetTwinAsync(deviceId));
-                //var twin = this.registry.GetTwinAsync(deviceId);
 
                 await Task.WhenAll(device, twin);
 
@@ -124,18 +122,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             var azureDevice = await this.rateLimiting.LimitRegistryOperationsAsync(
                 () => this.registry.AddDeviceAsync(device));
-            //var azureDevice = await this.registry.AddDeviceAsync(device);
 
             this.log.Debug("Fetching device twin", () => new { azureDevice.Id });
             var azureTwin = await this.rateLimiting.LimitTwinReadOperationsAsync(
                 () => this.registry.GetTwinAsync(azureDevice.Id));
-            //var azureTwin = await this.registry.GetTwinAsync(azureDevice.Id);
 
             this.log.Debug("Writing device twin", () => new { azureDevice.Id });
             azureTwin.Tags[DeviceTwin.SIMULATED_TAG_KEY] = DeviceTwin.SIMULATED_TAG_VALUE;
             azureTwin = await this.rateLimiting.LimitTwinWriteOperationsAsync(
                 () => this.registry.UpdateTwinAsync(azureDevice.Id, azureTwin, "*"));
-            //azureTwin = await this.registry.UpdateTwinAsync(azureDevice.Id, azureTwin, "*");
 
             return new Device(azureDevice, azureTwin, this.ioTHubHostName);
         }
