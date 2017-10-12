@@ -57,7 +57,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 throw new TimerNotInitializedException();
             }
 
-            this.timer.Change((int)delay.TotalMilliseconds, this.frequency);
+            this.timer.Change((int) delay.TotalMilliseconds, this.frequency);
             return this;
         }
 

@@ -15,7 +15,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     /// </summary>
     public class UpdateDeviceState : IDeviceStatusLogic
     {
-
         private const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
         private readonly IScriptInterpreter scriptInterpreter;
         private readonly ILogger log;
@@ -91,7 +90,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                         () => new { this.deviceId, deviceState = actor.DeviceState });
                 }
 
-
                 // Move state machine forward to update properties and start sending telemetry messages
                 if (actor.ActorStatus == Status.UpdatingDeviceState)
                 {
@@ -110,7 +108,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     () => new { this.deviceId, e.Message, Error = e.GetType().FullName });
             }
         }
-
 
         private void ValidateSetup()
         {

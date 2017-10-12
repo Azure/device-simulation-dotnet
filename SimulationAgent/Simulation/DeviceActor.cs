@@ -104,6 +104,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         // A timer used for the action of the current state. It's used to
         // retry connecting, and to keep refreshing the device state.
         private readonly ITimer timer;
+
         // Time used to check for desired/reported property changes
         private readonly ITimer propertyTimer;
 
