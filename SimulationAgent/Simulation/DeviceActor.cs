@@ -119,7 +119,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         // when to execute the external script. The value is configured in
         // the device model.
         private TimeSpan deviceStateInterval;
-        
+
         // Info about the messages to generate and send
         private IList<DeviceModel.DeviceModelMessage> messages;
 

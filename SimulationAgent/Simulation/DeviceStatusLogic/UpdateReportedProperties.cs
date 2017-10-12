@@ -60,11 +60,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 var differences = false;
                 lock (actor.DeviceState)
                 {
-                    // TODO: the device model should define whether the local state or the 
+                    // TODO: the device model should define whether the local state or the
                     //       desired state wins, i.e.where is the master value
                     // https://github.com/Azure/device-simulation-dotnet/issues/76
 
-                    // update reported properties with any state changes (either from desired prop 
+                    // update reported properties with any state changes (either from desired prop
                     // changes, methods, etc.)
                     if (this.ChangeTwinPropertiesToMatchDesired(device, actor.DeviceState))
                         differences = true;
