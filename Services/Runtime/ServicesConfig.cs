@@ -15,6 +15,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
     }
 
     // TODO: test Windows/Linux folder separator
+    //       https://github.com/Azure/device-simulation-dotnet/issues/84
     public class ServicesConfig : IServicesConfig
     {
         private string dtf;

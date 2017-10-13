@@ -23,10 +23,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
         Task DeleteAsync(string collectionId, string key);
     }
 
-    // TODO: handle retriable errors
+    // TODO: handle retriable errors - https://github.com/Azure/device-simulation-dotnet/issues/89
     public class StorageAdapterClient : IStorageAdapterClient
     {
         // TODO: make it configurable, default to false
+        //       https://github.com/Azure/device-simulation-dotnet/issues/90
         private const bool ALLOW_INSECURE_SSL_SERVER = true;
 
         private readonly IHttpClient httpClient;

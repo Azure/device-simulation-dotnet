@@ -25,6 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
     }
 
     // TODO: optimize the memory usage for this counter (see Queue<long> usage)
+    //       https://github.com/Azure/device-simulation-dotnet/issues/80
     public class PerDayCounter : RatedCounter
     {
         public PerDayCounter(double rate, string name, ILogger logger)
@@ -34,6 +35,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
     }
 
     // Leaky bucket counter
+    // Note: all the time values are expressed in milliseconds
     public abstract class RatedCounter
     {
         // At least 1 second duration
@@ -43,7 +45,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         private const double MIN_RATE = 1;
 
         // Milliseconds in the time unit (e.g. 1 minute, 1 second, etc.)
-        // All the operations in the class are measured in milliseconds.
         private readonly double timeUnitLength;
 
         // The max frequency to enforce, e.g. the maximum number
@@ -127,6 +128,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 }
 
                 // Calculate when the next event is allowed to run, i.e. how long to pause
+                // Note: this.lastTimestamp might be a value in the future
                 var nextTime = (long) (this.lastTimestamp + this.timeUnitLength + this.eventInterval * (count - this.eventsPerTimeUnit));
                 pause = nextTime - now;
 
@@ -136,7 +138,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
             // The caller is send too many events, if this happens you
             // should consider redesigning the simulation logic to run
-            // slower, rather than relying purley on the counter
+            // slower, rather than relying purely on the counter
             if (pause > 5000)
             {
                 if (pause > 60000)

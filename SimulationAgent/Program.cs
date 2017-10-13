@@ -32,7 +32,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             logger.Info("Registry ops per sec: " + config.ServicesConfig.RateLimiting.RegistryOperationsPerMinute, () => { });
             logger.Info("Twin reads per sec:   " + config.ServicesConfig.RateLimiting.TwinReadsPerSecond, () => { });
             logger.Info("Twin writes per sec:  " + config.ServicesConfig.RateLimiting.TwinWritesPerSecond, () => { });
-            logger.Info("Messages per day:     " + config.ServicesConfig.RateLimiting.MessagesPerDay, () => { });
+            logger.Info("Messages per second:  " + config.ServicesConfig.RateLimiting.DeviceMessagesPerSecond, () => { });
+            logger.Info("Messages per day:     " + config.ServicesConfig.RateLimiting.DeviceMessagesPerDay, () => { });
         }
     }
 }

@@ -23,7 +23,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
         private const string IOTHUB_LIMITS_KEY = APPLICATION_KEY + "RateLimits:";
         private const string CONNECTIONS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "device_connections_per_second";
         private const string REGISTRYOPS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "registry_operations_per_minute";
-        private const string MESSAGES_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "messages_per_day";
+        private const string DEVICE_MESSAGES_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "device_to_cloud_messages_per_second";
+        private const string DEVICE_MESSAGES_DAILY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "device_to_cloud_messages_per_day";
         private const string TWIN_READS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "twin_reads_per_second";
         private const string TWIN_WRITES_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "twin_writes_per_second";
 
@@ -57,7 +58,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
             {
                 ConnectionsPerSecond = configData.GetDouble(CONNECTIONS_FREQUENCY_LIMIT_KEY),
                 RegistryOperationsPerMinute = configData.GetDouble(REGISTRYOPS_FREQUENCY_LIMIT_KEY),
-                MessagesPerDay = configData.GetDouble(MESSAGES_FREQUENCY_LIMIT_KEY),
+                DeviceMessagesPerSecond = configData.GetDouble(DEVICE_MESSAGES_FREQUENCY_LIMIT_KEY),
+                DeviceMessagesPerDay = configData.GetDouble(DEVICE_MESSAGES_DAILY_LIMIT_KEY),
                 TwinReadsPerSecond = configData.GetDouble(TWIN_READS_FREQUENCY_LIMIT_KEY),
                 TwinWritesPerSecond = configData.GetDouble(TWIN_WRITES_FREQUENCY_LIMIT_KEY)
             };

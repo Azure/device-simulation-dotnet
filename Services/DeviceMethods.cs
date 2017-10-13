@@ -75,6 +75,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     ["currentTime"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:sszzz"),
                     ["deviceId"] = this.deviceId,
                     // TODO: add "deviceModel" so that the method scripts can use it like the "state" scripts
+                    //       https://github.com/Azure/device-simulation-dotnet/issues/91
                     //["deviceModel"] = this.device.
                 };
                 if (methodRequest.DataAsJson != "null")
