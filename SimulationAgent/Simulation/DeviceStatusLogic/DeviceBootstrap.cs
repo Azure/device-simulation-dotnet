@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
@@ -13,26 +14,43 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 {
     public class DeviceBootstrap : IDeviceStatusLogic
     {
+        // Retry frequency when failing to bootstrap (methods registration excluded)
+        // The actual frequency is calculated considering the number of methods
+        private static readonly TimeSpan retryFrequency = TimeSpan.FromSeconds(60);
+
+        // Device method registration timeout
+        private const int METHOD_REGISTRATION_TIMEOUT_SECS = 10;
+
         // When connecting to IoT Hub, timeout after 10 seconds
         private static readonly TimeSpan connectionTimeout = TimeSpan.FromSeconds(10);
+
+        // Twin write timeout
+        private static readonly TimeSpan updateTwinTimeout = TimeSpan.FromSeconds(10);
 
         private readonly ILogger log;
         private readonly IDevices devices;
         private string deviceId;
         private DeviceModel deviceModel;
 
+        // The timer invoking the Run method
+        private readonly ITimer timer;
+
         // Ensure that setup is called once and only once (which helps also detecting thread safety issues)
         private bool setupDone = false;
 
+        private IDeviceActor context;
+
         public DeviceBootstrap(
+            ITimer timer,
             IDevices devices,
             ILogger logger)
         {
+            this.timer = timer;
             this.devices = devices;
             this.log = logger;
         }
 
-        public void Setup(string deviceId, DeviceModel deviceModel)
+        public void Setup(string deviceId, DeviceModel deviceModel, IDeviceActor context)
         {
             if (this.setupDone)
             {
@@ -40,19 +58,55 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     () => new { this.deviceId });
                 throw new DeviceActorAlreadyInitializedException();
             }
-            this.setupDone = true;
 
+            this.setupDone = true;
             this.deviceId = deviceId;
             this.deviceModel = deviceModel;
+
+            this.context = context;
+
+            // Calculate the timeout considering the number of methods to register
+            var retryPeriod = TimeSpan.FromSeconds(
+                retryFrequency.Seconds
+                + METHOD_REGISTRATION_TIMEOUT_SECS * this.deviceModel.CloudToDeviceMethods.Count);
+
+            this.timer.Setup(this.Run, retryPeriod);
+        }
+
+        public void Start()
+        {
+            this.log.Info("Starting DeviceBootstrap timer",
+                () => new { this.context.DeviceId });
+            this.timer.Start();
+        }
+
+        public void Stop()
+        {
+            this.log.Info("Starting DeviceBootstrap timer",
+                () => new { this.context.DeviceId });
+            this.timer.Stop();
         }
 
         public void Run(object context)
+        {
+            try
+            {
+                this.timer.Pause();
+                this.RunInternal();
+            }
+            finally
+            {
+                this.timer.Resume();
+            }
+        }
+
+        private void RunInternal()
         {
             this.ValidateSetup();
 
             try
             {
-                var actor = (IDeviceActor) context;
+                var actor = this.context;
                 if (actor.CancellationToken.IsCancellationRequested)
                 {
                     actor.MoveNext();
@@ -89,7 +143,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 device.SetReportedProperty(p.Key, new JValue(p.Value));
             }
 
-            client.UpdateTwinAsync(device).Wait((int) connectionTimeout.TotalMilliseconds, token);
+            client.UpdateTwinAsync(device).Wait((int) updateTwinTimeout.TotalMilliseconds, token);
 
             this.log.Debug("Simulated device properties updated", () => { });
         }

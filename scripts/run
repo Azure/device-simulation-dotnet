@@ -100,7 +100,7 @@ run_storageadapter() {
     echo "Starting storage adapter..."
     docker run -it -p 9022:9022 \
         -e PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING \
-        azureiotpcs/pcs-storage-adapter-dotnet
+        azureiotpcs/pcs-storage-adapter-dotnet:testing
 }
 
 if [[ "$1" == "--help" || "$1" == "-h" ]]; then
