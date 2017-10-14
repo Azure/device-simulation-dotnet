@@ -1,44 +1,100 @@
-﻿using System;
+﻿// Copyright (c) Microsoft. All rights reserved.
+
+using System;
 using System.Collections.Generic;
-using System.Text;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using System.Threading;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic.Models;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic
 {
-
     public class UpdateReportedProperties : IDeviceStatusLogic
     {
-        // When connecting to IoT Hub, timeout after 10 seconds
-        private static readonly TimeSpan connectionTimeout = TimeSpan.FromSeconds(10);
+        // Twin write timeout
+        private static readonly TimeSpan updateTwinTimeout = TimeSpan.FromSeconds(10);
 
-        private IDevices devices;
+        // Twin update frequency
+        private static readonly TimeSpan reportedPropertyUpdateFrequency = TimeSpan.FromSeconds(30);
+
+        private readonly IDevices devices;
         private string deviceId;
         private DeviceModel deviceModel;
+
+        // The timer invoking the Run method
+        private readonly ITimer timer;
 
         private readonly ILogger log;
 
         // Ensure that setup is called once and only once (which helps also detecting thread safety issues)
         private bool setupDone = false;
 
+        private IDeviceActor context;
+
         public UpdateReportedProperties(
+            ITimer timer,
             IDevices devices,
             ILogger logger)
         {
+            this.timer = timer;
             this.log = logger;
             this.devices = devices;
         }
 
+        public void Setup(string deviceId, DeviceModel deviceModel, IDeviceActor context)
+        {
+            if (this.setupDone)
+            {
+                this.log.Error("Setup has already been invoked, are you sharing this instance with multiple devices?",
+                    () => new { this.deviceId });
+                throw new DeviceActorAlreadyInitializedException();
+            }
+
+            this.setupDone = true;
+            this.deviceId = deviceId;
+            this.deviceModel = deviceModel;
+
+            this.context = context;
+            this.timer.Setup(this.Run, reportedPropertyUpdateFrequency);
+        }
+
+        public void Start()
+        {
+            this.log.Info("Starting UpdateReportedProperties timer",
+                () => new { this.context.DeviceId });
+            this.timer.Start();
+        }
+
+        public void Stop()
+        {
+            this.log.Info("Stopping UpdateReportedProperties timer",
+                () => new { this.context.DeviceId });
+            this.timer.Stop();
+        }
+
         public void Run(object context)
         {
-            try { 
+            try
+            {
+                this.timer.Pause();
+                this.RunInternal();
+            }
+            finally
+            {
+                this.timer.Resume();
+            }
+        }
 
+        private void RunInternal()
+        {
+            try
+            {
                 this.ValidateSetup();
 
-                var actor = (IDeviceActor)context;
+                var actor = this.context;
                 if (actor.CancellationToken.IsCancellationRequested)
                 {
                     actor.Stop();
@@ -49,7 +105,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 this.log.Debug(
                     "Checking for desired property updates & updated reported properties",
-                    () => new { this.deviceId, deviceState = actor.DeviceState
+                    () => new
+                    {
+                        this.deviceId,
+                        deviceState = actor.DeviceState
                     });
 
                 // Get device
@@ -57,11 +116,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 var differences = false;
                 lock (actor.DeviceState)
                 {
-                    // TODO: the device model should define whether the local state or the 
+                    // TODO: the device model should define whether the local state or the
                     //       desired state wins, i.e.where is the master value
                     // https://github.com/Azure/device-simulation-dotnet/issues/76
 
-                    // update reported properties with any state changes (either from desired prop 
+                    // update reported properties with any state changes (either from desired prop
                     // changes, methods, etc.)
                     if (this.ChangeTwinPropertiesToMatchDesired(device, actor.DeviceState))
                         differences = true;
@@ -71,8 +130,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     if (this.ChangeTwinPropertiesToMatchActorState(device, actor.DeviceState))
                         differences = true;
                 }
-                if(differences)
-                    actor.BootstrapClient.UpdateTwinAsync(device).Wait((int)connectionTimeout.TotalMilliseconds);
+
+                if (differences)
+                {
+                    actor.BootstrapClient.UpdateTwinAsync(device).Wait((int) updateTwinTimeout.TotalMilliseconds);
+                }
 
                 // Move state machine forward to start sending telemetry messages if needed
                 if (actor.ActorStatus == Status.UpdatingReportedProperties)
@@ -85,36 +147,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                         "Already moved state machine forward, continuing to check for desired property changes",
                         () => new { this.deviceId });
                 }
-
             }
             catch (Exception e)
             {
                 this.log.Error("UpdateReportedProperties failed",
-                    () => new { this.deviceId, e});
+                    () => new { this.deviceId, e });
             }
-            finally
-            {
-                //TODO: Here we should unpause the timer - this same thing should be done in all state machine methods
-
-            }
-
-        }
-
-
-        public void Setup(string deviceId, DeviceModel deviceModel)
-        {
-
-            if (this.setupDone)
-            {
-                this.log.Error("Setup has already been invoked, are you sharing this instance with multiple devices?",
-                    () => new { this.deviceId });
-                throw new DeviceActorAlreadyInitializedException();
-            }
-
-            this.setupDone = true;
-            this.deviceId = deviceId;
-            this.deviceModel = deviceModel;
-
         }
 
         private bool ChangeTwinPropertiesToMatchActorState(Device device, Dictionary<string, object> actorState)
@@ -166,8 +204,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         private Device GetDevice(CancellationToken token)
         {
-            var task = this.devices.GetAsync(this.deviceId);
-            task.Wait((int)connectionTimeout.TotalMilliseconds, token);
+            var task = this.devices.GetAsync(this.deviceId, true);
+            task.Wait((int) updateTwinTimeout.TotalMilliseconds, token);
             return task.Result;
         }
 
@@ -181,5 +219,4 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             }
         }
     }
-
 }

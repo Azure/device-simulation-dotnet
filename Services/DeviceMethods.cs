@@ -13,7 +13,6 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
-
     public class DeviceMethods
     {
         private static readonly TimeSpan retryMethodCallbackRegistration = TimeSpan.FromSeconds(10);

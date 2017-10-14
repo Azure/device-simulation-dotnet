@@ -10,9 +10,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
     {
         ITimer Start();
         ITimer StartIn(TimeSpan delay);
+        void Pause();
+        void Resume();
         void Stop();
-        ITimer Setup(Action<object> action, object context, TimeSpan frequency);
-        ITimer Setup(Action<object> action, object context, int frequency);
+        ITimer Setup(Action<object> action, TimeSpan frequency, object context = null);
+        ITimer Setup(Action<object> action, int frequency, object context = null);
     }
 
     public class Timer : ITimer
@@ -21,19 +23,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         private System.Threading.Timer timer;
         private int frequency;
+        private bool stopped;
 
         public Timer(ILogger logger)
         {
             this.log = logger;
             this.frequency = 0;
+            this.stopped = true;
         }
 
-        public ITimer Setup(Action<object> action, object context, TimeSpan frequency)
+        public ITimer Setup(Action<object> action, TimeSpan frequency, object context = null)
         {
-            return this.Setup(action, context, (int) frequency.TotalMilliseconds);
+            return this.Setup(action, (int) frequency.TotalMilliseconds, context);
         }
 
-        public ITimer Setup(Action<object> action, object context, int frequency)
+        public ITimer Setup(Action<object> action, int frequency, object context = null)
         {
             this.frequency = frequency;
             this.timer = new System.Threading.Timer(
@@ -46,6 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         public ITimer Start()
         {
+            this.stopped = false;
             return this.StartIn(TimeSpan.Zero);
         }
 
@@ -57,14 +62,32 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 throw new TimerNotInitializedException();
             }
 
-            this.timer.Change((int)delay.TotalMilliseconds, this.frequency);
+            this.stopped = false;
+            this.timer.Change((int) delay.TotalMilliseconds, this.frequency);
             return this;
+        }
+
+        public void Pause()
+        {
+            if (!this.stopped)
+            {
+                this.timer?.Change(Timeout.Infinite, this.frequency);
+            }
+        }
+
+        public void Resume()
+        {
+            if (!this.stopped)
+            {
+                this.timer?.Change(this.frequency, this.frequency);
+            }
         }
 
         public void Stop()
         {
             try
             {
+                this.stopped = true;
                 this.timer?.Change(Timeout.Infinite, Timeout.Infinite);
                 this.timer?.Dispose();
             }

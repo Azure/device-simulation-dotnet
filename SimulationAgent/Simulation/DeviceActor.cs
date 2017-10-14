@@ -9,12 +9,18 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic.Models;
 using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation
 {
     public interface IDeviceActor
     {
+        /// <summary>
+        /// Return the ID of the device managed by this actor
+        /// </summary>
+        string DeviceId { get; }
+
         /// <summary>
         /// Azure IoT Hub client shared by Connect and SendTelemetry
         /// </summary>
@@ -84,16 +90,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private const string DEVICE_ID_PREFIX = "Simulated.";
         private const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
 
-        // When the actor fails to connect to IoT Hub, it retries every 10 seconds
-        private static readonly TimeSpan retryConnectingFrequency = TimeSpan.FromSeconds(10);
-
-        // When the actor fails to bootstrap, it retries every 60 seconds - it is longer b/c in
-        // bootstrap we're registering methods which have a 10 second timeout apiece
-        private static readonly TimeSpan retryBootstrappingFrequency = TimeSpan.FromSeconds(60);
-
-        // Property Update frequency
-        private static readonly TimeSpan reportedPropertyUpdateFrequency = TimeSpan.FromSeconds(30);
-
         // When connecting or sending a message, timeout after 5 seconds
         private static readonly TimeSpan connectionTimeout = TimeSpan.FromSeconds(5);
 
@@ -101,46 +97,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         // if the simulation needs to stop
         private static readonly TimeSpan checkCancellationFrequency = TimeSpan.FromSeconds(10);
 
-        // A timer used for the action of the current state. It's used to
-        // retry connecting, and to keep refreshing the device state.
-        private readonly ITimer timer;
-        // Time used to check for desired/reported property changes
-        private readonly ITimer propertyTimer;
-
-        // A collection of timers used to send messages. Each simulated device
-        // can send multiple messages, with different frequency.
-        private List<ITimer> telemetryTimers;
-
         // A timer used to check whether the simulation stopped and the actor
         // should stop running.
         private readonly ITimer cancellationCheckTimer;
 
-        // How often the simulated device state needs to be updated, i.e.
-        // when to execute the external script. The value is configured in
-        // the device model.
-        private TimeSpan deviceStateInterval;
-        
-        // Info about the messages to generate and send
-        private IList<DeviceModel.DeviceModelMessage> messages;
-
         // ID of the simulated device, used with Azure IoT Hub
-        private string deviceId;
 
         private readonly ILogger log;
-
-        // DI factory used to instantiate timers
-        private readonly DependencyResolution.IFactory factory;
 
         // Ensure that setup is called only once, to keep the actor thread safe
         private bool setupDone = false;
 
-        // State machine logic, each of the following has a Run() method
-        private readonly Connect connectLogic;
+        // ""State machine"" logic, each of the following tasks havae a Run()
+        // method and some tasks can be active at the same time
 
-        private readonly UpdateDeviceState updateDeviceStateLogic;
-        private readonly DeviceBootstrap deviceBootstrapLogic;
-        private readonly SendTelemetry sendTelemetryLogic;
-        private readonly UpdateReportedProperties updateReportedPropertiesLogic;
+        private readonly IDeviceStatusLogic connectLogic;
+        private readonly IDeviceStatusLogic deviceBootstrapLogic;
+        private readonly IDeviceStatusLogic updateDeviceStateLogic;
+        private readonly IDeviceStatusLogic updateReportedPropertiesLogic;
+        private readonly IDeviceStatusLogic sendTelemetryLogic;
+
+        public string DeviceId { get; private set; }
 
         /// <summary>
         /// Azure IoT Hub client shared by Connect and SendTelemetry
@@ -177,21 +154,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         public DeviceActor(
             ILogger logger,
-            DependencyResolution.IFactory factory)
+            Connect connectLogic,
+            DeviceBootstrap deviceBootstrapLogic,
+            UpdateDeviceState updateDeviceStateLogic,
+            UpdateReportedProperties updateReportedPropertiesLogic,
+            SendTelemetry sendTelemetryLogic,
+            ITimer cancellationCheckTimer)
         {
             this.log = logger;
-            this.deviceBootstrapLogic = factory.Resolve<DeviceBootstrap>();
-            this.connectLogic = factory.Resolve<Connect>();
-            this.updateDeviceStateLogic = factory.Resolve<UpdateDeviceState>();
-            this.sendTelemetryLogic = factory.Resolve<SendTelemetry>();
-            this.updateReportedPropertiesLogic = factory.Resolve<UpdateReportedProperties>();
-            this.factory = factory;
+
+            this.connectLogic = connectLogic;
+            this.deviceBootstrapLogic = deviceBootstrapLogic;
+            this.updateDeviceStateLogic = updateDeviceStateLogic;
+            this.updateReportedPropertiesLogic = updateReportedPropertiesLogic;
+            this.sendTelemetryLogic = sendTelemetryLogic;
+
+            this.cancellationCheckTimer = cancellationCheckTimer;
 
             this.ActorStatus = Status.None;
-            this.timer = this.factory.Resolve<ITimer>();
-            this.propertyTimer = this.factory.Resolve<ITimer>();
-            this.cancellationCheckTimer = this.factory.Resolve<ITimer>();
-            this.telemetryTimers = new List<ITimer>();
         }
 
         /// <summary>
@@ -208,7 +188,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 this.log.Error("The actor is already initialized",
                     () => new
                     {
-                        CurrentDeviceId = this.deviceId,
+                        CurrentDeviceId = this.DeviceId,
                         NewDeviceModelName = deviceModel.Name,
                         NewDeviceModelId = deviceModel.Id,
                         NewPosition = position
@@ -218,20 +198,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
             this.setupDone = true;
 
-            this.deviceId = DEVICE_ID_PREFIX + deviceModel.Id + "." + position;
-            this.messages = deviceModel.Telemetry;
+            this.DeviceId = DEVICE_ID_PREFIX + deviceModel.Id + "." + position;
 
-            this.deviceStateInterval = deviceModel.Simulation.Script.Interval;
             this.DeviceState = this.SetupTelemetryAndProperties(deviceModel);
-            this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState });
+            this.log.Debug("Initial device state", () => new { this.DeviceId, this.DeviceState });
 
-            this.connectLogic.Setup(this.deviceId, deviceModel);
-            this.updateDeviceStateLogic.Setup(this.deviceId, deviceModel);
-            this.deviceBootstrapLogic.Setup(this.deviceId, deviceModel);
-            this.sendTelemetryLogic.Setup(this.deviceId, deviceModel);
-            this.updateReportedPropertiesLogic.Setup(this.deviceId, deviceModel);
+            this.connectLogic.Setup(this.DeviceId, deviceModel, this);
+            this.updateDeviceStateLogic.Setup(this.DeviceId, deviceModel, this);
+            this.deviceBootstrapLogic.Setup(this.DeviceId, deviceModel, this);
+            this.sendTelemetryLogic.Setup(this.DeviceId, deviceModel, this);
+            this.updateReportedPropertiesLogic.Setup(this.DeviceId, deviceModel, this);
 
-            this.log.Debug("Setup complete", () => new { this.deviceId });
+            this.log.Debug("Setup complete", () => new { this.DeviceId });
             this.MoveNext();
 
             return this;
@@ -268,7 +246,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             switch (this.ActorStatus)
             {
                 default:
-                    this.log.Debug("The actor already started", () => new { this.deviceId });
+                    this.log.Debug("The actor already started", () => new { this.DeviceId });
                     break;
 
                 case Status.None:
@@ -276,8 +254,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     throw new DeviceActorNotInitializedException();
 
                 case Status.Ready:
+                    this.StartCancellationCheck();
                     this.CancellationToken = token;
-                    this.log.Debug("Starting...", () => new { this.deviceId });
+                    this.log.Debug("Starting...", () => new { this.DeviceId });
                     this.MoveNext();
                     break;
             }
@@ -294,11 +273,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             try
             {
                 this.log.Debug("Stopping actor", () => { });
-                this.StopTimers();
+
+                this.StopCancellationCheck();
+                this.connectLogic.Stop();
+                this.deviceBootstrapLogic.Stop();
+                this.updateDeviceStateLogic.Stop();
+                this.updateReportedPropertiesLogic.Stop();
+
                 this.Client?.DisconnectAsync().Wait(connectionTimeout);
                 this.BootstrapClient?.DisconnectAsync().Wait(connectionTimeout);
                 this.ActorStatus = Status.Ready;
-                this.log.Debug("Stopped", () => new { this.deviceId });
+                this.log.Debug("Stopped", () => new { this.DeviceId });
             }
             catch (Exception e)
             {
@@ -314,7 +299,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         {
             var nextStatus = this.ActorStatus + 1;
             this.log.Debug("Changing actor state to " + nextStatus,
-                () => new { this.deviceId, ActorStatus = this.ActorStatus.ToString(), nextStatus = nextStatus.ToString() });
+                () => new { this.DeviceId, ActorStatus = this.ActorStatus.ToString(), nextStatus = nextStatus.ToString() });
 
             switch (nextStatus)
             {
@@ -324,64 +309,52 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 case Status.Connecting:
                     this.ActorStatus = nextStatus;
-                    this.StopTimers();
-                    this.log.Debug("Scheduling connectLogic", () => new { this.deviceId });
-                    this.timer.Setup(this.connectLogic.Run, this, retryConnectingFrequency);
-                    this.timer.Start();
-                    this.ScheduleCancellationCheckIfRequired(retryConnectingFrequency);
+                    this.connectLogic.Start();
                     break;
 
                 case Status.BootstrappingDevice:
                     this.ActorStatus = nextStatus;
-                    this.StopTimers();
-                    this.log.Debug("Scheduling deviceBootstrapLogic", () => new { this.deviceId });
-                    this.timer.Setup(this.deviceBootstrapLogic.Run, this, retryBootstrappingFrequency);
-                    this.timer.Start();
-                    this.ScheduleCancellationCheckIfRequired(retryBootstrappingFrequency);
+                    this.connectLogic.Stop();
+                    this.deviceBootstrapLogic.Start();
                     break;
 
                 case Status.UpdatingDeviceState:
                     this.ActorStatus = nextStatus;
-                    this.StopTimers();
-                    this.log.Debug("Scheduling updateDeviceStateLogic", () => new { this.deviceId });
-                    this.timer.Setup(this.updateDeviceStateLogic.Run, this, this.deviceStateInterval);
-                    this.timer.Start();
-                    this.ScheduleCancellationCheckIfRequired(this.deviceStateInterval);
+                    this.deviceBootstrapLogic.Stop();
+                    this.updateDeviceStateLogic.Start();
                     break;
 
                 case Status.UpdatingReportedProperties:
-                    // UpdateState Timer is not stopped as UpdatingDeviceState needs to continue to generate random telemetry for the device
                     this.ActorStatus = nextStatus;
-                    this.log.Debug("Scheduling Reported Property updates", () => new { this.deviceId });
-                    this.propertyTimer.Setup(this.updateReportedPropertiesLogic.Run, this, reportedPropertyUpdateFrequency);
-                    this.propertyTimer.Start();
-                    this.ScheduleCancellationCheckIfRequired(reportedPropertyUpdateFrequency);
+                    this.updateReportedPropertiesLogic.Start();
+                    // Note: at this point both UpdatingDeviceState
+                    //       and UpdatingReportedProperties should be running
                     break;
 
                 case Status.SendingTelemetry:
                     this.ActorStatus = nextStatus;
-                    foreach (var message in this.messages)
-                    {
-                        var telemetryTimer = this.factory.Resolve<ITimer>();
-                        this.telemetryTimers.Add(telemetryTimer);
-                        var callContext = new SendTelemetryContext
-                        {
-                            Self = this,
-                            Message = message
-                        };
-
-                        this.log.Debug("Scheduling sendTelemetryLogic", () =>
-                            new { this.deviceId, message.Interval.TotalSeconds, message.MessageSchema.Name, message.MessageTemplate });
-
-                        telemetryTimer.Setup(this.sendTelemetryLogic.Run, callContext, message.Interval);
-                        telemetryTimer.StartIn(message.Interval);
-                    }
+                    this.sendTelemetryLogic.Start();
+                    // Note: at this point
+                    //       UpdatingDeviceState, UpdatingReportedProperties and SendingTelemetry
+                    //       should be running
                     break;
                 default:
                     this.log.Error("Unknown next status",
-                        () => new { this.deviceId, this.ActorStatus, nextStatus });
+                        () => new { this.DeviceId, this.ActorStatus, nextStatus });
                     throw new ArgumentOutOfRangeException();
             }
+        }
+
+        // Check if the user asks to stop the simulation
+        private void StartCancellationCheck()
+        {
+            this.cancellationCheckTimer.Setup(CancellationCheck, checkCancellationFrequency, this);
+            this.cancellationCheckTimer.Start();
+        }
+
+        private void StopCancellationCheck()
+        {
+            this.cancellationCheckTimer.Stop();
         }
 
         /// <summary>
@@ -397,32 +370,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             {
                 self.Stop();
             }
-        }
-
-        /// <summary>
-        /// Check whether a second timer is required, to periodically check if
-        /// the user asks to stop the simulation. The extra timer is needed
-        /// when the actor remains inactive for long periods, for example when
-        /// sending telemetry every 5 minutes.
-        /// </summary>
-        private void ScheduleCancellationCheckIfRequired(TimeSpan curr)
-        {
-            if (curr > checkCancellationFrequency)
-            {
-                this.cancellationCheckTimer.Setup(CancellationCheck, this, checkCancellationFrequency);
-                this.cancellationCheckTimer.Start();
-            }
-        }
-
-        private void StopTimers()
-        {
-            this.log.Debug("Stopping timers", () => new { this.deviceId });
-            this.timer.Stop();
-            this.propertyTimer.Stop();
-            this.cancellationCheckTimer.Stop();
-
-            foreach (var t in this.telemetryTimers) t.Stop();
-            this.telemetryTimers = new List<ITimer>();
         }
 
         /// <summary>Copy an object by value</summary>
