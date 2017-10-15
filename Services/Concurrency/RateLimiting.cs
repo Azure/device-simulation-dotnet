@@ -33,7 +33,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         private readonly PerMinuteCounter registryOperations;
         private readonly PerSecondCounter twinReads;
         private readonly PerSecondCounter twinWrites;
-        private readonly PerDayCounter messaging;
+        private readonly PerSecondCounter messaging;
+        private readonly PerDayCounter messagingDaily;
 
         public RateLimiting(
             IRateLimitingConfiguration config,
@@ -51,13 +52,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             this.twinWrites = new PerSecondCounter(
                 config.TwinWritesPerSecond, "Twin writes", log);
 
-            this.messaging = new PerDayCounter(
-                config.MessagesPerDay, "Messages", log);
+            this.messaging = new PerSecondCounter(
+                config.DeviceMessagesPerSecond, "Device msg/sec", log);
+
+            this.messagingDaily = new PerDayCounter(
+                config.DeviceMessagesPerDay, "Device msg/day", log);
 
             // The class should be a singleton, if this appears more than once
             // something is not setup correctly and the rating won't work.
             // TODO: enforce the single instance, compatibly with the use of
             //       Parallel.For in the simulation runner.
+            //       https://github.com/Azure/device-simulation-dotnet/issues/79
             log.Info("Rate limiting started. This message should appear only once in the logs.", () => { });
         }
 
@@ -112,12 +117,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         public async Task<T> LimitMessagesAsync<T>(Func<Task<T>> func)
         {
             await this.messaging.IncreaseAsync();
+            await this.messagingDaily.IncreaseAsync();
             return await func.Invoke();
         }
 
         public async Task LimitMessagesAsync(Func<Task> func)
         {
             await this.messaging.IncreaseAsync();
+            await this.messagingDaily.IncreaseAsync();
             await func.Invoke();
         }
     }

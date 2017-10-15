@@ -63,7 +63,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             builder.RegisterInstance(config.ServicesConfig.RateLimiting).As<IRateLimitingConfiguration>().SingleInstance();
 
             // Instantiate only one logger
-            // TODO: read log level from configuration
+            // TODO: read log level from configuration - https://github.com/Azure/device-simulation-dotnet/issues/43
             var logger = new Logger(Uptime.ProcessId, LogLevel.Debug);
             builder.RegisterInstance(logger).As<ILogger>().SingleInstance();
 

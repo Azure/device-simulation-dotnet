@@ -28,6 +28,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Whether to discard the twin created by the service when a device is created
         // When discarding the twin, we save one Twin Read operation (i.e. don't need to fetch the ETag)
         // TODO: when not discarding the twin, use the right ETag and manage conflicts
+        //       https://github.com/Azure/device-simulation-dotnet/issues/83
         private const bool DISCARD_TWIN_ON_CREATION = true;
 
         private readonly ILogger log;
@@ -157,6 +158,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             twin.Tags[DeviceTwin.SIMULATED_TAG_KEY] = DeviceTwin.SIMULATED_TAG_VALUE;
 
             // TODO: when not discarding the twin, use the right ETag and manage conflicts
+            //       https://github.com/Azure/device-simulation-dotnet/issues/83
             twin = await this.rateLimiting.LimitTwinWritesAsync(
                 () => this.registry.UpdateTwinAsync(device.Id, twin, "*"));
 

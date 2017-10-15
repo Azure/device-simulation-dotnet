@@ -125,6 +125,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                         // Device Twin properties can be set only over MQTT, so we need a dedicated client
                         // for the bootstrap
+                        // TODO: allow to use AMQP https://github.com/Azure/device-simulation-dotnet/issues/92
                         if (actor.Client.Protocol == IoTHubProtocol.MQTT)
                         {
                             actor.BootstrapClient = actor.Client;

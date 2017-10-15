@@ -76,6 +76,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             if (this.client != null && !this.connected)
             {
                 // TODO: HTTP clients don't "connect", find out how HTTP connections are measured and throttled
+                //       https://github.com/Azure/device-simulation-dotnet/issues/85
                 await this.rateLimiting.LimitConnectionsAsync(() => this.client.OpenAsync());
                 this.connected = true;
             }

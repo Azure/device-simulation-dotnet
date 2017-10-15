@@ -200,12 +200,10 @@ namespace Services.Test.Concurrency
             var paused = false;
             for (var i = 0; i < 10; i++)
             {
-                paused = paused || target.IncreaseAsync().Result;
+                // Assert - there was no pause
+                Assert.False(target.IncreaseAsync().Result);
                 Task.Delay(250).Wait();
             }
-
-            // Assert - nothing happened
-            Assert.False(paused);
         }
 
         /**

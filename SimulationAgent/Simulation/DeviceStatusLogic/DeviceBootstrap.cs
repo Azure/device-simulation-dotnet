@@ -149,6 +149,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         }
 
         // TODO: we should set this on creation, so we save one Read and one Write operation
+        //       https://github.com/Azure/device-simulation-dotnet/issues/88
         private static bool IsTwinNotUpdated(Device device)
         {
             return !device.Twin.ReportedProperties.ContainsKey("Protocol")
