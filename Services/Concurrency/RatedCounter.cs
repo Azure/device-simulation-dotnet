@@ -12,7 +12,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
     public class PerSecondCounter : RatedCounter
     {
-        public PerSecondCounter(double rate, string name, ILogger logger)
+        public PerSecondCounter(int rate, string name, ILogger logger)
             : base(rate, 1000, name, logger)
         {
         }
@@ -20,7 +20,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
     public class PerMinuteCounter : RatedCounter
     {
-        public PerMinuteCounter(double rate, string name, ILogger logger)
+        public PerMinuteCounter(int rate, string name, ILogger logger)
             : base(rate, 60 * 1000, name, logger)
         {
         }
@@ -30,7 +30,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
     //       https://github.com/Azure/device-simulation-dotnet/issues/80
     public class PerDayCounter : RatedCounter
     {
-        public PerDayCounter(double rate, string name, ILogger logger)
+        public PerDayCounter(int rate, string name, ILogger logger)
             : base(rate, 86400 * 1000, name, logger)
         {
             throw new NotSupportedException("Daily counters are not supported yet due to memory constraints.");
@@ -52,7 +52,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         // The max frequency to enforce, e.g. the maximum number
         // of events allowed within a minute, a second, etc.
-        private readonly long eventsPerTimeUnit;
+        private readonly int eventsPerTimeUnit;
 
         // A description used for diagnostics logs
         private readonly string name;
@@ -64,7 +64,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         //       monitor, so this is a good place for future optimizations
         private readonly Queue<long> timestamps;
 
-        public RatedCounter(double rate, double timeUnitLength, string name, ILogger logger)
+        public RatedCounter(int rate, double timeUnitLength, string name, ILogger logger)
         {
             if (rate < MIN_RATE)
             {
@@ -83,7 +83,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             this.name = name;
             this.log = logger;
 
-            this.eventsPerTimeUnit = (long) rate;
+            this.eventsPerTimeUnit = rate;
             this.timeUnitLength = timeUnitLength;
 
             this.timestamps = new Queue<long>();

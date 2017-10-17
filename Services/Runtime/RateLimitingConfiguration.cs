@@ -4,21 +4,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 {
     public interface IRateLimitingConfiguration
     {
-        double RegistryOperationsPerMinute { get; set; }
-        double TwinReadsPerSecond { get; set; }
-        double TwinWritesPerSecond { get; set; }
-        double ConnectionsPerSecond { get; set; }
-        double DeviceMessagesPerSecond { get; set; }
-        double DeviceMessagesPerDay { get; set; }
+        int RegistryOperationsPerMinute { get; set; }
+        int TwinReadsPerSecond { get; set; }
+        int TwinWritesPerSecond { get; set; }
+        int ConnectionsPerSecond { get; set; }
+        int DeviceMessagesPerSecond { get; set; }
+        int DeviceMessagesPerDay { get; set; }
     }
 
     public class RateLimitingConfiguration : IRateLimitingConfiguration
     {
-        public double RegistryOperationsPerMinute { get; set; }
-        public double TwinReadsPerSecond { get; set; }
-        public double TwinWritesPerSecond { get; set; }
-        public double ConnectionsPerSecond { get; set; }
-        public double DeviceMessagesPerSecond { get; set; }
-        public double DeviceMessagesPerDay { get; set; }
+        public int RegistryOperationsPerMinute { get; set; }
+        public int TwinReadsPerSecond { get; set; }
+        public int TwinWritesPerSecond { get; set; }
+        public int ConnectionsPerSecond { get; set; }
+        public int DeviceMessagesPerSecond { get; set; }
+        public int DeviceMessagesPerDay { get; set; }
     }
 }
