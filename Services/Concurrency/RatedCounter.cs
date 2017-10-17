@@ -124,15 +124,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 if (howManyInTheLastTimeUnit < this.eventsPerTimeUnit)
                 {
                     when = Math.Max(this.timestamps.Last(), now);
-                    pause = now - when;
                 }
                 else
                 {
                     // Add one [time unit] since when the Nth event ran
-                    var oneUnitTimeAgo = this.timestamps.ElementAt(this.timestamps.Count - (int) this.eventsPerTimeUnit);
+                    var oneUnitTimeAgo = this.timestamps.ElementAt(this.timestamps.Count - this.eventsPerTimeUnit);
                     when = oneUnitTimeAgo + (long) this.timeUnitLength;
-                    pause = when - now;
                 }
+
+                pause = when - now;
 
                 this.timestamps.Enqueue(when);
 
