@@ -1,10 +1,11 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
@@ -20,18 +21,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     public class Connect : IDeviceStatusLogic
     {
         // Retry frequency when failing to connect
-        private static readonly TimeSpan retryFrequency = TimeSpan.FromSeconds(10);
-
-        // Device client connection timeout
-        private static readonly TimeSpan connectionTimeout = TimeSpan.FromSeconds(5);
-
-        // Device registry fetch/creation timeout
-        private static readonly TimeSpan getDeviceTimeout = TimeSpan.FromSeconds(5);
+        private const int RETRY_FREQUENCY_MSECS = 10000;
 
         private readonly IDevices devices;
         private readonly ILogger log;
         private string deviceId;
-        private IoTHubProtocol? protocol;
+        private IoTHubProtocol protocol;
 
         // The timer invoking the Run method
         private readonly ITimer timer;
@@ -53,6 +48,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.log = logger;
             this.devices = devices;
             this.scriptInterpreter = scriptInterpreter;
+            this.timer.Setup(this.Run);
         }
 
         public void Setup(string deviceId, DeviceModel deviceModel, IDeviceActor context)
@@ -69,37 +65,38 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.protocol = deviceModel.Protocol;
 
             this.context = context;
-            this.timer.Setup(this.Run, retryFrequency);
         }
 
         public void Start()
         {
-            this.timer.Start();
+            this.log.Info("Starting Connect", () => new { this.deviceId });
+            this.timer.RunOnce(0);
         }
 
         public void Stop()
         {
-            this.timer.Stop();
+            this.log.Info("Stopping Connect", () => new { this.deviceId });
+            this.timer.Cancel();
         }
 
         public void Run(object context)
         {
+            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             try
             {
-                this.log.Info("Starting Connect timer",
-                    () => new { this.context.DeviceId });
-                this.timer.Pause();
-                this.RunInternal();
+                this.RunInternalAsync().Wait();
             }
             finally
             {
-                this.log.Info("Stopping Connect timer",
-                    () => new { this.context.DeviceId });
-                this.timer.Resume();
+                if (this.context.ActorStatus == Status.Connecting)
+                {
+                    var passed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                    this.timer.RunOnce(RETRY_FREQUENCY_MSECS - passed);
+                }
             }
         }
 
-        private void RunInternal()
+        private async Task RunInternalAsync()
         {
             this.ValidateSetup();
 
@@ -116,50 +113,40 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 try
                 {
-                    lock (actor)
+                    var device = await this.devices.GetOrCreateAsync(this.deviceId, false, actor.CancellationToken);
+
+                    actor.Client = this.devices.GetClient(device, this.protocol, this.scriptInterpreter);
+                    await actor.Client.ConnectAsync();
+
+                    // Device Twin properties can be set only over MQTT, so we need a dedicated client
+                    // for the bootstrap
+                    // TODO: allow to use AMQP https://github.com/Azure/device-simulation-dotnet/issues/92
+                    if (actor.Client.Protocol == IoTHubProtocol.MQTT)
                     {
-                        var device = this.GetDevice(this.deviceId, actor.CancellationToken);
-
-                        actor.Client = this.devices.GetClient(device, this.protocol.Value, this.scriptInterpreter);
-                        actor.Client.ConnectAsync().Wait(connectionTimeout);
-
-                        // Device Twin properties can be set only over MQTT, so we need a dedicated client
-                        // for the bootstrap
-                        // TODO: allow to use AMQP https://github.com/Azure/device-simulation-dotnet/issues/92
-                        if (actor.Client.Protocol == IoTHubProtocol.MQTT)
-                        {
-                            actor.BootstrapClient = actor.Client;
-                        }
-                        else
-                        {
-                            // bootstrap client is used to call methods and must have a script interpreter associated w/ it.
-                            actor.BootstrapClient = this.devices.GetClient(device, IoTHubProtocol.MQTT, this.scriptInterpreter);
-                            actor.BootstrapClient.ConnectAsync().Wait(connectionTimeout);
-                        }
-
-                        this.log.Debug("Connection successful", () => new { this.deviceId });
-
-                        actor.MoveNext();
+                        actor.BootstrapClient = actor.Client;
                     }
+                    else
+                    {
+                        // bootstrap client is used to call methods and must have a script interpreter associated w/ it.
+                        actor.BootstrapClient = this.devices.GetClient(device, IoTHubProtocol.MQTT, this.scriptInterpreter);
+                        await actor.BootstrapClient.ConnectAsync();
+                    }
+
+                    this.log.Debug("Connection successful", () => new { this.deviceId });
+
+                    actor.MoveNext();
+                }
+                catch (InvalidConfigurationException e)
+                {
+                    this.log.Error("Connection failed: unable to initialize the client.",
+                        () => new { this.deviceId, e });
                 }
                 catch (Exception e)
                 {
-                    this.log.Error("Connection failed", () => new { this.deviceId, e });
+                    this.log.Error("Unable to fetch the device, or initialize the client or establish a connection. See the exception details for more information.",
+                        () => new { this.deviceId, e });
                 }
             }
-        }
-
-        private Device GetDevice(string id, CancellationToken cancellationToken)
-        {
-            this.log.Debug("Connect.Run calling this.devices.GetOrCreateAsync",
-                () => new { id, getDeviceTimeout.TotalMilliseconds });
-
-            var task = this.devices.GetOrCreateAsync(this.deviceId, false);
-            task.Wait((int) connectionTimeout.TotalMilliseconds, cancellationToken);
-
-            this.log.Debug("Device credentials retrieved", () => new { this.deviceId });
-
-            return task.Result;
         }
 
         private void ValidateSetup()

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.Devices.Shared;
@@ -19,8 +20,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     {
         Task<Tuple<bool, string>> PingRegistryAsync();
         IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter);
-        Task<Device> GetOrCreateAsync(string deviceId, bool loadTwin);
-        Task<Device> GetAsync(string deviceId, bool loadTwin);
+        Task<Device> GetOrCreateAsync(string deviceId, bool loadTwin, CancellationToken cancellationToken);
+        Task<Device> GetAsync(string deviceId, bool loadTwin, CancellationToken cancellationToken);
     }
 
     public class Devices : IDevices
@@ -63,27 +64,33 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        public IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter)
+        public IDeviceClient GetClient(
+            Device device,
+            IoTHubProtocol protocol,
+            IScriptInterpreter scriptInterpreter)
         {
+            var sdkClient = this.GetDeviceSdkClient(device, protocol);
+            var methods = new DeviceMethods(sdkClient, this.log, scriptInterpreter);
+
             return new DeviceClient(
-                this.GetDeviceSdkClient(device, protocol),
-                protocol,
-                this.rateLimiting,
-                this.log,
                 device.Id,
-                scriptInterpreter);
+                protocol,
+                sdkClient,
+                methods,
+                this.rateLimiting,
+                this.log);
         }
 
-        public async Task<Device> GetOrCreateAsync(string deviceId, bool loadTwin)
+        public async Task<Device> GetOrCreateAsync(string deviceId, bool loadTwin, CancellationToken cancellationToken)
         {
             try
             {
-                return await this.GetAsync(deviceId, loadTwin);
+                return await this.GetAsync(deviceId, loadTwin, cancellationToken);
             }
             catch (ResourceNotFoundException)
             {
                 this.log.Debug("Device not found, will create", () => new { deviceId });
-                return await this.CreateAsync(deviceId);
+                return await this.CreateAsync(deviceId, cancellationToken);
             }
             catch (Exception e)
             {
@@ -92,7 +99,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        public async Task<Device> GetAsync(string deviceId, bool loadTwin)
+        public async Task<Device> GetAsync(string deviceId, bool loadTwin, CancellationToken cancellationToken)
         {
             Device result = null;
 
@@ -104,10 +111,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 if (loadTwin)
                 {
                     var deviceTask = this.rateLimiting.LimitRegistryOperationsAsync(
-                        () => this.registry.GetDeviceAsync(deviceId));
+                        () => this.registry.GetDeviceAsync(deviceId, cancellationToken));
 
                     var twinTask = this.rateLimiting.LimitTwinReadsAsync(
-                        () => this.registry.GetTwinAsync(deviceId));
+                        () => this.registry.GetTwinAsync(deviceId, cancellationToken));
 
                     await Task.WhenAll(deviceTask, twinTask);
 
@@ -117,7 +124,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 else
                 {
                     device = await this.rateLimiting.LimitRegistryOperationsAsync(
-                        () => this.registry.GetDeviceAsync(deviceId));
+                        () => this.registry.GetDeviceAsync(deviceId, cancellationToken));
                 }
 
                 if (device != null)
@@ -127,6 +134,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
+                if (e.InnerException != null && e.InnerException.GetType() == typeof(TaskCanceledException))
+                {
+                    // We get here when the cancellation token is triggered, which is fine
+                    this.log.Debug("Get device task canceled", () => new { deviceId, e.Message });
+                    return null;
+                }
+
                 this.log.Error("Unable to fetch the IoT device", () => new { deviceId, e });
                 throw new ExternalDependencyException("Unable to fetch the IoT device.");
             }
@@ -139,30 +153,45 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return result;
         }
 
-        private async Task<Device> CreateAsync(string deviceId)
+        private async Task<Device> CreateAsync(string deviceId, CancellationToken cancellationToken)
         {
-            this.log.Debug("Creating device", () => new { deviceId });
-            var device = new Azure.Devices.Device(deviceId);
-            device = await this.rateLimiting.LimitRegistryOperationsAsync(
-                () => this.registry.AddDeviceAsync(device));
-
-            var twin = new Twin();
-            if (!DISCARD_TWIN_ON_CREATION)
+            try
             {
-                this.log.Debug("Fetching device twin", () => new { device.Id });
-                twin = await this.rateLimiting.LimitTwinReadsAsync(() => this.registry.GetTwinAsync(device.Id));
+                this.log.Debug("Creating device", () => new { deviceId });
+                var device = new Azure.Devices.Device(deviceId);
+                device = await this.rateLimiting.LimitRegistryOperationsAsync(
+                    () => this.registry.AddDeviceAsync(device, cancellationToken));
+
+                var twin = new Twin();
+                if (!DISCARD_TWIN_ON_CREATION)
+                {
+                    this.log.Debug("Fetching device twin", () => new { device.Id });
+                    twin = await this.rateLimiting.LimitTwinReadsAsync(() => this.registry.GetTwinAsync(device.Id, cancellationToken));
+                }
+
+                this.log.Debug("Writing device twin an adding the `IsSimulated` Tag",
+                    () => new { device.Id, DeviceTwin.SIMULATED_TAG_KEY, DeviceTwin.SIMULATED_TAG_VALUE });
+                twin.Tags[DeviceTwin.SIMULATED_TAG_KEY] = DeviceTwin.SIMULATED_TAG_VALUE;
+
+                // TODO: when not discarding the twin, use the right ETag and manage conflicts
+                //       https://github.com/Azure/device-simulation-dotnet/issues/83
+                twin = await this.rateLimiting.LimitTwinWritesAsync(
+                    () => this.registry.UpdateTwinAsync(device.Id, twin, "*", cancellationToken));
+
+                return new Device(device, twin, this.ioTHubHostName);
             }
+            catch (Exception e)
+            {
+                if (e.InnerException != null && e.InnerException.GetType() == typeof(TaskCanceledException))
+                {
+                    // We get here when the cancellation token is triggered, which is fine
+                    this.log.Debug("Get device task canceled", () => new { deviceId, e.Message });
+                    return null;
+                }
 
-            this.log.Debug("Writing device twin an adding the `IsSimulated` Tag",
-                () => new { device.Id, DeviceTwin.SIMULATED_TAG_KEY, DeviceTwin.SIMULATED_TAG_VALUE });
-            twin.Tags[DeviceTwin.SIMULATED_TAG_KEY] = DeviceTwin.SIMULATED_TAG_VALUE;
-
-            // TODO: when not discarding the twin, use the right ETag and manage conflicts
-            //       https://github.com/Azure/device-simulation-dotnet/issues/83
-            twin = await this.rateLimiting.LimitTwinWritesAsync(
-                () => this.registry.UpdateTwinAsync(device.Id, twin, "*"));
-
-            return new Device(device, twin, this.ioTHubHostName);
+                this.log.Error("Unable to fetch the IoT device", () => new { deviceId, e });
+                throw new ExternalDependencyException("Unable to fetch the IoT device.");
+            }
         }
 
         private Azure.Devices.Client.DeviceClient GetDeviceSdkClient(Device device, IoTHubProtocol protocol)
@@ -197,7 +226,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     this.log.Error("Unable to create a client for the given protocol",
                         () => new { protocol });
 
-                    throw new Exception($"Unable to create a client for the given protocol ({protocol})");
+                    throw new InvalidConfigurationException($"Unable to create a client for the given protocol ({protocol})");
             }
 
             return sdkClient;

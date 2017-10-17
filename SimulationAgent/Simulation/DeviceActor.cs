@@ -17,11 +17,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     public interface IDeviceActor
     {
         /// <summary>
-        /// Return the ID of the device managed by this actor
-        /// </summary>
-        string DeviceId { get; }
-
-        /// <summary>
         /// Azure IoT Hub client shared by Connect and SendTelemetry
         /// </summary>
         IDeviceClient Client { get; set; }
@@ -87,29 +82,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
     public class DeviceActor : IDeviceActor
     {
+        // ID prefix of the simulated devices, used with Azure IoT Hub
         private const string DEVICE_ID_PREFIX = "Simulated.";
+
         private const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
 
-        // When connecting or sending a message, timeout after 5 seconds
-        private static readonly TimeSpan connectionTimeout = TimeSpan.FromSeconds(5);
+        // Timeout when disconnecting a client
+        private const int DISCONNECT_TIMEOUT_MSECS = 5000;
 
-        // Used to make sure the actor checks at least every 10 seconds
-        // if the simulation needs to stop
-        private static readonly TimeSpan checkCancellationFrequency = TimeSpan.FromSeconds(10);
+        // Checks every 10 seconds if the simulation needs to stop
+        private const int CHECK_CANCELLATION_FREQUENCY_MSECS = 10000;
 
         // A timer used to check whether the simulation stopped and the actor
         // should stop running.
         private readonly ITimer cancellationCheckTimer;
 
-        // ID of the simulated device, used with Azure IoT Hub
-
         private readonly ILogger log;
+
+        private string deviceId;
 
         // Ensure that setup is called only once, to keep the actor thread safe
         private bool setupDone = false;
 
-        // ""State machine"" logic, each of the following tasks havae a Run()
-        // method and some tasks can be active at the same time
+        // ""State machine"" logic, each of the following tasks have a Run()
+        // method, and some tasks can be active at the same time
 
         private readonly IDeviceStatusLogic connectLogic;
         private readonly IDeviceStatusLogic deviceBootstrapLogic;
@@ -117,7 +113,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private readonly IDeviceStatusLogic updateReportedPropertiesLogic;
         private readonly IDeviceStatusLogic sendTelemetryLogic;
 
-        public string DeviceId { get; private set; }
+        // Logic used to throttled the hub operations
+        private readonly IRateLimiting rateLimiting;
 
         /// <summary>
         /// Azure IoT Hub client shared by Connect and SendTelemetry
@@ -159,9 +156,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             UpdateDeviceState updateDeviceStateLogic,
             UpdateReportedProperties updateReportedPropertiesLogic,
             SendTelemetry sendTelemetryLogic,
+            IRateLimiting rateLimiting,
             ITimer cancellationCheckTimer)
         {
             this.log = logger;
+            this.rateLimiting = rateLimiting;
 
             this.connectLogic = connectLogic;
             this.deviceBootstrapLogic = deviceBootstrapLogic;
@@ -170,6 +169,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.sendTelemetryLogic = sendTelemetryLogic;
 
             this.cancellationCheckTimer = cancellationCheckTimer;
+            this.cancellationCheckTimer.Setup(CancellationCheck, this);
 
             this.ActorStatus = Status.None;
         }
@@ -188,7 +188,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 this.log.Error("The actor is already initialized",
                     () => new
                     {
-                        CurrentDeviceId = this.DeviceId,
+                        CurrentDeviceId = this.deviceId,
                         NewDeviceModelName = deviceModel.Name,
                         NewDeviceModelId = deviceModel.Id,
                         NewPosition = position
@@ -198,42 +198,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
             this.setupDone = true;
 
-            this.DeviceId = DEVICE_ID_PREFIX + deviceModel.Id + "." + position;
+            this.deviceId = DEVICE_ID_PREFIX + deviceModel.Id + "." + position;
 
             this.DeviceState = this.SetupTelemetryAndProperties(deviceModel);
-            this.log.Debug("Initial device state", () => new { this.DeviceId, this.DeviceState });
+            this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState });
 
-            this.connectLogic.Setup(this.DeviceId, deviceModel, this);
-            this.updateDeviceStateLogic.Setup(this.DeviceId, deviceModel, this);
-            this.deviceBootstrapLogic.Setup(this.DeviceId, deviceModel, this);
-            this.sendTelemetryLogic.Setup(this.DeviceId, deviceModel, this);
-            this.updateReportedPropertiesLogic.Setup(this.DeviceId, deviceModel, this);
+            this.connectLogic.Setup(this.deviceId, deviceModel, this);
+            this.updateDeviceStateLogic.Setup(this.deviceId, deviceModel, this);
+            this.deviceBootstrapLogic.Setup(this.deviceId, deviceModel, this);
+            this.sendTelemetryLogic.Setup(this.deviceId, deviceModel, this);
+            this.updateReportedPropertiesLogic.Setup(this.deviceId, deviceModel, this);
 
-            this.log.Debug("Setup complete", () => new { this.DeviceId });
+            this.log.Debug("Setup complete", () => new { this.deviceId });
             this.MoveNext();
 
             return this;
-        }
-
-        private Dictionary<string, object> SetupTelemetryAndProperties(DeviceModel deviceModel)
-        {
-            // put telemetry properties in state
-            Dictionary<string, object> state = CloneObject(deviceModel.Simulation.InitialState);
-
-            // TODO: think about whether these should be pulled from the hub instead of disk
-            // (the device model); i.e. what if someone has modified the hub twin directly
-            // put reported properties from device model into state
-            // https://github.com/Azure/device-simulation-dotnet/issues/86
-            foreach (var property in deviceModel.Properties)
-                state.Add(property.Key, property.Value);
-
-            // TODO:This is used to control whether telemetry is calculated in UpdateDeviceState.
-            // methods can turn telemetry off/on; e.g. setting temp high- turnoff, set low, turn on
-            // it would be better to do this at the telemetry item level - we should add this in the future
-            // https://github.com/Azure/device-simulation-dotnet/issues/87
-            state.Add(CALC_TELEMETRY, true);
-
-            return state;
         }
 
         /// <summary>
@@ -248,7 +227,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             switch (this.ActorStatus)
             {
                 default:
-                    this.log.Debug("The actor already started", () => new { this.DeviceId });
+                    this.log.Debug("The actor already started", () => new { this.deviceId });
                     break;
 
                 case Status.None:
@@ -256,9 +235,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     throw new DeviceActorNotInitializedException();
 
                 case Status.Ready:
-                    this.StartCancellationCheck();
                     this.CancellationToken = token;
-                    this.log.Debug("Starting...", () => new { this.DeviceId });
+                    this.rateLimiting.SetCancellationToken(token);
+                    this.log.Debug("Starting...", () => new { this.deviceId });
+                    this.cancellationCheckTimer.RunOnce(0);
                     this.MoveNext();
                     break;
             }
@@ -270,27 +250,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         /// </summary>
         public void Stop()
         {
+            if (this.ActorStatus <= Status.Ready) return;
+
+            this.ActorStatus = Status.None;
+
             // TODO: I see this not exiting cleanly sometimes in the logs (it throws)
             //       https://github.com/Azure/device-simulation-dotnet/issues/56
-            try
-            {
-                this.log.Debug("Stopping actor", () => { });
 
-                this.StopCancellationCheck();
-                this.connectLogic.Stop();
-                this.deviceBootstrapLogic.Stop();
-                this.updateDeviceStateLogic.Stop();
-                this.updateReportedPropertiesLogic.Stop();
+            this.log.Debug("Stopping device actor...", () => { });
 
-                this.Client?.DisconnectAsync().Wait(connectionTimeout);
-                this.BootstrapClient?.DisconnectAsync().Wait(connectionTimeout);
-                this.ActorStatus = Status.Ready;
-                this.log.Debug("Stopped", () => new { this.DeviceId });
-            }
-            catch (Exception e)
-            {
-                this.log.Error("An error occurred stopping the device actor", () => new { e });
-            }
+            this.TryStopConnectLogic();
+            this.TryStopDeviceBootstrapLogic();
+            this.TryStopUpdateDeviceStateLogic();
+            this.TryStopUpdateReportedPropertiesLogic();
+            this.TryDisconnectBootstrapClient();
+            this.TryDisconnectClient();
+
+            this.ActorStatus = Status.Ready;
+            this.log.Debug("Device actor stopped", () => new { this.deviceId });
         }
 
         /// <summary>
@@ -300,8 +277,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         public void MoveNext()
         {
             var nextStatus = this.ActorStatus + 1;
-            this.log.Debug("Changing actor state to " + nextStatus,
-                () => new { this.DeviceId, ActorStatus = this.ActorStatus.ToString(), nextStatus = nextStatus.ToString() });
+            this.log.Debug("Changing device actor state to " + nextStatus,
+                () => new { this.deviceId, ActorStatus = this.ActorStatus.ToString(), nextStatus = nextStatus.ToString() });
 
             switch (nextStatus)
             {
@@ -342,21 +319,35 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     break;
                 default:
                     this.log.Error("Unknown next status",
-                        () => new { this.DeviceId, this.ActorStatus, nextStatus });
+                        () => new { this.deviceId, this.ActorStatus, nextStatus });
                     throw new ArgumentOutOfRangeException();
             }
         }
 
-        // Check if the user asks to stop the simulation
-        private void StartCancellationCheck()
+        private Dictionary<string, object> SetupTelemetryAndProperties(DeviceModel deviceModel)
         {
-            this.cancellationCheckTimer.Setup(CancellationCheck, checkCancellationFrequency, this);
-            this.cancellationCheckTimer.Start();
+            // put telemetry properties in state
+            Dictionary<string, object> state = CloneObject(deviceModel.Simulation.InitialState);
+
+            // TODO: think about whether these should be pulled from the hub instead of disk
+            // (the device model); i.e. what if someone has modified the hub twin directly
+            // put reported properties from device model into state
+            foreach (var property in deviceModel.Properties)
+                state.Add(property.Key, property.Value);
+
+            // TODO:This is used to control whether telemetry is calculated in UpdateDeviceState.
+            // methods can turn telemetry off/on; e.g. setting temp high- turnoff, set low, turn on
+            // it would be better to do this at the telemetry item level - we should add this in the future
+            state.Add(CALC_TELEMETRY, true);
+
+            return state;
         }
 
-        private void StopCancellationCheck()
+        /// <summary>Copy an object by value</summary>
+        private static T CloneObject<T>(T source)
         {
-            this.cancellationCheckTimer.Stop();
+            return JsonConvert.DeserializeObject<T>(
+                JsonConvert.SerializeObject(source));
         }
 
         /// <summary>
@@ -368,23 +359,98 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private static void CancellationCheck(object context)
         {
             var self = (DeviceActor) context;
-            if (self.CancellationToken.IsCancellationRequested)
+            if (self.CancellationToken.IsCancellationRequested && self.ActorStatus > Status.Ready)
             {
                 self.Stop();
             }
+            else
+            {
+                self.cancellationCheckTimer.RunOnce(CHECK_CANCELLATION_FREQUENCY_MSECS);
+            }
         }
 
-        /// <summary>Copy an object by value</summary>
-        private static T CloneObject<T>(T source)
+        private void TryDisconnectClient()
         {
-            return JsonConvert.DeserializeObject<T>(
-                JsonConvert.SerializeObject(source));
+            if (this.Client == null) return;
+
+            try
+            {
+                this.log.Debug("Disconnecting device client", () => new { this.deviceId });
+                this.Client.DisconnectAsync().Wait(DISCONNECT_TIMEOUT_MSECS);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to disconnect the device client", () => new { e });
+            }
+
+            this.Client = null;
         }
 
-        private class TelemetryContext
+        private void TryDisconnectBootstrapClient()
         {
-            public DeviceActor Self { get; set; }
-            public DeviceModel.DeviceModelMessage Message { get; set; }
+            if (this.BootstrapClient == null) return;
+            if (this.Client.Protocol == this.BootstrapClient.Protocol) return;
+
+            try
+            {
+                this.log.Debug("Disconnecting device bootstrap client", () => new { this.deviceId });
+                this.BootstrapClient.DisconnectAsync().Wait(DISCONNECT_TIMEOUT_MSECS);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to disconnect the device boostrap client",
+                    () => new { e });
+            }
+
+            this.BootstrapClient = null;
+        }
+
+        private void TryStopUpdateReportedPropertiesLogic()
+        {
+            try
+            {
+                this.updateReportedPropertiesLogic.Stop();
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to stop UpdateReportedProperties logic", () => new { e });
+            }
+        }
+
+        private void TryStopUpdateDeviceStateLogic()
+        {
+            try
+            {
+                this.updateDeviceStateLogic.Stop();
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to stop UpdateDeviceState logic", () => new { e });
+            }
+        }
+
+        private void TryStopDeviceBootstrapLogic()
+        {
+            try
+            {
+                this.deviceBootstrapLogic.Stop();
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to stop DeviceBootstrap logic", () => new { e });
+            }
+        }
+
+        private void TryStopConnectLogic()
+        {
+            try
+            {
+                this.connectLogic.Stop();
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to stop Connect logic", () => new { e });
+            }
         }
     }
 }

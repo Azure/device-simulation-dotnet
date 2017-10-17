@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -15,9 +16,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     /// </summary>
     public class SendTelemetry : IDeviceStatusLogic
     {
-        // Device message delivery timeout
-        private static readonly TimeSpan sendTimeout = TimeSpan.FromSeconds(5);
-
         private readonly ILogger log;
         private readonly DependencyResolution.IFactory factory;
 
@@ -65,10 +63,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 {
                     DeviceActor = context,
                     Message = message,
-                    MessageTimer = timer
+                    MessageTimer = timer,
+                    Interval = message.Interval
                 };
 
-                timer.Setup(this.Run, message.Interval, messageContext);
+                timer.Setup(this.Run, messageContext);
 
                 this.timers.Add(timer);
             }
@@ -76,42 +75,48 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         public void Start()
         {
-            this.log.Info("Starting SendTelemetry timers",
-                () => new { this.context.DeviceId });
+            this.log.Info("Starting SendTelemetry", () => new { this.deviceId });
             foreach (var timer in this.timers)
             {
-                timer.Start();
+                timer.RunOnce(0);
             }
         }
 
         public void Stop()
         {
-            this.log.Info("Stopping SendTelemetry timers",
-                () => new { this.context.DeviceId });
+            this.log.Info("Stopping SendTelemetry", () => new { this.deviceId });
             foreach (var timer in this.timers)
             {
-                timer.Stop();
+                timer.Cancel();
             }
         }
 
         public void Run(object context)
         {
+            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
             // Each message context contains references to device
             // actor and the message timer, that we use to pause here
             var messageContext = (SendTelemetryContext) context;
-
             try
             {
-                messageContext.MessageTimer.Pause();
-                this.RunInternal(context);
+                try
+                {
+                    this.RunInternalAsync(context).Wait();
+                }
+                finally
+                {
+                    var passed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                    messageContext?.MessageTimer?.RunOnce(messageContext.Interval.TotalMilliseconds - passed);
+                }
             }
-            finally
+            catch (ObjectDisposedException e)
             {
-                messageContext.MessageTimer.Resume();
+                this.log.Debug("The simulation was stopped and some of the context is not available", () => new { e });
             }
         }
 
-        private void RunInternal(object context)
+        private async Task RunInternalAsync(object context)
         {
             this.ValidateSetup();
 
@@ -125,7 +130,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 return;
             }
 
-            // Send the telemetry message
+            // Send the telemetry message if the device is online
             try
             {
                 this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
@@ -143,9 +148,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                     this.log.Debug("SendTelemetry...",
                         () => new { this.deviceId, MessageSchema = message.MessageSchema.Name, msg });
-                    actor.Client
-                        .SendMessageAsync(msg, message.MessageSchema)
-                        .Wait(sendTimeout);
+                    await actor.Client.SendMessageAsync(msg, message.MessageSchema);
 
                     this.log.Debug("SendTelemetry complete", () => new { this.deviceId });
                 }
@@ -159,7 +162,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             catch (Exception e)
             {
                 this.log.Error("SendTelemetry failed",
-                    () => new { this.deviceId, e.Message, Error = e.GetType().FullName });
+                    () => new { this.deviceId, e });
             }
         }
 

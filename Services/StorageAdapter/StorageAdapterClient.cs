@@ -76,8 +76,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
 
         public async Task<ValueListApiModel> GetAllAsync(string collectionId)
         {
-
-
             var response = await this.httpClient.GetAsync(
                 this.PrepareRequest($"collections/{collectionId}/values"));
 
@@ -102,6 +100,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
                 this.PrepareRequest($"collections/{collectionId}/values",
                     new ValueApiModel { Data = value }));
 
+            this.log.Debug("Storage response", () => new { response });
+
             this.ThrowIfError(response, collectionId, "");
 
             return JsonConvert.DeserializeObject<ValueApiModel>(response.Content);
@@ -113,6 +113,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
                 this.PrepareRequest($"collections/{collectionId}/values/{key}",
                     new ValueApiModel { Data = value, ETag = etag }));
 
+            this.log.Debug("Storage response", () => new { response });
+
             this.ThrowIfError(response, collectionId, key);
 
             return JsonConvert.DeserializeObject<ValueApiModel>(response.Content);
@@ -122,6 +124,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
         {
             var response = await this.httpClient.DeleteAsync(
                 this.PrepareRequest($"collections/{collectionId}/values/{key}"));
+
+            this.log.Debug("Storage response", () => new { response });
 
             this.ThrowIfError(response, collectionId, key);
         }
@@ -144,6 +148,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
             {
                 request.SetContent(content);
             }
+
+            this.log.Debug("Storage request", () => new { request });
 
             return request;
         }

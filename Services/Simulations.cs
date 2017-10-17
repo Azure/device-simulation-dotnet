@@ -151,11 +151,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             // Note: forcing the ID because only one simulation can be created
             simulation.Id = SIMULATION_ID;
-            await this.storage.UpdateAsync(
+            var item = await this.storage.UpdateAsync(
                 STORAGE_COLLECTION,
                 SIMULATION_ID,
                 JsonConvert.SerializeObject(simulation),
                 simulation.Etag);
+
+            // Return the new etag provided by the storage
+            simulation.Etag = item.ETag;
 
             return simulation;
         }

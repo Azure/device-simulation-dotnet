@@ -17,6 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // Print some useful information
             PrintBootstrapInfo(container);
 
+            // TODO: use async/await with C# 7.1
             container.Resolve<ISimulation>().RunAsync().Wait();
         }
 

@@ -40,6 +40,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.timer = timer;
             this.scriptInterpreter = scriptInterpreter;
             this.log = logger;
+            this.timer.Setup(this.Run);
         }
 
         public void Setup(string deviceId, DeviceModel deviceModel, IDeviceActor context)
@@ -56,33 +57,41 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.deviceModel = deviceModel;
 
             this.context = context;
-            this.timer.Setup(this.Run, this.deviceModel.Simulation.Script.Interval);
         }
 
         public void Start()
         {
-            this.log.Info("Starting UpdateDeviceState timer",
-                () => new { this.context.DeviceId });
-            this.timer.Start();
+            this.log.Info("Starting UpdateDeviceState", () => new { this.deviceId });
+            this.timer.RunOnce(0);
         }
 
         public void Stop()
         {
-            this.log.Info("Stopping UpdateDeviceState timer",
-                () => new { this.context.DeviceId });
-            this.timer.Stop();
+            this.log.Info("Stopping UpdateDeviceState", () => new { this.deviceId });
+            this.timer.Cancel();
         }
 
         public void Run(object context)
         {
+            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             try
             {
-                this.timer.Pause();
-                this.RunInternal();
+                try
+                {
+                    this.RunInternal();
+                }
+                finally
+                {
+                    var passed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                    if (this.deviceModel != null)
+                    {
+                        this.timer?.RunOnce(this.deviceModel?.Simulation.Script.Interval.TotalMilliseconds - passed);
+                    }
+                }
             }
-            finally
+            catch (ObjectDisposedException e)
             {
-                this.timer.Resume();
+                this.log.Debug("The simulation was stopped and some of the context is not available", () => new { e });
             }
         }
 
@@ -97,9 +106,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 return;
             }
 
-            this.log.Debug("Checking for the need to compute new telemetry", () => new { this.deviceId, deviceState = actor.DeviceState });
-
-            // Compute new telemetry.
             try
             {
                 var scriptContext = new Dictionary<string, object>
@@ -111,8 +117,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 // until the correlating function has been called; e.g. when increasepressure is called, don't write
                 // telemetry until decreasepressure is called for that property.
+                this.log.Debug("Checking for the need to compute new telemetry",
+                    () => new { this.deviceId, deviceState = actor.DeviceState });
                 if ((bool) actor.DeviceState[CALC_TELEMETRY])
                 {
+                    // Compute new telemetry.
                     this.log.Debug("Updating device telemetry data", () => new { this.deviceId, deviceState = actor.DeviceState });
                     lock (actor.DeviceState)
                     {
@@ -126,26 +135,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 else
                 {
                     this.log.Debug(
-                        "Random telemetry generation is turned off for the actor",
+                        "Random telemetry generation is turned off for the device",
                         () => new { this.deviceId, deviceState = actor.DeviceState });
                 }
 
-                // Move state machine forward to update properties and start sending telemetry messages
+                // Move state machine forward to start watching twin changes and sending telemetry
                 if (actor.ActorStatus == Status.UpdatingDeviceState)
                 {
                     actor.MoveNext();
                 }
-                else
-                {
-                    this.log.Debug(
-                        "Already moved state machine forward, running local simulation to generate new property values",
-                        () => new { this.deviceId });
-                }
             }
             catch (Exception e)
             {
-                this.log.Error("UpdateDeviceState failed",
-                    () => new { this.deviceId, e.Message, Error = e.GetType().FullName });
+                this.log.Error("UpdateDeviceState failed", () => new { this.deviceId, e });
             }
         }
 

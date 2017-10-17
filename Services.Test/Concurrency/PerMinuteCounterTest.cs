@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Threading;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Services.Test.helpers;
 using Xunit;
@@ -39,7 +40,7 @@ namespace Services.Test.Concurrency
             var paused = false;
             for (int i = 0; i < CALLS; i++)
             {
-                paused = paused || target.IncreaseAsync().Result;
+                paused = paused || target.IncreaseAsync(CancellationToken.None).Result;
             }
 
             // Assert - The counter never throttled the call
@@ -66,7 +67,7 @@ namespace Services.Test.Concurrency
             var pauses = 0;
             for (int i = 0; i < CALLS; i++)
             {
-                pauses += target.IncreaseAsync().Result ? 1 : 0;
+                pauses += target.IncreaseAsync(CancellationToken.None).Result ? 1 : 0;
             }
 
             // Assert - The counter throttled the call once

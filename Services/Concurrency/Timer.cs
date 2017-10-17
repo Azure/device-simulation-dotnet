@@ -8,92 +8,76 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
     public interface ITimer
     {
-        ITimer Start();
-        ITimer StartIn(TimeSpan delay);
-        void Pause();
-        void Resume();
-        void Stop();
-        ITimer Setup(Action<object> action, TimeSpan frequency, object context = null);
-        ITimer Setup(Action<object> action, int frequency, object context = null);
+        void Setup(Action<object> action);
+        void Setup(Action<object> action, object context);
+        void RunOnce(int? dueTime);
+        void RunOnce(double? dueTime);
+        void Cancel();
     }
 
     public class Timer : ITimer
     {
         private readonly ILogger log;
-
+        private bool cancelled = false;
         private System.Threading.Timer timer;
-        private int frequency;
-        private bool stopped;
 
         public Timer(ILogger logger)
         {
             this.log = logger;
-            this.frequency = 0;
-            this.stopped = true;
         }
 
-        public ITimer Setup(Action<object> action, TimeSpan frequency, object context = null)
+        public void Setup(Action<object> action, object context)
         {
-            return this.Setup(action, (int) frequency.TotalMilliseconds, context);
-        }
-
-        public ITimer Setup(Action<object> action, int frequency, object context = null)
-        {
-            this.frequency = frequency;
             this.timer = new System.Threading.Timer(
                 new TimerCallback(action),
                 context,
                 Timeout.Infinite,
-                this.frequency);
-            return this;
+                Timeout.Infinite);
         }
 
-        public ITimer Start()
+        public void Setup(Action<object> action)
         {
-            this.stopped = false;
-            return this.StartIn(TimeSpan.Zero);
+            this.Setup(action, null);
         }
 
-        public ITimer StartIn(TimeSpan delay)
+        public void RunOnce(int? dueTime)
         {
+            if (!dueTime.HasValue) return;
+
+            if (this.cancelled)
+            {
+                this.log.Debug("Timer has been cancelled, ignoring call to RunOnce", () => { });
+            }
+
             if (this.timer == null)
             {
                 this.log.Error("The timer is not initialized", () => { });
                 throw new TimerNotInitializedException();
             }
 
-            this.stopped = false;
-            this.timer.Change((int) delay.TotalMilliseconds, this.frequency);
-            return this;
+            // Normalize negative values
+            var when = Math.Max(0, dueTime.Value);
+            this.timer?.Change(when, Timeout.Infinite);
         }
 
-        public void Pause()
+        public void RunOnce(double? dueTime)
         {
-            if (!this.stopped)
-            {
-                this.timer?.Change(Timeout.Infinite, this.frequency);
-            }
+            if (!dueTime.HasValue) return;
+
+            this.RunOnce((int) dueTime.Value);
         }
 
-        public void Resume()
-        {
-            if (!this.stopped)
-            {
-                this.timer?.Change(this.frequency, this.frequency);
-            }
-        }
-
-        public void Stop()
+        public void Cancel()
         {
             try
             {
-                this.stopped = true;
+                this.cancelled = true;
                 this.timer?.Change(Timeout.Infinite, Timeout.Infinite);
                 this.timer?.Dispose();
             }
-            catch (ObjectDisposedException e)
+            catch (ObjectDisposedException)
             {
-                this.log.Info("The timer was already disposed.", () => new { e });
+                this.log.Debug("The timer object was already disposed", () => { });
             }
         }
     }

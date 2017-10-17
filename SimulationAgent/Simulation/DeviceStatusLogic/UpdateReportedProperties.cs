@@ -2,7 +2,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -14,11 +14,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 {
     public class UpdateReportedProperties : IDeviceStatusLogic
     {
-        // Twin write timeout
-        private static readonly TimeSpan updateTwinTimeout = TimeSpan.FromSeconds(10);
-
         // Twin update frequency
-        private static readonly TimeSpan reportedPropertyUpdateFrequency = TimeSpan.FromSeconds(30);
+        private const int UPDATE_FREQUENCY_MSECS = 30000;
 
         private readonly IDevices devices;
         private string deviceId;
@@ -42,6 +39,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.timer = timer;
             this.log = logger;
             this.devices = devices;
+            this.timer.Setup(this.Run);
         }
 
         public void Setup(string deviceId, DeviceModel deviceModel, IDeviceActor context)
@@ -58,61 +56,60 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.deviceModel = deviceModel;
 
             this.context = context;
-            this.timer.Setup(this.Run, reportedPropertyUpdateFrequency);
         }
 
         public void Start()
         {
-            this.log.Info("Starting UpdateReportedProperties timer",
-                () => new { this.context.DeviceId });
-            this.timer.Start();
+            this.log.Info("Starting UpdateReportedProperties", () => new { this.deviceId });
+            this.timer.RunOnce(0);
         }
 
         public void Stop()
         {
-            this.log.Info("Stopping UpdateReportedProperties timer",
-                () => new { this.context.DeviceId });
-            this.timer.Stop();
+            this.log.Info("Stopping UpdateReportedProperties", () => new { this.deviceId });
+            this.timer.Cancel();
         }
 
         public void Run(object context)
         {
+            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             try
             {
-                this.timer.Pause();
-                this.RunInternal();
+                try
+                {
+                    this.RunInternalAsync().Wait();
+                }
+                finally
+                {
+                    var passed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                    this.timer?.RunOnce(UPDATE_FREQUENCY_MSECS - passed);
+                }
             }
-            finally
+            catch (ObjectDisposedException e)
             {
-                this.timer.Resume();
+                this.log.Debug("The simulation was stopped and some of the context is not available", () => new { e });
             }
         }
 
-        private void RunInternal()
+        private async Task RunInternalAsync()
         {
+            this.ValidateSetup();
+
+            var actor = this.context;
+            if (actor.CancellationToken.IsCancellationRequested)
+            {
+                actor.Stop();
+                return;
+            }
+
             try
             {
-                this.ValidateSetup();
+                this.log.Debug("Checking for desired property updates & update reported properties",
+                    () => new { this.deviceId, deviceState = actor.DeviceState });
 
-                var actor = this.context;
-                if (actor.CancellationToken.IsCancellationRequested)
-                {
-                    actor.Stop();
-                    return;
-                }
+                // Get device from IoT Hub registry
+                var device = await this.devices.GetAsync(this.deviceId, true, actor.CancellationToken);
 
-                //TODO: Here we should pause the timer in case the device takes too long to pull from the hub
-
-                this.log.Debug(
-                    "Checking for desired property updates & updated reported properties",
-                    () => new
-                    {
-                        this.deviceId,
-                        deviceState = actor.DeviceState
-                    });
-
-                // Get device
-                var device = this.GetDevice(actor.CancellationToken);
                 var differences = false;
                 lock (actor.DeviceState)
                 {
@@ -133,19 +130,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 if (differences)
                 {
-                    actor.BootstrapClient.UpdateTwinAsync(device).Wait((int) updateTwinTimeout.TotalMilliseconds);
+                    await actor.BootstrapClient.UpdateTwinAsync(device);
                 }
 
-                // Move state machine forward to start sending telemetry messages if needed
+                // Move state machine forward to start sending telemetry
                 if (actor.ActorStatus == Status.UpdatingReportedProperties)
                 {
                     actor.MoveNext();
-                }
-                else
-                {
-                    this.log.Debug(
-                        "Already moved state machine forward, continuing to check for desired property changes",
-                        () => new { this.deviceId });
                 }
             }
             catch (Exception e)
@@ -200,13 +191,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             }
 
             return differences;
-        }
-
-        private Device GetDevice(CancellationToken token)
-        {
-            var task = this.devices.GetAsync(this.deviceId, true);
-            task.Wait((int) updateTwinTimeout.TotalMilliseconds, token);
-            return task.Result;
         }
 
         private void ValidateSetup()

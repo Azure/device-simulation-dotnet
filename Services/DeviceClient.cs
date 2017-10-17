@@ -9,7 +9,6 @@ using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
@@ -26,7 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         Task UpdateTwinAsync(Device device);
 
-        void RegisterMethodsForDevice(IDictionary<string, Script> methods, Dictionary<string, object> deviceState);
+        Task RegisterMethodsForDeviceAsync(IDictionary<string, Script> methods, Dictionary<string, object> deviceState);
     }
 
     public class DeviceClient : IDeviceClient
@@ -39,35 +38,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private const string MESSAGE_SCHEMA_PROPERTY = "$$MessageSchema";
         private const string CONTENT_PROPERTY = "$$ContentType";
 
-        private readonly Azure.Devices.Client.DeviceClient client;
-        private readonly ILogger log;
-        private readonly IoTHubProtocol protocol;
-        private readonly IRateLimiting rateLimiting;
         private readonly string deviceId;
-        private readonly IScriptInterpreter scriptInterpreter;
-
-        //used to create method pointers for the device for the IoTHub to callback to
-        // ReSharper disable once NotAccessedField.Local
-        private DeviceMethods deviceMethods;
+        private readonly IoTHubProtocol protocol;
+        private readonly Azure.Devices.Client.DeviceClient client;
+        private readonly IDeviceMethods deviceMethods;
+        private readonly IRateLimiting rateLimiting;
+        private readonly ILogger log;
 
         private bool connected;
 
         public IoTHubProtocol Protocol => this.protocol;
 
         public DeviceClient(
-            Azure.Devices.Client.DeviceClient client,
-            IoTHubProtocol protocol,
-            IRateLimiting rateLimiting,
-            ILogger logger,
             string deviceId,
-            IScriptInterpreter scriptInterpreter)
+            IoTHubProtocol protocol,
+            Azure.Devices.Client.DeviceClient client,
+            IDeviceMethods deviceMethods,
+            IRateLimiting rateLimiting,
+            ILogger logger)
         {
-            this.client = client;
+            this.deviceId = deviceId;
             this.protocol = protocol;
+            this.client = client;
+            this.deviceMethods = deviceMethods;
             this.rateLimiting = rateLimiting;
             this.log = logger;
-            this.deviceId = deviceId;
-            this.scriptInterpreter = scriptInterpreter;
             this.connected = false;
         }
 
@@ -92,17 +87,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        public void RegisterMethodsForDevice(IDictionary<string, Script> methods,
+        public async Task RegisterMethodsForDeviceAsync(
+            IDictionary<string, Script> methods,
             Dictionary<string, object> deviceState)
         {
-            this.log.Debug("Attempting to setup methods for device", () => new
-            {
-                this.deviceId
-            });
+            this.log.Debug("Attempting to register device methods",
+                () => new { this.deviceId });
 
-            // TODO: Inject through the constructor instead
-            this.deviceMethods = new DeviceMethods(this.client, this.log, methods, deviceState, this.deviceId,
-                this.scriptInterpreter);
+            await this.deviceMethods.RegisterMethodsAsync(this.deviceId, methods, deviceState);
         }
 
         public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
