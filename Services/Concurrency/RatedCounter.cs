@@ -2,6 +2,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -10,7 +12,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
     public class PerSecondCounter : RatedCounter
     {
-        public PerSecondCounter(double rate, string name, ILogger logger)
+        public PerSecondCounter(int rate, string name, ILogger logger)
             : base(rate, 1000, name, logger)
         {
         }
@@ -18,7 +20,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
     public class PerMinuteCounter : RatedCounter
     {
-        public PerMinuteCounter(double rate, string name, ILogger logger)
+        public PerMinuteCounter(int rate, string name, ILogger logger)
             : base(rate, 60 * 1000, name, logger)
         {
         }
@@ -28,9 +30,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
     //       https://github.com/Azure/device-simulation-dotnet/issues/80
     public class PerDayCounter : RatedCounter
     {
-        public PerDayCounter(double rate, string name, ILogger logger)
+        public PerDayCounter(int rate, string name, ILogger logger)
             : base(rate, 86400 * 1000, name, logger)
         {
+            throw new NotSupportedException("Daily counters are not supported yet due to memory constraints.");
         }
     }
 
@@ -49,11 +52,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         // The max frequency to enforce, e.g. the maximum number
         // of events allowed within a minute, a second, etc.
-        private readonly double eventsPerTimeUnit;
-
-        // The expected time between 2 events, calculated off the frequency
-        // and used to pause the caller when it's going too fast.
-        private readonly double eventInterval;
+        private readonly int eventsPerTimeUnit;
 
         // A description used for diagnostics logs
         private readonly string name;
@@ -65,10 +64,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         //       monitor, so this is a good place for future optimizations
         private readonly Queue<long> timestamps;
 
-        // Keep track of the last element enqueued, to avoid O(n) lookups
-        private long lastTimestamp;
-
-        public RatedCounter(double rate, double timeUnitLength, string name, ILogger logger)
+        public RatedCounter(int rate, double timeUnitLength, string name, ILogger logger)
         {
             if (rate < MIN_RATE)
             {
@@ -90,73 +86,107 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             this.eventsPerTimeUnit = rate;
             this.timeUnitLength = timeUnitLength;
 
-            // e.g. 60000 / 100 = 600 msecs = one event every 0.6 secs
-            this.eventInterval = timeUnitLength / rate;
-
             this.timestamps = new Queue<long>();
-            this.lastTimestamp = 0;
 
-            this.log.Debug("New counter", () => new { name, rate, timeUnitLength });
+            this.log.Info("New counter", () => new { name, rate, timeUnitLength });
         }
 
         // Increase the counter, taking a pause if the caller is going too fast.
         // Return a boolean indicating whether a pause was required.
-        public async Task<bool> IncreaseAsync()
+        public async Task<bool> IncreaseAsync(CancellationToken token)
         {
-            long pause = 0;
+            long pause;
+
+            this.LogThroughput();
 
             // Note: keep the code fast, e.g. leave ASAP and don't I/O while locking
+            // TODO: improve performance: https://github.com/Azure/device-simulation-dotnet/issues/80
+            //       * remove O(n) lookups
+            //       * optimize memory usage (e.g. daily counters)
             lock (this.timestamps)
             {
-                long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                this.CleanQueue(now);
 
-                // Remove old events from the queue
-                var oneTimeUnitAgo = now - this.timeUnitLength;
-                while (this.timestamps.Count > 0 && this.timestamps.Peek() <= oneTimeUnitAgo)
+                // No pause if the limit hasn't been reached yet,
+                if (this.timestamps.Count < this.eventsPerTimeUnit)
                 {
-                    this.timestamps.Dequeue();
-                }
-
-                // How many events happened in the last time unit, and how many
-                // will happen next (the queue can contain future timestamps)
-                var count = this.timestamps.Count;
-                if (count < this.eventsPerTimeUnit)
-                {
-                    this.lastTimestamp = now;
                     this.timestamps.Enqueue(now);
                     return false;
                 }
 
-                // Calculate when the next event is allowed to run, i.e. how long to pause
-                // Note: this.lastTimestamp might be a value in the future
-                var nextTime = (long) (this.lastTimestamp + this.timeUnitLength + this.eventInterval * (count - this.eventsPerTimeUnit));
-                pause = nextTime - now;
+                long when;
+                now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var startFrom = now - this.timeUnitLength;
+                var howManyInTheLastTimeUnit = this.timestamps.Count(t => t > startFrom);
 
-                this.lastTimestamp = nextTime;
-                this.timestamps.Enqueue(nextTime);
+                // No pause if the limit hasn't been reached in the last time unit
+                if (howManyInTheLastTimeUnit < this.eventsPerTimeUnit)
+                {
+                    when = Math.Max(this.timestamps.Last(), now);
+                }
+                else
+                {
+                    // Add one [time unit] since when the Nth event ran
+                    var oneUnitTimeAgo = this.timestamps.ElementAt(this.timestamps.Count - this.eventsPerTimeUnit);
+                    when = oneUnitTimeAgo + (long) this.timeUnitLength;
+                }
+
+                pause = when - now;
+
+                this.timestamps.Enqueue(when);
+
+                // Ignore short pauses
+                if (pause < 1.01)
+                {
+                    return false;
+                }
             }
 
             // The caller is send too many events, if this happens you
             // should consider redesigning the simulation logic to run
             // slower, rather than relying purely on the counter
-            if (pause > 5000)
+            if (pause > 60000)
             {
-                if (pause > 60000)
-                {
-                    this.log.Warn("The pause will last more than a minute",
-                        () => new { this.name, seconds = pause / 1000 });
-                }
-                else
-                {
-                    this.log.Warn("The pause will last several seconds",
-                        () => new { this.name, seconds = pause / 1000 });
-                }
+                this.log.Warn("Pausing for more than a minute",
+                    () => new { this.name, seconds = pause / 1000 });
+            }
+            else if (pause > 5000)
+            {
+                this.log.Warn("Pausing for several seconds",
+                    () => new { this.name, seconds = pause / 1000 });
+            }
+            else
+            {
+                this.log.Info("Pausing", () => new { this.name, millisecs = pause });
             }
 
-            this.log.Debug("Pausing", () => new { this.name, millisecs = pause });
-            await Task.Delay((int) pause);
+            await Task.Delay((int) pause, token);
 
             return true;
+        }
+
+        private void LogThroughput()
+        {
+            if (this.log.LogLevel <= LogLevel.Debug && this.timestamps.Count > 1)
+            {
+                double speed = 0;
+                lock (this.timestamps)
+                {
+                    long time = this.timestamps.Last() - this.timestamps.First();
+                    speed = (int) (1000 * (double) this.timestamps.Count / time * 10) / 10;
+                }
+                this.log.Info(this.name + "/second", () => new { speed });
+            }
+        }
+
+        private void CleanQueue(long now)
+        {
+            // Clean up queue
+            while (this.timestamps.Count > 0 && (now - this.timestamps.Peek()) > 2 * this.timeUnitLength)
+            {
+                this.timestamps.Dequeue();
+            }
         }
     }
 }

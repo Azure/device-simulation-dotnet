@@ -16,7 +16,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
     public class Simulation : ISimulation
     {
-        private const int CHECK_INTERVAL = 3000;
+        private const int CHECK_INTERVAL_MSECS = 10000;
 
         private readonly ILogger log;
         private readonly ISimulations simulations;
@@ -73,7 +73,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     }
                 }
 
-                Thread.Sleep(CHECK_INTERVAL);
+                Thread.Sleep(CHECK_INTERVAL_MSECS);
             }
         }
 
@@ -93,7 +93,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 newSimulation.Modified != this.simulation.Modified)
             {
                 this.log.Debug("The simulation has been modified, stopping the current " +
-                               "simulation and starting the new one", () => { });
+                               "simulation and starting the new one if enabled", () => { });
                 this.runner.Stop();
 
                 this.simulation = newSimulation;

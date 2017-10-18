@@ -19,6 +19,8 @@ SET APP_HOME=%APP_HOME:~0,-9%
 cd %APP_HOME%
 
 IF "%1"=="-h" GOTO :Help
+IF "%1"=="/h" GOTO :Help
+IF "%1"=="/?" GOTO :Help
 IF "%1"=="--help" GOTO :Help
 IF "%1"=="-s" GOTO :RunInSandbox
 IF "%1"=="--in-sandbox" GOTO :RunInSandbox
@@ -148,7 +150,7 @@ IF "%1"=="--storage" GOTO :RunStorageAdapter
 
     docker run -it -p 9022:9022 ^
             -e PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING ^
-            azureiotpcs/pcs-storage-adapter-dotnet
+            azureiotpcs/pcs-storage-adapter-dotnet:testing
 
     :: Error 125 typically triggers in Windows if the drive is not shared
     IF %ERRORLEVEL% EQU 125 GOTO DOCKER_SHARE

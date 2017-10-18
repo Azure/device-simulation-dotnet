@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
@@ -42,7 +44,7 @@ namespace Services.Test.Concurrency
             var paused = false;
             for (var i = 0; i < EVENTS; i++)
             {
-                paused = paused || target.IncreaseAsync().Result;
+                paused = paused || target.IncreaseAsync(CancellationToken.None).Result;
             }
 
             // Assert
@@ -68,7 +70,7 @@ namespace Services.Test.Concurrency
             var paused = false;
             for (var i = 0; i < EVENTS; i++)
             {
-                paused = target.IncreaseAsync().Result;
+                paused = target.IncreaseAsync(CancellationToken.None).Result;
             }
 
             // Assert
@@ -100,7 +102,7 @@ namespace Services.Test.Concurrency
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             for (var i = 0; i < EVENTS; i++)
             {
-                target.IncreaseAsync().Wait(TEST_TIMEOUT);
+                target.IncreaseAsync(CancellationToken.None).Wait(TEST_TIMEOUT);
                 Thread.Sleep(100);
             }
 
@@ -138,13 +140,16 @@ namespace Services.Test.Concurrency
 
             // Act
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var last = now;
             for (var i = 0; i < EVENTS; i++)
             {
-                target.IncreaseAsync().Wait(TEST_TIMEOUT);
+                target.IncreaseAsync(CancellationToken.None).Wait(TEST_TIMEOUT);
+                last = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             }
 
             // Assert
-            var timepassed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
+            //long timepassed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
+            long timepassed = last - now;
             double actualSpeed = (double) (EVENTS - EVENTS_TO_IGNORE) * 1000 / timepassed;
             log.WriteLine("Time passed: {0} msecs", timepassed);
             log.WriteLine("Speed: {0} events/sec", actualSpeed);
@@ -173,7 +178,7 @@ namespace Services.Test.Concurrency
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             for (var i = 0; i < EVENTS; i++)
             {
-                target.IncreaseAsync().Wait(TEST_TIMEOUT);
+                target.IncreaseAsync(CancellationToken.None).Wait(TEST_TIMEOUT);
             }
 
             // Assert
@@ -197,13 +202,184 @@ namespace Services.Test.Concurrency
             var target = new PerSecondCounter(10, "test", this.targetLogger);
 
             // Act
-            var paused = false;
             for (var i = 0; i < 10; i++)
             {
                 // Assert - there was no pause
-                Assert.False(target.IncreaseAsync().Result);
+                Assert.False(target.IncreaseAsync(CancellationToken.None).Result);
                 Task.Delay(250).Wait();
             }
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void FourThreadsTenPerSecondAreThrottledTogether()
+        {
+            // Arrange
+            var events = new ConcurrentBag<DateTimeOffset>();
+            var target = new PerSecondCounter(10, "test", this.targetLogger);
+            var thread1 = new Thread(() =>
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    target.IncreaseAsync(CancellationToken.None).Wait();
+                    events.Add(DateTimeOffset.UtcNow);
+                }
+            });
+            var thread2 = new Thread(() =>
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    target.IncreaseAsync(CancellationToken.None).Wait();
+                    events.Add(DateTimeOffset.UtcNow);
+                }
+            });
+            var thread3 = new Thread(() =>
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    target.IncreaseAsync(CancellationToken.None).Wait();
+                    events.Add(DateTimeOffset.UtcNow);
+                }
+            });
+            var thread4 = new Thread(() =>
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    target.IncreaseAsync(CancellationToken.None).Wait();
+                    events.Add(DateTimeOffset.UtcNow);
+                }
+            });
+
+            // Act
+            while (DateTimeOffset.UtcNow.Millisecond > 200)
+            {
+                // wait until the next second
+            }
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            thread1.Start();
+            thread2.Start();
+            thread3.Start();
+            thread4.Start();
+            thread1.Join();
+            thread2.Join();
+            thread3.Join();
+            thread4.Join();
+
+            // Assert
+            var passed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
+            var j = 0;
+            foreach (var e in events.ToImmutableSortedSet())
+            {
+                j++;
+                log.WriteLine(j + ": " + e.ToString("hh:mm:ss.fff"));
+            }
+
+            log.WriteLine("time: " + passed);
+            Assert.InRange(passed, 3000, 3500);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void FourThreadsTwentyPerSecondAreThrottledTogether()
+        {
+            // Arrange
+            var events = new ConcurrentBag<DateTimeOffset>();
+            var target = new PerSecondCounter(20, "test", this.targetLogger);
+            var thread1 = new Thread(() =>
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    target.IncreaseAsync(CancellationToken.None).Wait();
+                    events.Add(DateTimeOffset.UtcNow);
+                }
+            });
+            var thread2 = new Thread(() =>
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    target.IncreaseAsync(CancellationToken.None).Wait();
+                    events.Add(DateTimeOffset.UtcNow);
+                }
+            });
+            var thread3 = new Thread(() =>
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    target.IncreaseAsync(CancellationToken.None).Wait();
+                    events.Add(DateTimeOffset.UtcNow);
+                }
+            });
+            var thread4 = new Thread(() =>
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    target.IncreaseAsync(CancellationToken.None).Wait();
+                    events.Add(DateTimeOffset.UtcNow);
+                }
+            });
+
+            // Act
+            while (DateTimeOffset.UtcNow.Millisecond > 200)
+            {
+                // wait until the next second
+            }
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            thread1.Start();
+            thread2.Start();
+            thread3.Start();
+            thread4.Start();
+            thread1.Join();
+            thread2.Join();
+            thread3.Join();
+            thread4.Join();
+
+            // Assert
+            var passed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
+            var j = 0;
+            foreach (var e in events.ToImmutableSortedSet())
+            {
+                j++;
+                log.WriteLine(j + ": " + e.ToString("hh:mm:ss.fff"));
+            }
+
+            log.WriteLine("time: " + passed);
+            Assert.InRange(passed, 1000, 1500);
+        }
+
+        /**
+         * Run two burst separate by a pause of 5 seconds, which is an edge
+         * case in the internal implementation, when the queue is cleaned up.
+         */
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST), Trait(Constants.SPEED, Constants.SLOW_TEST)]
+        public void ItSupportLongPeriodsWithoutEvents()
+        {
+            log.WriteLine("Starting test at " + DateTimeOffset.UtcNow.ToString("HH:mm:ss.fff"));
+
+            // Arrange
+            const int MAX_SPEED = 10;
+            const int EVENTS1 = 65;
+            const int EVENTS2 = 35;
+            var target = new PerSecondCounter(MAX_SPEED, "test", this.targetLogger);
+
+            // Act - Run 2 separate burst, separate by a pause long enough
+            // for the internal queue to be cleaned up.
+            var t1 = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            for (var i = 0; i < EVENTS1; i++)
+            {
+                target.IncreaseAsync(CancellationToken.None).Wait(TEST_TIMEOUT);
+            }
+            var t2 = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+            Thread.Sleep(5001);
+
+            var t3 = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            for (var i = 0; i < EVENTS2; i++)
+            {
+                target.IncreaseAsync(CancellationToken.None).Wait(TEST_TIMEOUT);
+            }
+            var t4 = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+            // Assert
+            Assert.InRange(t2 - t1, 6000, 7000);
+            Assert.InRange(t4 - t3, 3000, 4000);
         }
 
         /**
@@ -213,7 +389,7 @@ namespace Services.Test.Concurrency
          * with a limit of 20 events/second.
          */
         //[Fact]
-        [Fact(Skip="Test used only while debugging"), Trait(Constants.TYPE, Constants.UNIT_TEST), Trait(Constants.SPEED, Constants.SLOW_TEST)]
+        [Fact(Skip = "Test used only while debugging"), Trait(Constants.TYPE, Constants.UNIT_TEST), Trait(Constants.SPEED, Constants.SLOW_TEST)]
         public void ItObtainsTheDesiredFrequency_DebuggingTest()
         {
             log.WriteLine("Starting test at " + DateTimeOffset.UtcNow.ToString("HH:mm:ss.fff"));
@@ -230,7 +406,7 @@ namespace Services.Test.Concurrency
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             for (var i = 0; i < EVENTS; i++)
             {
-                target.IncreaseAsync().Wait(TEST_TIMEOUT);
+                target.IncreaseAsync(CancellationToken.None).Wait(TEST_TIMEOUT);
             }
 
             // Assert - the test should take ~5 seconds

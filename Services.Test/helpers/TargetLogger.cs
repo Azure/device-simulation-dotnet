@@ -19,6 +19,8 @@ namespace Services.Test.helpers
             this.testLogger = testLogger;
         }
 
+        public LogLevel LogLevel { get; }
+
         public void Debug(string message, Action context)
         {
             this.testLogger.WriteLine(Time() + "Target Debug: " + message);
