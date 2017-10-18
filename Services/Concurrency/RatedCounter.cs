@@ -136,7 +136,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
                 this.timestamps.Enqueue(when);
 
-                // Ignore pauses shorter than or equal to 1 msecs
+                // Ignore short pauses
                 if (pause < 1.01)
                 {
                     return false;

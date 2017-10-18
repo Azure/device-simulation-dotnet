@@ -38,6 +38,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.client = client;
             this.log = logger;
             this.scriptInterpreter = scriptInterpreter;
+            this.deviceId = string.Empty;
         }
 
         public async Task RegisterMethodsAsync(
@@ -45,6 +46,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IDictionary<string, Script> methods,
             Dictionary<string, object> deviceState)
         {
+            if (this.deviceId != string.Empty)
+            {
+                this.log.Error("Application error, each device must have a separate instance", () => { });
+                throw new Exception("Application error, each device must have a separate instance of " + this.GetType().FullName);
+            }
+
             this.deviceId = deviceId;
             this.cloudToDeviceMethods = methods;
             this.deviceState = deviceState;
