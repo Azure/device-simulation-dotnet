@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net;
@@ -45,13 +44,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
         private const string EXT_RESOURCES_HEADER = "X-Source";
 
         private const string ERROR401 = @"{""Error"":""Authentication required""}";
+        private const string ERROR503_AUTH = @"{""Error"":""Authentication service not available""}";
 
         private readonly RequestDelegate requestDelegate;
         private readonly IConfigurationManager<OpenIdConnectConfiguration> openIdCfgMan;
         private readonly IClientAuthConfig config;
         private readonly ILogger log;
-        private readonly TokenValidationParameters tokenValidationParams;
+        private TokenValidationParameters tokenValidationParams;
         private readonly bool authRequired;
+        private bool tokenValidationInitialized;
 
         public AuthMiddleware(
             // ReSharper disable once UnusedParameter.Local
@@ -65,6 +66,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
             this.config = config;
             this.log = log;
             this.authRequired = config.AuthRequired;
+            this.tokenValidationInitialized = false;
 
             // This will show in development mode, or in case auth is turned off
             if (!this.authRequired)
@@ -84,25 +86,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
                     this.config.JwtClockSkew
                 });
 
-                this.tokenValidationParams = new TokenValidationParameters
-                {
-                    // Validate the token signature
-                    RequireSignedTokens = true,
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKeys = this.GetSigningKeys(),
-
-                    // Validate the token issuer
-                    ValidateIssuer = true,
-                    ValidIssuer = this.config.JwtIssuer,
-
-                    // Validate the token audience
-                    ValidateAudience = true,
-                    ValidAudience = this.config.JwtAudience,
-
-                    // Validate token lifetime
-                    ValidateLifetime = true,
-                    ClockSkew = this.config.JwtClockSkew
-                };
+                this.InitializeTokenValidationAsync(CancellationToken.None).Wait();
             }
 
             // TODO ~devis: this is a temporary solution for public preview only
@@ -137,6 +121,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
                 // Call the next delegate/middleware in the pipeline
                 this.log.Debug("Skipping auth (auth disabled)", () => { });
                 return this.requestDelegate(context);
+            }
+
+            if (!this.InitializeTokenValidationAsync(context.RequestAborted).Result)
+            {
+                context.Response.StatusCode = (int) HttpStatusCode.ServiceUnavailable;
+                context.Response.Headers["Content-Type"] = "application/json";
+                context.Response.WriteAsync(ERROR503_AUTH);
+                return Task.CompletedTask;
             }
 
             if (context.Request.Headers.ContainsKey(AUTH_HEADER))
@@ -202,20 +194,43 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
             return false;
         }
 
-        private ICollection<SecurityKey> GetSigningKeys()
+        private async Task<bool> InitializeTokenValidationAsync(CancellationToken token)
         {
+            if (this.tokenValidationInitialized) return true;
+
             try
             {
-                return this.openIdCfgMan
-                    .GetConfigurationAsync(CancellationToken.None).Result
-                    .SigningKeys;
+                this.log.Info("Initializing OpenID configuration", () => { });
+                var openIdConfig = await this.openIdCfgMan.GetConfigurationAsync(token);
+
+                this.tokenValidationParams = new TokenValidationParameters
+                {
+                    // Validate the token signature
+                    RequireSignedTokens = true,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKeys = openIdConfig.SigningKeys,
+
+                    // Validate the token issuer
+                    ValidateIssuer = true,
+                    ValidIssuer = this.config.JwtIssuer,
+
+                    // Validate the token audience
+                    ValidateAudience = true,
+                    ValidAudience = this.config.JwtAudience,
+
+                    // Validate token lifetime
+                    ValidateLifetime = true,
+                    ClockSkew = this.config.JwtClockSkew
+                };
+
+                this.tokenValidationInitialized = true;
             }
             catch (Exception e)
             {
                 this.log.Error("Failed to setup OpenId Connect", () => new { e });
             }
 
-            return null;
+            return this.tokenValidationInitialized;
         }
     }
 }
