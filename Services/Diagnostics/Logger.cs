@@ -16,6 +16,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
     public interface ILogger
     {
+        LogLevel LogLevel { get; }
+
         // The following 4 methods allow to log a message, capturing the context
         // (i.e. the method where the log message is generated)
 
@@ -36,37 +38,39 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
     public class Logger : ILogger
     {
         private readonly string processId;
-        private readonly LogLevel loggingLevel;
+        private readonly LogLevel logLevel;
 
-        public Logger(string processId, LogLevel loggingLevel)
+        public Logger(string processId, LogLevel logLevel)
         {
             this.processId = processId;
-            this.loggingLevel = loggingLevel;
+            this.logLevel = logLevel;
         }
+
+        public LogLevel LogLevel => this.logLevel;
 
         // The following 4 methods allow to log a message, capturing the context
         // (i.e. the method where the log message is generated)
         public void Debug(string message, Action context)
         {
-            if (this.loggingLevel > LogLevel.Debug) return;
+            if (this.logLevel > LogLevel.Debug) return;
             this.Write("DEBUG", context.GetMethodInfo(), message);
         }
 
         public void Info(string message, Action context)
         {
-            if (this.loggingLevel > LogLevel.Info) return;
+            if (this.logLevel > LogLevel.Info) return;
             this.Write("INFO", context.GetMethodInfo(), message);
         }
 
         public void Warn(string message, Action context)
         {
-            if (this.loggingLevel > LogLevel.Warn) return;
+            if (this.logLevel > LogLevel.Warn) return;
             this.Write("WARN", context.GetMethodInfo(), message);
         }
 
         public void Error(string message, Action context)
         {
-            if (this.loggingLevel > LogLevel.Error) return;
+            if (this.logLevel > LogLevel.Error) return;
             this.Write("ERROR", context.GetMethodInfo(), message);
         }
 
@@ -74,7 +78,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         // capturing the context (i.e. the method where the log message is generated)
         public void Debug(string message, Func<object> context)
         {
-            if (this.loggingLevel > LogLevel.Debug) return;
+            if (this.logLevel > LogLevel.Debug) return;
 
             if (!string.IsNullOrEmpty(message)) message += ", ";
             message += Serialization.Serialize(context.Invoke());
@@ -84,7 +88,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
         public void Info(string message, Func<object> context)
         {
-            if (this.loggingLevel > LogLevel.Info) return;
+            if (this.logLevel > LogLevel.Info) return;
 
             if (!string.IsNullOrEmpty(message)) message += ", ";
             message += Serialization.Serialize(context.Invoke());
@@ -94,7 +98,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
         public void Warn(string message, Func<object> context)
         {
-            if (this.loggingLevel > LogLevel.Warn) return;
+            if (this.logLevel > LogLevel.Warn) return;
 
             if (!string.IsNullOrEmpty(message)) message += ", ";
             message += Serialization.Serialize(context.Invoke());
@@ -104,7 +108,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
         public void Error(string message, Func<object> context)
         {
-            if (this.loggingLevel > LogLevel.Error) return;
+            if (this.logLevel > LogLevel.Error) return;
 
             if (!string.IsNullOrEmpty(message)) message += ", ";
             message += Serialization.Serialize(context.Invoke());
@@ -133,8 +137,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             methodname = methodname.Split(new[] { '>' }, 2).First();
             methodname = methodname.Split(new[] { '<' }, 2).Last();
 
-            var time = DateTimeOffset.UtcNow.ToString("u");
-            Console.WriteLine($"[{this.processId}][{time}][{level}][{classname}:{methodname}] {text}");
+            var time = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff");
+            Console.WriteLine($"[{level}][{time}][{this.processId}][{classname}:{methodname}] {text}");
         }
     }
 }

@@ -130,8 +130,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 this.log.Info("Modifying simulation via PUT.", () => { });
 
-                if (simulation.Etag != simulations[0].Etag) {
-
+                if (simulation.Etag != simulations[0].Etag)
+                {
                     this.log.Error("Invalid Etag. Running simulation Etag is:'", () => new { simulations });
                     throw new InvalidInputException("Invalid Etag. Running simulation Etag is:'" + simulations[0].Etag + "'.");
                 }
@@ -151,11 +151,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             // Note: forcing the ID because only one simulation can be created
             simulation.Id = SIMULATION_ID;
-            await this.storage.UpdateAsync(
+            var item = await this.storage.UpdateAsync(
                 STORAGE_COLLECTION,
                 SIMULATION_ID,
                 JsonConvert.SerializeObject(simulation),
                 simulation.Etag);
+
+            // Return the new etag provided by the storage
+            simulation.Etag = item.ETag;
 
             return simulation;
         }

@@ -169,19 +169,24 @@ namespace Services.Test
             // Arrange
             this.ThereAreSomeDeviceModels();
             this.ThereAreNoSimulationsInTheStorage();
+            // Arrange the simulation data returned by the storage adapter
+            var updatedValue = new ValueApiModel { ETag = "newETag" };
+            this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(updatedValue);
 
             // Act
             var simulation = new SimulationModel
             {
                 Id = SIMULATION_ID,
                 Enabled = false,
-                Etag = "2345213461"
+                Etag = "oldETag"
             };
             this.target.UpsertAsync(simulation).Wait();
 
             // Assert
             this.storage.Verify(
-                x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.IsAny<string>(), simulation.Etag));
+                x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.IsAny<string>(), "oldETag"));
+            Assert.Equal("newETag", simulation.Etag);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

@@ -8,69 +8,76 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
     public interface ITimer
     {
-        ITimer Start();
-        ITimer StartIn(TimeSpan delay);
-        void Stop();
-        ITimer Setup(Action<object> action, object context, TimeSpan frequency);
-        ITimer Setup(Action<object> action, object context, int frequency);
+        void Setup(Action<object> action);
+        void Setup(Action<object> action, object context);
+        void RunOnce(int? dueTime);
+        void RunOnce(double? dueTime);
+        void Cancel();
     }
 
     public class Timer : ITimer
     {
         private readonly ILogger log;
-
+        private bool cancelled = false;
         private System.Threading.Timer timer;
-        private int frequency;
 
         public Timer(ILogger logger)
         {
             this.log = logger;
-            this.frequency = 0;
         }
 
-        public ITimer Setup(Action<object> action, object context, TimeSpan frequency)
+        public void Setup(Action<object> action, object context)
         {
-            return this.Setup(action, context, (int) frequency.TotalMilliseconds);
-        }
-
-        public ITimer Setup(Action<object> action, object context, int frequency)
-        {
-            this.frequency = frequency;
             this.timer = new System.Threading.Timer(
                 new TimerCallback(action),
                 context,
                 Timeout.Infinite,
-                this.frequency);
-            return this;
+                Timeout.Infinite);
         }
 
-        public ITimer Start()
+        public void Setup(Action<object> action)
         {
-            return this.StartIn(TimeSpan.Zero);
+            this.Setup(action, null);
         }
 
-        public ITimer StartIn(TimeSpan delay)
+        public void RunOnce(int? dueTime)
         {
+            if (!dueTime.HasValue) return;
+
+            if (this.cancelled)
+            {
+                this.log.Debug("Timer has been cancelled, ignoring call to RunOnce", () => { });
+            }
+
             if (this.timer == null)
             {
                 this.log.Error("The timer is not initialized", () => { });
                 throw new TimerNotInitializedException();
             }
 
-            this.timer.Change((int)delay.TotalMilliseconds, this.frequency);
-            return this;
+            // Normalize negative values
+            var when = Math.Max(0, dueTime.Value);
+            this.timer?.Change(when, Timeout.Infinite);
         }
 
-        public void Stop()
+        public void RunOnce(double? dueTime)
+        {
+            if (!dueTime.HasValue) return;
+
+            this.RunOnce((int) dueTime.Value);
+        }
+
+        public void Cancel()
         {
             try
             {
+                this.cancelled = true;
                 this.timer?.Change(Timeout.Infinite, Timeout.Infinite);
                 this.timer?.Dispose();
             }
-            catch (ObjectDisposedException e)
+            catch (ObjectDisposedException)
             {
-                this.log.Info("The timer was already disposed.", () => new { e });
+                this.log.Debug("The timer object was already disposed", () => { });
             }
         }
     }

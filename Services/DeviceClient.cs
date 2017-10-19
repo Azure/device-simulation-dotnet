@@ -6,9 +6,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
@@ -17,15 +17,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     {
         IoTHubProtocol Protocol { get; }
 
-        Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema);
-
-        Task SendRawMessageAsync(Message message);
+        Task ConnectAsync();
 
         Task DisconnectAsync();
 
+        Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema);
+
         Task UpdateTwinAsync(Device device);
 
-        void RegisterMethodsForDevice(IDictionary<string, Script> methods, Dictionary<string, object> deviceState);
+        Task RegisterMethodsForDeviceAsync(IDictionary<string, Script> methods, Dictionary<string, object> deviceState);
     }
 
     public class DeviceClient : IDeviceClient
@@ -38,42 +38,63 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private const string MESSAGE_SCHEMA_PROPERTY = "$$MessageSchema";
         private const string CONTENT_PROPERTY = "$$ContentType";
 
-        private readonly Azure.Devices.Client.DeviceClient client;
-        private readonly ILogger log;
-        private readonly IoTHubProtocol protocol;
         private readonly string deviceId;
-        private readonly IScriptInterpreter scriptInterpreter;
+        private readonly IoTHubProtocol protocol;
+        private readonly Azure.Devices.Client.DeviceClient client;
+        private readonly IDeviceMethods deviceMethods;
+        private readonly IRateLimiting rateLimiting;
+        private readonly ILogger log;
 
-        //used to create method pointers for the device for the IoTHub to callback to
-        private DeviceMethods deviceMethods;
-
-        public DeviceClient(
-            Azure.Devices.Client.DeviceClient client,
-            IoTHubProtocol protocol,
-            ILogger logger,
-            string deviceId,
-            IScriptInterpreter scriptInterpreter)
-        {
-            this.client = client;
-            this.protocol = protocol;
-            this.log = logger;
-            this.deviceId = deviceId;
-            this.scriptInterpreter = scriptInterpreter;
-        }
+        private bool connected;
 
         public IoTHubProtocol Protocol => this.protocol;
 
-        public void RegisterMethodsForDevice(IDictionary<string, Script> methods,
+        public DeviceClient(
+            string deviceId,
+            IoTHubProtocol protocol,
+            Azure.Devices.Client.DeviceClient client,
+            IDeviceMethods deviceMethods,
+            IRateLimiting rateLimiting,
+            ILogger logger)
+        {
+            this.deviceId = deviceId;
+            this.protocol = protocol;
+            this.client = client;
+            this.deviceMethods = deviceMethods;
+            this.rateLimiting = rateLimiting;
+            this.log = logger;
+            this.connected = false;
+        }
+
+        public async Task ConnectAsync()
+        {
+            if (this.client != null && !this.connected)
+            {
+                // TODO: HTTP clients don't "connect", find out how HTTP connections are measured and throttled
+                //       https://github.com/Azure/device-simulation-dotnet/issues/85
+                await this.rateLimiting.LimitConnectionsAsync(() => this.client.OpenAsync());
+                this.connected = true;
+            }
+        }
+
+        public async Task DisconnectAsync()
+        {
+            this.connected = false;
+            if (this.client != null)
+            {
+                await this.client.CloseAsync();
+                this.client.Dispose();
+            }
+        }
+
+        public async Task RegisterMethodsForDeviceAsync(
+            IDictionary<string, Script> methods,
             Dictionary<string, object> deviceState)
         {
-            this.log.Debug("Attempting to setup methods for device", () => new
-            {
-                this.deviceId
-            });
+            this.log.Debug("Attempting to register device methods",
+                () => new { this.deviceId });
 
-            // TODO: Inject through the constructor instead
-            this.deviceMethods = new DeviceMethods(this.client, this.log, methods, deviceState, this.deviceId,
-                this.scriptInterpreter);
+            await this.deviceMethods.RegisterMethodsAsync(this.deviceId, methods, deviceState);
         }
 
         public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
@@ -91,11 +112,40 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             });
         }
 
-        public async Task SendRawMessageAsync(Message message)
+        public async Task UpdateTwinAsync(Device device)
+        {
+            if (!this.connected) await this.ConnectAsync();
+
+            var azureTwin = await this.rateLimiting.LimitTwinReadsAsync(
+                () => this.client.GetTwinAsync());
+
+            // Remove properties
+            var props = azureTwin.Properties.Reported.GetEnumerator();
+            while (props.MoveNext())
+            {
+                var current = (KeyValuePair<string, object>) props.Current;
+
+                if (!device.Twin.ReportedProperties.ContainsKey(current.Key))
+                {
+                    this.log.Debug("Removing key", () => new { current.Key });
+                    azureTwin.Properties.Reported[current.Key] = null;
+                }
+            }
+
+            // Write properties
+            var reportedProperties = DictionaryToTwinCollection(device.Twin.ReportedProperties);
+            await this.rateLimiting.LimitTwinWritesAsync(
+                () => this.client.UpdateReportedPropertiesAsync(reportedProperties));
+        }
+
+        private async Task SendRawMessageAsync(Message message)
         {
             try
             {
-                await this.client.SendEventAsync(message);
+                if (!this.connected) await this.ConnectAsync();
+
+                await this.rateLimiting.LimitMessagesAsync(
+                    () => this.client.SendEventAsync(message));
 
                 this.log.Debug("SendRawMessageAsync for device", () => new
                 {
@@ -113,43 +163,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         e.InnerException
                     });
             }
-        }
-
-        public async Task UpdateTwinAsync(Device device)
-        {
-            var azureTwin = await this.GetTwinAsync();
-
-            // Remove properties
-            var props = azureTwin.Properties.Reported.GetEnumerator();
-            while (props.MoveNext())
-            {
-                var current = (KeyValuePair<string, object>) props.Current;
-
-                if (!device.Twin.ReportedProperties.ContainsKey(current.Key))
-                {
-                    this.log.Debug("Removing key", () => new { current.Key });
-                    azureTwin.Properties.Reported[current.Key] = null;
-                }
-            }
-
-            // Write properties
-            var reportedProperties = DictionaryToTwinCollection(device.Twin.ReportedProperties);
-
-            await this.client.UpdateReportedPropertiesAsync(reportedProperties);
-        }
-
-        public async Task DisconnectAsync()
-        {
-            if (this.client != null)
-            {
-                await this.client.CloseAsync();
-                this.client.Dispose();
-            }
-        }
-
-        private async Task<Twin> GetTwinAsync()
-        {
-            return await this.client.GetTwinAsync();
         }
 
         private static TwinCollection DictionaryToTwinCollection(Dictionary<string, JToken> x)

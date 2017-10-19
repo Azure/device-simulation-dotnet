@@ -1,109 +1,49 @@
-﻿using System;
+﻿// Copyright (c) Microsoft. All rights reserved.
+
+using System;
 using System.Collections.Generic;
-using System.Text;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
-using System.Threading;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic.Models;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic
 {
-
     public class UpdateReportedProperties : IDeviceStatusLogic
     {
-        // When connecting to IoT Hub, timeout after 10 seconds
-        private static readonly TimeSpan connectionTimeout = TimeSpan.FromSeconds(10);
+        // Twin update frequency
+        private const int UPDATE_FREQUENCY_MSECS = 30000;
 
-        private IDevices devices;
+        private readonly IDevices devices;
         private string deviceId;
         private DeviceModel deviceModel;
+
+        // The timer invoking the Run method
+        private readonly ITimer timer;
 
         private readonly ILogger log;
 
         // Ensure that setup is called once and only once (which helps also detecting thread safety issues)
         private bool setupDone = false;
 
+        private IDeviceActor context;
+
         public UpdateReportedProperties(
+            ITimer timer,
             IDevices devices,
             ILogger logger)
         {
+            this.timer = timer;
             this.log = logger;
             this.devices = devices;
+            this.timer.Setup(this.Run);
         }
 
-        public void Run(object context)
+        public void Setup(string deviceId, DeviceModel deviceModel, IDeviceActor context)
         {
-            try { 
-
-                this.ValidateSetup();
-
-                var actor = (IDeviceActor)context;
-                if (actor.CancellationToken.IsCancellationRequested)
-                {
-                    actor.Stop();
-                    return;
-                }
-
-                //TODO: Here we should pause the timer in case the device takes too long to pull from the hub
-
-                this.log.Debug(
-                    "Checking for desired property updates & updated reported properties",
-                    () => new { this.deviceId, deviceState = actor.DeviceState
-                    });
-
-                // Get device
-                var device = this.GetDevice(actor.CancellationToken);
-                var differences = false;
-                lock (actor.DeviceState)
-                {
-                    // TODO: the device model should define whether the local state or the 
-                    //       desired state wins, i.e.where is the master value
-                    // https://github.com/Azure/device-simulation-dotnet/issues/76
-
-                    // update reported properties with any state changes (either from desired prop 
-                    // changes, methods, etc.)
-                    if (this.ChangeTwinPropertiesToMatchDesired(device, actor.DeviceState))
-                        differences = true;
-
-                    // check for differences between reported/desired properties, update reported
-                    // properties with desired property values
-                    if (this.ChangeTwinPropertiesToMatchActorState(device, actor.DeviceState))
-                        differences = true;
-                }
-                if(differences)
-                    actor.BootstrapClient.UpdateTwinAsync(device).Wait((int)connectionTimeout.TotalMilliseconds);
-
-                // Move state machine forward to start sending telemetry messages if needed
-                if (actor.ActorStatus == Status.UpdatingReportedProperties)
-                {
-                    actor.MoveNext();
-                }
-                else
-                {
-                    this.log.Debug(
-                        "Already moved state machine forward, continuing to check for desired property changes",
-                        () => new { this.deviceId });
-                }
-
-            }
-            catch (Exception e)
-            {
-                this.log.Error("UpdateReportedProperties failed",
-                    () => new { this.deviceId, e});
-            }
-            finally
-            {
-                //TODO: Here we should unpause the timer - this same thing should be done in all state machine methods
-
-            }
-
-        }
-
-
-        public void Setup(string deviceId, DeviceModel deviceModel)
-        {
-
             if (this.setupDone)
             {
                 this.log.Error("Setup has already been invoked, are you sharing this instance with multiple devices?",
@@ -115,6 +55,95 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.deviceId = deviceId;
             this.deviceModel = deviceModel;
 
+            this.context = context;
+        }
+
+        public void Start()
+        {
+            this.log.Info("Starting UpdateReportedProperties", () => new { this.deviceId });
+            this.timer.RunOnce(0);
+        }
+
+        public void Stop()
+        {
+            this.log.Info("Stopping UpdateReportedProperties", () => new { this.deviceId });
+            this.timer.Cancel();
+        }
+
+        public void Run(object context)
+        {
+            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            try
+            {
+                try
+                {
+                    this.RunInternalAsync().Wait();
+                }
+                finally
+                {
+                    var passed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                    this.timer?.RunOnce(UPDATE_FREQUENCY_MSECS - passed);
+                }
+            }
+            catch (ObjectDisposedException e)
+            {
+                this.log.Debug("The simulation was stopped and some of the context is not available", () => new { e });
+            }
+        }
+
+        private async Task RunInternalAsync()
+        {
+            this.ValidateSetup();
+
+            var actor = this.context;
+            if (actor.CancellationToken.IsCancellationRequested)
+            {
+                actor.Stop();
+                return;
+            }
+
+            try
+            {
+                this.log.Debug("Checking for desired property updates & update reported properties",
+                    () => new { this.deviceId, deviceState = actor.DeviceState });
+
+                // Get device from IoT Hub registry
+                var device = await this.devices.GetAsync(this.deviceId, true, actor.CancellationToken);
+
+                var differences = false;
+                lock (actor.DeviceState)
+                {
+                    // TODO: the device model should define whether the local state or the
+                    //       desired state wins, i.e.where is the master value
+                    // https://github.com/Azure/device-simulation-dotnet/issues/76
+
+                    // update reported properties with any state changes (either from desired prop
+                    // changes, methods, etc.)
+                    if (this.ChangeTwinPropertiesToMatchDesired(device, actor.DeviceState))
+                        differences = true;
+
+                    // check for differences between reported/desired properties, update reported
+                    // properties with desired property values
+                    if (this.ChangeTwinPropertiesToMatchActorState(device, actor.DeviceState))
+                        differences = true;
+                }
+
+                if (differences)
+                {
+                    await actor.BootstrapClient.UpdateTwinAsync(device);
+                }
+
+                // Move state machine forward to start sending telemetry
+                if (actor.ActorStatus == Status.UpdatingReportedProperties)
+                {
+                    actor.MoveNext();
+                }
+            }
+            catch (Exception e)
+            {
+                this.log.Error("UpdateReportedProperties failed",
+                    () => new { this.deviceId, e });
+            }
         }
 
         private bool ChangeTwinPropertiesToMatchActorState(Device device, Dictionary<string, object> actorState)
@@ -164,13 +193,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             return differences;
         }
 
-        private Device GetDevice(CancellationToken token)
-        {
-            var task = this.devices.GetAsync(this.deviceId);
-            task.Wait((int)connectionTimeout.TotalMilliseconds, token);
-            return task.Result;
-        }
-
         private void ValidateSetup()
         {
             if (!this.setupDone)
@@ -181,5 +203,4 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             }
         }
     }
-
 }

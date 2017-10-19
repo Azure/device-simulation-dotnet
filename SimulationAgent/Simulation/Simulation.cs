@@ -16,7 +16,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
     public class Simulation : ISimulation
     {
-        private const int CHECK_INTERVAL = 3000;
+        private const int CHECK_INTERVAL_MSECS = 10000;
 
         private readonly ILogger log;
         private readonly ISimulations simulations;
@@ -58,7 +58,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                     // if the current simulation was asked to stop, stop it.
                     this.CheckForStopOrStartToSimulation();
-
                 }
                 catch (Exception e)
                 {
@@ -70,11 +69,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     this.log.Debug("----Current simulation being run------", () => { });
                     foreach (var model in this.simulation.DeviceModels)
                     {
-                        this.log.Debug("Device model:", () => model );
+                        this.log.Debug("Device model", () => new { model });
                     }
                 }
 
-                Thread.Sleep(CHECK_INTERVAL);
+                Thread.Sleep(CHECK_INTERVAL_MSECS);
             }
         }
 
@@ -94,14 +93,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 newSimulation.Modified != this.simulation.Modified)
             {
                 this.log.Debug("The simulation has been modified, stopping the current " +
-                               "simulation and starting the new one", () => { });
+                               "simulation and starting the new one if enabled", () => { });
                 this.runner.Stop();
 
                 this.simulation = newSimulation;
                 if (this.simulation.Enabled)
                 {
                     this.runner.Start(this.simulation);
-                    this.log.Debug("----Started new simulation ------", () => this.simulation);
+                    this.log.Debug("----Started new simulation ------", () => new { this.simulation });
                 }
             }
         }
@@ -130,6 +129,5 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 this.runner.Start(this.simulation);
             }
         }
-
     }
 }
