@@ -79,21 +79,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public Task<MethodResponse> ExecuteMethodAsync(MethodRequest methodRequest, object userContext)
         {
-            this.log.Info("Creating task to execute method with json payload.", () => new
+            try
             {
-                this.deviceId,
-                methodName = methodRequest.Name,
-                methodRequest.DataAsJson
-            });
+                this.log.Info("Creating task to execute method with json payload.", () => new
+                {
+                    this.deviceId,
+                    methodName = methodRequest.Name,
+                    methodRequest.DataAsJson
+                });
 
-            // Kick the method off on a separate thread & immediately return
-            // Not immediately returning would block the client connection to the hub
-            var t = Task.Run(() => this.MethodExecution(methodRequest));
+                // Kick the method off on a separate thread & immediately return
+                // Not immediately returning would block the client connection to the hub
+                var t = Task.Run(() => this.MethodExecution(methodRequest));
 
-            return Task.FromResult(
-                new MethodResponse(
-                    Encoding.UTF8.GetBytes("Executed Method:" + methodRequest.Name),
-                    (int) HttpStatusCode.OK));
+                return Task.FromResult(new MethodResponse((int) HttpStatusCode.OK));
+
+            }
+            catch(Exception e)
+            {
+                log.Error("Failed executing method.", () => new { methodRequest, e });
+                return Task.FromResult(new MethodResponse((int)HttpStatusCode.InternalServerError));
+            }
         }
 
         private void MethodExecution(MethodRequest methodRequest)

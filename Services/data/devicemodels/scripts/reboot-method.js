@@ -31,13 +31,18 @@ function main(context, previousState) {
     // update the state to offline
     updateState(state);
 
-    // Sleep for 20 seconds
-    sleep(20000);
+    // Sleep for 15 seconds
+    sleep(15000);
 
     state.DeviceMethodStatus = "Successfully rebooted device.";
+    updateState(state);
+
+    // Sleep for 5 seconds
+    sleep(5000);
     state.CalculateRandomizedTelemetry = true;
-    state.online = true;
     // update the state back to online
+    state.online = true;
+    state.DeviceMethodStatus = "";
     updateState(state);
 
 }

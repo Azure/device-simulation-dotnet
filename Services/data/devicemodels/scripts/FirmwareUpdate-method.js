@@ -38,7 +38,7 @@ function main(context, previousState) {
     log("Image Downloading...");
     state.DeviceMethodStatus = "Image Downloading...";
     updateState(state);
-    sleep(10000);
+    sleep(7500);
 
     log("Executing firmware update simulation function, firmware version passed:" + context.Firmware);
     state.DeviceMethodStatus = "Downloaded, applying firmware...";
@@ -52,10 +52,11 @@ function main(context, previousState) {
     state.DeviceMethodStatus = "Firmware Updated.";
     state.Firmware = context.Firmware;
     updateState(state);
-    sleep(5000);
+    sleep(7500);
 
     state.CalculateRandomizedTelemetry = true;
     state.online = true;
+    state.DeviceMethodStatus = "";
     updateState(state);
 
 }
