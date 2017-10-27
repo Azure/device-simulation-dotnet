@@ -10,7 +10,6 @@ var center_longitude = -121.177075;
 
 // Default state
 var state = {
-    online: true,
     latitude: center_latitude,
     longitude: center_longitude,
     speed: 80.0,

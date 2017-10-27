@@ -7,7 +7,6 @@
     "Protocol": "MQTT",
     "Simulation": {
         "InitialState": {
-            "online": true,
             "fuellevel": 70.0,
             "fuellevel_unit": "Gal",
             "coolant": 7500.0,
@@ -23,9 +22,16 @@
     },
     "Properties": {
         "Type": "Engine",
+        "Firmware": "1.0",
+        "Model": "PR005",
         "Location": "Factory 1",
-        "Latitude": 47.65358,
-        "Longitude": -122.133545
+        "Latitude": 47.643799,
+        "Longitude": -122.131369
+    },
+    "Tags": {
+        "Location": "Factory 1",
+        "Floor": "P1",
+        "Campus": "Redmond"
     },
     "Telemetry": [
         {

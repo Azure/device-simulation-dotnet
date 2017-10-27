@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -97,7 +96,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch(Exception e)
             {
-                log.Error("Failed executing method.", () => new { methodRequest, e });
+                this.log.Error("Failed executing method.", () => new { methodRequest, e });
                 return Task.FromResult(new MethodResponse((int)HttpStatusCode.InternalServerError));
             }
         }

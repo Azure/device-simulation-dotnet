@@ -17,8 +17,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     /// </summary>
     public class UpdateDeviceState : IDeviceStatusLogic
     {
-        private const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
-
         private readonly IScriptInterpreter scriptInterpreter;
         private readonly ILogger log;
         private string deviceId;
@@ -108,21 +106,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
             try
             {
-                var scriptContext = new Dictionary<string, object>
-                {
-                    ["currentTime"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:sszzz"),
-                    ["deviceId"] = this.deviceId,
-                    ["deviceModel"] = this.deviceModel.Name
-                };
-
-                // until the correlating function has been called; e.g. when increasepressure is called, don't write
-                // telemetry until decreasepressure is called for that property.
-                this.log.Debug("Checking for the need to compute new telemetry",
+                // until the correlating function has been called; e.g. when increasepressure is called,
+                // don't write telemetry until decreasepressure is called for that property
+                this.log.Debug("Checking for the need to compute new sensors state",
                     () => new { this.deviceId, deviceState = actor.DeviceState });
-                if ((bool) actor.DeviceState[CALC_TELEMETRY])
+
+                if (ScriptInterpreter.IsSensorSimulationEnabled(actor.DeviceState))
                 {
-                    // Compute new telemetry.
-                    this.log.Debug("Updating device telemetry data", () => new { this.deviceId, deviceState = actor.DeviceState });
+                    var scriptContext = new Dictionary<string, object>
+                    {
+                        ["currentTime"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:sszzz"),
+                        ["deviceId"] = this.deviceId,
+                        ["deviceModel"] = this.deviceModel.Name
+                    };
+
+                    // Compute new telemetry
+                    this.log.Debug("Updating device sensors state", () => new { this.deviceId, deviceState = actor.DeviceState });
                     lock (actor.DeviceState)
                     {
                         actor.DeviceState = this.scriptInterpreter.Invoke(
@@ -130,12 +129,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                             scriptContext,
                             actor.DeviceState);
                     }
-                    this.log.Debug("New device telemetry data calculated", () => new { this.deviceId, deviceState = actor.DeviceState });
+                    this.log.Debug("Sensors state updated", () => new { this.deviceId, deviceState = actor.DeviceState });
                 }
                 else
                 {
                     this.log.Debug(
-                        "Random telemetry generation is turned off for the device",
+                        "Sensor state generation is disabled for the device",
                         () => new { this.deviceId, deviceState = actor.DeviceState });
                 }
 

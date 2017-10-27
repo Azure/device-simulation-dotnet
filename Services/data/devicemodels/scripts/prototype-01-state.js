@@ -10,7 +10,6 @@ var center_longitude = -122.204184;
 
 // Default state
 var state = {
-    online: true,
     temperature: 65.0,
     temperature_unit: "F",
     pressure: 150.0,

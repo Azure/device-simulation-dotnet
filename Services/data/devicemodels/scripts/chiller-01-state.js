@@ -1,21 +1,19 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 /*global log*/
-/*global updateState*/
-/*global sleep*/
 /*jslint node: true*/
 
 "use strict";
 
 // Default state
 var state = {
-    online: true,
     temperature: 75.0,
     temperature_unit: "F",
     humidity: 70.0,
     humidity_unit: "%",
-    pressure: 250.0,
-    pressure_unit: "psig"
+    pressure: 150.0,
+    pressure_unit: "psig",
+    simulation_state: "normal_pressure"
 };
 
 /**
@@ -56,14 +54,19 @@ function main(context, previousState) {
     // the telemetry can apply changes using the previous function state.
     restoreState(previousState);
 
-    // 75 +/- 5%,  Min 25, Max 100
+    // 75F +/- 5%,  Min 25F, Max 100F
     state.temperature = vary(75, 5, 25, 100);
 
-    // 70 +/- 5%,  Min 2, Max 99
+    // 70% +/- 5%,  Min 2%, Max 99%
     state.humidity = vary(70, 5, 2, 99);
 
-    // 150 +/- 10%,  Min 50, Max 300
-    state.pressure = vary(150, 10, 50, 300);
+    if (state.simulation_state === "high_pressure") {
+        // 250 psig +/- 25%,  Min 50 psig, Max 300 psig
+        state.pressure = vary(250, 25, 50, 300);
+    } else {
+        // 150 psig +/- 10%,  Min 50 psig, Max 300 psig
+        state.pressure = vary(150, 10, 50, 300);
+    }
 
     return state;
 }

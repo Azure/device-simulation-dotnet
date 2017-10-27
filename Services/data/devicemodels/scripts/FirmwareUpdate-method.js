@@ -2,17 +2,15 @@
 
 /*global log*/
 /*global updateState*/
+/*global reportMethodProgress*/
 /*global sleep*/
+/*global disableSensorSimulation*/
+/*global enableSensorSimulation*/
+/*global enableTelemetry*/
+/*global disableTelemetry*/
 /*jslint node: true*/
 
 "use strict";
-
-// Default state
-var state = {
-    online: true,
-    Firmware: "1.0.0",
-    DeviceMethodStatus: "Updating Firmware"
-};
 
 /**
  * Entry point function called by the simulation engine.
@@ -23,40 +21,43 @@ var state = {
 /*jslint unparam: true*/
 function main(context, previousState) {
 
-    // Reboot - devices goes offline and comes online after 20 seconds
-    log("Executing firmware update simulation function, firmware version passed:" + context.Firmware);
+    log("Starting 'Firmware Update' method simulation, new firmware version: " + context.Firmware);
 
-    // update the state to offline & firmware updating
-    state.online = false;
-    state.CalculateRandomizedTelemetry = false;
-    var status = "Command received, updating firmware version to ";
-    status = status.concat(context.Firmware);
-    state.DeviceMethodStatus = status;
-    updateState(state);
+    // Go offline
+    disableTelemetry();
+    disableSensorSimulation();
+
+    // Report method start
+    reportMethodProgress("Command received, updating firmware version to " + context.Firmware);
     sleep(5000);
 
+    // Download firmware image
     log("Image Downloading...");
-    state.DeviceMethodStatus = "Image Downloading...";
-    updateState(state);
+    reportMethodProgress("Image Downloading...");
     sleep(7500);
 
+    // Install new firmware
     log("Executing firmware update simulation function, firmware version passed:" + context.Firmware);
-    state.DeviceMethodStatus = "Downloaded, applying firmware...";
-    updateState(state);
+    reportMethodProgress("Downloaded, applying firmware...");
     sleep(5000);
 
-    state.DeviceMethodStatus = "Rebooting...";
-    updateState(state);
-    sleep(5000);
+    // Reboot
+    reportMethodProgress("Rebooting...");
+    sleep(10000);
 
-    state.DeviceMethodStatus = "Firmware Updated.";
-    state.Firmware = context.Firmware;
+    // Update twin
+    reportMethodProgress("Firmware Updated.");
+    var state = {};
+    state.Firmare = context.Firmware;
     updateState(state);
     sleep(7500);
 
-    state.CalculateRandomizedTelemetry = true;
-    state.online = true;
-    state.DeviceMethodStatus = "";
-    updateState(state);
+    // Reset method execution progress status
+    reportMethodProgress("");
 
+    // Back online
+    enableSensorSimulation();
+    enableTelemetry();
+
+    log("'Firmware Update' method simulation completed");
 }

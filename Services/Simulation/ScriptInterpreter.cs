@@ -17,6 +17,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 
     public class ScriptInterpreter : IScriptInterpreter
     {
+        public const string SENSOR_SIMULATION_ENABLED = "SENSOR_SIMULATION_ENABLED";
+        public const string TELEMETRY_ENABLED = "TELEMETRY_ENABLED";
+        public const string DEVICE_METHOD_STATUS = "DeviceMethodStatus";
+
         private readonly IJavascriptInterpreter jsInterpreter;
         private readonly ILogger log;
 
@@ -45,6 +49,41 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                     this.log.Debug("JS result", () => new { result });
                     return result;
             }
+        }
+
+        public static void AddMethodStatusProperty(Dictionary<string, object> state)
+        {
+            state[DEVICE_METHOD_STATUS] = "";
+        }
+
+        public static void EnableSensorSimulation(Dictionary<string, object> state)
+        {
+            state.Add(SENSOR_SIMULATION_ENABLED, true);
+        }
+
+        public static void EnableTelemetry(Dictionary<string, object> state)
+        {
+            state.Add(TELEMETRY_ENABLED, true);
+        }
+
+        public static bool IsSensorSimulationEnabled(Dictionary<string, object> state)
+        {
+            if (state.ContainsKey(SENSOR_SIMULATION_ENABLED))
+            {
+                return (bool) state[SENSOR_SIMULATION_ENABLED];
+            }
+
+            return true;
+        }
+
+        public static bool IsTelemetryEnabled(Dictionary<string, object> state)
+        {
+            if (state.ContainsKey(TELEMETRY_ENABLED))
+            {
+                return (bool) state[TELEMETRY_ENABLED];
+            }
+
+            return true;
         }
     }
 }

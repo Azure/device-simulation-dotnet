@@ -3,6 +3,10 @@
 /*global log*/
 /*global updateState*/
 /*global sleep*/
+/*global disableSensorSimulation*/
+/*global enableSensorSimulation*/
+/*global enableTelemetry*/
+/*global disableTelemetry*/
 /*jslint node: true*/
 /*jslint todo: true*/
 

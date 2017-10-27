@@ -53,19 +53,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             // logging into the service logs
             engine.SetValue("log", new Action<object>(this.JsLog));
 
-            //register callback for state updates
-            engine.SetValue("updateState", new Action<JsValue>(this.UpdateState));
+            // Register callback for state updates
+            engine.SetValue("updateState", new Action<JsValue>(this.JsMergeState));
+            engine.SetValue("reportMethodProgress", new Action<string>(this.JsReportMethodProgress));
 
-            //register sleep function for javascript use
-            engine.SetValue("sleep", new Action<int>(this.Sleep));
+            // Register sleep function for javascript use
+            engine.SetValue("sleep", new Action<int>(this.JsSleep));
+
+            // Register functions to enable/disable internal state simulation
+            engine.SetValue("enableSensorSimulation", new Action(this.JsEnableSensorSimulation));
+            engine.SetValue("disableSensorSimulation", new Action(this.JsDisableSensorSimulation));
+
+            // Register functions to enable/disable telemetry
+            engine.SetValue("enableTelemetry", new Action(this.JsEnableTelemetry));
+            engine.SetValue("disableTelemetry", new Action(this.JsDisableTelemetry));
 
             var sourceCode = this.LoadScript(filename);
             this.log.Debug("Executing JS function", () => new { filename });
 
             try
             {
-                var output = engine.Execute(sourceCode).Invoke("main", context, this.deviceState);
-                var result = this.JsValueToDictionary(output);
+                JsValue output = engine.Execute(sourceCode).Invoke("main", context, this.deviceState);
+                Dictionary<string, object> result = this.JsValueToDictionary(output);
                 this.log.Debug("JS function success", () => new { filename, result });
                 return result;
             }
@@ -145,14 +154,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             this.log.Debug("Log from JS", () => new { data });
         }
 
-        private void Sleep(int timeInMs)
+        private void JsSleep(int timeInMs)
         {
             Task.Delay(timeInMs).Wait();
         }
 
         // TODO: Move this out of the scriptinterpreter class into DeviceClient to keep this class stateless
         //       https://github.com/Azure/device-simulation-dotnet/issues/45
-        private void UpdateState(JsValue data)
+        private void JsMergeState(JsValue data)
         {
             string key;
             object value;
@@ -175,6 +184,46 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                         this.deviceState[key] = value;
                     }
                 }
+            }
+        }
+
+        private void JsReportMethodProgress(string status)
+        {
+            lock (this.deviceState)
+            {
+                this.deviceState[ScriptInterpreter.DEVICE_METHOD_STATUS] = status;
+            }
+        }
+
+        private void JsEnableSensorSimulation()
+        {
+            lock (this.deviceState)
+            {
+                this.deviceState[ScriptInterpreter.SENSOR_SIMULATION_ENABLED] = true;
+            }
+        }
+
+        private void JsDisableSensorSimulation()
+        {
+            lock (this.deviceState)
+            {
+                this.deviceState[ScriptInterpreter.SENSOR_SIMULATION_ENABLED] = false;
+            }
+        }
+
+        private void JsEnableTelemetry()
+        {
+            lock (this.deviceState)
+            {
+                this.deviceState[ScriptInterpreter.TELEMETRY_ENABLED] = true;
+            }
+        }
+
+        private void JsDisableTelemetry()
+        {
+            lock (this.deviceState)
+            {
+                this.deviceState[ScriptInterpreter.TELEMETRY_ENABLED] = false;
             }
         }
     }
