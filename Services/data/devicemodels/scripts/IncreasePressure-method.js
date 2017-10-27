@@ -7,26 +7,59 @@
 
 "use strict";
 
-// Default state
-var state = {
-    pressure: 250.0,
-    CalculateRandomizedTelemetry: true
-};
-
 /**
  * Entry point function called by the simulation engine.
  *
  * @param context        The context contains current time, device model and id, not used
  * @param previousState  The device state since the last iteration, not used
  */
+
 /*jslint unparam: true*/
 function main(context, previousState) {
 
-    // Reboot - devices goes offline and comes online after 20 seconds
-    log("Executing IncreasePressure simulation function.");
-    state.pressure = 250;
-    state.CalculateRandomizedTelemetry = false;
-    // update the state to 250
+    log("Starting 'Increase Pressure' method simulation (5 seconds)");
+
+    // Pause the simulation and change the simulation mode so that the
+    // temperature will fluctuate at ~250 when it resumes
+    var state = {
+        simulation_state: "high_pressure",
+        CalculateRandomizedTelemetry: false
+    };
     updateState(state);
 
+    // Increase
+    state.pressure = 170;
+    updateState(state);
+    log("Pressure increased to " + state.pressure);
+    sleep(1000);
+
+    // Increase
+    state.pressure = 190;
+    updateState(state);
+    log("Pressure increased to " + state.pressure);
+    sleep(1000);
+
+    // Increase
+    state.pressure = 210;
+    updateState(state);
+    log("Pressure increased to " + state.pressure);
+    sleep(1000);
+
+    // Increase
+    state.pressure = 230;
+    updateState(state);
+    log("Pressure increased to " + state.pressure);
+    sleep(1000);
+
+    // Increase
+    state.pressure = 150;
+    updateState(state);
+    log("Pressure increased to " + state.pressure);
+    sleep(1000);
+
+    // Resume the simulation
+    state.CalculateRandomizedTelemetry = true;
+    updateState(state);
+
+    log("'Increase Pressure' method simulation completed");
 }
