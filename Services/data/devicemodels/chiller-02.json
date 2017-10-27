@@ -13,7 +13,8 @@
             "humidity": 70.0,
             "humidity_unit": "%",
             "pressure": 250.0,
-            "pressure_unit": "psig"
+            "pressure_unit": "psig",
+            "simulation_state": "high_pressure"
         },
         "Script": {
             "Type": "javascript",

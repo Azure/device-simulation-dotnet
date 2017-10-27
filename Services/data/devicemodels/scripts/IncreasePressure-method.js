@@ -52,7 +52,7 @@ function main(context, previousState) {
     sleep(1000);
 
     // Increase
-    state.pressure = 150;
+    state.pressure = 250;
     updateState(state);
     log("Pressure increased to " + state.pressure);
     sleep(1000);

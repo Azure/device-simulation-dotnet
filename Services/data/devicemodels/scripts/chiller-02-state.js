@@ -61,6 +61,7 @@ function main(context, previousState) {
     // 70% +/- 5%,  Min 2%, Max 99%
     state.humidity = vary(70, 5, 2, 99);
 
+    log("Simulation state: " + state.simulation_state);
     if (state.simulation_state === "high_pressure") {
         // 250 psig +/- 25%,  Min 50 psig, Max 300 psig
         state.pressure = vary(250, 25, 50, 300);
