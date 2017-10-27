@@ -7,7 +7,6 @@
 
 // Default state
 var state = {
-    online: true,
     fuellevel: 0.0,
     fuellevel_unit: "Gal",
     coolant: 7500.0,

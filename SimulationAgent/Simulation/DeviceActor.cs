@@ -7,6 +7,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic.Models;
@@ -84,8 +85,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     {
         // ID prefix of the simulated devices, used with Azure IoT Hub
         private const string DEVICE_ID_PREFIX = "Simulated.";
-
-        private const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
 
         // Timeout when disconnecting a client
         private const int DISCONNECT_TIMEOUT_MSECS = 5000;
@@ -335,10 +334,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             foreach (var property in deviceModel.Properties)
                 state.Add(property.Key, property.Value);
 
-            // TODO:This is used to control whether telemetry is calculated in UpdateDeviceState.
+            // TODO: each method should have a dedicated property
+            ScriptInterpreter.AddMethodStatusProperty(state);
+
+            // TODO: this is used to control whether telemetry is calculated in UpdateDeviceState.
             // methods can turn telemetry off/on; e.g. setting temp high- turnoff, set low, turn on
             // it would be better to do this at the telemetry item level - we should add this in the future
-            state.Add(CALC_TELEMETRY, true);
+            ScriptInterpreter.EnableSensorSimulation(state);
+            ScriptInterpreter.EnableTelemetry(state);
 
             return state;
         }

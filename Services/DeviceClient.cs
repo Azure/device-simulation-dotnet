@@ -91,8 +91,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IDictionary<string, Script> methods,
             Dictionary<string, object> deviceState)
         {
-            this.log.Debug("Attempting to register device methods",
-                () => new { this.deviceId });
+            this.log.Debug("Attempting to register device methods", () => new { this.deviceId });
 
             await this.deviceMethods.RegisterMethodsAsync(this.deviceId, methods, deviceState);
         }

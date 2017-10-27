@@ -7,13 +7,12 @@
     "Protocol": "MQTT",
     "Simulation": {
         "InitialState": {
-            "online": true,
             "temperature": 65.0,
             "temperature_unit": "F",
             "pressure": 150.0,
             "pressure_unit": "psig",
-            "latitude": 47.612514,
-            "longitude": -122.204184,
+            "latitude": 47.675738,
+            "longitude": -122.209277,
             "moving": false
         },
         "Script": {
@@ -24,11 +23,15 @@
     },
     "Properties": {
         "Type": "Prototyping",
-        "Firmware": "1.0.0",
-        "FirmwareUpdateStatus": "",
+        "Firmware": "2.1",
+        "Model": "PR002",
         "Location": "Field",
         "Latitude": 47.612514,
         "Longitude": -122.204184
+    },
+    "Tags": {
+        "Location": "Field",
+        "Mode": "Test 1"
     },
     "Telemetry": [
         {

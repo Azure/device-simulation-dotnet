@@ -2,7 +2,6 @@
 
 using System;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -73,7 +72,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     }
                 }
 
-                Thread.Sleep(CHECK_INTERVAL_MSECS);
+                await Task.Delay(CHECK_INTERVAL_MSECS);
             }
         }
 

@@ -62,7 +62,7 @@
     <None Update="data\devicemodels\scripts\TempDecrease-method.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="data\devicemodels\scripts\DecreasePressure-method.js">
+    <None Update="data\devicemodels\scripts\EmergencyValveRelease-method.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="data\devicemodels\scripts\IncreasePressure-method.js">

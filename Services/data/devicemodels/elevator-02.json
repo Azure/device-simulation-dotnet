@@ -7,7 +7,6 @@
     "Protocol": "MQTT",
     "Simulation": {
         "InitialState": {
-            "online": true,
             "floor": 4,
             "vibration": 10.0,
             "vibration_unit": "mm",
@@ -22,9 +21,15 @@
     },
     "Properties": {
         "Type": "Elevator",
-        "Location": "Building 17",
-        "Latitude": 47.643786,
-        "Longitude": -122.128047
+        "Firmware": "5.7",
+        "Model": "EL005",
+        "Location": "Building 2",
+        "Latitude": 47.640792,
+        "Longitude": -122.126258
+    },
+    "Tags": {
+        "Location": "Building 2",
+        "Campus": "Redmond"
     },
     "Telemetry": [
         {

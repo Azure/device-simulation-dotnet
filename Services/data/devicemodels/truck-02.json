@@ -7,7 +7,6 @@
     "Protocol": "MQTT",
     "Simulation": {
         "InitialState": {
-            "online": true,
             "latitude": 47.25433,
             "longitude": -121.177075,
             "speed": 30.0,
@@ -23,9 +22,14 @@
     },
     "Properties": {
         "Type": "Truck",
+        "Firmware": "0.1",
         "Location": "Field",
         "Latitude": 47.25433,
         "Longitude": -121.177075
+    },
+    "Tags": {
+        "Location": "Field",
+        "Load": "Produce"
     },
     "Telemetry": [
         {

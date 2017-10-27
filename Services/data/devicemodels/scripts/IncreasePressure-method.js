@@ -2,16 +2,15 @@
 
 /*global log*/
 /*global updateState*/
+/*global reportMethodProgress*/
 /*global sleep*/
+/*global disableSensorSimulation*/
+/*global enableSensorSimulation*/
+/*global enableTelemetry*/
+/*global disableTelemetry*/
 /*jslint node: true*/
 
 "use strict";
-
-// Default state
-var state = {
-    pressure: 250.0,
-    CalculateRandomizedTelemetry: true
-};
 
 /**
  * Entry point function called by the simulation engine.
@@ -22,11 +21,40 @@ var state = {
 /*jslint unparam: true*/
 function main(context, previousState) {
 
-    // Reboot - devices goes offline and comes online after 20 seconds
-    log("Executing IncreasePressure simulation function.");
-    state.pressure = 250;
-    state.CalculateRandomizedTelemetry = false;
-    // update the state to 250
-    updateState(state);
+    log("Starting 'Increase Pressure' method simulation (5 seconds)");
 
+    var state = {
+        simulation_state: "high_pressure"
+    };
+
+    disableSensorSimulation();
+
+    state.pressure = 170;
+    updateState(state);
+    log("Pressure increased to " + state.pressure);
+    sleep(1000);
+
+    state.pressure = 190;
+    updateState(state);
+    log("Pressure increased to " + state.pressure);
+    sleep(1000);
+
+    state.pressure = 210;
+    updateState(state);
+    log("Pressure increased to " + state.pressure);
+    sleep(1000);
+
+    state.pressure = 230;
+    updateState(state);
+    log("Pressure increased to " + state.pressure);
+    sleep(1000);
+
+    state.pressure = 250;
+    updateState(state);
+    log("Pressure increased to " + state.pressure);
+    sleep(1000);
+
+    enableSensorSimulation();
+
+    log("'Increase Pressure' method simulation completed");
 }

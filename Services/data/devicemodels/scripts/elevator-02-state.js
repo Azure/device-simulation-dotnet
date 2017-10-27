@@ -9,7 +9,6 @@ var floors = 15;
 
 // Default state
 var state = {
-    online: true,
     floor: 4,
     vibration: 10.0,
     vibration_unit: "mm",

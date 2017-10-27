@@ -2,7 +2,12 @@
 
 /*global log*/
 /*global updateState*/
+/*global reportMethodProgress*/
 /*global sleep*/
+/*global disableSensorSimulation*/
+/*global enableSensorSimulation*/
+/*global enableTelemetry*/
+/*global disableTelemetry*/
 /*jslint node: true*/
 /*jslint todo: true*/
 
@@ -11,8 +16,10 @@
 /*jslint unparam: true*/
 function main(context, previousState) {
 
-    log("Executing JavaScript TempIncrease function.");
+    log("Starting 'Temp Increase' method simulation");
 
     // TODO: This method is not implemented
     // https://github.com/Azure/device-simulation-dotnet/issues/44
+
+    log("'Temp Increase' method simulation completed");
 }

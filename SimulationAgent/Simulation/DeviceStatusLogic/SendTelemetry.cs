@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic.Models;
 
@@ -130,11 +131,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 return;
             }
 
-            // Send the telemetry message if the device is online
             try
             {
-                this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
-                if ((bool) actor.DeviceState["online"])
+                this.log.Debug("Checking if the device telemetry is enabled",
+                    () => new { this.deviceId, actor.DeviceState });
+                if (ScriptInterpreter.IsTelemetryEnabled(actor.DeviceState))
                 {
                     // Inject the device state into the message template
                     var msg = message.MessageTemplate;
@@ -154,15 +155,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 }
                 else
                 {
-                    // device could be rebooting, updating firmware, etc.
-                    this.log.Debug("No telemetry will be sent as the device is not online...",
-                        () => new { this.deviceId, actor.DeviceState });
+                    // The device could be rebooting, updating firmware, etc.
+                    this.log.Debug("Telemetry disabled, nothing will be sent...",
+                        () => new { this.deviceId });
                 }
             }
             catch (Exception e)
             {
-                this.log.Error("SendTelemetry failed",
-                    () => new { this.deviceId, e });
+                this.log.Error("SendTelemetry failed", () => new { this.deviceId, e });
             }
         }
 
