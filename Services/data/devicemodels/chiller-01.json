@@ -13,7 +13,8 @@
             "humidity": 70.0,
             "humidity_unit": "%",
             "pressure": 150.0,
-            "pressure_unit": "psig"
+            "pressure_unit": "psig",
+            "simulation_state": "normal_pressure"
         },
         "Script": {
             "Type": "javascript",
@@ -23,11 +24,16 @@
     },
     "Properties": {
         "Type": "Chiller",
-        "Firmware": "1.0.0",
-        "DeviceMethodStatus": "",
-        "Location": "Building 43",
-        "Latitude": 47.638928,
-        "Longitude": -122.13476
+        "Firmware": "1.0",
+        "Model": "CH101",
+        "Location": "Building 2",
+        "Latitude": 47.640792,
+        "Longitude": -122.126258
+    },
+    "Tags": {
+        "Location": "Building 2",
+        "Floor": "2",
+        "Campus": "Redmond"
     },
     "Telemetry": [
         {
@@ -53,16 +59,16 @@
             "Path": "Reboot-method.js"
         },
         "FirmwareUpdate": {
-          "Type": "javascript",
-          "Path": "FirmwareUpdate-method.js"
+            "Type": "javascript",
+            "Path": "FirmwareUpdate-method.js"
         },
         "EmergencyValveRelease": {
-          "Type": "javascript",
-          "Path": "DecreasePressure-method.js"
+            "Type": "javascript",
+            "Path": "EmergencyValveRelease-method.js"
         },
         "IncreasePressure": {
-          "Type": "javascript",
-          "Path": "IncreasePressure-method.js"
+            "Type": "javascript",
+            "Path": "IncreasePressure-method.js"
         }
     }
 }

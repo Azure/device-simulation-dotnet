@@ -7,12 +7,6 @@
 
 "use strict";
 
-// Default state
-var state = {
-    pressure: 250.0,
-    CalculateRandomizedTelemetry: false
-};
-
 /**
  * Entry point function called by the simulation engine.
  *
@@ -23,11 +17,13 @@ var state = {
 /*jslint unparam: true*/
 function main(context, previousState) {
 
-    // Reboot - devices goes offline and comes online after 20 seconds
-    log("Executing DecreasePressure simulation function.");
-    state.pressure = 150;
-    state.CalculateRandomizedTelemetry = true;
-    // update the state to 150
+    log("Starting 'Emergency Valve Release' method simulation");
+
+    var state = {
+        simulation_state: "normal_pressure",
+        pressure: 150
+    };
     updateState(state);
 
+    log("'Emergency Valve Release' method simulation completed");
 }
