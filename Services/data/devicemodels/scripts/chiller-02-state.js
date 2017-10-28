@@ -13,7 +13,8 @@ var state = {
     humidity: 70.0,
     humidity_unit: "%",
     pressure: 250.0,
-    pressure_unit: "psig"
+    pressure_unit: "psig",
+    simulation_state: "high_pressure"
 };
 
 /**
@@ -35,7 +36,7 @@ function restoreState(previousState) {
  * in between min and max
  */
 function vary(avg, percentage, min, max) {
-    var value =  avg * (1 + ((percentage / 100) * (2 * Math.random() - 1)));
+    var value = avg * (1 + ((percentage / 100) * (2 * Math.random() - 1)));
     value = Math.max(value, min);
     value = Math.min(value, max);
     return value;
@@ -60,8 +61,14 @@ function main(context, previousState) {
     // 70% +/- 5%,  Min 2%, Max 99%
     state.humidity = vary(70, 5, 2, 99);
 
-    // 250 psig +/- 25%,  Min 50 psig, Max 300 psig
-    state.pressure = vary(250, 25, 50, 300);
+    log("Simulation state: " + state.simulation_state);
+    if (state.simulation_state === "high_pressure") {
+        // 250 psig +/- 25%,  Min 50 psig, Max 300 psig
+        state.pressure = vary(250, 25, 50, 300);
+    } else {
+        // 150 psig +/- 10%,  Min 50 psig, Max 300 psig
+        state.pressure = vary(150, 10, 50, 300);
+    }
 
     return state;
 }
