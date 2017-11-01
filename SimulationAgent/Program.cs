@@ -4,6 +4,7 @@ using Autofac;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation;
+using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
@@ -12,6 +13,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     {
         static void Main(string[] args)
         {
+            // Temporary workaround to allow twin JSON deserialization
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
+            {
+                CheckAdditionalContent = false
+            };
+
             var container = DependencyResolution.Setup();
 
             // Print some useful information
