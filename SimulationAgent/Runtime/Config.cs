@@ -37,7 +37,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
         public Config(IConfigData configData)
         {
             var connstring = configData.GetString(IOTHUB_CONNSTRING_KEY);
-            if (connstring.ToLowerInvariant().Contains("your azure iot hub"))
+            if (connstring.ToLowerInvariant().Contains("azure iot hub"))
             {
                 // In order to connect to Azure IoT Hub, the service requires a connection
                 // string. The value can be found in the Azure Portal. For more information see

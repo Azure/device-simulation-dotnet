@@ -108,7 +108,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http
                         errorMessage += " - " + e.InnerException.Message;
                     }
 
-                    this.log.Error("Request failed", () => new { errorMessage, e });
+                    this.log.Error("Request failed", () => new { httpMethod.Method, request.Uri, errorMessage, e });
 
                     return new HttpResponse
                     {
@@ -118,7 +118,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http
                 }
                 catch (TaskCanceledException e)
                 {
-                    this.log.Error("Request failed", () => new { Message = e.Message + " The request timed out, the endpoint might be unreachable.", e });
+                    this.log.Error("Request failed", () => new { httpMethod.Method, request.Uri, Message = e.Message + " The request timed out, the endpoint might be unreachable.", e });
 
                     return new HttpResponse
                     {
@@ -128,7 +128,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http
                 }
                 catch (Exception e)
                 {
-                    this.log.Error("Request failed", () => new { e.Message, e });
+                    this.log.Error("Request failed", () => new { httpMethod.Method, request.Uri, e.Message, e });
 
                     return new HttpResponse
                     {
