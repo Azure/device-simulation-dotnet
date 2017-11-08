@@ -76,15 +76,8 @@ namespace Services.Test.Simulation
             var files = new List<string>
             {
                 "chiller-01-state.js",
-                "chiller-02-state.js",
                 "elevator-01-state.js",
-                "elevator-02-state.js",
-                "engine-01-state.js",
-                "engine-02-state.js",
-                "prototype-01-state.js",
-                "prototype-02-state.js",
-                "truck-01-state.js",
-                "truck-02-state.js"
+                "truck-01-state.js"
             };
             var context = new Dictionary<string, object>
             {

@@ -21,12 +21,6 @@
             "Interval": "00:00:05"
         }
     },
-    "Properties": {
-        "Type": "Truck",
-        "Location": "Field",
-        "Latitude": 47.445301,
-        "Longitude": -122.296307
-    },
     "Telemetry": [
         {
             "Interval": "00:00:10",
@@ -44,19 +38,5 @@
                 }
             }
         }
-    ],
-  "CloudToDeviceMethods": {
-      "FirmwareUpdate": {
-        "Type": "javascript",
-        "Path": "FirmwareUpdate-method.js"
-      },
-      "DecreaseCargoTemperature": {
-        "Type": "javascript",
-        "Path": "TBD.js"
-      },
-      "IncreaseCargoTemperature": {
-        "Type": "javascript",
-        "Path": "TBD.js"
-      }
-  }
+    ]
 }
