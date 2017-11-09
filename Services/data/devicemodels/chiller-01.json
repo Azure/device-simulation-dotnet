@@ -22,19 +22,6 @@
             "Interval": "00:00:05"
         }
     },
-    "Properties": {
-        "Type": "Chiller",
-        "Firmware": "1.0",
-        "Model": "CH101",
-        "Location": "Building 2",
-        "Latitude": 47.640792,
-        "Longitude": -122.126258
-    },
-    "Tags": {
-        "Location": "Building 2",
-        "Floor": "2",
-        "Campus": "Redmond"
-    },
     "Telemetry": [
         {
             "Interval": "00:00:10",
@@ -52,23 +39,5 @@
                 }
             }
         }
-    ],
-    "CloudToDeviceMethods": {
-        "Reboot": {
-            "Type": "javascript",
-            "Path": "Reboot-method.js"
-        },
-        "FirmwareUpdate": {
-            "Type": "javascript",
-            "Path": "FirmwareUpdate-method.js"
-        },
-        "EmergencyValveRelease": {
-            "Type": "javascript",
-            "Path": "EmergencyValveRelease-method.js"
-        },
-        "IncreasePressure": {
-            "Type": "javascript",
-            "Path": "IncreasePressure-method.js"
-        }
-    }
+    ]
 }

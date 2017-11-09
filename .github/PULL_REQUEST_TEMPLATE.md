@@ -1,13 +1,13 @@
-# Type of change? <!-- [x] all the boxes that apply -->
+# Description and Motivation <!-- Info & Context so we can review your pull request -->
+
+...
+
+# Change type <!-- [x] in all the boxes that apply -->
 
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Enhancement
 - [ ] Breaking change (breaks backward compatibility)
-
-# Description, Context, Motivation <!-- Please help us reviewing your PR -->
-
-...
 
 **Checklist:**
 

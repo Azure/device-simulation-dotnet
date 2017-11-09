@@ -6,6 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation
 {
@@ -52,15 +54,29 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 foreach (var dt in simulation.DeviceModels)
                 {
-                    var deviceModel = this.deviceModels.Get(dt.Id);
-                    Parallel.For(0, dt.Count, i =>
+                    if (dt.Count < 1) continue;
+
+                    DeviceModel deviceModel = null;
+                    try
                     {
-                        this.log.Debug("Starting device...",
-                            () => new { ModelName = deviceModel.Name, ModelId = dt.Id, i });
-                        this.factory.Resolve<IDeviceActor>()
-                            .Setup(deviceModel, i)
-                            .Start(this.cancellationToken.Token);
-                    });
+                        deviceModel = this.deviceModels.Get(dt.Id);
+                    }
+                    catch (ResourceNotFoundException)
+                    {
+                        this.log.Error("The device model doesn't exist", () => new { dt.Id });
+                    }
+
+                    if (deviceModel != null)
+                    {
+                        Parallel.For(0, dt.Count, i =>
+                        {
+                            this.log.Debug("Starting device...",
+                                () => new { ModelName = deviceModel.Name, ModelId = dt.Id, i });
+                            this.factory.Resolve<IDeviceActor>()
+                                .Setup(deviceModel, i)
+                                .Start(this.cancellationToken.Token);
+                        });
+                    }
                 }
 
                 this.running[0] = true;

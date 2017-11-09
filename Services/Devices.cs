@@ -111,10 +111,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 if (loadTwin)
                 {
                     var deviceTask = this.rateLimiting.LimitRegistryOperationsAsync(
-                        () => this.registry.GetDeviceAsync(deviceId, cancellationToken));
+                        () =>
+                        {
+                            this.log.Debug("Fetching device from registry", () => new { deviceId });
+                            return this.registry.GetDeviceAsync(deviceId, cancellationToken);
+                        });
 
                     var twinTask = this.rateLimiting.LimitTwinReadsAsync(
-                        () => this.registry.GetTwinAsync(deviceId, cancellationToken));
+                        () =>
+                        {
+                            this.log.Debug("Fetching twin from registry", () => new { deviceId });
+                            return this.registry.GetTwinAsync(deviceId, cancellationToken);
+                        });
 
                     await Task.WhenAll(deviceTask, twinTask);
 
@@ -124,7 +132,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 else
                 {
                     device = await this.rateLimiting.LimitRegistryOperationsAsync(
-                        () => this.registry.GetDeviceAsync(deviceId, cancellationToken));
+                        () =>
+                        {
+                            this.log.Debug("Fetching device from registry", () => new { deviceId });
+                            return this.registry.GetDeviceAsync(deviceId, cancellationToken);
+                        });
                 }
 
                 if (device != null)
