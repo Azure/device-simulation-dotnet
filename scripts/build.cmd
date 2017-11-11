@@ -1,3 +1,5 @@
+:: Copyright (c) Microsoft. All rights reserved.
+
 @ECHO off & setlocal enableextensions enabledelayedexpansion
 
 :: Usage:
@@ -83,7 +85,7 @@ goto :END
 
 :MISSING_DOTNET
     echo ERROR: 'dotnet' command not found.
-    echo Install .NET Core 1.1.2 and make sure the 'dotnet' command is in the PATH.
+    echo Install .NET Core 2 and make sure the 'dotnet' command is in the PATH.
     echo Nuget installation: https://dotnet.github.io/
     exit /B 1
 

@@ -8,13 +8,6 @@ If you want/plan to contribute, we ask you to sign a
 [CLA](https://cla.microsoft.com/) (Contribution License Agreement).
 A friendly bot will remind you about it when you submit a pull-request.
 
-This project has adopted the
-[Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct).
-For more information see the
-[Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq)
-or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with
-any additional questions or comments.
-
 Submitting a contribution
 =========================
 
@@ -103,7 +96,7 @@ With this configuration, when checking in files, git will verify that the
 application passes all the tests, running the build and the tests in your
 workstation, using the tools installed in your OS.
 
-Note: you will need [.NET Core](https://dotnet.github.io) installed and
+Note: you will need [.NET Core 2](https://dotnet.github.io) installed and
 in the system PATH. If you don't want to install .NET Core, you can run
 `setup --with-sandbox` instead, so build and tests will run inside
 a pre-configured Docker container.

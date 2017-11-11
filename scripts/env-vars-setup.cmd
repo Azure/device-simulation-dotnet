@@ -1,3 +1,5 @@
+:: Copyright (c) Microsoft. All rights reserved.
+
 ::  Prepare the environment variables used by the application.
 ::
 ::  For more information about finding IoT Hub settings, more information here:
