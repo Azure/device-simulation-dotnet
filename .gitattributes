@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft. All rights reserved.
+
 # Auto-detect text files, ensure they use LF.
 * text=auto eol=lf
 
