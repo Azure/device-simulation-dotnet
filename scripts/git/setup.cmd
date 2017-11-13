@@ -1,3 +1,5 @@
+:: Copyright (c) Microsoft. All rights reserved.
+
 @ECHO off & setlocal enableextensions enabledelayedexpansion
 
 :: strlen("\scripts\git\") => 13

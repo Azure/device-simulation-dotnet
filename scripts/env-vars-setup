@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Copyright (c) Microsoft. All rights reserved.
 
 #  Prepare the environment variables used by the application.
 #
