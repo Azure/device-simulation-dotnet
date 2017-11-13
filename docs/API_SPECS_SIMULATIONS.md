@@ -37,7 +37,7 @@ When invoking the API using the PUT HTTP method, the service will attempt
 to modify an existing simulation, creating a new one if the Id does not
 match any existing simulation. When using PUT, the simulation Id is passed
 through the URL. PUT requests are idempotent and don't generate errors when
-retried (unless the payload differs during a retry, in which case the Etag
+retried (unless the payload differs during a retry, in which case the ETag
 mismatch will generate an error).
 
 ```
@@ -92,7 +92,7 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-  "Etag": "969ee1fb277640",
+  "ETag": "969ee1fb277640",
   "Id": "1",
   "Enabled": true,
   "DeviceModels": [
@@ -160,7 +160,7 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-  "Etag": "cec0722b205740",
+  "ETag": "cec0722b205740",
   "Id": "1",
   "Enabled": true,
   "DeviceModels": [
@@ -319,7 +319,7 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-  "Etag": "cec0722b205740",
+  "ETag": "cec0722b205740",
   "Id": "1",
   "Enabled": true,
   "DeviceModels": [
@@ -352,7 +352,7 @@ In order to start a simulation, the `Enabled` property needs to be changed to
 `true`. While it's possible to use the PUT HTTP method, and edit the entire
 simulation object, the API supports also the PATCH HTTP method, so that a
 client can send a smaller request. In both cases the client should send the
-correct `Etag`, to manage the optimistic concurrency.
+correct `ETag`, to manage the optimistic concurrency.
 
 Request:
 ```
@@ -361,7 +361,7 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-  "Etag": "cec0722b205740",
+  "ETag": "cec0722b205740",
   "Enabled": true
 }
 ```
@@ -373,7 +373,7 @@ Content-Type: application/JSON
 ```
 ```json
 {
-  "Etag": "8602d62c271760",
+  "ETag": "8602d62c271760",
   "Id": "1",
   "Enabled": true,
   "DeviceModels": [
@@ -402,7 +402,7 @@ In order to stop a simulation, the `Enabled` property needs to be changed to
 `false`. While it's possible to use the PUT HTTP method, and edit the entire
 simulation object, the API supports also the PATCH HTTP method, so that a
 client can send a smaller request. In both cases the client should send the
-correct `Etag`, to manage the optimistic concurrency.
+correct `ETag`, to manage the optimistic concurrency.
 
 Request:
 ```
@@ -411,7 +411,7 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-  "Etag": "8602d62c271760",
+  "ETag": "8602d62c271760",
   "Enabled": false
 }
 ```
@@ -423,7 +423,7 @@ Content-Type: application/JSON
 ```
 ```json
 {
-  "Etag": "930a9aea201193",
+  "ETag": "930a9aea201193",
   "Id": "1",
   "Enabled": false,
   "DeviceModels": [

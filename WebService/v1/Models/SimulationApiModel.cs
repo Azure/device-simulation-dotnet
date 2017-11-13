@@ -14,8 +14,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         private DateTimeOffset created;
         private DateTimeOffset modified;
 
-        [JsonProperty(PropertyName = "Etag")]
-        public string Etag { get; set; }
+        [JsonProperty(PropertyName = "ETag")]
+        public string ETag { get; set; }
 
         [JsonProperty(PropertyName = "Id")]
         public string Id { get; set; }
@@ -46,7 +46,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         {
             this.DeviceModels = new List<DeviceModelRef>();
 
-            this.Etag = simulation.Etag;
+            this.ETag = simulation.ETag;
             this.Id = simulation.Id;
             this.Enabled = simulation.Enabled;
 
@@ -82,7 +82,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 
             var result = new Simulation
             {
-                Etag = this.Etag,
+                ETag = this.ETag,
                 Id = this.Id,
 
                 // When unspecified, a simulation is enabled
