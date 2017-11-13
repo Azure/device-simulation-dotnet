@@ -20,12 +20,6 @@
             "Interval": "00:00:05"
         }
     },
-    "Properties": {
-        "Type": "Elevator",
-        "Location": "Building 40",
-        "Latitude": 47.636369,
-        "Longitude": -122.133132
-    },
     "Telemetry": [
         {
             "Interval": "00:00:10",
@@ -42,19 +36,5 @@
                 }
             }
         }
-    ],
-  "CloudToDeviceMethods": {
-      "FirmwareUpdate": {
-        "Type": "javascript",
-        "Path": "FirmwareUpdate-method.js"
-      },
-      "StopElevator": {
-        "Type": "javascript",
-        "Path": "TBD.js"
-      },
-      "StartElevator": {
-        "Type": "javascript",
-        "Path": "TBD.js"
-      }
-  }
+    ]
 }
