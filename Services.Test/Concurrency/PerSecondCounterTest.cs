@@ -133,7 +133,7 @@ namespace Services.Test.Concurrency
             // Arrange
             const int EVENTS = 41;
             const int MAX_SPEED = 20;
-            const double PRECISION = 0.02; // empiric&acceptable value looking at CI builds
+            const double PRECISION = 0.05; // empiric&acceptable value looking at CI builds
 
             // When calculating the speed achieved, exclude the events in the last second
             const int EVENTS_TO_IGNORE = 1;
