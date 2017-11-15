@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;
 using Newtonsoft.Json;
 
@@ -104,12 +105,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         {
             this.Id = id;
 
+            var now = DateTimeOffset.UtcNow;
+
             var result = new Simulation
             {
                 ETag = this.ETag,
                 Id = this.Id,
-                StartTime = DateHelper.ParseDate(this.StartTime),
-                EndTime = DateHelper.ParseDate(this.EndTime),
+                StartTime = DateHelper.ParseDateExpression(this.StartTime, now),
+                EndTime = DateHelper.ParseDateExpression(this.EndTime, now),
 
                 // When unspecified, a simulation is enabled
                 Enabled = this.Enabled ?? true
@@ -123,6 +126,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
                     Count = x.Count
                 };
                 result.DeviceModels.Add(dt);
+            }
+
+            if (result.StartTime.HasValue && result.EndTime.HasValue
+                && result.StartTime.Value.Ticks >= result.EndTime.Value.Ticks)
+            {
+                throw new InvalidSimulationSchedulingException("The end time must be after the start time");
             }
 
             return result;

@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Threading;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;
 using WebService.Test.helpers;
@@ -25,56 +24,49 @@ namespace WebService.Test.v1.Models.Helpers
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItConvertsFormulas()
         {
-            var now = SyncClock();
+            var now = DateTimeOffset.UtcNow;
 
-            Assert.Equal(now.ToString(FORMAT), DateHelper.ParseDate("NOW").Value.ToString(FORMAT));
+            Assert.Equal(now.ToString(FORMAT), DateHelper.ParseDateExpression("NOW", now).Value.ToString(FORMAT));
 
-            Assert.Equal(now.AddDays(-1).ToString(FORMAT), DateHelper.ParseDate("NOW-P1D").Value.ToString(FORMAT));
-            Assert.Equal(now.AddDays(+1).ToString(FORMAT), DateHelper.ParseDate("NOW+P1D").Value.ToString(FORMAT));
+            Assert.Equal(now.AddDays(-1).ToString(FORMAT), DateHelper.ParseDateExpression("NOW-P1D", now).Value.ToString(FORMAT));
+            Assert.Equal(now.AddDays(+1).ToString(FORMAT), DateHelper.ParseDateExpression("NOW+P1D", now).Value.ToString(FORMAT));
 
-            Assert.Equal(now.AddHours(-30).ToString(FORMAT), DateHelper.ParseDate("NOW-PT30H").Value.ToString(FORMAT));
-            Assert.Equal(now.AddHours(+30).ToString(FORMAT), DateHelper.ParseDate("NOW+PT30H").Value.ToString(FORMAT));
+            Assert.Equal(now.AddHours(-30).ToString(FORMAT), DateHelper.ParseDateExpression("NOW-PT30H", now).Value.ToString(FORMAT));
+            Assert.Equal(now.AddHours(+30).ToString(FORMAT), DateHelper.ParseDateExpression("NOW+PT30H", now).Value.ToString(FORMAT));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItHandlesEdgeCases()
         {
-            var now = SyncClock();
+            var now = DateTimeOffset.UtcNow;
 
             // Empty value
             Assert.Null(DateHelper.ParseDate(""));
+            Assert.Null(DateHelper.ParseDateExpression("", now));
 
             // Space instead of a "+"
-            Assert.Equal(now.AddDays(+1).ToString(FORMAT), DateHelper.ParseDate("NOW P1D").Value.ToString(FORMAT));
-            Assert.Equal(now.AddHours(+30).ToString(FORMAT), DateHelper.ParseDate("NOW PT30H").Value.ToString(FORMAT));
+            Assert.Equal(now.AddDays(+1).ToString(FORMAT), DateHelper.ParseDateExpression("NOW P1D", now).Value.ToString(FORMAT));
+            Assert.Equal(now.AddHours(+30).ToString(FORMAT), DateHelper.ParseDateExpression("NOW PT30H", now).Value.ToString(FORMAT));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItThrowsExceptions()
         {
             Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDate("0"));
-            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDate("NOW-"));
-            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDate("NOW+"));
-            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDate("NOW-0"));
-            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDate("NOW+0"));
             Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDate("foo"));
-            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDate("NOW-foo"));
-            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDate("NOW+foo"));
-            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDate("NOW-NOW"));
-            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDate("NOW+NOW"));
-        }
+            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDate("NOW"));
 
-        private static DateTimeOffset SyncClock()
-        {
             var now = DateTimeOffset.UtcNow;
-
-            // Sync the clock to avoid test failures, assuming the test takes less than 5 seconds to complete
-            while (now.Second >= 55)
-            {
-                Thread.Sleep(1000);
-                now = DateTimeOffset.UtcNow;
-            }
-            return now;
+            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDateExpression("0", now));
+            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDateExpression("NOW-", now));
+            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDateExpression("NOW+", now));
+            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDateExpression("NOW-0", now));
+            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDateExpression("NOW+0", now));
+            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDateExpression("foo", now));
+            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDateExpression("NOW-foo", now));
+            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDateExpression("NOW+foo", now));
+            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDateExpression("NOW-NOW", now));
+            Assert.Throws<InvalidDateFormatException>(() => DateHelper.ParseDateExpression("NOW+NOW", now));
         }
     }
 }

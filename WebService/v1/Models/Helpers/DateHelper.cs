@@ -8,14 +8,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Hel
 {
     public static class DateHelper
     {
-        public static DateTimeOffset? ParseDate(string text)
+        public static DateTimeOffset? ParseDateExpression(string text, DateTimeOffset now)
         {
             if (string.IsNullOrEmpty(text)) return null;
 
             text = text.Trim();
             string utext = text.ToUpper();
-
-            var now = DateTimeOffset.UtcNow;
 
             if (utext.Equals("NOW"))
             {
@@ -38,7 +36,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Hel
                     return now.Add(delta);
                 }
 
-                return DateTimeOffset.Parse(text);
+                return ParseDate(text);
+            }
+            catch (Exception e)
+            {
+                // log happens upstream
+                throw new InvalidDateFormatException("Unable to parse date", e);
+            }
+        }
+
+        public static DateTimeOffset? ParseDate(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return null;
+
+            try
+            {
+                return DateTimeOffset.Parse(text.Trim());
             }
             catch (Exception e)
             {

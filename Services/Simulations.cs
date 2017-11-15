@@ -130,6 +130,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 this.log.Info("Modifying simulation via PUT.", () => { });
 
+                if (simulation.ETag == "*")
+                {
+                    simulation.ETag = simulations[0].ETag;
+                    this.log.Info("The client used Etag='*' choosing to overwrite the current simulation", () => { });
+                }
+
                 if (simulation.ETag != simulations[0].ETag)
                 {
                     this.log.Error("Invalid ETag. Running simulation Etag is:'", () => new { simulations });

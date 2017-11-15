@@ -99,6 +99,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             {
                 return simulation.ToServiceModel(id);
             }
+            catch (InvalidSimulationSchedulingException e)
+            {
+                this.log.Error("Invalid simulation start/end time", () => new { simulation, e });
+                throw new BadRequestException("Invalid start/end time", e);
+            }
             catch (InvalidDateFormatException e)
             {
                 this.log.Error("Invalid date format", () => new { simulation, e });
