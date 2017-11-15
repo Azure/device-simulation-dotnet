@@ -190,13 +190,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     () => new { device.Id, DeviceTwin.SIMULATED_TAG_KEY, DeviceTwin.SIMULATED_TAG_VALUE });
                 twin.Tags[DeviceTwin.SIMULATED_TAG_KEY] = DeviceTwin.SIMULATED_TAG_VALUE;
 
-                if (this.twinReadsWritesEnabled)
-                {
-                    // TODO: when not discarding the twin, use the right ETag and manage conflicts
-                    //       https://github.com/Azure/device-simulation-dotnet/issues/83
-                    twin = await this.rateLimiting.LimitTwinWritesAsync(
-                        () => this.registry.UpdateTwinAsync(device.Id, twin, "*", cancellationToken));
-                }
+
+                // TODO: when not discarding the twin, use the right ETag and manage conflicts
+                //       https://github.com/Azure/device-simulation-dotnet/issues/83
+                twin = await this.rateLimiting.LimitTwinWritesAsync(
+                    () => this.registry.UpdateTwinAsync(device.Id, twin, "*", cancellationToken));
 
                 return new Device(device, twin, this.ioTHubHostName);
             }
