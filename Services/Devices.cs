@@ -85,10 +85,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task<Device> GetOrCreateAsync(string deviceId, bool loadTwin, CancellationToken cancellationToken)
         {
+
+            if (!this.twinReadsWritesEnabled) { loadTwin = false; }
+
             try
             {
-                if (!this.twinReadsWritesEnabled) { loadTwin = false; }
-
                 return await this.GetAsync(deviceId, loadTwin, cancellationToken);
             }
             catch (ResourceNotFoundException)
