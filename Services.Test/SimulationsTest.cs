@@ -179,14 +179,14 @@ namespace Services.Test
             {
                 Id = SIMULATION_ID,
                 Enabled = false,
-                Etag = "oldETag"
+                ETag = "oldETag"
             };
             this.target.UpsertAsync(simulation).Wait();
 
             // Assert
             this.storage.Verify(
                 x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.IsAny<string>(), "oldETag"));
-            Assert.Equal("newETag", simulation.Etag);
+            Assert.Equal("newETag", simulation.ETag);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -226,7 +226,7 @@ namespace Services.Test
             this.storage.Setup(x => x.GetAllAsync(STORAGE_COLLECTION)).ReturnsAsync(new ValueListApiModel());
             // In case the test inserts a record, return a valid storage object
             this.storage.Setup(x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.IsAny<string>(), "*"))
-                .ReturnsAsync(new ValueApiModel { Key = SIMULATION_ID, Data = "{}", ETag = "someEtag" });
+                .ReturnsAsync(new ValueApiModel { Key = SIMULATION_ID, Data = "{}", ETag = "someETag" });
         }
 
         private void ThereIsAnEnabledSimulationInTheStorage()
@@ -236,7 +236,7 @@ namespace Services.Test
                 Id = SIMULATION_ID,
                 Created = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 Modified = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
-                Etag = "etag0",
+                ETag = "ETag0",
                 Enabled = true,
                 Version = 1
             };
@@ -246,7 +246,7 @@ namespace Services.Test
             {
                 Key = SIMULATION_ID,
                 Data = JsonConvert.SerializeObject(simulation),
-                ETag = simulation.Etag
+                ETag = simulation.ETag
             };
             list.Items.Add(value);
 

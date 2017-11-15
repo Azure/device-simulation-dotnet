@@ -4,10 +4,10 @@ using System;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
-    public static class Etags
+    public static class ETags
     {
         // A simple string generator, until we have a real storage
-        public static string NewEtag()
+        public static string NewETag()
         {
             var v1 = Guid.NewGuid().ToString().Replace("-", "");
             var v2 = DateTime.UtcNow.Ticks % 1000000;

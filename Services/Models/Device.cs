@@ -9,7 +9,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 {
     public class Device
     {
-        public string Etag { get; set; }
+        public string ETag { get; set; }
         public string Id { get; set; }
         public int C2DMessageCount { get; set; }
         public DateTimeOffset LastActivity { get; set; }
@@ -21,7 +21,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public string AuthPrimaryKey { get; set; }
 
         public Device(
-            string etag,
+            string eTag,
             string id,
             int c2DMessageCount,
             DateTimeOffset lastActivity,
@@ -32,7 +32,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             string primaryKey,
             string ioTHubHostName)
         {
-            this.Etag = etag;
+            this.ETag = eTag;
             this.Id = id;
             this.C2DMessageCount = c2DMessageCount;
             this.LastActivity = lastActivity;
@@ -46,7 +46,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         public Device(Azure.Devices.Device azureDevice, DeviceTwin twin, string ioTHubHostName) :
             this(
-                etag: azureDevice.ETag,
+                eTag: azureDevice.ETag,
                 id: azureDevice.Id,
                 c2DMessageCount: azureDevice.CloudToDeviceMessageCount,
                 lastActivity: azureDevice.LastActivityTime,
