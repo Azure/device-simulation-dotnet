@@ -207,7 +207,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.updateDeviceStateLogic.Setup(this.deviceId, deviceModel, this);
             this.deviceBootstrapLogic.Setup(this.deviceId, deviceModel, this);
             this.sendTelemetryLogic.Setup(this.deviceId, deviceModel, this);
-            this.updateReportedPropertiesLogic.Setup(this.deviceId, deviceModel, this);
+
+            if (this.rateLimiting.TwinReadsWritesEnabled)
+            {
+                this.updateReportedPropertiesLogic.Setup(this.deviceId, deviceModel, this);
+            }
 
             this.log.Debug("Setup complete", () => new { this.deviceId });
             this.MoveNext();
@@ -305,9 +309,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 case Status.UpdatingReportedProperties:
                     this.ActorStatus = nextStatus;
-                    this.updateReportedPropertiesLogic.Start();
-                    // Note: at this point both UpdatingDeviceState
-                    //       and UpdatingReportedProperties should be running
+                    // only update twin if enabled in config
+                    if (this.rateLimiting.TwinReadsWritesEnabled)
+                    {
+                        this.updateReportedPropertiesLogic.Start();
+                        // Note: at this point both UpdatingDeviceState
+                        //       and UpdatingReportedProperties should be running
+                    }
                     break;
 
                 case Status.SendingTelemetry:

@@ -10,6 +10,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         int ConnectionsPerSecond { get; set; }
         int DeviceMessagesPerSecond { get; set; }
         int DeviceMessagesPerDay { get; set; }
+        bool TwinReadsWritesEnabled { get; set; }
     }
 
     public class RateLimitingConfiguration : IRateLimitingConfiguration
@@ -20,5 +21,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         public int ConnectionsPerSecond { get; set; }
         public int DeviceMessagesPerSecond { get; set; }
         public int DeviceMessagesPerDay { get; set; }
+        public bool TwinReadsWritesEnabled { get; set; }
     }
 }
