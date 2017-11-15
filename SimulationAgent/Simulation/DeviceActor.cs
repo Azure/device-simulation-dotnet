@@ -7,6 +7,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic.Models;
@@ -116,6 +117,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         // Logic used to throttled the hub operations
         private readonly IRateLimiting rateLimiting;
 
+        // Only make read/write requests to twin if enabled
+        private readonly bool twinReadsWritesEnabled;
+
         /// <summary>
         /// Azure IoT Hub client shared by Connect and SendTelemetry
         /// </summary>
@@ -157,10 +161,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             UpdateReportedProperties updateReportedPropertiesLogic,
             SendTelemetry sendTelemetryLogic,
             IRateLimiting rateLimiting,
+            IServicesConfig config,
             ITimer cancellationCheckTimer)
         {
             this.log = logger;
             this.rateLimiting = rateLimiting;
+            this.twinReadsWritesEnabled = config.TwinReadsWritesEnabled;
 
             this.connectLogic = connectLogic;
             this.deviceBootstrapLogic = deviceBootstrapLogic;
@@ -208,7 +214,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.deviceBootstrapLogic.Setup(this.deviceId, deviceModel, this);
             this.sendTelemetryLogic.Setup(this.deviceId, deviceModel, this);
 
-            if (this.rateLimiting.TwinReadsWritesEnabled)
+            if (this.twinReadsWritesEnabled)
             {
                 this.updateReportedPropertiesLogic.Setup(this.deviceId, deviceModel, this);
             }
@@ -310,7 +316,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 case Status.UpdatingReportedProperties:
                     this.ActorStatus = nextStatus;
                     // only update twin if enabled in config
-                    if (this.rateLimiting.TwinReadsWritesEnabled)
+                    if (this.twinReadsWritesEnabled)
                     {
                         this.updateReportedPropertiesLogic.Start();
                         // Note: at this point both UpdatingDeviceState

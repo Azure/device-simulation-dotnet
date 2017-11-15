@@ -36,6 +36,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IRateLimiting rateLimiting;
         private readonly RegistryManager registry;
         private readonly string ioTHubHostName;
+        private readonly bool twinReadsWritesEnabled;
 
         public Devices(
             IRateLimiting rateLimiting,
@@ -46,6 +47,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log = logger;
             this.registry = RegistryManager.CreateFromConnectionString(config.IoTHubConnString);
             this.ioTHubHostName = IotHubConnectionStringBuilder.Create(config.IoTHubConnString).HostName;
+            this.twinReadsWritesEnabled = config.TwinReadsWritesEnabled;
             this.log.Debug("Devices service instantiated", () => new { this.ioTHubHostName });
         }
 
@@ -85,7 +87,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             try
             {
-                if (!this.rateLimiting.TwinReadsWritesEnabled) { loadTwin = false; }
+                if (!this.twinReadsWritesEnabled) { loadTwin = false; }
 
                 return await this.GetAsync(deviceId, loadTwin, cancellationToken);
             }
@@ -187,7 +189,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     () => new { device.Id, DeviceTwin.SIMULATED_TAG_KEY, DeviceTwin.SIMULATED_TAG_VALUE });
                 twin.Tags[DeviceTwin.SIMULATED_TAG_KEY] = DeviceTwin.SIMULATED_TAG_VALUE;
 
-                if (this.rateLimiting.TwinReadsWritesEnabled)
+                if (this.twinReadsWritesEnabled)
                 {
                     // TODO: when not discarding the twin, use the right ETag and manage conflicts
                     //       https://github.com/Azure/device-simulation-dotnet/issues/83

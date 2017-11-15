@@ -63,8 +63,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
                 DeviceMessagesPerSecond = configData.GetInt(DEVICE_MESSAGES_FREQUENCY_LIMIT_KEY, 50),
                 DeviceMessagesPerDay = configData.GetInt(DEVICE_MESSAGES_DAILY_LIMIT_KEY, 8000),
                 TwinReadsPerSecond = configData.GetInt(TWIN_READS_FREQUENCY_LIMIT_KEY, 5),
-                TwinWritesPerSecond = configData.GetInt(TWIN_WRITES_FREQUENCY_LIMIT_KEY, 5),
-                TwinReadsWritesEnabled = configData.GetBool(TWIN_READS_WRITES_ENABLED_KEY, false)
+                TwinWritesPerSecond = configData.GetInt(TWIN_WRITES_FREQUENCY_LIMIT_KEY, 5)
             };
 
             this.ServicesConfig = new ServicesConfig
@@ -74,7 +73,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
                 IoTHubConnString = connstring,
                 StorageAdapterApiUrl = configData.GetString(STORAGE_ADAPTER_API_URL_KEY),
                 StorageAdapterApiTimeout = configData.GetInt(STORAGE_ADAPTER_API_TIMEOUT_KEY),
-                RateLimiting = limitsConf
+                RateLimiting = limitsConf,
+                TwinReadsWritesEnabled = configData.GetBool(TWIN_READS_WRITES_ENABLED_KEY, false)
             };
         }
 

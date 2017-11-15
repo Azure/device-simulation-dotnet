@@ -10,8 +10,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
     public interface IRateLimiting
     {
-        bool TwinReadsWritesEnabled { get; }
-
         void SetCancellationToken(CancellationToken token);
 
         Task<T> LimitConnectionsAsync<T>(Func<Task<T>> func);
@@ -54,8 +52,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
             this.registryOperations = new PerMinuteCounter(
                 config.RegistryOperationsPerMinute, "Registry operations", log);
-
-            this.TwinReadsWritesEnabled = config.TwinReadsWritesEnabled;
 
             this.twinReads = new PerSecondCounter(
                 config.TwinReadsPerSecond, "Twin reads", log);
