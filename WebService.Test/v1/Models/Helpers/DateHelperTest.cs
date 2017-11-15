@@ -12,7 +12,7 @@ namespace WebService.Test.v1.Models.Helpers
     {
         // Truncate the seconds in case the second changes during the test (another way would be to test
         // the actual-expected delta, and accepting a small error)
-        const string FORMAT = "yyyy-MM-dd'T'HH:mm:--zzz";
+        const string FORMAT = "yyyy-MM-dd'T'HH:mm:sszzz";
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItConvertsDates()
@@ -22,7 +22,7 @@ namespace WebService.Test.v1.Models.Helpers
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItConvertsFormulas()
+        public void ItConvertsExpressions()
         {
             var now = DateTimeOffset.UtcNow;
 
