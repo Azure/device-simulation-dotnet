@@ -7,7 +7,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions
     public class InvalidDateFormatException : Exception
     {
         /// <summary>
-        /// This exception is thrown by a controller when the input validation
+        /// This exception is thrown by a controller when a datetime input validation
         /// fails. The client should fix the request before retrying.
         /// </summary>
         public InvalidDateFormatException() : base()
