@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Security;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json;
 
@@ -22,6 +23,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 
         [JsonProperty(PropertyName = "Enabled")]
         public bool? Enabled { get; set; }
+
+        [JsonProperty(PropertyName = "IoTHub")]
+        public IotHubModelRef IotHub { get; set; }
 
         [JsonProperty(PropertyName = "DeviceModels")]
         public List<DeviceModelRef> DeviceModels { get; set; }
@@ -72,6 +76,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 
             [JsonProperty(PropertyName = "Count")]
             public int Count { get; set; }
+        }
+
+        public class IotHubModelRef
+        {
+            [JsonProperty(PropertyName = "ConnectionString")]
+            public SecureString IoTHubConnString { get; set; }
         }
 
         /// <summary>Map an API model to the corresponding service model</summary>
