@@ -31,6 +31,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
     public class RateLimiting : IRateLimiting
     {
         // Use separate objects to reduce internal contentions in the lock statement
+
         private readonly PerSecondCounter connections;
         private readonly PerMinuteCounter registryOperations;
         private readonly PerSecondCounter twinReads;
