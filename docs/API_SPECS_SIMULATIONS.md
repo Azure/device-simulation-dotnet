@@ -123,6 +123,49 @@ Content-Type: application/json; charset=utf-8
 }
 ```
 
+## Scheduling the simulation and setting a duration
+
+Unless specified, a simulation will run continuously, until stopped.
+
+It is possible to set a start and end time, for example to schedule the
+simulation to run in the future and for a defined duration.
+
+To set start and end times, use the `StartTime` and `EndTime`, set in UTC
+timezone. Both values are optional, an empty `EndTime` will cause the
+simulation to run forever, once started.
+
+The fields can be set in two different formats, either passing a UTC datetime,
+or a "NOW" plus/minus an
+[ISO8601 formatted duration](https://en.wikipedia.org/wiki/ISO_8601#Durations).
+
+For instance, to start the simulation immediately, and run for two hours, the
+client should use:
+* StartTime: NOW
+* EndTime: NOW+PT2H
+
+while to start a simulation at midnight, for two hours:
+* StartTime: 2018-07-07T00:00:00z
+* EndTime: 2018-07-07T02:00:00z
+
+Request example:
+```
+POST /v1/simulations
+Content-Type: application/json; charset=utf-8
+```
+```json
+{
+  "Enabled": true,
+  "StartTime": "NOW",
+  "EndTime": "NOW+P7D",
+  "DeviceTypes": [
+    {
+      "Id": "truck-01",
+      "Count": 1
+    }
+  ]
+}
+```
+
 ## Create simulation passing in a list of device models and device count
 
 A client can create a simulation different from the default template, for
@@ -262,7 +305,7 @@ Content-Type: application/json; charset=utf-8
           },
           "Script":{
             "Type": "internal",
-            "Path": "math.random-within-range",
+            "Path": "Math.Random.WithinRange",
             "Params": {
               "temperature": {
                 "Min": 70,
@@ -292,6 +335,7 @@ Content-Type: application/json; charset=utf-8
             }
           }
         ]
+      }
     },
     {
       "Id": "truck-02",
@@ -312,7 +356,7 @@ Request:
 GET /v1/simulations/1
 ```
 
-Response:
+Response example:
 ```
 200 OK
 Content-Type: application/json; charset=utf-8
@@ -322,6 +366,8 @@ Content-Type: application/json; charset=utf-8
   "ETag": "cec0722b205740",
   "Id": "1",
   "Enabled": true,
+  "StartTime": "2019-02-03T14:00:00",
+  "EndTime": "2019-02-04T00:00:00",
   "DeviceModels": [
     {
       "Id": "truck-01",

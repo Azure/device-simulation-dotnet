@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
@@ -53,7 +54,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             return new SimulationApiModel(
-                await this.simulationsService.InsertAsync(simulation.ToServiceModel(), template));
+                await this.simulationsService.InsertAsync(this.GetServiceModel(simulation), template));
         }
 
         [HttpPut("{id}")]
@@ -68,7 +69,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             return new SimulationApiModel(
-                await this.simulationsService.UpsertAsync(simulation.ToServiceModel(id)));
+                await this.simulationsService.UpsertAsync(this.GetServiceModel(simulation, id)));
         }
 
         [HttpPatch("{id}")]
@@ -90,6 +91,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         public async Task DeleteAsync(string id)
         {
             await this.simulationsService.DeleteAsync(id);
+        }
+
+        private Simulation GetServiceModel(SimulationApiModel simulation, string id = "")
+        {
+            try
+            {
+                return simulation.ToServiceModel(id);
+            }
+            catch (InvalidDateFormatException e)
+            {
+                this.log.Error("Invalid date format", () => new { simulation, e });
+                throw new BadRequestException("Invalid date format", e);
+            }
         }
     }
 }

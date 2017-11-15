@@ -42,7 +42,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             {
                 try
                 {
-                    this.log.Debug("----Checking for simulation changes------", () => { });
+                    this.log.Debug("------ Checking for simulation changes ------", () => { });
 
                     var newSimulation = (await this.simulations.GetListAsync()).FirstOrDefault();
 
@@ -64,9 +64,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     this.log.Error("Failure reading and starting simulation from storage.", () => new { e });
                 }
 
-                if (this.simulation != null && this.simulation.Enabled == true)
+                if (this.simulation != null && this.simulation.ShouldBeRunning())
                 {
-                    this.log.Debug("----Current simulation being run------", () => { });
+                    this.log.Debug("------ Current simulation being run ------", () => { });
                     foreach (var model in this.simulation.DeviceModels)
                     {
                         this.log.Debug("Device model", () => new { model });
@@ -97,10 +97,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 this.runner.Stop();
 
                 this.simulation = newSimulation;
-                if (this.simulation.Enabled)
+
+                if (this.simulation.ShouldBeRunning())
                 {
+                    this.log.Debug("------ Starting simulation ------", () => new { this.simulation });
                     this.runner.Start(this.simulation);
-                    this.log.Debug("----Started new simulation ------", () => new { this.simulation });
+                    this.log.Debug("------ Simulation started ------", () => new { this.simulation });
                 }
             }
         }
@@ -110,21 +112,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             if (newSimulation != null && this.simulation == null)
             {
                 this.simulation = newSimulation;
-                if (this.simulation.Enabled)
+                if (this.simulation.ShouldBeRunning())
+                {
+                    this.log.Debug("------ Starting new simulation ------", () => new { this.simulation });
                     this.runner.Start(this.simulation);
+                    this.log.Debug("------ New simulation started ------", () => new { this.simulation });
+                }
             }
         }
 
         private void CheckForStopOrStartToSimulation()
         {
             // stopped
-            if (this.simulation != null && this.simulation.Enabled == false)
+            if (this.simulation != null && !this.simulation.ShouldBeRunning())
             {
                 this.runner.Stop();
             }
 
             // started
-            if (this.simulation != null && this.simulation.Enabled == true)
+            if (this.simulation != null && this.simulation.ShouldBeRunning())
             {
                 this.runner.Start(this.simulation);
             }
