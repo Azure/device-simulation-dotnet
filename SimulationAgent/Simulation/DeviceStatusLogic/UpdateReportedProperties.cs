@@ -7,6 +7,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation.DeviceStatusLogic.Models;
 
@@ -21,6 +22,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private string deviceId;
         private DeviceModel deviceModel;
 
+        // Only make read/write requests to twin if enabled
+        private readonly bool twinReadWriteEnabled;
+
         // The timer invoking the Run method
         private readonly ITimer timer;
 
@@ -34,8 +38,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         public UpdateReportedProperties(
             ITimer timer,
             IDevices devices,
+            IServicesConfig config,
             ILogger logger)
         {
+            this.twinReadWriteEnabled = config.TwinReadWriteEnabled;
             this.timer = timer;
             this.log = logger;
             this.devices = devices;
@@ -44,6 +50,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         public void Setup(string deviceId, DeviceModel deviceModel, IDeviceActor context)
         {
+            if (!this.twinReadWriteEnabled)
+            {
+                this.log.Info("Twin read/write disabled,  skipping UpdateReportedProperties setup.",
+                    () => new { twinReadWriteEnabled });
+                return;
+            }
+
             if (this.setupDone)
             {
                 this.log.Error("Setup has already been invoked, are you sharing this instance with multiple devices?",
@@ -60,6 +73,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         public void Start()
         {
+            if (!this.twinReadWriteEnabled)
+            {
+                this.log.Info("Twin read/write disabled, skipping start of UpdateReportedProperties.",
+                    () => new { twinReadWriteEnabled });
+                return;
+            }
+
             this.log.Info("Starting UpdateReportedProperties", () => new { this.deviceId });
             this.timer.RunOnce(0);
         }
@@ -72,6 +92,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         public void Run(object context)
         {
+            if (!this.twinReadWriteEnabled)
+            {
+                this.log.Info("Twin read/write disabled, skipping run UpdateReportedProperties.",
+                    () => new { twinReadWriteEnabled });
+                return;
+            }
+
             var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             try
             {
@@ -93,6 +120,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         private async Task RunInternalAsync()
         {
+            if (!twinReadWriteEnabled)
+            {
+                this.log.Info("Twin read/write disabled, skipping RunInternalAsync.",
+                    () => new { twinReadWriteEnabled });
+                return;
+            }
+
             this.ValidateSetup();
 
             var actor = this.context;

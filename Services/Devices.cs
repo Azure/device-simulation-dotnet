@@ -47,7 +47,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log = logger;
             this.registry = RegistryManager.CreateFromConnectionString(config.IoTHubConnString);
             this.ioTHubHostName = IotHubConnectionStringBuilder.Create(config.IoTHubConnString).HostName;
-            this.twinReadsWritesEnabled = config.TwinReadsWritesEnabled;
+            this.twinReadsWritesEnabled = config.TwinReadWriteEnabled;
             this.log.Debug("Devices service instantiated", () => new { this.ioTHubHostName });
         }
 

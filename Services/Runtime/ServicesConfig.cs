@@ -11,7 +11,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         string IoTHubConnString { get; set; }
         string StorageAdapterApiUrl { get; set; }
         int StorageAdapterApiTimeout { get; set; }
-        bool TwinReadsWritesEnabled { get; set; }
+        bool TwinReadWriteEnabled { get; set; }
 
         IRateLimitingConfiguration RateLimiting { get; set; }
     }
@@ -50,7 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 
         public IRateLimitingConfiguration RateLimiting { get; set; }
 
-        public bool TwinReadsWritesEnabled { get; set; }
+        public bool TwinReadWriteEnabled { get; set; }
 
         private string NormalizePath(string path)
         {

@@ -117,9 +117,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         // Logic used to throttled the hub operations
         private readonly IRateLimiting rateLimiting;
 
-        // Only make read/write requests to twin if enabled
-        private readonly bool twinReadsWritesEnabled;
-
         /// <summary>
         /// Azure IoT Hub client shared by Connect and SendTelemetry
         /// </summary>
@@ -161,12 +158,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             UpdateReportedProperties updateReportedPropertiesLogic,
             SendTelemetry sendTelemetryLogic,
             IRateLimiting rateLimiting,
-            IServicesConfig config,
             ITimer cancellationCheckTimer)
         {
             this.log = logger;
             this.rateLimiting = rateLimiting;
-            this.twinReadsWritesEnabled = config.TwinReadsWritesEnabled;
 
             this.connectLogic = connectLogic;
             this.deviceBootstrapLogic = deviceBootstrapLogic;
@@ -213,11 +208,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.updateDeviceStateLogic.Setup(this.deviceId, deviceModel, this);
             this.deviceBootstrapLogic.Setup(this.deviceId, deviceModel, this);
             this.sendTelemetryLogic.Setup(this.deviceId, deviceModel, this);
-
-            if (this.twinReadsWritesEnabled)
-            {
-                this.updateReportedPropertiesLogic.Setup(this.deviceId, deviceModel, this);
-            }
+            this.updateReportedPropertiesLogic.Setup(this.deviceId, deviceModel, this);
 
             this.log.Debug("Setup complete", () => new { this.deviceId });
             this.MoveNext();
@@ -315,13 +306,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 case Status.UpdatingReportedProperties:
                     this.ActorStatus = nextStatus;
-                    // only update twin if enabled in config
-                    if (this.twinReadsWritesEnabled)
-                    {
-                        this.updateReportedPropertiesLogic.Start();
-                        // Note: at this point both UpdatingDeviceState
-                        //       and UpdatingReportedProperties should be running
-                    }
+                    this.updateReportedPropertiesLogic.Start();
+                    // Note: at this point both UpdatingDeviceState
+                    //       and UpdatingReportedProperties should be running
                     break;
 
                 case Status.SendingTelemetry:
