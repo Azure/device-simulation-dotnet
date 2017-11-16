@@ -2,11 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Security;
-using System.Text.RegularExpressions;
-using Microsoft.Azure.Devices;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;
@@ -30,16 +25,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         [JsonProperty(PropertyName = "Enabled")]
         public bool? Enabled { get; set; }
 
-<<<<<<< HEAD
         [JsonProperty(PropertyName = "IoTHub")]
         public IotHubModelRef IotHub { get; set; }
-=======
+
         [JsonProperty(PropertyName = "StartTime", NullValueHandling = NullValueHandling.Ignore)]
         public string StartTime { get; set; }
 
         [JsonProperty(PropertyName = "EndTime", NullValueHandling = NullValueHandling.Ignore)]
         public string EndTime { get; set; }
->>>>>>> 8dcebc065f5bd72a2a5e7f40dc6a052de94bbd8b
 
         [JsonProperty(PropertyName = "DeviceModels")]
         public List<DeviceModelRef> DeviceModels { get; set; }
@@ -111,9 +104,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 
         public class IotHubModelRef
         {
-            [JsonProperty(PropertyName = "ConnectionString")]
-            public string ConnectionString { get; set; }
+            private string iotHubConnectionString;
 
+            [JsonProperty(PropertyName = "ConnectionString")]
+            public string ConnectionString
+            {
+                get => this.iotHubConnectionString;
+                set
+                {
+                    if (value != null)
+                    {
+                        // remove and securely store senstive key information
+                        // from IoTHub connection string
+                        this.iotHubConnectionString =
+                            IotHubConnectionStringHelper.RemoveAndStoreKey(value);
+                    }
+                }
+            }
         }
 
         /// <summary>Map an API model to the corresponding service model</summary>
@@ -152,58 +159,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             }
 
             return result;
-        }
-
-        /// <summary>
-        /// Sets the connection string and removes the sensitive key data to be stored locally
-        /// to the machine in a file .
-        /// 
-        /// TODO Encryption for key & storage in documentDb instead of file
-        /// 
-        /// </summary>
-        /// <param name="connString"></param>
-        private void SetConnectionString(string connString)
-        {
-            var key = this.GetKeyFromConnString(connString);
-
-            // store in local file
-            this.WriteKeyToFile(key);
-
-            // redact key from connection string
-            connString = connString.Replace(key, "");
-
-            this.IotHub.ConnectionString = connString;
-        }
-
-        private string GetKeyFromConnString(string connString)
-        {
-            var match = Regex.Match(connString,
-                @"^HostName=(?<hostName>.*);SharedAccessKeyName=(?<keyName>.*);SharedAccessKey=(?<key>.*);$");
-
-            if (!match.Success)
-            {
-                var message = "Invalid connection string for IoTHub";
-                throw new InvalidInputException(message);
-            }
-
-            return match.Groups["key"].Value;
-        }
-
-        private void WriteKeyToFile(string key)
-        {
-            string path = @"custom_iothub_key.txt";
-            if (!File.Exists(path))
-            {
-                // Create a file to write to. 
-                using (StreamWriter sw = File.CreateText(path))
-                {
-                    sw.WriteLine(key);
-                }
-            }
-            else
-            {
-                File.WriteAllText(path, key);
-            }
         }
     }
 }
