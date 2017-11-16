@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Azure.Devices;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;
@@ -117,7 +118,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
                         // remove and securely store senstive key information
                         // from IoTHub connection string
                         this.iotHubConnectionString =
-                            IotHubConnectionStringHelper.RemoveAndStoreKey(value);
+                            IotHubConnectionStringHelper.StoreAndRedact(value);
                     }
                 }
             }
