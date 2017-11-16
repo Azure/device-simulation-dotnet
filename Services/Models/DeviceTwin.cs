@@ -14,7 +14,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         public const string SIMULATED_TAG_VALUE = "Y";
 
-        public string Etag { get; set; }
+        public string ETag { get; set; }
         public string DeviceId { get; set; }
         public bool IsSimulated { get; set; }
         public Dictionary<string, JToken> DesiredProperties { get; set; }
@@ -25,7 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         {
             if (twin != null)
             {
-                this.Etag = twin.ETag;
+                this.ETag = twin.ETag;
                 this.DeviceId = twin.DeviceId;
                 this.Tags = TwinCollectionToDictionary(twin.Tags);
                 this.DesiredProperties = TwinCollectionToDictionary(twin.Properties.Desired);

@@ -53,7 +53,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             if (!this.twinReadWriteEnabled)
             {
                 this.log.Info("Twin read/write disabled,  skipping UpdateReportedProperties setup",
-                    () => new { twinReadWriteEnabled });
+                    () => new { this.twinReadWriteEnabled });
                 return;
             }
 
@@ -76,7 +76,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             if (!this.twinReadWriteEnabled)
             {
                 this.log.Info("Twin read/write disabled, skipping start of UpdateReportedProperties",
-                    () => new { twinReadWriteEnabled });
+                    () => new { this.twinReadWriteEnabled });
                 return;
             }
 
@@ -95,7 +95,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             if (!this.twinReadWriteEnabled)
             {
                 this.log.Info("Twin read/write disabled, skipping run UpdateReportedProperties",
-                    () => new { twinReadWriteEnabled });
+                    () => new { this.twinReadWriteEnabled });
                 return;
             }
 
@@ -120,10 +120,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         private async Task RunInternalAsync()
         {
-            if (!twinReadWriteEnabled)
+            if (!this.twinReadWriteEnabled)
             {
                 this.log.Info("Twin read/write disabled, skipping RunInternalAsync",
-                    () => new { twinReadWriteEnabled });
+                    () => new { this.twinReadWriteEnabled });
                 return;
             }
 

@@ -48,7 +48,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             foreach (var item in data.Items)
             {
                 var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
-                simulation.Etag = item.ETag;
+                simulation.ETag = item.ETag;
                 result.Add(simulation);
             }
 
@@ -59,7 +59,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             var item = await this.storage.GetAsync(STORAGE_COLLECTION, id);
             var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
-            simulation.Etag = item.ETag;
+            simulation.ETag = item.ETag;
             return simulation;
         }
 
@@ -108,7 +108,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 JsonConvert.SerializeObject(simulation),
                 "*");
 
-            simulation.Etag = result.ETag;
+            simulation.ETag = result.ETag;
 
             return simulation;
         }
@@ -130,10 +130,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 this.log.Info("Modifying simulation via PUT.", () => { });
 
-                if (simulation.Etag != simulations[0].Etag)
+                if (simulation.ETag == "*")
                 {
-                    this.log.Error("Invalid Etag. Running simulation Etag is:'", () => new { simulations });
-                    throw new InvalidInputException("Invalid Etag. Running simulation Etag is:'" + simulations[0].Etag + "'.");
+                    simulation.ETag = simulations[0].ETag;
+                    this.log.Info("The client used Etag='*' choosing to overwrite the current simulation", () => { });
+                }
+
+                if (simulation.ETag != simulations[0].ETag)
+                {
+                    this.log.Error("Invalid ETag. Running simulation Etag is:'", () => new { simulations });
+                    throw new InvalidInputException("Invalid ETag. Running simulation ETag is:'" + simulations[0].ETag + "'.");
                 }
 
                 simulation.Created = simulations[0].Created;
@@ -155,10 +161,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 STORAGE_COLLECTION,
                 SIMULATION_ID,
                 JsonConvert.SerializeObject(simulation),
-                simulation.Etag);
+                simulation.ETag);
 
-            // Return the new etag provided by the storage
-            simulation.Etag = item.ETag;
+            // Return the new ETag provided by the storage
+            simulation.ETag = item.ETag;
 
             return simulation;
         }
@@ -173,15 +179,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             var item = await this.storage.GetAsync(STORAGE_COLLECTION, patch.Id);
             var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
-            simulation.Etag = item.ETag;
+            simulation.ETag = item.ETag;
 
-            // Even when there's nothing to do, verify the etag mismatch
-            if (patch.Etag != simulation.Etag)
+            // Even when there's nothing to do, verify the ETag mismatch
+            if (patch.ETag != simulation.ETag)
             {
-                this.log.Warn("Etag mismatch",
-                    () => new { Current = simulation.Etag, Provided = patch.Etag });
+                this.log.Warn("ETag mismatch",
+                    () => new { Current = simulation.ETag, Provided = patch.ETag });
                 throw new ConflictingResourceException(
-                    $"The ETag provided doesn't match the current resource ETag ({simulation.Etag}).");
+                    $"The ETag provided doesn't match the current resource ETag ({simulation.ETag}).");
             }
 
             if (!patch.Enabled.HasValue || patch.Enabled.Value == simulation.Enabled)
@@ -198,9 +204,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 STORAGE_COLLECTION,
                 SIMULATION_ID,
                 JsonConvert.SerializeObject(simulation),
-                patch.Etag);
+                patch.ETag);
 
-            simulation.Etag = item.ETag;
+            simulation.ETag = item.ETag;
 
             return simulation;
         }
