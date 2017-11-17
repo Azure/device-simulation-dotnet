@@ -1,14 +1,14 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
+
 using System.IO;
 using System.Text.RegularExpressions;
-using Microsoft.Azure.Devices.Common;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers
 {
     public class IotHubConnectionStringHelper
     {
+        private const string USE_LOCAL_IOTHUB = "pre-provisioned";
         private const string CONNECTION_STRING_FILE_PATH = @"custom_iothub_key.txt";
 
         /// <summary>
@@ -23,15 +23,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Hel
         /// <param name="iotHubConnectionString"></param>
         public static string StoreAndRedact(string iotHubConnectionString)
         {
+            // check if environment variable should be used
+            if (iotHubConnectionString != USE_LOCAL_IOTHUB)
+            {
+                UseLocalIotHub();
+                return USE_LOCAL_IOTHUB;
+            }
 
             // find key and check that connection string is valid.
             var key = GetKeyFromConnString(iotHubConnectionString);
 
-            // store full connection string with key in local file
+            // store default value or full connection string with key in local file
             WriteToFile(iotHubConnectionString, CONNECTION_STRING_FILE_PATH);
 
             // redact key from connection string and return
             return iotHubConnectionString.Replace(key, "");
+        }
+
+        /// <summary>
+        /// If simulation uses the pre-provisioned IoT Hub for the service,
+        /// remove sensitive hub information that is no longer needed
+        /// </summary>
+        public static void UseLocalIotHub()
+        {
+            // delete custom IoT Hub string if local hub is being used
+            File.Delete(CONNECTION_STRING_FILE_PATH);
         }
 
         /// <summary>
@@ -42,7 +58,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Hel
         private static string GetKeyFromConnString(string iotHubConnectionString)
         {
             var match = Regex.Match(iotHubConnectionString,
-                @"^HostName=(?<hostName>.*);SharedAccessKeyName=(?<keyName>.*);SharedAccessKey=(?<key>.*);$");
+                @"^HostName=(?<hostName>.*);SharedAccessKeyName=(?<keyName>.*);SharedAccessKey=(?<key>.*)$");
 
             if (!match.Success)
             {

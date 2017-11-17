@@ -12,6 +12,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         [JsonProperty(PropertyName = "Enabled")]
         public bool? Enabled { get; set; }
 
+        [JsonProperty(PropertyName = "IoTHub")]
+        public IotHubApiModel IotHub { get; set; }
+
         public SimulationPatchApiModel()
         {
             this.Enabled = null;

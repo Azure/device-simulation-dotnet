@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Azure.Devices;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;
@@ -27,7 +26,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         public bool? Enabled { get; set; }
 
         [JsonProperty(PropertyName = "IoTHub")]
-        public IotHubModelRef IotHub { get; set; }
+        public IotHubApiModel IotHub { get; set; }
 
         [JsonProperty(PropertyName = "StartTime", NullValueHandling = NullValueHandling.Ignore)]
         public string StartTime { get; set; }
@@ -101,27 +100,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 
             [JsonProperty(PropertyName = "Count")]
             public int Count { get; set; }
-        }
-
-        public class IotHubModelRef
-        {
-            private string iotHubConnectionString;
-
-            [JsonProperty(PropertyName = "ConnectionString")]
-            public string ConnectionString
-            {
-                get => this.iotHubConnectionString;
-                set
-                {
-                    if (value != null)
-                    {
-                        // remove and securely store senstive key information
-                        // from IoTHub connection string
-                        this.iotHubConnectionString =
-                            IotHubConnectionStringHelper.StoreAndRedact(value);
-                    }
-                }
-            }
         }
 
         /// <summary>Map an API model to the corresponding service model</summary>
