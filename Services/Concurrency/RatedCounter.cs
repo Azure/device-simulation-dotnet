@@ -66,6 +66,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         public RatedCounter(int rate, double timeUnitLength, string name, ILogger logger)
         {
+            this.log = logger;
+
             if (rate < MIN_RATE)
             {
                 var msg = "The counter rate value must be greater than or equal to " + MIN_RATE;
@@ -81,8 +83,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             }
 
             this.name = name;
-            this.log = logger;
-
             this.eventsPerTimeUnit = rate;
             this.timeUnitLength = timeUnitLength;
 
