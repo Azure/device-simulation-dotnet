@@ -31,6 +31,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string DEVICE_MODELS_SCRIPTS_FOLDER_KEY = APPLICATION_KEY + "device_models_scripts_folder";
         private const string IOTHUB_CONN_STRING_KEY = APPLICATION_KEY + "iothub_connstring";
 
+        private const string TWIN_READ_WRITE_ENABLED_KEY = APPLICATION_KEY + "twin_read_write_enabled";
+
+        private const string IOTHUB_LIMITS_KEY = APPLICATION_KEY + "RateLimits:";
+        private const string CONNECTIONS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "device_connections_per_second";
+        private const string REGISTRYOPS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "registry_operations_per_minute";
+        private const string DEVICE_MESSAGES_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "device_to_cloud_messages_per_second";
+        private const string DEVICE_MESSAGES_DAILY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "device_to_cloud_messages_per_day";
+        private const string TWIN_READS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "twin_reads_per_second";
+        private const string TWIN_WRITES_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "twin_writes_per_second";
+
         private const string STORAGE_ADAPTER_KEY = "StorageAdapterService:";
         private const string STORAGE_ADAPTER_API_URL_KEY = STORAGE_ADAPTER_KEY + "webservice_url";
         private const string STORAGE_ADAPTER_API_TIMEOUT_KEY = STORAGE_ADAPTER_KEY + "webservice_timeout";
@@ -55,7 +65,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             this.Port = configData.GetInt(PORT_KEY);
 
             var connstring = configData.GetString(IOTHUB_CONN_STRING_KEY);
-            if (connstring.ToLowerInvariant().Contains("your azure iot hub"))
+            if (connstring.ToLowerInvariant().Contains("azure iot hub"))
             {
                 // In order to connect to Azure IoT Hub, the service requires a connection
                 // string. The value can be found in the Azure Portal. For more information see
@@ -72,13 +82,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                                     "value in the 'appsettings.ini' configuration file.");
             }
 
+            var limitsConf = new RateLimitingConfiguration
+            {
+                ConnectionsPerSecond = configData.GetInt(CONNECTIONS_FREQUENCY_LIMIT_KEY, 50),
+                RegistryOperationsPerMinute = configData.GetInt(REGISTRYOPS_FREQUENCY_LIMIT_KEY, 50),
+                DeviceMessagesPerSecond = configData.GetInt(DEVICE_MESSAGES_FREQUENCY_LIMIT_KEY, 50),
+                DeviceMessagesPerDay = configData.GetInt(DEVICE_MESSAGES_DAILY_LIMIT_KEY, 8000),
+                TwinReadsPerSecond = configData.GetInt(TWIN_READS_FREQUENCY_LIMIT_KEY, 5),
+                TwinWritesPerSecond = configData.GetInt(TWIN_WRITES_FREQUENCY_LIMIT_KEY, 5)
+            };
+
             this.ServicesConfig = new ServicesConfig
             {
                 DeviceModelsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_FOLDER_KEY)),
                 DeviceModelsScriptsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_SCRIPTS_FOLDER_KEY)),
                 IoTHubConnString = connstring,
                 StorageAdapterApiUrl = configData.GetString(STORAGE_ADAPTER_API_URL_KEY),
-                StorageAdapterApiTimeout = configData.GetInt(STORAGE_ADAPTER_API_TIMEOUT_KEY)
+                StorageAdapterApiTimeout = configData.GetInt(STORAGE_ADAPTER_API_TIMEOUT_KEY),
+                RateLimiting = limitsConf,
+                TwinReadWriteEnabled = configData.GetBool(TWIN_READ_WRITE_ENABLED_KEY, true)
             };
 
             this.ClientAuthConfig = new ClientAuthConfig
