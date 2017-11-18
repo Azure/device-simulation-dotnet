@@ -27,7 +27,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             {
                 ETag = this.ETag,
                 Id = id,
-                Enabled = this.Enabled
+                Enabled = this.Enabled,
+                IotHubConnectionString = this.IotHub.ConnectionString
             };
         }
     }

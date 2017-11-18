@@ -6,7 +6,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers
 {
-    public class IotHubConnectionStringHelper
+    public class IotHubConnectionStringManager
     {
         private const string USE_LOCAL_IOTHUB = "pre-provisioned";
         private const string CONNECTION_STRING_FILE_PATH = @"custom_iothub_key.txt";

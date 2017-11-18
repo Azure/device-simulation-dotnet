@@ -7,12 +7,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 {
     public class Simulation
     {
+        private const string USE_LOCAL_IOTHUB = "pre-provisioned";
+
         private DateTimeOffset? startTime;
         private DateTimeOffset? endTime;
 
         public string ETag { get; set; }
         public string Id { get; set; }
         public bool Enabled { get; set; }
+        public string IotHubConnectionString { get; set; }
         public IList<DeviceModelRef> DeviceModels { get; set; }
         public DateTimeOffset Created { get; set; }
         public DateTimeOffset Modified { get; set; }
@@ -37,6 +40,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
             // When unspecified, a simulation is enabled
             this.Enabled = true;
+            // by default, use PCS_IOTHUB_CONNSTRING
+            this.IotHubConnectionString = USE_LOCAL_IOTHUB;
             this.DeviceModels = new List<DeviceModelRef>();
         }
 
