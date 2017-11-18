@@ -1,5 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System;
+using System.Threading;
 using Autofac;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime;
@@ -24,8 +26,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // Print some useful information
             PrintBootstrapInfo(container);
 
+            // Increase the available resources
+            SetupThreadPool(container);
+
             // TODO: use async/await with C# 7.1
             container.Resolve<ISimulation>().RunAsync().Wait();
+        }
+
+        private static void SetupThreadPool(IContainer container)
+        {
+            var logger = container.Resolve<ILogger>();
+
+            ThreadPool.GetMaxThreads(out int workerThreads, out int completionPortThreads);
+            logger.Info("Original Worker threads: " + workerThreads, () => { });
+            logger.Info("Original Asynchronous I/O threads: " + completionPortThreads, () => { });
+
+            workerThreads = Math.Max(workerThreads, 5000);
+            completionPortThreads = Math.Max(completionPortThreads, 5000);
+            ThreadPool.SetMaxThreads(workerThreads, completionPortThreads);
+
+            ThreadPool.GetMaxThreads(out workerThreads, out completionPortThreads);
+            logger.Info("New Worker threads: " + workerThreads, () => { });
+            logger.Info("New Asynchronous I/O threads: " + completionPortThreads, () => { });
         }
 
         private static void PrintBootstrapInfo(IContainer container)
