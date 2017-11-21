@@ -2,7 +2,9 @@
 
 using System.IO;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;using WebService.Test.helpers;using Xunit;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;
+using WebService.Test.helpers;
+using Xunit;
 
 namespace WebService.Test.v1.Models.Helpers
 {
