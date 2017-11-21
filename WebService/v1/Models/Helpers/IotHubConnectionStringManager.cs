@@ -45,10 +45,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Hel
 
             // if key is null, the string has been redacted,
             // check if hub is in storage
-            if (key.IsNullOrWhiteSpace() &&
-                ConnectionStringIsStored(connectionString))
+            if (key.IsNullOrWhiteSpace())
             {
-                return connectionString;
+                if (ConnectionStringIsStored(connectionString))
+                {
+                    return connectionString;
+                }
+                else
+                {
+                    string message = "Could not connect to IotHub with the connection" +
+                                     "string provided. Check that the key is valid and " +
+                                     "that the hub exists.";
+                    throw new IotHubConnectionException(message);
+                }
             }
 
             // store full connection string with key in local file
