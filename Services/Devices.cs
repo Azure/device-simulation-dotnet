@@ -8,6 +8,7 @@ using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
@@ -45,10 +46,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             this.rateLimiting = rateLimiting;
             this.log = logger;
-            this.registry = RegistryManager.CreateFromConnectionString(config.IoTHubConnString);
-            this.ioTHubHostName = IotHubConnectionStringBuilder.Create(config.IoTHubConnString).HostName;
+
             this.twinReadsWritesEnabled = config.TwinReadWriteEnabled;
             this.log.Debug("Devices service instantiated", () => new { this.ioTHubHostName });
+
+            // get IoTHub connection string from either from user provided
+            // value or from the PCS_IOTHUB_CONNSTRING environment variable.
+            var connectionStringManager = new IotHubConnectionStringManager(config, logger);
+            string connString = connectionStringManager.GetIotHubConnectionString();
+
+            this.registry = RegistryManager.CreateFromConnectionString(connString);
+            this.ioTHubHostName = IotHubConnectionStringBuilder.Create(connString).HostName;
         }
 
         public async Task<Tuple<bool, string>> PingRegistryAsync()

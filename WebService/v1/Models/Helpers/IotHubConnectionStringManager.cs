@@ -2,14 +2,17 @@
 
 using System.IO;
 using System.Text.RegularExpressions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using Microsoft.Azure.Devices;
+using Microsoft.Azure.Devices.Common;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers
 {
     public class IotHubConnectionStringManager
     {
         private const string USE_LOCAL_IOTHUB = "pre-provisioned";
-        private const string CONNECTION_STRING_FILE_PATH = @"custom_iothub_key.txt";
+        private const string CONNECTION_STRING_FILE_PATH = @"user_iothub_key.txt";
+        private const string CONNECTION_STRING_REGEX = @"^HostName=(?<hostName>.*);SharedAccessKeyName=(?<keyName>.*);SharedAccessKey=(?<key>.*)$";
 
         /// <summary>
         /// Validates that the IoTHub Connection String is valid, stores the full
@@ -20,24 +23,36 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Hel
         ///      and investigate conversion to SecureString
         ///      https://github.com/Azure/device-simulation-dotnet/issues/129
         /// </summary>
-        /// <param name="iotHubConnectionString"></param>
-        public static string StoreAndRedact(string iotHubConnectionString)
+        /// <param name="connectionString"></param>
+        public static string StoreAndRedact(string connectionString)
         {
             // check if environment variable should be used
-            if (iotHubConnectionString != USE_LOCAL_IOTHUB)
+            if (connectionString.IsNullOrWhiteSpace() ||
+                connectionString == USE_LOCAL_IOTHUB)
             {
                 UseLocalIotHub();
                 return USE_LOCAL_IOTHUB;
             }
 
-            // find key and check that connection string is valid.
-            var key = GetKeyFromConnString(iotHubConnectionString);
+            // check that connection strng is valid and the IotHub exists
+            IsValidConnectionString(connectionString);
 
-            // store default value or full connection string with key in local file
-            WriteToFile(iotHubConnectionString, CONNECTION_STRING_FILE_PATH);
+            // find key
+            var key = GetKeyFromConnString(connectionString);
+
+            // if key is null, the string has been redacted,
+            // check if hub is in storage
+            if (key.IsNullOrWhiteSpace() &&
+                ConnectionStringIsStored(connectionString))
+            {
+                return connectionString;
+            }
+
+            // store full connection string with key in local file
+            WriteToFile(connectionString, CONNECTION_STRING_FILE_PATH);
 
             // redact key from connection string and return
-            return iotHubConnectionString.Replace(key, "");
+            return connectionString.Replace(key, "");
         }
 
         /// <summary>
@@ -53,35 +68,104 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Hel
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="iotHubConnectionString"></param>
+        /// <param name="connectionString"></param>
         /// <returns></returns>
-        private static string GetKeyFromConnString(string iotHubConnectionString)
+        private static string GetKeyFromConnString(string connectionString)
         {
-            var match = Regex.Match(iotHubConnectionString,
-                @"^HostName=(?<hostName>.*);SharedAccessKeyName=(?<keyName>.*);SharedAccessKey=(?<key>.*)$");
-
-            if (!match.Success)
-            {
-                var message = "Invalid connection string for IoTHub";
-                throw new InvalidInputException(message);
-            }
+            var match = Regex.Match(connectionString, CONNECTION_STRING_REGEX);
 
             return match.Groups["key"].Value;
         }
 
-        private static void WriteToFile(string key, string path)
+        /// <summary>
+        /// Checks if connection string provided has a valid format.
+        /// If format is valid, and the connection string has a non-null
+        /// value for the key, also checks if a connection to the IotHub
+        /// can be made.
+        /// </summary>
+        /// <param name="connectionString"></param>
+        /// <returns></returns>
+        private static bool IsValidConnectionString(string connectionString)
+        {
+            var match = Regex.Match(connectionString, CONNECTION_STRING_REGEX);
+
+            if (!match.Success)
+            {
+                var message = "Invalid connection string format for IoTHub. " +
+                    "The correct format is: HostName=[hubname];SharedAccessKeyName=" +
+                    "[iothubowner or service];SharedAccessKey=[null or valid key]";
+
+                throw new InvalidIotHubConnectionStringFormatException(message);
+            }
+
+            // if a key is provided, check if IoTHub is valid
+            if (!match.Groups["key"].Value.IsNullOrWhiteSpace())
+            {
+                try
+                {
+                    RegistryManager.CreateFromConnectionString(connectionString);
+                }
+                catch (IOException)
+                {
+                    string message = "Could not connect to IotHub with the connection" +
+                                     "string provided. Check that the key is valid and " +
+                                     "that the hub exists.";
+                    throw new IotHubConnectionException(message);
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Takes in a connection string with empty key information. 
+        /// Returns true if the key for the redacted string is in storage.
+        /// Returns false if the key for the redacted string is not in storage.
+        /// </summary>
+        /// <param name="connectionString"></param>
+        /// <returns></returns>
+        private static bool ConnectionStringIsStored(string connectionString)
+        {
+            var userHub = IotHubConnectionStringBuilder.Create(connectionString);
+
+            var storedHub = IotHubConnectionStringBuilder.Create(
+                    ReadFromFile(CONNECTION_STRING_FILE_PATH));
+
+            return userHub.HostName == storedHub.HostName &&
+                   userHub.SharedAccessKeyName == storedHub.SharedAccessKeyName;
+        }
+
+        /// <summary>
+        /// Retrieves connection string from local storage.
+        /// Returns null if file doesn't exist.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        private static string ReadFromFile(string path)
+        {
+            string result = null;
+
+            if (File.Exists(path))
+            {
+                result = File.ReadAllText(path);
+            }
+
+            return result;
+        }
+
+        private static void WriteToFile(string connectionString, string path)
         {
             if (!File.Exists(path))
             {
                 // Create a file to write to. 
                 using (StreamWriter sw = File.CreateText(path))
                 {
-                    sw.WriteLine(key);
+                    sw.WriteLine(connectionString);
                 }
             }
             else
             {
-                File.WriteAllText(path, key);
+                File.WriteAllText(path, connectionString);
             }
         }
     }

@@ -14,23 +14,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         public string ConnectionString
         {
             get => this.iotHubConnectionString;
-            set
-            {
-                if (value != null)
-                {
-                    // remove and securely store senstive key information
-                    // from IoTHub connection string
-                    // if value is "pre-provisioned" will use hub info
-                    // in PCS_IOTHUB_CONNSTRING
-                    this.iotHubConnectionString =
-                        IotHubConnectionStringHelper.StoreAndRedact(value);
-                }
-            }
+            set =>
+                // remove and securely store senstive key information
+                // from IoTHub connection string
+                // if value is "pre-provisioned" will use hub info
+                // in PCS_IOTHUB_CONNSTRING
+                this.iotHubConnectionString =
+                    IotHubConnectionStringManager.StoreAndRedact(value);
         }
 
         public IotHubApiModel()
         {
             this.ConnectionString = USE_LOCAL_IOTHUB;
+        }
+
+        public IotHubApiModel(string connectionString)
+        {
+            this.ConnectionString = connectionString;
         }
     }
 }

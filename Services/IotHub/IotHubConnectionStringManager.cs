@@ -1,9 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using Microsoft.Azure.Devices.Common;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
@@ -12,8 +10,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
     // retrieves Iot Hub connection secret from storage
     public class IotHubConnectionStringManager
     {
-        private const string USE_LOCAL_IOTHUB = "pre-provisioned";
-        private const string CONNECTION_STRING_FILE_PATH = @"custom_iothub_key.txt";
+        private const string CONNECTION_STRING_FILE_PATH = @"user_iothub_key.txt";
 
         private readonly IServicesConfig config;
         private readonly ILogger log;
@@ -28,17 +25,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         /// <summary>
         /// Checks storage for which connection string to use.
-        /// If value is "pre-provisioned" will return the value
-        /// stored in PCS_IOTHUB_CONNSTRING
-        /// Otherwise returns value in local storage.
+        /// If value is null or file doesn't exist, return the
+        /// value stored in PCS_IOTHUB_CONNSTRING. Otherwise
+        /// returns value in local storage.
         /// </summary>
         /// <returns></returns>
         public string GetIotHubConnectionString()
         {
             string customIotHub = ReadFromFile(CONNECTION_STRING_FILE_PATH);
 
-            if (customIotHub == USE_LOCAL_IOTHUB)
+            // if no user provided hub is stored, use the pre-provisioned hub 
+            if (customIotHub.IsNullOrWhiteSpace())
             {
+                this.log.Info("Using IotHub stored in PCS_IOTHUB_CONNSTRING.", () => new {});
                 return this.config.IoTHubConnString;
             }
 
@@ -47,15 +46,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         /// <summary>
         /// Retrieves connection string from local storage.
-        /// Returns default value if file doesn't exist.
+        /// Returns null if file doesn't exist.
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        private string ReadFromFile(string path)
+        private static string ReadFromFile(string path)
         {
-            string result = USE_LOCAL_IOTHUB;
+            string result = null;
 
-            if (!File.Exists(path))
+            if (File.Exists(path))
             {
                 result = File.ReadAllText(path);
             }

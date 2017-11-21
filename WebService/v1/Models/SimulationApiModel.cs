@@ -53,7 +53,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 
             // When unspecified, a simulation is enabled
             this.Enabled = true;
-
+            this.IotHub = null;
             this.StartTime = null;
             this.EndTime = null;
             this.DeviceModels = new List<DeviceModelRef>();
@@ -65,6 +65,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             this.ETag = simulation.ETag;
             this.Id = simulation.Id;
             this.Enabled = simulation.Enabled;
+            this.IotHub.ConnectionString = simulation.IotHubConnectionString;
 
             // Ignore the date if the simulation doesn't have a start time
             if (simulation.StartTime.HasValue && !simulation.StartTime.Value.Equals(DateTimeOffset.MinValue))
@@ -118,7 +119,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
                 EndTime = DateHelper.ParseDateExpression(this.EndTime, now),
 
                 // When unspecified, a simulation is enabled
-                Enabled = this.Enabled ?? true
+                Enabled = this.Enabled ?? true,
+                IotHubConnectionString = this.IotHub.ConnectionString
             };
 
             foreach (var x in this.DeviceModels)
