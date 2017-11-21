@@ -11,8 +11,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Hel
     public class IotHubConnectionStringManager
     {
         private const string USE_LOCAL_IOTHUB = "pre-provisioned";
-        private const string CONNECTION_STRING_FILE_PATH = @"user_iothub_key.txt";
-        private const string CONNECTION_STRING_REGEX = @"^HostName=(?<hostName>.*);SharedAccessKeyName=(?<keyName>.*);SharedAccessKey=(?<key>.*)$";
+        private const string CONNSTRING_FILE_PATH = @"keys\user_iothub_key.txt";
+        private const string CONNSTRING_REGEX = @"^HostName=(?<hostName>.*);SharedAccessKeyName=(?<keyName>.*);SharedAccessKey=(?<key>.*)$";
+        private const string CONNSTRING_REGEX_HOSTNAME = "hostName";
+        private const string CONNSTRING_REGEX_KEYNAME = "keyName";
+        private const string CONNSTRING_REGEX_KEY = "key";
 
         /// <summary>
         /// Validates that the IoTHub Connection String is valid, stores the full
@@ -49,7 +52,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Hel
             }
 
             // store full connection string with key in local file
-            WriteToFile(connectionString, CONNECTION_STRING_FILE_PATH);
+            WriteToFile(connectionString, CONNSTRING_FILE_PATH);
 
             // redact key from connection string and return
             return connectionString.Replace(key, "");
@@ -62,7 +65,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Hel
         public static void UseLocalIotHub()
         {
             // delete custom IoT Hub string if local hub is being used
-            File.Delete(CONNECTION_STRING_FILE_PATH);
+            File.Delete(CONNSTRING_FILE_PATH);
         }
 
         /// <summary>
@@ -72,9 +75,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Hel
         /// <returns></returns>
         private static string GetKeyFromConnString(string connectionString)
         {
-            var match = Regex.Match(connectionString, CONNECTION_STRING_REGEX);
+            var match = Regex.Match(connectionString, CONNSTRING_REGEX);
 
-            return match.Groups["key"].Value;
+            return match.Groups[CONNSTRING_REGEX_KEY].Value;
         }
 
         /// <summary>
@@ -87,7 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Hel
         /// <returns></returns>
         private static bool IsValidConnectionString(string connectionString)
         {
-            var match = Regex.Match(connectionString, CONNECTION_STRING_REGEX);
+            var match = Regex.Match(connectionString, CONNSTRING_REGEX);
 
             if (!match.Success)
             {
@@ -99,7 +102,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Hel
             }
 
             // if a key is provided, check if IoTHub is valid
-            if (!match.Groups["key"].Value.IsNullOrWhiteSpace())
+            if (!match.Groups[CONNSTRING_REGEX_KEY].Value.IsNullOrWhiteSpace())
             {
                 try
                 {
@@ -118,7 +121,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Hel
         }
 
         /// <summary>
-        /// Takes in a connection string with empty key information. 
+        /// Takes in a connection string with empty key information.
         /// Returns true if the key for the redacted string is in storage.
         /// Returns false if the key for the redacted string is not in storage.
         /// </summary>
@@ -126,13 +129,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Hel
         /// <returns></returns>
         private static bool ConnectionStringIsStored(string connectionString)
         {
-            var userHub = IotHubConnectionStringBuilder.Create(connectionString);
+            // parse user provided hub info
+            var userHubMatch = Regex.Match(connectionString, CONNSTRING_REGEX);
+            var userHubHostName = userHubMatch.Groups[CONNSTRING_REGEX_HOSTNAME].Value;
+            var userHubKeyName = userHubMatch.Groups[CONNSTRING_REGEX_KEYNAME].Value;
 
-            var storedHub = IotHubConnectionStringBuilder.Create(
-                    ReadFromFile(CONNECTION_STRING_FILE_PATH));
+            // parse stored hub info
+            var storedHubString = ReadFromFile(CONNSTRING_FILE_PATH);
+            var storedHubMatch = Regex.Match(storedHubString, CONNSTRING_REGEX);
+            var storedHubHostName = storedHubMatch.Groups[CONNSTRING_REGEX_HOSTNAME].Value;
+            var storedHubKeyName = storedHubMatch.Groups[CONNSTRING_REGEX_KEYNAME].Value;
 
-            return userHub.HostName == storedHub.HostName &&
-                   userHub.SharedAccessKeyName == storedHub.SharedAccessKeyName;
+            return userHubHostName == storedHubHostName &&
+                   userHubKeyName == storedHubKeyName;
         }
 
         /// <summary>
@@ -143,14 +152,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Hel
         /// <returns></returns>
         private static string ReadFromFile(string path)
         {
-            string result = null;
-
             if (File.Exists(path))
             {
-                result = File.ReadAllText(path);
+                // remove special characters and return string
+                return Regex.Replace(File.ReadAllText(path), @"[\r\n\t ]+", "");
             }
 
-            return result;
+            return null;
         }
 
         private static void WriteToFile(string connectionString, string path)

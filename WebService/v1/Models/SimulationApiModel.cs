@@ -65,7 +65,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             this.ETag = simulation.ETag;
             this.Id = simulation.Id;
             this.Enabled = simulation.Enabled;
-            this.IotHub.ConnectionString = simulation.IotHubConnectionString;
+            this.IotHub = new IotHubApiModel(simulation.IotHubConnectionString);
 
             // Ignore the date if the simulation doesn't have a start time
             if (simulation.StartTime.HasValue && !simulation.StartTime.Value.Equals(DateTimeOffset.MinValue))

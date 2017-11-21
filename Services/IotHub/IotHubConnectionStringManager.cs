@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System.IO;
+using System.Text.RegularExpressions;
 using Microsoft.Azure.Devices.Common;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
@@ -10,7 +11,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
     // retrieves Iot Hub connection secret from storage
     public class IotHubConnectionStringManager
     {
-        private const string CONNECTION_STRING_FILE_PATH = @"user_iothub_key.txt";
+        private const string CONNECTION_STRING_FILE_PATH = @"keys\user_iothub_key.txt";
 
         private readonly IServicesConfig config;
         private readonly ILogger log;
@@ -32,12 +33,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// <returns></returns>
         public string GetIotHubConnectionString()
         {
+            // read connection string file from webservice
             string customIotHub = ReadFromFile(CONNECTION_STRING_FILE_PATH);
 
             // if no user provided hub is stored, use the pre-provisioned hub 
             if (customIotHub.IsNullOrWhiteSpace())
             {
-                this.log.Info("Using IotHub stored in PCS_IOTHUB_CONNSTRING.", () => new {});
+                this.log.Info("Using IotHub stored in PCS_IOTHUB_CONNSTRING.", () => new { });
                 return this.config.IoTHubConnString;
             }
 
@@ -52,14 +54,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// <returns></returns>
         private static string ReadFromFile(string path)
         {
-            string result = null;
-
             if (File.Exists(path))
             {
-                result = File.ReadAllText(path);
+                // remove special characters and return string
+                return Regex.Replace(File.ReadAllText(path), @"[\r\n\t ]+", "");
             }
 
-            return result;
+            return null;
         }
     }
 }
