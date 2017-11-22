@@ -5,7 +5,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Newtonsoft.Json;
 
@@ -30,15 +32,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IDeviceModels deviceModels;
         private readonly IStorageAdapterClient storage;
         private readonly ILogger log;
+        private readonly IIotHubConnectionStringManager connectionStringManager;
 
         public Simulations(
             IDeviceModels deviceModels,
             IStorageAdapterClient storage,
+            IIotHubConnectionStringManager connectionStringManager,
             ILogger logger)
         {
             this.deviceModels = deviceModels;
             this.storage = storage;
             this.log = logger;
+            this.connectionStringManager = connectionStringManager;
         }
 
         public async Task<IList<Models.Simulation>> GetListAsync()
@@ -85,6 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             simulation.Created = DateTimeOffset.UtcNow;
             simulation.Modified = simulation.Created;
             simulation.Version = 1;
+            simulation.IotHubConnectionString = this.connectionStringManager.StoreAndRedact(simulation.IotHubConnectionString);
 
             // Create default simulation
             if (!string.IsNullOrEmpty(template) && template.ToLowerInvariant() == "default")
@@ -157,6 +163,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             // Note: forcing the ID because only one simulation can be created
             simulation.Id = SIMULATION_ID;
+            simulation.IotHubConnectionString = this.connectionStringManager.StoreAndRedact(simulation.IotHubConnectionString);
+
             var item = await this.storage.UpdateAsync(
                 STORAGE_COLLECTION,
                 SIMULATION_ID,

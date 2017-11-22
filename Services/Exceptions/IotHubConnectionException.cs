@@ -2,7 +2,7 @@
 
 using System;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
 {
     public class IotHubConnectionException : Exception
     {

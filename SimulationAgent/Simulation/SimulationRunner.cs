@@ -33,6 +33,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.log = logger;
             this.deviceModels = deviceModels;
             this.factory = factory;
+            this.factory.Resolve<IDevices>().UpdateIotHub();
 
             this.running = new List<bool> { false };
         }
@@ -51,6 +52,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 this.log.Info("Starting simulation...", () => new { simulation.Id });
                 this.cancellationToken = new CancellationTokenSource();
+                this.factory.Resolve<IDevices>().UpdateIotHub();
 
                 foreach (var dt in simulation.DeviceModels)
                 {

@@ -23,6 +23,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter);
         Task<Device> GetOrCreateAsync(string deviceId, bool loadTwin, CancellationToken cancellationToken);
         Task<Device> GetAsync(string deviceId, bool loadTwin, CancellationToken cancellationToken);
+        void UpdateIotHub();
     }
 
     public class Devices : IDevices
@@ -35,10 +36,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         private readonly ILogger log;
         private readonly IRateLimiting rateLimiting;
-        private readonly RegistryManager registry;
-        private readonly string ioTHubHostName;
+        private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly bool twinReadsWritesEnabled;
 
+        private RegistryManager registry;
+        private string ioTHubHostName;
+        
         public Devices(
             IRateLimiting rateLimiting,
             IServicesConfig config,
@@ -51,8 +54,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log.Debug("Devices service instantiated", () => new { this.ioTHubHostName });
 
             // get IoTHub connection string from either from user provided
-            // value or from the PCS_IOTHUB_CONNSTRING environment variable.
-            var connectionStringManager = new IotHubConnectionStringManager(config, logger);
+            // value or from the environment variable.
+            this.connectionStringManager = new IotHubConnectionStringManager(config, logger);
             string connString = connectionStringManager.GetIotHubConnectionString();
 
             this.registry = RegistryManager.CreateFromConnectionString(connString);
@@ -72,6 +75,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.log.Error("Device registry test failed", () => new { e });
                 return new Tuple<bool, string>(false, e.Message);
             }
+        }
+
+        public void UpdateIotHub()
+        {
+            string connString = connectionStringManager.GetIotHubConnectionString();
+            this.registry = RegistryManager.CreateFromConnectionString(connString);
+            this.ioTHubHostName = IotHubConnectionStringBuilder.Create(connString).HostName;
+            this.log.Info("Updated IoTHub for devices", () => new { this.ioTHubHostName });
         }
 
         public IDeviceClient GetClient(

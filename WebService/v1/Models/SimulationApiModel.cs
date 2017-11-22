@@ -2,6 +2,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using Microsoft.Azure.Devices.Common;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;
@@ -12,6 +15,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
     public class SimulationApiModel
     {
         private const string DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:sszzz";
+        private const string CONNSTRING_REGEX = @"^HostName=(?<hostName>.*);SharedAccessKeyName=(?<keyName>.*);SharedAccessKey=(?<key>.*)$";
         private readonly long version;
         private DateTimeOffset created;
         private DateTimeOffset modified;
