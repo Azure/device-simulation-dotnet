@@ -27,7 +27,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// <summary>
         /// Checks storage for which connection string to use.
         /// If value is null or file doesn't exist, return the
-        /// value stored in PCS_IOTHUB_CONNSTRING. Otherwise
+        /// value stored in environment variable. Otherwise
         /// returns value in local storage.
         /// </summary>
         /// <returns></returns>

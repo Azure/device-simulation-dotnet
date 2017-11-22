@@ -15,7 +15,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         {
             get => this.iotHubConnectionString;
             set =>
-                // remove and securely store senstive key information
+                // remove and securely store sensitive key information
                 // from IoTHub connection string
                 // if value is "pre-provisioned" will use hub info
                 // in PCS_IOTHUB_CONNSTRING
