@@ -29,7 +29,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         private readonly string connStringFilePath;
             
-
         private readonly IServicesConfig config;
         private readonly ILogger log;
 
@@ -37,7 +36,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             IServicesConfig config,
             ILogger logger)
         {
-            this.connStringFilePath = AppDomain.CurrentDomain.BaseDirectory + "custom_iothub_key.txt";
+            // Store file for connection string under the solution directory
+            // so all projects have access
+            var projectPath = AppContext.BaseDirectory
+                .Substring(0, AppContext.BaseDirectory
+                .IndexOf("bin", StringComparison.Ordinal));
+            var solutionPath = Directory.GetParent(projectPath).Parent.FullName;
+            this.connStringFilePath = solutionPath + Path.DirectorySeparatorChar + "custom_iothub_key.txt";
+
             this.config = config;
             this.log = logger;
         }
