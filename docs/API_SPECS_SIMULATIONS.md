@@ -157,7 +157,7 @@ Content-Type: application/json; charset=utf-8
   "Enabled": true,
   "StartTime": "NOW",
   "EndTime": "NOW+P7D",
-  "DeviceTypes": [
+  "DeviceModels": [
     {
       "Id": "truck-01",
       "Count": 1
@@ -179,7 +179,7 @@ Content-Type: application/json; charset=utf-8
 ```json
 {
   "Enabled": true,
-  "DeviceTypes": [
+  "DeviceModels": [
     {
       "Id": "truck-01",
       "Count": 3
