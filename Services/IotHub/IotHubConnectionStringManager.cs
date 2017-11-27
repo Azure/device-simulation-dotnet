@@ -203,7 +203,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         private void WriteToFile(string connectionString, string path)
         {
-            this.log.Debug("Write IotHub connection string to path: " + path, () => new { path });
+            this.log.Info("Write IotHub connection string to path: " + path, () => new { path });
             if (!Directory.Exists(this.config.IoTHubFolder))
             {
                 Directory.CreateDirectory(this.config.IoTHubFolder);
@@ -231,13 +231,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// <returns></returns>
         private string ReadFromFile(string path)
         {
-            this.log.Debug("Check for IotHub connection string under path: " + path, () => new { path });
+            this.log.Info("Check for IotHub connection string under path: " + path, () => new { path });
             if (File.Exists(path))
             {
                 // remove special characters and return string
                 return Regex.Replace(File.ReadAllText(path), @"[\r\n\t ]+", "");
             }
 
+            this.log.Info("IotHub connection string file not present.", () => new { path });
             return null;
         }
     }

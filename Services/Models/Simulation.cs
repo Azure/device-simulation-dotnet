@@ -47,7 +47,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
             // When unspecified, a simulation is enabled
             this.Enabled = true;
-            // by default, use PCS_IOTHUB_CONNSTRING
+            // by default, use environment variable
             this.IotHubConnectionString = USE_LOCAL_IOTHUB;
             this.DeviceModels = new List<DeviceModelRef>();
         }
