@@ -3,7 +3,6 @@
 using System;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.Devices.Shared;
-using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 {
@@ -62,12 +61,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public Device(Azure.Devices.Device azureDevice, Twin azureTwin, string ioTHubHostName) :
             this(azureDevice, new DeviceTwin(azureTwin), ioTHubHostName)
         {
-        }
-
-        public Device SetReportedProperty(string key, JToken value)
-        {
-            this.Twin.ReportedProperties[key] = value;
-            return this;
         }
     }
 }
