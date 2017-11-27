@@ -26,6 +26,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private const string CONNSTRING_REGEX_HOSTNAME = "hostName";
         private const string CONNSTRING_REGEX_KEYNAME = "keyName";
         private const string CONNSTRING_REGEX_KEY = "key";
+        private const string CONNSTRING_FILE_NAME = "custom_iothub_key.txt";
 
         private readonly string connStringFilePath;
             
@@ -36,15 +37,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             IServicesConfig config,
             ILogger logger)
         {
-            // Store file for connection string under the solution directory
-            // so all projects have access
-            var projectPath = AppContext.BaseDirectory
-                .Substring(0, AppContext.BaseDirectory
-                .IndexOf("bin", StringComparison.Ordinal));
-            var solutionPath = Directory.GetParent(projectPath).Parent.FullName;
-            this.connStringFilePath = solutionPath + Path.DirectorySeparatorChar + "custom_iothub_key.txt";
-
             this.config = config;
+            this.connStringFilePath = config.IoTHubFolder + CONNSTRING_FILE_NAME;
             this.log = logger;
         }
 
@@ -207,8 +201,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                    userHubKeyName == storedHubKeyName;
         }
 
-        private static void WriteToFile(string connectionString, string path)
+        private void WriteToFile(string connectionString, string path)
         {
+            this.log.Debug("Write IotHub connection string to path: " + path, () => new { path });
+            if (!Directory.Exists(this.config.IoTHubFolder))
+            {
+                Directory.CreateDirectory(this.config.IoTHubFolder);
+            }
+
             if (!File.Exists(path))
             {
                 // Create a file to write to. 
@@ -231,6 +231,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// <returns></returns>
         private string ReadFromFile(string path)
         {
+            this.log.Debug("Check for IotHub connection string under path: " + path, () => new { path });
             if (File.Exists(path))
             {
                 // remove special characters and return string
