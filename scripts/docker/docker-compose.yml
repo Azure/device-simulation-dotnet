@@ -15,8 +15,13 @@ services:
     ports:
       - "9003:9003"
     environment:
-      - PCS_IOTHUB_CONNSTRING=${PCS_IOTHUB_CONNSTRING}
+      - PCS_IOTHUB_CONNSTRING
       - PCS_STORAGEADAPTER_WEBSERVICE_URL=http://storageadapter:9022/v1
+      - PCS_AUTH_REQUIRED
+      - PCS_CORS_WHITELIST
+      - PCS_AUTH_ISSUER
+      - PCS_AUTH_AUDIENCE
+      - PCS_TWIN_READ_WRITE_ENABLED
     #volumes:
     #  - ./sample-volume:/app/data:ro
   storageadapter:
@@ -24,4 +29,4 @@ services:
     ports:
       - "9022:9022"
     environment:
-      - PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING=${PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING}
+      - PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING

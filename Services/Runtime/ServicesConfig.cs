@@ -12,8 +12,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         string StorageAdapterApiUrl { get; set; }
         int StorageAdapterApiTimeout { get; set; }
         bool TwinReadWriteEnabled { get; set; }
-
-        IRateLimitingConfiguration RateLimiting { get; set; }
     }
 
     // TODO: test Windows/Linux folder separator
@@ -27,7 +25,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         {
             this.dtf = string.Empty;
             this.dtbf = string.Empty;
-            this.RateLimiting = new RateLimitingConfiguration();
         }
 
         public string DeviceModelsFolder
@@ -47,8 +44,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         public string StorageAdapterApiUrl { get; set; }
 
         public int StorageAdapterApiTimeout { get; set; }
-
-        public IRateLimitingConfiguration RateLimiting { get; set; }
 
         public bool TwinReadWriteEnabled { get; set; }
 

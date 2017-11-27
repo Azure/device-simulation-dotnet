@@ -17,7 +17,6 @@ RUN \
     # provide custom device models and/or customized scripts.
     mv /app/webservice/data /app && \
     cd /app/webservice && rm -fR data && ln -s /app/data && \
-    cd /app/simulationagent && rm -fR data && ln -s /app/data && \
     # Clean up destination folder
     rm -f /app/Dockerfile /app/.dockerignore
 

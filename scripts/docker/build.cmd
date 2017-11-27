@@ -37,16 +37,12 @@ cd %APP_HOME%
 
     rmdir /s /q out\docker
     rmdir /s /q WebService\bin\Docker
-    rmdir /s /q SimulationAgent\bin\Docker
 
     mkdir out\docker\webservice
-    mkdir out\docker\simulationagent
 
     dotnet publish WebService      --configuration %CONFIGURATION% --output bin\Docker
-    dotnet publish SimulationAgent --configuration %CONFIGURATION% --output bin\Docker
 
     xcopy /s WebService\bin\Docker\*       out\docker\webservice\
-    xcopy /s SimulationAgent\bin\Docker\*  out\docker\simulationagent\
 
     copy scripts\docker\.dockerignore               out\docker\
     copy scripts\docker\Dockerfile                  out\docker\
