@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json.Linq;
@@ -16,15 +15,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface IDeviceClient
     {
         IoTHubProtocol Protocol { get; }
-
         Task ConnectAsync();
-
         Task DisconnectAsync();
-
         Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema);
-
         Task UpdateTwinAsync(Device device);
-
         Task RegisterMethodsForDeviceAsync(IDictionary<string, Script> methods, Dictionary<string, object> deviceState);
     }
 
@@ -41,8 +35,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly string deviceId;
         private readonly IoTHubProtocol protocol;
         private readonly Azure.Devices.Client.DeviceClient client;
-        private readonly IDeviceMethods deviceMethods;
-        private readonly IRateLimiting rateLimiting;
         private readonly ILogger log;
 
         private bool connected;
@@ -53,17 +45,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             string deviceId,
             IoTHubProtocol protocol,
             Azure.Devices.Client.DeviceClient client,
-            IDeviceMethods deviceMethods,
-            IRateLimiting rateLimiting,
             ILogger logger)
         {
             this.deviceId = deviceId;
             this.protocol = protocol;
             this.client = client;
-            this.deviceMethods = deviceMethods;
-            this.rateLimiting = rateLimiting;
             this.log = logger;
-            this.connected = false;
         }
 
         public async Task ConnectAsync()
@@ -72,7 +59,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 // TODO: HTTP clients don't "connect", find out how HTTP connections are measured and throttled
                 //       https://github.com/Azure/device-simulation-dotnet/issues/85
-                await this.rateLimiting.LimitConnectionsAsync(() => this.client.OpenAsync());
+                await this.client.OpenAsync();
                 this.connected = true;
             }
         }
@@ -87,14 +74,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        public async Task RegisterMethodsForDeviceAsync(
+        public Task RegisterMethodsForDeviceAsync(
             IDictionary<string, Script> methods,
             Dictionary<string, object> deviceState)
         {
+            /* TEMPORARY DISABLED
             this.log.Debug("Attempting to register device methods",
                 () => new { this.deviceId });
 
             await this.deviceMethods.RegisterMethodsAsync(this.deviceId, methods, deviceState);
+            */
+            return Task.CompletedTask;
         }
 
         public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
@@ -112,8 +102,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             });
         }
 
-        public async Task UpdateTwinAsync(Device device)
+        public Task UpdateTwinAsync(Device device)
         {
+            /* TEMPORARY DISABLED
             if (!this.connected) await this.ConnectAsync();
 
             var azureTwin = await this.rateLimiting.LimitTwinReadsAsync(
@@ -136,16 +127,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var reportedProperties = DictionaryToTwinCollection(device.Twin.ReportedProperties);
             await this.rateLimiting.LimitTwinWritesAsync(
                 () => this.client.UpdateReportedPropertiesAsync(reportedProperties));
+            */
+            return Task.CompletedTask;
         }
 
         private async Task SendRawMessageAsync(Message message)
         {
             try
             {
-                if (!this.connected) await this.ConnectAsync();
-
-                await this.rateLimiting.LimitMessagesAsync(
-                    () => this.client.SendEventAsync(message));
+                await this.client.SendEventAsync(message);
 
                 this.log.Debug("SendRawMessageAsync for device", () => new
                 {

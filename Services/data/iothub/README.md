@@ -1,2 +1,3 @@
-﻿For more information about custom Azure IoTHub connection strings
-[see the wiki](https://github.com/Azure/device-simulation-dotnet/tree/azure-iot-pcs-simulation/docs/API_SPECS_SIMULATIONS.md).
+﻿This folder is used at run time to store a custom data, like the custom connection string.
+
+Do not delete this folder, and make sure the configuration points here.

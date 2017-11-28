@@ -111,6 +111,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 
             var now = DateTimeOffset.UtcNow;
 
+            var connString = ServicesConfig.USE_DEFAULT_IOTHUB;
+            if (this.IotHub!= null && this.IotHub.ConnectionString != IotHubApiModel.USE_DEFAULT_IOTHUB)
+            {
+                connString = this.IotHub.ConnectionString;
+            }
+
             var result = new Simulation
             {
                 ETag = this.ETag,
@@ -120,7 +126,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 
                 // When unspecified, a simulation is enabled
                 Enabled = this.Enabled ?? true,
-                IotHubConnectionString = this.IotHub.ConnectionString != IotHubApiModel.USE_DEFAULT_IOTHUB ? this.IotHub.ConnectionString : ServicesConfig.USE_DEFAULT_IOTHUB
+                IotHubConnectionString = connString
             };
 
             foreach (var x in this.DeviceModels)

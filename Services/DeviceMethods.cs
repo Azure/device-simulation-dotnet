@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+/* CODE TEMPORARILY COMMENTED OUT
+
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -159,3 +161,4 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
     }
 }
+*/

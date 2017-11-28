@@ -7,6 +7,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Jint;
 using Jint.Native;
+using Jint.Parser;
+using Jint.Parser.Ast;
 using Jint.Runtime.Descriptors;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
@@ -26,6 +28,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         private readonly ILogger log;
         private readonly string folder;
         private Dictionary<string, object> deviceState;
+
+        // The following are static to improve overall performance
+        // TODO make the class a singleton - https://github.com/Azure/device-simulation-dotnet/issues/45
+        private static readonly JavaScriptParser parser = new JavaScriptParser();
+
+        private static readonly Dictionary<string, Program> programs = new Dictionary<string, Program>();
 
         public JavascriptInterpreter(
             IServicesConfig config,
@@ -59,12 +67,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             //register sleep function for javascript use
             engine.SetValue("sleep", new Action<int>(this.Sleep));
 
-            var sourceCode = this.LoadScript(filename);
-            this.log.Debug("Executing JS function", () => new { filename });
-
             try
             {
-                var output = engine.Execute(sourceCode).Invoke("main", context, this.deviceState);
+                Program program;
+                if (programs.ContainsKey(filename))
+                {
+                    program = programs[filename];
+                }
+                else
+                {
+                    var sourceCode = this.LoadScript(filename);
+
+                    this.log.Info("Compiling script source code", () => new { filename });
+                    program = parser.Parse(sourceCode);
+                    programs.Add(filename, program);
+                }
+
+                this.log.Debug("Executing JS function", () => new { filename });
+                JsValue output = engine.Execute(program).Invoke("main", context, this.deviceState);
+
                 var result = this.JsValueToDictionary(output);
                 this.log.Debug("JS function success", () => new { filename, result });
                 return result;
@@ -83,7 +104,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         /// </summary>
         private Dictionary<string, object> JsValueToDictionary(JsValue data)
         {
-            Dictionary<string, object> result;
+            var result = new Dictionary<string, object>();
+            if (data == null) return result;
 
             try
             {

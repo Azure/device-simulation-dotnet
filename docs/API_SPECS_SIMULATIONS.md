@@ -125,17 +125,29 @@ Content-Type: application/json; charset=utf-8
 
 ## Pointing a simulation to a custom Azure IoT Hub
 
-By default the simulation will run using the hub specified in the configuration file.
+By default the simulation will run using the hub specified in the
+configuration file.
 
-To specify a custom Azure IoT Hub, specify the connection string for the IoT Hub in the PUT request.
-Ex: `"ConnectionString": "HostName=iothub-abcde.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=<valid iothub key>"`
+To use a different Azure IoT Hub, it is possible to set a custom
+connection string for the IoT Hub to connect to, in the PUT request.
 
-The response will contain the connection string with the sensitive key information removed.
+Example value in the JSON payload: 
+```
+"ConnectionString": "HostName=iothub-abcde.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=<valid iothub key>"
+```
 
-If a valid connection string has already been provided, a partial connection string with a null key may be provided.
-Ex: `"ConnectionString": "HostName=iothub-abcde.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey="`
+When using a custom connection string, the web service response will
+remove the sensitive key before returning the simulation details.
 
-To switch back to the default Azure IoT Hub stored in the config file, specficy "default" as the connection string.
+If a valid connection string has already been provided, a partial
+connection string with an empty secret key may be provided:
+Example:
+```
+"ConnectionString": "HostName=iothub-abcde.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey="
+```
+
+To switch back to the default Azure IoT Hub stored in the configuration file,
+use the value "default" as the connection string.
 
 
 ```
@@ -191,7 +203,7 @@ Content-Type: application/json; charset=utf-8
   "Enabled": true,
   "StartTime": "NOW",
   "EndTime": "NOW+P7D",
-  "DeviceTypes": [
+  "DeviceModels": [
     {
       "Id": "truck-01",
       "Count": 1
@@ -213,7 +225,7 @@ Content-Type: application/json; charset=utf-8
 ```json
 {
   "Enabled": true,
-  "DeviceTypes": [
+  "DeviceModels": [
     {
       "Id": "truck-01",
       "Count": 3

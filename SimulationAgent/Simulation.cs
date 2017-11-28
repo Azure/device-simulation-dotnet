@@ -7,11 +7,12 @@ using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulation
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
     public interface ISimulation
     {
         Task RunAsync();
+        void Stop();
     }
 
     public class Simulation : ISimulation
@@ -22,6 +23,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private readonly ISimulations simulations;
         private readonly ISimulationRunner runner;
         private Services.Models.Simulation simulation;
+        private bool running;
 
         public Simulation(
             ILogger logger,
@@ -31,6 +33,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.log = logger;
             this.simulations = simulations;
             this.runner = runner;
+            this.running = true;
         }
 
         public async Task RunAsync()
@@ -38,13 +41,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.log.Info("Simulation Agent running", () => { });
 
             // Keep running, checking if the simulation changes
-            while (true)
+            while (this.running)
             {
                 try
                 {
                     this.log.Debug("------ Checking for simulation changes ------", () => { });
 
                     var newSimulation = (await this.simulations.GetListAsync()).FirstOrDefault();
+                    this.log.Debug("Simulation loaded", () => new { newSimulation });
 
                     // if the simulation is removed from storage & we're running stop simulation.
                     this.CheckForDeletedSimulation(newSimulation);
@@ -75,6 +79,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 Thread.Sleep(CHECK_INTERVAL_MSECS);
             }
+        }
+
+        public void Stop()
+        {
+            this.running = false;
+            this.runner.Stop();
         }
 
         private void CheckForDeletedSimulation(Services.Models.Simulation newSimulation)
