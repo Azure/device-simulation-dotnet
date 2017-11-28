@@ -8,6 +8,7 @@ using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
@@ -22,6 +23,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter);
         Task<Device> GetOrCreateAsync(string deviceId, bool loadTwin, CancellationToken cancellationToken);
         Task<Device> GetAsync(string deviceId, bool loadTwin, CancellationToken cancellationToken);
+        void UpdateIotHub();
     }
 
     public class Devices : IDevices
@@ -34,21 +36,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         private readonly ILogger log;
         private readonly IRateLimiting rateLimiting;
-        private readonly RegistryManager registry;
-        private readonly string ioTHubHostName;
+        private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly bool twinReadsWritesEnabled;
 
+        private RegistryManager registry;
+        private string ioTHubHostName;
+        
         public Devices(
             IRateLimiting rateLimiting,
             IServicesConfig config,
+            IIotHubConnectionStringManager connStringManager,
             ILogger logger)
         {
             this.rateLimiting = rateLimiting;
             this.log = logger;
-            this.registry = RegistryManager.CreateFromConnectionString(config.IoTHubConnString);
-            this.ioTHubHostName = IotHubConnectionStringBuilder.Create(config.IoTHubConnString).HostName;
+
             this.twinReadsWritesEnabled = config.TwinReadWriteEnabled;
             this.log.Debug("Devices service instantiated", () => new { this.ioTHubHostName });
+
+            this.connectionStringManager = connStringManager;
+            this.UpdateIotHub();
         }
 
         public async Task<Tuple<bool, string>> PingRegistryAsync()
@@ -64,6 +71,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.log.Error("Device registry test failed", () => new { e });
                 return new Tuple<bool, string>(false, e.Message);
             }
+        }
+
+        /// <summary>
+        /// Get IoTHub connection string from either from user provided
+        /// value or from the environment variable.
+        /// </summary>
+        public void UpdateIotHub()
+        {
+            string connString = this.connectionStringManager.GetIotHubConnectionString();
+            this.registry = RegistryManager.CreateFromConnectionString(connString);
+            this.ioTHubHostName = IotHubConnectionStringBuilder.Create(connString).HostName;
+            this.log.Info("Updated IoTHub for devices", () => new { this.ioTHubHostName });
         }
 
         public IDeviceClient GetClient(

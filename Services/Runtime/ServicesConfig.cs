@@ -8,6 +8,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
     {
         string DeviceModelsFolder { get; set; }
         string DeviceModelsScriptsFolder { get; set; }
+        string IoTHubFolder { get; set; }
         string IoTHubConnString { get; set; }
         string StorageAdapterApiUrl { get; set; }
         int StorageAdapterApiTimeout { get; set; }
@@ -20,13 +21,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
     //       https://github.com/Azure/device-simulation-dotnet/issues/84
     public class ServicesConfig : IServicesConfig
     {
+        public const string USE_DEFAULT_IOTHUB = "default";
         private string dtf;
         private string dtbf;
+        private string ihf;
 
         public ServicesConfig()
         {
             this.dtf = string.Empty;
             this.dtbf = string.Empty;
+            this.ihf = string.Empty;
             this.RateLimiting = new RateLimitingConfiguration();
         }
 
@@ -40,6 +44,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         {
             get { return this.dtbf; }
             set { this.dtbf = this.NormalizePath(value); }
+        }
+        public string IoTHubFolder
+        {
+            get { return this.ihf; }
+            set { this.ihf = this.NormalizePath(value); }
         }
 
         public string IoTHubConnString { get; set; }

@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;
 using Newtonsoft.Json;
@@ -24,6 +25,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 
         [JsonProperty(PropertyName = "Enabled")]
         public bool? Enabled { get; set; }
+
+        [JsonProperty(PropertyName = "IoTHub")]
+        public IotHubApiModel IotHub { get; set; }
 
         [JsonProperty(PropertyName = "StartTime", NullValueHandling = NullValueHandling.Ignore)]
         public string StartTime { get; set; }
@@ -50,7 +54,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 
             // When unspecified, a simulation is enabled
             this.Enabled = true;
-
+            this.IotHub = null;
             this.StartTime = null;
             this.EndTime = null;
             this.DeviceModels = new List<DeviceModelRef>();
@@ -62,6 +66,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             this.ETag = simulation.ETag;
             this.Id = simulation.Id;
             this.Enabled = simulation.Enabled;
+            this.IotHub = new IotHubApiModel(simulation.IotHubConnectionString);
 
             // Ignore the date if the simulation doesn't have a start time
             if (simulation.StartTime.HasValue && !simulation.StartTime.Value.Equals(DateTimeOffset.MinValue))
@@ -100,7 +105,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         }
 
         /// <summary>Map an API model to the corresponding service model</summary>
-        /// <param name="id">The simulation ID when using PUT/PATCH, empty otherwise</param>
         public Simulation ToServiceModel(string id = "")
         {
             this.Id = id;
@@ -115,7 +119,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
                 EndTime = DateHelper.ParseDateExpression(this.EndTime, now),
 
                 // When unspecified, a simulation is enabled
-                Enabled = this.Enabled ?? true
+                Enabled = this.Enabled ?? true,
+                IotHubConnectionString = this.IotHub.ConnectionString != IotHubApiModel.USE_DEFAULT_IOTHUB ? this.IotHub.ConnectionString : ServicesConfig.USE_DEFAULT_IOTHUB
             };
 
             foreach (var x in this.DeviceModels)

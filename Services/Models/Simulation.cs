@@ -2,6 +2,8 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 {
@@ -9,6 +11,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
     {
         private DateTimeOffset? startTime;
         private DateTimeOffset? endTime;
+        private string iotHubConnectionString;
 
         public string ETag { get; set; }
         public string Id { get; set; }
@@ -30,6 +33,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             set => this.endTime = value ?? DateTimeOffset.MaxValue;
         }
 
+        public string IotHubConnectionString
+        {
+            get => this.iotHubConnectionString;
+            set => this.iotHubConnectionString = value ?? ServicesConfig.USE_DEFAULT_IOTHUB;
+        }
+
         public Simulation()
         {
             this.StartTime = DateTimeOffset.MinValue;
@@ -37,6 +46,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
             // When unspecified, a simulation is enabled
             this.Enabled = true;
+            // by default, use environment variable
+            this.IotHubConnectionString = ServicesConfig.USE_DEFAULT_IOTHUB;
             this.DeviceModels = new List<DeviceModelRef>();
         }
 
