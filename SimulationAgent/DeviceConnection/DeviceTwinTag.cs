@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -29,18 +30,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.deviceId = deviceId;
         }
 
-        public void Run()
+        public async Task RunAsync()
         {
             this.log.Debug("Adding tag to device twin...", () => new { this.deviceId });
+            try
+            {
+                var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                await this.devices.AddTagAsync(this.deviceId);
 
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            this.devices.AddTagAsync(this.deviceId)
-                .ContinueWith(t =>
-                {
-                    var timeTaken = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
-                    this.log.Debug("Device tag added", () => new { this.deviceId, timeTaken });
-                    this.context.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceTwinTagged);
-                });
+                var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
+                this.log.Debug("Device tag added", () => new { this.deviceId, timeSpent });
+
+                this.context.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceTwinTagged);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Error while tagging the device twin", () => new { this.deviceId, e });
+                this.context.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceTwinTaggingFailed);
+            }
         }
     }
 }

@@ -143,7 +143,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.deviceId = deviceId;
             this.deviceStateActor = deviceStateActor;
             this.loopSettings = loopSettings;
-            
+
             this.fetchLogic.Setup(this, this.deviceId, this.deviceModel);
             this.registerLogic.Setup(this, this.deviceId, this.deviceModel);
             this.deviceTwinTagLogic.Setup(this, this.deviceId, this.deviceModel);
@@ -259,63 +259,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     return;
 
                 case ActorStatus.ReadyToFetch:
-                    try
-                    {
-                        this.status = ActorStatus.Fetching;
-                        this.actorLogger.FetchingDevice();
-                        this.fetchLogic.Run();
-                    }
-                    catch (Exception e)
-                    {
-                        this.log.Error("Error while fetching the device", () => new { this.deviceId, e });
-                        this.HandleEvent(ActorEvents.FetchFailed);
-                    }
-
+                    this.status = ActorStatus.Fetching;
+                    this.actorLogger.FetchingDevice();
+                    this.fetchLogic.RunAsync();
                     return;
 
                 case ActorStatus.ReadyToRegister:
-                    try
-                    {
-                        this.status = ActorStatus.Registering;
-                        this.actorLogger.RegisteringDevice();
-                        this.registerLogic.Run();
-                    }
-                    catch (Exception e)
-                    {
-                        this.log.Error("Error while registering the device", () => new { this.deviceId, e });
-                        this.HandleEvent(ActorEvents.RegistrationFailed);
-                    }
-
+                    this.status = ActorStatus.Registering;
+                    this.actorLogger.RegisteringDevice();
+                    this.registerLogic.RunAsync();
                     return;
 
                 case ActorStatus.ReadyToConnect:
-                    try
-                    {
-                        this.status = ActorStatus.Connecting;
-                        this.actorLogger.ConnectingDevice();
-                        this.connectLogic.Run();
-                    }
-                    catch (Exception e)
-                    {
-                        this.log.Error("Connection error", () => new { this.deviceId, e });
-                        this.HandleEvent(ActorEvents.ConnectionFailed);
-                    }
-
+                    this.status = ActorStatus.Connecting;
+                    this.actorLogger.ConnectingDevice();
+                    this.connectLogic.RunAsync();
                     return;
 
                 case ActorStatus.ReadyToTagDeviceTwin:
-                    try
-                    {
-                        this.status = ActorStatus.TaggingDeviceTwin;
-                        this.actorLogger.TaggingDeviceTwin();
-                        this.deviceTwinTagLogic.Run();
-                    }
-                    catch (Exception e)
-                    {
-                        this.log.Error("Error while tagging the device twin", () => new { this.deviceId, e });
-                        this.HandleEvent(ActorEvents.DeviceTwinTaggingFailed);
-                    }
-
+                    this.status = ActorStatus.TaggingDeviceTwin;
+                    this.actorLogger.TaggingDeviceTwin();
+                    this.deviceTwinTagLogic.RunAsync();
                     return;
             }
         }

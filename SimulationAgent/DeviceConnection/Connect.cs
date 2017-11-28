@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -33,19 +34,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.protocol = deviceModel.Protocol;
         }
 
-        public void Run()
+        public async Task RunAsync()
         {
             this.log.Debug("Connecting...", () => new { this.deviceId });
 
-            this.context.Client = this.devices.GetClient(this.context.Device, this.protocol);
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            this.context.Client.ConnectAsync()
-                .ContinueWith(t =>
-                {
-                    var timeTaken = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
-                    this.log.Debug("Device connected", () => new { this.deviceId, timeTaken });
-                    this.context.HandleEvent(DeviceConnectionActor.ActorEvents.Connected);
-                });
+            try
+            {
+                this.context.Client = this.devices.GetClient(this.context.Device, this.protocol);
+
+                var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                await this.context.Client.ConnectAsync();
+
+                var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
+                this.log.Debug("Device connected", () => new { this.deviceId, timeSpent });
+                this.context.HandleEvent(DeviceConnectionActor.ActorEvents.Connected);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Connection error", () => new { this.deviceId, e });
+                this.context.HandleEvent(DeviceConnectionActor.ActorEvents.ConnectionFailed);
+            }
         }
     }
 }

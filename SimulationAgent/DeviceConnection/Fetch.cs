@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -29,28 +30,33 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.deviceId = deviceId;
         }
 
-        public void Run()
+        public async Task RunAsync()
         {
             this.log.Debug("Fetching device...", () => new { this.deviceId });
 
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            this.devices.GetAsync(this.deviceId)
-                .ContinueWith(t =>
+            try
+            {
+                var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var device = await this.devices.GetAsync(this.deviceId);
+
+                var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
+                if (device != null)
                 {
-                    var timeTaken = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
-                    var device = t.Result;
-                    if (device != null)
-                    {
-                        this.context.Device = device;
-                        this.log.Debug("Device found", () => new { device.Id, timeTaken, device.Enabled });
-                        this.context.HandleEvent(DeviceConnectionActor.ActorEvents.FetchCompleted);
-                    }
-                    else
-                    {
-                        this.log.Debug("Device not found", () => new { this.deviceId, timeTaken });
-                        this.context.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceNotFound);
-                    }
-                });
+                    this.context.Device = device;
+                    this.log.Debug("Device found", () => new { device.Id, timeSpent, device.Enabled });
+                    this.context.HandleEvent(DeviceConnectionActor.ActorEvents.FetchCompleted);
+                }
+                else
+                {
+                    this.log.Debug("Device not found", () => new { this.deviceId, timeSpent });
+                    this.context.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceNotFound);
+                }
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Error while fetching the device", () => new { this.deviceId, e });
+                this.context.HandleEvent(DeviceConnectionActor.ActorEvents.FetchFailed);
+            }
         }
     }
 }

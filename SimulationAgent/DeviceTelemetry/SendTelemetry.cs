@@ -35,6 +35,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         {
             this.log.Debug("Sending telemetry...", () => new { this.deviceId });
 
+            try
+            {
             var state = this.context.DeviceState;
             this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
             if ((bool) state["online"])
@@ -57,8 +59,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                 this.context.Client.SendMessageAsync(msg, this.message.MessageSchema)
                     .ContinueWith(t =>
                     {
-                        var timeTaken = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
-                        this.log.Debug("Telemetry delivered", () => new { this.deviceId, timeTaken, MessageSchema = this.message.MessageSchema.Name });
+                        var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
+                        this.log.Debug("Telemetry delivered", () => new { this.deviceId, timeSpent, MessageSchema = this.message.MessageSchema.Name });
                         this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
                     });
             }
@@ -67,6 +69,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                 // device could be rebooting, updating firmware, etc.
                 this.log.Debug("No telemetry will be sent as the device is offline...", () => new { this.deviceId });
                 this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
+            }
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Telemetry error", () => new { this.deviceId, e });
+                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDeliveryFailed);
             }
         }
     }

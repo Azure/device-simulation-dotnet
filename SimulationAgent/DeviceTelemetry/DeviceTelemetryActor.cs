@@ -180,17 +180,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                     return;
 
                 case ActorStatus.ReadyToSend:
-                    try
-                    {
-                        this.status = ActorStatus.Sending;
-                        this.actorLogger.SendingTelemetry();
-                        this.sendTelemetryLogic.Run();
-                    }
-                    catch (Exception e)
-                    {
-                        this.log.Error("Telemetry error", () => new { this.deviceId, e });
-                        this.HandleEvent(ActorEvents.TelemetryDeliveryFailed);
-                    }
+                    this.status = ActorStatus.Sending;
+                    this.actorLogger.SendingTelemetry();
+                    this.sendTelemetryLogic.Run();
                     return;
             }
         }
