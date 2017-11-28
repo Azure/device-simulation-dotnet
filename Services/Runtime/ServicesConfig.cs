@@ -6,15 +6,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 {
     public interface IServicesConfig
     {
-        string DeviceModelsFolder { get; set; }
-        string DeviceModelsScriptsFolder { get; set; }
-        string IoTHubFolder { get; set; }
-        string IoTHubConnString { get; set; }
-        string StorageAdapterApiUrl { get; set; }
-        int StorageAdapterApiTimeout { get; set; }
-        bool TwinReadWriteEnabled { get; set; }
-
-        IRateLimitingConfiguration RateLimiting { get; set; }
+        string DeviceModelsFolder { get; }
+        string DeviceModelsScriptsFolder { get; }
+        string IoTHubDataFolder { get; }
+        string IoTHubConnString { get; }
+        string StorageAdapterApiUrl { get; }
+        int StorageAdapterApiTimeout { get; }
+        bool TwinReadWriteEnabled { get; }
     }
 
     // TODO: test Windows/Linux folder separator
@@ -22,6 +20,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
     public class ServicesConfig : IServicesConfig
     {
         public const string USE_DEFAULT_IOTHUB = "default";
+
         private string dtf;
         private string dtbf;
         private string ihf;
@@ -31,7 +30,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             this.dtf = string.Empty;
             this.dtbf = string.Empty;
             this.ihf = string.Empty;
-            this.RateLimiting = new RateLimitingConfiguration();
         }
 
         public string DeviceModelsFolder
@@ -45,7 +43,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             get { return this.dtbf; }
             set { this.dtbf = this.NormalizePath(value); }
         }
-        public string IoTHubFolder
+
+        public string IoTHubDataFolder
         {
             get { return this.ihf; }
             set { this.ihf = this.NormalizePath(value); }
@@ -56,8 +55,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         public string StorageAdapterApiUrl { get; set; }
 
         public int StorageAdapterApiTimeout { get; set; }
-
-        public IRateLimitingConfiguration RateLimiting { get; set; }
 
         public bool TwinReadWriteEnabled { get; set; }
 

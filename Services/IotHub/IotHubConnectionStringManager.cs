@@ -36,7 +36,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             ILogger logger)
         {
             this.config = config;
-            this.connStringFilePath = config.IoTHubFolder + CONNSTRING_FILE_NAME;
+            this.connStringFilePath = config.IoTHubDataFolder + CONNSTRING_FILE_NAME;
             this.log = logger;
         }
 

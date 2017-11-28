@@ -21,6 +21,16 @@ namespace Services.Test.helpers
 
         public LogLevel LogLevel { get; }
 
+        public string FormatDate(long time)
+        {
+            return DateTimeOffset.FromUnixTimeMilliseconds(time).ToString("yyyy-MM-dd HH:mm:ss.fff");
+        }
+
+        public void LogToFile(string filename, string text)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Debug(string message, Action context)
         {
             this.testLogger.WriteLine(Time() + "Target Debug: " + message);
