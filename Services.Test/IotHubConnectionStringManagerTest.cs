@@ -13,8 +13,6 @@ namespace Services.Test
 {
     public class IotHubConnectionStringManagerTest
     {
-        private const string CONNSTRING_FILE_PATH = @"custom_iothub_key.txt";
-
         private readonly Mock<ILogger> logger;
         private readonly IServicesConfig config;
         private readonly IotHubConnectionStringManager target;
@@ -29,20 +27,8 @@ namespace Services.Test
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItThrowsOnInvalidConnStringFormat()
         {
-            // Arrange
-            if (File.Exists(CONNSTRING_FILE_PATH))
-            {
-                File.Delete(CONNSTRING_FILE_PATH);
-            }
-
             // Assert
-            Assert.Throws<InvalidIotHubConnectionStringFormatException>(() => this.target.StoreAndRedact("foobar"));
-
-            // Clean Up
-            if (File.Exists(CONNSTRING_FILE_PATH))
-            {
-                File.Delete(CONNSTRING_FILE_PATH);
-            }
+            Assert.Throws<InvalidIotHubConnectionStringFormatException>(() => this.target.RedactAndStore("foobar"));
         }
     }
 }

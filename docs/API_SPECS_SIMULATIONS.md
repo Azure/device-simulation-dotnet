@@ -123,6 +123,40 @@ Content-Type: application/json; charset=utf-8
 }
 ```
 
+## Pointing a simulation to a custom Azure IoT Hub
+
+By default the simulation will run using the hub specified in the configuration file.
+
+To specify a custom Azure IoT Hub, specify the connection string for the IoT Hub in the PUT request.
+Ex: `"ConnectionString": "HostName=iothub-abcde.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=<valid iothub key>"`
+
+The response will contain the connection string with the sensitive key information removed.
+
+If a valid connection string has already been provided, a partial connection string with a null key may be provided.
+Ex: `"ConnectionString": "HostName=iothub-abcde.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey="`
+
+To switch back to the default Azure IoT Hub stored in the config file, specficy "default" as the connection string.
+
+
+```
+PUT /v1/simulations/1
+
+{
+  "Enabled": <true|false>,
+  "IotHub": {
+      "ConnectionString": "<valid iothub connection string | default>"
+  }
+  "DeviceModels": [
+    {
+      "Id": "<model ID>",
+      "Count": <count>
+    },
+    ...
+  ]
+  ...
+}
+```
+
 ## Scheduling the simulation and setting a duration
 
 Unless specified, a simulation will run continuously, until stopped.

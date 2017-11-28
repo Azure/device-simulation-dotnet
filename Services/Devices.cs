@@ -45,6 +45,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public Devices(
             IRateLimiting rateLimiting,
             IServicesConfig config,
+            IIotHubConnectionStringManager connStringManager,
             ILogger logger)
         {
             this.rateLimiting = rateLimiting;
@@ -53,13 +54,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.twinReadsWritesEnabled = config.TwinReadWriteEnabled;
             this.log.Debug("Devices service instantiated", () => new { this.ioTHubHostName });
 
-            // get IoTHub connection string from either from user provided
-            // value or from the environment variable.
-            this.connectionStringManager = new IotHubConnectionStringManager(config, logger);
-            string connString = connectionStringManager.GetIotHubConnectionString();
-
-            this.registry = RegistryManager.CreateFromConnectionString(connString);
-            this.ioTHubHostName = IotHubConnectionStringBuilder.Create(connString).HostName;
+            this.connectionStringManager = connStringManager;
+            this.UpdateIotHub();
         }
 
         public async Task<Tuple<bool, string>> PingRegistryAsync()
@@ -77,9 +73,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
+        /// <summary>
+        /// Get IoTHub connection string from either from user provided
+        /// value or from the environment variable.
+        /// </summary>
         public void UpdateIotHub()
         {
-            string connString = connectionStringManager.GetIotHubConnectionString();
+            string connString = this.connectionStringManager.GetIotHubConnectionString();
             this.registry = RegistryManager.CreateFromConnectionString(connString);
             this.ioTHubHostName = IotHubConnectionStringBuilder.Create(connString).HostName;
             this.log.Info("Updated IoTHub for devices", () => new { this.ioTHubHostName });

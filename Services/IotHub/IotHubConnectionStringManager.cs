@@ -15,13 +15,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
     public interface IIotHubConnectionStringManager
     {
         string GetIotHubConnectionString();
-        string StoreAndRedact(string connectionString);
-        void UseLocalIotHub();
+        string RedactAndStore(string connectionString);
     }
 
     public class IotHubConnectionStringManager : IIotHubConnectionStringManager
     {
-        private const string USE_LOCAL_IOTHUB = "default";
         private const string CONNSTRING_REGEX = @"^HostName=(?<hostName>.*);SharedAccessKeyName=(?<keyName>.*);SharedAccessKey=(?<key>.*)$";
         private const string CONNSTRING_REGEX_HOSTNAME = "hostName";
         private const string CONNSTRING_REGEX_KEYNAME = "keyName";
@@ -45,48 +43,47 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// <summary>
         /// Checks storage for which connection string to use.
         /// If value is null or file doesn't exist, return the
-        /// value stored in environment variable. Otherwise
+        /// value stored in the configuration file. Otherwise
         /// returns value in local storage.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Full connection string including secret</returns>
         public string GetIotHubConnectionString()
         {
             // read connection string file from webservice
-            string customIotHub = this.ReadFromFile(this.connStringFilePath);
+            string customIotHub = this.ReadFromFile();
 
             // if no user provided hub is stored, use the pre-provisioned hub 
             if (customIotHub.IsNullOrWhiteSpace())
             {
-                this.log.Info("Using IotHub stored in PCS_IOTHUB_CONNSTRING.", () => new { });
+                this.log.Debug("Using IotHub connection string stored in config.", () => { });
                 return this.config.IoTHubConnString;
             }
 
-            this.log.Info("Using IoTHub provided by the client.", () => new { });
+            this.log.Debug("Using IoTHub provided by the client.", () => new { });
             return customIotHub;
         }
 
         /// <summary>
         /// Validates that the IoTHub Connection String is valid, stores the full
         /// string with key in a local file, then removes the sensitive key data and
-        /// returns the IoTHub Connection String with and empty string for the SharedAccessKey
+        /// returns the IoTHub Connection String with an empty string for the SharedAccessKey
         /// 
         /// TODO Encryption for key & storage in documentDb instead of file
-        ///      and investigate conversion to SecureString
         ///      https://github.com/Azure/device-simulation-dotnet/issues/129
         /// </summary>
-        /// <param name="connectionString"></param>
-        public string StoreAndRedact(string connectionString)
+        /// <returns>Redacted connection string (i.e. without SharedAccessKey)</returns>
+        public string RedactAndStore(string connectionString)
         {
             // check if environment variable should be used
             if (connectionString.IsNullOrWhiteSpace() ||
-                connectionString == USE_LOCAL_IOTHUB)
+                connectionString == ServicesConfig.USE_DEFAULT_IOTHUB)
             {
-                this.UseLocalIotHub();
-                return USE_LOCAL_IOTHUB;
+                this.UseDefaultIotHub();
+                return ServicesConfig.USE_DEFAULT_IOTHUB;
             }
 
             // check that connection strng is valid and the IotHub exists
-            this.IsValidConnectionString(connectionString);
+            this.ValidateConnectionString(connectionString);
 
             // find key
             var key = GetKeyFromConnString(connectionString);
@@ -109,20 +106,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
 
             // store full connection string with key in local file
-            WriteToFile(connectionString, this.connStringFilePath);
+            this.WriteToFile(connectionString);
 
             // redact key from connection string and return
             return connectionString.Replace(key, "");
-        }
-
-        /// <summary>
-        /// If simulation uses the pre-provisioned IoT Hub for the service,
-        /// remove sensitive hub information that is no longer needed
-        /// </summary>
-        public void UseLocalIotHub()
-        {
-            // delete custom IoT Hub string if local hub is being used
-            File.Delete(this.connStringFilePath);
         }
 
         /// <summary>
@@ -131,9 +118,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// value for the key, also checks if a connection to the IotHub
         /// can be made.
         /// </summary>
-        /// <param name="connectionString"></param>
-        /// <returns></returns>
-        public bool IsValidConnectionString(string connectionString)
+        public void ValidateConnectionString(string connectionString)
         {
             var match = Regex.Match(connectionString, CONNSTRING_REGEX);
 
@@ -161,15 +146,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                     throw new IotHubConnectionException(message);
                 }
             }
-
-            return true;
         }
 
         /// <summary>
-        /// 
+        /// If simulation uses the pre-provisioned IoT Hub for the service,
+        /// then remove sensitive hub information that is no longer needed
         /// </summary>
-        /// <param name="connectionString"></param>
-        /// <returns></returns>
+        private void UseDefaultIotHub()
+        {
+            try
+            {
+                // delete custom IoT Hub string if default hub is being used
+                File.Delete(this.connStringFilePath);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to delete connection string file.", () => new { this.connStringFilePath, e });
+                throw;
+            }
+        }
+
         private static string GetKeyFromConnString(string connectionString)
         {
             var match = Regex.Match(connectionString, CONNSTRING_REGEX);
@@ -182,8 +178,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// Returns true if the key for the redacted string is in storage.
         /// Returns false if the key for the redacted string is not in storage.
         /// </summary>
-        /// <param name="connectionString"></param>
-        /// <returns></returns>
         private bool ConnectionStringIsStored(string connectionString)
         {
             // parse user provided hub info
@@ -192,7 +186,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             var userHubKeyName = userHubMatch.Groups[CONNSTRING_REGEX_KEYNAME].Value;
 
             // parse stored hub info
-            var storedHubString = this.ReadFromFile(this.connStringFilePath);
+            var storedHubString = this.ReadFromFile();
             var storedHubMatch = Regex.Match(storedHubString, CONNSTRING_REGEX);
             var storedHubHostName = storedHubMatch.Groups[CONNSTRING_REGEX_HOSTNAME].Value;
             var storedHubKeyName = storedHubMatch.Groups[CONNSTRING_REGEX_KEYNAME].Value;
@@ -201,25 +195,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                    userHubKeyName == storedHubKeyName;
         }
 
-        private void WriteToFile(string connectionString, string path)
+        private void WriteToFile(string connectionString)
         {
-            this.log.Info("Write IotHub connection string to path: " + path, () => new { path });
-            if (!Directory.Exists(this.config.IoTHubFolder))
-            {
-                Directory.CreateDirectory(this.config.IoTHubFolder);
-            }
+            this.log.Debug("Write IotHub connection string to file.", () => new { this.connStringFilePath });
 
-            if (!File.Exists(path))
+            try
             {
-                // Create a file to write to. 
-                using (StreamWriter sw = File.CreateText(path))
-                {
-                    sw.WriteLine(connectionString);
-                }
+                File.WriteAllText(this.connStringFilePath, connectionString);
             }
-            else
+            catch (Exception e)
             {
-                File.WriteAllText(path, connectionString);
+                this.log.Error("Unable to write connection string to file.", () => new { this.connStringFilePath, e });
+                throw;
             }
         }
 
@@ -227,18 +214,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// Retrieves connection string from local storage.
         /// Returns null if file doesn't exist.
         /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        private string ReadFromFile(string path)
+        private string ReadFromFile()
         {
-            this.log.Info("Check for IotHub connection string under path: " + path, () => new { path });
-            if (File.Exists(path))
+            this.log.Debug("Check for IotHub connection string from file.", () => new { this.connStringFilePath });
+            if (File.Exists(this.connStringFilePath))
             {
-                // remove special characters and return string
-                return Regex.Replace(File.ReadAllText(path), @"[\r\n\t ]+", "");
+                try
+                {
+                    // remove special characters and return string
+                    return Regex.Replace(File.ReadAllText(this.connStringFilePath), @"[\r\n\t ]+", "");
+                }
+                catch (Exception e)
+                {
+                    this.log.Error("Unable to read connection string from file.", () => new { this.connStringFilePath, e });
+                    return null;
+                }
             }
 
-            this.log.Info("IotHub connection string file not present.", () => new { path });
+            this.log.Debug("IotHub connection string file not present.", () => new { this.connStringFilePath });
             return null;
         }
     }

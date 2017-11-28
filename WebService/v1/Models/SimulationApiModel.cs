@@ -2,10 +2,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using Microsoft.Azure.Devices.Common;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;
 using Newtonsoft.Json;
@@ -15,7 +13,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
     public class SimulationApiModel
     {
         private const string DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:sszzz";
-        private const string CONNSTRING_REGEX = @"^HostName=(?<hostName>.*);SharedAccessKeyName=(?<keyName>.*);SharedAccessKey=(?<key>.*)$";
         private readonly long version;
         private DateTimeOffset created;
         private DateTimeOffset modified;
@@ -108,7 +105,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         }
 
         /// <summary>Map an API model to the corresponding service model</summary>
-        /// <param name="id">The simulation ID when using PUT/PATCH, empty otherwise</param>
         public Simulation ToServiceModel(string id = "")
         {
             this.Id = id;
@@ -124,7 +120,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 
                 // When unspecified, a simulation is enabled
                 Enabled = this.Enabled ?? true,
-                IotHubConnectionString = this.IotHub.ConnectionString
+                IotHubConnectionString = this.IotHub.ConnectionString != IotHubApiModel.USE_DEFAULT_IOTHUB ? this.IotHub.ConnectionString : ServicesConfig.USE_DEFAULT_IOTHUB
             };
 
             foreach (var x in this.DeviceModels)

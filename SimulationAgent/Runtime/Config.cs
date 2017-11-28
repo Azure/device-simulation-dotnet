@@ -18,7 +18,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
         private const string APPLICATION_KEY = "DeviceSimulationService:";
         private const string DEVICE_MODELS_FOLDER_KEY = APPLICATION_KEY + "device_models_folder";
         private const string DEVICE_MODELS_SCRIPTS_FOLDER_KEY = APPLICATION_KEY + "device_models_scripts_folder";
-        private const string IOT_HUB_FOLDER_KEY = APPLICATION_KEY + "iot_hub_folder";
+        private const string IOTHUB_CUSTOM_CONNSTRING_FOLDER_KEY = APPLICATION_KEY + "iothub_custom_connstring_folder";
         private const string IOTHUB_CONNSTRING_KEY = APPLICATION_KEY + "iothub_connstring";
 
         private const string TWIN_READ_WRITE_ENABLED_KEY = APPLICATION_KEY + "twin_read_write_enabled";
@@ -71,7 +71,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Runtime
             {
                 DeviceModelsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_FOLDER_KEY)),
                 DeviceModelsScriptsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_SCRIPTS_FOLDER_KEY)),
-                IoTHubFolder = MapRelativePath(configData.GetString(IOT_HUB_FOLDER_KEY)),
+                IoTHubFolder = MapRelativePath(configData.GetString(IOTHUB_CUSTOM_CONNSTRING_FOLDER_KEY)),
                 IoTHubConnString = connstring,
                 StorageAdapterApiUrl = configData.GetString(STORAGE_ADAPTER_API_URL_KEY),
                 StorageAdapterApiTimeout = configData.GetInt(STORAGE_ADAPTER_API_TIMEOUT_KEY),

@@ -90,7 +90,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             simulation.Created = DateTimeOffset.UtcNow;
             simulation.Modified = simulation.Created;
             simulation.Version = 1;
-            simulation.IotHubConnectionString = this.connectionStringManager.StoreAndRedact(simulation.IotHubConnectionString);
 
             // Create default simulation
             if (!string.IsNullOrEmpty(template) && template.ToLowerInvariant() == "default")
@@ -106,6 +105,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     });
                 }
             }
+
+            // TODO if write to storage adapter fails, the iothub connection string 
+            //      will still be stored to disk. Storing the encrypted string using
+            //      storage adapter would address this
+            //      https://github.com/Azure/device-simulation-dotnet/issues/129
+            simulation.IotHubConnectionString = this.connectionStringManager.RedactAndStore(simulation.IotHubConnectionString);
 
             // Note: using UpdateAsync because the service generates the ID
             var result = await this.storage.UpdateAsync(
@@ -163,16 +168,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             // Note: forcing the ID because only one simulation can be created
             simulation.Id = SIMULATION_ID;
-            simulation.IotHubConnectionString = this.connectionStringManager.StoreAndRedact(simulation.IotHubConnectionString);
 
-            var item = await this.storage.UpdateAsync(
+            // TODO if write to storage adapter fails, the iothub connection string 
+            //      will still be stored to disk. Storing the encrypted string using
+            //      storage adapter would address this
+            //      https://github.com/Azure/device-simulation-dotnet/issues/129
+            simulation.IotHubConnectionString = this.connectionStringManager.RedactAndStore(simulation.IotHubConnectionString);
+
+            var result = await this.storage.UpdateAsync(
                 STORAGE_COLLECTION,
                 SIMULATION_ID,
                 JsonConvert.SerializeObject(simulation),
                 simulation.ETag);
 
             // Return the new ETag provided by the storage
-            simulation.ETag = item.ETag;
+            simulation.ETag = result.ETag;
 
             return simulation;
         }
