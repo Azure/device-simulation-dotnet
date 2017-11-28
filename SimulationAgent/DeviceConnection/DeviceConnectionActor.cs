@@ -7,6 +7,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Scheduling;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection
 {
@@ -16,7 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         Device Device { get; set; }
         bool Connected { get; }
 
-        void Setup(string deviceId, DeviceModel deviceModel, IDeviceStateActor deviceStateActor);
+        void Setup(string deviceId, DeviceModel deviceModel, IDeviceStateActor deviceStateActor, ConnectionLoopSettings loopSettings);
         void Run();
         void HandleEvent(DeviceConnectionActor.ActorEvents e);
         void Stop();
@@ -69,6 +70,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private string deviceId;
         private DeviceModel deviceModel;
         private long whenToRun;
+        private ConnectionLoopSettings loopSettings;
 
         /// <summary>
         /// Reference to the actor managing the device state, used
@@ -129,7 +131,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         /// with details like the device model and message type to simulate.
         /// Setup() should be called only once.
         /// </summary>
-        public void Setup(string deviceId, DeviceModel deviceModel, IDeviceStateActor deviceStateActor)
+        public void Setup(string deviceId, DeviceModel deviceModel, IDeviceStateActor deviceStateActor, ConnectionLoopSettings loopSettings)
         {
             if (this.status != ActorStatus.None)
             {
@@ -141,6 +143,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.deviceModel = deviceModel;
             this.deviceId = deviceId;
             this.deviceStateActor = deviceStateActor;
+            this.loopSettings = loopSettings;
 
             this.fetchLogic.Setup(this, this.deviceId, this.deviceModel);
             this.registerLogic.Setup(this, this.deviceId, this.deviceModel);
@@ -169,30 +172,49 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             switch (e)
             {
                 case ActorEvents.Started:
+                    if (this.loopSettings.SchedulableFetches <= 0) return;
+                    this.loopSettings.SchedulableFetches--;
+
                     this.actorLogger.ActorStarted();
                     this.ScheduleFetch();
                     break;
+
                 case ActorEvents.FetchFailed:
+                    if (this.loopSettings.SchedulableFetches <= 0) return;
+                    this.loopSettings.SchedulableFetches--;
+
                     this.actorLogger.DeviceFetchFailed();
                     this.ScheduleFetch();
                     break;
+
                 case ActorEvents.DeviceNotFound:
+                    if (this.loopSettings.SchedulableRegistrations <= 0) return;
+                    this.loopSettings.SchedulableRegistrations--;
+
                     this.actorLogger.DeviceNotFound();
                     this.ScheduleRegistration();
                     break;
 
                 case ActorEvents.DeviceRegistered:
+                    if (this.loopSettings.SchedulableTaggings <= 0) return;
+                    this.loopSettings.SchedulableTaggings--;
 
                     this.actorLogger.DeviceRegistered();
                     this.ScheduleDeviceTagging();
                     break;
 
                 case ActorEvents.RegistrationFailed:
+                    if (this.loopSettings.SchedulableRegistrations <= 0) return;
+                    this.loopSettings.SchedulableRegistrations--;
+
                     this.actorLogger.DeviceRegistrationFailed();
                     this.ScheduleRegistration();
                     break;
 
                 case ActorEvents.DeviceTwinTaggingFailed:
+                    if (this.loopSettings.SchedulableTaggings <= 0) return;
+                    this.loopSettings.SchedulableTaggings--;
+
                     this.actorLogger.DeviceTwinTaggingFailed();
                     this.ScheduleDeviceTagging();
                     break;

@@ -13,6 +13,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Scheduling;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
@@ -27,11 +28,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // ID prefix of the simulated devices, used with Azure IoT Hub
         private const string DEVICE_ID_PREFIX = "Simulated.";
 
-        private const int MIN_STATE_LOOP_DURATION = 1000;
-        private const int MIN_TELEMETRY_LOOP_DURATION = 500;
-
         // Application logger
         private readonly ILogger log;
+
+        // Set of counter to optimize scheduling
+        private readonly ConnectionLoopSettings connectionLoopSettings;
 
         // Service used to load device models details
         private readonly IDeviceModels deviceModels;
@@ -67,10 +68,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private bool running;
 
         public SimulationRunner(
+            IRateLimitingConfig ratingConfig,
             ILogger logger,
             IDeviceModels deviceModels,
             IFactory factory)
         {
+            this.connectionLoopSettings = new ConnectionLoopSettings(ratingConfig);
+
             this.log = logger;
             this.deviceModels = deviceModels;
             this.factory = factory;
@@ -198,7 +202,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                 this.log.Info("Device state loop completed", () => new { durationMsecs });
-                this.SlowDownIfTooFast(durationMsecs, MIN_STATE_LOOP_DURATION);
+                this.SlowDownIfTooFast(durationMsecs, StateLoopSettings.MIN_LOOP_DURATION);
             }
         }
 
@@ -206,6 +210,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             while (this.running)
             {
+                this.connectionLoopSettings.NewLoop();
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 foreach (var device in this.deviceConnectionActors)
                 {
@@ -214,7 +219,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                 this.log.Info("Device state loop completed", () => new { durationMsecs });
-                this.SlowDownIfTooFast(durationMsecs, MIN_STATE_LOOP_DURATION);
+                this.SlowDownIfTooFast(durationMsecs, ConnectionLoopSettings.MIN_LOOP_DURATION);
             }
         }
 
@@ -230,7 +235,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                 this.log.Info("Telemetry loop completed", () => new { durationMsecs });
-                this.SlowDownIfTooFast(durationMsecs, MIN_TELEMETRY_LOOP_DURATION);
+                this.SlowDownIfTooFast(durationMsecs, TelemetryLoopSettings.MIN_LOOP_DURATION);
             }
         }
 
@@ -262,7 +267,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             // Create one connection actor for each device
             var deviceConnectionActor = this.factory.Resolve<IDeviceConnectionActor>();
-            deviceConnectionActor.Setup(deviceId, deviceModel, deviceStateActor);
+            deviceConnectionActor.Setup(deviceId, deviceModel, deviceStateActor, this.connectionLoopSettings);
             this.deviceConnectionActors.Add(key, deviceConnectionActor);
 
             // Create one telemetry actor for each telemetry message to be sent
