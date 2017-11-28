@@ -180,34 +180,43 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     this.actorLogger.DeviceNotFound();
                     this.ScheduleRegistration();
                     break;
+
                 case ActorEvents.DeviceRegistered:
+
                     this.actorLogger.DeviceRegistered();
                     this.ScheduleDeviceTagging();
                     break;
+
                 case ActorEvents.RegistrationFailed:
                     this.actorLogger.DeviceRegistrationFailed();
                     this.ScheduleRegistration();
                     break;
+
                 case ActorEvents.DeviceTwinTaggingFailed:
                     this.actorLogger.DeviceTwinTaggingFailed();
                     this.ScheduleDeviceTagging();
                     break;
+
                 case ActorEvents.FetchCompleted:
                     this.actorLogger.DeviceFetched();
                     this.ScheduleConnection();
                     break;
+
                 case ActorEvents.DeviceTwinTagged:
                     this.actorLogger.DeviceTwinTagged();
                     this.ScheduleConnection();
                     break;
+
                 case ActorEvents.ConnectionFailed:
                     this.actorLogger.DeviceConnectionFailed();
                     this.ScheduleConnection();
                     break;
+
                 case ActorEvents.Connected:
                     this.actorLogger.DeviceConnected();
                     this.status = ActorStatus.Done;
                     break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(e), e, null);
             }
@@ -239,6 +248,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                         this.log.Error("Error while fetching the device", () => new { this.deviceId, e });
                         this.HandleEvent(ActorEvents.FetchFailed);
                     }
+
                     return;
 
                 case ActorStatus.ReadyToRegister:
@@ -253,6 +263,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                         this.log.Error("Error while registering the device", () => new { this.deviceId, e });
                         this.HandleEvent(ActorEvents.RegistrationFailed);
                     }
+
                     return;
 
                 case ActorStatus.ReadyToConnect:
@@ -267,6 +278,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                         this.log.Error("Connection error", () => new { this.deviceId, e });
                         this.HandleEvent(ActorEvents.ConnectionFailed);
                     }
+
                     return;
 
                 case ActorStatus.ReadyToTagDeviceTwin:
@@ -281,6 +293,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                         this.log.Error("Error while tagging the device twin", () => new { this.deviceId, e });
                         this.HandleEvent(ActorEvents.DeviceTwinTaggingFailed);
                     }
+
                     return;
             }
         }

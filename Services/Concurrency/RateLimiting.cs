@@ -28,7 +28,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         //private readonly PerDayCounter messagingDaily;
 
         public RateLimiting(
-            IRateLimitingConfiguration config,
+            IRateLimitingConfig config,
             ILogger log)
         {
             this.connections = new PerSecondCounter(

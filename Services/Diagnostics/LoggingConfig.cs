@@ -14,14 +14,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
     
     public interface ILoggingConfig
     {
-        LogLevel LogLevel { get; set; }
-        bool LogProcessId { get; set; }
-        bool ExtraDiagnostics { get; set; }
-        string ExtraDiagnosticsPath { get; set; }
-        string DateFormat { get; set; }
-        string BwListPrefix { get; set; }
-        HashSet<string> BlackList { get; set; }
-        HashSet<string> WhiteList { get; set; }
+        LogLevel LogLevel { get; }
+        bool LogProcessId { get; }
+        bool ExtraDiagnostics { get; }
+        string ExtraDiagnosticsPath { get; }
+        string DateFormat { get; }
+        string BwListPrefix { get; }
+        HashSet<string> BlackList { get; }
+        HashSet<string> WhiteList { get; }
     }
     
     public class LoggingConfig : ILoggingConfig

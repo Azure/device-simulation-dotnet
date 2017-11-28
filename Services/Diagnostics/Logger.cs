@@ -153,6 +153,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
         public void LogToFile(string filename, string text)
         {
+            // Without the lock, some logs would be lost due to contentions
             lock (this.fileLock)
             {
                 File.AppendAllText(filename, text);

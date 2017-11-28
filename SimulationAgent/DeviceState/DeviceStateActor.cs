@@ -11,7 +11,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
 {
     public interface IDeviceStateActor
     {
-        Dictionary<string, object> DeviceState { get; set; }
+        Dictionary<string, object> DeviceState { get; }
         void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices);
         void Run();
     }

@@ -17,7 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         // Web service listening port
         int Port { get; }
 
-        ILoggingConfig LoggingConfig { get; set; }
+        ILoggingConfig LoggingConfig { get; }
 
         // Client authentication and authorization configuration
         IClientAuthConfig ClientAuthConfig { get; }
@@ -25,7 +25,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         // Service layer configuration
         IServicesConfig ServicesConfig { get; }
 
-        IRateLimitingConfiguration RateLimitingConfig { get; set; }
+        // Simulation speed configuration
+        IRateLimitingConfig RateLimitingConfig { get; }
     }
 
     public class Config : IConfig
@@ -75,15 +76,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         public ILoggingConfig LoggingConfig { get; set; }
         public IClientAuthConfig ClientAuthConfig { get; }
         public IServicesConfig ServicesConfig { get; }
-        public IRateLimitingConfiguration RateLimitingConfig { get; set; }
+        public IRateLimitingConfig RateLimitingConfig { get; set; }
 
         public Config(IConfigData configData)
         {
             this.Port = configData.GetInt(PORT_KEY);
             this.LoggingConfig = GetLogConfig(configData);
             this.ClientAuthConfig = GetClientAuthConfig(configData);
-            this.ServicesConfig = GetServicesConfiguration(configData);
-            this.RateLimitingConfig = GetRateLimitingConfiguration(configData);
+            this.ServicesConfig = GetServicesConfig(configData);
+            this.RateLimitingConfig = GetRateLimitingConfig(configData);
         }
 
         private static ILoggingConfig GetLogConfig(IConfigData configData)
@@ -133,7 +134,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             };
         }
 
-        private static IServicesConfig GetServicesConfiguration(IConfigData configData)
+        private static IServicesConfig GetServicesConfig(IConfigData configData)
         {
             var connstring = configData.GetString(IOTHUB_CONNSTRING_KEY);
             if (connstring.ToLowerInvariant().Contains("azure iot hub"))
@@ -164,9 +165,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             };
         }
 
-        private static IRateLimitingConfiguration GetRateLimitingConfiguration(IConfigData configData)
+        private static IRateLimitingConfig GetRateLimitingConfig(IConfigData configData)
         {
-            return new RateLimitingConfiguration
+            return new RateLimitingConfig
             {
                 ConnectionsPerSecond = configData.GetInt(CONNECTIONS_FREQUENCY_LIMIT_KEY, 50),
                 RegistryOperationsPerMinute = configData.GetInt(REGISTRYOPS_FREQUENCY_LIMIT_KEY, 50),

@@ -162,21 +162,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                 this.running = false;
 
-                foreach (var actor in this.deviceConnectionActors)
+                foreach (var device in this.deviceConnectionActors)
                 {
-                    actor.Value.Stop();
+                    device.Value.Stop();
                 }
 
-                foreach (var actor in this.deviceTelemetryActors)
+                foreach (var device in this.deviceTelemetryActors)
                 {
-                    actor.Value.Stop();
+                    device.Value.Stop();
                 }
 
                 // Allow 3 seconds to complete before stopping the threads
                 Thread.Sleep(3000);
-                this.devicesStateThread.Interrupt();
-                this.devicesConnectionThread.Interrupt();
-                this.devicesTelemetryThread.Interrupt();
+                this.TryToStopStateThread();
+                this.TryToStopConnectionThread();
+                this.TryToStopTelemetryThread();
 
                 // Reset local state
                 this.deviceStateActors.Clear();
@@ -271,6 +271,42 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var deviceTelemetryActor = this.factory.Resolve<IDeviceTelemetryActor>();
                 deviceTelemetryActor.Setup(deviceId, deviceModel, message, deviceStateActor, deviceConnectionActor);
                 this.deviceTelemetryActors.Add(key, deviceTelemetryActor);
+            }
+        }
+
+        private void TryToStopTelemetryThread()
+        {
+            try
+            {
+                this.devicesTelemetryThread.Interrupt();
+            }
+            catch (Exception e)
+            {
+                this.log.Warn("Unable to stop the telemetry thread in a clean way", () => new { e });
+            }
+        }
+
+        private void TryToStopConnectionThread()
+        {
+            try
+            {
+                this.devicesConnectionThread.Interrupt();
+            }
+            catch (Exception e)
+            {
+                this.log.Warn("Unable to stop the connections thread in a clean way", () => new { e });
+            }
+        }
+
+        private void TryToStopStateThread()
+        {
+            try
+            {
+                this.devicesStateThread.Interrupt();
+            }
+            catch (Exception e)
+            {
+                this.log.Warn("Unable to stop the devices state thread in a clean way", () => new { e });
             }
         }
     }

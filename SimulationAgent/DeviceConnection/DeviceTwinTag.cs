@@ -31,7 +31,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
         public void Run()
         {
-            this.log.Debug("Registering device...", () => new { this.deviceId });
+            this.log.Debug("Adding tag to device twin...", () => new { this.deviceId });
 
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             this.devices.AddTagAsync(this.deviceId)

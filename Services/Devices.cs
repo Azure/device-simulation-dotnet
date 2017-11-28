@@ -75,6 +75,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log.Debug("Fetching device from registry", () => new { deviceId });
 
             Device result = null;
+            var now = DateTimeOffset.UtcNow;
 
             try
             {
@@ -92,7 +93,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 if (e.InnerException != null && e.InnerException.GetType() == typeof(TaskCanceledException))
                 {
-                    this.log.Error("Get device task timed out", () => new { deviceId, e.Message });
+                    var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now.ToUnixTimeMilliseconds();
+                    this.log.Error("Get device task timed out", () => new { timeSpent, deviceId, e.Message });
                     throw;
                 }
 
@@ -141,6 +143,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             await this.GetRegistry().UpdateTwinAsync(deviceId, twin, "*");
         }
 
+        // Temporary workaround, see https://github.com/Azure/device-simulation-dotnet/issues/136
         private RegistryManager GetRegistry()
         {
             if (this.registryCount > REGISTRY_LIMIT_REQUESTS)
