@@ -12,13 +12,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
     {
         public string Type { get; set; }
         public string Path { get; set; }
-        public TimeSpan Interval { get; set; }
 
         public Script()
         {
             this.Type = "javascript";
             this.Path = "scripts" + System.IO.Path.DirectorySeparatorChar;
-            this.Interval = TimeSpan.Zero;
         }
     }
 
@@ -102,12 +100,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public class StateSimulation
         {
             public Dictionary<string, object> InitialState { get; set; }
-            public Script Script { get; set; }
+            public TimeSpan Interval { get; set; }
+            public List<Script> Scripts { get; set; }
 
             public StateSimulation()
             {
                 this.InitialState = new Dictionary<string, object>();
-                this.Script = new Script();
+                this.Interval = TimeSpan.Zero;
+                this.Scripts = new List<Script>();
             }
         }
 

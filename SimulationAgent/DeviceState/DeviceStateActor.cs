@@ -121,7 +121,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                     return;
 
                 case ActorStatus.Updating:
-                    this.whenCanIUpdate += (long) this.deviceModel.Simulation.Script.Interval.TotalMilliseconds;
+                    this.whenCanIUpdate += (long) this.deviceModel.Simulation.Interval.TotalMilliseconds;
                     return;
             }
 
