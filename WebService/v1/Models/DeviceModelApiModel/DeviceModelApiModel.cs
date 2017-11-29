@@ -46,38 +46,48 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
 
         public DeviceModelApiModel()
         {
+            this.Id = string.Empty;
+            this.Version = string.Empty;
+            this.Name = string.Empty;
+            this.Description = string.Empty;
+            this.Protocol = string.Empty;
             this.Simulation = new DeviceModelSimulation();
-            this.Telemetry = new List<DeviceModelTelemetry>();
             this.Properties = new Dictionary<string, object>();
+            this.Telemetry = new List<DeviceModelTelemetry>();
             this.CloudToDeviceMethods = new Dictionary<string, DeviceModelSimulationScript>();
         }
 
-        /// <summary>Map a service model to the corresponding API model</summary>
-        public DeviceModelApiModel(DeviceModel model) : this()
+        // Map service model to API model
+        public static DeviceModelApiModel FromServiceModel(DeviceModel value)
         {
-            if (model == null) return;
+            if (value == null) return null;
 
-            this.Id = model.Id;
-            this.Version = model.Version;
-            this.Name = model.Name;
-            this.Description = model.Description;
-            this.Protocol = model.Protocol.ToString();
-            this.Simulation = new DeviceModelSimulation(model.Simulation);
-
-            foreach (var property in model.Properties)
+            var result = new DeviceModelApiModel
             {
-                this.Properties.Add(property.Key, property.Value);
+                Id = value.Id,
+                Version = value.Version,
+                Name = value.Name,
+                Description = value.Description,
+                Protocol = value.Protocol.ToString(),
+                Simulation = DeviceModelSimulation.FromServiceModel(value.Simulation)
+            };
+
+            foreach (var property in value.Properties)
+            {
+                result.Properties.Add(property.Key, property.Value);
             }
 
-            foreach (var message in model.Telemetry)
+            foreach (var message in value.Telemetry)
             {
-                this.Telemetry.Add(new DeviceModelTelemetry(message));
+                result.Telemetry.Add(DeviceModelTelemetry.FromServiceModel(message));
             }
 
-            foreach (var method in model.CloudToDeviceMethods)
+            foreach (var method in value.CloudToDeviceMethods)
             {
-                this.CloudToDeviceMethods.Add(method.Key, new DeviceModelSimulationScript(method.Value));
+                result.CloudToDeviceMethods.Add(method.Key, DeviceModelSimulationScript.FromServiceModel(method.Value));
             }
+
+            return result;
         }
     }
 }

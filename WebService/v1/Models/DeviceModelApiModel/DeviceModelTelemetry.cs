@@ -23,14 +23,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
             this.MessageSchema = new DeviceModelTelemetryMessageSchema();
         }
 
-        /// <summary>Map a service model to the corresponding API model</summary>
-        public DeviceModelTelemetry(DeviceModel.DeviceModelMessage message) : this()
+        // Map service model to API model
+        public static DeviceModelTelemetry FromServiceModel(DeviceModel.DeviceModelMessage value)
         {
-            if (message == null) return;
+            if (value == null) return null;
 
-            this.Interval = message.Interval.ToString("c");
-            this.MessageTemplate = message.MessageTemplate;
-            this.MessageSchema = new DeviceModelTelemetryMessageSchema(message.MessageSchema);
+            var result = new DeviceModelTelemetry
+            {
+                Interval = value.Interval.ToString("c"),
+                MessageTemplate = value.MessageTemplate,
+                MessageSchema = DeviceModelTelemetryMessageSchema.FromServiceModel(value.MessageSchema)
+            };
+
+            return result;
         }
     }
 }

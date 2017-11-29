@@ -19,6 +19,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         public string Path { get; set; }
 
         // Optional, used to provide input parameters to the script
+        // TODO: validate input using a method provided by the function specified in this.Path
+        //       https://github.com/Azure/device-simulation-dotnet/issues/139
         [JsonProperty(PropertyName = "Params", NullValueHandling = NullValueHandling.Ignore)]
         public object Params { get; set; }
 
@@ -43,13 +45,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             };
         }
 
-        public bool IsEmpty()
-        {
-            return string.IsNullOrEmpty(this.Type)
-                   && string.IsNullOrEmpty(this.Path)
-                   && this.Params == null;
-        }
-
         // Map service model to API model
         public static IList<DeviceModelSimulationScriptOverride> FromServiceModel(IList<Simulation.DeviceModelSimulationScriptOverride> value)
         {
@@ -67,6 +62,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Path = !string.IsNullOrEmpty(value.Path) ? value.Path : null,
                 Params = value.Params
             };
+        }
+
+        public bool IsEmpty()
+        {
+            return string.IsNullOrEmpty(this.Type)
+                   && string.IsNullOrEmpty(this.Path)
+                   && this.Params == null;
         }
     }
 }

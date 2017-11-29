@@ -40,50 +40,36 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         [HttpGet]
         public async Task<StatusApiModel> Get()
         {
-            var statusIsOk = true;
             var statusMsg = "Alive and well";
             var errors = new List<string>();
 
-            // Check access to Azure IoT Hub
-            Tuple<bool, string> iotHubStatus = null;
-            try
+            var iotHubStatus = await this.CheckAzureIoTHubStatus(errors);
+            var storageStatus = await this.CheckStorageStatus(errors);
+            var simulationIsRunning = await this.IsSimulationRunning(errors);
+
+            // Prepare status message
+            var statusIsOk = iotHubStatus.Item1 && storageStatus.Item1;
+            if (!statusIsOk)
             {
-                if (this.IsHubConnectionStringConfigured())
-                {
-                    iotHubStatus = await this.devices.PingRegistryAsync();
-                    if (!iotHubStatus.Item1)
-                    {
-                        statusIsOk = false;
-                        errors.Add("Unable to use Azure IoT Hub service");
-                    }
-                }
-                else
-                {
-                    iotHubStatus = new Tuple<bool, string>(false, "not configured");
-                }
-            }
-            catch (Exception e)
-            {
-                this.log.Error("Hub ping failed", () => new { e });
+                statusMsg = string.Join(";", errors);
             }
 
-            // Check access to storage
-            Tuple<bool, string> storageStatus = null;
-            try
-            {
-                storageStatus = await this.storage.PingAsync();
-                if (!storageStatus.Item1)
-                {
-                    statusIsOk = false;
-                    errors.Add("Unable to use Storage");
-                }
-            }
-            catch (Exception e)
-            {
-                this.log.Error("Storage ping failed", () => new { e });
-            }
+            // Prepare response
+            var result = new StatusApiModel(statusIsOk, statusMsg);
 
-            // Check simulation status
+            result.Properties.Add("SimulationRunning", simulationIsRunning.HasValue ? (simulationIsRunning.Value ? "true" : "false") : "unknown");
+            result.Properties.Add("IoTHubConnectionStringConfigured", this.IsHubConnectionStringConfigured() ? "true" : "false");
+
+            result.Dependencies.Add("IoTHub", iotHubStatus?.Item2);
+            result.Dependencies.Add("Storage", storageStatus?.Item2);
+
+            this.log.Info("Service status request", () => new { Healthy = statusIsOk, statusMsg, running = simulationIsRunning });
+
+            return result;
+        }
+
+        private async Task<bool?> IsSimulationRunning(List<string> errors)
+        {
             bool? simulationRunning = null;
             try
             {
@@ -96,22 +82,52 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 this.log.Error("Unable to fetch simulation status", () => new { e });
             }
 
-            // Prepare status message
-            if (!statusIsOk)
+            return simulationRunning;
+        }
+
+        private async Task<Tuple<bool, string>> CheckStorageStatus(ICollection<string> errors)
+        {
+            Tuple<bool, string> result;
+            try
             {
-                statusMsg = string.Join(";", errors);
+                result = await this.storage.PingAsync();
+                if (!result.Item1)
+                {
+                    errors.Add("Unable to use Storage");
+                }
+            }
+            catch (Exception e)
+            {
+                result = new Tuple<bool, string>(false, "Storage check failed");
+                this.log.Error("Storage ping failed", () => new { e });
             }
 
-            // Prepare response
-            var result = new StatusApiModel(statusIsOk, statusMsg);
+            return result;
+        }
 
-            result.Properties.Add("SimulationRunning", simulationRunning.HasValue ? (simulationRunning.Value ? "true" : "false") : "unknown");
-            result.Properties.Add("IoTHubConnectionStringConfigured", this.IsHubConnectionStringConfigured() ? "true" : "false");
-
-            result.Dependencies.Add("IoTHub", iotHubStatus?.Item2);
-            result.Dependencies.Add("Storage", storageStatus?.Item2);
-
-            this.log.Info("Service status request", () => new { Healthy = statusIsOk, statusMsg, running = simulationRunning });
+        private async Task<Tuple<bool, string>> CheckAzureIoTHubStatus(ICollection<string> errors)
+        {
+            Tuple<bool, string> result;
+            try
+            {
+                if (this.IsHubConnectionStringConfigured())
+                {
+                    result = await this.devices.PingRegistryAsync();
+                    if (!result.Item1)
+                    {
+                        errors.Add("Unable to use Azure IoT Hub service");
+                    }
+                }
+                else
+                {
+                    result = new Tuple<bool, string>(true, "IoTHub connection string not configured");
+                }
+            }
+            catch (Exception e)
+            {
+                result = new Tuple<bool, string>(false, "IoTHub check failed");
+                this.log.Error("Hub ping failed", () => new { e });
+            }
 
             return result;
         }

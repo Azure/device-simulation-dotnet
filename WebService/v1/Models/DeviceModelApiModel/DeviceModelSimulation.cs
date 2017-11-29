@@ -25,14 +25,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
             this.SimulationScripts = new List<DeviceModelSimulationScript>();
         }
 
-        /// <summary>Map a service model to the corresponding API model</summary>
-        public DeviceModelSimulation(DeviceModel.StateSimulation state) : this()
+        // Map service model to API model
+        public static DeviceModelSimulation FromServiceModel(DeviceModel.StateSimulation value)
         {
-            if (state == null) return;
+            if (value == null) return null;
 
-            this.Initial = state.InitialState;
-            this.Interval = state.Interval.ToString("c");
-            this.SimulationScripts = state.Scripts.Select(s => new DeviceModelSimulationScript(s)).ToList();
+            return new DeviceModelSimulation
+            {
+                Initial = value.InitialState,
+                Interval = value.Interval.ToString("c"),
+                SimulationScripts = value.Scripts.Select(DeviceModelSimulationScript.FromServiceModel).Where(x => x != null).ToList()
+            };
         }
     }
 }

@@ -21,13 +21,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         [HttpGet]
         public DeviceModelListApiModel Get()
         {
-            return new DeviceModelListApiModel(this.deviceModelsService.GetList());
+            return DeviceModelListApiModel.FromServiceModel(this.deviceModelsService.GetList());
         }
 
         [HttpGet("{id}")]
         public DeviceModelApiModel Get(string id)
         {
-            return new DeviceModelApiModel(this.deviceModelsService.Get(id));
+            return DeviceModelApiModel.FromServiceModel(this.deviceModelsService.Get(id));
         }
     }
 }

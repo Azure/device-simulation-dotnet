@@ -48,12 +48,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             return result;
         }
 
-        private bool IsEmpty()
-        {
-            return (this.Simulation == null || this.Simulation.IsEmpty())
-                   && (this.Telemetry == null || this.Telemetry.Count == 0);
-        }
-
         // Map service model to API model
         public static DeviceModelApiModelOverride FromServiceModel(Simulation.DeviceModelOverride value)
         {
@@ -64,6 +58,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Simulation = DeviceModelSimulationOverride.FromServiceModel(value.Simulation),
                 Telemetry = DeviceModelTelemetryOverride.FromServiceModel(value.Telemetry)
             };
+        }
+
+        public bool IsEmpty()
+        {
+            return (this.Simulation == null || this.Simulation.IsEmpty())
+                   && (this.Telemetry == null || this.Telemetry.Count == 0);
         }
     }
 }

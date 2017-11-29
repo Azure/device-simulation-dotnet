@@ -209,10 +209,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log.Info("Selected active IoT Hub for devices", () => new { this.ioTHubHostName });
         }
 
+        // This call can throw an exception, which is fine when the exception happens during a method
+        // call. We cannot allow the exception to occur in the constructor though, because it
+        // would break DI.
         private void SetupHub()
         {
             if (this.setupDone) return;
-
             this.SetCurrentIotHub();
 
             this.setupDone = true;

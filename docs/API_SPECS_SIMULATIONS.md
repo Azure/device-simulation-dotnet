@@ -308,7 +308,7 @@ the default settings, defined in their respective JSON files (*truck-02.json*,
 *elevator-01.json*, *elevator-02.json*).
 
 The *truck-01* device model defines 3 distinct telemetry messages, and
-the example shows how to set a custom frequency for each one, in order
+the example shows how to set a custom frequency for each one, **in order**
 10 seconds, 20 seconds, and 30 seconds.
 
 Request:
@@ -362,9 +362,9 @@ Similarly to the previous example, the simulation uses multiple models,
 but only one (the third in this case) is customized.
 
 Some important notes:
-* when customizing the **telemetry content**, all the details must be included:
+* When customizing the **telemetry content**, all the details must be included:
   *Interval*, *MessageTemplate*, and *MessageSchema*
-* when using internal scripts (e.g. *Math.Random.WithinRange*), the
+* When using internal scripts (e.g. *Math.Random.WithinRange*), the
   list of fields must be included. For instance note how the customized
   *elevator-01* uses 2 scripts: one for *temperature* and *humidity*,
   and one for *vibration*

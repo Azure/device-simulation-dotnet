@@ -19,13 +19,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
             this.Path = "scripts" + System.IO.Path.DirectorySeparatorChar;
         }
 
-        /// <summary>Map a service model to the corresponding API model</summary>
-        public DeviceModelSimulationScript(Script script) : this()
+        // Map service model to API model
+        public static DeviceModelSimulationScript FromServiceModel(Script value)
         {
-            if (script == null) return;
+            if (value == null) return null;
 
-            this.Type = script.Type;
-            this.Path = script.Path;
+            return new DeviceModelSimulationScript
+            {
+                Type = value.Type,
+                Path = value.Path
+            };
         }
     }
 }

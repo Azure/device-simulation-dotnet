@@ -50,13 +50,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             return result;
         }
 
-        internal bool IsEmpty()
-        {
-            return string.IsNullOrEmpty(this.Interval)
-                   && string.IsNullOrEmpty(this.MessageTemplate)
-                   && (this.MessageSchema == null || this.MessageSchema.IsEmpty());
-        }
-
         // Map service model to API model
         public static DeviceModelTelemetryOverride FromServiceModel(Simulation.DeviceModelTelemetryOverride value)
         {
@@ -74,6 +67,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         public static IList<DeviceModelTelemetryOverride> FromServiceModel(IEnumerable<Simulation.DeviceModelTelemetryOverride> value)
         {
             return value?.Select(FromServiceModel).ToList();
+        }
+
+        public bool IsEmpty()
+        {
+            return string.IsNullOrEmpty(this.Interval)
+                   && string.IsNullOrEmpty(this.MessageTemplate)
+                   && (this.MessageSchema == null || this.MessageSchema.IsEmpty());
         }
     }
 }

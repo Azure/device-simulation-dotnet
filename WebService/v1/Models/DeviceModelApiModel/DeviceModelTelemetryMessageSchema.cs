@@ -24,18 +24,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
             this.Fields = new Dictionary<string, string>();
         }
 
-        /// <summary>Map a service model to the corresponding API model</summary>
-        public DeviceModelTelemetryMessageSchema(DeviceModel.DeviceModelMessageSchema schema) : this()
+        // Map service model to API model
+        public static DeviceModelTelemetryMessageSchema FromServiceModel(DeviceModel.DeviceModelMessageSchema value)
         {
-            if (schema == null) return;
+            if (value == null) return null;
 
-            this.Name = schema.Name;
-            this.Format = schema.Format.ToString();
-
-            foreach (var field in schema.Fields)
+            var result = new DeviceModelTelemetryMessageSchema
             {
-                this.Fields.Add(field.Key, field.Value.ToString());
+                Name = value.Name,
+                Format = value.Format.ToString()
+            };
+
+            foreach (var field in value.Fields)
+            {
+                result.Fields.Add(field.Key, field.Value.ToString());
             }
+
+            return result;
         }
     }
 }

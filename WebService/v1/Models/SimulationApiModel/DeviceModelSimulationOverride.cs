@@ -49,12 +49,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             return result;
         }
 
-        internal bool IsEmpty()
-        {
-            return string.IsNullOrEmpty(this.Interval)
-                   && (this.SimulationScripts == null || this.SimulationScripts.Count == 0);
-        }
-
         // Map service model to API model
         public static DeviceModelSimulationOverride FromServiceModel(Simulation.DeviceModelSimulationOverride value)
         {
@@ -65,6 +59,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Interval = value.Interval?.ToString("c"),
                 SimulationScripts = DeviceModelSimulationScriptOverride.FromServiceModel(value.SimulationScripts)
             };
+        }
+
+        public bool IsEmpty()
+        {
+            return string.IsNullOrEmpty(this.Interval)
+                   && (this.SimulationScripts == null || this.SimulationScripts.Count == 0);
         }
     }
 }

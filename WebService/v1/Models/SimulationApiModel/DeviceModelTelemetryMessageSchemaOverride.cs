@@ -42,13 +42,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             };
         }
 
-        internal bool IsEmpty()
-        {
-            return string.IsNullOrEmpty(this.Name)
-                   && string.IsNullOrEmpty(this.Format)
-                   && (this.Fields == null || this.Fields.Count == 0);
-        }
-
         // Map service model to API model
         public static DeviceModelTelemetryMessageSchemaOverride FromServiceModel(Simulation.DeviceModelTelemetryMessageSchemaOverride value)
         {
@@ -60,6 +53,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Format = !string.IsNullOrEmpty(value.Format) ? value.Format : null,
                 Fields = value.Fields
             };
+        }
+
+        public bool IsEmpty()
+        {
+            return string.IsNullOrEmpty(this.Name)
+                   && string.IsNullOrEmpty(this.Format)
+                   && (this.Fields == null || this.Fields.Count == 0);
         }
     }
 }
