@@ -36,7 +36,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         // Service used to load device models details
         private readonly IDeviceModels deviceModels;
-        
+
         // Reference to the singleton used to access the devices
         private readonly IDevices devices;
 
@@ -122,18 +122,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.devices.SetCurrentIotHub();
 
                 // Loop through all the device models used in the simulation
-                var models = from model in simulation.DeviceModels where model.Count > 0 select model;
+                var models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
 
                 // Calculate the total number of devices
                 var total = models.Sum(model => model.Count);
 
                 foreach (var model in models)
                 {
-                    // Load device model from disk
+                    // Load device model from disk and merge with overrides
                     DeviceModel deviceModel;
                     try
                     {
-                        deviceModel = this.deviceModels.Get(model.Id);
+                        deviceModel = this.deviceModels.OverrideDeviceModel(
+                            this.deviceModels.Get(model.Id), model.Override);
                     }
                     catch (ResourceNotFoundException)
                     {
@@ -143,7 +144,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                     for (var i = 0; i < model.Count; i++)
                     {
-                        this.CreateActorsForDevice(deviceModel, model, i, total);
+                        this.CreateActorsForDevice(deviceModel, i, total);
                     }
                 }
 
@@ -234,16 +235,41 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         private void SendTelemetryThread()
         {
+            if (this.deviceTelemetryActors.Count == 0)
+            {
+                this.log.Warn("There is no telemetry to send, stopping the telemetry thread", () => { });
+                return;
+            }
+
+            var stats = new Dictionary<string, int>();
             while (this.running)
             {
+                // Keep count of what the actors are doing and log it
+                if (this.log.InfoIsEnabled)
+                {
+                    stats.Clear();
+                    stats["nothingToDo"] = 0;
+                }
+
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 foreach (var telemetry in this.deviceTelemetryActors)
                 {
-                    telemetry.Value.Run();
+                    var stat = telemetry.Value.Run();
+                    if (this.log.InfoIsEnabled)
+                    {
+                        if (stat != null)
+                        {
+                            stats[stat] = stats.ContainsKey(stat) ? stats[stat] + 1 : 1;
+                        }
+                        else
+                        {
+                            stats["nothingToDo"]++;
+                        }
+                    }
                 }
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
-                this.log.Info("Telemetry loop completed", () => new { durationMsecs });
+                this.log.Info("Telemetry loop completed", () => new { durationMsecs, stats });
                 this.SlowDownIfTooFast(durationMsecs, TelemetryLoopSettings.MIN_LOOP_DURATION);
             }
         }
@@ -261,13 +287,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
          * one actor to manage the connection to the hub, and one actor for each
          * telemetry message to send.
          */
-        private void CreateActorsForDevice(DeviceModel deviceModel, Services.Models.Simulation.DeviceModelRef dm, int position, int total)
+        private void CreateActorsForDevice(DeviceModel deviceModel, int position, int total)
         {
             var deviceId = DEVICE_ID_PREFIX + deviceModel.Id + "." + position;
             var key = deviceModel.Id + "#" + position;
 
             this.log.Debug("Creating device actors...",
-                () => new { ModelName = deviceModel.Name, ModelId = dm.Id, position });
+                () => new { ModelName = deviceModel.Name, ModelId = deviceModel.Id, position });
 
             // Create one state actor for each device
             var deviceStateActor = this.factory.Resolve<IDeviceStateActor>();
@@ -280,11 +306,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.deviceConnectionActors.Add(key, deviceConnectionActor);
 
             // Create one telemetry actor for each telemetry message to be sent
+            var i = 0;
             foreach (var message in deviceModel.Telemetry)
             {
+                // Skip telemetry without an interval set
+                if (!(message.Interval.TotalMilliseconds > 0))
+                {
+                    this.log.Warn("Skipping telemetry with interval = 0",
+                        () => new { model = deviceModel.Id, message });
+                    continue;
+                }
+
                 var deviceTelemetryActor = this.factory.Resolve<IDeviceTelemetryActor>();
                 deviceTelemetryActor.Setup(deviceId, deviceModel, message, deviceStateActor, deviceConnectionActor);
-                this.deviceTelemetryActors.Add(key, deviceTelemetryActor);
+
+                var actorKey = key + "#" + (i++).ToString();
+                this.deviceTelemetryActors.Add(actorKey, deviceTelemetryActor);
             }
         }
 

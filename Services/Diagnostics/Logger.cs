@@ -14,6 +14,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
         string FormatDate(long time);
 
+        bool DebugIsEnabled { get; }
+        bool InfoIsEnabled { get; }
+
         // The following 4 methods allow to log a message, capturing the context
         // (i.e. the method where the log message is generated)
 
@@ -77,6 +80,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         }
 
         public LogLevel LogLevel => this.logLevel;
+
+        public bool DebugIsEnabled => this.logLevel <= LogLevel.Debug;
+
+        public bool InfoIsEnabled => this.logLevel <= LogLevel.Info;
 
         public string FormatDate(long time)
         {
