@@ -33,7 +33,7 @@ install_precommit_hook() {
 uninstall_precommit_hook() {
     echo "Removing pre-commit hook..."
 
-    cd $APP_HOME/.git || failed
+    cd $APP_HOME/.git/hooks || failed
     set +e
     rm -f ./pre-commit
     set -e

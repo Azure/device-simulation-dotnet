@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;
@@ -81,12 +82,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList()
             };
 
-            if (result.StartTime.HasValue && result.EndTime.HasValue
-                                          && result.StartTime.Value.Ticks >= result.EndTime.Value.Ticks)
-            {
-                throw new InvalidSimulationSchedulingException("The simulation End Time must be after the Start Time");
-            }
-
             return result;
         }
 
@@ -121,6 +116,55 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             result.modified = value.Modified;
 
             return result;
+        }
+
+        public void ValidateInputRequest(ILogger log)
+        {
+            const string NO_DEVICE_MODEL = "The simulation doesn't contain any device model";
+            const string ZERO_DEVICES = "The simulation has zero devices";
+            const string END_TIME_BEFORE_START_TIME = "The simulation End Time must be after the Start Time";
+            const string INVALID_DATE = "Invalid date format";
+            const string CANNOT_RUN_IN_THE_PAST = "The simulation end date is in the past";
+
+            // A simulation must contain at least one device model
+            if (this.DeviceModels.Count < 1)
+            {
+                log.Error(NO_DEVICE_MODEL, () => new { simulation = this });
+                throw new BadRequestException(NO_DEVICE_MODEL);
+            }
+
+            // A simulation must use at least one device
+            if (this.DeviceModels.Sum(x => x.Count) < 1)
+            {
+                log.Error(ZERO_DEVICES, () => new { simulation = this });
+                throw new BadRequestException(ZERO_DEVICES);
+            }
+
+            try
+            {
+                var now = DateTimeOffset.UtcNow;
+                var startTime = DateHelper.ParseDateExpression(this.StartTime, now);
+                var endTime = DateHelper.ParseDateExpression(this.EndTime, now);
+
+                // The start time must be before the end time
+                if (startTime.HasValue && endTime.HasValue && startTime.Value.Ticks >= endTime.Value.Ticks)
+                {
+                    log.Error(END_TIME_BEFORE_START_TIME, () => new { simulation = this });
+                    throw new BadRequestException(END_TIME_BEFORE_START_TIME);
+                }
+
+                // The end time cannot be in the past
+                if (endTime.HasValue && endTime.Value.Ticks <= now.Ticks)
+                {
+                    log.Error(CANNOT_RUN_IN_THE_PAST, () => new { simulation = this });
+                    throw new BadRequestException(CANNOT_RUN_IN_THE_PAST);
+                }
+            }
+            catch (InvalidDateFormatException e)
+            {
+                log.Error(INVALID_DATE, () => new { simulation = this });
+                throw new BadRequestException(INVALID_DATE, e);
+            }
         }
     }
 }
