@@ -174,7 +174,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             switch (this.status)
             {
                 case ActorStatus.ReadyToStart:
-                    if (!this.deviceConnectionActor.Connected) return null;
+                    if (!this.deviceConnectionActor.Connected) return "device not connected yet";
 
                     this.whenToRun = 0;
                     this.HandleEvent(ActorEvents.Started);
