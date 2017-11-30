@@ -26,6 +26,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private const string CONNSTRING_REGEX_KEY = "key";
         private const string CONNSTRING_FILE_NAME = "custom_iothub_key.txt";
 
+        private const string OWNER_KEYNAME = "iothubowner";
+        private const string SERVICE_KEYNAME = "service";
+
         private readonly string connStringFilePath;
             
         private readonly IServicesConfig config;
@@ -82,11 +85,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 return ServicesConfig.USE_DEFAULT_IOTHUB;
             }
 
-            // check that connection strng is valid and the IotHub exists
-            this.ValidateConnectionString(connectionString);
+            // check that connection string is valid and the IotHub exists
+            ValidateConnectionString(connectionString);
 
             // find key
-            var key = GetKeyFromConnString(connectionString);
+            var key = this.GetKeyFromConnString(connectionString);
 
             // if key is null, the string has been redacted,
             // check if hub is in storage
@@ -118,10 +121,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// value for the key, also checks if a connection to the IotHub
         /// can be made.
         /// </summary>
-        public void ValidateConnectionString(string connectionString)
+        public static void ValidateConnectionString(string connectionString)
         {
-            var match = Regex.Match(connectionString, CONNSTRING_REGEX);
+            // valid if default or null
+            if (connectionString == ServicesConfig.USE_DEFAULT_IOTHUB ||
+                connectionString.IsNullOrWhiteSpace())
+            {
+                return;
+            }
 
+            // check format of provided string
+            var match = Regex.Match(connectionString, CONNSTRING_REGEX);
             if (!match.Success)
             {
                 var message = "Invalid connection string format for IoTHub. " +
@@ -131,6 +141,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 throw new InvalidIotHubConnectionStringFormatException(message);
             }
 
+            // check if KeyName permissions are either "iothubowner" or "service"
+            if (!(match.Groups[CONNSTRING_REGEX_KEYNAME].Value == OWNER_KEYNAME ||
+                  match.Groups[CONNSTRING_REGEX_KEYNAME].Value == SERVICE_KEYNAME))
+            {
+                string message = "IotHub connection string must have KeyName of `service`" +
+                                 " or `iothubowner`.";
+                throw new IotHubConnectionException(message);
+            }
+
             // if a key is provided, check if IoTHub is valid
             if (!match.Groups[CONNSTRING_REGEX_KEY].Value.IsNullOrWhiteSpace())
             {
@@ -138,12 +157,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 {
                     RegistryManager.CreateFromConnectionString(connectionString);
                 }
-                catch (IOException)
+                catch (Exception e)
                 {
                     string message = "Could not connect to IotHub with the connection" +
                                      "string provided. Check that the key is valid and " +
                                      "that the hub exists.";
-                    throw new IotHubConnectionException(message);
+                    throw new IotHubConnectionException(message, e);
                 }
             }
         }
@@ -166,7 +185,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
         }
 
-        private static string GetKeyFromConnString(string connectionString)
+        private string GetKeyFromConnString(string connectionString)
         {
             var match = Regex.Match(connectionString, CONNSTRING_REGEX);
 
@@ -180,13 +199,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// </summary>
         private bool ConnectionStringIsStored(string connectionString)
         {
+            // get stored string from file
+            var storedHubString = this.ReadFromFile();
+
+            if (connectionString.IsNullOrWhiteSpace() ||
+                storedHubString.IsNullOrWhiteSpace())
+            {
+                return false;
+            }
+
             // parse user provided hub info
             var userHubMatch = Regex.Match(connectionString, CONNSTRING_REGEX);
             var userHubHostName = userHubMatch.Groups[CONNSTRING_REGEX_HOSTNAME].Value;
             var userHubKeyName = userHubMatch.Groups[CONNSTRING_REGEX_KEYNAME].Value;
 
             // parse stored hub info
-            var storedHubString = this.ReadFromFile();
             var storedHubMatch = Regex.Match(storedHubString, CONNSTRING_REGEX);
             var storedHubHostName = storedHubMatch.Groups[CONNSTRING_REGEX_HOSTNAME].Value;
             var storedHubKeyName = storedHubMatch.Groups[CONNSTRING_REGEX_KEYNAME].Value;

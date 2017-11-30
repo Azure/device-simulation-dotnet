@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
@@ -144,6 +145,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             {
                 throw new InvalidSimulationSchedulingException("The end time must be after the start time");
             }
+
+            IotHubConnectionStringManager.ValidateConnectionString(result.IotHubConnectionString);
 
             return result;
         }

@@ -40,7 +40,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters
                      || context.Exception is InvalidInputException
                      || context.Exception is Services.Exceptions.InvalidIotHubConnectionStringFormatException
                      || context.Exception is WebService.v1.Exceptions.InvalidIotHubConnectionStringFormatException
-                     || context.Exception is Services.Exceptions.IotHubConnectionException)
+                     || context.Exception is IotHubConnectionException)
         {
                 context.Result = this.GetResponse(HttpStatusCode.BadRequest, context.Exception);
             }
