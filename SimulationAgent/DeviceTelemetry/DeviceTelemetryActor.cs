@@ -25,7 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             IDeviceStateActor deviceStateActor,
             IDeviceConnectionActor deviceConnectionActor);
 
-        void Run();
+        string Run();
         void HandleEvent(DeviceTelemetryActor.ActorEvents e);
         void Stop();
     }
@@ -163,28 +163,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             }
         }
 
-        public void Run()
+        // Run the next step and return a description about what happened
+        public string Run()
         {
             this.log.Debug(this.status.ToString(), () => new { this.deviceId });
 
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            if (now < this.whenToRun) return;
+            if (now < this.whenToRun) return null;
 
             switch (this.status)
             {
                 case ActorStatus.ReadyToStart:
-                    if (!this.deviceConnectionActor.Connected) return;
+                    if (!this.deviceConnectionActor.Connected) return null;
 
                     this.whenToRun = 0;
                     this.HandleEvent(ActorEvents.Started);
-                    return;
+                    return "started";
 
                 case ActorStatus.ReadyToSend:
                     this.status = ActorStatus.Sending;
                     this.actorLogger.SendingTelemetry();
                     this.sendTelemetryLogic.Run();
-                    return;
+                    return "sent telemetry";
             }
+
+            return null;
         }
 
         private void ScheduleTelemetry()
