@@ -22,7 +22,8 @@ Content-Type: application/JSON
     "UpTime": "88",
     "UID": "779e748b-fc97-4eb4-adcd-2fbe51df619c",
     "Properties": {
-        "Simulation": "on|off"
+        "SimulationRunning": "true|false|unknown",
+        "IoTHubConnectionStringConfigured": "true|false"
     },
     "Dependencies": {
         "IoTHub": "OK|ERROR:...msg...",
@@ -39,6 +40,7 @@ Content-Type: application/JSON
 * UpTime: value specific to the process running, i.e. in case of multiple
   deployments each instance has a different uptime
 * UID: a unique value in each instance, used mostly for logging correlation
-* Properties: used only for debugging, free form entries
-* Dependencies: health status of the internal dependencies, values used
-  only for debugging
+* Properties: contains runtime information, e.g. whether the simulation
+  is running and if the configuration contains a hub connection string
+* Dependencies: health status of the internal dependencies, e.g. hub
+  and storage

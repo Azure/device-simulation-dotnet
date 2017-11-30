@@ -8,6 +8,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers
 {
@@ -34,7 +35,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         [HttpGet("{id}")]
         public async Task<SimulationApiModel> GetAsync(string id)
         {
-            return new SimulationApiModel(await this.simulationsService.GetAsync(id));
+            return SimulationApiModel.FromServiceModel(await this.simulationsService.GetAsync(id));
         }
 
         [HttpPost]
@@ -53,7 +54,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 simulation = new SimulationApiModel();
             }
 
-            return new SimulationApiModel(
+            return SimulationApiModel.FromServiceModel(
                 await this.simulationsService.InsertAsync(this.GetServiceModel(simulation), template));
         }
 
@@ -68,7 +69,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data or invalid data provided.");
             }
 
-            return new SimulationApiModel(
+            return SimulationApiModel.FromServiceModel(
                 await this.simulationsService.UpsertAsync(this.GetServiceModel(simulation, id)));
         }
 
@@ -83,7 +84,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data or invalid data provided");
             }
 
-            return new SimulationApiModel(
+            return SimulationApiModel.FromServiceModel(
                 await this.simulationsService.MergeAsync(patch.ToServiceModel(id)));
         }
 

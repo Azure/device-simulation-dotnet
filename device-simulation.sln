@@ -83,6 +83,7 @@ ProjectSection(SolutionItems) = preProject
 	docs\API_SPECS_SIMULATIONS.md = docs\API_SPECS_SIMULATIONS.md
 	docs\DEVICE_MODELS.md = docs\DEVICE_MODELS.md
 	docs\INDEX.md = docs\INDEX.md
+	docs\BREAKING_CHANGES.md = docs\BREAKING_CHANGES.md
 EndProjectSection
 EndProject
 Global
