@@ -109,7 +109,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             //      will still be stored to disk. Storing the encrypted string using
             //      storage adapter would address this
             //      https://github.com/Azure/device-simulation-dotnet/issues/129
-            simulation.IotHubConnectionString = this.connectionStringManager.RedactAndStore(simulation.IotHubConnectionString);
+            simulation.IotHubConnectionString = await this.connectionStringManager.RedactAndStore(simulation.IotHubConnectionString);
 
             // Note: using UpdateAsync because the service generates the ID
             var result = await this.storage.UpdateAsync(
@@ -172,7 +172,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             //      will still be stored to disk. Storing the encrypted string using
             //      storage adapter would address this
             //      https://github.com/Azure/device-simulation-dotnet/issues/129
-            simulation.IotHubConnectionString = this.connectionStringManager.RedactAndStore(simulation.IotHubConnectionString);
+            simulation.IotHubConnectionString = await this.connectionStringManager.RedactAndStore(simulation.IotHubConnectionString);
 
             var result = await this.storage.UpdateAsync(
                 STORAGE_COLLECTION,

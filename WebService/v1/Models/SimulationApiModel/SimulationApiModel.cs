@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -119,7 +120,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             return result;
         }
 
-        public void ValidateInputRequest(ILogger log)
+        public async Task ValidateInputRequest(ILogger log)
         {
             const string NO_DEVICE_MODEL = "The simulation doesn't contain any device model";
             const string ZERO_DEVICES = "The simulation has zero devices";
@@ -167,7 +168,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 throw new BadRequestException(INVALID_DATE, e);
             }
 
-            IotHubConnectionStringManager.ValidateConnectionString(this.IotHub.ConnectionString);
+            await IotHubConnectionStringManager.ValidateConnectionString(this.IotHub.ConnectionString);
         }
     }
 }

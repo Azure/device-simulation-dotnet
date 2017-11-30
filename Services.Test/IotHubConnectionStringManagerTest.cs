@@ -24,10 +24,10 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItThrowsOnInvalidConnStringFormat()
+        public async System.Threading.Tasks.Task ItThrowsOnInvalidConnStringFormat()
         {
             // Assert
-            Assert.Throws<InvalidIotHubConnectionStringFormatException>(() => this.target.RedactAndStore("foobar"));
+            await Assert.ThrowsAsync<InvalidIotHubConnectionStringFormatException>(() => this.target.RedactAndStore("foobar"));
         }
     }
 }

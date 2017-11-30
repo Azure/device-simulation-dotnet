@@ -3,6 +3,8 @@
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.Devices.Common;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -15,7 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
     public interface IIotHubConnectionStringManager
     {
         string GetIotHubConnectionString();
-        string RedactAndStore(string connectionString);
+        Task<string> RedactAndStore(string connectionString);
     }
 
     public class IotHubConnectionStringManager : IIotHubConnectionStringManager
@@ -75,7 +77,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         ///      https://github.com/Azure/device-simulation-dotnet/issues/129
         /// </summary>
         /// <returns>Redacted connection string (i.e. without SharedAccessKey)</returns>
-        public string RedactAndStore(string connectionString)
+        public async Task<string> RedactAndStore(string connectionString)
         {
             // check if environment variable should be used
             if (connectionString.IsNullOrWhiteSpace() ||
@@ -86,7 +88,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
 
             // check that connection string is valid and the IotHub exists
-            ValidateConnectionString(connectionString);
+            await ValidateConnectionString(connectionString);
 
             // find key
             var key = this.GetKeyFromConnString(connectionString);
@@ -121,7 +123,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// value for the key, also checks if a connection to the IotHub
         /// can be made.
         /// </summary>
-        public static void ValidateConnectionString(string connectionString)
+        public static async Task ValidateConnectionString(string connectionString)
         {
             // valid if default or null
             if (connectionString == ServicesConfig.USE_DEFAULT_IOTHUB ||
@@ -141,27 +143,37 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 throw new InvalidIotHubConnectionStringFormatException(message);
             }
 
-            // check if KeyName permissions are either "iothubowner" or "service"
-            if (!(match.Groups[CONNSTRING_REGEX_KEYNAME].Value == OWNER_KEYNAME ||
-                  match.Groups[CONNSTRING_REGEX_KEYNAME].Value == SERVICE_KEYNAME))
-            {
-                string message = "IotHub connection string must have KeyName of `service`" +
-                                 " or `iothubowner`.";
-                throw new IotHubConnectionException(message);
-            }
-
             // if a key is provided, check if IoTHub is valid
             if (!match.Groups[CONNSTRING_REGEX_KEY].Value.IsNullOrWhiteSpace())
             {
+                RegistryManager registryManager = null;
                 try
                 {
-                    RegistryManager.CreateFromConnectionString(connectionString);
+                    registryManager = RegistryManager.CreateFromConnectionString(connectionString);
                 }
                 catch (Exception e)
                 {
                     string message = "Could not connect to IotHub with the connection" +
                                      "string provided. Check that the key is valid and " +
                                      "that the hub exists.";
+                    throw new IotHubConnectionException(message, e);
+                }
+
+                try
+                {
+                    // check read permissions
+                    await registryManager.GetDevicesAsync(1, CancellationToken.None);
+
+                    // check write permissions
+                    var testDevice = new Device();
+                    testDevice = await registryManager.AddDeviceAsync(testDevice);
+                    await registryManager.RemoveDeviceAsync(testDevice);
+                }
+                catch (Exception e)
+                {
+                    string message = "Could not read or create devices with IotHub connection" +
+                                     "string provided. Check that the policy for the key allows " + 
+                                     "`Registry Read/Write` and `Service Connect` permissions.";
                     throw new IotHubConnectionException(message, e);
                 }
             }
