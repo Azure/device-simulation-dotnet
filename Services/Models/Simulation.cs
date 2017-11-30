@@ -40,11 +40,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         public Simulation()
         {
+            // When unspecified, a simulation is enabled
+            this.Enabled = true;
+
             this.StartTime = DateTimeOffset.MinValue;
             this.EndTime = DateTimeOffset.MaxValue;
 
-            // When unspecified, a simulation is enabled
-            this.Enabled = true;
             // by default, use environment variable
             this.IotHubConnectionString = ServicesConfig.USE_DEFAULT_IOTHUB;
             this.DeviceModels = new List<DeviceModelRef>();
@@ -54,6 +55,100 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         {
             public string Id { get; set; }
             public int Count { get; set; }
+            public DeviceModelOverride Override { get; set; }
+        }
+
+        public class DeviceModelOverride
+        {
+            // Optional field, used to customize the scripts which update the device state
+            public DeviceModelSimulationOverride Simulation { get; set; }
+
+            // Optional field, the list can be empty
+            // When non empty, the content is merged with (overwriting) the scripts in the device model definition
+            // If this list is shorter than the original definition, elements in excess are removed
+            // i.e. to keep all the original telemetry messages, there must be an entry for each of them
+            public IList<DeviceModelTelemetryOverride> Telemetry { get; set; }
+
+            public DeviceModelOverride()
+            {
+                this.Simulation = null;
+                this.Telemetry = null;
+            }
+        }
+
+        public class DeviceModelSimulationOverride
+        {
+            // Optional, used to customize the device state update interval
+            public TimeSpan? Interval { get; set; }
+
+            // Optional field, the list can be empty
+            // When non empty, the content is merged with (overwriting) the scripts in the device model definition
+            // If this list is shorter than the original definition, elements in excess are removed
+            // i.e. to keep all the original scripts, there must be an entry for each of them
+            public IList<DeviceModelSimulationScriptOverride> SimulationScripts { get; set; }
+
+            public DeviceModelSimulationOverride()
+            {
+                this.Interval = null;
+                this.SimulationScripts = null;
+            }
+        }
+
+        public class DeviceModelSimulationScriptOverride
+        {
+            // Optional, used to change the script used
+            public string Type { get; set; }
+
+            // Optional, used to change the script used
+            public string Path { get; set; }
+
+            // Optional, used to provide input parameters to the script
+            public object Params { get; set; }
+
+            public DeviceModelSimulationScriptOverride()
+            {
+                this.Type = null;
+                this.Path = null;
+                this.Params = null;
+            }
+        }
+
+        public class DeviceModelTelemetryOverride
+        {
+            // Optional field, used to customize the telemetry interval
+            public TimeSpan? Interval { get; set; }
+
+            // Optional field, when null use the template set in the device model definition
+            public string MessageTemplate { get; set; }
+
+            // Optional field, when null use the schema set in the device model definition
+            public DeviceModelTelemetryMessageSchemaOverride MessageSchema { get; set; }
+
+            public DeviceModelTelemetryOverride()
+            {
+                this.Interval = null;
+                this.MessageTemplate = null;
+                this.MessageSchema = null;
+            }
+        }
+
+        public class DeviceModelTelemetryMessageSchemaOverride
+        {
+            // Optional, used to customize the name of the message schema
+            public string Name { get; set; }
+
+            // Optional, used to change the message format, e.g. from JSON to base64
+            public string Format { get; set; }
+
+            // Optional, used to replace the list of fields in the schema (the content is not merged)
+            public IDictionary<string, string> Fields { get; set; }
+
+            public DeviceModelTelemetryMessageSchemaOverride()
+            {
+                this.Name = null;
+                this.Format = null;
+                this.Fields = null;
+            }
         }
 
         public bool ShouldBeRunning()

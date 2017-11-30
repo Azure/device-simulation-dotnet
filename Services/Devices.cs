@@ -61,6 +61,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private string ioTHubHostName;
         private RegistryManager registry;
         private int registryCount;
+        private bool setupDone;
 
         public Devices(
             IServicesConfig config,
@@ -71,14 +72,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.connectionStringManager = connStringManager;
             this.twinReadsWritesEnabled = config.TwinReadWriteEnabled;
             this.registryCount = -1;
-            this.SetCurrentIotHub();
+            this.setupDone = false;
         }
-        
+
         /// <summary>
         /// Ping the registry to see if the connection is healthy
         /// </summary>
         public async Task<Tuple<bool, string>> PingRegistryAsync()
         {
+            this.SetupHub();
+
             try
             {
                 await this.GetRegistry().GetDeviceAsync("healthcheck");
@@ -96,6 +99,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public IDeviceClient GetClient(Device device, IoTHubProtocol protocol)
         {
+            this.SetupHub();
+
             var sdkClient = this.GetDeviceSdkClient(device, protocol);
 
             return new DeviceClient(
@@ -110,8 +115,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<Device> GetAsync(string deviceId)
         {
+            this.SetupHub();
+
             this.log.Debug("Fetching device from registry", () => new { deviceId });
-            
+
             Device result = null;
             var now = DateTimeOffset.UtcNow;
 
@@ -148,6 +155,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<Device> CreateAsync(string deviceId)
         {
+            this.SetupHub();
+
             try
             {
                 this.log.Debug("Creating device", () => new { deviceId });
@@ -177,6 +186,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task AddTagAsync(string deviceId)
         {
+            this.SetupHub();
+
             this.log.Debug("Writing device twin and adding the `IsSimulated` Tag",
                 () => new { deviceId, DeviceTwin.SIMULATED_TAG_KEY, DeviceTwin.SIMULATED_TAG_VALUE });
 
@@ -196,6 +207,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.registry = RegistryManager.CreateFromConnectionString(connString);
             this.ioTHubHostName = IotHubConnectionStringBuilder.Create(connString).HostName;
             this.log.Info("Selected active IoT Hub for devices", () => new { this.ioTHubHostName });
+        }
+
+        // This call can throw an exception, which is fine when the exception happens during a method
+        // call. We cannot allow the exception to occur in the constructor though, because it
+        // would break DI.
+        private void SetupHub()
+        {
+            if (this.setupDone) return;
+            this.SetCurrentIotHub();
+
+            this.setupDone = true;
         }
 
         // Temporary workaround, see https://github.com/Azure/device-simulation-dotnet/issues/136

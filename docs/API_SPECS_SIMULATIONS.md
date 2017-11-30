@@ -14,7 +14,9 @@ after the first request has been successfully completed.
 
 ```
 POST /v1/simulations
-
+Content-Type: application/json; charset=utf-8
+```
+```json
 {
   "Enabled": <true|false>,
   "DeviceModels": [
@@ -42,7 +44,9 @@ mismatch will generate an error).
 
 ```
 PUT /v1/simulations/1
-
+Content-Type: application/json; charset=utf-8
+```
+```json
 {
   "Enabled": <true|false>,
   "DeviceModels": [
@@ -277,17 +281,36 @@ Content-Type: application/json; charset=utf-8
 }
 ```
 
-## Creating a simulation customizing the device models
+## Creating a simulation with customized device models
 
 Device models information is typically loaded from the device models
 definitiond stored in the JSON files.  However, it's possible to override
-some of these details, using the `override` block in the API request.
-The API allows to override the telemetry frequency, the script used to
-generate telemetry, and the format of the telemetry.
+some of these details, using an `Override` block in the API request.
+
+The API allows to override the following device model details:
+
+* **Scripts type, path and interval**.  If the device model defines multiple
+  scripts, the order of the override must match the same order used
+  in the device model JSON file.
+* **Telemetry frequency, template and schema**.  If the device model defines
+  multiple telemetry messages, the order of the overrides must match
+  the same order used in the device model JSON file.
+
+
+### Example: Custom telemetry frequency (a.k.a. "Interval")
 
 The following example shows how to override the telemetry frequency for
-a device model sending 3 different messages (note that the order is
-important):
+a device model. Note that the order of the overrides is important.
+
+The example creates a simulation using 4 device models: *truck-01*,
+*truck-02*, *elevator-01*, *elevator-02*.
+Only the frequency of *truck-01* is customized, while the others models use
+the default settings, defined in their respective JSON files (*truck-02.json*,
+*elevator-01.json*, *elevator-02.json*).
+
+The *truck-01* device model defines 3 distinct telemetry messages, and
+the example shows how to set a custom frequency for each one, **in order**
+10 seconds, 20 seconds, and 30 seconds.
 
 Request:
 ```
@@ -304,13 +327,13 @@ Content-Type: application/json; charset=utf-8
       "Override": {
         "Telemetry": [
           {
-            "Interval":"00:00:10"
+            "Interval": "00:00:10"
           },
           {
-            "Interval":"00:00:20"
+            "Interval": "00:00:20"
           },
           {
-            "Interval":"00:00:30"
+            "Interval": "00:00:30"
           }
         ]
       }
@@ -322,13 +345,30 @@ Content-Type: application/json; charset=utf-8
     {
       "Id": "elevator-01",
       "Count": 10
+    },
+    {
+      "Id": "elevator-02",
+      "Count": 1
     }
   ]
 }
 ```
 
-The following example shows how to override the script used to generate
-the virtual sensors state, and the content of the telemetry messages:
+### Example: Customize scripts (custom sensors)
+
+The following example shows how to customize the scripts used to generate
+the virtual sensors state, and the content of the telemetry messages.
+
+Similarly to the previous example, the simulation uses multiple models,
+but only one (the third in this case) is customized.
+
+Some important notes:
+* When customizing the **telemetry content**, all the details must be included:
+  *Interval*, *MessageTemplate*, and *MessageSchema*
+* When using internal scripts (e.g. *Math.Random.WithinRange*), the
+  list of fields must be included. For instance note how the customized
+  *elevator-01* uses 2 scripts: one for *temperature* and *humidity*,
+  and one for *vibration*
 
 Request:
 ```
@@ -341,6 +381,14 @@ Content-Type: application/json; charset=utf-8
   "DeviceModels": [
     {
       "Id": "truck-01",
+      "Count": 1
+    },
+    {
+      "Id": "truck-02",
+      "Count": 10
+    },
+    {
+      "Id": "elevator-01",
       "Count": 3,
       "Override": {
         "Simulation":{
@@ -349,48 +397,56 @@ Content-Type: application/json; charset=utf-8
             "temperature_unit": "F",
             "humidity": 50,
             "humidity_unit": "psig",
+            "vibration": 50,
+            "vibration_unit": "hz"
           },
-          "Script":{
-            "Type": "internal",
-            "Path": "Math.Random.WithinRange",
-            "Params": {
-              "temperature": {
-                "Min": 70,
-                "Max": 90
-              },
-              "humidity": {
-                "Min": 50,
-                "Max": 60
+          "Interval":"00:00:10",
+          "Scripts":[
+            {
+              "Type": "internal",
+              "Path": "Math.Random.WithinRange",
+              "Params": {
+                "temperature": {
+                  "Min": 70,
+                  "Max": 90
+                },
+                "humidity": {
+                  "Min": 50,
+                  "Max": 60
+                }
               }
             },
-            "Interval":"00:00:10"
-          }
+            {
+              "Type": "internal",
+              "Path": "Math.Increasing",
+              "Params": {
+                "vibration": {
+                  "Min": 10,
+                  "Max": 90
+                }
+              }
+            }
+          ]
         },
         "Telemetry": [
           {
             "Interval":"00:00:10",
-            "MessageTemplate":"{\"temperature\":${temperature},\"temperature_unit\":\"temperature\",\"humidity\":${humidity},\"humidity_unit\":\"humidity\"}",
+            "MessageTemplate":"{\"t\":${temperature},\"t_unit\":\"${temperature_unit}\",\"h\":${humidity},\"h_unit\":\"${humidity_unit}\",\"v\":${vibration},\"v_unit\":\"${vibration_unit}\"}",
             "MessageSchema":{
               "Name":"custom-sensors;v1",
               "Format":"JSON",
               "Fields":{
-                "<name 1>":"double",
-                "<name 1>_unit":"text",
-                "<name 2>":"double",
-                "<name 2>_unit":"text"
+                "t":"double",
+                "t_unit":"text",
+                "h":"double",
+                "h_unit":"text",
+                "v":"double",
+                "v_unit":"text"
               }
             }
           }
         ]
       }
-    },
-    {
-      "Id": "truck-02",
-      "Count": 1
-    },
-    {
-      "Id": "elevator-01",
-      "Count": 10
     }
   ]
 }
@@ -542,5 +598,23 @@ Content-Type: application/JSON
 ## Modifying a running simulation
 
 Simulations can be modified by calling PUT and passing the existing
-simulation ID.  This can be coupled with a GET to pull the existing
-imulation content, editing it, then calling PUT with the modification(s).
+simulation ID.  This should be coupled with a GET to pull the existing
+simulation content, editing it, then calling PUT with the modification(s).
+
+When editing a simulation a client needs to send in the request the
+current `ETag` value, to correctly handle concurrent requests, avoiding
+the risk of data loss in case of multiple clients attempting to change
+the simulation details.
+
+However, the service supports the special ETag value `*`, that can be used
+to ignore any change happened and overwrite the existing simulation.  Note
+that this is meant to be used only when data loss is acceptable, e.g.
+during development sessions and in test environments.
+
+## Deleting a simulation
+
+Simulations can be deleted using the DELETE method.
+
+```
+DELETE /v1/simulations/1
+```

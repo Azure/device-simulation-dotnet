@@ -15,11 +15,13 @@
             "cargotemperature": 38.0,
             "cargotemperature_unit": "F"
         },
-        "Script": {
-            "Type": "javascript",
-            "Path": "truck-01-state.js",
-            "Interval": "00:00:05"
-        }
+        "Interval": "00:00:10",
+        "Scripts": [
+            {
+                "Type": "javascript",
+                "Path": "truck-01-state.js"
+            }
+        ]
     },
     "Telemetry": [
         {

@@ -4,10 +4,10 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers
 {
@@ -34,7 +34,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         [HttpGet("{id}")]
         public async Task<SimulationApiModel> GetAsync(string id)
         {
-            return new SimulationApiModel(await this.simulationsService.GetAsync(id));
+            return SimulationApiModel.FromServiceModel(await this.simulationsService.GetAsync(id));
         }
 
         [HttpPost]
@@ -42,6 +42,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromBody] SimulationApiModel simulation,
             [FromQuery(Name = "template")] string template = "")
         {
+            simulation?.ValidateInputRequest(this.log);
+
             if (simulation == null)
             {
                 if (string.IsNullOrEmpty(template))
@@ -53,8 +55,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 simulation = new SimulationApiModel();
             }
 
-            return new SimulationApiModel(
-                await this.simulationsService.InsertAsync(this.GetServiceModel(simulation), template));
+            return SimulationApiModel.FromServiceModel(
+                await this.simulationsService.InsertAsync(simulation.ToServiceModel(), template));
         }
 
         [HttpPut("{id}")]
@@ -62,14 +64,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromBody] SimulationApiModel simulation,
             string id = "")
         {
+            simulation?.ValidateInputRequest(this.log);
+
             if (simulation == null)
             {
                 this.log.Warn("No data or invalid data provided", () => new { simulation });
                 throw new BadRequestException("No data or invalid data provided.");
             }
 
-            return new SimulationApiModel(
-                await this.simulationsService.UpsertAsync(this.GetServiceModel(simulation, id)));
+            return SimulationApiModel.FromServiceModel(
+                await this.simulationsService.UpsertAsync(simulation.ToServiceModel(id)));
         }
 
         [HttpPatch("{id}")]
@@ -83,7 +87,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data or invalid data provided");
             }
 
-            return new SimulationApiModel(
+            return SimulationApiModel.FromServiceModel(
                 await this.simulationsService.MergeAsync(patch.ToServiceModel(id)));
         }
 
@@ -91,24 +95,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         public async Task DeleteAsync(string id)
         {
             await this.simulationsService.DeleteAsync(id);
-        }
-
-        private Simulation GetServiceModel(SimulationApiModel simulation, string id = "")
-        {
-            try
-            {
-                return simulation.ToServiceModel(id);
-            }
-            catch (InvalidSimulationSchedulingException e)
-            {
-                this.log.Error("Invalid simulation start/end time", () => new { simulation, e });
-                throw new BadRequestException("Invalid start/end time", e);
-            }
-            catch (InvalidDateFormatException e)
-            {
-                this.log.Error("Invalid date format", () => new { simulation, e });
-                throw new BadRequestException("Invalid date format", e);
-            }
         }
     }
 }

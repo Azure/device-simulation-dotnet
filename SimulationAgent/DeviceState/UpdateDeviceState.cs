@@ -61,10 +61,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
 
                 lock (this.context.DeviceState)
                 {
-                    this.context.DeviceState = this.scriptInterpreter.Invoke(
-                        this.deviceModel.Simulation.Script,
-                        scriptContext,
-                        this.context.DeviceState);
+                    foreach (var script in this.deviceModel.Simulation.Scripts)
+                    {
+                        this.context.DeviceState = this.scriptInterpreter.Invoke(
+                            script,
+                            scriptContext,
+                            this.context.DeviceState);
+                    }
                 }
 
                 this.log.Debug("New device telemetry data calculated", () => new { this.deviceId, deviceState = this.context.DeviceState });
