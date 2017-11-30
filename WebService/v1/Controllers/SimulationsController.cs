@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
@@ -43,6 +42,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromBody] SimulationApiModel simulation,
             [FromQuery(Name = "template")] string template = "")
         {
+            simulation?.ValidateInputRequest(this.log);
+
             if (simulation == null)
             {
                 if (string.IsNullOrEmpty(template))
@@ -55,7 +56,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             return SimulationApiModel.FromServiceModel(
-                await this.simulationsService.InsertAsync(this.GetServiceModel(simulation), template));
+                await this.simulationsService.InsertAsync(simulation.ToServiceModel(), template));
         }
 
         [HttpPut("{id}")]
@@ -63,6 +64,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromBody] SimulationApiModel simulation,
             string id = "")
         {
+            simulation?.ValidateInputRequest(this.log);
+
             if (simulation == null)
             {
                 this.log.Warn("No data or invalid data provided", () => new { simulation });
@@ -70,7 +73,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             return SimulationApiModel.FromServiceModel(
-                await this.simulationsService.UpsertAsync(this.GetServiceModel(simulation, id)));
+                await this.simulationsService.UpsertAsync(simulation.ToServiceModel(id)));
         }
 
         [HttpPatch("{id}")]
@@ -92,24 +95,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         public async Task DeleteAsync(string id)
         {
             await this.simulationsService.DeleteAsync(id);
-        }
-
-        private Simulation GetServiceModel(SimulationApiModel simulation, string id = "")
-        {
-            try
-            {
-                return simulation.ToServiceModel(id);
-            }
-            catch (InvalidSimulationSchedulingException e)
-            {
-                this.log.Error("Invalid simulation start/end time", () => new { simulation, e });
-                throw new BadRequestException("Invalid start/end time", e);
-            }
-            catch (InvalidDateFormatException e)
-            {
-                this.log.Error("Invalid date format", () => new { simulation, e });
-                throw new BadRequestException("Invalid date format", e);
-            }
         }
     }
 }
