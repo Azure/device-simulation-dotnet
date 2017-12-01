@@ -78,6 +78,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         public class DeviceModelSimulationOverride
         {
+            // Optional, used to customize the initial state of the device
+            public Dictionary<string,object> InitialState { get; set; }
+
             // Optional, used to customize the device state update interval
             public TimeSpan? Interval { get; set; }
 
@@ -89,6 +92,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
             public DeviceModelSimulationOverride()
             {
+                this.InitialState = null;
                 this.Interval = null;
                 this.Scripts = null;
             }

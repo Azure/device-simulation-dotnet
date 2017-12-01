@@ -12,6 +12,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
     // Avoid subclassing <DeviceModelSimulation> to exclude unused fields and different default values
     public class DeviceModelSimulationOverride
     {
+        // Optional, used to customize the initial state of the device
+        [JsonProperty(PropertyName = "InitialState", NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, object> InitialState { get; set; }
+
         // Optional, used to customize the device state update interval
         [JsonProperty(PropertyName = "Interval", NullValueHandling = NullValueHandling.Ignore)]
         public string Interval { get; set; }
@@ -26,6 +30,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         // Default constructor used by web service requests
         public DeviceModelSimulationOverride()
         {
+            this.InitialState = null;
             this.Interval = null;
             this.Scripts = null;
         }
@@ -35,7 +40,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         {
             if (this.IsEmpty()) return null;
 
-            var result = new Simulation.DeviceModelSimulationOverride();
+            var result = new Simulation.DeviceModelSimulationOverride
+            {
+                InitialState = this.InitialState
+            };
 
             var scripts = this.Scripts?.Where(x => x != null && !x.IsEmpty()).ToList();
             if (scripts?.Count > 0)
@@ -58,6 +66,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
             return new DeviceModelSimulationOverride
             {
+                InitialState = value.InitialState,
                 Interval = value.Interval?.ToString("c"),
                 Scripts = DeviceModelSimulationScriptOverride.FromServiceModel(value.Scripts)
             };
