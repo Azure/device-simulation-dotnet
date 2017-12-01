@@ -196,6 +196,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             string testDeviceId = "test-device-creation" + DateTime.UtcNow.ToFileTimeUtc();
             var device = new Device(testDeviceId);
 
+            // To test permissions, try to create a test device.
             try
             {
                 await registryManager.AddDeviceAsync(device);
@@ -209,18 +210,29 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 throw new IotHubConnectionException(message, e);
             }
 
-            try
+            // Delete the test device that was created.
+            // If test device deletion fails, retry. Throw if unsuccessful.
+            int deleteRetryCount = 3;
+            Device response;
+            do
             {
-                await registryManager.RemoveDeviceAsync(testDeviceId);
-            }
-            catch (Exception e)
-            {
-                string message = "Could not delete test device from IotHub. Device Id: " + testDeviceId;
-                this.log.Error(message, () => new { testDeviceId });
-                throw new IotHubConnectionException(message, e);
-            }
+                deleteRetryCount--;
 
-            var response = await registryManager.GetDeviceAsync(testDeviceId);
+                try
+                {
+                    await registryManager.RemoveDeviceAsync(testDeviceId);
+                }
+                catch (Exception e)
+                {
+                    string message = "Could not delete test device from IotHub. Device Id: " + testDeviceId;
+                    this.log.Error(message, () => new { testDeviceId });
+                    throw new IotHubConnectionException(message, e);
+                }
+
+                response = await registryManager.GetDeviceAsync(testDeviceId);
+
+            } while (response != null && deleteRetryCount > 0);
+
             if (response != null)
             {
                 string message = "Could not delete test device from IotHub. Device Id: " + testDeviceId;
