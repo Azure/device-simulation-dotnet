@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel
 {
     // SEE: <DeviceModelApiModel> for the original fields being overridden
+    // Avoid subclassing <DeviceModelApiModel> to exclude unused fields and different default values
     public class DeviceModelApiModelOverride
     {
         // Optional field, used to customize the scripts which update the device state

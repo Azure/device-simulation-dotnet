@@ -10,19 +10,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
     public class DeviceModelSimulation
     {
         [JsonProperty(PropertyName = "InitialState")]
-        public Dictionary<string, object> Initial { get; set; }
+        public Dictionary<string, object> InitialState { get; set; }
 
         [JsonProperty(PropertyName = "Interval", NullValueHandling = NullValueHandling.Ignore)]
         public string Interval { get; set; }
 
         [JsonProperty(PropertyName = "Scripts")]
-        public List<DeviceModelSimulationScript> SimulationScripts { get; set; }
+        public List<DeviceModelSimulationScript> Scripts { get; set; }
 
         public DeviceModelSimulation()
         {
-            this.Initial = new Dictionary<string, object>();
+            this.InitialState = new Dictionary<string, object>();
             this.Interval = null;
-            this.SimulationScripts = new List<DeviceModelSimulationScript>();
+            this.Scripts = new List<DeviceModelSimulationScript>();
         }
 
         // Map service model to API model
@@ -32,9 +32,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
 
             return new DeviceModelSimulation
             {
-                Initial = value.InitialState,
+                InitialState = value.InitialState,
                 Interval = value.Interval.ToString("c"),
-                SimulationScripts = value.Scripts.Select(DeviceModelSimulationScript.FromServiceModel).Where(x => x != null).ToList()
+                Scripts = value.Scripts.Select(DeviceModelSimulationScript.FromServiceModel).Where(x => x != null).ToList()
             };
         }
     }
