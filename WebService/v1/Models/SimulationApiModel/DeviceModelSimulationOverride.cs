@@ -36,7 +36,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
             var result = new Simulation.DeviceModelSimulationOverride();
 
-            if ((this.SimulationScripts?.Where(x => x != null && !x.IsEmpty())).Any())
+            var scripts = this.SimulationScripts?.Where(x => x != null && !x.IsEmpty()).ToList();
+            if (scripts?.Count > 0)
             {
                 result.SimulationScripts = this.SimulationScripts.Select(x => x.ToServiceModel()).ToList();
             }

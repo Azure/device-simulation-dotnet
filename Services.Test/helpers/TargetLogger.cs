@@ -20,6 +20,8 @@ namespace Services.Test.helpers
         }
 
         public LogLevel LogLevel { get; }
+        public bool DebugIsEnabled { get; }
+        public bool InfoIsEnabled { get; }
 
         public string FormatDate(long time)
         {
