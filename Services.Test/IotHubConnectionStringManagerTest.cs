@@ -27,7 +27,7 @@ namespace Services.Test
         public async System.Threading.Tasks.Task ItThrowsOnInvalidConnStringFormat()
         {
             // Assert
-            await Assert.ThrowsAsync<InvalidIotHubConnectionStringFormatException>(() => this.target.RedactAndStore("foobar"));
+            await Assert.ThrowsAsync<InvalidIotHubConnectionStringFormatException>(() => this.target.RedactAndStoreAsync("foobar"));
         }
     }
 }

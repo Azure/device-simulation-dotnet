@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
@@ -15,13 +16,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
     public class SimulationsController : Controller
     {
         private readonly ISimulations simulationsService;
+        private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly ILogger log;
 
         public SimulationsController(
             ISimulations simulationsService,
+            IIotHubConnectionStringManager connectionStringManager,
             ILogger logger)
         {
             this.simulationsService = simulationsService;
+            this.connectionStringManager = connectionStringManager;
             this.log = logger;
         }
 
@@ -42,7 +46,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromBody] SimulationApiModel simulation,
             [FromQuery(Name = "template")] string template = "")
         {
-            simulation?.ValidateInputRequest(this.log);
+            simulation?.ValidateInputRequest(this.log, this.connectionStringManager);
 
             if (simulation == null)
             {
@@ -64,7 +68,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromBody] SimulationApiModel simulation,
             string id = "")
         {
-            simulation?.ValidateInputRequest(this.log);
+            simulation?.ValidateInputRequest(this.log, this.connectionStringManager);
 
             if (simulation == null)
             {

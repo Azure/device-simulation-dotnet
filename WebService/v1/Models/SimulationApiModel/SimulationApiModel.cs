@@ -120,7 +120,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             return result;
         }
 
-        public async Task ValidateInputRequest(ILogger log)
+        public async Task ValidateInputRequest(ILogger log, IIotHubConnectionStringManager connectionStringManager)
         {
             const string NO_DEVICE_MODEL = "The simulation doesn't contain any device model";
             const string ZERO_DEVICES = "The simulation has zero devices";
@@ -168,7 +168,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 throw new BadRequestException(INVALID_DATE, e);
             }
 
-            await IotHubConnectionStringManager.ValidateConnectionString(this.IotHub.ConnectionString);
+            await connectionStringManager.ValidateConnectionStringAsync(this.IotHub.ConnectionString);
         }
     }
 }
