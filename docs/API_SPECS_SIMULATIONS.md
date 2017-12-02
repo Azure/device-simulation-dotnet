@@ -135,9 +135,11 @@ configuration file.
 To use a different Azure IoT Hub, it is possible to set a custom
 connection string for the IoT Hub to connect to, in the PUT request.
 
+Note: the SharedAccessKeyName must be either "iothubowner" or a custom policy with registry read/write and service permissions.
+
 Example value in the JSON payload: 
 ```
-"ConnectionString": "HostName=iothub-abcde.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=<valid iothub key>"
+"ConnectionString": "HostName=<iothub name>.azure-devices.net;SharedAccessKeyName=<iothubowner | custom policy>;SharedAccessKey=<valid iothub key>"
 ```
 
 When using a custom connection string, the web service response will
@@ -152,7 +154,6 @@ Example:
 
 To switch back to the default Azure IoT Hub stored in the configuration file,
 use the value "default" as the connection string.
-
 
 ```
 PUT /v1/simulations/1
