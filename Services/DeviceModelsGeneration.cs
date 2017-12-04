@@ -34,7 +34,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.UpdateDeviceModelSimulationScriptsCount(overrideInfo.Simulation?.Scripts, result);
             this.UpdateDeviceModelTelemetryCount(overrideInfo.Telemetry, result);
 
-            this.SetSimulationInitialState(overrideInfo.Simulation.InitialState, result);
+            this.SetSimulationInitialState(overrideInfo.Simulation?.InitialState, result);
             this.SetSimulationInterval(overrideInfo.Simulation?.Interval, result);
             this.SetSimulationScripts(overrideInfo.Simulation?.Scripts, result);
             this.SetTelemetry(overrideInfo.Telemetry, result);
