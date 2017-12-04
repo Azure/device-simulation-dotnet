@@ -28,6 +28,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // ID prefix of the simulated devices, used with Azure IoT Hub
         private const string DEVICE_ID_PREFIX = "Simulated.";
 
+        // ID used for custom device models, where the list of sensors is provided by the user
+        private const string CUSTOM_DEVICE_MODEL_ID = "custom";
+
         // Application logger
         private readonly ILogger log;
 
@@ -69,11 +72,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         // Flag signaling whether the simulation has started and is running (to avoid contentions)
         private bool running;
+        private IDeviceModelsGeneration deviceModelsOverriding;
 
         public SimulationRunner(
             IRateLimitingConfig ratingConfig,
             ILogger logger,
             IDeviceModels deviceModels,
+            IDeviceModelsGeneration deviceModelsOverriding,
             IDevices devices,
             IFactory factory)
         {
@@ -81,6 +86,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             this.log = logger;
             this.deviceModels = deviceModels;
+            this.deviceModelsOverriding = deviceModelsOverriding;
             this.devices = devices;
             this.factory = factory;
 
@@ -129,22 +135,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                 foreach (var model in models)
                 {
-                    // Load device model from disk and merge with overrides
-                    DeviceModel deviceModel;
                     try
                     {
-                        deviceModel = this.deviceModels.OverrideDeviceModel(
-                            this.deviceModels.Get(model.Id), model.Override);
+                        // Load device model from disk and merge with overrides
+                        var deviceModel = this.GetDeviceModel(model.Id, model.Override);
+
+                        for (var i = 0; i < model.Count; i++)
+                        {
+                            this.CreateActorsForDevice(deviceModel, i, total);
+                        }
                     }
                     catch (ResourceNotFoundException)
                     {
                         this.log.Error("The device model doesn't exist", () => new { model.Id });
-                        continue;
                     }
-
-                    for (var i = 0; i < model.Count; i++)
+                    catch (Exception e)
                     {
-                        this.CreateActorsForDevice(deviceModel, i, total);
+                        this.log.Error("Unexpected error preparing the device model", () => new { model.Id, e });
                     }
                 }
 
@@ -198,6 +205,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.deviceConnectionActors.Clear();
                 this.starting = false;
             }
+        }
+
+        private DeviceModel GetDeviceModel(string id, Services.Models.Simulation.DeviceModelOverride overrides)
+        {
+            var modelDef = new DeviceModel();
+            if (id.ToLowerInvariant() != CUSTOM_DEVICE_MODEL_ID)
+            {
+                modelDef = this.deviceModels.Get(id);
+            }
+            else
+            {
+                modelDef.Id = CUSTOM_DEVICE_MODEL_ID;
+                modelDef.Name = CUSTOM_DEVICE_MODEL_ID;
+                modelDef.Description = "Simulated device with custom list of sensors";
+            }
+
+            return this.deviceModelsOverriding.Generate(modelDef, overrides);
         }
 
         private void UpdateDevicesStateThread()

@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel
 {
     // SEE: <DeviceModelApiModel.DeviceModelTelemetry> for the original fields being overridden
+    // Avoid subclassing <DeviceModelTelemetry> to exclude unused fields and different default values
     public class DeviceModelTelemetryOverride
     {
         // Optional field, used to customize the telemetry interval

@@ -101,7 +101,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             var whitelist = new HashSet<string>();
             foreach (var k in values) blacklist.Add(k);
 
-            Enum.TryParse(configData.GetString(LOGGING_LOGLEVEL_KEY, Services.Diagnostics.LoggingConfig.DEFAULT_LOGLEVEL.ToString()), out LogLevel logLevel);
+            Enum.TryParse(configData.GetString(LOGGING_LOGLEVEL_KEY, Services.Diagnostics.LoggingConfig.DEFAULT_LOGLEVEL.ToString()), true, out LogLevel logLevel);
             var result = new LoggingConfig
             {
                 LogLevel = logLevel,

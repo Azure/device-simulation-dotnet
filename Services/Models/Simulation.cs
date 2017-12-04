@@ -78,6 +78,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         public class DeviceModelSimulationOverride
         {
+            // Optional, used to customize the initial state of the device
+            public Dictionary<string,object> InitialState { get; set; }
+
             // Optional, used to customize the device state update interval
             public TimeSpan? Interval { get; set; }
 
@@ -85,12 +88,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             // When non empty, the content is merged with (overwriting) the scripts in the device model definition
             // If this list is shorter than the original definition, elements in excess are removed
             // i.e. to keep all the original scripts, there must be an entry for each of them
-            public IList<DeviceModelSimulationScriptOverride> SimulationScripts { get; set; }
+            public IList<DeviceModelSimulationScriptOverride> Scripts { get; set; }
 
             public DeviceModelSimulationOverride()
             {
+                this.InitialState = null;
                 this.Interval = null;
-                this.SimulationScripts = null;
+                this.Scripts = null;
             }
         }
 
@@ -138,10 +142,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             public string Name { get; set; }
 
             // Optional, used to change the message format, e.g. from JSON to base64
-            public string Format { get; set; }
+            public DeviceModel.DeviceModelMessageSchemaFormat? Format { get; set; }
 
             // Optional, used to replace the list of fields in the schema (the content is not merged)
-            public IDictionary<string, string> Fields { get; set; }
+            public IDictionary<string, DeviceModel.DeviceModelMessageSchemaType> Fields { get; set; }
 
             public DeviceModelTelemetryMessageSchemaOverride()
             {

@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json;
@@ -7,6 +8,7 @@ using Newtonsoft.Json;
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel
 {
     // SEE: <DeviceModelApiModel.DeviceModelTelemetryMessageSchema> for the original fields being overridden
+    // Avoid subclassing <DeviceModelTelemetryMessageSchema> to exclude unused fields and different default values
     public class DeviceModelTelemetryMessageSchemaOverride
     {
         // Optional, used to customize the name of the message schema
@@ -34,12 +36,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         {
             if (this.IsEmpty()) return null;
 
-            return new Simulation.DeviceModelTelemetryMessageSchemaOverride
+            var result = new Simulation.DeviceModelTelemetryMessageSchemaOverride
             {
                 Name = !string.IsNullOrEmpty(this.Name) ? this.Name : null,
-                Format = !string.IsNullOrEmpty(this.Format) ? this.Format : null,
-                Fields = this.Fields
+                Format = null,
+                Fields = null
             };
+
+            // Map the list of fields
+            if (this.Fields != null && this.Fields.Count > 0)
+            {
+                result.Fields = new Dictionary<string, DeviceModel.DeviceModelMessageSchemaType>();
+                foreach (KeyValuePair<string, string> field in this.Fields)
+                {
+                    var fieldType = Enum.TryParse(field.Value, true, out DeviceModel.DeviceModelMessageSchemaType schemaType)
+                        ? schemaType
+                        : DeviceModel.DeviceModelMessageSchemaType.Object;
+                    result.Fields.Add(field.Key, fieldType);
+                }
+            }
+
+            // Map the message format
+            if (!string.IsNullOrEmpty(this.Format)
+                && Enum.TryParse(this.Format, true, out DeviceModel.DeviceModelMessageSchemaFormat format))
+            {
+                result.Format = format;
+            }
+
+            return result;
         }
 
         // Map service model to API model
@@ -47,12 +71,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         {
             if (value == null) return null;
 
-            return new DeviceModelTelemetryMessageSchemaOverride
+            var result = new DeviceModelTelemetryMessageSchemaOverride
             {
                 Name = !string.IsNullOrEmpty(value.Name) ? value.Name : null,
-                Format = !string.IsNullOrEmpty(value.Format) ? value.Format : null,
-                Fields = value.Fields
+                Format = value.Format?.ToString()
             };
+
+            if (value.Fields != null && value.Fields.Count > 0)
+            {
+                result.Fields = new Dictionary<string, string>();
+                foreach (var field in value.Fields)
+                {
+                    result.Fields.Add(field.Key, field.Value.ToString());
+                }
+            }
+
+            return result;
         }
 
         public bool IsEmpty()

@@ -133,6 +133,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
             // put telemetry properties in state
             Dictionary<string, object> state = CloneObject(deviceModel.Simulation.InitialState);
 
+            // Ensure the state contains the "online" key
+            if (!state.ContainsKey("online"))
+            {
+                state["online"] = true;
+            }
+
             // TODO: think about whether these should be pulled from the hub instead of disk
             // (the device model); i.e. what if someone has modified the hub twin directly
             // put reported properties from device model into state

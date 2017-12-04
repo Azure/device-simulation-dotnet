@@ -9,8 +9,13 @@ using Newtonsoft.Json;
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel
 {
     // SEE: <DeviceModelApiModel.DeviceModelSimulation> for the original fields being overridden
+    // Avoid subclassing <DeviceModelSimulation> to exclude unused fields and different default values
     public class DeviceModelSimulationOverride
     {
+        // Optional, used to customize the initial state of the device
+        [JsonProperty(PropertyName = "InitialState", NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, object> InitialState { get; set; }
+
         // Optional, used to customize the device state update interval
         [JsonProperty(PropertyName = "Interval", NullValueHandling = NullValueHandling.Ignore)]
         public string Interval { get; set; }
@@ -20,13 +25,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         // If this list is shorter than the original definition, elements in excess are removed
         // i.e. to keep all the original scripts, there must be an entry for each of them
         [JsonProperty(PropertyName = "Scripts", NullValueHandling = NullValueHandling.Ignore)]
-        public IList<DeviceModelSimulationScriptOverride> SimulationScripts { get; set; }
+        public IList<DeviceModelSimulationScriptOverride> Scripts { get; set; }
 
         // Default constructor used by web service requests
         public DeviceModelSimulationOverride()
         {
+            this.InitialState = null;
             this.Interval = null;
-            this.SimulationScripts = null;
+            this.Scripts = null;
         }
 
         // Map API model to service model
@@ -34,12 +40,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         {
             if (this.IsEmpty()) return null;
 
-            var result = new Simulation.DeviceModelSimulationOverride();
+            var result = new Simulation.DeviceModelSimulationOverride
+            {
+                InitialState = this.InitialState
+            };
 
-            var scripts = this.SimulationScripts?.Where(x => x != null && !x.IsEmpty()).ToList();
+            var scripts = this.Scripts?.Where(x => x != null && !x.IsEmpty()).ToList();
             if (scripts?.Count > 0)
             {
-                result.SimulationScripts = this.SimulationScripts.Select(x => x.ToServiceModel()).ToList();
+                result.Scripts = this.Scripts.Select(x => x.ToServiceModel()).ToList();
             }
 
             if (!string.IsNullOrEmpty(this.Interval))
@@ -57,15 +66,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
             return new DeviceModelSimulationOverride
             {
+                InitialState = value.InitialState,
                 Interval = value.Interval?.ToString("c"),
-                SimulationScripts = DeviceModelSimulationScriptOverride.FromServiceModel(value.SimulationScripts)
+                Scripts = DeviceModelSimulationScriptOverride.FromServiceModel(value.Scripts)
             };
         }
 
         public bool IsEmpty()
         {
             return string.IsNullOrEmpty(this.Interval)
-                   && (this.SimulationScripts == null || this.SimulationScripts.Count == 0);
+                   && (this.Scripts == null || this.Scripts.Count == 0);
         }
     }
 }

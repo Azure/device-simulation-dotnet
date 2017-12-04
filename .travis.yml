@@ -1,16 +1,12 @@
 language: csharp
 mono: none
-dotnet: 2.0.0
+dotnet: 2.0.3
 sudo: false
 cache:
   directories:
   - "$HOME/.nuget/"
 before_install:
 - set -e
-addons:
-  apt:
-    packages:
-    - dotnet-sharedframework-microsoft.netcore.app-1.1.2
 script:
 - "bash ./$CODEBASE/scripts/build"
 notifications:
