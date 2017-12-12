@@ -1,4 +1,4 @@
-# Environment variables
+# Environment Variables
 
 The service requires some mandatory environment settings and supports some
 customizations via optional environment variables.
@@ -7,16 +7,15 @@ Depending on the OS and how the microservice is run, environment variables
 can be defined in multiple ways. See below how to set environment variables
 in the different contexts.
 
-# List of Environment Variables
+## Mandatory settings
 
-## Mandatory
 * `PCS_IOTHUB_CONNSTRING` [mandatory]: contains the full connection string
   required to connect devices and send telemetry. The value, even if empty,
   is required.
 * `PCS_STORAGEADAPTER_WEBSERVICE_URL` [mandatory]: the URL where the storage
   adapter service is available, e.g. `http://127.0.0.1:9022/v1`.
 
-## Optional
+## Optional settings
 
 * `LOG_LEVEL` [optional, default `Warn`]: the amount and level of logging.
   Supported values are `Debug`, `Info`, `Warn`, `Error`.
@@ -27,7 +26,8 @@ in the different contexts.
 * `PCS_CORS_WHITELIST` [optional, default empty]: the web service cross-origin
   request settings. By default, cross origin requests are not allowed.
   Use `{ 'origins': ['*'], 'methods': ['*'], 'headers': ['*'] }` to allow
-  any request while developing.  In Production CORS is not required.
+  any request during development.  In Production CORS is not required, and
+  should be used very carefully if enabled.
 * `PCS_AUTH_ISSUER` [optional, default empty]: the OAuth2 JWT tokens
   issuer, e.g. `https://sts.windows.net/fa01ade2-2365-4dd1-a084-a6ef027090fc/`.
 * `PCS_AUTH_AUDIENCE` [optional, default empty]: the OAuth2 JWT tokens
