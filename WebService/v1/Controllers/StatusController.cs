@@ -17,24 +17,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
     [Route(Version.PATH + "/[controller]"), ExceptionsFilter]
     public sealed class StatusController : Controller
     {
+        private const string JSON_TRUE = "true";
+        private const string JSON_FALSE = "false";
+
         private readonly IDevices devices;
         private readonly IStorageAdapterClient storage;
         private readonly ISimulations simulations;
         private readonly ILogger log;
         private readonly IServicesConfig servicesConfig;
+        private readonly IDeploymentConfig deploymentConfig;
 
         public StatusController(
             IDevices devices,
             IStorageAdapterClient storage,
             ISimulations simulations,
             ILogger logger,
-            IServicesConfig servicesConfig)
+            IServicesConfig servicesConfig,
+            IDeploymentConfig deploymentConfig)
         {
             this.devices = devices;
             this.storage = storage;
             this.simulations = simulations;
             this.log = logger;
             this.servicesConfig = servicesConfig;
+            this.deploymentConfig = deploymentConfig;
         }
 
         [HttpGet]
@@ -56,9 +62,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
             // Prepare response
             var result = new StatusApiModel(statusIsOk, statusMsg);
+            var isHubConfigured = this.IsHubConnectionStringConfigured();
 
-            result.Properties.Add("SimulationRunning", simulationIsRunning.HasValue ? (simulationIsRunning.Value ? "true" : "false") : "unknown");
-            result.Properties.Add("IoTHubConnectionStringConfigured", this.IsHubConnectionStringConfigured() ? "true" : "false");
+            result.Properties.Add("SimulationRunning",
+                simulationIsRunning.HasValue
+                    ? (simulationIsRunning.Value ? JSON_TRUE : JSON_FALSE)
+                    : "unknown");
+            result.Properties.Add("IoTHubConnectionStringConfigured",
+                isHubConfigured
+                    ? JSON_TRUE
+                    : JSON_FALSE);
+
+            if (isHubConfigured)
+            {
+                result.Properties.Add("IoTHubMetricsUrl", this.GetIoTHubMetricsUrl());
+            }
 
             result.Dependencies.Add("IoTHub", iotHubStatus?.Item2);
             result.Dependencies.Add("Storage", storageStatus?.Item2);
@@ -139,6 +157,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                     && cs.Contains("hostname=")
                     && cs.Contains("sharedaccesskeyname=")
                     && cs.Contains("sharedaccesskey="));
+        }
+
+        private string GetIoTHubMetricsUrl()
+        {
+            return $"https://portal.azure.com/{this.deploymentConfig.AzureSubscriptionDomain}" +
+                   $"#resource/subscriptions/{this.deploymentConfig.AzureSubscriptionId}" +
+                   $"/resourceGroups/{this.deploymentConfig.AzureResourceGroup}" +
+                   $"/providers/Microsoft.Devices/IotHubs/{this.deploymentConfig.AzureIothubName}/Metrics";
         }
     }
 }

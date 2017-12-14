@@ -73,6 +73,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterInstance(config.LoggingConfig).As<ILoggingConfig>().SingleInstance();
             builder.RegisterInstance(config.ServicesConfig).As<IServicesConfig>().SingleInstance();
             builder.RegisterInstance(config.RateLimitingConfig).As<IRateLimitingConfig>().SingleInstance();
+            builder.RegisterInstance(config.DeploymentConfig).As<IDeploymentConfig>().SingleInstance();
 
             // Instantiate only one logger
             var logger = new Logger(Uptime.ProcessId, config.LoggingConfig);
