@@ -32,6 +32,25 @@ in the different contexts.
   issuer, e.g. `https://sts.windows.net/fa01ade2-2365-4dd1-a084-a6ef027090fc/`.
 * `PCS_AUTH_AUDIENCE` [optional, default empty]: the OAuth2 JWT tokens
   audience, e.g. `2814e709-6a0e-4861-9594-d3b6e2b81331`.
+* `PCS_SUBSCRIPTION_DOMAIN` [optional, default empty]: Azure Active
+  Directory Domain of the Azure subscription where the Azure IoT Hub is
+  deployed. The value is optional because the service can be deployed without
+  a hub. The value is used to create a URL taking to the IoT Hub metrics in
+  the Azure portal.
+* `PCS_SUBSCRIPTION_ID` [optional, default empty]: # Azure subscription
+   where the Azure IoT Hub is deployed, e.g. "mytest.onmicrosoft.com". The
+   value is optional because the service can be deployed without a hub.
+   The info is used to create a URL taking to the IoT Hub metrics in the
+   Azure portal.
+* `PCS_RESOURCE_GROUP` [optional, default empty]: # Azure resource group
+   where the Azure IoT Hub is deployed, e.g. "abcd1234-5678-1234-abcd-abcd5678abcd".
+   The value is optional because the service can be deployed without a hub.
+   The info is used to create a URL taking to the IoT Hub metrics in the
+   Azure portal.
+* `PCS_IOHUB_NAME` [optional, default empty]: # IoT Hub name, e.g. "mytest3507e89".
+   The value is optional because the service can be deployed without a hub.
+   The info is used to create a URL taking to the IoT Hub metrics in the
+   Azure portal.
 
 # How to define Environment Variables
 

@@ -17,11 +17,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface IDevices
     {
         /// <summary>
-        /// Ping the registry to see if the connection is healthy
-        /// </summary>
-        Task<Tuple<bool, string>> PingRegistryAsync();
-
-        /// <summary>
         /// Get a client for the device
         /// </summary>
         IDeviceClient GetClient(Device device, IoTHubProtocol protocol);
@@ -73,25 +68,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.twinReadsWritesEnabled = config.TwinReadWriteEnabled;
             this.registryCount = -1;
             this.setupDone = false;
-        }
-
-        /// <summary>
-        /// Ping the registry to see if the connection is healthy
-        /// </summary>
-        public async Task<Tuple<bool, string>> PingRegistryAsync()
-        {
-            this.SetupHub();
-
-            try
-            {
-                await this.GetRegistry().GetDeviceAsync("healthcheck");
-                return new Tuple<bool, string>(true, "OK");
-            }
-            catch (Exception e)
-            {
-                this.log.Error("Device registry test failed", () => new { e });
-                return new Tuple<bool, string>(false, e.Message);
-            }
         }
 
         /// <summary>

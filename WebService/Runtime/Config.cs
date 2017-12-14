@@ -28,6 +28,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
 
         // Simulation speed configuration
         IRateLimitingConfig RateLimitingConfig { get; }
+
+        // Deployment details
+        IDeploymentConfig DeploymentConfig { get; }
     }
 
     public class Config : IConfig
@@ -38,7 +41,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string DEVICE_MODELS_SCRIPTS_FOLDER_KEY = APPLICATION_KEY + "device_models_scripts_folder";
         private const string IOTHUB_DATA_FOLDER_KEY = APPLICATION_KEY + "iothub_data_folder";
         private const string IOTHUB_CONNSTRING_KEY = APPLICATION_KEY + "iothub_connstring";
-
         private const string TWIN_READ_WRITE_ENABLED_KEY = APPLICATION_KEY + "twin_read_write_enabled";
 
         private const string IOTHUB_LIMITS_KEY = APPLICATION_KEY + "RateLimits:";
@@ -74,11 +76,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string JWT_AUDIENCE_KEY = JWT_KEY + "audience";
         private const string JWT_CLOCK_SKEW_KEY = JWT_KEY + "clock_skew_seconds";
 
+        private const string DEPLOYMENT_KEY = APPLICATION_KEY + "Deployment:";
+        private const string AZURE_SUBSCRIPTION_DOMAIN = DEPLOYMENT_KEY + "azure_subscription_domain";
+        private const string AZURE_SUBSCRIPTION_ID = DEPLOYMENT_KEY + "azure_subscription_id";
+        private const string AZURE_RESOURCE_GROUP = DEPLOYMENT_KEY + "azure_resource_group";
+        private const string AZURE_IOTHUB_NAME = DEPLOYMENT_KEY + "azure_iothub_name";
+
         public int Port { get; }
         public ILoggingConfig LoggingConfig { get; set; }
         public IClientAuthConfig ClientAuthConfig { get; }
         public IServicesConfig ServicesConfig { get; }
         public IRateLimitingConfig RateLimitingConfig { get; set; }
+        public IDeploymentConfig DeploymentConfig { get; set; }
 
         public Config(IConfigData configData)
         {
@@ -87,6 +96,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             this.ServicesConfig = GetServicesConfig(configData);
             this.ClientAuthConfig = GetClientAuthConfig(configData);
             this.RateLimitingConfig = GetRateLimitingConfig(configData);
+            this.DeploymentConfig = GetDeploymentConfig(configData);
+        }
+
+        private static IDeploymentConfig GetDeploymentConfig(IConfigData configData)
+        {
+            return new DeploymentConfig
+            {
+                AzureSubscriptionDomain = configData.GetString(AZURE_SUBSCRIPTION_DOMAIN, "undefined.onmicrosoft.com"),
+                AzureSubscriptionId = configData.GetString(AZURE_SUBSCRIPTION_ID, Guid.Empty.ToString()),
+                AzureResourceGroup = configData.GetString(AZURE_RESOURCE_GROUP, "undefined"),
+                AzureIothubName = configData.GetString(AZURE_IOTHUB_NAME, "undefined")
+            };
         }
 
         private static ILoggingConfig GetLogConfig(IConfigData configData)
