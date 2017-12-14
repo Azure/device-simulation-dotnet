@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
@@ -75,10 +76,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
             if (isHubConfigured)
             {
-                result.Properties.Add("IoTHubMetricsUrl", this.GetIoTHubMetricsUrl());
+                result.Properties.Add("PreprovisionedIoTHubMetricsUrl", this.GetIoTHubMetricsUrl());
             }
 
-            result.Dependencies.Add("IoTHub", iotHubStatus?.Item2);
+            result.Dependencies.Add("PreprovisionedIoTHub", iotHubStatus?.Item2);
             result.Dependencies.Add("Storage", storageStatus?.Item2);
 
             this.log.Info("Service status request", () => new { Healthy = statusIsOk, statusMsg, running = simulationIsRunning });
