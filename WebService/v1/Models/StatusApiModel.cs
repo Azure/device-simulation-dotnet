@@ -50,7 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             { "$uri", "/" + Version.PATH + "/status" }
         };
 
-        public StatusApiModel(bool isOk, string msg)
+        public void SetStatus(bool isOk, string msg)
         {
             this.Status = isOk ? "OK" : "ERROR";
             if (!string.IsNullOrEmpty(msg))

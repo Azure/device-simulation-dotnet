@@ -184,7 +184,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
             catch (Exception e)
             {
-                string message = "Could not read devices with IotHub connection " +
+                string message = "Could not read devices with the Iot Hub connection " +
                                  "string provided. Check that the policy for the key allows " +
                                  "`Registry Read/Write` and `Service Connect` permissions.";
                 this.log.Error(message, () => new { e });
@@ -207,7 +207,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
             catch (Exception e)
             {
-                string message = "Could not create devices with IotHub connection " +
+                string message = "Could not create devices with the Iot Hub connection " +
                                  "string provided. Check that the policy for the key allows " +
                                  "`Registry Read/Write` and `Service Connect` permissions.";
                 this.log.Error(message, () => new { e });
