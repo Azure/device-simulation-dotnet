@@ -17,7 +17,7 @@ in the different contexts.
 
 ## Optional settings
 
-* `LOG_LEVEL` [optional, default `Warn`]: the amount and level of logging.
+* `PCS_LOG_LEVEL` [optional, default `Warn`]: the amount and level of logging.
   Supported values are `Debug`, `Info`, `Warn`, `Error`.
 * `PCS_TWIN_READ_WRITE_ENABLED` [optional, default `True`]: whether the service
   reads and write the Device Twin.  Currently not used.
