@@ -16,37 +16,37 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface ISimulations
     {
         /// <summary>
-        /// Get list of simulations
+        /// Get list of simulations.
         /// </summary>
         Task<IList<Models.Simulation>> GetListAsync();
 
         /// <summary>
-        /// Get a simulation
+        /// Get a simulation.
         /// </summary>
         Task<Models.Simulation> GetAsync(string id);
 
         /// <summary>
-        /// Create a simulation
+        /// Create a simulation.
         /// </summary>
         Task<Models.Simulation> InsertAsync(Models.Simulation simulation, string template = "");
 
         /// <summary>
-        /// Create or Replace a simulation
+        /// Create or Replace a simulation.
         /// </summary>
         Task<Models.Simulation> UpsertAsync(Models.Simulation simulation);
 
         /// <summary>
-        /// Modify a simulation
+        /// Modify a simulation.
         /// </summary>
         Task<Models.Simulation> MergeAsync(SimulationPatch patch);
 
         /// <summary>
-        /// Delete a simulation and its devices
+        /// Delete a simulation and its devices.
         /// </summary>
         Task DeleteAsync(string id);
 
         /// <summary>
-        /// Get the ID of the devices in a simulation
+        /// Get the ID of the devices in a simulation.
         /// </summary>
         IEnumerable<string> GetDeviceIds(Models.Simulation simulation);
     }
@@ -78,7 +78,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
-        /// Get list of simulations
+        /// Get list of simulations.
         /// </summary>
         public async Task<IList<Models.Simulation>> GetListAsync()
         {
@@ -95,7 +95,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
-        /// Get a simulation
+        /// Get a simulation.
         /// </summary>
         public async Task<Models.Simulation> GetAsync(string id)
         {
@@ -106,7 +106,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
-        /// Create a simulation
+        /// Create a simulation.
         /// </summary>
         public async Task<Models.Simulation> InsertAsync(Models.Simulation simulation, string template = "")
         {
@@ -165,9 +165,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
-        /// Create or Replace a simulation
-        /// Upsert the simulation. The logic works under the assumption that
-        /// there is only one simulation with id "1".
+        /// Create or Replace a simulation.
+        /// The logic works under the assumption that there is only one simulation with id "1".
         /// </summary>
         public async Task<Models.Simulation> UpsertAsync(Models.Simulation simulation)
         {
@@ -229,7 +228,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
-        /// Modify a simulation
+        /// Modify a simulation.
         /// </summary>
         public async Task<Models.Simulation> MergeAsync(SimulationPatch patch)
         {
@@ -274,7 +273,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
-        /// Delete a simulation and its devices
+        /// Delete a simulation and its devices.
         /// </summary>
         public async Task DeleteAsync(string id)
         {
@@ -287,7 +286,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
-        /// Get the ID of the devices in a simulation
+        /// Get the ID of the devices in a simulation.
         /// </summary>
         public IEnumerable<string> GetDeviceIds(Models.Simulation simulation)
         {

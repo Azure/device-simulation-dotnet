@@ -68,7 +68,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // the simulation. When the simulation is running the registry is not used anymore.
         private const uint REGISTRY_LIMIT_REQUESTS = 1000;
 
-        // When working with batches, this is the max size
+        // When working with batches, this is the max size that the batch insert and delete APIs allow
         private const int REGISTRY_MAX_BATCH_SIZE = 100;
 
         // ID prefix of the simulated devices, used with Azure IoT Hub
@@ -233,7 +233,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     batch.Select(id => new Azure.Devices.Device(id)), CancellationToken.None);
 
                 this.log.Info("Devices batch created",
-                    () => new { result.IsSuccessful, result.Errors });
+                    () => new { batchNumber, result.IsSuccessful, result.Errors });
             }
         }
 
@@ -264,7 +264,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         cancellationToken: CancellationToken.None);
 
                     this.log.Info("Devices batch deleted",
-                        () => new { result.IsSuccessful, result.Errors });
+                        () => new { batchNumber, result.IsSuccessful, result.Errors });
                 }
             }
             catch (TooManyDevicesException error)
