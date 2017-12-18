@@ -124,6 +124,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             simulation.ETag = result.ETag;
 
+            await this.CreateDevicesAsync(simulation);
+
             return simulation;
         }
 
@@ -187,6 +189,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             // Return the new ETag provided by the storage
             simulation.ETag = result.ETag;
 
+            // If any, create the new devices
+            await this.CreateDevicesAsync(simulation);
+
             return simulation;
         }
 
@@ -229,6 +234,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             simulation.ETag = item.ETag;
 
+            // If any, create the new devices
+            await this.CreateDevicesAsync(simulation);
+
             return simulation;
         }
 
@@ -238,21 +246,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             await this.storage.DeleteAsync(STORAGE_COLLECTION, id);
         }
 
+        private async Task CreateDevicesAsync(Models.Simulation simulation)
+        {
+            if (simulation.Enabled)
+            {
+                var deviceIds = this.GetDeviceIds(simulation);
+                await this.devices.CreateListAsync(deviceIds);
+            }
+        }
+
         private async Task DeleteDevicesAsync(string simulationId)
         {
-            var deviceIds = new List<string>();
+            var deviceIds = this.GetDeviceIds(await this.GetAsync(simulationId));
+            await this.devices.DeleteListAsync(deviceIds);
+        }
 
-            // Load simulation
-            Models.Simulation simulation;
-            try
-            {
-                simulation = await this.GetAsync(simulationId);
-            }
-            catch (Exception e)
-            {
-                this.log.Error("Unable to fetch simulation", () => new { e });
-                throw;
-            }
+        private IEnumerable<string> GetDeviceIds(Models.Simulation simulation)
+        {
+            var deviceIds = new List<string>();
 
             // Calculate the device IDs used in the simulation
             var models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
@@ -264,8 +275,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
             }
 
-            // Delete devices
-            await this.devices.DeleteAsync(deviceIds);
+            return deviceIds;
         }
     }
 }

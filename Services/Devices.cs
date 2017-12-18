@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
+using Microsoft.Azure.Devices.Common.Exceptions;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -40,9 +41,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task AddTagAsync(string deviceId);
 
         /// <summary>
+        /// Create a list of devices
+        /// </summary>
+        Task CreateListAsync(IEnumerable<string> deviceIds);
+
+        /// <summary>
         /// Delete a list of devices
         /// </summary>
-        Task DeleteAsync(IEnumerable<string> deviceIds);
+        Task DeleteListAsync(IEnumerable<string> deviceIds);
 
         /// <summary> 
         /// Set the current IoT Hub using either the user provided one or the configuration settings 
@@ -61,6 +67,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // is used to recreate the registry manager instance every once in a while, while starting
         // the simulation. When the simulation is running the registry is not used anymore.
         private const uint REGISTRY_LIMIT_REQUESTS = 1000;
+
+        // When working with batches, this is the max size
+        private const int REGISTRY_MAX_BATCH_SIZE = 100;
 
         // ID prefix of the simulated devices, used with Azure IoT Hub
         private const string DEVICE_ID_PREFIX = "Simulated.";
@@ -191,18 +200,77 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
-        /// Delete a list of devices
+        /// Create a list of devices
         /// </summary>
-        public async Task DeleteAsync(IEnumerable<string> deviceIds)
+        public async Task CreateListAsync(IEnumerable<string> deviceIds)
         {
             this.SetupHub();
 
-            this.log.Info("Deleting devices", () => new { Count = deviceIds.Count() });
+            var batches = this.SplitArray(deviceIds.ToList(), REGISTRY_MAX_BATCH_SIZE).ToArray();
 
-            await this.registry.RemoveDevices2Async(
-                deviceIds.Select(id => new Azure.Devices.Device(id)),
-                forceRemove: true,
-                cancellationToken: CancellationToken.None);
+            this.log.Info("Creating devices",
+                () => new { Count = deviceIds.Count(), Batches = batches.Length, REGISTRY_MAX_BATCH_SIZE });
+
+            for (var batchNumber = 0; batchNumber < batches.Length; batchNumber++)
+            {
+                var batch = batches[batchNumber];
+
+                this.log.Info("Creating devices batch",
+                    () => new { batchNumber, batchSize = batch.Count() });
+
+                BulkRegistryOperationResult result = await this.registry.AddDevices2Async(
+                    batch.Select(id => new Azure.Devices.Device(id)), CancellationToken.None);
+
+                this.log.Info("Devices batch created",
+                    () => new { result.IsSuccessful, result.Errors });
+            }
+        }
+
+        /// <summary>
+        /// Delete a list of devices
+        /// </summary>
+        public async Task DeleteListAsync(IEnumerable<string> deviceIds)
+        {
+            this.SetupHub();
+
+            var batches = this.SplitArray(deviceIds.ToList(), REGISTRY_MAX_BATCH_SIZE).ToArray();
+
+            this.log.Info("Deleting devices",
+                () => new { Count = deviceIds.Count(), Batches = batches.Length, REGISTRY_MAX_BATCH_SIZE });
+
+            try
+            {
+                for (var batchNumber = 0; batchNumber < batches.Length; batchNumber++)
+                {
+                    var batch = batches[batchNumber];
+
+                    this.log.Info("Deleting devices batch",
+                        () => new { batchNumber, batchSize = batch.Count() });
+
+                    BulkRegistryOperationResult result = await this.registry.RemoveDevices2Async(
+                        batch.Select(id => new Azure.Devices.Device(id)),
+                        forceRemove: true,
+                        cancellationToken: CancellationToken.None);
+
+                    this.log.Info("Devices batch deleted",
+                        () => new { result.IsSuccessful, result.Errors });
+                }
+            }
+            catch (TooManyDevicesException error)
+            {
+                this.log.Error("Failed to delete devices, the batch is too big", () => new { error });
+                throw;
+            }
+            catch (IotHubCommunicationException error)
+            {
+                this.log.Error("Failed to delete devices (IotHubCommunicationException)", () => new { error.InnerException, error });
+                throw;
+            }
+            catch (Exception error)
+            {
+                this.log.Error("Failed to delete devices", () => new { error });
+                throw;
+            }
         }
 
         /// <summary> 
@@ -211,6 +279,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public void SetCurrentIotHub()
         {
             string connString = this.connectionStringManager.GetIotHubConnectionString();
+
+            connString = "HostName=devissim003useast9dd22.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=ymxUjxVhTfqVLaT1SmZF7oETlWdTUyOR6cBE8npaGD0=";
+
             this.registry = RegistryManager.CreateFromConnectionString(connString);
             this.ioTHubHostName = IotHubConnectionStringBuilder.Create(connString).HostName;
             this.log.Info("Selected active IoT Hub for devices", () => new { this.ioTHubHostName });
@@ -303,6 +374,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             return sdkClient;
+        }
+
+        private IEnumerable<IEnumerable<T>> SplitArray<T>(IReadOnlyCollection<T> array, int size)
+        {
+            var count = (int) Math.Ceiling((float) array.Count / size);
+            for (int i = 0; i < count; i++)
+            {
+                yield return array.Skip(i * size).Take(size);
+            }
         }
     }
 }
