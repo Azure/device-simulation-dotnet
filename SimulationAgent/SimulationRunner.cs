@@ -25,11 +25,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
     public class SimulationRunner : ISimulationRunner
     {
-        // ID prefix of the simulated devices, used with Azure IoT Hub
-        private const string DEVICE_ID_PREFIX = "Simulated.";
-
-        // ID used for custom device models, where the list of sensors is provided by the user
-        private const string CUSTOM_DEVICE_MODEL_ID = "custom";
+        // Allow 30 seconds to create the devices (1000 devices normally takes 2-3 seconds)
+        private const int DEVICES_CREATION_TIMEOUT_SECS = 30;
 
         // Application logger
         private readonly ILogger log;
@@ -40,8 +37,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Service used to load device models details
         private readonly IDeviceModels deviceModels;
 
+        // Logic used to prepare device models, overriding settings as requested by the UI
+        private readonly IDeviceModelsGeneration deviceModelsOverriding;
+
         // Reference to the singleton used to access the devices
         private readonly IDevices devices;
+
+        // Service used to manage simulation details
+        private readonly ISimulations simulations;
 
         // DI factory used to instantiate actors
         private readonly IFactory factory;
@@ -72,7 +75,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         // Flag signaling whether the simulation has started and is running (to avoid contentions)
         private bool running;
-        private IDeviceModelsGeneration deviceModelsOverriding;
 
         public SimulationRunner(
             IRateLimitingConfig ratingConfig,
@@ -80,6 +82,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             IDeviceModels deviceModels,
             IDeviceModelsGeneration deviceModelsOverriding,
             IDevices devices,
+            ISimulations simulations,
             IFactory factory)
         {
             this.connectionLoopSettings = new ConnectionLoopSettings(ratingConfig);
@@ -88,6 +91,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.deviceModels = deviceModels;
             this.deviceModelsOverriding = deviceModelsOverriding;
             this.devices = devices;
+            this.simulations = simulations;
             this.factory = factory;
 
             this.startLock = new { };
@@ -126,6 +130,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 // Note: this is a singleton class, so we can call this once. This sets
                 // the active hub, e.g. in case the user provided a custom connection string.
                 this.devices.SetCurrentIotHub();
+
+                // Create the devices
+                try
+                {
+                    var devices = this.simulations.GetDeviceIds(simulation);
+
+                    // This will ignore existing devices, creating only the missing ones
+                    this.devices.CreateListAsync(devices)
+                        .Wait(TimeSpan.FromSeconds(DEVICES_CREATION_TIMEOUT_SECS));
+                }
+                catch (Exception e)
+                {
+                    this.running = false;
+                    this.starting = false;
+                    this.log.Error("Failed to create devices", () => new { e });
+
+                    // Return and retry
+                    return;
+                }
 
                 // Loop through all the device models used in the simulation
                 var models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
@@ -210,14 +233,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private DeviceModel GetDeviceModel(string id, Services.Models.Simulation.DeviceModelOverride overrides)
         {
             var modelDef = new DeviceModel();
-            if (id.ToLowerInvariant() != CUSTOM_DEVICE_MODEL_ID)
+            if (id.ToLowerInvariant() != DeviceModels.CUSTOM_DEVICE_MODEL_ID)
             {
                 modelDef = this.deviceModels.Get(id);
             }
             else
             {
-                modelDef.Id = CUSTOM_DEVICE_MODEL_ID;
-                modelDef.Name = CUSTOM_DEVICE_MODEL_ID;
+                modelDef.Id = DeviceModels.CUSTOM_DEVICE_MODEL_ID;
+                modelDef.Name = DeviceModels.CUSTOM_DEVICE_MODEL_ID;
                 modelDef.Description = "Simulated device with custom list of sensors";
             }
 
@@ -313,7 +336,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
          */
         private void CreateActorsForDevice(DeviceModel deviceModel, int position, int total)
         {
-            var deviceId = DEVICE_ID_PREFIX + deviceModel.Id + "." + position;
+            var deviceId = this.devices.GenerateId(deviceModel.Id, position);
             var key = deviceModel.Id + "#" + position;
 
             this.log.Debug("Creating device actors...",

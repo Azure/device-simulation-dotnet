@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -14,12 +15,40 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface ISimulations
     {
+        /// <summary>
+        /// Get list of simulations.
+        /// </summary>
         Task<IList<Models.Simulation>> GetListAsync();
+
+        /// <summary>
+        /// Get a simulation.
+        /// </summary>
         Task<Models.Simulation> GetAsync(string id);
+
+        /// <summary>
+        /// Create a simulation.
+        /// </summary>
         Task<Models.Simulation> InsertAsync(Models.Simulation simulation, string template = "");
+
+        /// <summary>
+        /// Create or Replace a simulation.
+        /// </summary>
         Task<Models.Simulation> UpsertAsync(Models.Simulation simulation);
+
+        /// <summary>
+        /// Modify a simulation.
+        /// </summary>
         Task<Models.Simulation> MergeAsync(SimulationPatch patch);
+
+        /// <summary>
+        /// Delete a simulation and its devices.
+        /// </summary>
         Task DeleteAsync(string id);
+
+        /// <summary>
+        /// Get the ID of the devices in a simulation.
+        /// </summary>
+        IEnumerable<string> GetDeviceIds(Models.Simulation simulation);
     }
 
     public class Simulations : ISimulations
@@ -30,21 +59,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         private readonly IDeviceModels deviceModels;
         private readonly IStorageAdapterClient storage;
-        private readonly ILogger log;
         private readonly IIotHubConnectionStringManager connectionStringManager;
+        private readonly IDevices devices;
+        private readonly ILogger log;
 
         public Simulations(
             IDeviceModels deviceModels,
             IStorageAdapterClient storage,
             IIotHubConnectionStringManager connectionStringManager,
+            IDevices devices,
             ILogger logger)
         {
             this.deviceModels = deviceModels;
             this.storage = storage;
-            this.log = logger;
             this.connectionStringManager = connectionStringManager;
+            this.devices = devices;
+            this.log = logger;
         }
 
+        /// <summary>
+        /// Get list of simulations.
+        /// </summary>
         public async Task<IList<Models.Simulation>> GetListAsync()
         {
             var data = await this.storage.GetAllAsync(STORAGE_COLLECTION);
@@ -59,6 +94,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return result;
         }
 
+        /// <summary>
+        /// Get a simulation.
+        /// </summary>
         public async Task<Models.Simulation> GetAsync(string id)
         {
             var item = await this.storage.GetAsync(STORAGE_COLLECTION, id);
@@ -67,6 +105,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return simulation;
         }
 
+        /// <summary>
+        /// Create a simulation.
+        /// </summary>
         public async Task<Models.Simulation> InsertAsync(Models.Simulation simulation, string template = "")
         {
             // TODO: complete validation
@@ -124,8 +165,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
-        /// Upsert the simulation. The logic works under the assumption that
-        /// there is only one simulation with id "1".
+        /// Create or Replace a simulation.
+        /// The logic works under the assumption that there is only one simulation with id "1".
         /// </summary>
         public async Task<Models.Simulation> UpsertAsync(Models.Simulation simulation)
         {
@@ -186,6 +227,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return simulation;
         }
 
+        /// <summary>
+        /// Modify a simulation.
+        /// </summary>
         public async Task<Models.Simulation> MergeAsync(SimulationPatch patch)
         {
             if (patch.Id != SIMULATION_ID)
@@ -228,9 +272,37 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return simulation;
         }
 
+        /// <summary>
+        /// Delete a simulation and its devices.
+        /// </summary>
         public async Task DeleteAsync(string id)
         {
+            // Delete devices first
+            var deviceIds = this.GetDeviceIds(await this.GetAsync(id));
+            await this.devices.DeleteListAsync(deviceIds);
+
+            // Then delete the simulation from the storage
             await this.storage.DeleteAsync(STORAGE_COLLECTION, id);
+        }
+
+        /// <summary>
+        /// Get the ID of the devices in a simulation.
+        /// </summary>
+        public IEnumerable<string> GetDeviceIds(Models.Simulation simulation)
+        {
+            var deviceIds = new List<string>();
+
+            // Calculate the device IDs used in the simulation
+            var models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
+            foreach (var model in models)
+            {
+                for (var i = 0; i < model.Count; i++)
+                {
+                    deviceIds.Add(this.devices.GenerateId(model.Id, i));
+                }
+            }
+
+            return deviceIds;
         }
     }
 }
