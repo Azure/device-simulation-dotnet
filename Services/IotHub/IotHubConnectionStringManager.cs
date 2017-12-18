@@ -56,7 +56,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             string customIotHub = this.ReadFromFile();
 
             // if no user provided hub is stored, use the pre-provisioned hub 
-            if (customIotHub.IsNullOrWhiteSpace())
+            if (this.IsDefaultHub(customIotHub))
             {
                 this.log.Debug("Using IotHub connection string stored in config.", () => { });
                 return this.config.IoTHubConnString;
@@ -78,10 +78,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         public async Task<string> RedactAndStoreAsync(string connectionString)
         {
             // check if environment variable should be used
-            if (connectionString.IsNullOrWhiteSpace() ||
-                connectionString == ServicesConfig.USE_DEFAULT_IOTHUB)
+            if (this.IsDefaultHub(connectionString))
             {
-                this.UseDefaultIotHub();
+                await this.UseDefaultIotHubAsync();
                 return ServicesConfig.USE_DEFAULT_IOTHUB;
             }
 
@@ -124,15 +123,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// </summary>
         public async Task ValidateConnectionStringAsync(string connectionString)
         {
-            // valid if default or null
-            
-            if (connectionString.IsNullOrWhiteSpace() ||
-                string.Equals(
-                    connectionString,
-                    ServicesConfig.USE_DEFAULT_IOTHUB,
-                    StringComparison.OrdinalIgnoreCase))
+            // valid if default IotHub
+            if (this.IsDefaultHub(connectionString))
             {
                 return;
+            }
+
+            // remove whitespace and check if result is null
+            connectionString = connectionString.Trim();
+            if (connectionString == null)
+            {
+                var message = "Invalid connection string for IoTHub. " +
+                    "Provided string contained all whitespace." +
+                    "The correct format is: HostName=[hubname];SharedAccessKeyName=" +
+                    "[iothubowner or service];SharedAccessKey=[null or valid key]";
+                this.log.Error(message, () => { });
+                throw new InvalidIotHubConnectionStringFormatException(message);
             }
 
             // check format of provided string
@@ -155,6 +161,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
 
             this.log.Debug("IotHub connection string provided is valid.", () => { });
+        }
+
+        /// <summary>
+        /// Checks if string is intended to be the default IotHub.
+        /// Default hub is used if provided string is null, empty, or default.
+        /// </summary>
+        private bool IsDefaultHub(string connectionString)
+        {
+            if (connectionString == null ||
+                connectionString == string.Empty ||
+                string.Equals(
+                    connectionString.Trim(),
+                    ServicesConfig.USE_DEFAULT_IOTHUB,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary> Throws if unable to create a registry manager with a valid IotHub. </summary>
@@ -251,8 +276,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// If simulation uses the pre-provisioned IoT Hub for the service,
         /// then remove sensitive hub information that is no longer needed
         /// </summary>
-        private void UseDefaultIotHub()
+        private async Task UseDefaultIotHubAsync()
         {
+            // check if default hub is valid
+            try
+            {
+                this.ValidateExistingIotHub(config.IoTHubConnString);
+                await this.ValidateReadPermissionsAsync(config.IoTHubConnString);
+                await this.ValidateWritePermissionsAsync(config.IoTHubConnString);
+            }
+            catch (Exception e)
+            {
+                string msg = "Unable to use default IoT Hub. Check that the " +
+                    "pre-provisioned hub exists and has the correct permissions.";
+                this.log.Error(msg, () => new { e });
+                throw new IotHubConnectionException(msg, e);
+            }
+
             try
             {
                 // delete custom IoT Hub string if default hub is being used

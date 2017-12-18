@@ -1,5 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Newtonsoft.Json;
 
@@ -27,9 +29,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         // Map API model to service model
         public static string ToServiceModel(SimulationIotHub iotHub)
         {
-            return iotHub != null && iotHub.ConnectionString != USE_DEFAULT_IOTHUB
+            return iotHub != null && !IsDefaultHub(iotHub.ConnectionString)
                 ? iotHub.ConnectionString
                 : ServicesConfig.USE_DEFAULT_IOTHUB;
+        }
+
+        private static bool IsDefaultHub(string connectionString)
+        {
+            if (connectionString == null ||
+                connectionString == string.Empty ||
+                string.Equals(
+                    connectionString.Trim(),
+                    ServicesConfig.USE_DEFAULT_IOTHUB,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }
