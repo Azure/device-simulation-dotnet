@@ -25,12 +25,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
     public class SimulationRunner : ISimulationRunner
     {
-        // ID prefix of the simulated devices, used with Azure IoT Hub
-        private const string DEVICE_ID_PREFIX = "Simulated.";
-
-        // ID used for custom device models, where the list of sensors is provided by the user
-        private const string CUSTOM_DEVICE_MODEL_ID = "custom";
-
         // Application logger
         private readonly ILogger log;
 
@@ -210,14 +204,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private DeviceModel GetDeviceModel(string id, Services.Models.Simulation.DeviceModelOverride overrides)
         {
             var modelDef = new DeviceModel();
-            if (id.ToLowerInvariant() != CUSTOM_DEVICE_MODEL_ID)
+            if (id.ToLowerInvariant() != DeviceModels.CUSTOM_DEVICE_MODEL_ID)
             {
                 modelDef = this.deviceModels.Get(id);
             }
             else
             {
-                modelDef.Id = CUSTOM_DEVICE_MODEL_ID;
-                modelDef.Name = CUSTOM_DEVICE_MODEL_ID;
+                modelDef.Id = DeviceModels.CUSTOM_DEVICE_MODEL_ID;
+                modelDef.Name = DeviceModels.CUSTOM_DEVICE_MODEL_ID;
                 modelDef.Description = "Simulated device with custom list of sensors";
             }
 
@@ -313,7 +307,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
          */
         private void CreateActorsForDevice(DeviceModel deviceModel, int position, int total)
         {
-            var deviceId = DEVICE_ID_PREFIX + deviceModel.Id + "." + position;
+            var deviceId = this.devices.GenerateId(deviceModel.Id, position);
             var key = deviceModel.Id + "#" + position;
 
             this.log.Debug("Creating device actors...",

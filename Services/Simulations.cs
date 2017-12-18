@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -30,19 +31,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         private readonly IDeviceModels deviceModels;
         private readonly IStorageAdapterClient storage;
-        private readonly ILogger log;
         private readonly IIotHubConnectionStringManager connectionStringManager;
+        private readonly IDevices devices;
+        private readonly ILogger log;
 
         public Simulations(
             IDeviceModels deviceModels,
             IStorageAdapterClient storage,
             IIotHubConnectionStringManager connectionStringManager,
+            IDevices devices,
             ILogger logger)
         {
             this.deviceModels = deviceModels;
             this.storage = storage;
-            this.log = logger;
             this.connectionStringManager = connectionStringManager;
+            this.devices = devices;
+            this.log = logger;
         }
 
         public async Task<IList<Models.Simulation>> GetListAsync()
@@ -230,7 +234,38 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task DeleteAsync(string id)
         {
+            await this.DeleteDevicesAsync(id);
             await this.storage.DeleteAsync(STORAGE_COLLECTION, id);
+        }
+
+        private async Task DeleteDevicesAsync(string simulationId)
+        {
+            var deviceIds = new List<string>();
+
+            // Load simulation
+            Models.Simulation simulation;
+            try
+            {
+                simulation = await this.GetAsync(simulationId);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to fetch simulation", () => new { e });
+                throw;
+            }
+
+            // Calculate the device IDs used in the simulation
+            var models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
+            foreach (var model in models)
+            {
+                for (var i = 0; i < model.Count; i++)
+                {
+                    deviceIds.Add(this.devices.GenerateId(model.Id, i));
+                }
+            }
+
+            // Delete devices
+            await this.devices.DeleteAsync(deviceIds);
         }
     }
 }

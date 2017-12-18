@@ -1,6 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.Devices.Shared;
@@ -36,10 +39,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         Task AddTagAsync(string deviceId);
 
+        /// <summary>
+        /// Delete a list of devices
+        /// </summary>
+        Task DeleteAsync(IEnumerable<string> deviceIds);
+
         /// <summary> 
         /// Set the current IoT Hub using either the user provided one or the configuration settings 
         /// </summary>
         void SetCurrentIotHub();
+
+        /// <summary>
+        /// Generate a device Id
+        /// </summary>
+        string GenerateId(string deviceModelId, int position);
     }
 
     public class Devices : IDevices
@@ -48,6 +61,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // is used to recreate the registry manager instance every once in a while, while starting
         // the simulation. When the simulation is running the registry is not used anymore.
         private const uint REGISTRY_LIMIT_REQUESTS = 1000;
+
+        // ID prefix of the simulated devices, used with Azure IoT Hub
+        private const string DEVICE_ID_PREFIX = "Simulated.";
 
         private readonly ILogger log;
         private readonly IIotHubConnectionStringManager connectionStringManager;
@@ -174,6 +190,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             await this.GetRegistry().UpdateTwinAsync(deviceId, twin, "*");
         }
 
+        /// <summary>
+        /// Delete a list of devices
+        /// </summary>
+        public async Task DeleteAsync(IEnumerable<string> deviceIds)
+        {
+            this.SetupHub();
+
+            this.log.Info("Deleting devices", () => new { Count = deviceIds.Count() });
+
+            await this.registry.RemoveDevices2Async(
+                deviceIds.Select(id => new Azure.Devices.Device(id)),
+                forceRemove: true,
+                cancellationToken: CancellationToken.None);
+        }
+
         /// <summary> 
         /// Get IoTHub connection string from either the user provided value or the configuration 
         /// </summary>
@@ -183,6 +214,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.registry = RegistryManager.CreateFromConnectionString(connString);
             this.ioTHubHostName = IotHubConnectionStringBuilder.Create(connString).HostName;
             this.log.Info("Selected active IoT Hub for devices", () => new { this.ioTHubHostName });
+        }
+
+        /// <summary>
+        /// Generate a device Id
+        /// </summary>
+        public string GenerateId(string deviceModelId, int position)
+        {
+            return DEVICE_ID_PREFIX + deviceModelId + "." + position;
         }
 
         // This call can throw an exception, which is fine when the exception happens during a method
