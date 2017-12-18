@@ -279,9 +279,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public void SetCurrentIotHub()
         {
             string connString = this.connectionStringManager.GetIotHubConnectionString();
-
-            connString = "HostName=devissim003useast9dd22.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=ymxUjxVhTfqVLaT1SmZF7oETlWdTUyOR6cBE8npaGD0=";
-
             this.registry = RegistryManager.CreateFromConnectionString(connString);
             this.ioTHubHostName = IotHubConnectionStringBuilder.Create(connString).HostName;
             this.log.Info("Selected active IoT Hub for devices", () => new { this.ioTHubHostName });
