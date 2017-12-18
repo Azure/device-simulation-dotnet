@@ -15,12 +15,40 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface ISimulations
     {
+        /// <summary>
+        /// Get list of simulations
+        /// </summary>
         Task<IList<Models.Simulation>> GetListAsync();
+
+        /// <summary>
+        /// Get a simulation
+        /// </summary>
         Task<Models.Simulation> GetAsync(string id);
+
+        /// <summary>
+        /// Create a simulation
+        /// </summary>
         Task<Models.Simulation> InsertAsync(Models.Simulation simulation, string template = "");
+
+        /// <summary>
+        /// Create or Replace a simulation
+        /// </summary>
         Task<Models.Simulation> UpsertAsync(Models.Simulation simulation);
+
+        /// <summary>
+        /// Modify a simulation
+        /// </summary>
         Task<Models.Simulation> MergeAsync(SimulationPatch patch);
+
+        /// <summary>
+        /// Delete a simulation and its devices
+        /// </summary>
         Task DeleteAsync(string id);
+
+        /// <summary>
+        /// Get the ID of the devices in a simulation
+        /// </summary>
+        IEnumerable<string> GetDeviceIds(Models.Simulation simulation);
     }
 
     public class Simulations : ISimulations
@@ -49,6 +77,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log = logger;
         }
 
+        /// <summary>
+        /// Get list of simulations
+        /// </summary>
         public async Task<IList<Models.Simulation>> GetListAsync()
         {
             var data = await this.storage.GetAllAsync(STORAGE_COLLECTION);
@@ -63,6 +94,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return result;
         }
 
+        /// <summary>
+        /// Get a simulation
+        /// </summary>
         public async Task<Models.Simulation> GetAsync(string id)
         {
             var item = await this.storage.GetAsync(STORAGE_COLLECTION, id);
@@ -71,6 +105,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return simulation;
         }
 
+        /// <summary>
+        /// Create a simulation
+        /// </summary>
         public async Task<Models.Simulation> InsertAsync(Models.Simulation simulation, string template = "")
         {
             // TODO: complete validation
@@ -124,12 +161,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             simulation.ETag = result.ETag;
 
-            await this.CreateDevicesAsync(simulation);
-
             return simulation;
         }
 
         /// <summary>
+        /// Create or Replace a simulation
         /// Upsert the simulation. The logic works under the assumption that
         /// there is only one simulation with id "1".
         /// </summary>
@@ -189,12 +225,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             // Return the new ETag provided by the storage
             simulation.ETag = result.ETag;
 
-            // If any, create the new devices
-            await this.CreateDevicesAsync(simulation);
-
             return simulation;
         }
 
+        /// <summary>
+        /// Modify a simulation
+        /// </summary>
         public async Task<Models.Simulation> MergeAsync(SimulationPatch patch)
         {
             if (patch.Id != SIMULATION_ID)
@@ -234,34 +270,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             simulation.ETag = item.ETag;
 
-            // If any, create the new devices
-            await this.CreateDevicesAsync(simulation);
-
             return simulation;
         }
 
+        /// <summary>
+        /// Delete a simulation and its devices
+        /// </summary>
         public async Task DeleteAsync(string id)
         {
-            await this.DeleteDevicesAsync(id);
+            // Delete devices first
+            var deviceIds = this.GetDeviceIds(await this.GetAsync(id));
+            await this.devices.DeleteListAsync(deviceIds);
+
+            // Then delete the simulation from the storage
             await this.storage.DeleteAsync(STORAGE_COLLECTION, id);
         }
 
-        private async Task CreateDevicesAsync(Models.Simulation simulation)
-        {
-            if (simulation.Enabled)
-            {
-                var deviceIds = this.GetDeviceIds(simulation);
-                await this.devices.CreateListAsync(deviceIds);
-            }
-        }
-
-        private async Task DeleteDevicesAsync(string simulationId)
-        {
-            var deviceIds = this.GetDeviceIds(await this.GetAsync(simulationId));
-            await this.devices.DeleteListAsync(deviceIds);
-        }
-
-        private IEnumerable<string> GetDeviceIds(Models.Simulation simulation)
+        /// <summary>
+        /// Get the ID of the devices in a simulation
+        /// </summary>
+        public IEnumerable<string> GetDeviceIds(Models.Simulation simulation)
         {
             var deviceIds = new List<string>();
 

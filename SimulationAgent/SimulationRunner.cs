@@ -37,6 +37,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Reference to the singleton used to access the devices
         private readonly IDevices devices;
 
+        // Service used to manage simulation details
+        private readonly ISimulations simulations;
+
         // DI factory used to instantiate actors
         private readonly IFactory factory;
 
@@ -74,6 +77,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             IDeviceModels deviceModels,
             IDeviceModelsGeneration deviceModelsOverriding,
             IDevices devices,
+            ISimulations simulations,
             IFactory factory)
         {
             this.connectionLoopSettings = new ConnectionLoopSettings(ratingConfig);
@@ -82,6 +86,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.deviceModels = deviceModels;
             this.deviceModelsOverriding = deviceModelsOverriding;
             this.devices = devices;
+            this.simulations = simulations;
             this.factory = factory;
 
             this.startLock = new { };
@@ -120,6 +125,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 // Note: this is a singleton class, so we can call this once. This sets
                 // the active hub, e.g. in case the user provided a custom connection string.
                 this.devices.SetCurrentIotHub();
+
+                // Create the devices
+                try
+                {
+                    var devices = this.simulations.GetDeviceIds(simulation);
+
+                    // This will ignore existing devices, creating only the missing ones
+                    this.devices.CreateListAsync(devices).Wait(TimeSpan.FromSeconds(30));
+                }
+                catch (Exception e)
+                {
+                    this.running = false;
+                    this.starting = false;
+                    this.log.Error("Failed to create devices", () => new { e });
+
+                    // Return and retry
+                    return;
+                }
 
                 // Loop through all the device models used in the simulation
                 var models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();

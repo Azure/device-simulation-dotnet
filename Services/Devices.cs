@@ -21,6 +21,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface IDevices
     {
         /// <summary>
+        /// Set the current IoT Hub using either the user provided one or the configuration settings
+        /// </summary>
+        void SetCurrentIotHub();
+
+        /// <summary>
         /// Get a client for the device
         /// </summary>
         IDeviceClient GetClient(Device device, IoTHubProtocol protocol);
@@ -49,11 +54,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// Delete a list of devices
         /// </summary>
         Task DeleteListAsync(IEnumerable<string> deviceIds);
-
-        /// <summary> 
-        /// Set the current IoT Hub using either the user provided one or the configuration settings 
-        /// </summary>
-        void SetCurrentIotHub();
 
         /// <summary>
         /// Generate a device Id
@@ -93,6 +93,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.twinReadsWritesEnabled = config.TwinReadWriteEnabled;
             this.registryCount = -1;
             this.setupDone = false;
+        }
+
+        /// <summary>
+        /// Get IoTHub connection string from either the user provided value or the configuration
+        /// </summary>
+        public void SetCurrentIotHub()
+        {
+            string connString = this.connectionStringManager.GetIotHubConnectionString();
+            this.registry = RegistryManager.CreateFromConnectionString(connString);
+            this.ioTHubHostName = IotHubConnectionStringBuilder.Create(connString).HostName;
+            this.log.Info("Selected active IoT Hub for devices", () => new { this.ioTHubHostName });
         }
 
         /// <summary>
@@ -271,17 +282,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.log.Error("Failed to delete devices", () => new { error });
                 throw;
             }
-        }
-
-        /// <summary> 
-        /// Get IoTHub connection string from either the user provided value or the configuration 
-        /// </summary>
-        public void SetCurrentIotHub()
-        {
-            string connString = this.connectionStringManager.GetIotHubConnectionString();
-            this.registry = RegistryManager.CreateFromConnectionString(connString);
-            this.ioTHubHostName = IotHubConnectionStringBuilder.Create(connString).HostName;
-            this.log.Info("Selected active IoT Hub for devices", () => new { this.ioTHubHostName });
         }
 
         /// <summary>
