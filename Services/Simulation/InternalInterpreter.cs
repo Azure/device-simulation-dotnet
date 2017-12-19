@@ -98,7 +98,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 }
 
                 double current = Convert.ToDouble(state[sensor.Key]);
-                double next = Math.Abs(current - max) < EQUALITY_PRECISION ? min : Math.Min(current + step, max);
+                double next = AreEqual(current, max) ? min : Math.Min(current + step, max);
 
                 state[sensor.Key] = next;
             }
@@ -106,7 +106,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             return state;
         }
 
-        // For each sensors specified, increase the current state, up to a maximum, then restart from a minimum
+        // For each sensors specified, decrease the current state, down to a minimum, then restart from a maximum
         private Dictionary<string, object> RunDecreasingScript(object scriptParams, Dictionary<string, object> state)
         {
             var sensors = this.JsonParamAsDictionary(scriptParams);
@@ -122,7 +122,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 }
 
                 double current = Convert.ToDouble(state[sensor.Key]);
-                double next = Math.Abs(current - max) < EQUALITY_PRECISION ? max : Math.Max(current - step, min);
+                double next = AreEqual(current, min) ? max : Math.Max(current - step, min);
 
                 state[sensor.Key] = next;
             }
@@ -187,6 +187,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 this.log.Error("Unknown script parameters format. The parameters should be passed key-value dictionary.", () => new { parameters, e });
                 throw new NotSupportedException("Unknown script parameters format. The parameters should be passed key-value dictionary.");
             }
+        }
+
+        private static bool AreEqual(double a, double b)
+        {
+            return Math.Abs(a - b) < EQUALITY_PRECISION;
         }
     }
 }
