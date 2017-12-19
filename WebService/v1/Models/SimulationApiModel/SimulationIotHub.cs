@@ -36,17 +36,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
         private static bool IsDefaultHub(string connectionString)
         {
-            if (connectionString == null ||
+            return
+                connectionString == null ||
                 connectionString == string.Empty ||
                 string.Equals(
                     connectionString.Trim(),
                     USE_DEFAULT_IOTHUB,
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            return false;
+                    StringComparison.OrdinalIgnoreCase);
         }
     }
 }

@@ -159,17 +159,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// </summary>
         private bool IsDefaultHub(string connectionString)
         {
-            if (connectionString == null ||
+            return
+                connectionString == null ||
                 connectionString == string.Empty ||
                 string.Equals(
                     connectionString.Trim(),
                     ServicesConfig.USE_DEFAULT_IOTHUB,
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            return false;
+                    StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary> Throws if unable to create a registry manager with a valid IotHub. </summary>
