@@ -267,9 +267,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             // check if default hub is valid
             try
             {
-                this.ValidateExistingIotHub(config.IoTHubConnString);
-                await this.ValidateReadPermissionsAsync(config.IoTHubConnString);
-                await this.ValidateWritePermissionsAsync(config.IoTHubConnString);
+                this.ValidateExistingIotHub(this.config.IoTHubConnString);
+                await this.ValidateReadPermissionsAsync(this.config.IoTHubConnString);
+                await this.ValidateWritePermissionsAsync(this.config.IoTHubConnString);
             }
             catch (Exception e)
             {
