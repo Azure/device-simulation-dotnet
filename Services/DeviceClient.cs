@@ -94,12 +94,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             eventMessage.Properties.Add(MESSAGE_SCHEMA_PROPERTY, schema.Name);
             eventMessage.Properties.Add(CONTENT_PROPERTY, "JSON");
 
-            await this.SendRawMessageAsync(eventMessage);
+            eventMessage.ContentType = "application/json";
+            eventMessage.ContentEncoding = "utf-8";
+            eventMessage.MessageSchema = schema.Name;
+            eventMessage.CreationTimeUtc = DateTime.UtcNow;
 
-            this.log.Debug("SendMessageAsync for device", () => new
-            {
-                this.deviceId
-            });
+            this.log.Debug("Sending message from device",
+                () => new { this.deviceId, Schema = schema.Name });
+
+            await this.SendRawMessageAsync(eventMessage);
         }
 
         public Task UpdateTwinAsync(Device device)
