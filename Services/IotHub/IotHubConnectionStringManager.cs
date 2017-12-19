@@ -133,8 +133,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             connectionString = connectionString.Trim();
             if (connectionString == null)
             {
-                var message = "Invalid connection string for IoTHub. " +
-                    "Provided string contained all whitespace." +
+                var message = "Invalid connection string format for IoTHub. " +
                     "The correct format is: HostName=[hubname];SharedAccessKeyName=" +
                     "[iothubowner or service];SharedAccessKey=[null or valid key]";
                 this.log.Error(message, () => { });
