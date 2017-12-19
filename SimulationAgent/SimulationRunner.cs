@@ -233,7 +233,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private DeviceModel GetDeviceModel(string id, Services.Models.Simulation.DeviceModelOverride overrides)
         {
             var modelDef = new DeviceModel();
-            if (id.ToLowerInvariant() != DeviceModels.CUSTOM_DEVICE_MODEL_ID)
+            if (id.ToLowerInvariant() != DeviceModels.CUSTOM_DEVICE_MODEL_ID.ToLowerInvariant())
             {
                 modelDef = this.deviceModels.Get(id);
             }

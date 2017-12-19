@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json;
 
@@ -32,9 +34,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         // Map API model to service model
         public Simulation.DeviceModelRef ToServiceModel()
         {
+            // Map "Custom" and "CUSTOM" to "custom", i.e. ignore case
+            var id = this.Id;
+            if (string.Compare(id, DeviceModels.CUSTOM_DEVICE_MODEL_ID, StringComparison.InvariantCultureIgnoreCase) == 0)
+            {
+                id = DeviceModels.CUSTOM_DEVICE_MODEL_ID;
+            }
+
             return new Simulation.DeviceModelRef
             {
-                Id = this.Id,
+                Id = id,
                 Count = this.Count,
                 Override = this.Override?.ToServiceModel()
             };
