@@ -55,10 +55,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             // read connection string file from webservice
             string customIotHub = this.ReadFromFile();
 
-            // if no user provided hub is stored, use the pre-provisioned hub 
+            // check if default hub should be used
             if (this.IsDefaultHub(customIotHub))
             {
-                this.log.Debug("Using IotHub connection string stored in config.", () => { });
+                this.log.Info("Using IotHub connection string stored in config.", () => { });
                 return this.config.IoTHubConnString;
             }
 
