@@ -40,7 +40,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 connectionString == string.Empty ||
                 string.Equals(
                     connectionString.Trim(),
-                    ServicesConfig.USE_DEFAULT_IOTHUB,
+                    USE_DEFAULT_IOTHUB,
                     StringComparison.OrdinalIgnoreCase))
             {
                 return true;
