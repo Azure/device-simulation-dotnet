@@ -161,10 +161,10 @@ the IDE, there are several ways to manage environment variables:
 Other resources
 ===============
 
-* [Device Models specification](wiki/Device-Models)
-* [Simulation service API specs](wiki/%5BAPI-Specifications%5D-Service)
-* [Device Models API specs](wiki/%5BAPI-Specifications%5D-Device-Models)
-* [Simulations API specs](wiki/%5BAPI-Specifications%5D-Simulations)
+* [Device Models specification][device-model-wiki]
+* [Simulation service API specs][simulation-service-api-spec-wiki]
+* [Device Models API specs][device-models-api-spec-wiki]
+* [Simulations API specs][simulation-api-spec-wiki]
 
 Contributing to the solution
 ============================
@@ -201,3 +201,8 @@ Please enter issues, bugs, or suggestions as GitHub Issues here: https://github.
 [dotnetcore-tools-url]: https://www.microsoft.com/net/core#windowsvs2017
 [windows-envvars-howto-url]: https://superuser.com/questions/949560/how-do-i-set-system-environment-variables-in-windows-10
 [docker-compose-install-url]: https://docs.docker.com/compose/install
+
+[device-model-wiki]: https://github.com/Azure/device-simulation-dotnet/wiki/Device-Models
+[simulation-service-api-spec-wiki]: https://github.com/Azure/device-simulation-dotnet/wiki/%5BAPI-Specifications%5D-Service
+[device-models-api-spec-wiki]: https://github.com/Azure/device-simulation-dotnet/wiki/%5BAPI-Specifications%5D-Device-Models
+[simulation-api-spec-wiki]: https://github.com/Azure/device-simulation-dotnet/wiki/%5BAPI-Specifications%5D-Simulations
