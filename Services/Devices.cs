@@ -132,6 +132,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log.Debug("Fetching device from registry", () => new { deviceId });
 
             Device result = null;
+            var now = DateTimeOffset.UtcNow;
+
             try
             {
                 var device = await this.GetRegistry().GetDeviceAsync(deviceId);
@@ -146,8 +148,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
+                if (e.InnerException != null && e.InnerException.GetType() == typeof(TaskCanceledException))
+                {
+                    var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now.ToUnixTimeMilliseconds();
+                    this.log.Error("Get device task timed out", () => new { timeSpent, deviceId, e.Message });
+                    throw;
+                }
+
                 this.log.Error("Unable to fetch the IoT device", () => new { deviceId, e });
-                throw new ExternalDependencyException("Unable to fetch the IoT device.");
+                throw new ExternalDependencyException("Unable to fetch the IoT device");
             }
 
             return result;
@@ -159,6 +168,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public async Task<Device> CreateAsync(string deviceId)
         {
             this.SetupHub();
+            var now = DateTimeOffset.UtcNow;
 
             try
             {
@@ -174,13 +184,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 if (e.InnerException != null && e.InnerException.GetType() == typeof(TaskCanceledException))
                 {
-                    // We get here when the cancellation token is triggered, which is fine
-                    this.log.Debug("Device creation task canceled", () => new { deviceId, e.Message });
-                    return null;
+                    var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now.ToUnixTimeMilliseconds();
+                    this.log.Error("Create device task timed out", () => new { timeSpent, deviceId, e.Message });
+                    throw;
                 }
 
                 this.log.Error("Unable to create the device", () => new { deviceId, e });
-                throw new ExternalDependencyException("Unable to create the device.", e);
+                throw new ExternalDependencyException("Unable to create the device", e);
             }
         }
 
