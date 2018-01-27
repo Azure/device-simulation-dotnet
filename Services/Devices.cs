@@ -132,8 +132,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log.Debug("Fetching device from registry", () => new { deviceId });
 
             Device result = null;
-            var now = DateTimeOffset.UtcNow;
-
             try
             {
                 var device = await this.GetRegistry().GetDeviceAsync(deviceId);
@@ -148,13 +146,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                if (e.InnerException != null && e.InnerException.GetType() == typeof(TaskCanceledException))
-                {
-                    var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now.ToUnixTimeMilliseconds();
-                    this.log.Error("Get device task timed out", () => new { timeSpent, deviceId, e.Message });
-                    throw;
-                }
-
                 this.log.Error("Unable to fetch the IoT device", () => new { deviceId, e });
                 throw new ExternalDependencyException("Unable to fetch the IoT device.");
             }
