@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.Devices.Common.Exceptions;
@@ -74,22 +73,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // ID prefix of the simulated devices, used with Azure IoT Hub
         private const string DEVICE_ID_PREFIX = "Simulated.";
 
-        private readonly ILogger log;
         private readonly IIotHubConnectionStringManager connectionStringManager;
-        private readonly bool twinReadsWritesEnabled;
+        private readonly ILogger log;
 
+        private readonly bool twinReadsWritesEnabled;
         private string ioTHubHostName;
-        private RegistryManager registry;
+        private IRegistryManager registry;
         private int registryCount;
         private bool setupDone;
 
         public Devices(
             IServicesConfig config,
             IIotHubConnectionStringManager connStringManager,
+            IRegistryManager registryManager,
             ILogger logger)
         {
-            this.log = logger;
             this.connectionStringManager = connStringManager;
+            this.registry = registryManager;
+            this.log = logger;
             this.twinReadsWritesEnabled = config.TwinReadWriteEnabled;
             this.registryCount = -1;
             this.setupDone = false;
@@ -101,7 +102,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public void SetCurrentIotHub()
         {
             string connString = this.connectionStringManager.GetIotHubConnectionString();
-            this.registry = RegistryManager.CreateFromConnectionString(connString);
+            this.registry = this.registry.CreateFromConnectionString(connString);
             this.ioTHubHostName = IotHubConnectionStringBuilder.Create(connString).HostName;
             this.log.Info("Selected active IoT Hub for devices", () => new { this.ioTHubHostName });
         }
@@ -182,14 +183,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                if (e.InnerException != null && e.InnerException.GetType() == typeof(TaskCanceledException))
-                {
-                    var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now.ToUnixTimeMilliseconds();
-                    this.log.Error("Create device task timed out", () => new { timeSpent, deviceId, e.Message });
-                    throw;
-                }
-
-                this.log.Error("Unable to create the device", () => new { deviceId, e });
+                var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now.ToUnixTimeMilliseconds();
+                this.log.Error("Unable to create the device", () => new { timeSpent, deviceId, e });
                 throw new ExternalDependencyException("Unable to create the device", e);
             }
         }
@@ -231,7 +226,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     () => new { batchNumber, batchSize = batch.Count() });
 
                 BulkRegistryOperationResult result = await this.registry.AddDevices2Async(
-                    batch.Select(id => new Azure.Devices.Device(id)), CancellationToken.None);
+                    batch.Select(id => new Azure.Devices.Device(id)));
 
                 this.log.Info("Devices batch created",
                     () => new { batchNumber, result.IsSuccessful, result.Errors });
@@ -261,8 +256,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                     BulkRegistryOperationResult result = await this.registry.RemoveDevices2Async(
                         batch.Select(id => new Azure.Devices.Device(id)),
-                        forceRemove: true,
-                        cancellationToken: CancellationToken.None);
+                        forceRemove: true);
 
                     this.log.Info("Devices batch deleted",
                         () => new { batchNumber, result.IsSuccessful, result.Errors });
@@ -305,7 +299,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         // Temporary workaround, see https://github.com/Azure/device-simulation-dotnet/issues/136
-        private RegistryManager GetRegistry()
+        private IRegistryManager GetRegistry()
         {
             if (this.registryCount > REGISTRY_LIMIT_REQUESTS)
             {
@@ -327,7 +321,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             if (this.registryCount == -1)
             {
                 string connString = this.connectionStringManager.GetIotHubConnectionString();
-                this.registry = RegistryManager.CreateFromConnectionString(connString);
+                this.registry = this.registry.CreateFromConnectionString(connString);
                 this.registry.OpenAsync();
             }
 
