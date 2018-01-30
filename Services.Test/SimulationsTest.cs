@@ -220,6 +220,36 @@ namespace Services.Test
             Assert.ThrowsAsync<ResourceOutOfDateException>(() => this.target.UpsertAsync(s1Updated));
         }
 
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ThereAreNoNullPropertiesInTheDeviceModel()
+        {
+            // Arrange
+            this.ThereAreSomeDeviceModels();
+            this.ThereAreNoSimulationsInTheStorage();
+            
+            // Arrange the simulation data returned by the storage adapter
+            var updatedValue = new ValueApiModel { ETag = "newETag" };
+            this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(updatedValue);
+
+            // Act
+            var simulation = new SimulationModel
+            {
+                Id = SIMULATION_ID,
+                ETag = "ETag0",
+                Enabled = true,
+                Version = 1
+            };
+            this.target.UpsertAsync(simulation).Wait();
+
+            // Assert
+            this.storage.Verify(x => x.UpdateAsync(
+                STORAGE_COLLECTION,
+                SIMULATION_ID,
+                It.Is<string>(s => !s.Contains("null")),
+                "ETag0"));
+        }
+
         private void ThereAreSomeDeviceModels()
         {
             this.deviceModels.Setup(x => x.GetList()).Returns(this.models);
