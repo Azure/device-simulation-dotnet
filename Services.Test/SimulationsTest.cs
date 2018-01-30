@@ -226,13 +226,8 @@ namespace Services.Test
             // Arrange
             this.ThereAreSomeDeviceModels();
             this.ThereAreNoSimulationsInTheStorage();
-            
-            // Arrange the simulation data returned by the storage adapter
-            var updatedValue = new ValueApiModel { ETag = "newETag" };
-            this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(updatedValue);
 
-            // Act
+            // Arrange the simulation data returned by the storage adapter
             var simulation = new SimulationModel
             {
                 Id = SIMULATION_ID,
@@ -240,6 +235,16 @@ namespace Services.Test
                 Enabled = true,
                 Version = 1
             };
+            var updatedValue = new ValueApiModel
+            {
+                Key = SIMULATION_ID,
+                Data = JsonConvert.SerializeObject(simulation),
+                ETag = simulation.ETag
+            };
+            this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(updatedValue);
+
+            // Act
             this.target.UpsertAsync(simulation).Wait();
 
             // Assert
