@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 {
@@ -79,6 +80,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public class DeviceModelSimulationOverride
         {
             // Optional, used to customize the initial state of the device
+            [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
             public Dictionary<string,object> InitialState { get; set; }
 
             // Optional, used to customize the device state update interval
@@ -88,6 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             // When non empty, the content is merged with (overwriting) the scripts in the device model definition
             // If this list is shorter than the original definition, elements in excess are removed
             // i.e. to keep all the original scripts, there must be an entry for each of them
+            [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
             public IList<DeviceModelSimulationScriptOverride> Scripts { get; set; }
 
             public DeviceModelSimulationOverride()
@@ -123,9 +126,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             public TimeSpan? Interval { get; set; }
 
             // Optional field, when null use the template set in the device model definition
+            [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
             public string MessageTemplate { get; set; }
 
             // Optional field, when null use the schema set in the device model definition
+            [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
             public DeviceModelTelemetryMessageSchemaOverride MessageSchema { get; set; }
 
             public DeviceModelTelemetryOverride()
