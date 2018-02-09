@@ -280,6 +280,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
+        //private void UpdateTwinThread()
+        //{
+        //    while (this.running)
+        //    {
+        //        var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        //        foreach (var device in this.deviceTwinActors)
+        //        {
+        //            device.Value.Run();
+        //        }
+
+        //        var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
+        //        this.log.Info("Device state loop completed", () => new { durationMsecs });
+        //        this.SlowDownIfTooFast(durationMsecs, ConnectionLoopSettings.MIN_LOOP_DURATION);
+        //    }
+        //}
+
         private void SendTelemetryThread()
         {
             if (this.deviceTelemetryActors.Count == 0)
@@ -351,6 +367,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             var deviceConnectionActor = this.factory.Resolve<IDeviceConnectionActor>();
             deviceConnectionActor.Setup(deviceId, deviceModel, deviceStateActor, this.connectionLoopSettings);
             this.deviceConnectionActors.Add(key, deviceConnectionActor);
+
+            //// Create one twin actor for each device
+            //var deviceTwinActor = this.factory.Resolve<IDeviceTwinActor>();
+            //deviceTwinActor.Setup(deviceId, deviceModel, deviceStateActor, this.connectionLoopSettings, deviceStateActor, deviceConnectionActor);
+            //this.deviceTwinActors.Add(key, deviceTwinActor);
 
             // Create one telemetry actor for each telemetry message to be sent
             var i = 0;

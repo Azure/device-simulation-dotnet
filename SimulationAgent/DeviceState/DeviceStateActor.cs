@@ -82,7 +82,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                     // Prepare the dependencies
                     case ActorStatus.None:
                         this.updateDeviceStateLogic.Setup(this, this.deviceId, this.deviceModel);
-                        this.DeviceState = this.SetupTelemetryAndProperties(this.deviceModel);
+                        this.DeviceState = this.SetupTelemetry(this.deviceModel);
                         this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState });
                         this.MoveForward();
                         return;
@@ -128,7 +128,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
             throw new Exception("Application error, MoveForward() should not be invoked when status = " + this.status);
         }
 
-        private Dictionary<string, object> SetupTelemetryAndProperties(DeviceModel deviceModel)
+        private Dictionary<string, object> SetupTelemetry(DeviceModel deviceModel)
         {
             // put telemetry properties in state
             Dictionary<string, object> state = CloneObject(deviceModel.Simulation.InitialState);
@@ -139,11 +139,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                 state["online"] = true;
             }
 
-            // TODO: think about whether these should be pulled from the hub instead of disk
-            // (the device model); i.e. what if someone has modified the hub twin directly
-            // put reported properties from device model into state
-            foreach (var property in deviceModel.Properties)
-                state.Add(property.Key, property.Value);
+            //// TODO: think about whether these should be pulled from the hub instead of disk
+            //// (the device model); i.e. what if someone has modified the hub twin directly
+            //// put reported properties from device model into state
+            //foreach (var property in deviceModel.Properties)
+            //    state.Add(property.Key, property.Value);
 
             // TODO:This is used to control whether telemetry is calculated in UpdateDeviceState.
             // methods can turn telemetry off/on; e.g. setting temp high- turnoff, set low, turn on
