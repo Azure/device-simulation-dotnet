@@ -197,41 +197,44 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     result.Telemetry[i].MessageTemplate = t.MessageTemplate;
                 }
 
-                if (!string.IsNullOrEmpty(t.MessageSchema.Name)
+                if (t.MessageSchema != null)
+                {
+                    if (!string.IsNullOrEmpty(t.MessageSchema.Name)
                     && t.MessageSchema.Name != result.Telemetry[i].MessageSchema.Name)
-                {
-                    this.log.Info("Changing telemetry message schema name",
-                        () => new
-                        {
-                            originalName = result.Telemetry[i].MessageSchema.Name,
-                            newName = t.MessageSchema.Name
-                        });
+                    {
+                        this.log.Info("Changing telemetry message schema name",
+                            () => new
+                            {
+                                originalName = result.Telemetry[i].MessageSchema.Name,
+                                newName = t.MessageSchema.Name
+                            });
 
-                    result.Telemetry[i].MessageSchema.Name = t.MessageSchema.Name;
-                }
+                        result.Telemetry[i].MessageSchema.Name = t.MessageSchema.Name;
+                    }
 
-                if (t.MessageSchema.Format != null
-                    && t.MessageSchema.Format != result.Telemetry[i].MessageSchema.Format)
-                {
-                    this.log.Info("Changing telemetry message schema format",
-                        () => new
-                        {
-                            originalFormat = result.Telemetry[i].MessageSchema.Format,
-                            newFormat = t.MessageSchema.Format
-                        });
+                    if (t.MessageSchema.Format != null
+                        && t.MessageSchema.Format != result.Telemetry[i].MessageSchema.Format)
+                    {
+                        this.log.Info("Changing telemetry message schema format",
+                            () => new
+                            {
+                                originalFormat = result.Telemetry[i].MessageSchema.Format,
+                                newFormat = t.MessageSchema.Format
+                            });
 
-                    result.Telemetry[i].MessageSchema.Format = t.MessageSchema.Format.Value;
-                }
+                        result.Telemetry[i].MessageSchema.Format = t.MessageSchema.Format.Value;
+                    }
 
-                if (t.MessageSchema.Fields != null)
-                {
-                    this.log.Info("Changing telemetry message schema fields",
-                        () => new
-                        {
-                            originalFields = result.Telemetry[i].MessageSchema.Fields,
-                            newFields = t.MessageSchema.Fields
-                        });
-                    result.Telemetry[i].MessageSchema.Fields = t.MessageSchema.Fields;
+                    if (t.MessageSchema.Fields != null)
+                    {
+                        this.log.Info("Changing telemetry message schema fields",
+                            () => new
+                            {
+                                originalFields = result.Telemetry[i].MessageSchema.Fields,
+                                newFields = t.MessageSchema.Fields
+                            });
+                        result.Telemetry[i].MessageSchema.Fields = t.MessageSchema.Fields;
+                    }
                 }
             }
         }
