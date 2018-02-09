@@ -200,7 +200,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 if (t.MessageSchema != null)
                 {
                     if (!string.IsNullOrEmpty(t.MessageSchema.Name)
-                    && t.MessageSchema.Name != result.Telemetry[i].MessageSchema.Name)
+                        && t.MessageSchema.Name != result.Telemetry[i].MessageSchema.Name)
                     {
                         this.log.Info("Changing telemetry message schema name",
                             () => new
