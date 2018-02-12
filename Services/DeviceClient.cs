@@ -111,6 +111,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task UpdateTwinAsync(Device device)
         {
+            /*
             if (!this.connected) await this.ConnectAsync();
 
             var azureTwin = await this.rateLimiting.LimitTwinReadsAsync(
@@ -135,6 +136,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 () => this.client.UpdateReportedPropertiesAsync(reportedProperties));
 
             return Task.CompletedTask;
+            */
         }
 
         private async Task SendRawMessageAsync(Message message)

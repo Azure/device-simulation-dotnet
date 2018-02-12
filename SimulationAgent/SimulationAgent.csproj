@@ -8,7 +8,4 @@
   <ItemGroup>
     <ProjectReference Include="..\Services\Services.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="DeviceTwinActor\" />
-  </ItemGroup>
 </Project>
