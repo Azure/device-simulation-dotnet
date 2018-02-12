@@ -1,4 +1,6 @@
-﻿using Moq;
+﻿// Copyright (c) Microsoft. All rights reserved.
+
+using Moq;
 using System.Collections.Generic;
 using DeviceModel = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
 using Xunit.Abstractions;
@@ -44,7 +46,7 @@ namespace Services.Test
                             Format = DeviceModelMessageSchemaFormat.JSON,
                             Fields = new Dictionary<string, DeviceModelMessageSchemaType>()
                             {
-                                {"temp", new DeviceModelMessageSchemaType() }
+                                { "temp", new DeviceModelMessageSchemaType() }
                             }
                         }
                     }
@@ -60,8 +62,8 @@ namespace Services.Test
             Assert.NotEmpty(result.Telemetry);
             for (var i = 0; i < result.Telemetry.Count; i++)
             {
-                Assert.Equal(result.Telemetry[i].MessageTemplate, source.Telemetry[i].MessageTemplate);
-                Assert.Equal(result.Telemetry[i].MessageSchema.Name, source.Telemetry[i].MessageSchema.Name);
+                Assert.Equal(source.Telemetry[i].MessageTemplate, result.Telemetry[i].MessageTemplate);
+                Assert.Equal(source.Telemetry[i].MessageSchema.Name, result.Telemetry[i].MessageSchema.Name);
             }
         }
     }
