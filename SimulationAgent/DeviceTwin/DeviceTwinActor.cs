@@ -125,6 +125,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTw
         {
             throw new NotImplementedException();
         }
+
+        private Dictionary<string, object> SetupTwin(DeviceModel deviceModel)
+        {
+            // TODO
+            // Add Device Model twin values like Telemetry Reported Prop
+        }
+
         private void ScheduleTwinUpdate()
         {
             throw new NotImplementedException();
