@@ -47,7 +47,7 @@ build_docker_image() {
 
     cd out/docker/
 
-    docker build --squash --compress --tag $DOCKER_TAG \
+    docker build  --compress --tag $DOCKER_TAG \
         --label "$DOCKER_LABEL2" --label "$DOCKER_LABEL3" .
 
     echo "Run './scripts/docker/publish' to publish the image to the registry"
