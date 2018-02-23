@@ -103,7 +103,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             // Active devices status
-            string activeDeviceCount = this.GetActiveDeviceCount(isRunning);
+            string activeDeviceCount = this.GetActiveDeviceCount(isRunning).ToString();
             result.Properties.Add(ACTIVE_DEVICE_COUNT, activeDeviceCount);
 
             // Prepare status message and response
@@ -229,12 +229,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                    $"/providers/Microsoft.Devices/IotHubs/{this.deploymentConfig.AzureIothubName}/Metrics";
         }
 
-        private string GetActiveDeviceCount(bool isRunning)
+        private int GetActiveDeviceCount(bool isRunning)
         {
-            if (!isRunning) return "0";
+            if (!isRunning) return 0;
 
-            string activeDeviceCount = this.simulationRunner.GetActiveDevicesCount().ToString();
-            return activeDeviceCount;
+            return this.simulationRunner.GetActiveDevicesCount();
         }
     }
 }
