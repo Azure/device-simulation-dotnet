@@ -1,18 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using StatusController = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers.StatusController;
-using SimulationModel = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
-using Xunit;
-using Xunit.Abstractions;
-using WebService.Test.helpers;
-using Moq;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
-using System.Threading.Tasks;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
+﻿// Copyright (c) Microsoft. All rights reserved.
+
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
+using Moq;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using WebService.Test.helpers;
+using Xunit;
+using Xunit.Abstractions;
+using SimulationModel = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
+using StatusController = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers.StatusController;
 
 namespace WebService.Test.v1.Controllers
 {
@@ -59,7 +61,7 @@ namespace WebService.Test.v1.Controllers
             SetupSimulationForRunner();
 
             this.simulationRunner
-                .Setup(x => x.GetActiveDeviceCount())
+                .Setup(x => x.GetActiveDevicesCount())
                 .Returns(5);
 
             // Act

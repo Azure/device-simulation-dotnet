@@ -1,21 +1,22 @@
-﻿using Moq;
+﻿// Copyright (c) Microsoft. All rights reserved.
+
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
+using Moq;
+using SimulationAgent.Test.helpers;
 using System;
 using System.Collections.Generic;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
-using Xunit.Abstractions;
-using SimulationRunner = Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.SimulationRunner;
-using SimulationModel = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 using Xunit;
-using SimulationAgent.Test.helpers;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
-using System.Collections.Concurrent;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Xunit.Abstractions;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
+using SimulationModel = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
+using SimulationRunner = Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.SimulationRunner;
 
 namespace SimulationAgent.Test
 {
@@ -69,7 +70,7 @@ namespace SimulationAgent.Test
         public void ActiveCountInitToZero()
         {
             // Act
-            var result = this.target.GetActiveDeviceCount();
+            var result = this.target.GetActiveDevicesCount();
 
             // Assert
             Assert.Equal(0, result);
@@ -99,7 +100,7 @@ namespace SimulationAgent.Test
 
             // Act
             this.target.Start(simulation);
-            var result = this.target.GetActiveDeviceCount();
+            var result = this.target.GetActiveDevicesCount();
 
             // Assert
             Assert.Equal(7, result);

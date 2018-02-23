@@ -1,20 +1,20 @@
-﻿using System;
+﻿// Copyright (c) Microsoft. All rights reserved.
+
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
+using Moq;
+using SimulationAgent.Test.helpers;
+using System;
 using System.Collections.Generic;
 using Xunit;
 using Xunit.Abstractions;
-using SimulationAgent.Test.helpers;
-using Moq;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 
 namespace SimulationAgent.Test.DeviceState
 {
     public class DeviceStateActorTest
     {
-        private const string DEVICE_ID = "01";
         private readonly Mock<ILogger> logger;
         private readonly Mock<IScriptInterpreter> scriptInterpreter;
         private readonly Mock<UpdateDeviceState> updateDeviceStateLogic;
@@ -62,7 +62,9 @@ namespace SimulationAgent.Test.DeviceState
 
         private void SetupDeviceStatusActor()
         {
-            // Arrange
+            string DEVICE_ID = "01";
+            int postion = 1;
+            int total = 10;
             var deviceModel = new DeviceModel { Id = DEVICE_ID };
             var deviceState = new Dictionary<string, object>
             {
@@ -76,8 +78,7 @@ namespace SimulationAgent.Test.DeviceState
                     It.IsAny<Dictionary<string, object>>()))
                 .Returns(deviceState);
 
-            // Act
-            this.target.Setup(DEVICE_ID, deviceModel, 1, 10);
+            this.target.Setup(DEVICE_ID, deviceModel, postion, total);
         }
     }
 }

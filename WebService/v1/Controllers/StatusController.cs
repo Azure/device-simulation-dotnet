@@ -233,7 +233,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         {
             if (!isRunning) return "0";
 
-            string activeDeviceCount = this.simulationRunner.GetActiveDeviceCount().ToString();
+            string activeDeviceCount = this.simulationRunner.GetActiveDevicesCount().ToString();
             return activeDeviceCount;
         }
     }
