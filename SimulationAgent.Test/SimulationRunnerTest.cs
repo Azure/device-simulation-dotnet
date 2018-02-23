@@ -20,11 +20,6 @@ using SimulationRunner = Microsoft.Azure.IoTSolutions.DeviceSimulation.Simulatio
 
 namespace SimulationAgent.Test
 {
-    public enum ActorStatus
-    {
-        None,
-        Updating
-    }
     public class SimulationRunnerTest
     {
         private readonly Mock<IRateLimitingConfig> ratingConfig;
@@ -80,9 +75,10 @@ namespace SimulationAgent.Test
         public void AbleToGetActiveDeviceCount()
         {
             // Arrange
+            const int DEVICE_COUNT = 7;
             var models = new List<DeviceModelRef>
             {
-                new DeviceModelRef { Id = "01", Count = 7 }
+                new DeviceModelRef { Id = "01", Count = DEVICE_COUNT }
             };
 
             var simulation = new SimulationModel
@@ -103,7 +99,7 @@ namespace SimulationAgent.Test
             var result = this.target.GetActiveDevicesCount();
 
             // Assert
-            Assert.Equal(7, result);
+            Assert.Equal(DEVICE_COUNT, result);
         }
 
         private void SetupSimulationReadyToStart()
@@ -143,6 +139,6 @@ namespace SimulationAgent.Test
             this.factory
                 .Setup(x => x.Resolve<IDeviceTelemetryActor>())
                 .Returns(this.deviceTelemetryActor.Object);
-}
+        }
     }
 }
