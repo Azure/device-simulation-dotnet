@@ -15,7 +15,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         bool IsDeviceActive { get; }
         void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices);
         void Run();
-        bool IsDeviceActive { get; }
     }
 
     public class DeviceStateActor : IDeviceStateActor
@@ -33,6 +32,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         /// periodically updated using an external script.
         /// </summary>
         public Dictionary<string, object> DeviceState { get; set; }
+        /// <summary>
+        /// Mark the DeviceStatusActor is Active when the ActorStatus is Updating
+        /// </summary>
         public bool IsDeviceActive
         {
             get
