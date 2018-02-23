@@ -58,11 +58,12 @@ namespace WebService.Test.v1.Controllers
         public async Task GetTest()
         {
             // Arrange
+            const int ACTIVE_DEVICE_COUNT = 5;
             SetupSimulationForRunner();
 
             this.simulationRunner
                 .Setup(x => x.GetActiveDevicesCount())
-                .Returns(5);
+                .Returns(ACTIVE_DEVICE_COUNT);
 
             // Act
             var result = await this.target.Get();
@@ -70,7 +71,7 @@ namespace WebService.Test.v1.Controllers
             // Assert
             Assert.Equal(3, result.Properties.Count);
             Assert.Equal("true", result.Properties["SimulationRunning"]);
-            Assert.Equal("5", result.Properties["ActiveDeviceCount"]);
+            Assert.Equal(ACTIVE_DEVICE_COUNT.ToString(), result.Properties["ActiveDeviceCount"]);
 
         }
 
