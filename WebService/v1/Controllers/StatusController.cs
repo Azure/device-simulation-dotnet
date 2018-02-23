@@ -10,6 +10,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
 
@@ -27,6 +28,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private const string PREPROVISIONED_IOTHUB_KEY = "PreprovisionedIoTHub";
         private const string PREPROVISIONED_IOTHUB_INUSE_KEY = "PreprovisionedIoTHubInUse";
         private const string PREPROVISIONED_IOTHUB_METRICS_KEY = "PreprovisionedIoTHubMetricsUrl";
+        private const string ACTIVE_DEVICE_COUNT = "ActiveDeviceCount";
 
         private readonly IPreprovisionedIotHub preprovisionedIotHub;
         private readonly IStorageAdapterClient storage;
@@ -35,6 +37,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private readonly IServicesConfig servicesConfig;
         private readonly IDeploymentConfig deploymentConfig;
         private readonly IIotHubConnectionStringManager connectionStringManager;
+        private readonly ISimulationRunner simulationRunner;
 
         public StatusController(
             IPreprovisionedIotHub preprovisionedIotHub,
@@ -43,7 +46,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             ILogger logger,
             IServicesConfig servicesConfig,
             IDeploymentConfig deploymentConfig,
-            IIotHubConnectionStringManager connectionStringManager)
+            IIotHubConnectionStringManager connectionStringManager,
+            ISimulationRunner simulationRunner)
         {
             this.preprovisionedIotHub = preprovisionedIotHub;
             this.storage = storage;
@@ -52,6 +56,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             this.servicesConfig = servicesConfig;
             this.deploymentConfig = deploymentConfig;
             this.connectionStringManager = connectionStringManager;
+            this.simulationRunner = simulationRunner;
         }
 
         [HttpGet]
@@ -96,6 +101,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                     }
                 }
             }
+
+            // Active devices status
+            string activeDeviceCount = this.GetActiveDeviceCount(isRunning);
+            result.Properties.Add(ACTIVE_DEVICE_COUNT, activeDeviceCount);
 
             // Prepare status message and response
             if (!statusIsOk)
@@ -218,6 +227,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                    $"#resource/subscriptions/{this.deploymentConfig.AzureSubscriptionId}" +
                    $"/resourceGroups/{this.deploymentConfig.AzureResourceGroup}" +
                    $"/providers/Microsoft.Devices/IotHubs/{this.deploymentConfig.AzureIothubName}/Metrics";
+        }
+
+        private string GetActiveDeviceCount(bool isRunning)
+        {
+            if (!isRunning) return "0";
+
+            string activeDeviceCount = this.simulationRunner.GetActiveDeviceCount().ToString();
+            return activeDeviceCount;
         }
     }
 }
