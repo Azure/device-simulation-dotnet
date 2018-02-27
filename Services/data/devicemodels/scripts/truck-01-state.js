@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 /*global log*/
+/*global updateState*/
+/*global updateProperties*/
 /*jslint node: true*/
 
 "use strict";

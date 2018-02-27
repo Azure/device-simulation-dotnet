@@ -20,15 +20,17 @@ var state = {
     simulation_state: "normal_pressure"
 };
 
-// Default properties
+// Default device properties
 var properties = {};
 
 /**
  * Restore the global state using data from the previous iteration.
  *
- * @param previousState The output of main() from the previous iteration
+ * @param {object} previousState The output of main() from the previous iteration
+ * @returns {void}
  */
 function restoreState(previousState) {
+
     // If the previous state is null, force a default state
     if (previousState !== undefined && previousState !== null) {
         state = previousState;
@@ -43,6 +45,7 @@ function restoreState(previousState) {
  * @param previousProperties The output of main() from the previous iteration
  */
 function restoreProperties(previousProperties) {
+
     // If the previous properties are null, force the default properties
     if (previousProperties !== undefined && previousProperties !== null) {
         properties = previousProperties;
@@ -54,8 +57,11 @@ function restoreProperties(previousProperties) {
 /**
  * Simple formula generating a random value around the average
  * in between min and max
+ *
+ * @returns random value with given parameters
  */
 function vary(avg, percentage, min, max) {
+
     var value = avg * (1 + ((percentage / 100) * (2 * Math.random() - 1)));
     value = Math.max(value, min);
     value = Math.min(value, max);
@@ -81,8 +87,6 @@ function main(context, previousState, previousProperties) {
 
     // 75F +/- 5%,  Min 25F, Max 100F
     state.temperature = vary(75, 5, 25, 100);
-
-    previousState.GetProperties()
 
     // 70% +/- 5%,  Min 2%, Max 99%
     state.humidity = vary(70, 5, 2, 99);

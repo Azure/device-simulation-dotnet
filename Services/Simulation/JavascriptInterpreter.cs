@@ -47,7 +47,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         /// <summary>
         /// Load a JS file and execute the main() function, passing in
         /// context information and the output from the previous execution.
-        /// Returns a map of values.
+        /// Modifies the internal device state with the latest values.
         /// </summary>
         public void Invoke(
             string filename,

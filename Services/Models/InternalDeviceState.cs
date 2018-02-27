@@ -43,6 +43,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         // flag that indicates when the twin needs to be pushed to the IoT Hub
         public bool PropertyChanged { get; set; }
 
+        public InternalDeviceState(ILogger log)
+        {
+            this.simulationState = new Dictionary<string, object>();
+
+            this.PropertyChanged = false;
+            this.properties = new Dictionary<string, object>();
+            
+            this.log = log;
+        }
+
         public InternalDeviceState(DeviceModel deviceModel, ILogger log)
         {
             this.simulationState = this.SetupTelemetry(deviceModel);
@@ -117,14 +127,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         }
 
         /// <summary>
-        /// Returns true if key exists
+        /// Retrieve all simulation state values as a read only dictionary
         /// </summary>
-        public bool HasStateValue(string key)
+        public IReadOnlyDictionary<string, object> GetState()
         {
             // lock properties as mulitple scripts may try to access key at the same time.
-            lock (this.properties)
+            lock (this.simulationState)
             {
-                return this.simulationState.ContainsKey(key);
+                // return a read only dictionary to enforce updates through the set property
+                return new ReadOnlyDictionary<string, object>(this.simulationState);
             }
         }
 
@@ -141,15 +152,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         }
 
         /// <summary>
-        /// Retrieve all simulation state values as a read only dictionary
+        /// Returns true if key exists
         /// </summary>
-        public IReadOnlyDictionary<string, object> GetState()
+        public bool HasStateValue(string key)
         {
             // lock properties as mulitple scripts may try to access key at the same time.
-            lock (this.simulationState)
+            lock (this.properties)
             {
-                // return a read only dictionary to enforce updates through the set property
-                return new ReadOnlyDictionary<string, object>(this.simulationState);
+                return this.simulationState.ContainsKey(key);
             }
         }
 
@@ -158,7 +168,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         /// </summary>
         public object GetStateValue(string key)
         {
-            throw new System.NotImplementedException();
+            // lock properties as mulitple scripts may try to access key at the same time.
+            lock (this.simulationState)
+            {
+                return this.simulationState[key];
+            }
         }
 
         /// <summary>

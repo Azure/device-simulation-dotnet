@@ -42,6 +42,8 @@ namespace Services.Test.Simulation
         public void ReturnedStateIsIntact()
         {
             // Arrange
+            InternalDeviceState deviceState = new InternalDeviceState(this.logger.Object);
+
             var filename = "chiller-01-state.js";
             var context = new Dictionary<string, object>
             {
@@ -58,26 +60,26 @@ namespace Services.Test.Simulation
                 ["lights_on"] = false
             };
 
-            Mock<IInternalDeviceState> deviceState = new Mock<IInternalDeviceState>();
-            deviceState.Object.SetState(sensors);
+            deviceState.SetState(sensors);
 
             // Act
-            this.target.Invoke(filename, context, deviceState.Object);
+            this.target.Invoke(filename, context, deviceState);
 
             // Assert
-            
-            Assert.Equal(sensors.Count, deviceState.Object.GetState().Count);
-            Assert.IsType<Double>(deviceState.Object.GetStateValue("temperature"));
-            Assert.IsType<string>(deviceState.Object.GetStateValue("temperature_unit"));
-            Assert.IsType<Double>(deviceState.Object.GetStateValue("humidity"));
-            Assert.IsType<string>(deviceState.Object.GetStateValue("humidity_unit"));
-            Assert.IsType<bool>(deviceState.Object.GetStateValue("lights_on"));
+            Assert.Equal(sensors.Count, deviceState.GetState().Count);
+            Assert.IsType<Double>(deviceState.GetStateValue("temperature"));
+            Assert.IsType<string>(deviceState.GetStateValue("temperature_unit"));
+            Assert.IsType<Double>(deviceState.GetStateValue("humidity"));
+            Assert.IsType<string>(deviceState.GetStateValue("humidity_unit"));
+            Assert.IsType<bool>(deviceState.GetStateValue("lights_on"));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void TestJavascriptFiles()
         {
             // Arrange
+            InternalDeviceState deviceState = new InternalDeviceState(this.logger.Object);
+
             var files = new List<string>
             {
                 "chiller-01-state.js",
@@ -91,13 +93,11 @@ namespace Services.Test.Simulation
                 ["deviceModel"] = "room"
             };
 
-            Mock<IInternalDeviceState> state = new Mock<IInternalDeviceState>();
-
             // Act - Assert (no exception should occur)
             foreach (var file in files)
             {
-                this.target.Invoke(file, context, state.Object);
-                Assert.NotNull(state.Object.GetState());
+                this.target.Invoke(file, context, deviceState);
+                Assert.NotNull(deviceState.GetState());
             }
         }
 

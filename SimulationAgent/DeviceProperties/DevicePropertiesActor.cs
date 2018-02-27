@@ -1,8 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -42,8 +40,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         public enum ActorEvents
         {
             Started,
-            TwinUpdateFailed,
-            TwinUpdated,
+            PropertiesUpdateFailed,
+            PropertiesUpdated,
         }
 
         private readonly ILogger log;
@@ -53,7 +51,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
         private ActorStatus status;
         private string deviceId;
-        private DeviceModel deviceModel;
         private long whenToRun;
 
         /// <summary>
@@ -94,9 +91,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             this.updatePropertiesLogic = updatePropertiesLogic;
 
             this.status = ActorStatus.None;
-            this.deviceModel = null;
             this.deviceId = null;
             this.deviceStateActor = null;
+        }
+
+        public void Setup(
+            string deviceId,
+            IDeviceStateActor deviceStateActor,
+            IDeviceConnectionActor deviceConnectionActor)
+        {
+            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
+            // for future PR
+            throw new NotImplementedException();
         }
 
         public void HandleEvent(DevicePropertiesActor.ActorEvents e)
@@ -107,16 +113,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         }
 
         public string Run()
-        {
-            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
-            // for future PR
-            throw new NotImplementedException();
-        }
-
-        public void Setup(
-            string deviceId,
-            IDeviceStateActor deviceStateActor,
-            IDeviceConnectionActor deviceConnectionActor)
         {
             // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
             // for future PR

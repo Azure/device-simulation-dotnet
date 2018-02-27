@@ -35,6 +35,7 @@ namespace Services.Test
             this.config = new Mock<IServicesConfig>();
             this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
             this.registry = new Mock<IRegistryManager>();
+            this.rateLimiting = new Mock<IRateLimiting>();
             this.logger = new Mock<ILogger>();
 
             this.target = new Devices(
