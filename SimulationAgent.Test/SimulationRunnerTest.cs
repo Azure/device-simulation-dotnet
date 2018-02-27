@@ -102,6 +102,10 @@ namespace SimulationAgent.Test
             Assert.Equal(DEVICE_COUNT, result);
         }
 
+        /*
+         * Setup deviceModel, devicesIds, simulations, devices, deviceStateActor,
+         * deviceConnectionActor, deviceTelemetryActor for simulationRunner
+         */
         private void SetupSimulationReadyToStart()
         {
             var deviceIds = new List<string> { "01", "02" };
