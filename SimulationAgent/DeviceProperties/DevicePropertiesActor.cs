@@ -1,39 +1,40 @@
-﻿using System;
+﻿// Copyright (c) Microsoft. All rights reserved.
+
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTwin;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTwinActor
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties
 {
-    public interface IDeviceTwinActor
+    public interface IDevicePropertiesActor
     {
-        Dictionary<string, object> DeviceState { get; }
+        IInternalDeviceState DeviceState { get; }
         IDeviceClient Client { get; }
-        Services.Models.DeviceTwin DeviceTwin { get; }
 
         void Setup(
             string deviceId,
-            Services.Models.DeviceTwin deviceTwin,
             IDeviceStateActor deviceStateActor,
             IDeviceConnectionActor deviceConnectionActor);
 
         string Run();
-        void HandleEvent(DeviceTwinActor.ActorEvents e);
+        void HandleEvent(DevicePropertiesActor.ActorEvents e);
         void Stop();
     }
 
-    public class DeviceTwinActor : IDeviceTwinActor
+    public class DevicePropertiesActor : IDevicePropertiesActor
     {
         private enum ActorStatus
         {
             None,
             ReadyToStart,
-            ReadyToSend,
+            WaitingForUpdate,
+            ReadyToUpdate,
             Updating,
             Stopped
         }
@@ -48,7 +49,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTw
         private readonly ILogger log;
         private readonly IActorsLogger actorLogger;
         private readonly IRateLimiting rateLimiting;
-        private readonly IDeviceTwinLogic updateTwinLogic;
+        private readonly IDevicePropertiesLogic updatePropertiesLogic;
 
         private ActorStatus status;
         private string deviceId;
@@ -67,34 +68,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTw
         private IDeviceConnectionActor deviceConnectionActor;
 
         /// <summary>
-        /// The telemetry message managed by this actor
-        /// </summary>
-        public DeviceModel.DeviceModelMessage Message { get; private set; }
-
-        /// <summary>
         /// State maintained by the state actor
         /// </summary>
-        public Dictionary<string, object> DeviceState => this.deviceStateActor.DeviceState;
+        public IInternalDeviceState DeviceState => this.deviceStateActor.DeviceState;
 
         /// <summary>
-        /// Azure IoT Hub client created by the connection actor
+        /// Azure IoT Hub client
         /// </summary>
         public IDeviceClient Client => this.deviceConnectionActor.Client;
 
-        public Services.Models.DeviceTwin DeviceTwin => throw new NotImplementedException();
+        /// <summary>
+        /// Azure IoT Hub Device instance
+        /// </summary>
+        public Device Device => this.deviceConnectionActor.Device;
 
-        public DeviceTwinActor(
+        public DevicePropertiesActor(
             ILogger logger,
             IActorsLogger actorLogger,
             IRateLimiting rateLimiting,
-            UpdateTwin updateTwinLogic)
+            UpdateReportedProperties updatePropertiesLogic)
         {
             this.log = logger;
             this.actorLogger = actorLogger;
             this.rateLimiting = rateLimiting;
-            this.updateTwinLogic = updateTwinLogic;
-
-            this.Message = null;
+            this.updatePropertiesLogic = updatePropertiesLogic;
 
             this.status = ActorStatus.None;
             this.deviceModel = null;
@@ -102,7 +99,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTw
             this.deviceStateActor = null;
         }
 
-        public void HandleEvent(DeviceTwinActor.ActorEvents e)
+        public void HandleEvent(DevicePropertiesActor.ActorEvents e)
         {
             throw new NotImplementedException();
         }
@@ -114,7 +111,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTw
 
         public void Setup(
             string deviceId,
-            Services.Models.DeviceTwin deviceTwin,
             IDeviceStateActor deviceStateActor,
             IDeviceConnectionActor deviceConnectionActor)
         {
@@ -126,15 +122,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTw
             throw new NotImplementedException();
         }
 
-        private Dictionary<string, object> SetupTwin(DeviceModel deviceModel)
-        {
-            // TODO
-            // Add Device Model twin values like Telemetry Reported Prop
-        }
-
         private void ScheduleTwinUpdate()
         {
-            throw new NotImplementedException();
+            // considers the throttling settings, identifies when twin can be updated
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            this.whenToRun = now + this.rateLimiting.GetPauseForNextTwinWrite();
+
+            this.status = ActorStatus.ReadyToUpdate;
+
+            this.actorLogger.TwinUpdateScheduled(this.whenToRun);
+            this.log.Debug("Twin update scheduled",
+                () => new
+                {
+                    this.deviceId,
+                    Status = this.status.ToString(),
+                    When = this.log.FormatDate(this.whenToRun)
+                });
         }
 
         private void ScheduleTwinUpdateRetry()

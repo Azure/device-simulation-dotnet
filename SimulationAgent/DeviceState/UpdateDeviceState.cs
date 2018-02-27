@@ -48,7 +48,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
 
         public void Run()
         {
-            if ((bool) this.context.DeviceState[DeviceStateActor.CALC_TELEMETRY])
+            if ((bool) this.context.DeviceState.GetStateValue(DeviceStateActor.CALC_TELEMETRY))
             {
                 this.log.Debug("Updating device telemetry data", () => new { this.deviceId });
 
@@ -63,7 +63,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                 {
                     foreach (var script in this.deviceModel.Simulation.Scripts)
                     {
-                        this.context.DeviceState = this.scriptInterpreter.Invoke(
+                        // call Invoke() which to update the internal device state
+                        this.scriptInterpreter.Invoke(
                             script,
                             scriptContext,
                             this.context.DeviceState);

@@ -33,6 +33,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public string Description { get; set; }
         public IoTHubProtocol Protocol { get; set; }
         public StateSimulation Simulation { get; set; }
+        public Dictionary<string, object> Properties { get; set; }
         public IList<DeviceModelMessage> Telemetry { get; set; }
         public IDictionary<string, Script> CloudToDeviceMethods { get; set; }
 
@@ -44,6 +45,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.Description = string.Empty;
             this.Protocol = IoTHubProtocol.AMQP;
             this.Simulation = new StateSimulation();
+            this.Properties = new Dictionary<string, object>();
             this.Telemetry = new List<DeviceModelMessage>();
             this.CloudToDeviceMethods = new Dictionary<string, Script>();
         }

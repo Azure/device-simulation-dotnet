@@ -37,6 +37,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         void SendingTelemetry();
         void TelemetryDelivered();
         void TelemetryFailed();
+
+        void TwinUpdateScheduled(long time);
+        void TwinUpdateRetryScheduled(long time);
+        void UpdatingDeviceTwin();
+        void DeviceTwinUpdated();
+        void DeviceTwinUpdateFailed();
+
     }
 
     public class ActorsLogger : IActorsLogger
@@ -210,7 +217,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             this.Log("Twin tagging FAILED");
-            this.LogTwin("Twin tagg FAILED");
+            this.LogTwin("Twin tag FAILED");
         }
 
         public void DeviceConnectionScheduled(long time)
@@ -286,6 +293,48 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
             this.Log("Telemetry FAILED");
             this.LogTelemetry("FAILED");
+        }
+
+        public void TwinUpdateScheduled(long time)
+        {
+            if (!this.enabled) return;
+
+            var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
+            this.Log("Twin update scheduled " + msg);
+            this.LogTwin("Twin update scheduled " + msg);
+        }
+
+        public void TwinUpdateRetryScheduled(long time)
+        {
+            if (!this.enabled) return;
+
+            var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
+            this.Log("Twin update retry scheduled " + msg);
+            this.LogTwin("Retry scheduled " + msg);
+        }
+
+        public void UpdatingDeviceTwin()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Updating twin");
+            this.LogTwin("Updating");
+        }
+
+        public void DeviceTwinUpdated()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Twin updated");
+            this.LogTwin("Updated");
+        }
+
+        public void DeviceTwinUpdateFailed()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Twin update FAILED");
+            this.LogTwin("Twin update FAILED");
         }
 
         private void Log(string msg)

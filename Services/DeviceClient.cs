@@ -19,7 +19,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task ConnectAsync();
         Task DisconnectAsync();
         Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema);
-        Task UpdateTwinAsync(Device device);
         Task RegisterMethodsForDeviceAsync(IDictionary<string, Script> methods, Dictionary<string, object> deviceState);
     }
 
@@ -109,9 +108,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             await this.SendRawMessageAsync(eventMessage);
         }
 
-        public async Task UpdateTwinAsync(Device device)
+        public async Task UpdatePropertiesAsync(Device device)
         {
-            /*
             if (!this.connected) await this.ConnectAsync();
 
             var azureTwin = await this.rateLimiting.LimitTwinReadsAsync(
@@ -121,7 +119,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var props = azureTwin.Properties.Reported.GetEnumerator();
             while (props.MoveNext())
             {
-                var current = (KeyValuePair<string, object>) props.Current;
+                var current = (KeyValuePair<string, object>)props.Current;
 
                 if (!device.Twin.ReportedProperties.ContainsKey(current.Key))
                 {
@@ -134,9 +132,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var reportedProperties = DictionaryToTwinCollection(device.Twin.ReportedProperties);
             await this.rateLimiting.LimitTwinWritesAsync(
                 () => this.client.UpdateReportedPropertiesAsync(reportedProperties));
-
-            return Task.CompletedTask;
-            */
         }
 
         private async Task SendRawMessageAsync(Message message)

@@ -2,16 +2,18 @@
 
 using System;
 using System.Collections.Generic;
+using Jint.Native;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState
 {
     public interface IDeviceStateActor
     {
-        Dictionary<string, object> DeviceState { get; }
+        IInternalDeviceState DeviceState { get; }
         void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices);
         void Run();
     }
@@ -24,13 +26,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
             Updating
         }
 
-        public const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
-
         /// <summary>
-        /// The virtual state of the simulated device. The state is
-        /// periodically updated using an external script.
+        /// The virtual state of the simulated device. The state is composed of 
+        /// both the device reported properties (device values like firmware etc..)
+        /// and the device simulation state (simulated sensor data like temperature etc...)
+        /// that are periodically updated using an external script.
         /// </summary>
-        public Dictionary<string, object> DeviceState { get; set; }
+        public IInternalDeviceState DeviceState { get; set; }
+
+        public const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
 
         private readonly ILogger log;
         private readonly UpdateDeviceState updateDeviceStateLogic;
@@ -53,7 +57,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         /// Invoke this method before calling Start(), to initialize the actor
         /// with details like the device model and message type to simulate.
         /// If this method is not called before Start(), the application will
-        /// thrown an exception.
+        /// throw an exception.
         /// Setup() should be called only once, typically after the constructor.
         /// </summary>
         public void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices)
@@ -82,7 +86,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                     // Prepare the dependencies
                     case ActorStatus.None:
                         this.updateDeviceStateLogic.Setup(this, this.deviceId, this.deviceModel);
-                        this.DeviceState = this.SetupTelemetry(this.deviceModel);
+                        this.DeviceState = new InternalDeviceState(this.deviceModel, this.log);
                         this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState });
                         this.MoveForward();
                         return;
@@ -126,32 +130,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
             }
 
             throw new Exception("Application error, MoveForward() should not be invoked when status = " + this.status);
-        }
-
-        private Dictionary<string, object> SetupTelemetry(DeviceModel deviceModel)
-        {
-            // put telemetry properties in state
-            Dictionary<string, object> state = CloneObject(deviceModel.Simulation.InitialState);
-
-            // Ensure the state contains the "online" key
-            if (!state.ContainsKey("online"))
-            {
-                state["online"] = true;
-            }
-
-            // TODO:This is used to control whether telemetry is calculated in UpdateDeviceState.
-            // methods can turn telemetry off/on; e.g. setting temp high- turnoff, set low, turn on
-            // it would be better to do this at the telemetry item level - we should add this in the future
-            state.Add(CALC_TELEMETRY, true);
-
-            return state;
-        }
-
-        /// <summary>Copy an object by value</summary>
-        private static T CloneObject<T>(T source)
-        {
-            return JsonConvert.DeserializeObject<T>(
-                JsonConvert.SerializeObject(source));
         }
     }
 }

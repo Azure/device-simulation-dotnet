@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
@@ -16,12 +17,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         /// <param name="scriptPath">Name of the script</param>
         /// <param name="scriptParams">Script parameters, e.g. min, max, step</param>
         /// <param name="context">Context, e.g. current time, device Id, device Model</param>
-        /// <param name="state">Current device sensors state</param>
-        /// <returns>New device sensors state</returns>
-        Dictionary<string, object> Invoke(
+        /// <param name="state">Current device sensors state and device properties state</param>
+        /// <remarks> Updates the internal device sensors state </remarks>
+        void Invoke(
             string scriptPath, object scriptParams,
             Dictionary<string, object> context,
-            Dictionary<string, object> state);
+            IInternalDeviceState state);
     }
 
     public class InternalInterpreter : IInternalInterpreter
@@ -47,43 +48,42 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             this.random = new Random();
         }
 
-        public Dictionary<string, object> Invoke(
+        public void Invoke(
             string scriptPath,
             object scriptParams,
             Dictionary<string, object> context,
-            Dictionary<string, object> state)
+            IInternalDeviceState state)
         {
             switch (scriptPath.ToLowerInvariant())
             {
                 case SCRIPT_RANDOM:
-                    return this.RunRandomNumberScript(scriptParams, state);
-
+                    this.RunRandomNumberScript(scriptParams, state);
+                    break;
                 case SCRIPT_INCREASING:
-                    return this.RunIncreasingScript(scriptParams, state);
-
+                    this.RunIncreasingScript(scriptParams, state);
+                    break;
                 case SCRIPT_DECREASING:
-                    return this.RunDecreasingScript(scriptParams, state);
-
+                    this.RunDecreasingScript(scriptParams, state);
+                    break;
                 default:
                     throw new NotSupportedException($"Unknown script `{scriptPath}`.");
             }
         }
 
         // For each sensors specified, generate a random number in the range requested
-        private Dictionary<string, object> RunRandomNumberScript(object scriptParams, Dictionary<string, object> state)
+        private void RunRandomNumberScript(object scriptParams, IInternalDeviceState state)
         {
             var sensors = this.JsonParamAsDictionary(scriptParams);
             foreach (var sensor in sensors)
             {
                 (double min, double max) = this.GetMinMaxParameters(sensor.Value);
-                state[sensor.Key] = this.random.NextDouble() * (max - min) + min;
+                var value = this.random.NextDouble() * (max - min) + min;
+                state.SetStateValue(sensor.Key, value);
             }
-
-            return state;
         }
 
         // For each sensors specified, increase the current state, up to a maximum, then restart from a minimum
-        private Dictionary<string, object> RunIncreasingScript(object scriptParams, Dictionary<string, object> state)
+        private void RunIncreasingScript(object scriptParams, IInternalDeviceState state)
         {
             var sensors = this.JsonParamAsDictionary(scriptParams);
             foreach (var sensor in sensors)
@@ -92,22 +92,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 (double min, double max, double step) = this.GetMinMaxStepParameters(sensor.Value);
 
                 // Add the sensor to the state if missing
-                if (!state.ContainsKey(sensor.Key))
+                if (!state.HasStateValue(sensor.Key))
                 {
-                    state[sensor.Key] = min;
+                    state.SetStateValue(sensor.Key, min);
                 }
 
-                double current = Convert.ToDouble(state[sensor.Key]);
+                double current = Convert.ToDouble(state.GetStateValue(sensor.Key));
                 double next = AreEqual(current, max) ? min : Math.Min(current + step, max);
 
-                state[sensor.Key] = next;
+                state.SetStateValue(sensor.Key, next);
             }
-
-            return state;
         }
 
         // For each sensors specified, decrease the current state, down to a minimum, then restart from a maximum
-        private Dictionary<string, object> RunDecreasingScript(object scriptParams, Dictionary<string, object> state)
+        private void RunDecreasingScript(object scriptParams, IInternalDeviceState state)
         {
             var sensors = this.JsonParamAsDictionary(scriptParams);
             foreach (var sensor in sensors)
@@ -116,18 +114,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 (double min, double max, double step) = this.GetMinMaxStepParameters(sensor.Value);
 
                 // Add the sensor to the state if missing
-                if (!state.ContainsKey(sensor.Key))
+                if (!state.HasStateValue(sensor.Key))
                 {
-                    state[sensor.Key] = max;
+                    state.SetStateValue(sensor.Key, max);
                 }
 
-                double current = Convert.ToDouble(state[sensor.Key]);
+                double current = Convert.ToDouble(state.GetStateValue(sensor.Key));
                 double next = AreEqual(current, min) ? max : Math.Max(current - step, min);
 
-                state[sensor.Key] = next;
+                state.SetStateValue(sensor.Key, next);
             }
-
-            return state;
         }
 
         private (double, double) GetMinMaxParameters(object parameters)

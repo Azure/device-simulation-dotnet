@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Moq;
@@ -48,7 +49,7 @@ namespace Services.Test.Simulation
                 ["deviceId"] = "device-123",
                 ["deviceModel"] = "room"
             };
-            var state = new Dictionary<string, object>
+            var sensors = new Dictionary<string, object>
             {
                 ["temperature"] = 50.5,
                 ["temperature_unit"] = "device-123",
@@ -57,16 +58,20 @@ namespace Services.Test.Simulation
                 ["lights_on"] = false
             };
 
+            Mock<IInternalDeviceState> deviceState = new Mock<IInternalDeviceState>();
+            deviceState.Object.SetState(sensors);
+
             // Act
-            Dictionary<string, object> result = this.target.Invoke(filename, context, state);
+            this.target.Invoke(filename, context, deviceState.Object);
 
             // Assert
-            Assert.Equal(state.Count, result.Count);
-            Assert.IsType<Double>(result["temperature"]);
-            Assert.IsType<string>(result["temperature_unit"]);
-            Assert.IsType<Double>(result["humidity"]);
-            Assert.IsType<string>(result["humidity_unit"]);
-            Assert.IsType<bool>(result["lights_on"]);
+            
+            Assert.Equal(sensors.Count, deviceState.Object.GetState().Count);
+            Assert.IsType<Double>(deviceState.Object.GetStateValue("temperature"));
+            Assert.IsType<string>(deviceState.Object.GetStateValue("temperature_unit"));
+            Assert.IsType<Double>(deviceState.Object.GetStateValue("humidity"));
+            Assert.IsType<string>(deviceState.Object.GetStateValue("humidity_unit"));
+            Assert.IsType<bool>(deviceState.Object.GetStateValue("lights_on"));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -86,11 +91,13 @@ namespace Services.Test.Simulation
                 ["deviceModel"] = "room"
             };
 
+            Mock<IInternalDeviceState> state = new Mock<IInternalDeviceState>();
+
             // Act - Assert (no exception should occur)
             foreach (var file in files)
             {
-                var result = this.target.Invoke(file, context, null);
-                Assert.NotNull(result);
+                this.target.Invoke(file, context, state.Object);
+                Assert.NotNull(state.Object.GetState());
             }
         }
 

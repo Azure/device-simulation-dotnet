@@ -11,23 +11,24 @@ using Jint.Parser;
 using Jint.Parser.Ast;
 using Jint.Runtime.Descriptors;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 {
     public interface IJavascriptInterpreter
     {
-        Dictionary<string, object> Invoke(
+        void Invoke(
             string filename,
             Dictionary<string, object> context,
-            Dictionary<string, object> state);
+            IInternalDeviceState state);
     }
 
     public class JavascriptInterpreter : IJavascriptInterpreter
     {
         private readonly ILogger log;
         private readonly string folder;
-        private Dictionary<string, object> deviceState;
+        private IInternalDeviceState deviceState;
 
         // The following are static to improve overall performance
         // TODO make the class a singleton - https://github.com/Azure/device-simulation-dotnet/issues/45
@@ -48,10 +49,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         /// context information and the output from the previous execution.
         /// Returns a map of values.
         /// </summary>
-        public Dictionary<string, object> Invoke(
+        public void Invoke(
             string filename,
             Dictionary<string, object> context,
-            Dictionary<string, object> state)
+            IInternalDeviceState state)
         {
             this.deviceState = state;
 
@@ -61,10 +62,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             // logging into the service logs
             engine.SetValue("log", new Action<object>(this.JsLog));
 
-            //register callback for state updates
+            // register callback for state updates
             engine.SetValue("updateState", new Action<JsValue>(this.UpdateState));
 
-            //register sleep function for javascript use
+            // register callback for property updates
+            engine.SetValue("updateProperty", new Action<JsValue>(this.UpdateProperties));
+
+            // register sleep function for javascript use
             engine.SetValue("sleep", new Action<int>(this.Sleep));
 
             try
@@ -84,16 +88,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 }
 
                 this.log.Debug("Executing JS function", () => new { filename });
-                JsValue output = engine.Execute(program).Invoke("main", context, this.deviceState);
+                JsValue output = engine.Execute(program).Invoke("main", context,
+                    this.deviceState.GetState(), this.deviceState.GetProperties());
 
-                var result = this.JsValueToDictionary(output);
-                this.log.Debug("JS function success", () => new { filename, result });
-                return result;
+                // update the internal device state with the new state
+                this.UpdateState(output);
+
+                this.log.Debug("JS function success", () => new { filename, output });
             }
             catch (Exception e)
             {
                 this.log.Error("JS function failure", () => new { e.Message, e.GetType().FullName });
-                return new Dictionary<string, object>();
             }
         }
 
@@ -102,7 +107,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         /// returned by Jint can be either a Dictionary or a
         /// Jint.Native.ObjectInstance, each with a different parsing logic.
         /// </summary>
-        private Dictionary<string, object> JsValueToDictionary(JsValue data)
+        public Dictionary<string, object> JsValueToDictionary(JsValue data)
         {
             var result = new Dictionary<string, object>();
             if (data == null) return result;
@@ -174,7 +179,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 
         // TODO: Move this out of the scriptinterpreter class into DeviceClient to keep this class stateless
         //       https://github.com/Azure/device-simulation-dotnet/issues/45
-        private void UpdateState(JsValue data)
+        public void UpdateState(JsValue data)
         {
             string key;
             object value;
@@ -182,20 +187,42 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 
             this.log.Debug("Updating state from the script", () => new { data, this.deviceState });
 
-            stateChanges = this.JsValueToDictionary((JsValue) data);
+            stateChanges = JsValueToDictionary((JsValue)data);
 
-            //Update device state with the script data passed
+            // Update device state with the script data passed
             lock (this.deviceState)
             {
                 for (int i = 0; i < stateChanges.Count; i++)
                 {
                     key = stateChanges.Keys.ElementAt(i);
                     value = stateChanges.Values.ElementAt(i);
-                    if (this.deviceState.ContainsKey(key))
-                    {
-                        this.log.Debug("state change", () => new { key, value });
-                        this.deviceState[key] = value;
-                    }
+                    this.log.Debug("state change", () => new { key, value });
+                    this.deviceState.SetStateValue(key, value);
+                }
+            }
+        }
+
+        // TODO: Move this out of the scriptinterpreter class into DeviceStateActor to keep this class stateless
+        //       https://github.com/Azure/device-simulation-dotnet/issues/45
+        private void UpdateProperties(JsValue data)
+        {
+            string key;
+            object value;
+            Dictionary<string, object> propertyChanges;
+
+            this.log.Debug("Updating device properties from the script", () => new { data, this.deviceState });
+
+            propertyChanges = this.JsValueToDictionary((JsValue)data);
+
+            // Update device properties with the script data passed
+            lock (this.deviceState)
+            {
+                for (int i = 0; i < propertyChanges.Count; i++)
+                {
+                    key = propertyChanges.Keys.ElementAt(i);
+                    value = propertyChanges.Values.ElementAt(i);
+
+                    this.deviceState.SetProperty(key, value);
                 }
             }
         }
