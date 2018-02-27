@@ -68,7 +68,7 @@ namespace WebService.Test.v1.Controllers
 =======
             const int ACTIVE_DEVICE_COUNT = 5;
             const int FAILED_MESSAGE_COUNT = 1;
-            const int TOTAL_MESSAGE_COUNT = 1;
+            const int TOTAL_MESSAGE_COUNT = 10;
             const double MESSAGE_THROUGHPUT = 15.5556;
             var updatedValue = new ValueApiModel { ETag = "newETag" };
             const string IOTHUB_CONNECTION_STRING = "hostname=hub-1;sharedaccesskeyname=hubowner;sharedaccesskey=fakekey";
@@ -129,7 +129,7 @@ namespace WebService.Test.v1.Controllers
             Assert.Equal("true", result.Properties["PreprovisionedIoTHubInUse"]); 
             Assert.Equal(ACTIVE_DEVICE_COUNT.ToString(), result.Properties["ActiveDeviceCount"]);
             Assert.Equal(MESSAGE_THROUGHPUT.ToString("F"), result.Properties["MessagesPerSecond"]);
-            Assert.Equal(ACTIVE_DEVICE_COUNT.ToString(), result.Properties["ActiveDeviceCount"]);
+            Assert.Equal(TOTAL_MESSAGE_COUNT.ToString(), result.Properties["TotalMessagesCount"]);
             Assert.Equal(FAILED_MESSAGE_COUNT.ToString(), result.Properties["FailedMessagesCount"]);
 >>>>>>> Add telemetry metrics support
         }
