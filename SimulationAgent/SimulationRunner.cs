@@ -22,6 +22,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         void Start(Services.Models.Simulation simulation);
         void Stop();
         int GetActiveDevicesCount();
+        int GetTotalMessagesCount();
+        int GetFailedMessagesCount();
+        double GetMessageThroughput();
     }
 
     public class SimulationRunner : ISimulationRunner
@@ -77,6 +80,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Flag signaling whether the simulation has started and is running (to avoid contentions)
         private bool running;
 
+        // Counter for telemetry messages
+        private int totalMessagesCount = 0;
+
+        // Counter for failed telemetry messages;
+        private int failedMessagesCount = 0;
+
+        // Per seconde counter for telemetry messages
+        private readonly PerSecondCounter messaging;
+
         public SimulationRunner(
             IRateLimitingConfig ratingConfig,
             ILogger logger,
@@ -84,7 +96,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             IDeviceModelsGeneration deviceModelsOverriding,
             IDevices devices,
             ISimulations simulations,
-            IFactory factory)
+            IFactory factory,
+            IRateLimiting messaging)
         {
             this.connectionLoopSettings = new ConnectionLoopSettings(ratingConfig);
 
@@ -102,6 +115,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.deviceStateActors = new ConcurrentDictionary<string, IDeviceStateActor>();
             this.deviceConnectionActors = new ConcurrentDictionary<string, IDeviceConnectionActor>();
             this.deviceTelemetryActors = new ConcurrentDictionary<string, IDeviceTelemetryActor>();
+
+            this.messaging = new PerSecondCounter(
+                ratingConfig.DeviceMessagesPerSecond, "Device msg/sec", logger);
         }
 
         /// <summary>
@@ -233,6 +249,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         // Method to return the count of active devices
         public int GetActiveDevicesCount() => this.deviceStateActors.Count(a => a.Value.IsDeviceActive);
+
+        public int GetTotalMessagesCount() => this.deviceTelemetryActors.Sum(a => a.Value.TotalMessagesCount);
+
+        public int GetFailedMessagesCount() => this.deviceTelemetryActors.Sum(a => a.Value.FailedMessagesCount);
+
+        public double GetMessageThroughput() => this.messaging.GetThroughputForMessages();
 
         private DeviceModel GetDeviceModel(string id, Services.Models.Simulation.DeviceModelOverride overrides)
         {

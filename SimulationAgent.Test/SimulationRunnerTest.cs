@@ -22,6 +22,7 @@ namespace SimulationAgent.Test
 {
     public class SimulationRunnerTest
     {
+        private readonly Mock<IRateLimitingConfig> rateLimitingConfig;
         private readonly Mock<IRateLimitingConfig> ratingConfig;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IDeviceModels> deviceModels;
@@ -33,6 +34,7 @@ namespace SimulationAgent.Test
         private readonly Mock<IDeviceStateActor> deviceStateActor;
         private readonly Mock<IDeviceConnectionActor> deviceConnectionActor;
         private readonly Mock<IDeviceTelemetryActor> deviceTelemetryActor;
+        private readonly Mock<IRateLimiting> rateLimiting;
         private readonly Mock<UpdateDeviceState> updateDeviceStateLogic;
         private readonly SimulationRunner target;
 
@@ -50,6 +52,9 @@ namespace SimulationAgent.Test
             this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
             this.deviceTelemetryActor = new Mock<IDeviceTelemetryActor>();
             this.updateDeviceStateLogic = new Mock<UpdateDeviceState>();
+            this.rateLimiting = new Mock<IRateLimiting>();
+
+            this.ratingConfig.Setup(x => x.DeviceMessagesPerSecond).Returns(10);
 
             this.target = new SimulationRunner(
                 this.ratingConfig.Object,
@@ -58,7 +63,8 @@ namespace SimulationAgent.Test
                 this.deviceModelsOverriding.Object,
                 this.devices.Object,
                 this.simulations.Object,
-                this.factory.Object);
+                this.factory.Object,
+                this.rateLimiting.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

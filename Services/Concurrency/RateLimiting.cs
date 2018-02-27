@@ -11,6 +11,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         long GetPauseForNextTwinRead();
         long GetPauseForNextTwinWrite();
         long GetPauseForNextMessage();
+        double GetThroughputForMessages();
     }
 
     public class RateLimiting : IRateLimiting
@@ -82,5 +83,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             // https://github.com/Azure/device-simulation-dotnet/issues/80
             return this.messaging.GetPause();
         }
+
+        /// <summary>
+        /// Get message throughput (messages per second)
+        /// </summary>
+        public double GetThroughputForMessages() => this.messaging.GetThroughputForMessages();
     }
 }

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
@@ -28,7 +29,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private const string PREPROVISIONED_IOTHUB_KEY = "PreprovisionedIoTHub";
         private const string PREPROVISIONED_IOTHUB_INUSE_KEY = "PreprovisionedIoTHubInUse";
         private const string PREPROVISIONED_IOTHUB_METRICS_KEY = "PreprovisionedIoTHubMetricsUrl";
-        private const string ACTIVE_DEVICES_COUNT_KEY = "ActiveDevicesCount";
+        private const string ACTIVE_DEVICE_COUNT = "ActiveDeviceCount";
+        private const string TOTAL_MESSAGES_COUNT = "TotalMessagesCount";
+        private const string FAILED_MESSAGES_COUNT = "FailedMessagesCount";
+        private const string MESSAGE_PER_SECOND = "MessagesPerSecond";
 
         private readonly IPreprovisionedIotHub preprovisionedIotHub;
         private readonly IStorageAdapterClient storage;
@@ -38,6 +42,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private readonly IDeploymentConfig deploymentConfig;
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly ISimulationRunner simulationRunner;
+        private readonly IRateLimiting rateReporter;
 
         public StatusController(
             IPreprovisionedIotHub preprovisionedIotHub,
@@ -47,7 +52,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             IServicesConfig servicesConfig,
             IDeploymentConfig deploymentConfig,
             IIotHubConnectionStringManager connectionStringManager,
-            ISimulationRunner simulationRunner)
+            ISimulationRunner simulationRunner,
+            IRateLimiting rateLimiting)
         {
             this.preprovisionedIotHub = preprovisionedIotHub;
             this.storage = storage;
@@ -57,6 +63,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             this.deploymentConfig = deploymentConfig;
             this.connectionStringManager = connectionStringManager;
             this.simulationRunner = simulationRunner;
+            this.rateReporter = rateLimiting;
         }
 
         [HttpGet]
@@ -103,8 +110,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             // Active devices status
-            string activeDevicesCount = this.GetActiveDevicesCount(isRunning).ToString();
-            result.Properties.Add(ACTIVE_DEVICES_COUNT_KEY, activeDevicesCount);
+            string activeDeviceCount = this.GetActiveDevicesCount(isRunning).ToString();
+            result.Properties.Add(ACTIVE_DEVICE_COUNT, activeDeviceCount);
+
+            // Total telemetry messages count
+            string totalMessagesCount = this.GetTotalMessagesCount(isRunning).ToString();
+            result.Properties.Add(TOTAL_MESSAGES_COUNT, totalMessagesCount);
+
+            // Failed telemetry messages count
+            string failedMessagesCount = this.GetFailedMessagesCount(isRunning).ToString();
+            result.Properties.Add(FAILED_MESSAGES_COUNT, failedMessagesCount);
+
+            // Telemetry messages thoughput
+            string messagesPerSecond = this.GetMessagesPerSecond(isRunning).ToString("F");
+            result.Properties.Add(MESSAGE_PER_SECOND, messagesPerSecond);
 
             // Prepare status message and response
             if (!statusIsOk)
@@ -234,6 +253,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             if (!isRunning) return 0;
 
             return this.simulationRunner.GetActiveDevicesCount();
+        }
+
+        private int GetTotalMessagesCount(bool isRunning)
+        {
+            if (!isRunning) return 0;
+
+            return this.simulationRunner.GetTotalMessagesCount();
+        }
+
+        private int GetFailedMessagesCount(bool isRunning)
+        {
+            if (!isRunning) return 0;
+
+            return this.simulationRunner.GetFailedMessagesCount();
+        }
+
+        private double GetMessagesPerSecond(bool isRunning)
+        {
+            if (!isRunning) return 0;
+
+            return this.rateReporter.GetThroughputForMessages();
         }
     }
 }

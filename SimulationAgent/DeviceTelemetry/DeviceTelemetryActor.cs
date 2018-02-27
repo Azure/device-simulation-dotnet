@@ -17,6 +17,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         Dictionary<string, object> DeviceState { get; }
         IDeviceClient Client { get; }
         DeviceModel.DeviceModelMessage Message { get; }
+        int TotalMessagesCount { get; }
+        int FailedMessagesCount { get; }
 
         void Setup(
             string deviceId,
@@ -60,6 +62,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         private string deviceId;
         private DeviceModel deviceModel;
         private long whenToRun;
+        private int totalMessageCount = 0;
+        private int failedMessageCount = 0;
 
         /// <summary>
         /// Reference to the actor managing the device state, used
@@ -86,6 +90,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         /// Azure IoT Hub client created by the connection actor
         /// </summary>
         public IDeviceClient Client => this.deviceConnectionActor.Client;
+
+        public int TotalMessagesCount => totalMessageCount;
+
+        public int FailedMessagesCount => failedMessageCount;
 
         public DeviceTelemetryActor(
             ILogger logger,
@@ -151,10 +159,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                     this.ScheduleTelemetry();
                     break;
                 case ActorEvents.TelemetryDelivered:
+                    totalMessageCount++;
                     this.actorLogger.TelemetryDelivered();
                     this.ScheduleTelemetry();
                     break;
                 case ActorEvents.TelemetryDeliveryFailed:
+                    totalMessageCount++;
+                    failedMessageCount++;
                     this.actorLogger.TelemetryFailed();
                     this.ScheduleTelemetryRetry();
                     break;
