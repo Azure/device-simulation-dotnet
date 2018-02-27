@@ -37,7 +37,7 @@ namespace SimulationAgent.Test.DeviceState
         public void ReportInactiveStatusBeforeRun()
         {
             // Arrange
-            SetupDeviceStatusActor();
+            SetupDeviceStateActor();
 
             // Act
             var result = this.target.IsDeviceActive;
@@ -50,7 +50,7 @@ namespace SimulationAgent.Test.DeviceState
         public void ReportActiveStatusAfterRun()
         {
             // Arrange
-            SetupDeviceStatusActor();
+            SetupDeviceStateActor();
 
             // Act
             this.target.Run();
@@ -60,7 +60,7 @@ namespace SimulationAgent.Test.DeviceState
             Assert.True(result);
         }
 
-        private void SetupDeviceStatusActor()
+        private void SetupDeviceStateActor()
         {
             string DEVICE_ID = "01";
             int postion = 1;

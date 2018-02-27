@@ -106,36 +106,43 @@ namespace SimulationAgent.Test
         {
             var deviceIds = new List<string> { "01", "02" };
 
+            // Setup simulations
             this.simulations
                 .Setup(x => x.GetDeviceIds(It.IsAny<Simulation>()))
                 .Returns(deviceIds);
 
             var deviceModel = new DeviceModel { Id = "01" };
 
+            // Setup deviceModel overriding
             this.deviceModelsOverriding
                 .Setup(x => x.Generate(
                     It.IsAny<DeviceModel>(),
                     It.IsAny<DeviceModelOverride>()))
                 .Returns(deviceModel);
 
+            // Setup devices for simulation runner
             this.devices
                 .Setup(x => x.GenerateId(
                     It.IsAny<string>(),
                     It.IsAny<int>()))
                 .Returns("Simulate-01");
 
+            // Setup device active status
             this.deviceStateActor
                 .Setup(x => x.IsDeviceActive)
                 .Returns(true);
 
+            // Setup deviceStateActor
             this.factory
                 .Setup(x => x.Resolve<IDeviceStateActor>())
                 .Returns(this.deviceStateActor.Object);
 
+            // Setup deviceConnectionActor
             this.factory
                 .Setup(x => x.Resolve<IDeviceConnectionActor>())
                 .Returns(this.deviceConnectionActor.Object);
 
+            // Setup deviceTelemetryActor
             this.factory
                 .Setup(x => x.Resolve<IDeviceTelemetryActor>())
                 .Returns(this.deviceTelemetryActor.Object);
