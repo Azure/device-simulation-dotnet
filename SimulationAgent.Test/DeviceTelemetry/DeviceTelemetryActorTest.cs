@@ -4,7 +4,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
@@ -74,7 +73,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
 
             // Act
             // Deliver 5 messages
-            for (int i = 1; i < 5; i++)
+            for (int i = 0; i < 5; i++)
             {
                 this.target.HandleEvent(messageDelivered);
             }
@@ -86,7 +85,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
 
             // Assert
             Assert.Equal(1, failedMessagesCount);
-            Assert.Equal(5, totalMessagesCount);
+            Assert.Equal(6, totalMessagesCount);
         }
 
         private void SetupDeviceTelemetryActor()
