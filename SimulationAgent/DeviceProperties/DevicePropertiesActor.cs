@@ -101,11 +101,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
         public void HandleEvent(DevicePropertiesActor.ActorEvents e)
         {
+            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
+            // for future PR
             throw new NotImplementedException();
         }
 
         public string Run()
         {
+            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
+            // for future PR
             throw new NotImplementedException();
         }
 
@@ -114,34 +118,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             IDeviceStateActor deviceStateActor,
             IDeviceConnectionActor deviceConnectionActor)
         {
+            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
+            // for future PR
             throw new NotImplementedException();
         }
 
         public void Stop()
         {
+            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
+            // for future PR
             throw new NotImplementedException();
         }
 
         private void ScheduleTwinUpdate()
         {
-            // considers the throttling settings, identifies when twin can be updated
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            this.whenToRun = now + this.rateLimiting.GetPauseForNextTwinWrite();
-
-            this.status = ActorStatus.ReadyToUpdate;
-
-            this.actorLogger.TwinUpdateScheduled(this.whenToRun);
-            this.log.Debug("Twin update scheduled",
-                () => new
-                {
-                    this.deviceId,
-                    Status = this.status.ToString(),
-                    When = this.log.FormatDate(this.whenToRun)
-                });
+            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
+            // for future PR
         }
 
         private void ScheduleTwinUpdateRetry()
         {
+            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
+            // for future PR
             throw new NotImplementedException();
         }
 

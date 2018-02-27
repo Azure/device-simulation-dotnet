@@ -110,28 +110,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task UpdatePropertiesAsync(Device device)
         {
-            if (!this.connected) await this.ConnectAsync();
-
-            var azureTwin = await this.rateLimiting.LimitTwinReadsAsync(
-                () => this.client.GetTwinAsync());
-
-            // Remove properties
-            var props = azureTwin.Properties.Reported.GetEnumerator();
-            while (props.MoveNext())
-            {
-                var current = (KeyValuePair<string, object>)props.Current;
-
-                if (!device.Twin.ReportedProperties.ContainsKey(current.Key))
-                {
-                    this.log.Debug("Removing key", () => new { current.Key });
-                    azureTwin.Properties.Reported[current.Key] = null;
-                }
-            }
-
-            // Write properties
-            var reportedProperties = DictionaryToTwinCollection(device.Twin.ReportedProperties);
-            await this.rateLimiting.LimitTwinWritesAsync(
-                () => this.client.UpdateReportedPropertiesAsync(reportedProperties));
+            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
+            // for future PR
         }
 
         private async Task SendRawMessageAsync(Message message)
