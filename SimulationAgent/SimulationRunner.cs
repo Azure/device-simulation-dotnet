@@ -21,6 +21,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     {
         void Start(Services.Models.Simulation simulation);
         void Stop();
+        int GetActiveDevicesCount();
     }
 
     public class SimulationRunner : ISimulationRunner
@@ -229,6 +230,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.starting = false;
             }
         }
+
+        // Method to return the count of active devices
+        public int GetActiveDevicesCount() => this.deviceStateActors.Count(a => a.Value.IsDeviceActive);
 
         private DeviceModel GetDeviceModel(string id, Services.Models.Simulation.DeviceModelOverride overrides)
         {

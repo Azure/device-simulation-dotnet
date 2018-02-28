@@ -12,6 +12,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
     public interface IDeviceStateActor
     {
         Dictionary<string, object> DeviceState { get; }
+        bool IsDeviceActive { get; }
         void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices);
         void Run();
     }
@@ -31,6 +32,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         /// periodically updated using an external script.
         /// </summary>
         public Dictionary<string, object> DeviceState { get; set; }
+
+        /// <summary>
+        /// The device is considered active when the state is being updated.
+        /// 
+        /// By design, rather than talking about "connected devices", we use 
+        /// the term "active devices" which is more generic. So when we show
+        /// the number of active devices, we can include devices which are not
+        /// connected yet but being simulated.
+        /// </summary>
+        public bool IsDeviceActive
+        {
+            get
+            {
+                return this.status == ActorStatus.Updating;
+            }
+        }
 
         private readonly ILogger log;
         private readonly UpdateDeviceState updateDeviceStateLogic;
