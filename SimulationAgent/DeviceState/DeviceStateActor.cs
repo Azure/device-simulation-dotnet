@@ -32,16 +32,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         /// periodically updated using an external script.
         /// </summary>
         public Dictionary<string, object> DeviceState { get; set; }
-        /// <summary>
-        /// Mark the DeviceStatusActor is Active when the ActorStatus is Updating
-        /// </summary>
-        public bool IsDeviceActive
-        {
-            get
-            {
-                return this.status == ActorStatus.Updating;
-            }
-        }
 
         /// <summary>
         /// The device is considered active when the state is being updated.

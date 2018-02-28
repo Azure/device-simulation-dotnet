@@ -29,10 +29,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private const string PREPROVISIONED_IOTHUB_KEY = "PreprovisionedIoTHub";
         private const string PREPROVISIONED_IOTHUB_INUSE_KEY = "PreprovisionedIoTHubInUse";
         private const string PREPROVISIONED_IOTHUB_METRICS_KEY = "PreprovisionedIoTHubMetricsUrl";
-        private const string ACTIVE_DEVICE_COUNT = "ActiveDeviceCount";
-        private const string TOTAL_MESSAGES_COUNT = "TotalMessagesCount";
-        private const string FAILED_MESSAGES_COUNT = "FailedMessagesCount";
-        private const string MESSAGE_PER_SECOND = "MessagesPerSecond";
+        private const string ACTIVE_DEVICE_COUNT_KEY = "ActiveDeviceCount";
+        private const string TOTAL_MESSAGES_COUNT_KEY = "TotalMessagesCount";
+        private const string FAILED_MESSAGES_COUNT_KEY = "FailedMessagesCount";
+        private const string MESSAGE_PER_SECOND_KEY = "MessagesPerSecond";
+        private const string FAILED_DEVICE_CONNECTIONS_COUNT_KEY = "FailedDeviceConnectionsCount";
+        private const string FAILED_DEVICE_TWIN_UPDATES_COUNT_KEY = "FailedDeviceTwinUpdatesCount";
 
         private readonly IPreprovisionedIotHub preprovisionedIotHub;
         private readonly IStorageAdapterClient storage;
@@ -111,19 +113,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
             // Active devices status
             string activeDeviceCount = this.GetActiveDevicesCount(isRunning).ToString();
-            result.Properties.Add(ACTIVE_DEVICE_COUNT, activeDeviceCount);
+            result.Properties.Add(ACTIVE_DEVICE_COUNT_KEY, activeDeviceCount);
 
             // Total telemetry messages count
             string totalMessagesCount = this.GetTotalMessagesCount(isRunning).ToString();
-            result.Properties.Add(TOTAL_MESSAGES_COUNT, totalMessagesCount);
+            result.Properties.Add(TOTAL_MESSAGES_COUNT_KEY, totalMessagesCount);
 
             // Failed telemetry messages count
             string failedMessagesCount = this.GetFailedMessagesCount(isRunning).ToString();
-            result.Properties.Add(FAILED_MESSAGES_COUNT, failedMessagesCount);
+            result.Properties.Add(FAILED_MESSAGES_COUNT_KEY, failedMessagesCount);
 
             // Telemetry messages thoughput
             string messagesPerSecond = this.GetMessagesPerSecond(isRunning).ToString("F");
-            result.Properties.Add(MESSAGE_PER_SECOND, messagesPerSecond);
+            result.Properties.Add(MESSAGE_PER_SECOND_KEY, messagesPerSecond);
+
+            // Failed device connections count
+            string failedDeviceConnectionsCount = this.GetFailedDeviceConnections(isRunning).ToString();
+            result.Properties.Add(FAILED_DEVICE_CONNECTIONS_COUNT_KEY, failedDeviceConnectionsCount);
+
+            // Failed device connections count
+            string failedDeviceTwinUpdatesCount = this.GetFailedDeviceTwinUpdates(isRunning).ToString();
+            result.Properties.Add(FAILED_DEVICE_TWIN_UPDATES_COUNT_KEY, failedDeviceTwinUpdatesCount);
 
             // Prepare status message and response
             if (!statusIsOk)
@@ -274,6 +284,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             if (!isRunning) return 0;
 
             return this.rateReporter.GetThroughputForMessages();
+        }
+
+        private double GetFailedDeviceConnections(bool isRunning)
+        {
+            if (!isRunning) return 0;
+
+            return this.simulationRunner.GetFailedDeviceConnections();
+        }
+
+        private double GetFailedDeviceTwinUpdates(bool isRunning)
+        {
+            if (!isRunning) return 0;
+
+            return this.simulationRunner.GetFailedDeviceTwinUpdates();
         }
     }
 }

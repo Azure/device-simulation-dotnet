@@ -25,6 +25,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         int GetTotalMessagesCount();
         int GetFailedMessagesCount();
         double GetMessageThroughput();
+        int GetFailedDeviceConnections();
+        int GetFailedDeviceTwinUpdates();
     }
 
     public class SimulationRunner : ISimulationRunner
@@ -79,12 +81,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         // Flag signaling whether the simulation has started and is running (to avoid contentions)
         private bool running;
-
-        // Counter for telemetry messages
-        private int totalMessagesCount = 0;
-
-        // Counter for failed telemetry messages;
-        private int failedMessagesCount = 0;
 
         // Per seconde counter for telemetry messages
         private readonly PerSecondCounter messaging;
@@ -255,6 +251,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         public int GetFailedMessagesCount() => this.deviceTelemetryActors.Sum(a => a.Value.FailedMessagesCount);
 
         public double GetMessageThroughput() => this.messaging.GetThroughputForMessages();
+
+        public int GetFailedDeviceConnections() => this.deviceConnectionActors.Sum(a => a.Value.FailedDeviceConnectionsCount);
+
+        public int GetFailedDeviceTwinUpdates() => this.deviceConnectionActors.Sum(a => a.Value.FailedTwinUpdatesCount);
 
         private DeviceModel GetDeviceModel(string id, Services.Models.Simulation.DeviceModelOverride overrides)
         {

@@ -62,55 +62,25 @@ namespace WebService.Test.v1.Controllers
         public async Task ItReturnsTheNumberOfActiveDevices()
         {
             // Arrange
-<<<<<<< HEAD
-            const int ACTIVE_DEVICES_COUNT = 5;
             this.SetupSimulationForRunner();
-=======
-            const int ACTIVE_DEVICE_COUNT = 5;
-            const int FAILED_MESSAGE_COUNT = 1;
-            const int TOTAL_MESSAGE_COUNT = 10;
-            const double MESSAGE_THROUGHPUT = 15.5556;
-            var updatedValue = new ValueApiModel { ETag = "newETag" };
-            const string IOTHUB_CONNECTION_STRING = "hostname=hub-1;sharedaccesskeyname=hubowner;sharedaccesskey=fakekey";
-            Tuple<bool, string> CONNECTIONSTRING = new Tuple<bool, string>(true, IOTHUB_CONNECTION_STRING);
-
-            // Simulation status
-            SetupSimulationForRunner();
->>>>>>> Add telemetry metrics support
-
-            // Storage status
-            this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(updatedValue);
-
-            // Preprovisioned hub status
-            this.preprovisionedIotHub
-                .Setup(x => x.PingRegistryAsync())
-                .ReturnsAsync(CONNECTIONSTRING);
-
-            this.servicesConfig
-               .Setup(x => x.IoTHubConnString)
-               .Returns(IOTHUB_CONNECTION_STRING);
-
-            this.connectionStringManager
-                .Setup(x => x.GetIotHubConnectionString())
-                .Returns(IOTHUB_CONNECTION_STRING);
-
-            // Active devices status
+            const int ACTIVE_DEVICES_COUNT = 5;
             this.simulationRunner
                 .Setup(x => x.GetActiveDevicesCount())
                 .Returns(ACTIVE_DEVICES_COUNT);
 
-            // Total telemetry messages count
-            this.simulationRunner
-                .Setup(x => x.GetTotalMessagesCount())
-                .Returns(TOTAL_MESSAGE_COUNT);
+            // Act
+            var result = await this.target.Get();
 
-            // Failed telemetry messages count
-            this.simulationRunner
-                .Setup(x => x.GetFailedMessagesCount())
-                .Returns(FAILED_MESSAGE_COUNT);
+            // Assert
+            Assert.Equal(ACTIVE_DEVICES_COUNT.ToString(), result.Properties["ActiveDeviceCount"]);
+        }
 
-            // Telemetry messages thoughput
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public async Task ItReturnsTheThroughputOfMessagesPerSecond()
+        {
+            // Arrange
+            const double MESSAGE_THROUGHPUT = 15.5556;
+            this.SetupSimulationForRunner();
             this.rateReporter
                 .Setup(x => x.GetThroughputForMessages())
                 .Returns(MESSAGE_THROUGHPUT);
@@ -119,19 +89,98 @@ namespace WebService.Test.v1.Controllers
             var result = await this.target.Get();
 
             // Assert
-<<<<<<< HEAD
-            Assert.Equal(ACTIVE_DEVICES_COUNT.ToString(), result.Properties["ActiveDevicesCount"]);
-=======
-            Assert.Equal(8, result.Properties.Count);
-            Assert.Equal("true", result.Properties["SimulationRunning"]);
-            Assert.Equal("true", result.Properties["PreprovisionedIoTHub"]);
-            Assert.Contains("https://portal.azure.com/", result.Properties["PreprovisionedIoTHubMetricsUrl"]);
-            Assert.Equal("true", result.Properties["PreprovisionedIoTHubInUse"]); 
-            Assert.Equal(ACTIVE_DEVICE_COUNT.ToString(), result.Properties["ActiveDeviceCount"]);
             Assert.Equal(MESSAGE_THROUGHPUT.ToString("F"), result.Properties["MessagesPerSecond"]);
-            Assert.Equal(TOTAL_MESSAGE_COUNT.ToString(), result.Properties["TotalMessagesCount"]);
-            Assert.Equal(FAILED_MESSAGE_COUNT.ToString(), result.Properties["FailedMessagesCount"]);
->>>>>>> Add telemetry metrics support
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public async Task ItReturnsTheNumberOfTotalMessagesCount()
+        {
+            // Arrange
+            const int TOTAL_MESSAGES_COUNT = 10;
+            this.SetupSimulationForRunner();
+            this.simulationRunner
+                .Setup(x => x.GetTotalMessagesCount())
+                .Returns(TOTAL_MESSAGES_COUNT);
+
+            // Act
+            var result = await this.target.Get();
+
+            // Assert
+            Assert.Equal(TOTAL_MESSAGES_COUNT.ToString(), result.Properties["TotalMessagesCount"]);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public async Task ItReturnsTheNumberOfFailedMessagesCount()
+        {
+            // Arrange
+            const int FAILED_MESSAGES_COUNT = 5;
+            this.SetupSimulationForRunner();
+            this.simulationRunner
+                .Setup(x => x.GetFailedMessagesCount())
+                .Returns(FAILED_MESSAGES_COUNT);
+
+            // Act
+            var result = await this.target.Get();
+
+            // Assert
+            Assert.Equal(FAILED_MESSAGES_COUNT.ToString(), result.Properties["FailedMessagesCount"]);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public async Task ItReturnsTheStatusOfRunningSimulation()
+        {
+            // Arrange
+            this.SetupSimulationForRunner();
+
+            // Act
+            var result = await this.target.Get();
+
+            // Assert
+            Assert.Equal("true", result.Properties["SimulationRunning"]);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public async Task ItReturnsTheStatusOfPreprovisionedIoTHub()
+        {
+            // Arrange
+            this.SetupSimulationForRunner();
+            this.SetupPreprovisionedIoTHub();
+
+            // Act
+            var result = await this.target.Get();
+
+            // Assert
+            Assert.Equal("true", result.Properties["PreprovisionedIoTHub"]);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public async Task ItReturnsTheUrlOfPreprovisionedIoTHub()
+        {
+            // Arrange
+            this.SetupSimulationForRunner();
+            this.SetupPreprovisionedIoTHub();
+
+            // Act
+            var result = await this.target.Get();
+
+            // Assert
+            Assert.Contains("https://portal.azure.com/", result.Properties["PreprovisionedIoTHubMetricsUrl"]);
+        }
+
+
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public async Task ItReturnsPreprovisionedIoTHubInUse()
+        {
+            // Arrange
+            this.SetupSimulationForRunner();
+            this.SetupPreprovisionedIoTHub();
+
+            // Act
+            var result = await this.target.Get();
+
+            // Assert
+            Assert.Equal("true", result.Properties["PreprovisionedIoTHubInUse"]);
         }
 
         private void SetupSimulationForRunner()
@@ -154,6 +203,20 @@ namespace WebService.Test.v1.Controllers
             this.simulations
                 .Setup(x => x.GetListAsync())
                 .ReturnsAsync(simulations);
+        }
+
+        private void SetupPreprovisionedIoTHub()
+        {
+            const string IOTHUB_CONNECTION_STRING = "hostname=hub-1;sharedaccesskeyname=hubowner;sharedaccesskey=fakekey";
+            Tuple<bool, string> CONNECTIONSTRING = new Tuple<bool, string>(true, IOTHUB_CONNECTION_STRING);
+
+            this.servicesConfig
+               .Setup(x => x.IoTHubConnString)
+               .Returns(IOTHUB_CONNECTION_STRING);
+
+            this.connectionStringManager
+                .Setup(x => x.GetIotHubConnectionString())
+                .Returns(IOTHUB_CONNECTION_STRING);
         }
     }
 }

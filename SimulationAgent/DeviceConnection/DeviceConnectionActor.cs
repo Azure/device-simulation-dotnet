@@ -15,6 +15,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         IDeviceClient Client { get; set; }
         Device Device { get; set; }
         bool Connected { get; }
+        int FailedDeviceConnectionsCount { get; }
+        int FailedTwinUpdatesCount { get; }
 
         void Setup(string deviceId, DeviceModel deviceModel, IDeviceStateActor deviceStateActor, ConnectionLoopSettings loopSettings);
         void Run();
@@ -70,6 +72,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private DeviceModel deviceModel;
         private long whenToRun;
         private ConnectionLoopSettings loopSettings;
+        private int failedDeviceConnectionsCount = 0;
+        private int failedTwinUpdatesCount = 0;
 
         /// <summary>
         /// Reference to the actor managing the device state, used
@@ -96,6 +100,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         /// The telemetry message managed by this actor
         /// </summary>
         public DeviceModel.DeviceModelMessage Message { get; private set; }
+
+        /// <summary>
+        /// Failed device connections counter
+        /// </summary>
+        public int FailedDeviceConnectionsCount => this.failedDeviceConnectionsCount;
+
+        /// <summary>
+        /// Failed device connections counter
+        /// </summary>
+        public int FailedTwinUpdatesCount => this.failedTwinUpdatesCount;
 
         public DeviceConnectionActor(
             ILogger logger,
@@ -215,6 +229,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     if (this.loopSettings.SchedulableTaggings <= 0) return;
                     this.loopSettings.SchedulableTaggings--;
 
+                    failedTwinUpdatesCount++;
                     this.actorLogger.DeviceTwinTaggingFailed();
                     this.ScheduleDeviceTagging();
                     break;
@@ -230,6 +245,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     break;
 
                 case ActorEvents.ConnectionFailed:
+                    failedDeviceConnectionsCount++;
                     this.actorLogger.DeviceConnectionFailed();
                     this.ScheduleConnection();
                     break;
