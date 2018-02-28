@@ -32,6 +32,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         private ILogger log;
 
+        // TODO https://github.com/Azure/device-simulation-dotnet/issues/171
+        // consider using thread safe concurrent dictionary here in case multiple scripts
+        // try to modify the state at the same time. 
+
         // The virtual state of the simulated device. The simulationState is
         // periodically updated using an external script.
         private Dictionary<string, object> simulationState;
@@ -157,7 +161,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public bool HasStateValue(string key)
         {
             // lock properties as mulitple scripts may try to access key at the same time.
-            lock (this.properties)
+            lock (this.simulationState)
             {
                 return this.simulationState.ContainsKey(key);
             }
@@ -183,13 +187,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             // lock properties as mulitple scripts may try to access key at the same time.
             lock (this.simulationState)
             {
-                if (this.properties.ContainsKey(key))
+                if (this.simulationState.ContainsKey(key))
                 {
-                    this.properties[key] = value;
+                    this.simulationState[key] = value;
                 }
                 else
                 {
-                    this.properties.Add(key, value);
+                    this.simulationState.Add(key, value);
                 }
             }
         }
@@ -219,16 +223,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         private Dictionary<string, object> SetupProperties(DeviceModel deviceModel)
         {
 
-            Dictionary<string, object> properties = new Dictionary<string, object>();
+            Dictionary<string, object> result = new Dictionary<string, object>();
 
             // add device properties to the properties dictionary. These properties will be written
             // as reported properties on the IoT Hub.
             foreach (var property in deviceModel.Properties)
             {
-                this.properties.Add(property.Key, JToken.FromObject(property.Value));
+                result.Add(property.Key, JToken.FromObject(property.Value));
             }
 
-            return properties;
+            return result;
         }
 
         /// <summary>Copy an object by value</summary>
