@@ -2,14 +2,12 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using System.Text;
 using Moq;
-using Newtonsoft.Json;
 using Services.Test.helpers;
 using Xunit;
 using Xunit.Abstractions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
 
 namespace Services.Test
