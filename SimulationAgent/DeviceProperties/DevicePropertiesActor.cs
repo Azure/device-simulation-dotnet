@@ -102,7 +102,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         {
             // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
             // for future PR
-            throw new NotImplementedException();
         }
 
         public void HandleEvent(DevicePropertiesActor.ActorEvents e)
