@@ -36,7 +36,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         /// <summary>
         /// The device is considered active when the state is being updated.
         /// 
-        /// By design, rather than talking about "connected deivces", we use 
+        /// By design, rather than talking about "connected devices", we use 
         /// the term "active devices" which is more generic. So when we show
         /// the number of active devices, we can include devices which are not
         /// connected yet but being simulated.
