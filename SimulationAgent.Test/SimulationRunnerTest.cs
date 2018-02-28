@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
+using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -10,8 +12,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
 using Moq;
 using SimulationAgent.Test.helpers;
-using System;
-using System.Collections.Generic;
 using Xunit;
 using Xunit.Abstractions;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
@@ -62,7 +62,7 @@ namespace SimulationAgent.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ActiveCountInitToZero()
+        public void TheActiveDevicesCountIsZeroAtStart()
         {
             // Act
             var result = this.target.GetActiveDevicesCount();
@@ -72,13 +72,13 @@ namespace SimulationAgent.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void AbleToGetActiveDeviceCount()
+        public void ItReturnsTheNumberOfActiveDevices()
         {
             // Arrange
-            const int DEVICE_COUNT = 7;
+            const int ACTIVE_DEVICES_COUNT = 7;
             var models = new List<DeviceModelRef>
             {
-                new DeviceModelRef { Id = "01", Count = DEVICE_COUNT }
+                new DeviceModelRef { Id = "01", Count = ACTIVE_DEVICES_COUNT }
             };
 
             var simulation = new SimulationModel
@@ -99,57 +99,81 @@ namespace SimulationAgent.Test
             var result = this.target.GetActiveDevicesCount();
 
             // Assert
-            Assert.Equal(DEVICE_COUNT, result);
+            Assert.Equal(ACTIVE_DEVICES_COUNT, result);
         }
 
-        /*
-         * Setup deviceModel, devicesIds, simulations, devices, deviceStateActor,
-         * deviceConnectionActor, deviceTelemetryActor for simulationRunner
-         */
         private void SetupSimulationReadyToStart()
         {
-            var deviceIds = new List<string> { "01", "02" };
+            this.SetupSimulations();
 
-            // Setup simulations
-            this.simulations
-                .Setup(x => x.GetDeviceIds(It.IsAny<Simulation>()))
-                .Returns(deviceIds);
+            this.SetUpDeviceModelsOverriding();
 
-            var deviceModel = new DeviceModel { Id = "01" };
+            this.SetupDevices();
 
-            // Setup deviceModel overriding
-            this.deviceModelsOverriding
-                .Setup(x => x.Generate(
-                    It.IsAny<DeviceModel>(),
-                    It.IsAny<DeviceModelOverride>()))
-                .Returns(deviceModel);
+            this.SetupDeviceStateActor();
 
-            // Setup devices for simulation runner
+            this.SetupDeviceConnectionActor();
+
+            this.SetupDeviceTelemetryActor();
+
+            this.SetupActiveDeviceStatus();
+        }
+
+        private void SetupActiveDeviceStatus()
+        {
+            this.deviceStateActor
+                .Setup(x => x.IsDeviceActive)
+                .Returns(true);
+        }
+
+        private void SetupDeviceTelemetryActor()
+        {
+            this.factory
+                .Setup(x => x.Resolve<IDeviceTelemetryActor>())
+                .Returns(this.deviceTelemetryActor.Object);
+        }
+
+        private void SetupDeviceConnectionActor()
+        {
+            this.factory
+                .Setup(x => x.Resolve<IDeviceConnectionActor>())
+                .Returns(this.deviceConnectionActor.Object);
+        }
+
+        private void SetupDeviceStateActor()
+        {
+            this.factory
+                .Setup(x => x.Resolve<IDeviceStateActor>())
+                .Returns(this.deviceStateActor.Object);
+        }
+
+        private void SetupDevices()
+        {
             this.devices
                 .Setup(x => x.GenerateId(
                     It.IsAny<string>(),
                     It.IsAny<int>()))
                 .Returns("Simulate-01");
+        }
 
-            // Setup device active status
-            this.deviceStateActor
-                .Setup(x => x.IsDeviceActive)
-                .Returns(true);
+        private void SetUpDeviceModelsOverriding()
+        {
+            var deviceModel = new DeviceModel { Id = "01" };
 
-            // Setup deviceStateActor
-            this.factory
-                .Setup(x => x.Resolve<IDeviceStateActor>())
-                .Returns(this.deviceStateActor.Object);
+            this.deviceModelsOverriding
+                .Setup(x => x.Generate(
+                    It.IsAny<DeviceModel>(),
+                    It.IsAny<DeviceModelOverride>()))
+                .Returns(deviceModel);
+        }
 
-            // Setup deviceConnectionActor
-            this.factory
-                .Setup(x => x.Resolve<IDeviceConnectionActor>())
-                .Returns(this.deviceConnectionActor.Object);
+        private void SetupSimulations()
+        {
+            var deviceIds = new List<string> { "01", "02" };
 
-            // Setup deviceTelemetryActor
-            this.factory
-                .Setup(x => x.Resolve<IDeviceTelemetryActor>())
-                .Returns(this.deviceTelemetryActor.Object);
+            this.simulations
+                .Setup(x => x.GetDeviceIds(It.IsAny<Simulation>()))
+                .Returns(deviceIds);
         }
     }
 }

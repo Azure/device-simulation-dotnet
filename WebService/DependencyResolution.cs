@@ -90,6 +90,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterType<DeviceModels>().As<IDeviceModels>().SingleInstance();
             builder.RegisterType<Services.Devices>().As<IDevices>().SingleInstance();
             builder.RegisterType<RateLimiting>().As<IRateLimiting>().SingleInstance();
+
+            // The simulation runner contains the service counters, which are read and
+            // written by multiple parts of the application, so we need to make sure 
+            // there is only one instance storing that information.
             builder.RegisterType<SimulationRunner>().As<ISimulationRunner>().SingleInstance();
 
             // Registrations required by Autofac, these classes implement the same interface

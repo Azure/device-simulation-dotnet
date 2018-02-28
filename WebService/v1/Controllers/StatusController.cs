@@ -28,7 +28,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private const string PREPROVISIONED_IOTHUB_KEY = "PreprovisionedIoTHub";
         private const string PREPROVISIONED_IOTHUB_INUSE_KEY = "PreprovisionedIoTHubInUse";
         private const string PREPROVISIONED_IOTHUB_METRICS_KEY = "PreprovisionedIoTHubMetricsUrl";
-        private const string ACTIVE_DEVICE_COUNT = "ActiveDeviceCount";
+        private const string ACTIVE_DEVICES_COUNT_KEY = "ActiveDevicesCount";
 
         private readonly IPreprovisionedIotHub preprovisionedIotHub;
         private readonly IStorageAdapterClient storage;
@@ -103,8 +103,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             // Active devices status
-            string activeDeviceCount = this.GetActiveDeviceCount(isRunning).ToString();
-            result.Properties.Add(ACTIVE_DEVICE_COUNT, activeDeviceCount);
+            string activeDevicesCount = this.GetActiveDevicesCount(isRunning).ToString();
+            result.Properties.Add(ACTIVE_DEVICES_COUNT_KEY, activeDevicesCount);
 
             // Prepare status message and response
             if (!statusIsOk)
@@ -229,7 +229,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                    $"/providers/Microsoft.Devices/IotHubs/{this.deploymentConfig.AzureIothubName}/Metrics";
         }
 
-        private int GetActiveDeviceCount(bool isRunning)
+        private int GetActiveDevicesCount(bool isRunning)
         {
             if (!isRunning) return 0;
 

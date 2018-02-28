@@ -1,5 +1,8 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
@@ -7,9 +10,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using WebService.Test.helpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -55,24 +55,21 @@ namespace WebService.Test.v1.Controllers
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task GetTest()
+        public async Task ItReturnsTheNumberOfActiveDevices()
         {
             // Arrange
-            const int ACTIVE_DEVICE_COUNT = 5;
-            SetupSimulationForRunner();
+            const int ACTIVE_DEVICES_COUNT = 5;
+            this.SetupSimulationForRunner();
 
             this.simulationRunner
                 .Setup(x => x.GetActiveDevicesCount())
-                .Returns(ACTIVE_DEVICE_COUNT);
+                .Returns(ACTIVE_DEVICES_COUNT);
 
             // Act
             var result = await this.target.Get();
 
             // Assert
-            Assert.Equal(3, result.Properties.Count);
-            Assert.Equal("true", result.Properties["SimulationRunning"]);
-            Assert.Equal(ACTIVE_DEVICE_COUNT.ToString(), result.Properties["ActiveDeviceCount"]);
-
+            Assert.Equal(ACTIVE_DEVICES_COUNT.ToString(), result.Properties["ActiveDevicesCount"]);
         }
 
         private void SetupSimulationForRunner()
