@@ -91,9 +91,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         /// </summary>
         public IDeviceClient Client => this.deviceConnectionActor.Client;
 
-        public int TotalMessagesCount => totalMessageCount;
+        /// <summary>
+        /// Total messages count created by the connection actor
+        /// </summary>
+        public int TotalMessagesCount => this.totalMessageCount;
 
-        public int FailedMessagesCount => failedMessageCount;
+        /// <summary>
+        /// Failed messages count created by the connection actor
+        /// </summary>
+        public int FailedMessagesCount => this.failedMessageCount;
 
         public DeviceTelemetryActor(
             ILogger logger,
