@@ -38,12 +38,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         void TelemetryDelivered();
         void TelemetryFailed();
 
-        void TwinUpdateScheduled(long time);
-        void TwinUpdateRetryScheduled(long time);
+        void DeviceTwinUpdateScheduled(long time);
+        void DeviceTwinUpdateRetryScheduled(long time);
         void UpdatingDeviceTwin();
         void DeviceTwinUpdated();
         void DeviceTwinUpdateFailed();
-
     }
 
     public class ActorsLogger : IActorsLogger
@@ -295,7 +294,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.LogTelemetry("FAILED");
         }
 
-        public void TwinUpdateScheduled(long time)
+        public void DeviceTwinUpdateScheduled(long time)
         {
             if (!this.enabled) return;
 
@@ -304,7 +303,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.LogTwin("Twin update scheduled at: " + msg);
         }
 
-        public void TwinUpdateRetryScheduled(long time)
+        public void DeviceTwinUpdateRetryScheduled(long time)
         {
             if (!this.enabled) return;
 
