@@ -24,7 +24,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         int GetActiveDevicesCount();
         int GetTotalMessagesCount();
         int GetFailedMessagesCount();
-        double GetMessageThroughput();
         int GetFailedDeviceConnections();
         int GetFailedDeviceTwinUpdates();
     }
@@ -82,8 +81,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Flag signaling whether the simulation has started and is running (to avoid contentions)
         private bool running;
 
-        // Per seconde counter for telemetry messages
-        private readonly PerSecondCounter messaging;
+        private int totalDevicesCount;
 
         public SimulationRunner(
             IRateLimitingConfig ratingConfig,
@@ -92,8 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             IDeviceModelsGeneration deviceModelsOverriding,
             IDevices devices,
             ISimulations simulations,
-            IFactory factory,
-            IRateLimiting messaging)
+            IFactory factory)
         {
             this.connectionLoopSettings = new ConnectionLoopSettings(ratingConfig);
 
@@ -111,9 +108,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.deviceStateActors = new ConcurrentDictionary<string, IDeviceStateActor>();
             this.deviceConnectionActors = new ConcurrentDictionary<string, IDeviceConnectionActor>();
             this.deviceTelemetryActors = new ConcurrentDictionary<string, IDeviceTelemetryActor>();
-
-            this.messaging = new PerSecondCounter(
-                ratingConfig.DeviceMessagesPerSecond, "Device msg/sec", logger);
         }
 
         /// <summary>
@@ -148,6 +142,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 try
                 {
                     var devices = this.simulations.GetDeviceIds(simulation);
+
+                    this.totalDevicesCount = devices.Count();
 
                     // This will ignore existing devices, creating only the missing ones
                     this.devices.CreateListAsync(devices)
@@ -246,14 +242,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Method to return the count of active devices
         public int GetActiveDevicesCount() => this.deviceStateActors.Count(a => a.Value.IsDeviceActive);
 
+        // Method to return the count of total messages
         public int GetTotalMessagesCount() => this.deviceTelemetryActors.Sum(a => a.Value.TotalMessagesCount);
 
+        // Method to return the count of deliver failed messages
         public int GetFailedMessagesCount() => this.deviceTelemetryActors.Sum(a => a.Value.FailedMessagesCount);
 
-        public double GetMessageThroughput() => this.messaging.GetThroughputForMessages();
-
+        // Method to return the count of connection failed devices
         public int GetFailedDeviceConnections() => this.deviceConnectionActors.Sum(a => a.Value.FailedDeviceConnectionsCount);
 
+        // Method to return the count of twin update failed devices
         public int GetFailedDeviceTwinUpdates() => this.deviceConnectionActors.Sum(a => a.Value.FailedTwinUpdatesCount);
 
         private DeviceModel GetDeviceModel(string id, Services.Models.Simulation.DeviceModelOverride overrides)

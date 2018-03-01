@@ -29,7 +29,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private const string PREPROVISIONED_IOTHUB_KEY = "PreprovisionedIoTHub";
         private const string PREPROVISIONED_IOTHUB_INUSE_KEY = "PreprovisionedIoTHubInUse";
         private const string PREPROVISIONED_IOTHUB_METRICS_KEY = "PreprovisionedIoTHubMetricsUrl";
-        private const string ACTIVE_DEVICE_COUNT_KEY = "ActiveDeviceCount";
+        private const string ACTIVE_DEVICES_COUNT_KEY = "ActiveDevicesCount";
         private const string TOTAL_MESSAGES_COUNT_KEY = "TotalMessagesCount";
         private const string FAILED_MESSAGES_COUNT_KEY = "FailedMessagesCount";
         private const string MESSAGE_PER_SECOND_KEY = "MessagesPerSecond";
@@ -111,9 +111,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 }
             }
 
-            // Active devices status
-            string activeDeviceCount = this.GetActiveDevicesCount(isRunning).ToString();
-            result.Properties.Add(ACTIVE_DEVICE_COUNT_KEY, activeDeviceCount);
+            // Active devices count
+            string activeDevicesCount = this.GetActiveDevicesCount(isRunning).ToString();
+            result.Properties.Add(ACTIVE_DEVICES_COUNT_KEY, activeDevicesCount);
 
             // Total telemetry messages count
             string totalMessagesCount = this.GetTotalMessagesCount(isRunning).ToString();

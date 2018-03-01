@@ -14,6 +14,7 @@ using Moq;
 using SimulationAgent.Test.helpers;
 using Xunit;
 using Xunit.Abstractions;
+using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 using SimulationModel = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 using SimulationRunner = Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.SimulationRunner;
@@ -22,7 +23,6 @@ namespace SimulationAgent.Test
 {
     public class SimulationRunnerTest
     {
-        private readonly Mock<IRateLimitingConfig> rateLimitingConfig;
         private readonly Mock<IRateLimitingConfig> ratingConfig;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IDeviceModels> deviceModels;
@@ -53,7 +53,6 @@ namespace SimulationAgent.Test
             this.deviceTelemetryActor = new Mock<IDeviceTelemetryActor>();
             this.updateDeviceStateLogic = new Mock<UpdateDeviceState>();
             this.rateLimiting = new Mock<IRateLimiting>();
-
             this.ratingConfig.Setup(x => x.DeviceMessagesPerSecond).Returns(10);
 
             this.target = new SimulationRunner(
@@ -63,8 +62,7 @@ namespace SimulationAgent.Test
                 this.deviceModelsOverriding.Object,
                 this.devices.Object,
                 this.simulations.Object,
-                this.factory.Object,
-                this.rateLimiting.Object);
+                this.factory.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -82,12 +80,93 @@ namespace SimulationAgent.Test
         {
             // Arrange
             const int ACTIVE_DEVICES_COUNT = 7;
+
+            var simulation = this.GenerateSimulationModel(ACTIVE_DEVICES_COUNT);
+
+            this.SetupSimulationReadyToStart();
+
+            // Act
+            this.target.Start(simulation);
+            var result = this.target.GetActiveDevicesCount();
+
+            // Assert
+            Assert.Equal(ACTIVE_DEVICES_COUNT, result);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void TheNumberOfTotalMessagesCountIsZeroAtStart()
+        {
+            // Act
+            var result = this.target.GetTotalMessagesCount();
+
+            // Assert
+            Assert.Equal(0, result);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReturnsTheNumberOfTotalMessagesCount()
+        {
+            // Arrange
+            const int TOTAL_MESSAGES_PER_DEVICE_COUNT = 10;
+            const int ACTIVE_DEVICES_COUNT = 7;
+
+            var simulation = this.GenerateSimulationModel(ACTIVE_DEVICES_COUNT);
+
+            this.SetupSimulationReadyToStart();
+
+            this.deviceTelemetryActor
+                .Setup(x => x.TotalMessagesCount)
+                .Returns(TOTAL_MESSAGES_PER_DEVICE_COUNT);
+
+            // Act
+            this.target.Start(simulation);
+            var result = this.target.GetTotalMessagesCount();
+
+            // Assert
+            Assert.Equal(TOTAL_MESSAGES_PER_DEVICE_COUNT * ACTIVE_DEVICES_COUNT, result);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void TheNumberOfFailedMessagesCountIsZeroAtStart()
+        {
+            // Act
+            var result = this.target.GetFailedMessagesCount();
+
+            // Assert
+            Assert.Equal(0, result);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReturnsTheNumberOfFailedMessagesCount()
+        {
+            // Arrange
+            const int FAILED_MESSAGES_PER_DEVICE_COUNT = 1;
+            const int ACTIVE_DEVICES_COUNT = 7;
+
+            var simulation = this.GenerateSimulationModel(ACTIVE_DEVICES_COUNT);
+
+            this.SetupSimulationReadyToStart();
+
+            this.deviceTelemetryActor
+                .Setup(x => x.FailedMessagesCount)
+                .Returns(FAILED_MESSAGES_PER_DEVICE_COUNT);
+
+            // Act
+            this.target.Start(simulation);
+            var result = this.target.GetFailedMessagesCount();
+
+            // Assert
+            Assert.Equal(FAILED_MESSAGES_PER_DEVICE_COUNT * ACTIVE_DEVICES_COUNT, result);
+        }
+
+        private SimulationModel GenerateSimulationModel(int ACTIVE_DEVICES_COUNT)
+        {
             var models = new List<DeviceModelRef>
             {
                 new DeviceModelRef { Id = "01", Count = ACTIVE_DEVICES_COUNT }
             };
 
-            var simulation = new SimulationModel
+            return new SimulationModel
             {
                 Id = "1",
                 Created = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
@@ -97,15 +176,6 @@ namespace SimulationAgent.Test
                 Version = 1,
                 DeviceModels = models
             };
-
-            SetupSimulationReadyToStart();
-
-            // Act
-            this.target.Start(simulation);
-            var result = this.target.GetActiveDevicesCount();
-
-            // Assert
-            Assert.Equal(ACTIVE_DEVICES_COUNT, result);
         }
 
         private void SetupSimulationReadyToStart()
@@ -164,7 +234,13 @@ namespace SimulationAgent.Test
 
         private void SetUpDeviceModelsOverriding()
         {
-            var deviceModel = new DeviceModel { Id = "01" };
+            var telemetry = new List<DeviceModelMessage>();
+            var message = new DeviceModelMessage
+            {
+                Interval = TimeSpan.FromSeconds(10)
+            };
+            telemetry.Add(message);
+            var deviceModel = new DeviceModel { Id = "01", Telemetry = telemetry };
 
             this.deviceModelsOverriding
                 .Setup(x => x.Generate(

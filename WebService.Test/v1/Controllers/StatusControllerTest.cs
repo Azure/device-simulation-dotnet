@@ -72,7 +72,7 @@ namespace WebService.Test.v1.Controllers
             var result = await this.target.Get();
 
             // Assert
-            Assert.Equal(ACTIVE_DEVICES_COUNT.ToString(), result.Properties["ActiveDeviceCount"]);
+            Assert.Equal(ACTIVE_DEVICES_COUNT.ToString(), result.Properties["ActiveDevicesCount"]);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
