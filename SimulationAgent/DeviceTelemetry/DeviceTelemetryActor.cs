@@ -165,13 +165,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                     this.ScheduleTelemetry();
                     break;
                 case ActorEvents.TelemetryDelivered:
-                    totalMessageCount++;
+                    this.totalMessageCount++;
                     this.actorLogger.TelemetryDelivered();
                     this.ScheduleTelemetry();
                     break;
                 case ActorEvents.TelemetryDeliveryFailed:
-                    totalMessageCount++;
-                    failedMessageCount++;
+                    this.totalMessageCount++;
+                    this.failedMessageCount++;
                     this.actorLogger.TelemetryFailed();
                     this.ScheduleTelemetryRetry();
                     break;

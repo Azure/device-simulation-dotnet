@@ -229,7 +229,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     if (this.loopSettings.SchedulableTaggings <= 0) return;
                     this.loopSettings.SchedulableTaggings--;
 
-                    failedTwinUpdatesCount++;
+                    this.failedTwinUpdatesCount++;
                     this.actorLogger.DeviceTwinTaggingFailed();
                     this.ScheduleDeviceTagging();
                     break;
@@ -245,7 +245,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     break;
 
                 case ActorEvents.ConnectionFailed:
-                    failedDeviceConnectionsCount++;
+                    this.failedDeviceConnectionsCount++;
                     this.actorLogger.DeviceConnectionFailed();
                     this.ScheduleConnection();
                     break;
