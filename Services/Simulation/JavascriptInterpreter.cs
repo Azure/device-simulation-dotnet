@@ -13,6 +13,7 @@ using Jint.Runtime.Descriptors;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 {
@@ -88,8 +89,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 }
 
                 this.log.Debug("Executing JS function", () => new { filename });
-                JsValue output = engine.Execute(program).Invoke("main", context,
-                    this.deviceState.GetState(), this.deviceState.GetProperties());
+
+                JsValue output = engine.Execute(program).Invoke(
+                    "main",
+                    context,
+                    this.deviceState.GetState(),
+                    this.deviceState.GetProperties());
 
                 // update the internal device state with the new state
                 this.UpdateState(output);

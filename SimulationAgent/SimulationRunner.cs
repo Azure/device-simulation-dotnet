@@ -390,7 +390,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             deviceConnectionActor.Setup(deviceId, deviceModel, deviceStateActor, this.connectionLoopSettings);
             this.deviceConnectionActors.Add(key, deviceConnectionActor);
 
-            //// Create one device properties actor for each device
+            // Create one device properties actor for each device
             var devicePropertiesActor = this.factory.Resolve<IDevicePropertiesActor>();
             devicePropertiesActor.Setup(deviceId, deviceStateActor, deviceConnectionActor);
             this.devicePropertiesActors.Add(key, devicePropertiesActor);

@@ -11,11 +11,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
     public interface IInternalDeviceState
     {
         bool PropertyChanged { get; set; }
-        IReadOnlyDictionary<string, object> GetProperties();
+        Dictionary<string, object> GetProperties();
         bool HasProperty(string key);
         object GetProperty(string key);
         void SetProperty(string key, object value);
-        IReadOnlyDictionary<string, object> GetState();
+        Dictionary<string, object> GetState();
         void SetState(Dictionary<string, object> state);
         bool HasStateValue(string key);
         object GetStateValue(string key);
@@ -95,13 +95,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         /// <summary>
         /// Retrieve all device properties from the DeviceTwin reported properties as a read only dictionary
         /// </summary>
-        public IReadOnlyDictionary<string, object> GetProperties()
+        public Dictionary<string, object> GetProperties()
         {
             // lock properties as mulitple scripts may try to access key at the same time.
             lock (this.properties)
             {
-                // return a read only dictionary to enforce updates through the set property
-                return new ReadOnlyDictionary<string, object>(this.properties);
+                // TODO investigate returning a read only dictionary to
+                // enforce updates through the set property
+                return new Dictionary<string, object>(this.properties);
             }
         }
 
@@ -133,13 +134,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         /// <summary>
         /// Retrieve all simulation state values as a read only dictionary
         /// </summary>
-        public IReadOnlyDictionary<string, object> GetState()
+        public Dictionary<string, object> GetState()
         {
             // lock properties as mulitple scripts may try to access key at the same time.
             lock (this.simulationState)
             {
-                // return a read only dictionary to enforce updates through the set property
-                return new ReadOnlyDictionary<string, object>(this.simulationState);
+                // TODO investigate returning a read only dictionary to
+                // enforce updates through the set property
+                return new Dictionary<string, object>(this.simulationState);
             }
         }
 

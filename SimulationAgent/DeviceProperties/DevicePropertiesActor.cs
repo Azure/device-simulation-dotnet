@@ -82,7 +82,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             ILogger logger,
             IActorsLogger actorLogger,
             IRateLimiting rateLimiting,
-            UpdateReportedProperties updatePropertiesLogic)
+            IDevicePropertiesLogic updatePropertiesLogic)
         {
             this.log = logger;
             this.actorLogger = actorLogger;
