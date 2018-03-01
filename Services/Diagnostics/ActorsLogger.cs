@@ -118,8 +118,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Fetch scheduled " + msg);
-            this.LogRegistry("Fetch scheduled " + msg);
+            this.Log("Fetch scheduled at: " + msg);
+            this.LogRegistry("Fetch scheduled at: " + msg);
         }
 
         public void FetchingDevice()
@@ -159,8 +159,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Device registration scheduled " + msg);
-            this.LogRegistry("Registration scheduled " + msg);
+            this.Log("Device registration scheduled at: " + msg);
+            this.LogRegistry("Registration scheduled at: " + msg);
         }
 
         public void RegisteringDevice()
@@ -192,8 +192,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Twin tagging scheduled " + msg);
-            this.LogTwin("Twin tagging scheduled " + msg);
+            this.Log("Twin tagging scheduled at: " + msg);
+            this.LogTwin("Twin tagging scheduled at: " + msg);
         }
 
         public void TaggingDeviceTwin()
@@ -225,8 +225,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Device connection scheduled " + msg);
-            this.LogConnection("Connection scheduled " + msg);
+            this.Log("Device connection scheduled at: " + msg);
+            this.LogConnection("Connection scheduled at: " + msg);
         }
 
         public void ConnectingDevice()
@@ -258,8 +258,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Telemetry scheduled " + msg);
-            this.LogTelemetry("Scheduled " + msg);
+            this.Log("Telemetry scheduled at: " + msg);
+            this.LogTelemetry("Scheduled at: " + msg);
         }
 
         public void TelemetryRetryScheduled(long time)
@@ -267,8 +267,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Telemetry retry scheduled " + msg);
-            this.LogTelemetry("Retry scheduled " + msg);
+            this.Log("Telemetry retry scheduled at: " + msg);
+            this.LogTelemetry("Retry scheduled at: " + msg);
         }
 
         public void SendingTelemetry()
@@ -300,8 +300,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Twin update scheduled " + msg);
-            this.LogTwin("Twin update scheduled " + msg);
+            this.Log("Twin update scheduled at: " + msg);
+            this.LogTwin("Twin update scheduled at: " + msg);
         }
 
         public void TwinUpdateRetryScheduled(long time)
@@ -309,8 +309,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Twin update retry scheduled " + msg);
-            this.LogTwin("Retry scheduled " + msg);
+            this.Log("Twin update retry scheduled at: " + msg);
+            this.LogTwin("Retry scheduled at: " + msg);
         }
 
         public void UpdatingDeviceTwin()
