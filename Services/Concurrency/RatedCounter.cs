@@ -181,14 +181,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         {
             if (this.timestamps.Count > 1)
             {
-                double speed;
-                lock (this.timestamps)
-                {
-                    long time = this.timestamps.Last() - this.timestamps.First();
-                    speed = (1000 * (double)this.timestamps.Count / time * 10) / 10;
-                }
-
-                return speed;
+                return this.GetMessagesPerSecond(this.timestamps);
             }
 
             return 0;
@@ -198,15 +191,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         {
             if (this.log.LogLevel <= LogLevel.Debug && this.timestamps.Count > 1)
             {
-                double speed;
-                lock (this.timestamps)
-                {
-                    long time = this.timestamps.Last() - this.timestamps.First();
-                    speed = (1000 * (double) this.timestamps.Count / time * 10) / 10;
-                }
-
+                double speed = this.GetMessagesPerSecond(this.timestamps);
                 this.log.Info(this.name, () => new { speed });
             }
+        }
+
+        private double GetMessagesPerSecond(Queue<long> timestamps)
+        {
+            double speed;
+            lock (timestamps)
+            {
+                // Time range in milliseconds
+                long time = timestamps.Last() - timestamps.First();
+
+                // Unit for speed is messages per second
+                speed = (1000 * (double)timestamps.Count / time * 10) / 10;
+            }
+
+            return speed;
         }
 
         private void CleanQueue(long now)
