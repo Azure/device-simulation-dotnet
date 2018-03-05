@@ -35,7 +35,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly string deviceId;
         private readonly IoTHubProtocol protocol;
         private readonly Azure.Devices.Client.DeviceClient client;
-        private readonly IRateLimiting rateLimiting;
         private readonly ILogger log;
 
         private bool connected;
@@ -46,13 +45,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             string deviceId,
             IoTHubProtocol protocol,
             Azure.Devices.Client.DeviceClient client,
-            IRateLimiting rateLimiting,
             ILogger logger)
         {
             this.deviceId = deviceId;
             this.protocol = protocol;
             this.client = client;
-            this.rateLimiting = rateLimiting;
             this.log = logger;
         }
 

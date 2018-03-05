@@ -23,7 +23,6 @@ namespace Services.Test
 
         private Mock<IServicesConfig> config;
         private Mock<IIotHubConnectionStringManager> connectionStringManager;
-        private Mock<IRateLimiting> rateLimiting;
         private Mock<ILogger> logger;
         private readonly Mock<IRegistryManager> registry;
         private readonly Devices target;
@@ -35,14 +34,12 @@ namespace Services.Test
             this.config = new Mock<IServicesConfig>();
             this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
             this.registry = new Mock<IRegistryManager>();
-            this.rateLimiting = new Mock<IRateLimiting>();
             this.logger = new Mock<ILogger>();
 
             this.target = new Devices(
                 this.config.Object,
                 this.connectionStringManager.Object,
                 this.registry.Object,
-                this.rateLimiting.Object,
                 this.logger.Object);
 
             this.connectionStringManager

@@ -10,6 +10,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
     public interface IDeviceStateActor
     {
         IInternalDeviceState DeviceState { get; }
+        IInternalDeviceProperties DeviceProperties { get; }
         bool IsDeviceActive { get; }
         void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices);
         void Run();
@@ -23,13 +24,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
             Updating
         }
 
-        /// <summary>
-        /// The virtual state of the simulated device. The state is composed of 
-        /// both the device reported properties (device values like firmware etc..)
-        /// and the device simulation state (simulated sensor data like temperature etc...)
-        /// that are periodically updated using an external script.
-        /// </summary>
         public IInternalDeviceState DeviceState { get; set; }
+        public IInternalDeviceProperties DeviceProperties { get; set; }
 
         public const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
 
@@ -99,8 +95,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                     // Prepare the dependencies
                     case ActorStatus.None:
                         this.updateDeviceStateLogic.Setup(this, this.deviceId, this.deviceModel);
-                        this.DeviceState = new InternalDeviceState(this.deviceModel, this.log);
-                        this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState });
+                        this.DeviceState = new InternalDeviceState(this.deviceModel);
+                        this.DeviceProperties = new InternalDeviceProperties(this.deviceModel);
+                        this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState, this.DeviceProperties });
                         this.MoveForward();
                         return;
 

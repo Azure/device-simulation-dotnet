@@ -54,7 +54,6 @@ function restoreProperties(previousProperties) {
 /**
  * Simple formula generating a random value around the average
  * in between min and max
- * @returns random value with given parameters
  */
 function vary(avg, percentage, min, max) {
     var value =  avg * (1 + ((percentage / 100) * (2 * Math.random() - 1)));

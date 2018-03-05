@@ -78,7 +78,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             {
                 (double min, double max) = this.GetMinMaxParameters(sensor.Value);
                 var value = this.random.NextDouble() * (max - min) + min;
-                state.SetStateValue(sensor.Key, value);
+                state.Set(sensor.Key, value);
             }
         }
 
@@ -92,15 +92,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 (double min, double max, double step) = this.GetMinMaxStepParameters(sensor.Value);
 
                 // Add the sensor to the state if missing
-                if (!state.HasStateValue(sensor.Key))
+                if (!state.Has(sensor.Key))
                 {
-                    state.SetStateValue(sensor.Key, min);
+                    state.Set(sensor.Key, min);
                 }
 
-                double current = Convert.ToDouble(state.GetStateValue(sensor.Key));
+                double current = Convert.ToDouble(state.Get(sensor.Key));
                 double next = AreEqual(current, max) ? min : Math.Min(current + step, max);
 
-                state.SetStateValue(sensor.Key, next);
+                state.Set(sensor.Key, next);
             }
         }
 
@@ -114,15 +114,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 (double min, double max, double step) = this.GetMinMaxStepParameters(sensor.Value);
 
                 // Add the sensor to the state if missing
-                if (!state.HasStateValue(sensor.Key))
+                if (!state.Has(sensor.Key))
                 {
-                    state.SetStateValue(sensor.Key, max);
+                    state.Set(sensor.Key, max);
                 }
 
-                double current = Convert.ToDouble(state.GetStateValue(sensor.Key));
+                double current = Convert.ToDouble(state.Get(sensor.Key));
                 double next = AreEqual(current, min) ? max : Math.Max(current - step, min);
 
-                state.SetStateValue(sensor.Key, next);
+                state.Set(sensor.Key, next);
             }
         }
 

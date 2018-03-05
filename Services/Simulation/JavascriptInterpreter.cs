@@ -22,7 +22,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         void Invoke(
             string filename,
             Dictionary<string, object> context,
-            IInternalDeviceState state);
+            IInternalDeviceState state,
+            IInternalDeviceProperties properties);
     }
 
     public class JavascriptInterpreter : IJavascriptInterpreter
@@ -30,6 +31,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         private readonly ILogger log;
         private readonly string folder;
         private IInternalDeviceState deviceState;
+        private IInternalDeviceProperties deviceProperties;
 
         // The following are static to improve overall performance
         // TODO make the class a singleton - https://github.com/Azure/device-simulation-dotnet/issues/45
@@ -53,9 +55,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         public void Invoke(
             string filename,
             Dictionary<string, object> context,
-            IInternalDeviceState state)
+            IInternalDeviceState state,
+            IInternalDeviceProperties properties)
         {
             this.deviceState = state;
+            this.deviceProperties = properties;
 
             var engine = new Engine();
 
@@ -93,8 +97,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 JsValue output = engine.Execute(program).Invoke(
                     "main",
                     context,
-                    this.deviceState.GetState(),
-                    this.deviceState.GetProperties());
+                    this.deviceState.GetAll(),
+                    this.deviceProperties.GetAll());
 
                 // update the internal device state with the new state
                 this.UpdateState(output);
@@ -202,7 +206,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                     key = stateChanges.Keys.ElementAt(i);
                     value = stateChanges.Values.ElementAt(i);
                     this.log.Debug("state change", () => new { key, value });
-                    this.deviceState.SetStateValue(key, value);
+                    this.deviceState.Set(key, value);
                 }
             }
         }
@@ -226,8 +230,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 {
                     key = propertyChanges.Keys.ElementAt(i);
                     value = propertyChanges.Values.ElementAt(i);
-
-                    this.deviceState.SetProperty(key, value);
+                    this.log.Debug("property change", () => new { key, value });
+                    this.deviceState.Set(key, value);
                 }
             }
         }

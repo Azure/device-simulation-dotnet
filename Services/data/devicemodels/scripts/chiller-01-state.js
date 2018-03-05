@@ -30,7 +30,6 @@ var properties = {};
  * @returns {void}
  */
 function restoreState(previousState) {
-
     // If the previous state is null, force a default state
     if (previousState !== undefined && previousState !== null) {
         state = previousState;
@@ -45,7 +44,6 @@ function restoreState(previousState) {
  * @param previousProperties The output of main() from the previous iteration
  */
 function restoreProperties(previousProperties) {
-
     // If the previous properties are null, force the default properties
     if (previousProperties !== undefined && previousProperties !== null) {
         properties = previousProperties;
@@ -61,7 +59,6 @@ function restoreProperties(previousProperties) {
  * @returns random value with given parameters
  */
 function vary(avg, percentage, min, max) {
-
     var value = avg * (1 + ((percentage / 100) * (2 * Math.random() - 1)));
     value = Math.max(value, min);
     value = Math.min(value, max);

@@ -3,33 +3,47 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 {
-    public interface IInternalDeviceState
+    public interface IInternalDeviceProperties
     {
         Dictionary<string, object> GetAll();
         void SetAll(Dictionary<string, object> newState);
         bool Has(string key);
         object Get(string key);
         void Set(string key, object value);
+        bool Changed { get; }
+        void ResetChanged();
     }
 
-    public class InternalDeviceState : IInternalDeviceState
+    public class InternalDeviceProperties : IInternalDeviceProperties
     {
-        public const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
-
         private IDictionary<string, object> dictionary;
+        private bool changed;
 
-        public InternalDeviceState()
+        public bool Changed { get { return this.changed; } }
+
+        public InternalDeviceProperties()
         {
             this.dictionary = new ConcurrentDictionary<string, object>();
+            this.changed = false;
         }
 
-        public InternalDeviceState(DeviceModel deviceModel)
+        public InternalDeviceProperties(DeviceModel deviceModel)
         {
-            var initialState = this.SetupTelemetry(deviceModel);
-            this.dictionary = new ConcurrentDictionary<string, object>(initialState);
+            var intitalProperties = this.SetupProperties(deviceModel);
+            this.dictionary = new ConcurrentDictionary<string, object>(intitalProperties);
+            this.changed = true;
+        }
+
+        /// <summary>
+        /// Called when values have been synchronized. Resets 'changed' flag to false.
+        /// </summary>
+        public void ResetChanged()
+        {
+            this.changed = false;
         }
 
         public object Get(string key)
@@ -48,7 +62,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         }
 
         /// <summary>
-        /// Sets the key with the given value, adds new value if key does not exist.
+        /// Set a property with the given key, adds new value if key does not exist.
         /// Sets the changed flag to true.
         /// </summary>
         public virtual void Set(string key, object value)
@@ -61,33 +75,29 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             {
                 this.dictionary.Add(key, value);
             }
+
+            this.changed = true;
         }
 
         public virtual void SetAll(Dictionary<string, object> newState)
         {
             this.dictionary = newState;
+            this.changed = true;
         }
 
         /// <summary>
-        /// Initializes device state from the device model.
+        /// Initializes device properties from the device model.
         /// </summary>
-        private Dictionary<string, object> SetupTelemetry(DeviceModel deviceModel)
+        private Dictionary<string, object> SetupProperties(DeviceModel deviceModel)
         {
-            Dictionary<string, object> state = CloneObject(deviceModel.Simulation.InitialState);
+            Dictionary<string, object> result = new Dictionary<string, object>();
 
-            // Ensure the state contains the "online" key
-            if (!state.ContainsKey("online"))
+            foreach (var property in deviceModel.Properties)
             {
-                state["online"] = true;
+                result.Add(property.Key, JToken.FromObject(property.Value));
             }
 
-            // TODO: This is used to control whether telemetry is calculated in UpdateDeviceState.
-            //       methods can turn telemetry off/on; e.g. setting temp high- turnoff, set low, turn on
-            //       it would be better to do this at the telemetry item level - we should add this in the future
-            //       https://github.com/Azure/device-simulation-dotnet/issues/174
-            state.Add(CALC_TELEMETRY, true);
-
-            return state;
+            return result;
         }
 
         /// <summary>Copy an object by value</summary>

@@ -2,9 +2,7 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Moq;
 using Services.Test.helpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -12,53 +10,49 @@ using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Devic
 
 namespace Services.Test
 {
-    public class InternalDeviceStateTest
+    public class InternalDevicePropertiesTest
     {
-        private InternalDeviceState target;
+        private InternalDeviceProperties target;
 
-        public InternalDeviceStateTest(ITestOutputHelper log)
+        public InternalDevicePropertiesTest(ITestOutputHelper log)
         {
-            // Initialize device state
-            this.target = this.GetTestDeviceState();
+            // Initialize device properties
+            this.target = this.GetTestProperties();
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void GetStateWithNoValuesIsEmpty()
+        public void GetWithNoPropertiesIsEmpty()
         {
             // Arrange
-            this.target = this.GetEmptyDeviceState();
+            this.target = this.GetEmptyProperties();
 
             // Act
-            var state = this.target.GetAll();
+            var props = this.target.GetAll();
 
             // Assert
-            Assert.Empty(state);
+            Assert.Empty(props);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void GetStateIsNotNullAndHasExpectedCount()
+        public void GetPropertiesIsNotNullAndHasExpectedCount()
         {
             // Arrange
-            this.target = this.GetTestDeviceState();
-            var initialState = this.GetTestChillerModel().Simulation.InitialState;
-
-            // DeviceStateActor adds the CALC_TELEMETRY key and value automatically to 
-            // control whether telemetry is calculated in UpdateDeviceState. Add one to expected count.
-            var expectedCount = initialState.Count + 1;
+            this.target = this.GetTestProperties();
+            var expectedCount = this.GetTestChillerModel().Properties.Count;
 
             // Act
-            var state = this.target.GetAll();
+            var props = this.target.GetAll();
 
             // Assert
-            Assert.NotEmpty(state);
-            Assert.Equal(state.Count, expectedCount);
+            Assert.NotEmpty(props);
+            Assert.Equal(props.Count, expectedCount);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void GetStateValueThrowsIfKeyDoesNotExist()
+        public void GetPropertyThrowsIfKeyDoesNotExist()
         {
             // Arrange
-            this.target = this.GetTestDeviceState();
+            this.target = this.GetTestProperties();
             var key = "KeyThatDoesNotExist";
 
             // Act and Assert
@@ -66,14 +60,31 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void GetStateValueReturnsValue()
+        public void GetPropertyReturnsValue()
         {
             // Arrange
-            this.target = this.GetTestDeviceState();
-            var key = "testKey";
-            var value = "testValue";
+            this.target = this.GetTestProperties();
+            var key = "TestPropKey";
+            var value = "TestPropValue";
 
             // Act
+            var result = this.target.Get(key);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(result, value);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void SetPropertyTest()
+        {
+            // Arrange
+            this.target = this.GetEmptyProperties();
+            var key = "testSetKey";
+            var value = "testSetValue";
+
+            // Act
+            this.target.Set(key, value);
             var result = this.target.Get(key);
 
             // Assert
@@ -85,7 +96,7 @@ namespace Services.Test
         public void SetStateValueTest()
         {
             // Arrange
-            this.target = this.GetEmptyDeviceState();
+            this.target = this.GetEmptyProperties();
             var key = "testSetKey";
             var value = "testSetValue";
             this.target.Set(key, value);
@@ -99,10 +110,10 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void HasStateValueReturnsTrueForKey()
+        public void HasPropertyReturnsTrueForProperty()
         {
             // Arrange
-            this.target = this.GetEmptyDeviceState();
+            this.target = this.GetEmptyProperties();
             var key = "testHasKey";
             var value = "testHasValue";
             this.target.Set(key, value);
@@ -115,10 +126,10 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void HasStateValueReturnsFalseIfNotThere()
+        public void HasPropertyReturnsFalseIfNotThere()
         {
             // Arrange
-            this.target = this.GetEmptyDeviceState();
+            this.target = this.GetEmptyProperties();
             var key = "KeyThatDoesNotExist";
 
             // Act
@@ -128,14 +139,47 @@ namespace Services.Test
             Assert.False(result);
         }
 
-        private InternalDeviceState GetEmptyDeviceState()
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ChangedIsSetToTrueForNewProperty()
         {
-            return new InternalDeviceState();
+            // Arrange
+            this.target = this.GetEmptyProperties();
+            Assert.False(this.target.Changed);
+
+            var key = "testKey";
+            var value = "testValue";
+
+            // Act
+            this.target.Set(key, value);
+
+            // Assert
+            Assert.True(this.target.Changed);
         }
 
-        private InternalDeviceState GetTestDeviceState()
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ResetChangedIsFalse()
         {
-            return new InternalDeviceState(GetTestChillerModel());
+            // Arrange
+            this.target = this.GetTestProperties();
+
+            var key = "testKey";
+            var value = "testValue";
+
+            // Act
+            this.target.ResetChanged();
+
+            // Assert
+            Assert.False(this.target.Changed);
+        }
+
+        private InternalDeviceProperties GetEmptyProperties()
+        {
+            return new InternalDeviceProperties();
+        }
+
+        private InternalDeviceProperties GetTestProperties()
+        {
+            return new InternalDeviceProperties(GetTestChillerModel());
         }
 
         /// <summary>

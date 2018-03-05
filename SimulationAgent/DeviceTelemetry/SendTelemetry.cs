@@ -37,7 +37,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
             try
             {
-                var state = this.context.DeviceState.GetState();
+                var state = this.context.DeviceState.GetAll();
                 this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
                 if ((bool) state["online"])
                 {
