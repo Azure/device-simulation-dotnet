@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json.Linq;
@@ -107,8 +106,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task UpdatePropertiesAsync(Device device)
         {
-            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
-            // for future PR
+            // TODO branch for twin updates to IoT Hub located at:
+            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
         }
 
         private async Task SendRawMessageAsync(Message message)

@@ -99,39 +99,39 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             IDeviceStateActor deviceStateActor,
             IDeviceConnectionActor deviceConnectionActor)
         {
-            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
-            // for future PR
+            // TODO branch for twin updates to IoT Hub located at:
+            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
         }
 
         public void HandleEvent(DevicePropertiesActor.ActorEvents e)
         {
-            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
-            // for future PR
+            // TODO branch for twin updates to IoT Hub located at:
+            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
         }
 
         public string Run()
         {
-            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
-            // for future PR
+            // TODO branch for twin updates to IoT Hub located at:
+            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
             return null;
         }
 
         public void Stop()
         {
-            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
-            // for future PR
+            // TODO branch for twin updates to IoT Hub located at:
+            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
         }
 
         private void ScheduleTwinUpdate()
         {
-            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
-            // for future PR
+            // TODO branch for twin updates to IoT Hub located at:
+            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
         }
 
         private void ScheduleTwinUpdateRetry()
         {
-            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
-            // for future PR
+            // TODO branch for twin updates to IoT Hub located at:
+            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
         }
 
     }
