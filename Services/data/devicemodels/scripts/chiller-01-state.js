@@ -26,8 +26,7 @@ var properties = {};
 /**
  * Restore the global state using data from the previous iteration.
  *
- * @param {object} previousState The output of main() from the previous iteration
- * @returns {void}
+ * @param previousState The output of main() from the previous iteration
  */
 function restoreState(previousState) {
     // If the previous state is null, force a default state
