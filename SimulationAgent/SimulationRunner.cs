@@ -81,8 +81,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Flag signaling whether the simulation has started and is running (to avoid contentions)
         private bool running;
 
-        private int totalDevicesCount;
-
         public SimulationRunner(
             IRateLimitingConfig ratingConfig,
             ILogger logger,
@@ -142,9 +140,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 try
                 {
                     var devices = this.simulations.GetDeviceIds(simulation);
-
-                    this.totalDevicesCount = devices.Count();
-
+                    
                     // This will ignore existing devices, creating only the missing ones
                     this.devices.CreateListAsync(devices)
                         .Wait(TimeSpan.FromSeconds(DEVICES_CREATION_TIMEOUT_SECS));
