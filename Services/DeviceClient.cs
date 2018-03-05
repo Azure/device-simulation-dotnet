@@ -104,10 +104,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             await this.SendRawMessageAsync(eventMessage);
         }
 
-        public async Task UpdatePropertiesAsync(Device device)
+        public Task UpdateTwinAsync(Device device)
         {
             // TODO branch for twin updates to IoT Hub located at:
             //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
+            return Task.CompletedTask;
         }
 
         private async Task SendRawMessageAsync(Message message)
