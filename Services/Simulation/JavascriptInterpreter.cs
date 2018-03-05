@@ -116,7 +116,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         /// returned by Jint can be either a Dictionary or a
         /// Jint.Native.ObjectInstance, each with a different parsing logic.
         /// </summary>
-        public Dictionary<string, object> JsValueToDictionary(JsValue data)
+        private Dictionary<string, object> JsValueToDictionary(JsValue data)
         {
             var result = new Dictionary<string, object>();
             if (data == null) return result;
@@ -188,7 +188,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 
         // TODO: Move this out of the scriptinterpreter class into DeviceClient to keep this class stateless
         //       https://github.com/Azure/device-simulation-dotnet/issues/45
-        public void UpdateState(JsValue data)
+        private void UpdateState(JsValue data)
         {
             string key;
             object value;
