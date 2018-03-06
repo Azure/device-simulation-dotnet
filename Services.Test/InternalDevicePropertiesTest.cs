@@ -21,7 +21,7 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void GetWithNoPropertiesIsEmpty()
+        public void Should_Be_Empty_On_Get_All_When_No_Properties_Added()
         {
             // Arrange
             this.target = this.GetEmptyProperties();
@@ -34,7 +34,7 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void GetPropertiesIsNotNullAndHasExpectedCount()
+        public void Should_Return_All_Test_Properties_On_Get_All_When_Initialized_With_Device_Model()
         {
             // Arrange
             this.target = this.GetTestProperties();
@@ -46,10 +46,16 @@ namespace Services.Test
             // Assert
             Assert.NotEmpty(props);
             Assert.Equal(props.Count, expectedCount);
+            Assert.Equal("TestChiller", props["Type"]);
+            Assert.Equal("1.0", props["Firmware"]);
+            Assert.Equal("TestCH101", props["Model"]);
+            Assert.Equal("TestBuilding 2", props["Location"]);
+            Assert.Equal(47.640792, props["Latitude"]);
+            Assert.Equal(-122.126258, props["Longitude"]);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void GetPropertyThrowsIfKeyDoesNotExist()
+        public void Should_Throw_On_Get_When_Key_Does_Not_Exist()
         {
             // Arrange
             this.target = this.GetTestProperties();
@@ -60,10 +66,12 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void GetPropertyReturnsValue()
+        public void Should_Return_Value_When_Calling_Get_And_Property_Exists()
         {
             // Arrange
             this.target = this.GetTestProperties();
+
+            // test values that should be in the test device model
             var key = "TestPropKey";
             var value = "TestPropValue";
 
@@ -76,7 +84,7 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void SetPropertyTest()
+        public void Should_Add_Value_When_Set()
         {
             // Arrange
             this.target = this.GetEmptyProperties();
@@ -93,7 +101,7 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void SetStateValueTest()
+        public void Should_Set_Value_With_Key()
         {
             // Arrange
             this.target = this.GetEmptyProperties();
@@ -110,7 +118,7 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void HasPropertyReturnsTrueForProperty()
+        public void Has_Should_Return_True_When_Property_Exists()
         {
             // Arrange
             this.target = this.GetEmptyProperties();
@@ -126,7 +134,7 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void HasPropertyReturnsFalseIfNotThere()
+        public void Has_Should_Return_False_When_Property_Does_Not_Exist()
         {
             // Arrange
             this.target = this.GetEmptyProperties();
@@ -140,7 +148,7 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ChangedIsSetToTrueForNewProperty()
+        public void Changed_SHould_Return_True_When_New_Property_Added()
         {
             // Arrange
             this.target = this.GetEmptyProperties();
@@ -157,7 +165,7 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ResetChangedIsFalse()
+        public void Changed_Should_Be_False_When_Reset()
         {
             // Arrange
             this.target = this.GetTestProperties();
