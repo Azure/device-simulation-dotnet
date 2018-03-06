@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -40,8 +39,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         public enum ActorEvents
         {
             Started,
-            TwinUpdateFailed,
-            TwinUpdated,
+            PropertiesUpdateFailed,
+            PropertiesUpdated,
         }
 
         private readonly ILogger log;
@@ -51,7 +50,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
         private ActorStatus status;
         private string deviceId;
-        private DeviceModel deviceModel;
         private long whenToRun;
 
         /// <summary>
@@ -84,7 +82,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             ILogger logger,
             IActorsLogger actorLogger,
             IRateLimiting rateLimiting,
-            UpdateReportedProperties updatePropertiesLogic)
+            IDevicePropertiesLogic updatePropertiesLogic)
         {
             this.log = logger;
             this.actorLogger = actorLogger;
@@ -92,23 +90,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             this.updatePropertiesLogic = updatePropertiesLogic;
 
             this.status = ActorStatus.None;
-            this.deviceModel = null;
             this.deviceId = null;
             this.deviceStateActor = null;
-        }
-
-        public void HandleEvent(DevicePropertiesActor.ActorEvents e)
-        {
-            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
-            // for future PR
-            throw new NotImplementedException();
-        }
-
-        public string Run()
-        {
-            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
-            // for future PR
-            throw new NotImplementedException();
         }
 
         public void Setup(
@@ -116,30 +99,39 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             IDeviceStateActor deviceStateActor,
             IDeviceConnectionActor deviceConnectionActor)
         {
-            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
-            // for future PR
-            throw new NotImplementedException();
+            // TODO branch for twin updates to IoT Hub located at:
+            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
+        }
+
+        public void HandleEvent(DevicePropertiesActor.ActorEvents e)
+        {
+            // TODO branch for twin updates to IoT Hub located at:
+            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
+        }
+
+        public string Run()
+        {
+            // TODO branch for twin updates to IoT Hub located at:
+            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
+            return null;
         }
 
         public void Stop()
         {
-            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
-            // for future PR
-            throw new NotImplementedException();
+            // TODO branch for twin updates to IoT Hub located at:
+            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
         }
 
         private void ScheduleTwinUpdate()
         {
-            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
-            // for future PR
-            throw new NotImplementedException();
+            // TODO branch for twin updates to IoT Hub located at:
+            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
         }
 
         private void ScheduleTwinUpdateRetry()
         {
-            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
-            // for future PR
-            throw new NotImplementedException();
+            // TODO branch for twin updates to IoT Hub located at:
+            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
         }
 
     }

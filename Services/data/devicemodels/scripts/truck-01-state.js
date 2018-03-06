@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 /*global log*/
+/*global updateState*/
+/*global updateProperties*/
 /*jslint node: true*/
 
 "use strict";
@@ -76,6 +78,8 @@ function varylocation(latitude, longitude, distance) {
 
 /**
  * Entry point function called by the simulation engine.
+ * Returns updated simulation state.
+ * Device property updates must call updateProperties() to persist.
  *
  * @param context        The context contains current time, device model and id
  * @param previousState  The device state since the last iteration

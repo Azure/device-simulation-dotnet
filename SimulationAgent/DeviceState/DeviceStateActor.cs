@@ -1,19 +1,17 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Collections.Generic;
-using Jint.Native;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState
 {
     public interface IDeviceStateActor
     {
         IInternalDeviceState DeviceState { get; }
+        IInternalDeviceProperties DeviceProperties { get; }
+        bool IsDeviceActive { get; }
         void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices);
         void Run();
     }
@@ -26,15 +24,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
             Updating
         }
 
-        /// <summary>
-        /// The virtual state of the simulated device. The state is composed of 
-        /// both the device reported properties (device values like firmware etc..)
-        /// and the device simulation state (simulated sensor data like temperature etc...)
-        /// that are periodically updated using an external script.
-        /// </summary>
         public IInternalDeviceState DeviceState { get; set; }
+        public IInternalDeviceProperties DeviceProperties { get; set; }
 
         public const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
+
+        /// <summary>
+        /// The device is considered active when the state is being updated.
+        /// 
+        /// By design, rather than talking about "connected devices", we use 
+        /// the term "active devices" which is more generic. So when we show
+        /// the number of active devices, we can include devices which are not
+        /// connected yet but being simulated.
+        /// </summary>
+        public bool IsDeviceActive
+        {
+            get
+            {
+                return this.status == ActorStatus.Updating;
+            }
+        }
 
         private readonly ILogger log;
         private readonly UpdateDeviceState updateDeviceStateLogic;
@@ -86,8 +95,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                     // Prepare the dependencies
                     case ActorStatus.None:
                         this.updateDeviceStateLogic.Setup(this, this.deviceId, this.deviceModel);
-                        this.DeviceState = new InternalDeviceState(this.deviceModel, this.log);
-                        this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState });
+                        this.DeviceState = new InternalDeviceState(this.deviceModel);
+                        this.DeviceProperties = new InternalDeviceProperties(this.deviceModel);
+                        this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState, this.DeviceProperties });
                         this.MoveForward();
                         return;
 

@@ -12,12 +12,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         /// <summary>Invoke one of the device script files</summary>
         /// <param name="script">Name of the script</param>
         /// <param name="context">Context, e.g. current time, device Id, device Model</param>
-        /// <param name="state">Current device sensors state and device properties state</param>
+        /// <param name="state">Current device sensors state</param>
+        /// <param name="properties">Current device properties state</param>
         /// <remarks> Updates the internal device sensors state and internal device properties</remarks>
         void Invoke(
             Script script,
             Dictionary<string, object> context,
-            IInternalDeviceState state
+            IInternalDeviceState state,
+            IInternalDeviceProperties properites
             );
     }
 
@@ -40,7 +42,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         public void Invoke(
             Script script,
             Dictionary<string, object> context,
-            IInternalDeviceState state)
+            IInternalDeviceState state,
+            IInternalDeviceProperties properties)
         {
             switch (script.Type.ToLowerInvariant())
             {
@@ -50,7 +53,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 
                 case "javascript":
                     this.log.Debug("Invoking JS", () => new { script.Path, context, state });
-                    this.jsInterpreter.Invoke(script.Path, context, state);
+                    this.jsInterpreter.Invoke(script.Path, context, state, properties);
                     this.log.Debug("JS invocation complete", () => {});
                     break;
 

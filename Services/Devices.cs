@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.Devices.Common.Exceptions;
 using Microsoft.Azure.Devices.Shared;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
@@ -75,7 +74,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private const string DEVICE_ID_PREFIX = "Simulated.";
 
         private readonly IIotHubConnectionStringManager connectionStringManager;
-        private readonly IRateLimiting rateLimiting;
         private readonly ILogger log;
 
         private readonly bool twinReadsWritesEnabled;
@@ -88,12 +86,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IServicesConfig config,
             IIotHubConnectionStringManager connStringManager,
             IRegistryManager registryManager,
-            IRateLimiting rateLimiting,
             ILogger logger)
         {
             this.connectionStringManager = connStringManager;
             this.registry = registryManager;
-            this.rateLimiting = rateLimiting;
             this.log = logger;
             this.twinReadsWritesEnabled = config.TwinReadWriteEnabled;
             this.registryCount = -1;
@@ -124,7 +120,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 device.Id,
                 protocol,
                 sdkClient,
-                this.rateLimiting,
                 this.log);
         }
 

@@ -1,10 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties
 {
@@ -12,30 +9,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
     {
         private readonly ILogger log;
 
-        private string deviceId;
-
         private IDevicePropertiesActor context;
 
-        public UpdateReportedProperties(
-            IDevices devices,
-            IServicesConfig config,
-            ILogger logger)
+        public UpdateReportedProperties(ILogger logger)
         {
             this.log = logger;
         }
 
-        public void Setup(IDevicePropertiesActor deviceTwinActor, string deviceId, DeviceModel deviceModel)
+        public void Setup(IDevicePropertiesActor devicePropertiesActor, string deviceId, DeviceModel deviceModel)
         {
-            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
-            // for future PR
-            throw new NotImplementedException();
+            // TODO branch for twin updates to IoT Hub located at:
+            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
         }
 
         public void Run()
         {
-            // TODO see https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
-            // for future PR
-            throw new NotImplementedException();
+            // TODO branch for twin updates to IoT Hub located at:
+            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
         }
     }
 }

@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 /*global log*/
+/*global updateState*/
+/*global updateProperties*/
 /*jslint node: true*/
 
 "use strict";
@@ -52,7 +54,6 @@ function restoreProperties(previousProperties) {
 /**
  * Simple formula generating a random value around the average
  * in between min and max
- * @returns random value with given parameters
  */
 function vary(avg, percentage, min, max) {
     var value =  avg * (1 + ((percentage / 100) * (2 * Math.random() - 1)));
@@ -76,6 +77,8 @@ function varyfloor(current, min, max) {
 
 /**
  * Entry point function called by the simulation engine.
+ * Returns updated simulation state.
+ * Device property updates must call updateProperties() to persist.
  *
  * @param context        The context contains current time, device model and id
  * @param previousState  The device state since the last iteration

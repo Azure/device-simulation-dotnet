@@ -22,6 +22,7 @@ namespace Services.Test.Simulation
         private readonly ITestOutputHelper log;
         private readonly Mock<IServicesConfig> config;
         private readonly Mock<ILogger> logger;
+        private readonly Mock<IInternalDeviceProperties> properties;
         private readonly JavascriptInterpreter target;
 
         public JavascriptInterpreterTest(ITestOutputHelper log)
@@ -31,6 +32,7 @@ namespace Services.Test.Simulation
             this.config = new Mock<IServicesConfig>();
             this.config.SetupGet(x => x.DeviceModelsFolder).Returns("./data/devicemodels/");
             this.config.SetupGet(x => x.DeviceModelsScriptsFolder).Returns("./data/devicemodels/scripts/");
+            this.properties = new Mock<IInternalDeviceProperties>();
 
             this.logger = new Mock<ILogger>();
             this.CaptureApplicationLogs(this.logger);
@@ -42,6 +44,8 @@ namespace Services.Test.Simulation
         public void ReturnedStateIsIntact()
         {
             // Arrange
+            InternalDeviceState deviceState = new InternalDeviceState();
+
             var filename = "chiller-01-state.js";
             var context = new Dictionary<string, object>
             {
@@ -58,26 +62,26 @@ namespace Services.Test.Simulation
                 ["lights_on"] = false
             };
 
-            Mock<IInternalDeviceState> deviceState = new Mock<IInternalDeviceState>();
-            deviceState.Object.SetState(sensors);
+            deviceState.SetAll(sensors);
 
             // Act
-            this.target.Invoke(filename, context, deviceState.Object);
+            this.target.Invoke(filename, context, deviceState, properties.Object);
 
             // Assert
-            
-            Assert.Equal(sensors.Count, deviceState.Object.GetState().Count);
-            Assert.IsType<Double>(deviceState.Object.GetStateValue("temperature"));
-            Assert.IsType<string>(deviceState.Object.GetStateValue("temperature_unit"));
-            Assert.IsType<Double>(deviceState.Object.GetStateValue("humidity"));
-            Assert.IsType<string>(deviceState.Object.GetStateValue("humidity_unit"));
-            Assert.IsType<bool>(deviceState.Object.GetStateValue("lights_on"));
+            Assert.Equal(sensors.Count, deviceState.GetAll().Count);
+            Assert.IsType<Double>(deviceState.Get("temperature"));
+            Assert.IsType<string>(deviceState.Get("temperature_unit"));
+            Assert.IsType<Double>(deviceState.Get("humidity"));
+            Assert.IsType<string>(deviceState.Get("humidity_unit"));
+            Assert.IsType<bool>(deviceState.Get("lights_on"));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void TestJavascriptFiles()
         {
             // Arrange
+            InternalDeviceState deviceState = new InternalDeviceState();
+
             var files = new List<string>
             {
                 "chiller-01-state.js",
@@ -91,13 +95,11 @@ namespace Services.Test.Simulation
                 ["deviceModel"] = "room"
             };
 
-            Mock<IInternalDeviceState> state = new Mock<IInternalDeviceState>();
-
             // Act - Assert (no exception should occur)
             foreach (var file in files)
             {
-                this.target.Invoke(file, context, state.Object);
-                Assert.NotNull(state.Object.GetState());
+                this.target.Invoke(file, context, deviceState, properties.Object);
+                Assert.NotNull(deviceState.GetAll());
             }
         }
 

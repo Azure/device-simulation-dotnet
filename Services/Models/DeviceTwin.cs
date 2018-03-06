@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Azure.Devices.Shared;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 {
@@ -16,9 +17,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public string ETag { get; set; }
         public string DeviceId { get; set; }
         public bool IsSimulated { get; set; }
-        public Dictionary<string, object> DesiredProperties { get; set; }
-        public Dictionary<string, object> ReportedProperties { get; set; }
-        public Dictionary<string, object> Tags { get; set; }
+        public Dictionary<string, JToken> DesiredProperties { get; set; }
+        public Dictionary<string, JToken> ReportedProperties { get; set; }
+        public Dictionary<string, JToken> Tags { get; set; }
 
         public DeviceTwin(Twin twin)
         {
@@ -33,13 +34,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             }
         }
 
-        private static Dictionary<string, object> TwinCollectionToDictionary(TwinCollection collection)
+        private static Dictionary<string, JToken> TwinCollectionToDictionary(TwinCollection x)
         {
-            var result = new Dictionary<string, object>();
+            var result = new Dictionary<string, JToken>();
 
-            if (collection == null) return result;
+            if (x == null) return result;
 
-            foreach (KeyValuePair<string, object> twin in collection)
+            foreach (KeyValuePair<string, JToken> twin in x)
             {
                 try
                 {
@@ -55,13 +56,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             return result;
         }
 
-        private static TwinCollection DictionaryToTwinCollection(Dictionary<string, object> dictionary)
+        private static TwinCollection DictionaryToTwinCollection(Dictionary<string, JToken> x)
         {
             var result = new TwinCollection();
 
-            if (dictionary == null) return result;
+            if (x == null) return result;
 
-            foreach (KeyValuePair<string, object> item in dictionary)
+            foreach (KeyValuePair<string, JToken> item in x)
             {
                 try
                 {
