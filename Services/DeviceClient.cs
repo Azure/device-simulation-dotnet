@@ -155,6 +155,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         Exception = e.GetType().FullName,
                         e.InnerException
                     });
+
+                throw new TelemetrySendException("Message delivery failed with " + e.Message);
             }
         }
 
