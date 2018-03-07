@@ -107,7 +107,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         public int FailedDeviceConnectionsCount => this.failedDeviceConnectionsCount;
 
         /// <summary>
-        /// Failed device connections counter
+        /// Failed device twin updates counter
         /// </summary>
         public int FailedTwinUpdatesCount => this.failedTwinUpdatesCount;
 
