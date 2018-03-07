@@ -32,7 +32,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             this.message = context.Message;
         }
 
-        public void Run()
+        public async void Run()
         {
             this.log.Debug("Sending telemetry...", () => new { this.deviceId });
 
@@ -57,32 +57,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                         () => new { this.deviceId, MessageSchema = this.message.MessageSchema.Name, msg });
 
                     var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                    this.context.Client.SendMessageAsync(msg, this.message.MessageSchema)
-                        .ContinueWith(t =>
-                        {
-                            if (t.IsFaulted)
-                            {
-                                if (t.Exception is AggregateException)
-                                {
-                                    var exceptions = t.Exception.InnerExceptions;
-                                    foreach (var exception in exceptions)
-                                    {
-                                        // Faulted with TelemetrySendException
-                                        if (exception != null && exception is TelemetrySendException)
-                                        {
-                                            this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDeliveryFailed);
-                                        }
-                                    }
-                                }
-                            }
-                            else if (t.IsCompleted)
-                            {
-                                var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
-                                this.log.Debug("Telemetry delivered", () => new { this.deviceId, timeSpent, MessageSchema = this.message.MessageSchema.Name });
-
-                                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
-                            }
-                        });
+                    await this.context.Client.SendMessageAsync(msg, this.message.MessageSchema);
+                    var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
+                    this.log.Debug("Telemetry delivered", () => new { this.deviceId, timeSpent, MessageSchema = this.message.MessageSchema.Name });
+                    this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
+ 
                 }
                 else
                 {
@@ -90,6 +69,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                     this.log.Debug("No telemetry will be sent as the device is offline...", () => new { this.deviceId });
                     this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
                 }
+            }
+            catch (TelemetrySendException e)
+            {
+                this.log.Error("Telemetry error", () => new { this.deviceId, e });
+                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDeliveryFailed);
             }
             catch (Exception e)
             {
