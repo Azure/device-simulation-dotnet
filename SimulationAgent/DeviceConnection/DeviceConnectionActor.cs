@@ -15,8 +15,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         IDeviceClient Client { get; set; }
         Device Device { get; set; }
         bool Connected { get; }
-        int FailedDeviceConnectionsCount { get; }
-        int FailedTwinUpdatesCount { get; }
+        long FailedDeviceConnectionsCount { get; }
+        long FailedTwinUpdatesCount { get; }
+        long SimulationErrorsCount { get; }
 
         void Setup(string deviceId, DeviceModel deviceModel, IDeviceStateActor deviceStateActor, ConnectionLoopSettings loopSettings);
         void Run();
@@ -72,8 +73,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private DeviceModel deviceModel;
         private long whenToRun;
         private ConnectionLoopSettings loopSettings;
-        private int failedDeviceConnectionsCount = 0;
-        private int failedTwinUpdatesCount = 0;
+        private long failedDeviceConnectionsCount;
+        private long failedTwinUpdatesCount;
+        private long failedRegistrationsCount;
+        private long failedFetchCount;
 
         /// <summary>
         /// Reference to the actor managing the device state, used
@@ -104,12 +107,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         /// <summary>
         /// Failed device connections counter
         /// </summary>
-        public int FailedDeviceConnectionsCount => this.failedDeviceConnectionsCount;
+        public long FailedDeviceConnectionsCount => this.failedDeviceConnectionsCount;
 
         /// <summary>
         /// Failed device twin updates counter
         /// </summary>
-        public int FailedTwinUpdatesCount => this.failedTwinUpdatesCount;
+        public long FailedTwinUpdatesCount => this.failedTwinUpdatesCount;
+
+        /// <summary>
+        /// Simulation error counter in DeviceConnectionActor
+        /// </summary>
+        public long SimulationErrorsCount => this.failedRegistrationsCount +
+            this.failedFetchCount +
+            this.failedTwinUpdatesCount +
+            this.failedDeviceConnectionsCount;
 
         public DeviceConnectionActor(
             ILogger logger,
@@ -137,7 +148,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.deviceModel = null;
             this.deviceId = null;
             this.deviceStateActor = null;
-        }
+
+            this.failedDeviceConnectionsCount = 0;
+            this.failedTwinUpdatesCount = 0;
+            this.failedRegistrationsCount = 0;
+            this.failedFetchCount = 0;
+    }
 
         /// <summary>
         /// Invoke this method before calling Execute(), to initialize the actor
@@ -197,6 +213,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     if (this.loopSettings.SchedulableFetches <= 0) return;
                     this.loopSettings.SchedulableFetches--;
 
+                    this.failedFetchCount++;
                     this.actorLogger.DeviceFetchFailed();
                     this.ScheduleFetch();
                     break;
@@ -221,6 +238,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     if (this.loopSettings.SchedulableRegistrations <= 0) return;
                     this.loopSettings.SchedulableRegistrations--;
 
+                    this.failedRegistrationsCount++;
                     this.actorLogger.DeviceRegistrationFailed();
                     this.ScheduleRegistration();
                     break;
@@ -228,7 +246,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 case ActorEvents.DeviceTwinTaggingFailed:
                     if (this.loopSettings.SchedulableTaggings <= 0) return;
                     this.loopSettings.SchedulableTaggings--;
-
+                    
                     this.failedTwinUpdatesCount++;
                     this.actorLogger.DeviceTwinTaggingFailed();
                     this.ScheduleDeviceTagging();

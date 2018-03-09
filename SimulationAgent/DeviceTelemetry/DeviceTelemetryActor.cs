@@ -17,8 +17,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         Dictionary<string, object> DeviceState { get; }
         IDeviceClient Client { get; }
         DeviceModel.DeviceModelMessage Message { get; }
-        int TotalMessagesCount { get; }
-        int FailedMessagesCount { get; }
+        long TotalMessagesCount { get; }
+        long FailedMessagesCount { get; }
 
         void Setup(
             string deviceId,
@@ -49,6 +49,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         public enum ActorEvents
         {
             Started,
+            SendingTelemetry,
             TelemetryDeliveryFailed,
             TelemetryDelivered,
         }
@@ -62,8 +63,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         private string deviceId;
         private DeviceModel deviceModel;
         private long whenToRun;
-        private int totalMessageCount = 0;
-        private int failedMessageCount = 0;
+        private long totalMessagesCount;
+        private long failedMessagesCount;
 
         /// <summary>
         /// Reference to the actor managing the device state, used
@@ -94,12 +95,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         /// <summary>
         /// Total messages count created by the connection actor
         /// </summary>
-        public int TotalMessagesCount => this.totalMessageCount;
+        public long TotalMessagesCount => this.totalMessagesCount;
 
         /// <summary>
         /// Failed messages count created by the connection actor
         /// </summary>
-        public int FailedMessagesCount => this.failedMessageCount;
+        public long FailedMessagesCount => this.failedMessagesCount;
 
         public DeviceTelemetryActor(
             ILogger logger,
@@ -118,6 +119,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             this.deviceModel = null;
             this.deviceId = null;
             this.deviceStateActor = null;
+            this.totalMessagesCount = 0;
+            this.failedMessagesCount = 0;
         }
 
         /// <summary>
@@ -164,14 +167,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                     this.actorLogger.ActorStarted();
                     this.ScheduleTelemetry();
                     break;
+                case ActorEvents.SendingTelemetry:
+                    this.totalMessagesCount++;
+                    break;
                 case ActorEvents.TelemetryDelivered:
-                    this.totalMessageCount++;
                     this.actorLogger.TelemetryDelivered();
                     this.ScheduleTelemetry();
                     break;
                 case ActorEvents.TelemetryDeliveryFailed:
-                    this.totalMessageCount++;
-                    this.failedMessageCount++;
+                    this.failedMessagesCount++;
                     this.actorLogger.TelemetryFailed();
                     this.ScheduleTelemetryRetry();
                     break;

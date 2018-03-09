@@ -35,6 +35,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private const string MESSAGE_PER_SECOND_KEY = "MessagesPerSecond";
         private const string FAILED_DEVICE_CONNECTIONS_COUNT_KEY = "FailedDeviceConnectionsCount";
         private const string FAILED_DEVICE_TWIN_UPDATES_COUNT_KEY = "FailedDeviceTwinUpdatesCount";
+        private const string SIMULATION_ERRORS_COUNT_KEY = "SimulationErrorsCount";
 
         private readonly IPreprovisionedIotHub preprovisionedIotHub;
         private readonly IStorageAdapterClient storage;
@@ -129,12 +130,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             result.Properties.Add(MESSAGE_PER_SECOND_KEY, messagesPerSecond);
 
             // Failed device connections count
-            string failedDeviceConnectionsCount = this.GetFailedDeviceConnections().ToString();
+            string failedDeviceConnectionsCount = this.GetFailedDeviceConnectionsCount().ToString();
             result.Properties.Add(FAILED_DEVICE_CONNECTIONS_COUNT_KEY, failedDeviceConnectionsCount);
 
             // Failed device connections count
-            string failedDeviceTwinUpdatesCount = this.GetFailedDeviceTwinUpdates().ToString();
+            string failedDeviceTwinUpdatesCount = this.GetFailedDeviceTwinUpdatesCount().ToString();
             result.Properties.Add(FAILED_DEVICE_TWIN_UPDATES_COUNT_KEY, failedDeviceTwinUpdatesCount);
+
+            // Simulation errors count
+            string simulationErrorsCount = this.GetSimulationErrorsCount().ToString();
+            result.Properties.Add(SIMULATION_ERRORS_COUNT_KEY, simulationErrorsCount);
 
             // Prepare status message and response
             if (!statusIsOk)
@@ -259,25 +264,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                    $"/providers/Microsoft.Devices/IotHubs/{this.deploymentConfig.AzureIothubName}/Metrics";
         }
 
-        private int GetActiveDevicesCount()
+        private long GetActiveDevicesCount()
         {
             if (!this.isRunning) return 0;
 
-            return this.simulationRunner.GetActiveDevicesCount();
+            return this.simulationRunner.ActiveDevicesCount;
         }
 
-        private int GetTotalMessagesCount()
+        private long GetTotalMessagesCount()
         {
             if (!this.isRunning) return 0;
 
-            return this.simulationRunner.GetTotalMessagesCount();
+            return this.simulationRunner.TotalMessagesCount;
         }
 
-        private int GetFailedMessagesCount()
+        private long GetFailedMessagesCount()
         {
             if (!this.isRunning) return 0;
 
-            return this.simulationRunner.GetFailedMessagesCount();
+            return this.simulationRunner.FailedMessagesCount;
         }
 
         private double GetMessagesPerSecond()
@@ -287,18 +292,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             return this.rateReporter.GetThroughputForMessages();
         }
 
-        private double GetFailedDeviceConnections()
+        private long GetFailedDeviceConnectionsCount()
         {
             if (!this.isRunning) return 0;
 
-            return this.simulationRunner.GetFailedDeviceConnections();
+            return this.simulationRunner.FailedDeviceConnectionsCount;
         }
 
-        private double GetFailedDeviceTwinUpdates()
+        private long GetFailedDeviceTwinUpdatesCount()
         {
             if (!this.isRunning) return 0;
 
-            return this.simulationRunner.GetFailedDeviceTwinUpdates();
+            return this.simulationRunner.FailedDeviceTwinUpdatesCount;
+        }
+
+        private long GetSimulationErrorsCount()
+        {
+            if (!this.isRunning) return 0;
+
+            return this.simulationRunner.SimulationErrorsCount;
         }
     }
 }

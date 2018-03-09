@@ -57,11 +57,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                         () => new { this.deviceId, MessageSchema = this.message.MessageSchema.Name, msg });
 
                     var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.SendingTelemetry);
                     await this.context.Client.SendMessageAsync(msg, this.message.MessageSchema);
                     var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
                     this.log.Debug("Telemetry delivered", () => new { this.deviceId, timeSpent, MessageSchema = this.message.MessageSchema.Name });
                     this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
- 
                 }
                 else
                 {
