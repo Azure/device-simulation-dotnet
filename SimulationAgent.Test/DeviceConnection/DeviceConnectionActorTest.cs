@@ -68,7 +68,7 @@ namespace SimulationAgent.Test.DeviceConnection
             this.SetupDeviceConnectionActor();
 
             // Act
-            int failedDeviceConnectionCount = this.target.FailedDeviceConnectionsCount;
+            long failedDeviceConnectionCount = this.target.FailedDeviceConnectionsCount;
 
             // Assert
             Assert.Equal(0, failedDeviceConnectionCount);
@@ -88,7 +88,7 @@ namespace SimulationAgent.Test.DeviceConnection
                 this.target.HandleEvent(connectionFailed);
             }
 
-            int failedDeviceConnectionCount = this.target.FailedDeviceConnectionsCount;
+            long failedDeviceConnectionCount = this.target.FailedDeviceConnectionsCount;
 
             // Assert
             Assert.Equal(FAILED_DEVICE_CONNECTIONS_COUNT, failedDeviceConnectionCount);
@@ -101,7 +101,7 @@ namespace SimulationAgent.Test.DeviceConnection
             this.SetupDeviceConnectionActor();
 
             // Act
-            int failedTwinUpdateCount = this.target.FailedTwinUpdatesCount;
+            long failedTwinUpdateCount = this.target.FailedTwinUpdatesCount;
 
             // Assert
             Assert.Equal(0, failedTwinUpdateCount);
@@ -120,8 +120,8 @@ namespace SimulationAgent.Test.DeviceConnection
             {
                 this.target.HandleEvent(deviceTwinTaggingFailed);
             }
-            
-            int failedTwinUpdateCount = this.target.FailedTwinUpdatesCount;
+
+            long failedTwinUpdateCount = this.target.FailedTwinUpdatesCount;
 
             // Assert
             Assert.Equal(FAILED_DEVICE_TWIN_UPDATES_COUNT, failedTwinUpdateCount);

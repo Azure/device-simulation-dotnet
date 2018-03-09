@@ -65,7 +65,7 @@ namespace WebService.Test.v1.Controllers
             this.SetupSimulationForRunner();
             const int ACTIVE_DEVICES_COUNT = 5;
             this.simulationRunner
-                .Setup(x => x.GetActiveDevicesCount())
+                .Setup(x => x.ActiveDevicesCount)
                 .Returns(ACTIVE_DEVICES_COUNT);
 
             // Act
@@ -99,7 +99,7 @@ namespace WebService.Test.v1.Controllers
             const int TOTAL_MESSAGES_COUNT = 10;
             this.SetupSimulationForRunner();
             this.simulationRunner
-                .Setup(x => x.GetTotalMessagesCount())
+                .Setup(x => x.TotalMessagesCount)
                 .Returns(TOTAL_MESSAGES_COUNT);
 
             // Act
@@ -116,7 +116,7 @@ namespace WebService.Test.v1.Controllers
             const int FAILED_MESSAGES_COUNT = 5;
             this.SetupSimulationForRunner();
             this.simulationRunner
-                .Setup(x => x.GetFailedMessagesCount())
+                .Setup(x => x.FailedMessagesCount)
                 .Returns(FAILED_MESSAGES_COUNT);
 
             // Act
@@ -124,6 +124,23 @@ namespace WebService.Test.v1.Controllers
 
             // Assert
             Assert.Equal(FAILED_MESSAGES_COUNT.ToString(), result.Properties["FailedMessagesCount"]);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public async Task ItReturnsTheNumberOfSimulationErrorsCount()
+        {
+            // Arrange
+            const int SIMULATION_ERRORS_COUNT = 5;
+            this.SetupSimulationForRunner();
+            this.simulationRunner
+                .Setup(x => x.SimulationErrorsCount)
+                .Returns(SIMULATION_ERRORS_COUNT);
+
+            // Act
+            var result = await this.target.Get();
+
+            // Assert
+            Assert.Equal(SIMULATION_ERRORS_COUNT.ToString(), result.Properties["SimulationErrorsCount"]);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

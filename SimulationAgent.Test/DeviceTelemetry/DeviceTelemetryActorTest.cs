@@ -55,7 +55,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
             SetupDeviceTelemetryActor();
 
             // Act
-            int failedMessagesCount = this.target.FailedMessagesCount;
+            long failedMessagesCount = this.target.FailedMessagesCount;
 
             // Assert
             Assert.Equal(0, failedMessagesCount);
@@ -76,7 +76,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
             }
 
             // Get results
-            int failedMessagesCount = this.target.FailedMessagesCount;
+            long failedMessagesCount = this.target.FailedMessagesCount;
 
             // Assert
             Assert.Equal(FAILED_MESSAGES_COUNT, failedMessagesCount);
@@ -89,7 +89,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
             SetupDeviceTelemetryActor();
 
             // Act
-            int totalMessagesCount = this.target.TotalMessagesCount;
+            long totalMessagesCount = this.target.TotalMessagesCount;
 
             // Assert
             Assert.Equal(0, totalMessagesCount);
@@ -99,29 +99,21 @@ namespace SimulationAgent.Test.DeviceTelemetry
         public void ItReturnsTheNumberOfTotalMessagesCount()
         {
             // Arrange
-            const int MESSAGES_DELIVERED_FAILED_COUNT = 5;
-            const int MESSAGES_DELIVERED_COUNT = 5;
+            const int MESSAGES_SENDING_COUNT = 5;
             SetupDeviceTelemetryActor();
-            DeviceTelemetryActor.ActorEvents messageDelivered = DeviceTelemetryActor.ActorEvents.TelemetryDelivered;
-            DeviceTelemetryActor.ActorEvents messageFailed = DeviceTelemetryActor.ActorEvents.TelemetryDeliveryFailed;
+            DeviceTelemetryActor.ActorEvents sendingMessage = DeviceTelemetryActor.ActorEvents.SendingTelemetry;
 
             // Act
-            for (int i = 0; i < MESSAGES_DELIVERED_COUNT; i++)
+            for (int i = 0; i < MESSAGES_SENDING_COUNT; i++)
             {
-                this.target.HandleEvent(messageDelivered);
-            }
-            for (int i = 0; i < MESSAGES_DELIVERED_FAILED_COUNT; i++)
-            {
-                this.target.HandleEvent(messageFailed);
+                this.target.HandleEvent(sendingMessage);
             }
 
             // Get results
-            int failedMessagesCount = this.target.FailedMessagesCount;
-            int totalMessagesCount = this.target.TotalMessagesCount;
+            long totalMessagesCount = this.target.TotalMessagesCount;
 
             // Assert
-            Assert.Equal(MESSAGES_DELIVERED_FAILED_COUNT, failedMessagesCount);
-            Assert.Equal(MESSAGES_DELIVERED_FAILED_COUNT + MESSAGES_DELIVERED_COUNT, totalMessagesCount);
+            Assert.Equal(MESSAGES_SENDING_COUNT, totalMessagesCount);
         }
 
         private void SetupDeviceTelemetryActor()
