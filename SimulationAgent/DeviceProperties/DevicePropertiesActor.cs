@@ -11,7 +11,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 {
     public interface IDevicePropertiesActor
     {
-        IInternalDeviceState DeviceState { get; }
+        ISmartDictionary DeviceState { get; }
         IDeviceClient Client { get; }
 
         void Setup(
@@ -66,7 +66,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         /// <summary>
         /// State maintained by the state actor
         /// </summary>
-        public IInternalDeviceState DeviceState => this.deviceStateActor.DeviceState;
+        public ISmartDictionary DeviceState => this.deviceStateActor.DeviceState;
 
         /// <summary>
         /// Azure IoT Hub client

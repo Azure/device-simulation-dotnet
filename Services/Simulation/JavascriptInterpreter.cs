@@ -22,16 +22,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         void Invoke(
             string filename,
             Dictionary<string, object> context,
-            IInternalDeviceState state,
-            IInternalDeviceProperties properties);
+            ISmartDictionary state,
+            ISmartDictionary properties);
     }
 
     public class JavascriptInterpreter : IJavascriptInterpreter
     {
         private readonly ILogger log;
         private readonly string folder;
-        private IInternalDeviceState deviceState;
-        private IInternalDeviceProperties deviceProperties;
+        private ISmartDictionary deviceState;
+        private ISmartDictionary deviceProperties;
 
         // The following are static to improve overall performance
         // TODO make the class a singleton - https://github.com/Azure/device-simulation-dotnet/issues/45
@@ -55,8 +55,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         public void Invoke(
             string filename,
             Dictionary<string, object> context,
-            IInternalDeviceState state,
-            IInternalDeviceProperties properties)
+            ISmartDictionary state,
+            ISmartDictionary properties)
         {
             this.deviceState = state;
             this.deviceProperties = properties;
@@ -192,11 +192,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         {
             string key;
             object value;
-            Dictionary<string, object> stateChanges;
+            Dictionary<string, object> stateChanges = this.JsValueToDictionary(data);
 
             this.log.Debug("Updating state from the script", () => new { data, this.deviceState });
-
-            stateChanges = JsValueToDictionary((JsValue)data);
 
             // Update device state with the script data passed
             lock (this.deviceState)
@@ -217,11 +215,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         {
             string key;
             object value;
-            Dictionary<string, object> propertyChanges;
+            Dictionary<string, object> propertyChanges = this.JsValueToDictionary(data);
 
             this.log.Debug("Updating device properties from the script", () => new { data, this.deviceState });
-
-            propertyChanges = this.JsValueToDictionary((JsValue)data);
 
             // Update device properties with the script data passed
             lock (this.deviceState)

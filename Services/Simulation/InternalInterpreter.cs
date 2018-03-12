@@ -22,7 +22,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         void Invoke(
             string scriptPath, object scriptParams,
             Dictionary<string, object> context,
-            IInternalDeviceState state);
+            ISmartDictionary state);
     }
 
     public class InternalInterpreter : IInternalInterpreter
@@ -52,7 +52,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             string scriptPath,
             object scriptParams,
             Dictionary<string, object> context,
-            IInternalDeviceState state)
+            ISmartDictionary state)
         {
             switch (scriptPath.ToLowerInvariant())
             {
@@ -71,7 +71,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         }
 
         // For each sensors specified, generate a random number in the range requested
-        private void RunRandomNumberScript(object scriptParams, IInternalDeviceState state)
+        private void RunRandomNumberScript(object scriptParams, ISmartDictionary state)
         {
             var sensors = this.JsonParamAsDictionary(scriptParams);
             foreach (var sensor in sensors)
@@ -83,7 +83,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         }
 
         // For each sensors specified, increase the current state, up to a maximum, then restart from a minimum
-        private void RunIncreasingScript(object scriptParams, IInternalDeviceState state)
+        private void RunIncreasingScript(object scriptParams, ISmartDictionary state)
         {
             var sensors = this.JsonParamAsDictionary(scriptParams);
             foreach (var sensor in sensors)
@@ -105,7 +105,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         }
 
         // For each sensors specified, decrease the current state, down to a minimum, then restart from a maximum
-        private void RunDecreasingScript(object scriptParams, IInternalDeviceState state)
+        private void RunDecreasingScript(object scriptParams, ISmartDictionary state)
         {
             var sensors = this.JsonParamAsDictionary(scriptParams);
             foreach (var sensor in sensors)

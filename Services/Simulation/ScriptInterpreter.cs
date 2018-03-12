@@ -12,14 +12,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         /// <summary>Invoke one of the device script files</summary>
         /// <param name="script">Name of the script</param>
         /// <param name="context">Context, e.g. current time, device Id, device Model</param>
-        /// <param name="state">Current device sensors state</param>
-        /// <param name="properties">Current device properties state</param>
-        /// <remarks> Updates the internal device sensors state and internal device properties</remarks>
+        /// <param name="state">Current device state</param>
+        /// <param name="properties">Current device properties</param>
+        /// <remarks> Updates the internal device state and internal device properties</remarks>
         void Invoke(
             Script script,
             Dictionary<string, object> context,
-            IInternalDeviceState state,
-            IInternalDeviceProperties properites
+            ISmartDictionary state,
+            ISmartDictionary properties
             );
     }
 
@@ -42,8 +42,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         public void Invoke(
             Script script,
             Dictionary<string, object> context,
-            IInternalDeviceState state,
-            IInternalDeviceProperties properties)
+            ISmartDictionary state,
+            ISmartDictionary properties)
         {
             switch (script.Type.ToLowerInvariant())
             {
