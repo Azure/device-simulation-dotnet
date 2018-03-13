@@ -49,7 +49,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void TheNumberOfFailedMessagesCountIsZeroAtStart()
+        public void TheNumberOfFailedMessagesIsZeroAtStart()
         {
             // Arrange
             SetupDeviceTelemetryActor();
@@ -62,7 +62,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsTheNumberOfFailedMessagesCount()
+        public void ItReturnsTheNumberOfFailedMessages()
         {
             // Arrange
             const int FAILED_MESSAGES_COUNT = 5;
@@ -83,7 +83,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void TheNumberOfTotalMessagesCountIsZeroAtStart()
+        public void TheNumberOfTotalMessagesIsZeroAtStart()
         {
             // Arrange
             SetupDeviceTelemetryActor();
@@ -96,7 +96,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsTheNumberOfTotalMessagesCount()
+        public void ItReturnsTheNumberOfTotalMessages()
         {
             // Arrange
             const int MESSAGES_SENDING_COUNT = 5;

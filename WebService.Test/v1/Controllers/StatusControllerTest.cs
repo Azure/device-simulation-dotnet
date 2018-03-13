@@ -69,7 +69,7 @@ namespace WebService.Test.v1.Controllers
                 .Returns(ACTIVE_DEVICES_COUNT);
 
             // Act
-            var result = await this.target.Get();
+            var result = await this.target.GetAsync();
 
             // Assert
             Assert.Equal(ACTIVE_DEVICES_COUNT.ToString(), result.Properties["ActiveDevicesCount"]);
@@ -86,14 +86,14 @@ namespace WebService.Test.v1.Controllers
                 .Returns(MESSAGE_THROUGHPUT);
 
             // Act
-            var result = await this.target.Get();
+            var result = await this.target.GetAsync();
 
             // Assert
             Assert.Equal(MESSAGE_THROUGHPUT.ToString("F"), result.Properties["MessagesPerSecond"]);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task ItReturnsTheNumberOfTotalMessagesCount()
+        public async Task ItReturnsTheNumberOfTotalMessages()
         {
             // Arrange
             const int TOTAL_MESSAGES_COUNT = 10;
@@ -103,14 +103,14 @@ namespace WebService.Test.v1.Controllers
                 .Returns(TOTAL_MESSAGES_COUNT);
 
             // Act
-            var result = await this.target.Get();
+            var result = await this.target.GetAsync();
 
             // Assert
             Assert.Equal(TOTAL_MESSAGES_COUNT.ToString(), result.Properties["TotalMessagesCount"]);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task ItReturnsTheNumberOfFailedMessagesCount()
+        public async Task ItReturnsTheNumberOfFailedMessages()
         {
             // Arrange
             const int FAILED_MESSAGES_COUNT = 5;
@@ -120,14 +120,14 @@ namespace WebService.Test.v1.Controllers
                 .Returns(FAILED_MESSAGES_COUNT);
 
             // Act
-            var result = await this.target.Get();
+            var result = await this.target.GetAsync();
 
             // Assert
             Assert.Equal(FAILED_MESSAGES_COUNT.ToString(), result.Properties["FailedMessagesCount"]);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task ItReturnsTheNumberOfSimulationErrorsCount()
+        public async Task ItReturnsTheNumberOfSimulationErrors()
         {
             // Arrange
             const int SIMULATION_ERRORS_COUNT = 5;
@@ -137,7 +137,7 @@ namespace WebService.Test.v1.Controllers
                 .Returns(SIMULATION_ERRORS_COUNT);
 
             // Act
-            var result = await this.target.Get();
+            var result = await this.target.GetAsync();
 
             // Assert
             Assert.Equal(SIMULATION_ERRORS_COUNT.ToString(), result.Properties["SimulationErrorsCount"]);
@@ -150,7 +150,7 @@ namespace WebService.Test.v1.Controllers
             this.SetupSimulationForRunner();
 
             // Act
-            var result = await this.target.Get();
+            var result = await this.target.GetAsync();
 
             // Assert
             Assert.Equal("true", result.Properties["SimulationRunning"]);
@@ -164,7 +164,7 @@ namespace WebService.Test.v1.Controllers
             this.SetupPreprovisionedIoTHub();
 
             // Act
-            var result = await this.target.Get();
+            var result = await this.target.GetAsync();
 
             // Assert
             Assert.Equal("true", result.Properties["PreprovisionedIoTHub"]);
@@ -178,7 +178,7 @@ namespace WebService.Test.v1.Controllers
             this.SetupPreprovisionedIoTHub();
 
             // Act
-            var result = await this.target.Get();
+            var result = await this.target.GetAsync();
 
             // Assert
             Assert.Contains("https://portal.azure.com/", result.Properties["PreprovisionedIoTHubMetricsUrl"]);
@@ -194,7 +194,7 @@ namespace WebService.Test.v1.Controllers
             this.SetupPreprovisionedIoTHub();
 
             // Act
-            var result = await this.target.Get();
+            var result = await this.target.GetAsync();
 
             // Assert
             Assert.Equal("true", result.Properties["PreprovisionedIoTHubInUse"]);

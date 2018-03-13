@@ -62,7 +62,7 @@ namespace SimulationAgent.Test.DeviceConnection
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void TheNumberOfFailedDeviceConnectionsCountIsZeroAtStart()
+        public void TheNumberOfFailedDeviceConnectionsIsZeroAtStart()
         {
             // Arrange
             this.SetupDeviceConnectionActor();
@@ -75,7 +75,7 @@ namespace SimulationAgent.Test.DeviceConnection
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsTheNumberOfFailedDeviceConnectionsCount()
+        public void ItReturnsTheNumberOfFailedDeviceConnections()
         {
             // Arrange
             const int FAILED_DEVICE_CONNECTIONS_COUNT = 3;
@@ -95,7 +95,7 @@ namespace SimulationAgent.Test.DeviceConnection
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void TheNumberOfFailedTwinUpdatesCountIsZeroAtStart()
+        public void TheNumberOfFailedTwinUpdatesIsZeroAtStart()
         {
             // Arrange
             this.SetupDeviceConnectionActor();
@@ -108,7 +108,7 @@ namespace SimulationAgent.Test.DeviceConnection
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsTheNumberOfFailedTwinUpdatesCount()
+        public void ItReturnsTheNumberOfFailedTwinUpdates()
         {
             // Arrange
             const int FAILED_DEVICE_TWIN_UPDATES_COUNT = 5;
