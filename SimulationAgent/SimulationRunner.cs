@@ -448,7 +448,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             catch (Exception e)
             {
                 this.IncreamentSimulationErrorsCount();
-                this.log.Warn("Unable to start the telemetry thread", () => new { e });
+                this.log.Error("Unable to start the telemetry thread", () => new { e });
+                throw new Exception("Unable to start the telemetry thread", e);
             }
         }
 
@@ -462,7 +463,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             catch (Exception e)
             {
                 this.IncreamentSimulationErrorsCount();
-                this.log.Warn("Unable to start the device connection thread", () => new { e });
+                this.log.Error("Unable to start the device connection thread", () => new { e });
+                throw new Exception("Unable to start the device connection thread", e);
             }
         }
 
@@ -476,7 +478,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             catch (Exception e)
             {
                 this.IncreamentSimulationErrorsCount();
-                this.log.Warn("Unable to start the device state thread", () => new { e });
+                this.log.Error("Unable to start the device state thread", () => new { e });
+                throw new Exception("Unable to start the device state thread", e);
             }
         }
 
