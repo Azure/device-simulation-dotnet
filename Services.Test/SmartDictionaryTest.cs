@@ -10,18 +10,18 @@ using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Devic
 
 namespace Services.Test
 {
-    public class InternalDevicePropertiesTest
+    public class SmartDictionaryTest
     {
-        private InternalDeviceProperties target;
+        private ISmartDictionary target;
 
-        public InternalDevicePropertiesTest(ITestOutputHelper log)
+        public SmartDictionaryTest(ITestOutputHelper log)
         {
             // Initialize device properties
             this.target = this.GetTestProperties();
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void GetWithNoPropertiesIsEmpty()
+        public void Should_Be_Empty_On_Get_All_When_No_Properties_Added()
         {
             // Arrange
             this.target = this.GetEmptyProperties();
@@ -34,7 +34,7 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void GetPropertiesIsNotNullAndHasExpectedCount()
+        public void Should_Return_All_Test_Properties_On_Get_All_When_Initialized_With_Device_Model()
         {
             // Arrange
             this.target = this.GetTestProperties();
@@ -46,124 +46,166 @@ namespace Services.Test
             // Assert
             Assert.NotEmpty(props);
             Assert.Equal(props.Count, expectedCount);
+            Assert.Equal("TestChiller", props["Type"]);
+            Assert.Equal("1.0", props["Firmware"]);
+            Assert.Equal("TestCH101", props["Model"]);
+            Assert.Equal("TestBuilding 2", props["Location"]);
+            Assert.Equal(47.640792, props["Latitude"]);
+            Assert.Equal(-122.126258, props["Longitude"]);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void GetPropertyThrowsIfKeyDoesNotExist()
+        public void Should_Return_Value_When_Calling_Get_And_Property_Exists()
         {
             // Arrange
             this.target = this.GetTestProperties();
-            var key = "KeyThatDoesNotExist";
+            var expectedCount = this.GetTestChillerModel().Properties.Count;
+
+            // Act
+            var props = this.target.GetAll();
+
+            // Assert
+            Assert.NotEmpty(props);
+            Assert.Equal(props.Count, expectedCount);
+            Assert.Equal("TestChiller", props["Type"]);
+            Assert.Equal("1.0", props["Firmware"]);
+            Assert.Equal("TestCH101", props["Model"]);
+            Assert.Equal("TestBuilding 2", props["Location"]);
+            Assert.Equal(47.640792, props["Latitude"]);
+            Assert.Equal(-122.126258, props["Longitude"]);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void Should_Throw_On_Get_When_Key_Does_Not_Exist()
+        {
+            // Arrange
+            this.target = this.GetTestProperties();
+            const string KEY = "KeyThatDoesNotExist";
 
             // Act and Assert
-            Assert.Throws<KeyNotFoundException>(() => this.target.Get(key));
+            Assert.Throws<KeyNotFoundException>(() => this.target.Get(KEY));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void GetPropertyReturnsValue()
+        public void Should_Return_Copy_From_Get_All()
         {
             // Arrange
-            this.target = this.GetTestProperties();
-            var key = "TestPropKey";
-            var value = "TestPropValue";
+
+            // test values
+            const string KEY1 = "key1";
+            const string VALUE1 = "value1";
+            const string NEW_VALUE = "newvalue";
+
+            var dictionary = new Dictionary<string,object>
+            {
+                { KEY1, VALUE1 }
+            };
+
+            this.target = new SmartDictionary(dictionary);
 
             // Act
-            var result = this.target.Get(key);
+
+            // modify copy
+            var dictionaryCopy = this.target.GetAll();
+            dictionaryCopy[KEY1] = NEW_VALUE;
+
+            // check original
+            var result = this.target.Get(KEY1);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.Equal(result, value);
+            Assert.Equal(result, VALUE1);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void SetPropertyTest()
+        public void Should_Add_Value_When_Set()
         {
             // Arrange
             this.target = this.GetEmptyProperties();
-            var key = "testSetKey";
-            var value = "testSetValue";
+            const string KEY = "testSetKey";
+            const string VALUE = "testSetValue";
 
             // Act
-            this.target.Set(key, value);
-            var result = this.target.Get(key);
+            this.target.Set(KEY, VALUE);
+            var result = this.target.Get(KEY);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(result, value);
+            Assert.Equal(result, VALUE);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void SetStateValueTest()
+        public void Should_Set_Value_With_Key()
         {
             // Arrange
             this.target = this.GetEmptyProperties();
-            var key = "testSetKey";
-            var value = "testSetValue";
-            this.target.Set(key, value);
+            const string KEY = "testSetKey";
+            const string VALUE = "testSetValue";
+            this.target.Set(KEY, VALUE);
 
             // Act
-            var result = this.target.Get(key);
+            var result = this.target.Get(KEY);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(result, value);
+            Assert.Equal(result, VALUE);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void HasPropertyReturnsTrueForProperty()
+        public void Has_Should_Return_True_When_Property_Exists()
         {
             // Arrange
             this.target = this.GetEmptyProperties();
-            var key = "testHasKey";
-            var value = "testHasValue";
-            this.target.Set(key, value);
+            const string KEY = "testHasKey";
+            const string VALUE = "testHasValue";
+            this.target.Set(KEY, VALUE);
 
             // Act
-            var result = this.target.Has(key);
+            var result = this.target.Has(KEY);
 
             // Assert
             Assert.True(result);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void HasPropertyReturnsFalseIfNotThere()
+        public void Has_Should_Return_False_When_Property_Does_Not_Exist()
         {
             // Arrange
             this.target = this.GetEmptyProperties();
-            var key = "KeyThatDoesNotExist";
+            const string KEY = "KeyThatDoesNotExist";
 
             // Act
-            var result = this.target.Has(key);
+            var result = this.target.Has(KEY);
 
             // Assert
             Assert.False(result);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ChangedIsSetToTrueForNewProperty()
+        public void Changed_SHould_Return_True_When_New_Property_Added()
         {
             // Arrange
             this.target = this.GetEmptyProperties();
             Assert.False(this.target.Changed);
 
-            var key = "testKey";
-            var value = "testValue";
+            const string KEY = "testKey";
+            const string VALUE = "testValue";
 
             // Act
-            this.target.Set(key, value);
+            this.target.Set(KEY, VALUE);
 
             // Assert
             Assert.True(this.target.Changed);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ResetChangedIsFalse()
+        public void Changed_Should_Be_False_When_Reset()
         {
             // Arrange
             this.target = this.GetTestProperties();
 
-            var key = "testKey";
-            var value = "testValue";
+            const string KEY = "testKey";
+            const string VALUE = "testValue";
+            this.target.Set(KEY, VALUE);
 
             // Act
             this.target.ResetChanged();
@@ -172,14 +214,14 @@ namespace Services.Test
             Assert.False(this.target.Changed);
         }
 
-        private InternalDeviceProperties GetEmptyProperties()
+        private SmartDictionary GetEmptyProperties()
         {
-            return new InternalDeviceProperties();
+            return new SmartDictionary();
         }
 
-        private InternalDeviceProperties GetTestProperties()
+        private SmartDictionary GetTestProperties()
         {
-            return new InternalDeviceProperties(GetTestChillerModel());
+            return new SmartDictionary(this.GetTestChillerModel().Properties);
         }
 
         /// <summary>

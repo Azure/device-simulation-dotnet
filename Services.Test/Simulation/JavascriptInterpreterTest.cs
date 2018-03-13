@@ -22,7 +22,7 @@ namespace Services.Test.Simulation
         private readonly ITestOutputHelper log;
         private readonly Mock<IServicesConfig> config;
         private readonly Mock<ILogger> logger;
-        private readonly Mock<IInternalDeviceProperties> properties;
+        private readonly Mock<ISmartDictionary> properties;
         private readonly JavascriptInterpreter target;
 
         public JavascriptInterpreterTest(ITestOutputHelper log)
@@ -32,7 +32,7 @@ namespace Services.Test.Simulation
             this.config = new Mock<IServicesConfig>();
             this.config.SetupGet(x => x.DeviceModelsFolder).Returns("./data/devicemodels/");
             this.config.SetupGet(x => x.DeviceModelsScriptsFolder).Returns("./data/devicemodels/scripts/");
-            this.properties = new Mock<IInternalDeviceProperties>();
+            this.properties = new Mock<ISmartDictionary>();
 
             this.logger = new Mock<ILogger>();
             this.CaptureApplicationLogs(this.logger);
@@ -44,7 +44,7 @@ namespace Services.Test.Simulation
         public void ReturnedStateIsIntact()
         {
             // Arrange
-            InternalDeviceState deviceState = new InternalDeviceState();
+            SmartDictionary deviceState = new SmartDictionary();
 
             var filename = "chiller-01-state.js";
             var context = new Dictionary<string, object>
@@ -80,7 +80,7 @@ namespace Services.Test.Simulation
         public void TestJavascriptFiles()
         {
             // Arrange
-            InternalDeviceState deviceState = new InternalDeviceState();
+            SmartDictionary deviceState = new SmartDictionary();
 
             var files = new List<string>
             {
@@ -98,7 +98,7 @@ namespace Services.Test.Simulation
             // Act - Assert (no exception should occur)
             foreach (var file in files)
             {
-                this.target.Invoke(file, context, deviceState, properties.Object);
+                this.target.Invoke(file, context, deviceState, this.properties.Object);
                 Assert.NotNull(deviceState.GetAll());
             }
         }

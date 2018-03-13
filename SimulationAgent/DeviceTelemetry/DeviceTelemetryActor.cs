@@ -13,7 +13,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 {
     public interface IDeviceTelemetryActor
     {
-        IInternalDeviceState DeviceState { get; }
+        ISmartDictionary DeviceState { get; }
         IDeviceClient Client { get; }
         DeviceModel.DeviceModelMessage Message { get; }
 
@@ -79,7 +79,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         /// <summary>
         /// State maintained by the state actor
         /// </summary>
-        public IInternalDeviceState DeviceState => this.deviceStateActor.DeviceState;
+        public ISmartDictionary DeviceState => this.deviceStateActor.DeviceState;
 
         /// <summary>
         /// Azure IoT Hub client created by the connection actor

@@ -1,16 +1,19 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState
 {
     public interface IDeviceStateActor
     {
-        IInternalDeviceState DeviceState { get; }
-        IInternalDeviceProperties DeviceProperties { get; }
+        ISmartDictionary DeviceState { get; }
+        ISmartDictionary DeviceProperties { get; }
         bool IsDeviceActive { get; }
         void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices);
         void Run();
@@ -24,8 +27,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
             Updating
         }
 
-        public IInternalDeviceState DeviceState { get; set; }
-        public IInternalDeviceProperties DeviceProperties { get; set; }
+        public ISmartDictionary DeviceState { get; set; }
+        public ISmartDictionary DeviceProperties { get; set; }
 
         public const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
 
@@ -95,8 +98,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                     // Prepare the dependencies
                     case ActorStatus.None:
                         this.updateDeviceStateLogic.Setup(this, this.deviceId, this.deviceModel);
-                        this.DeviceState = new InternalDeviceState(this.deviceModel);
-                        this.DeviceProperties = new InternalDeviceProperties(this.deviceModel);
+                        this.DeviceState = this.InitializeTelemetry(this.deviceModel);
+                        this.DeviceProperties = this.InitializeProperties(this.deviceModel);
                         this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState, this.DeviceProperties });
                         this.MoveForward();
                         return;
@@ -140,6 +143,52 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
             }
 
             throw new Exception("Application error, MoveForward() should not be invoked when status = " + this.status);
+        }
+
+        /// <summary>
+        /// Initializes device properties from the device model.
+        /// </summary>
+        private ISmartDictionary InitializeProperties(DeviceModel model)
+        {
+            var properties = new SmartDictionary();
+
+            foreach (var property in model.Properties)
+            {
+                properties.Set(property.Key, JToken.FromObject(property.Value));
+            }
+
+            return properties;
+        }
+
+        /// <summary>
+        /// Initializes device state from the device model.
+        /// </summary>
+        private ISmartDictionary InitializeTelemetry(DeviceModel model)
+        {
+            var initialState = CloneObject(model.Simulation.InitialState);
+
+            var state = new SmartDictionary(initialState);
+
+            // Ensure the state contains the "online" key
+            if (!state.Has("online"))
+            {
+                state.Set("online", true);
+            }
+
+            // TODO: This is used to control whether telemetry is calculated in UpdateDeviceState.
+            //       methods can turn telemetry off/on; e.g. setting temp high- turnoff, set low, turn on
+            //       it would be better to do this at the telemetry item level - we should add this in the future
+            //       https://github.com/Azure/device-simulation-dotnet/issues/174
+            state.Set(CALC_TELEMETRY, true);
+
+            return state;
+        }
+
+        /// <summary>Copy an object by value</summary>
+        private static T CloneObject<T>(T source)
+        {
+            return JsonConvert.DeserializeObject<T>(
+                JsonConvert.SerializeObject(source));
         }
     }
 }
