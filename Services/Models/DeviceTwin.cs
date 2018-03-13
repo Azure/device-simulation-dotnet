@@ -34,17 +34,35 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             }
         }
 
+        /*
+        JValue:  string, integer, float, boolean
+        JArray:  list, array
+        JObject: dictionary, object
+
+        JValue:     JToken, IEquatable<JValue>, IFormattable, IComparable, IComparable<JValue>, IConvertible
+        JArray:     JContainer, IList<JToken>, ICollection<JToken>, IEnumerable<JToken>, IEnumerable
+        JObject:    JContainer, IDictionary<string, JToken>, ICollection<KeyValuePair<string, JToken>>, IEnumerable<KeyValuePair<string, JToken>>, IEnumerable, INotifyPropertyChanged, ICustomTypeDescriptor, INotifyPropertyChanging
+        JContainer: JToken, IList<JToken>, ICollection<JToken>, IEnumerable<JToken>, IEnumerable, ITypedList, IBindingList, IList, ICollection, INotifyCollectionChanged
+        JToken:     IJEnumerable<JToken>, IEnumerable<JToken>, IEnumerable, IJsonLineInfo, ICloneable, IDynamicMetaObjectProvider
+        */
         private static Dictionary<string, JToken> TwinCollectionToDictionary(TwinCollection x)
         {
             var result = new Dictionary<string, JToken>();
 
             if (x == null) return result;
 
-            foreach (KeyValuePair<string, JToken> twin in x)
+            foreach (KeyValuePair<string, object> twin in x)
             {
                 try
                 {
-                    result.Add(twin.Key, twin.Value);
+                    if (twin.Value is JToken)
+                    {
+                        result.Add(twin.Key, (JToken)twin.Value);
+                    }
+                    else
+                    {
+                        result.Add(twin.Key, JToken.Parse(twin.Value.ToString()));
+                    }
                 }
                 catch (Exception e)
                 {
