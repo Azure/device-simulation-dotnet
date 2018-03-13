@@ -181,33 +181,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         /// Get messages throughput.
         /// </summary>
         /// <returns>Throughput: messages per second</returns>
-        public double GetThroughputForMessages() => this.GetMessagesPerSecond(this.timestamps);
-
-        private void LogThroughput()
-        {
-            if (this.log.LogLevel <= LogLevel.Debug && this.timestamps.Count > 1)
-            {
-                double speed = this.GetMessagesPerSecond(this.timestamps);
-                this.log.Info(this.name, () => new { speed });
-            }
-        }
-
-        private double GetMessagesPerSecond(Queue<long> timestamps)
+        public double GetThroughputForMessages()
         {
             double speed = 0;
-            lock (timestamps)
+            lock (this.timestamps)
             {
-                if (timestamps.Count > 1)
+                if (this.timestamps.Count > 1)
                 {
                     // Time range in milliseconds
-                    long time = timestamps.Last() - timestamps.First();
+                    long time = this.timestamps.Last() - this.timestamps.First();
 
                     // Unit for speed is messages per second
-                    speed = (1000 * (double)timestamps.Count / time * 10) / 10;
+                    speed = (1000 * (double) this.timestamps.Count / time * 10) / 10;
                 }
             }
 
             return speed;
+        }
+
+        private void LogThroughput()
+        {
+            if (this.log.LogLevel <= LogLevel.Debug)
+            {
+                double speed = this.GetThroughputForMessages();
+                this.log.Info(this.name, () => new { speed });
+            }
         }
 
         private void CleanQueue(long now)
