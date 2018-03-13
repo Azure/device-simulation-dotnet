@@ -57,7 +57,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
                 {
                     if (twin.Value is JToken)
                     {
-                        result.Add(twin.Key, (JToken)twin.Value);
+                        result.Add(twin.Key, (JToken) twin.Value);
                     }
                     else
                     {
