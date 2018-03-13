@@ -28,6 +28,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
 
         public const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
 
+        private readonly ILogger log;
+        private readonly UpdateDeviceState updateDeviceStateLogic;
+        private string deviceId;
+        private DeviceModel deviceModel;
+        private long whenCanIUpdate;
+        private int startDelayMsecs;
+        private ActorStatus status;
+        private long simulationErrorsCount;
+
         /// <summary>
         /// The virtual state of the simulated device. The state is
         /// periodically updated using an external script.
@@ -49,15 +58,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                 return this.status == ActorStatus.Updating;
             }
         }
-
-        private readonly ILogger log;
-        private readonly UpdateDeviceState updateDeviceStateLogic;
-        private string deviceId;
-        private DeviceModel deviceModel;
-        private long whenCanIUpdate;
-        private int startDelayMsecs;
-        private ActorStatus status;
-        private long simulationErrorsCount;
 
         public DeviceStateActor(
             ILogger logger,
