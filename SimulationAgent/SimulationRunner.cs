@@ -330,7 +330,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // Avoid 1msec sleeps
             if (duration >= min || min - duration <= 1) return;
 
-            Thread.Sleep(min - (int)duration);
+            Thread.Sleep(min - (int) duration);
         }
 
         /**
