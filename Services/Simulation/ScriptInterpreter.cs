@@ -59,7 +59,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 
                 case "internal":
                     this.log.Debug("Invoking internal script", () => new { script.Path, context, state });
-                    this.intInterpreter.Invoke(script.Path, script.Params, context, state);
+                    this.intInterpreter.Invoke(script.Path, script.Params, context, state, properties);
                     this.log.Debug("Internal script complete", () => {});
                     break;
             }
