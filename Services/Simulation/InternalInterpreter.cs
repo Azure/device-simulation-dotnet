@@ -22,7 +22,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         void Invoke(
             string scriptPath, object scriptParams,
             Dictionary<string, object> context,
-            ISmartDictionary state);
+            ISmartDictionary state,
+            ISmartDictionary properties);
     }
 
     public class InternalInterpreter : IInternalInterpreter
@@ -52,7 +53,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             string scriptPath,
             object scriptParams,
             Dictionary<string, object> context,
-            ISmartDictionary state)
+            ISmartDictionary state,
+            ISmartDictionary properties)
         {
             switch (scriptPath.ToLowerInvariant())
             {
