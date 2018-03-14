@@ -19,8 +19,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             Script script,
             Dictionary<string, object> context,
             ISmartDictionary state,
-            ISmartDictionary properties
-            );
+            ISmartDictionary properties);
     }
 
     public class ScriptInterpreter : IScriptInterpreter

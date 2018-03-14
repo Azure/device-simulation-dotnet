@@ -45,20 +45,6 @@ function restoreSimulation(previousState, previousProperties) {
 }
 
 /**
- * Restore the global properties using data from the previous iteration.
- *
- * @param previousProperties The output of main() from the previous iteration
- */
-function restoreProperties(previousProperties) {
-    // If the previous properties are null, force the default properties
-    if (previousProperties !== undefined && previousProperties !== null) {
-        properties = previousProperties;
-    } else {
-        log("Using default properties");
-    }
-}
-
-/**
  * Simple formula generating a random value around the average
  * in between min and max
  */
@@ -98,9 +84,6 @@ function main(context, previousState, previousProperties) {
     // generating the new telemetry, so that the telemetry can apply changes
     // using the previous function state.
     restoreSimulation(previousState, previousProperties);
-
-    // restore global device properties
-    restoreProperties(previousProperties);
 
     if (state.moving) {
         state.floor = varyfloor(state.floor, 1, floors);

@@ -181,7 +181,7 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void Changed_SHould_Return_True_When_New_Property_Added()
+        public void Changed_Should_Return_True_When_New_Property_Added()
         {
             // Arrange
             this.target = this.GetEmptyProperties();

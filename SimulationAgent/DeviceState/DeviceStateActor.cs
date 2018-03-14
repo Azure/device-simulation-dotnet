@@ -98,8 +98,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                     // Prepare the dependencies
                     case ActorStatus.None:
                         this.updateDeviceStateLogic.Setup(this, this.deviceId, this.deviceModel);
-                        this.DeviceState = this.InitializeTelemetry(this.deviceModel);
-                        this.DeviceProperties = this.InitializeProperties(this.deviceModel);
+                        this.DeviceState = this.GetInitialState(this.deviceModel);
+                        this.DeviceProperties = this.GetInitialProperties(this.deviceModel);
                         this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState, this.DeviceProperties });
                         this.MoveForward();
                         return;
@@ -148,7 +148,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         /// <summary>
         /// Initializes device properties from the device model.
         /// </summary>
-        private ISmartDictionary InitializeProperties(DeviceModel model)
+        private ISmartDictionary GetInitialProperties(DeviceModel model)
         {
             var properties = new SmartDictionary();
 
@@ -163,7 +163,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         /// <summary>
         /// Initializes device state from the device model.
         /// </summary>
-        private ISmartDictionary InitializeTelemetry(DeviceModel model)
+        private ISmartDictionary GetInitialState(DeviceModel model)
         {
             var initialState = CloneObject(model.Simulation.InitialState);
 

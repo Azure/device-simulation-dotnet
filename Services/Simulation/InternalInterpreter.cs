@@ -17,8 +17,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         /// <param name="scriptPath">Name of the script</param>
         /// <param name="scriptParams">Script parameters, e.g. min, max, step</param>
         /// <param name="context">Context, e.g. current time, device Id, device Model</param>
-        /// <param name="state">Current device sensors state and device properties state</param>
-        /// <remarks> Updates the internal device sensors state </remarks>
+        /// <param name="state">Current device sensors state</param>
+        /// <param name="properties">Current device properties state</param>
+        /// <remarks>Updates the internal device sensors state</remarks>
         void Invoke(
             string scriptPath, object scriptParams,
             Dictionary<string, object> context,
