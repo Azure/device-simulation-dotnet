@@ -85,12 +85,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                         var genericError = false;
                         var timeoutError = false;
 
-                        if (t.IsCompleted)
-                        {
-                            var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
-                            this.log.Debug("Telemetry delivered", () => new { this.deviceId, timeSpent, MessageSchema = this.message.MessageSchema.Name });
-                        }
-                        else if (t.IsFaulted)
+                        if (t.IsFaulted)
                         {
                             success = false;
                             genericError = true;
@@ -115,6 +110,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                             {
                                 this.log.Error("Telemetry send unknown error", () => new { this.deviceId, t.Exception });
                             }
+                        }
+                        else if(t.IsCompleted)
+                        {
+                            var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
+                            this.log.Debug("Telemetry delivered", () => new { this.deviceId, timeSpent, MessageSchema = this.message.MessageSchema.Name });
                         }
 
                         if (success)
