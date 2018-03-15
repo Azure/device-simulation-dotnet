@@ -1,0 +1,79 @@
+{
+  "SchemaVersion": "1.0.0",
+  "Id": "drone-01",
+  "Version": "0.0.1",
+  "Name": "Poltergeist",
+  "Description": "Delivery carrier drone with multiple sensors.",
+  "Protocol": "MQTT",
+  "Simulation": {
+    "InitialState": {
+      "online": true,
+      "temperature": 75.0,
+      "temperature_unit": "F",
+      "velocity": 0.0,
+      "velocity_unit": "mm/sec",
+      "acceleration": 0.0,
+      "acceleration_unit": "mm/sec",
+      "latitude": 44.2,
+      "longitude": 30.4,
+      "altitude": 0.0,
+      "flightStatus": 0,
+      "batteryStatus": "Full",
+      "batteryLevel": 1.0
+    },
+    "Script": {
+      "Type": "javascript",
+      "Path": "drone-01-state.js",
+      "Interval": "00:00:05"
+    }
+  },
+  "Properties": {
+    "Type": "Drone",
+    "Firmware": "1.0",
+    "Model": "DJI-Phantom",
+    "OwnerId": "patterns-n-practices",
+    "origin_latitude": 44.2,
+    "origin_longitude": 30.4,
+    "destination_latitude": 88.2,
+    "destination_longitude": -10.4
+  },
+  "Tags": {
+    "Location": "Building 43",
+    "Floor": "1",
+    "Campus": "Redmond"
+  },
+  "Telemetry": [
+    {
+      "Interval": "00:00:05",
+      "MessageTemplate": "{\"velocity\":${velocity},\"velocity_unit\":\"${velocity_unit}\",\"acceleration\":${acceleration},\"acceleration_unit\":\"${acceleration_unit},\"latitude\":\"${latitude},\"longitude\":\"${longitude},\"altitude\":\"${altitude},\"flightStatus\":\"${flightStatus}\"}",
+      "MessageSchema": {
+        "Name": "drone-event-sensor;v1",
+        "Format": "JSON",
+        "Fields": {
+          "velocity": "double",
+          "velocity_unit": "text",
+          "acceleration": "double",
+          "acceleration_unit": "text",
+          "latitude": "double",
+          "longitude": "double",
+          "altitude": "double",
+          "flightStatus": "integer"
+        }
+      }
+    },
+    {
+      "Interval": "00:00:20",
+      "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"batteryStatus\":\"${batteryStatus},\"batteryLevel\":\"${batteryLevel}\"}",
+      "MessageSchema": {
+        "Name": "drone-state-sensor;v1",
+        "Format": "JSON",
+        "Fields": {
+          "temperature": "double",
+          "temperature_unit": "text",
+          "batteryStatus": "text",
+          "batteryLevel": "double"
+        }
+      }
+    }
+  ]
+}
