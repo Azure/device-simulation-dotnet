@@ -71,7 +71,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             engine.SetValue("updateState", new Action<JsValue>(this.UpdateState));
 
             // register callback for property updates
-            engine.SetValue("updateProperty", new Action<JsValue>(this.UpdateProperties));
+            engine.SetValue("updateProperty", new Action<string, object>(this.UpdateProperty));
 
             // register sleep function for javascript use
             engine.SetValue("sleep", new Action<int>(this.Sleep));
@@ -211,24 +211,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 
         // TODO: Move this out of the scriptinterpreter class into DeviceStateActor to keep this class stateless
         //       https://github.com/Azure/device-simulation-dotnet/issues/45
-        private void UpdateProperties(JsValue data)
+        private void UpdateProperty(string key, object value)
         {
-            string key;
-            object value;
-            Dictionary<string, object> propertyChanges = this.JsValueToDictionary(data);
+            this.log.Debug("Updating device property from the script", () => new { key, value });
 
-            this.log.Debug("Updating device properties from the script", () => new { data, this.deviceState });
-
-            // Update device properties with the script data passed
-            lock (this.deviceState)
+            // Update device property at key with the script value passed
+            lock (this.deviceProperties)
             {
-                for (int i = 0; i < propertyChanges.Count; i++)
-                {
-                    key = propertyChanges.Keys.ElementAt(i);
-                    value = propertyChanges.Values.ElementAt(i);
-                    this.log.Debug("property change", () => new { key, value });
-                    this.deviceState.Set(key, value);
-                }
+                this.deviceProperties.Set(key, value);
             }
         }
     }

@@ -16,14 +16,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         void ResetChanged();
     }
 
+    /// <summary>
+    /// Wrapper for a dictionary that supports concurrent reads and writes 
+    /// and tracks if any entries have been changed.
+    /// </summary>
     public class SmartDictionary : ISmartDictionary
     {
+        /// <summary>
+        /// A collection of items that can support concurrent reads and writes.
+        /// </summary>
         private IDictionary<string, object> dictionary;
 
         public bool Changed { get; private set; }
 
         public SmartDictionary()
         {
+            // needs to support concurrent reads and writes
             this.dictionary = new ConcurrentDictionary<string, object>();
             this.Changed = false;
         }

@@ -2,7 +2,7 @@
 
 /*global log*/
 /*global updateState*/
-/*global updateProperties*/
+/*global updateProperty*/
 /*global sleep*/
 /*jslint node: true*/
 
@@ -26,25 +26,18 @@ var properties = {};
 /**
  * Restore the global state using data from the previous iteration.
  *
- * @param previousState The output of main() from the previous iteration
+ * @param previousState device state from the previous iteration
+ * @param previousProperties device properties from the previous iteration
  */
-function restoreState(previousState) {
+function restoreSimulation(previousState, previousProperties) {
     // If the previous state is null, force a default state
-    if (previousState !== undefined && previousState !== null) {
+    if (previousState) {
         state = previousState;
     } else {
         log("Using default state");
     }
-}
 
-/**
- * Restore the global properties using data from the previous iteration.
- *
- * @param previousProperties The output of main() from the previous iteration
- */
-function restoreProperties(previousProperties) {
-    // If the previous properties are null, force the default properties
-    if (previousProperties !== undefined && previousProperties !== null) {
+    if (previousProperties) {
         properties = previousProperties;
     } else {
         log("Using default properties");
@@ -69,19 +62,17 @@ function vary(avg, percentage, min, max) {
  * Returns updated simulation state.
  * Device property updates must call updateProperties() to persist.
  *
- * @param context        The context contains current time, device model and id
- * @param previousState  The device state since the last iteration
+ * @param context             The context contains current time, device model and id
+ * @param previousState       The device state since the last iteration
  * @param previousProperties  The device properties since the last iteration
  */
 /*jslint unparam: true*/
 function main(context, previousState, previousProperties) {
 
-    // Restore the global state before generating the new telemetry, so that
-    // the telemetry can apply changes using the previous function state.
-    restoreState(previousState);
-
-    // restore global device properties
-    restoreProperties(previousProperties);
+    // Restore the global device properties and the global state before
+    // generating the new telemetry, so that the telemetry can apply changes
+    // using the previous function state.
+    restoreSimulation(previousState, previousProperties);
 
     // 75F +/- 5%,  Min 25F, Max 100F
     state.temperature = vary(75, 5, 25, 100);

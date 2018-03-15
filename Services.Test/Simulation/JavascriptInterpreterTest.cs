@@ -53,7 +53,7 @@ namespace Services.Test.Simulation
                 ["deviceId"] = "device-123",
                 ["deviceModel"] = "room"
             };
-            var sensors = new Dictionary<string, object>
+            var state = new Dictionary<string, object>
             {
                 ["temperature"] = 50.5,
                 ["temperature_unit"] = "device-123",
@@ -62,13 +62,13 @@ namespace Services.Test.Simulation
                 ["lights_on"] = false
             };
 
-            deviceState.SetAll(sensors);
+            deviceState.SetAll(state);
 
             // Act
             this.target.Invoke(filename, context, deviceState, properties.Object);
 
             // Assert
-            Assert.Equal(sensors.Count, deviceState.GetAll().Count);
+            Assert.Equal(state.Count, deviceState.GetAll().Count);
             Assert.IsType<Double>(deviceState.Get("temperature"));
             Assert.IsType<string>(deviceState.Get("temperature_unit"));
             Assert.IsType<Double>(deviceState.Get("humidity"));
