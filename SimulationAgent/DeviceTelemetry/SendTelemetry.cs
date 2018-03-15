@@ -66,10 +66,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                                 var exceptions = t.Exception.InnerExceptions;
                                 foreach (var exception in exceptions)
                                 {
-                                    if (exception != null && exception is TelemetrySendException)
+                                    if (exception != null && exception is TelemetrySendException && exception.InnerException is TimeoutException)
                                     {
-                                        this.log.Debug("Telemetry deliver failed", () => new { this.deviceId, exception });
-                                        this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDeliveryFailed);
+                                        this.log.Error("Telemetry send timeout error", () => new { this.deviceId, exception });
+                                        this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendTimeoutFailure);
+                                    }
+                                    else
+                                    {
+                                        this.log.Error("Telemetry send unknown error", () => new { this.deviceId, exception });
+                                        this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendUnkonwnFailure);
                                     }
                                 }
                             }
@@ -92,7 +97,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             catch (Exception e)
             {
                 this.log.Error("Telemetry error", () => new { this.deviceId, e });
-                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDeliveryFailed);
+                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendUnkonwnFailure);
             }
         }
     }

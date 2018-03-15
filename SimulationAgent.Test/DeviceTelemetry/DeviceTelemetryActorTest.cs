@@ -67,7 +67,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
             // Arrange
             const int FAILED_MESSAGES_COUNT = 5;
             SetupDeviceTelemetryActor();
-            DeviceTelemetryActor.ActorEvents messageFailed = DeviceTelemetryActor.ActorEvents.TelemetryDeliveryFailed;
+            DeviceTelemetryActor.ActorEvents messageFailed = DeviceTelemetryActor.ActorEvents.TelemetrySendUnkonwnFailure;
 
             // Act
             for(int i = 0; i < FAILED_MESSAGES_COUNT; i++)
