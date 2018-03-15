@@ -365,6 +365,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     throw new InvalidConfigurationException($"Unable to create a client for the given protocol ({protocol})");
             }
             sdkClient.SetRetryPolicy(new Microsoft.Azure.Devices.Client.NoRetry());
+            sdkClient.OperationTimeoutInMilliseconds = 10000;
 
             return sdkClient;
         }
