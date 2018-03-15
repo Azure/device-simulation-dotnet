@@ -70,6 +70,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // When working with batches, this is the max size that the batch insert and delete APIs allow
         private const int REGISTRY_MAX_BATCH_SIZE = 100;
 
+        // When sending telemetry or other operations, wait only for 10 seconds. This setting sets how
+        // throttling affects the application. The default SDK value is 4 minutes, which causes high
+        // CPU usage.
+        private const int SDK_CLIENT_TIMEOUT = 10000;
+
         // ID prefix of the simulated devices, used with Azure IoT Hub
         private const string DEVICE_ID_PREFIX = "Simulated.";
 
@@ -364,8 +369,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                     throw new InvalidConfigurationException($"Unable to create a client for the given protocol ({protocol})");
             }
-            sdkClient.SetRetryPolicy(new Microsoft.Azure.Devices.Client.NoRetry());
-            sdkClient.OperationTimeoutInMilliseconds = 10000;
+
+            sdkClient.SetRetryPolicy(new Azure.Devices.Client.NoRetry());
+            sdkClient.OperationTimeoutInMilliseconds = SDK_CLIENT_TIMEOUT;
 
             return sdkClient;
         }

@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 
@@ -56,36 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                     this.log.Debug("Calling SendMessageAsync...",
                         () => new { this.deviceId, MessageSchema = this.message.MessageSchema.Name, msg });
 
-                    var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                    this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.SendingTelemetry);
-                    this.context.Client.SendMessageAsync(msg, this.message.MessageSchema)
-                        .ContinueWith(t =>
-                        {
-                            if (t.IsFaulted && t.Exception is AggregateException)
-                            {
-                                var exceptions = t.Exception.InnerExceptions;
-                                foreach (var exception in exceptions)
-                                {
-                                    if (exception != null && exception is TelemetrySendException && exception.InnerException is TimeoutException)
-                                    {
-                                        this.log.Error("Telemetry send timeout error", () => new { this.deviceId, exception });
-                                        this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendTimeoutFailure);
-                                    }
-                                    else
-                                    {
-                                        this.log.Error("Telemetry send unknown error", () => new { this.deviceId, exception });
-                                        this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendUnkonwnFailure);
-                                    }
-                                }
-                            }
-                            else if (t.IsCompleted)
-                            {
-                                var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
-                                this.log.Debug("Telemetry delivered", () => new { this.deviceId, timeSpent, MessageSchema = this.message.MessageSchema.Name });
-                                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
-                            }
-                        });
-                    
+                    this.SendTelemetryMessage(msg);
                 }
                 else
                 {
@@ -97,8 +67,70 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             catch (Exception e)
             {
                 this.log.Error("Telemetry error", () => new { this.deviceId, e });
-                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendUnkonwnFailure);
+                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendUnknownFailure);
             }
+        }
+
+        private void SendTelemetryMessage(string msg)
+        {
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+            this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.SendingTelemetry);
+
+            this.context.Client
+                .SendMessageAsync(msg, this.message.MessageSchema)
+                .ContinueWith(t =>
+                    {
+                        var success = true;
+                        var genericError = false;
+                        var timeoutError = false;
+
+                        if (t.IsCompleted)
+                        {
+                            var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
+                            this.log.Debug("Telemetry delivered", () => new { this.deviceId, timeSpent, MessageSchema = this.message.MessageSchema.Name });
+                        }
+                        else if (t.IsFaulted)
+                        {
+                            success = false;
+                            genericError = true;
+
+                            if (t.Exception is AggregateException)
+                            {
+                                foreach (var exception in t.Exception.InnerExceptions)
+                                {
+                                    if (exception is TimeoutException)
+                                    {
+                                        this.log.Error("Telemetry send timeout error", () => new { this.deviceId, exception });
+                                        timeoutError = true;
+                                        genericError = false;
+                                    }
+                                    else
+                                    {
+                                        this.log.Error("Telemetry send unknown error", () => new { this.deviceId, exception });
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                this.log.Error("Telemetry send unknown error", () => new { this.deviceId, t.Exception });
+                            }
+                        }
+
+                        if (success)
+                        {
+                            this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
+                        }
+                        else if (timeoutError)
+                        {
+                            this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendTimeoutFailure);
+                        }
+                        else if (genericError)
+                        {
+                            this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendUnknownFailure);
+                        }
+                    }
+                );
         }
     }
 }

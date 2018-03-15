@@ -145,6 +145,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     this.deviceId
                 });
             }
+            catch (TimeoutException e)
+            {
+                this.log.Error("Message delivery timed out",
+                    () => new
+                    {
+                        Protocol = this.protocol.ToString(),
+                        ExceptionMessage = e.Message,
+                        Exception = e.GetType().FullName,
+                        e.InnerException
+                    });
+
+                throw new TelemetrySendTimeoutException("Message delivery timed out with " + e.Message, e);
+            }
             catch (Exception e)
             {
                 this.log.Error("Message delivery failed",

@@ -50,7 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         {
             Started,
             SendingTelemetry,
-            TelemetrySendUnkonwnFailure,
+            TelemetrySendUnknownFailure,
             TelemetrySendTimeoutFailure,
             TelemetryDelivered,
         }
@@ -168,25 +168,32 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                     this.actorLogger.ActorStarted();
                     this.ScheduleTelemetry();
                     break;
+
                 case ActorEvents.SendingTelemetry:
                     this.totalMessagesCount++;
                     break;
+
                 case ActorEvents.TelemetryDelivered:
                     this.actorLogger.TelemetryDelivered();
                     this.ScheduleTelemetry();
                     break;
+
                 case ActorEvents.TelemetrySendTimeoutFailure:
                     this.failedMessagesCount++;
                     this.actorLogger.TelemetryFailed();
                     break;
-                case ActorEvents.TelemetrySendUnkonwnFailure:
+
+                case ActorEvents.TelemetrySendUnknownFailure:
                     this.failedMessagesCount++;
                     this.actorLogger.TelemetryFailed();
-                    
+
                     // TODO: investigate CPU spike when retry sending telemetry
                     // github issue: https://github.com/Azure/device-simulation-dotnet/issues/176
+                    // Note that we split the timeout event out (ActorEvents.TelemetrySendTimeoutFailure)
+                    // to avoid the retry
                     this.ScheduleTelemetryRetry();
                     break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(e), e, null);
             }
