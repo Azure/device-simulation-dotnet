@@ -51,7 +51,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             Started,
             SendingTelemetry,
             TelemetrySendUnknownFailure,
-            TelemetrySendTimeoutFailure,
+            TelemetrySendFailure,
             TelemetryDelivered,
         }
 
@@ -178,7 +178,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                     this.ScheduleTelemetry();
                     break;
 
-                case ActorEvents.TelemetrySendTimeoutFailure:
+                case ActorEvents.TelemetrySendFailure:
                     this.failedMessagesCount++;
                     this.actorLogger.TelemetryFailed();
                     break;

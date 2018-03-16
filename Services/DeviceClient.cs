@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
@@ -157,6 +158,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     });
 
                 throw new TelemetrySendTimeoutException("Message delivery timed out with " + e.Message, e);
+            }
+            catch(IOException e)
+            {
+                this.log.Error("Message delivery IOExcepotion",
+                    () => new
+                    {
+                        Protocol = this.protocol.ToString(),
+                        ExceptionMessage = e.Message,
+                        Exception = e.GetType().FullName,
+                        e.InnerException
+                    });
+
+                throw new TelemetrySendIOException("Message delivery I/O failed with " + e.Message, e);
             }
             catch (Exception e)
             {
