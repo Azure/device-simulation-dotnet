@@ -77,7 +77,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.telemetryLogFile = this.path + Path.DirectorySeparatorChar + "telemetry.log";
 
             this.enabled = this.enabledInConfig && !string.IsNullOrEmpty(this.path);
-
+            
             if (!this.enabled) return;
 
             try

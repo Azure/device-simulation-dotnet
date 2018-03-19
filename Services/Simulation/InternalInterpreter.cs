@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
@@ -18,13 +17,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         /// <param name="scriptParams">Script parameters, e.g. min, max, step</param>
         /// <param name="context">Context, e.g. current time, device Id, device Model</param>
         /// <param name="state">Current device sensors state</param>
-        /// <param name="properties">Current device properties state</param>
-        /// <remarks>Updates the internal device sensors state</remarks>
-        void Invoke(
+        /// <returns>New device sensors state</returns>
+        Dictionary<string, object> Invoke(
             string scriptPath, object scriptParams,
             Dictionary<string, object> context,
-            ISmartDictionary state,
-            ISmartDictionary properties);
+            Dictionary<string, object> state);
     }
 
     public class InternalInterpreter : IInternalInterpreter
@@ -50,43 +47,43 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             this.random = new Random();
         }
 
-        public void Invoke(
+        public Dictionary<string, object> Invoke(
             string scriptPath,
             object scriptParams,
             Dictionary<string, object> context,
-            ISmartDictionary state,
-            ISmartDictionary properties)
+            Dictionary<string, object> state)
         {
             switch (scriptPath.ToLowerInvariant())
             {
                 case SCRIPT_RANDOM:
-                    this.RunRandomNumberScript(scriptParams, state);
-                    break;
+                    return this.RunRandomNumberScript(scriptParams, state);
+
                 case SCRIPT_INCREASING:
-                    this.RunIncreasingScript(scriptParams, state);
-                    break;
+                    return this.RunIncreasingScript(scriptParams, state);
+
                 case SCRIPT_DECREASING:
-                    this.RunDecreasingScript(scriptParams, state);
-                    break;
+                    return this.RunDecreasingScript(scriptParams, state);
+
                 default:
                     throw new NotSupportedException($"Unknown script `{scriptPath}`.");
             }
         }
 
         // For each sensors specified, generate a random number in the range requested
-        private void RunRandomNumberScript(object scriptParams, ISmartDictionary state)
+        private Dictionary<string, object> RunRandomNumberScript(object scriptParams, Dictionary<string, object> state)
         {
             var sensors = this.JsonParamAsDictionary(scriptParams);
             foreach (var sensor in sensors)
             {
                 (double min, double max) = this.GetMinMaxParameters(sensor.Value);
-                var value = this.random.NextDouble() * (max - min) + min;
-                state.Set(sensor.Key, value);
+                state[sensor.Key] = this.random.NextDouble() * (max - min) + min;
             }
+
+            return state;
         }
 
         // For each sensors specified, increase the current state, up to a maximum, then restart from a minimum
-        private void RunIncreasingScript(object scriptParams, ISmartDictionary state)
+        private Dictionary<string, object> RunIncreasingScript(object scriptParams, Dictionary<string, object> state)
         {
             var sensors = this.JsonParamAsDictionary(scriptParams);
             foreach (var sensor in sensors)
@@ -95,20 +92,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 (double min, double max, double step) = this.GetMinMaxStepParameters(sensor.Value);
 
                 // Add the sensor to the state if missing
-                if (!state.Has(sensor.Key))
+                if (!state.ContainsKey(sensor.Key))
                 {
-                    state.Set(sensor.Key, min);
+                    state[sensor.Key] = min;
                 }
 
-                double current = Convert.ToDouble(state.Get(sensor.Key));
+                double current = Convert.ToDouble(state[sensor.Key]);
                 double next = AreEqual(current, max) ? min : Math.Min(current + step, max);
 
-                state.Set(sensor.Key, next);
+                state[sensor.Key] = next;
             }
+
+            return state;
         }
 
         // For each sensors specified, decrease the current state, down to a minimum, then restart from a maximum
-        private void RunDecreasingScript(object scriptParams, ISmartDictionary state)
+        private Dictionary<string, object> RunDecreasingScript(object scriptParams, Dictionary<string, object> state)
         {
             var sensors = this.JsonParamAsDictionary(scriptParams);
             foreach (var sensor in sensors)
@@ -117,16 +116,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 (double min, double max, double step) = this.GetMinMaxStepParameters(sensor.Value);
 
                 // Add the sensor to the state if missing
-                if (!state.Has(sensor.Key))
+                if (!state.ContainsKey(sensor.Key))
                 {
-                    state.Set(sensor.Key, max);
+                    state[sensor.Key] = max;
                 }
 
-                double current = Convert.ToDouble(state.Get(sensor.Key));
+                double current = Convert.ToDouble(state[sensor.Key]);
                 double next = AreEqual(current, min) ? max : Math.Max(current - step, min);
 
-                state.Set(sensor.Key, next);
+                state[sensor.Key] = next;
             }
+
+            return state;
         }
 
         private (double, double) GetMinMaxParameters(object parameters)

@@ -37,39 +37,39 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
             try
             {
-                var state = this.context.DeviceState.GetAll();
-                this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
-                if ((bool) state["online"])
-                {
-                    // device could be rebooting, updating firmware, etc.
-                    this.log.Debug("The device state says the device is online", () => new { this.deviceId });
+            var state = this.context.DeviceState;
+            this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
+            if ((bool) state["online"])
+            {
+                // device could be rebooting, updating firmware, etc.
+                this.log.Debug("The device state says the device is online", () => new { this.deviceId });
 
-                    // Inject the device state into the message template
-                    this.log.Debug("Preparing the message content using the device state", () => new { this.deviceId });
-                    var msg = this.message.MessageTemplate;
-                    foreach (var value in state)
+                // Inject the device state into the message template
+                this.log.Debug("Preparing the message content using the device state", () => new { this.deviceId });
+                var msg = this.message.MessageTemplate;
+                foreach (var value in state)
+                {
+                    msg = msg.Replace("${" + value.Key + "}", value.Value.ToString());
+                }
+
+                this.log.Debug("Calling SendMessageAsync...",
+                    () => new { this.deviceId, MessageSchema = this.message.MessageSchema.Name, msg });
+
+                var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                this.context.Client.SendMessageAsync(msg, this.message.MessageSchema)
+                    .ContinueWith(t =>
                     {
-                        msg = msg.Replace("${" + value.Key + "}", value.Value.ToString());
-                    }
-
-                    this.log.Debug("Calling SendMessageAsync...",
-                        () => new { this.deviceId, MessageSchema = this.message.MessageSchema.Name, msg });
-
-                    var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                    this.context.Client.SendMessageAsync(msg, this.message.MessageSchema)
-                        .ContinueWith(t =>
-                        {
-                            var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
-                            this.log.Debug("Telemetry delivered", () => new { this.deviceId, timeSpent, MessageSchema = this.message.MessageSchema.Name });
-                            this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
-                        });
-                }
-                else
-                {
-                    // device could be rebooting, updating firmware, etc.
-                    this.log.Debug("No telemetry will be sent as the device is offline...", () => new { this.deviceId });
-                    this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
-                }
+                        var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
+                        this.log.Debug("Telemetry delivered", () => new { this.deviceId, timeSpent, MessageSchema = this.message.MessageSchema.Name });
+                        this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
+                    });
+            }
+            else
+            {
+                // device could be rebooting, updating firmware, etc.
+                this.log.Debug("No telemetry will be sent as the device is offline...", () => new { this.deviceId });
+                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
+            }
             }
             catch (Exception e)
             {

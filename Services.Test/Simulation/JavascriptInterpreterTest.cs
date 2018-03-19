@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Moq;
@@ -22,7 +21,6 @@ namespace Services.Test.Simulation
         private readonly ITestOutputHelper log;
         private readonly Mock<IServicesConfig> config;
         private readonly Mock<ILogger> logger;
-        private readonly Mock<ISmartDictionary> properties;
         private readonly JavascriptInterpreter target;
 
         public JavascriptInterpreterTest(ITestOutputHelper log)
@@ -32,7 +30,6 @@ namespace Services.Test.Simulation
             this.config = new Mock<IServicesConfig>();
             this.config.SetupGet(x => x.DeviceModelsFolder).Returns("./data/devicemodels/");
             this.config.SetupGet(x => x.DeviceModelsScriptsFolder).Returns("./data/devicemodels/scripts/");
-            this.properties = new Mock<ISmartDictionary>();
 
             this.logger = new Mock<ILogger>();
             this.CaptureApplicationLogs(this.logger);
@@ -44,8 +41,6 @@ namespace Services.Test.Simulation
         public void ReturnedStateIsIntact()
         {
             // Arrange
-            SmartDictionary deviceState = new SmartDictionary();
-
             var filename = "chiller-01-state.js";
             var context = new Dictionary<string, object>
             {
@@ -62,26 +57,22 @@ namespace Services.Test.Simulation
                 ["lights_on"] = false
             };
 
-            deviceState.SetAll(state);
-
             // Act
-            this.target.Invoke(filename, context, deviceState, properties.Object);
+            Dictionary<string, object> result = this.target.Invoke(filename, context, state);
 
             // Assert
-            Assert.Equal(state.Count, deviceState.GetAll().Count);
-            Assert.IsType<Double>(deviceState.Get("temperature"));
-            Assert.IsType<string>(deviceState.Get("temperature_unit"));
-            Assert.IsType<Double>(deviceState.Get("humidity"));
-            Assert.IsType<string>(deviceState.Get("humidity_unit"));
-            Assert.IsType<bool>(deviceState.Get("lights_on"));
+            Assert.Equal(state.Count, result.Count);
+            Assert.IsType<Double>(result["temperature"]);
+            Assert.IsType<string>(result["temperature_unit"]);
+            Assert.IsType<Double>(result["humidity"]);
+            Assert.IsType<string>(result["humidity_unit"]);
+            Assert.IsType<bool>(result["lights_on"]);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void TestJavascriptFiles()
         {
             // Arrange
-            SmartDictionary deviceState = new SmartDictionary();
-
             var files = new List<string>
             {
                 "chiller-01-state.js",
@@ -98,8 +89,8 @@ namespace Services.Test.Simulation
             // Act - Assert (no exception should occur)
             foreach (var file in files)
             {
-                this.target.Invoke(file, context, deviceState, this.properties.Object);
-                Assert.NotNull(deviceState.GetAll());
+                var result = this.target.Invoke(file, context, null);
+                Assert.NotNull(result);
             }
         }
 
