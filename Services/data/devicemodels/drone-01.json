@@ -45,7 +45,7 @@
   "Telemetry": [
     {
       "Interval": "00:00:05",
-      "MessageTemplate": "{\"velocity\":${velocity},\"velocity_unit\":\"${velocity_unit}\",\"acceleration\":${acceleration},\"acceleration_unit\":\"${acceleration_unit},\"latitude\":\"${latitude},\"longitude\":\"${longitude},\"altitude\":\"${altitude},\"flightStatus\":\"${flightStatus}\"}",
+      "MessageTemplate": "{\"velocity\":\"${velocity}${velocity_unit}\",\"acceleration\":\"${acceleration}${acceleration_unit}\",\"position\":\"${latitude}|${longitude}|${altitude}\",\"flightStatus\":\"${flightStatus}\"}",
       "MessageSchema": {
         "Name": "drone-event-sensor;v1",
         "Format": "JSON",
@@ -63,7 +63,7 @@
     },
     {
       "Interval": "00:00:20",
-      "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"batteryStatus\":\"${batteryStatus},\"batteryLevel\":\"${batteryLevel}\"}",
+      "MessageTemplate": "{\"temperature\":\"${temperature}-${temperature_unit}\",\"batteryStatus\":\"${batteryStatus},\"batteryLevel\":\"${batteryLevel}\"}",
       "MessageSchema": {
         "Name": "drone-state-sensor;v1",
         "Format": "JSON",
