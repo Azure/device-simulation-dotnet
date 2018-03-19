@@ -6,7 +6,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 {
     public interface IDevicePropertiesLogic
     {
-        void Setup(IDevicePropertiesActor devicePropertiesActor, string deviceId, DeviceModel deviceModel);
+        void Setup(IDevicePropertiesActor devicePropertiesActor, string deviceId);
         void Run();
     }
 }

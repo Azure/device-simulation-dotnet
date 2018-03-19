@@ -6,6 +6,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties
 {
@@ -30,7 +31,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         {
             None,
             ReadyToStart,
-            WaitingForUpdate,
             ReadyToUpdate,
             Updating,
             Stopped
@@ -92,15 +92,33 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             this.status = ActorStatus.None;
             this.deviceId = null;
             this.deviceStateActor = null;
+            this.deviceConnectionActor = null;
         }
 
+        /// <summary>
+        /// Invoke this method before calling Execute(), to initialize the actor
+        /// with details like the device id. Setup() should be called only once.
+        /// </summary>
         public void Setup(
             string deviceId,
             IDeviceStateActor deviceStateActor,
             IDeviceConnectionActor deviceConnectionActor)
         {
-            // TODO branch for twin updates to IoT Hub located at:
-            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
+            if (this.status != ActorStatus.None)
+            {
+                this.log.Error("The actor is already initialized",
+                    () => new { CurrentDeviceId = this.deviceId });
+                throw new DeviceActorAlreadyInitializedException();
+            }
+
+            this.deviceId = deviceId;
+            this.deviceStateActor = deviceStateActor;
+            this.deviceConnectionActor = deviceConnectionActor;
+
+            this.updatePropertiesLogic.Setup(this, this.deviceId);
+            this.actorLogger.Setup(deviceId, "Properties");
+
+            this.status = ActorStatus.ReadyToStart;
         }
 
         public void HandleEvent(DevicePropertiesActor.ActorEvents e)

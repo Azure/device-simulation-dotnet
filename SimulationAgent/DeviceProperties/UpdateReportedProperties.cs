@@ -16,7 +16,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             this.log = logger;
         }
 
-        public void Setup(IDevicePropertiesActor devicePropertiesActor, string deviceId, DeviceModel deviceModel)
+        public void Setup(IDevicePropertiesActor devicePropertiesActor, string deviceId)
         {
             // TODO branch for twin updates to IoT Hub located at:
             //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
