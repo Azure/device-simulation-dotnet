@@ -9,10 +9,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 {
     public interface IScriptInterpreter
     {
-        Dictionary<string, object> Invoke(
+        /// <summary>Invoke one of the device script files</summary>
+        /// <param name="script">Name of the script</param>
+        /// <param name="context">Context, e.g. current time, device Id, device Model</param>
+        /// <param name="state">Current device state</param>
+        /// <param name="properties">Current device properties</param>
+        /// <remarks> Updates the internal device state and internal device properties</remarks>
+        void Invoke(
             Script script,
             Dictionary<string, object> context,
-            Dictionary<string, object> state);
+            ISmartDictionary state,
+            ISmartDictionary properties);
     }
 
     public class ScriptInterpreter : IScriptInterpreter
@@ -31,10 +38,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             this.log = logger;
         }
 
-        public Dictionary<string, object> Invoke(
+        public void Invoke(
             Script script,
             Dictionary<string, object> context,
-            Dictionary<string, object> state)
+            ISmartDictionary state,
+            ISmartDictionary properties)
         {
             switch (script.Type.ToLowerInvariant())
             {
@@ -44,15 +52,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 
                 case "javascript":
                     this.log.Debug("Invoking JS", () => new { script.Path, context, state });
-                    var jsResult = this.jsInterpreter.Invoke(script.Path, context, state);
-                    this.log.Debug("JS result", () => new { result = jsResult });
-                    return jsResult;
+                    this.jsInterpreter.Invoke(script.Path, context, state, properties);
+                    this.log.Debug("JS invocation complete", () => {});
+                    break;
 
                 case "internal":
                     this.log.Debug("Invoking internal script", () => new { script.Path, context, state });
-                    var intResult = this.intInterpreter.Invoke(script.Path, script.Params, context, state);
-                    this.log.Debug("Internal script result", () => new { intresult = intResult });
-                    return intResult;
+                    this.intInterpreter.Invoke(script.Path, script.Params, context, state, properties);
+                    this.log.Debug("Internal script complete", () => {});
+                    break;
             }
         }
     }
