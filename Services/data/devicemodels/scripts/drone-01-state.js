@@ -18,6 +18,9 @@ var battery_full = 1.0;
 var flight_simulation = [0, 1, 2, 1, 3, 1, 4];
 var current_status = 0;
 
+const GeoSpatialPrecision = 6;
+const DecimalPrecision = 2;
+
 // Default state
 var state = {
     online: true,
@@ -26,7 +29,7 @@ var state = {
     velocity: 0.0,
     velocity_unit: "mm/sec",
     acceleration: 0.0,
-    acceleration_unit: "mm/sec",
+    acceleration_unit: "mm/sec^2",
     flightStatus: 1,
     batteryStatus: "full",
     batteryLevel: battery_full,
@@ -86,14 +89,14 @@ function main(context, previousState) {
     restoreState(previousState);
 
     // 75F +/- 5%,  Min 25F, Max 100F
-    state.temperature = vary(75, 2, 60, 100);
+    state.temperature = vary(75, 2, 60, 100).toFixed(DecimalPrecision);
 
-    state.acceleration = vary(5.0, 5, 0.0, 9.9);
+    state.acceleration = vary(5.0, 5, 0.0, 9.9).toFixed(DecimalPrecision);
 
-    state.velocity = vary(99.99, 5, 0.0, 199.99);
+    state.velocity = vary(99.99, 5, 0.0, 199.99).toFixed(DecimalPrecision);
 
     // 0.5 +/- 5%, Min 0.5, Max 1.0
-    state.batteryLevel = vary(0.5, 5, 0.2, battery_full);
+    state.batteryLevel = vary(0.5, 5, 0.2, battery_full).toFixed(DecimalPrecision);
 
     state.batteryStatus = getBatteryStatus(state.batteryLevel);
 
@@ -101,10 +104,10 @@ function main(context, previousState) {
     state.flightStatus = getFlightStatus();
 
     var coords = varylocation(center_latitude, center_longitude, distance_vary);
-    state.latitude = coords.latitude;
-    state.longitude = coords.longitude;
+    state.latitude = coords.latitude.toFixed(GeoSpatialPrecision);
+    state.longitude = coords.longitude.toFixed(GeoSpatialPrecision);
 
-    state.altitude = vary(stable_altitude, 5, stable_altitude - altitude_vary, stable_altitude + altitude_vary);
+    state.altitude = vary(stable_altitude, 5, stable_altitude - altitude_vary, stable_altitude + altitude_vary).toFixed(DecimalPrecision);
 
     return state;
 }

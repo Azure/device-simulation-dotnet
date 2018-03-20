@@ -13,12 +13,12 @@
       "velocity": 0.0,
       "velocity_unit": "mm/sec",
       "acceleration": 0.0,
-      "acceleration_unit": "mm/sec",
-      "latitude": 44.2,
-      "longitude": 30.4,
+      "acceleration_unit": "mm/sec^2",
+      "latitude": 44.234567,
+      "longitude": 30.456789,
       "altitude": 0.0,
       "flightStatus": 0,
-      "batteryStatus": "Full",
+      "batteryStatus": "full",
       "batteryLevel": 1.0
     },
     "Script": {
@@ -32,10 +32,10 @@
     "Firmware": "1.0",
     "Model": "DJI-Phantom",
     "OwnerId": "patterns-n-practices",
-    "origin_latitude": 44.2,
-    "origin_longitude": 30.4,
-    "destination_latitude": 88.2,
-    "destination_longitude": -10.4
+    "origin_latitude": 44.234567,
+    "origin_longitude": 30.456789,
+    "destination_latitude": 88.234567,
+    "destination_longitude": -10.456789
   },
   "Tags": {
     "Location": "Building 43",
@@ -45,7 +45,7 @@
   "Telemetry": [
     {
       "Interval": "00:00:05",
-      "MessageTemplate": "{\"velocity\":\"${velocity}${velocity_unit}\",\"acceleration\":\"${acceleration}${acceleration_unit}\",\"position\":\"${latitude}|${longitude}|${altitude}\",\"flightStatus\":\"${flightStatus}\"}",
+      "MessageTemplate": "{\"velocity\":\"${velocity}\",\"acceleration\":\"${acceleration}\",\"position\":\"${latitude}|${longitude}|${altitude}\",\"flightStatus\":\"${flightStatus}\"}",
       "MessageSchema": {
         "Name": "drone-event-sensor;v1",
         "Format": "JSON",
@@ -63,7 +63,7 @@
     },
     {
       "Interval": "00:00:20",
-      "MessageTemplate": "{\"temperature\":\"${temperature}-${temperature_unit}\",\"batteryStatus\":\"${batteryStatus},\"batteryLevel\":\"${batteryLevel}\"}",
+      "MessageTemplate": "{\"temperature\":\"${temperature}\",\"batteryStatus\":\"${batteryStatus}\",\"batteryLevel\":\"${batteryLevel}\"}",
       "MessageSchema": {
         "Name": "drone-state-sensor;v1",
         "Format": "JSON",

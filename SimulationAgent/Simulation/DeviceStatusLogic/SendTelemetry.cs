@@ -146,7 +146,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                         }
 
                         // Prepend some fields as per pnpiotct request
-                        var format = $"{{\"device_id\":\"{this.deviceId}\",\"sensor_type\":\"{message.MessageSchema.Name}\",\"timestamp\":\"{DateTimeOffset.Now.ToUniversalTime()}\",";
+                        var format = $"{{\"device_id\":\"{this.deviceId}\",\"sensor_type\":\"{message.MessageSchema.Name}\",\"time_sent\":\"{DateTimeOffset.Now.ToUniversalTime()}\",";
                         msg = msg.Replace("{", "");
                         msg = String.Concat(format, msg);
                     }
