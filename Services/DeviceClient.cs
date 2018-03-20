@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json.Linq;
@@ -38,6 +39,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly ILogger log;
 
         private bool connected;
+        private IRateLimiting rateLimiting;
 
         public IoTHubProtocol Protocol => this.protocol;
 
@@ -45,11 +47,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             string deviceId,
             IoTHubProtocol protocol,
             Azure.Devices.Client.DeviceClient client,
+            IRateLimiting rateLimiting,
             ILogger logger)
         {
             this.deviceId = deviceId;
             this.protocol = protocol;
             this.client = client;
+            this.rateLimiting = rateLimiting;
             this.log = logger;
         }
 
@@ -105,9 +109,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             await this.SendRawMessageAsync(eventMessage);
         }
 
-        public Task UpdateTwinAsync(Device device)
+        public void UpdateTwinAsync(Device device)
         {
-            /* TEMPORARY DISABLED
+            /*
             if (!this.connected) await this.ConnectAsync();
 
             var azureTwin = await this.rateLimiting.LimitTwinReadsAsync(
@@ -131,7 +135,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             await this.rateLimiting.LimitTwinWritesAsync(
                 () => this.client.UpdateReportedPropertiesAsync(reportedProperties));
             */
-            return Task.CompletedTask;
+            return;
         }
 
         private async Task SendRawMessageAsync(Message message)
