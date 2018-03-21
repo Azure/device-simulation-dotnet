@@ -78,7 +78,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private IDeviceStateActor deviceStateActor;
 
         /// <summary>
-        /// Azure IoT Hub client shared by Connect and SendTelemetry
+        /// Azure IoT Hub client shared by Connect, Properties, and SendTelemetry
         /// </summary>
         public IDeviceClient Client { get; set; }
 

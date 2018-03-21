@@ -16,6 +16,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         ISmartDictionary DeviceProperties { get; }
         ISmartDictionary DeviceState { get; }
         IDeviceClient Client { get; }
+        Device Device { get; }
 
         void Setup(
             string deviceId,

@@ -19,7 +19,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task ConnectAsync();
         Task DisconnectAsync();
         Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema);
-        Task UpdateTwinAsync(Device device);
+        Task UpdatePropertiesAsync(ISmartDictionary properties);
         Task RegisterMethodsForDeviceAsync(IDictionary<string, Script> methods, Dictionary<string, object> deviceState);
     }
 
@@ -39,7 +39,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly ILogger log;
 
         private bool connected;
-        private IRateLimiting rateLimiting;
 
         public IoTHubProtocol Protocol => this.protocol;
 
@@ -47,13 +46,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             string deviceId,
             IoTHubProtocol protocol,
             Azure.Devices.Client.DeviceClient client,
-            IRateLimiting rateLimiting,
             ILogger logger)
         {
             this.deviceId = deviceId;
             this.protocol = protocol;
             this.client = client;
-            this.rateLimiting = rateLimiting;
             this.log = logger;
         }
 
@@ -109,32 +106,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             await this.SendRawMessageAsync(eventMessage);
         }
 
-        public void UpdateTwinAsync(Device device)
+        /// <summary>
+        /// Updates the reported properties in the device twin on the IoT Hub
+        /// </summary>
+        public async Task UpdatePropertiesAsync(ISmartDictionary properties)
         {
-            /*
             if (!this.connected) await this.ConnectAsync();
 
-            var azureTwin = await this.rateLimiting.LimitTwinReadsAsync(
-                () => this.client.GetTwinAsync());
+            var reportedProperties = SmartDictionaryToTwinCollection(properties);
 
-            // Remove properties
-            var props = azureTwin.Properties.Reported.GetEnumerator();
-            while (props.MoveNext())
+            await this.client.UpdateReportedPropertiesAsync(reportedProperties);
+
+            this.log.Debug("Update reported properties for device", () => new
             {
-                var current = (KeyValuePair<string, object>) props.Current;
+                this.deviceId,
+                ReportedProperties = reportedProperties
+            });
 
-                if (!device.Twin.ReportedProperties.ContainsKey(current.Key))
-                {
-                    this.log.Debug("Removing key", () => new { current.Key });
-                    azureTwin.Properties.Reported[current.Key] = null;
-                }
-            }
-
-            // Write properties
-            var reportedProperties = DictionaryToTwinCollection(device.Twin.ReportedProperties);
-            await this.rateLimiting.LimitTwinWritesAsync(
-                () => this.client.UpdateReportedPropertiesAsync(reportedProperties));
-            */
             return;
         }
 
@@ -162,17 +150,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        private static TwinCollection DictionaryToTwinCollection(Dictionary<string, JToken> x)
+        private static TwinCollection SmartDictionaryToTwinCollection(ISmartDictionary dictionary)
         {
             var result = new TwinCollection();
 
-            if (x != null)
+            if (dictionary != null)
             {
-                foreach (KeyValuePair<string, JToken> item in x)
+                var items = dictionary.GetAll();
+
+                foreach (KeyValuePair<string, object> item in items)
                 {
                     try
                     {
-                        result[item.Key] = item.Value;
+                        // Use JToken for serialization
+                        result[item.Key] = JToken.FromObject(item.Value);
                     }
                     catch (Exception e)
                     {

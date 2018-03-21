@@ -2,7 +2,6 @@
 
 using System;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties
 {
@@ -48,11 +47,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                 this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
                 if ((bool)state["online"])
                 {
-                    // device could be rebooting, updating firmware, etc.
+                    // Device could be rebooting, updating firmware, etc.
                     this.log.Debug("The device state says the device is online", () => new { this.deviceId });
 
+                    // Update the device twin with the current device properites state
                     var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                    this.context.Client.UpdateTwinAsync()
+                    this.context.Client.UpdatePropertiesAsync(this.context.DeviceProperties)
                         .ContinueWith(t =>
                         {
                             var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
@@ -62,7 +62,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                 }
                 else
                 {
-                    // device could be rebooting, updating firmware, etc.
+                    // Device could be rebooting, updating firmware, etc.
                     this.log.Debug("No properties will be updated as the device is offline...", () => new { this.deviceId });
                     this.context.HandleEvent(DevicePropertiesActor.ActorEvents.PropertiesUpdateFailed);
                 }

@@ -4,6 +4,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
@@ -23,6 +24,7 @@ namespace Services.Test
         private Mock<IServicesConfig> config;
         private Mock<IIotHubConnectionStringManager> connectionStringManager;
         private Mock<ILogger> logger;
+        private Mock<IRateLimiting> rateLimiting;
         private readonly Mock<IRegistryManager> registry;
         private readonly Devices target;
 
