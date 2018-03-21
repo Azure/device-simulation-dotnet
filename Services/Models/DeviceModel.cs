@@ -27,6 +27,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
     public class DeviceModel
     {
+        public string ETag { get; set; }
         public string Id { get; set; }
         public string Version { get; set; }
         public string Name { get; set; }
@@ -36,9 +37,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public Dictionary<string, object> Properties { get; set; }
         public IList<DeviceModelMessage> Telemetry { get; set; }
         public IDictionary<string, Script> CloudToDeviceMethods { get; set; }
+        public DateTimeOffset Created { get; set; }
+        public DateTimeOffset Modified { get; set; }
 
         public DeviceModel()
         {
+            this.ETag = string.Empty;
             this.Id = string.Empty;
             this.Version = "0.0.0";
             this.Name = string.Empty;
