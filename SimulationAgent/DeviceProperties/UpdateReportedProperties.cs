@@ -59,6 +59,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                             this.log.Debug("Device property updates delivered", () => new { this.deviceId, timeSpent, Properties = properties});
                             this.context.HandleEvent(DevicePropertiesActor.ActorEvents.PropertiesUpdated);
                         });
+
+                    // Mark properties as updated
+                    this.context.DeviceProperties.ResetChanged();
                 }
                 else
                 {
