@@ -2,13 +2,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Newtonsoft.Json;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 
 // TODO: tests
 // TODO: handle errors
@@ -16,8 +16,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface IDeviceModels
     {
-        IEnumerable<DeviceModel> GetList();
-        DeviceModel Get(string id);
+        /// <summary>
+        /// Get list of device models.
+        /// </summary>
+        Task<IEnumerable<DeviceModel>> GetListAsync();
+
+        /// <summary>
+        /// Get a device model.
+        /// </summary>
+        Task<DeviceModel> GetAsync(string id);
+
+        /// <summary>
+        /// Create a device model.
+        /// </summary>
+        Task<DeviceModel> InsertAsync(DeviceModel deviceModel);
+
+        /// <summary>
+        /// Create or replace a device model.
+        /// </summary>
+        Task<DeviceModel> UpsertAsync(DeviceModel deviceModel);
+
+        /// <summary>
+        /// Delete a custom device model.
+        /// </summary>
+        Task DeleteAsync(string id);
     }
 
     public class DeviceModels : IDeviceModels
@@ -29,49 +51,63 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         private readonly IServicesConfig config;
         private readonly ILogger log;
+        private readonly IStorageAdapterClient storage;
 
         private List<string> deviceModelFiles;
         private List<DeviceModel> deviceModels;
+        private CustomDeviceModels customDeviceModels;
+        private StockDeviceModels stockDeviceModels;
 
         public DeviceModels(
+            IStorageAdapterClient storage,
+            ICustomDeviceModels CustomDeviceModels,
+            IStockDeviceModels StockDeviceModels,
             IServicesConfig config,
             ILogger logger)
         {
+            this.storage = storage;
             this.config = config;
             this.log = logger;
-            this.deviceModelFiles = null;
-            this.deviceModels = null;
+            this.stockDeviceModels = new StockDeviceModels(
+                this.config,
+                this.log);
+            this.customDeviceModels = new CustomDeviceModels(
+                this.storage,
+                this.log);
         }
 
-        public IEnumerable<DeviceModel> GetList()
+        /// <summary>
+        /// Get list of device models.
+        /// </summary>
+        public async Task<IEnumerable<DeviceModel>> GetListAsync()
         {
-            if (this.deviceModels != null) return this.deviceModels;
-
-            this.deviceModels = new List<DeviceModel>();
+            var deviceModels = new List<DeviceModel>();
 
             try
             {
-                var files = this.GetDeviceModelFiles();
-                foreach (var f in files)
-                {
-                    var c = JsonConvert.DeserializeObject<DeviceModel>(File.ReadAllText(f));
-                    this.deviceModels.Add(c);
-                }
+                var stockDeviceModels = this.stockDeviceModels.GetList();
+                var customDeviceModels = await this.customDeviceModels.GetListAsync();
+                deviceModels = stockDeviceModels
+                    .Concat(customDeviceModels)
+                    .ToList();
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to load Device Model configuration",
+                this.log.Error("Unable to load Device Model ",
                     () => new { e.Message, Exception = e });
 
-                throw new InvalidConfigurationException("Unable to load Device Model configuration: " + e.Message, e);
+                throw new Exception("Unable to load Device Model : " + e.Message, e);
             }
 
-            return this.deviceModels;
+            return deviceModels;
         }
 
-        public DeviceModel Get(string id)
+        /// <summary>
+        /// Get a device model.
+        /// </summary>
+        public async Task<DeviceModel> GetAsync(string id)
         {
-            var list = this.GetList();
+            var list = await this.GetListAsync();
             var item = list.FirstOrDefault(i => i.Id == id);
             if (item != null)
                 return item;
@@ -81,19 +117,52 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             throw new ResourceNotFoundException();
         }
 
-        private List<string> GetDeviceModelFiles()
+        /// <summary>
+        /// Create a device model.
+        /// </summary>
+        public async Task<DeviceModel> InsertAsync(DeviceModel deviceModel)
         {
-            if (this.deviceModelFiles != null) return this.deviceModelFiles;
+            try
+            {
+                var result = await this.customDeviceModels.InsertAsync(deviceModel);
+                deviceModel.ETag = result.ETag;
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to create a new device model", () => new { Exception = e });
+            }
 
-            this.log.Debug("Device models folder", () => new { this.config.DeviceModelsFolder });
+            return deviceModel;
+        }
 
-            var fileEntries = Directory.GetFiles(this.config.DeviceModelsFolder);
+        /// <summary>
+        /// Create or replace a device model.
+        /// </summary>
+        public async Task<DeviceModel> UpsertAsync(DeviceModel deviceModel)
+        {
+            try
+            {
+                var result = await this.customDeviceModels.UpsertAsync(deviceModel);
+                deviceModel.ETag = result.ETag;
+            }
+            catch(ConflictingResourceException exception)
+            {
+                this.log.Error("Unable to update deivce model :'", () => new { exception });
+            }
+            catch (Exception exception)
+            {
+                this.log.Error("Unable to update deivce model :'", () => new { exception });
+            }
 
-            this.deviceModelFiles = fileEntries.Where(fileName => fileName.EndsWith(EXT)).ToList();
+            return deviceModel;
+        }
 
-            this.log.Debug("Device model files", () => new { this.deviceModelFiles });
-
-            return this.deviceModelFiles;
+        /// <summary>
+        /// Delete a custom device model.
+        /// </summary>
+        public async Task DeleteAsync(string id)
+        {
+            await this.customDeviceModels.DeleteAsync(id);
         }
     }
 }
