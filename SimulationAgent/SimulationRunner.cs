@@ -290,7 +290,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             var modelDef = new DeviceModel();
             if (id.ToLowerInvariant() != DeviceModels.CUSTOM_DEVICE_MODEL_ID.ToLowerInvariant())
             {
-                modelDef = this.deviceModels.Get(id);
+                var task = this.deviceModels.GetAsync(id);
+                task.Wait(TimeSpan.FromMinutes(1));
+                modelDef = task.Result;
             }
             else
             {

@@ -209,7 +209,7 @@ namespace Services.Test
         public void UpsertUsesOptimisticConcurrency()
         {
             // Arrange
-            this.deviceModels.Setup(x => x.GetList()).Returns(this.models);
+            this.deviceModels.Setup(x => x.GetListAsync()).ReturnsAsync(this.models);
 
             var id = Guid.NewGuid().ToString();
             var s1 = new SimulationModel { Id = id, Enabled = false };
@@ -257,7 +257,7 @@ namespace Services.Test
 
         private void ThereAreSomeDeviceModels()
         {
-            this.deviceModels.Setup(x => x.GetList()).Returns(this.models);
+            this.deviceModels.Setup(x => x.GetListAsync()).ReturnsAsync(this.models);
         }
 
         private void ThereAreNoSimulationsInTheStorage()
