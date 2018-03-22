@@ -55,6 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 foreach (var f in files)
                 {
                     var c = JsonConvert.DeserializeObject<DeviceModel>(File.ReadAllText(f));
+                    c.Type = "StockModel";
                     this.deviceModels.Add(c);
                 }
             }
