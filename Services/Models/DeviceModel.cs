@@ -32,6 +32,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public string Version { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        public string Type { get; set; }
         public IoTHubProtocol Protocol { get; set; }
         public StateSimulation Simulation { get; set; }
         public Dictionary<string, object> Properties { get; set; }
@@ -47,6 +48,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.Version = "0.0.0";
             this.Name = string.Empty;
             this.Description = string.Empty;
+            this.Type = string.Empty;
             this.Protocol = IoTHubProtocol.AMQP;
             this.Simulation = new StateSimulation();
             this.Properties = new Dictionary<string, object>();
