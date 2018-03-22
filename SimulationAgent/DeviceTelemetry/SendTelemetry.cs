@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry
 {
@@ -36,7 +37,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
         public void Run()
         {
-            var state = this.context.DeviceState;
+            // Clone state to deal with concurrent access to the underlying data
+            var state = CloneObject(this.context.DeviceState);
+
             this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
             if ((bool) state["online"] == false)
             {
@@ -123,6 +126,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             }
 
             return e != null ? "Telemetry send unknown error" : string.Empty;
+        }
+
+        // Copy an object by value
+        private static T CloneObject<T>(T source)
+        {
+            return JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(source));
         }
 
         /*
