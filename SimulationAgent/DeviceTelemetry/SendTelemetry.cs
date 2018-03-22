@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -33,6 +34,98 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             this.message = context.Message;
         }
 
+        public void Run()
+        {
+            var state = this.context.DeviceState;
+            this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
+            if ((bool) state["online"] == false)
+            {
+                // device could be rebooting, updating firmware, etc.
+                this.log.Debug("No telemetry will be sent as the device is offline...", () => new { this.deviceId });
+                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
+                return;
+            }
+
+            // device could be rebooting, updating firmware, etc.
+            this.log.Debug("The device state says the device is online", () => new { this.deviceId });
+            this.log.Debug("Sending telemetry...", () => new { this.deviceId });
+
+            // Inject the device state into the message template
+            this.log.Debug("Preparing the message content using the device state", () => new { this.deviceId });
+            var msg = this.message.MessageTemplate;
+            foreach (var value in state)
+            {
+                msg = msg.Replace("${" + value.Key + "}", value.Value.ToString());
+            }
+
+            this.SendTelemetryMessage(msg);
+        }
+
+        private void SendTelemetryMessage(string msg)
+        {
+            this.log.Debug("Calling SendMessageAsync...",
+                () => new { this.deviceId, MessageSchema = this.message.MessageSchema.Name, msg });
+
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+            try
+            {
+                /**
+                 * ContinueWith allows to easily manage the exceptions here, with the ability to change
+                 * the code to synchronous or asynchronous, via TaskContinuationOptions.
+                 *
+                 * Once the code successfully handle all the scenarios, with good throughput and low CPU usage
+                 * we should see if the async/await syntax performs similarly/better.
+                 */
+                this.context.Client
+                    .SendMessageAsync(msg, this.message.MessageSchema)
+                    .ContinueWith(t =>
+                        {
+                            var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
+
+                            if (t.IsCanceled)
+                            {
+                                this.log.Error("The telemetry sending task has been cancelled", () => new { this.deviceId, t.Exception });
+                            }
+                            else if (t.IsFaulted)
+                            {
+                                var exception = t.Exception.InnerExceptions.FirstOrDefault();
+                                this.log.Error(GetLogErrorMessage(exception), () => new { this.deviceId, exception });
+                                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendFailure);
+                            }
+                            else if (t.IsCompleted)
+                            {
+                                this.log.Debug("Telemetry delivered", () => new { this.deviceId, timeSpent, MessageSchema = this.message.MessageSchema.Name });
+                                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
+                            }
+                        },
+                        TaskContinuationOptions.ExecuteSynchronously);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unexpected error while sending telemetry", () => new { this.deviceId, e });
+                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendFailure);
+            }
+        }
+
+        private static string GetLogErrorMessage(Exception e)
+        {
+            switch (e)
+            {
+                case TelemetrySendTimeoutException _:
+                    return "Telemetry send timeout error";
+
+                case TelemetrySendIOException _:
+                    return "Telemetry send I/O error";
+
+                case TelemetrySendException _:
+                    return "Telemetry send unknown error";
+            }
+
+            return e != null ? "Telemetry send unknown error" : string.Empty;
+        }
+
+        /*
         public void Run()
         {
             this.log.Debug("Sending telemetry...", () => new { this.deviceId });
@@ -87,7 +180,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                 this.log.Debug("Telemetry delivered", () => new { this.deviceId, timeSpent, MessageSchema = this.message.MessageSchema.Name });
                 this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
             }
-            catch(TelemetrySendTimeoutException exception)
+            catch (TelemetrySendTimeoutException exception)
             {
                 this.log.Error("Telemetry send timeout error", () => new { this.deviceId, exception });
                 this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendFailure);
@@ -108,5 +201,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                 this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendUnknownFailure);
             }
         }
+        */
     }
 }

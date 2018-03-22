@@ -6,9 +6,9 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry
 {
@@ -50,9 +50,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         {
             Started,
             SendingTelemetry,
-            TelemetrySendUnknownFailure,
             TelemetrySendFailure,
-            TelemetryDelivered,
+            TelemetryDelivered
         }
 
         private readonly ILogger log;
@@ -181,16 +180,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                 case ActorEvents.TelemetrySendFailure:
                     this.failedMessagesCount++;
                     this.actorLogger.TelemetryFailed();
-                    break;
-
-                case ActorEvents.TelemetrySendUnknownFailure:
-                    this.failedMessagesCount++;
-                    this.actorLogger.TelemetryFailed();
-
-                    // TODO: investigate CPU spike when retry sending telemetry
-                    // github issue: https://github.com/Azure/device-simulation-dotnet/issues/176
-                    // Note that we split the timeout event out (ActorEvents.TelemetrySendTimeoutFailure)
-                    // to avoid the retry
                     this.ScheduleTelemetryRetry();
                     break;
 
@@ -233,7 +222,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             var availableSchedule = now + this.rateLimiting.GetPauseForNextMessage();
 
             // looking at the simulation settings, when should the message be sent
-            // note: this.whenToExecute contains the time when the last msg was sent
+            // note: this.whenToRun contains the time when the last msg was sent
             var optimalSchedule = this.whenToRun + (long) this.Message.Interval.TotalMilliseconds;
 
             this.whenToRun = Math.Max(optimalSchedule, availableSchedule);
@@ -251,6 +240,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
         private void ScheduleTelemetryRetry()
         {
+            // TODO: Work in progress - CPU perf optimization
+
+            // Ignore the retry, just schedule the next message
+            this.ScheduleTelemetry();
+
+            // TODO: back off? - this retry logic is probably overloading the CPU
+
+            /*
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var pauseMsec = this.rateLimiting.GetPauseForNextMessage();
             this.whenToRun = now + pauseMsec;
@@ -264,6 +261,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                     Status = this.status.ToString(),
                     When = this.log.FormatDate(this.whenToRun)
                 });
+            */
         }
     }
 }
