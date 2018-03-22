@@ -111,19 +111,29 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task UpdatePropertiesAsync(ISmartDictionary properties)
         {
-            if (!this.connected) await this.ConnectAsync();
-
-            var reportedProperties = SmartDictionaryToTwinCollection(properties);
-
-            await this.client.UpdateReportedPropertiesAsync(reportedProperties);
-
-            this.log.Debug("Update reported properties for device", () => new
+            try
             {
-                this.deviceId,
-                ReportedProperties = reportedProperties
-            });
+                var reportedProperties = SmartDictionaryToTwinCollection(properties);
 
-            return;
+                await this.client.UpdateReportedPropertiesAsync(reportedProperties);
+
+                this.log.Debug("Update reported properties for device", () => new
+                {
+                    this.deviceId,
+                    ReportedProperties = reportedProperties
+                });
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Update reported properties failed",
+                    () => new
+                    {
+                        Protocol = this.protocol.ToString(),
+                        ExceptionMessage = e.Message,
+                        Exception = e.GetType().FullName,
+                        e.InnerException
+                    });
+            }
         }
 
         private async Task SendRawMessageAsync(Message message)
