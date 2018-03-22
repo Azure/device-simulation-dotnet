@@ -43,12 +43,12 @@
     <None Remove="data\devicemodels\truck-02.json" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="jint" Version="2.10.4" />
-    <PackageReference Include="Microsoft.Azure.Devices" Version="1.4.1" />
-    <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.5.2" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="2.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="jint" Version="2.11.58" />
+    <PackageReference Include="Microsoft.Azure.Devices" Version="1.16.0-preview-001" />
+    <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.17.0-preview-001" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="2.1.0-preview1-final" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="2.1.0-preview1-final" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
   </ItemGroup>
   <ItemGroup>
     <None Update="data\devicemodels\drone-01.json">

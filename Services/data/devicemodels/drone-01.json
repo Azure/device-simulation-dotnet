@@ -17,7 +17,8 @@
       "latitude": 44.234567,
       "longitude": 30.456789,
       "altitude": 0.0,
-      "flightStatus": 0,
+      "flightPosition": 0,
+      "flightStatus": "0",
       "batteryStatus": "full",
       "batteryLevel": 1.0
     },
@@ -57,7 +58,7 @@
           "latitude": "double",
           "longitude": "double",
           "altitude": "double",
-          "flightStatus": "integer"
+          "flightStatus": "text"
         }
       }
     },

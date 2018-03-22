@@ -15,27 +15,27 @@ var altitude_vary = 5.012;
 var distance_vary = 10;
 var battery_full = 1.0;
 
-var flight_simulation = [0, 1, 2, 1, 3, 1, 4];
-var current_status = 0;
-
 const GeoSpatialPrecision = 6;
 const DecimalPrecision = 2;
+
+const FlightPath = ["0", "1", "2", "1", "3", "1", "4"];
 
 // Default state
 var state = {
     online: true,
-    temperature: 75,
+    temperature: 75.0,
     temperature_unit: "F",
     velocity: 0.0,
     velocity_unit: "mm/sec",
     acceleration: 0.0,
     acceleration_unit: "mm/sec^2",
-    flightStatus: 1,
     batteryStatus: "full",
     batteryLevel: battery_full,
     latitude: center_latitude,
     longitude: center_longitude,
-    altitude: stable_altitude
+    altitude: stable_altitude,
+    flightStatus: "0",
+    flightPosition: 0
 };
 
 /**
@@ -46,9 +46,7 @@ var state = {
 function restoreState(previousState) {
     // If the previous state is null, force a default state
     if (previousState !== undefined && previousState !== null) {
-        log("Using previous state...");
         state = previousState;
-        log("Using previous state FAILED...");
     } else {
         log("Using default state");
     }
@@ -64,16 +62,6 @@ function vary(avg, percentage, min, max) {
     value = Math.min(value, max);
     return value;
 }
-
-/**
- * Simple function to enforce emergency landing by sending a C2D message
- */
-function decideCourse() {
-    // Some overtly comlex algorithm to calculate weather conditions such
-    // as wind velocity, resistance etc. and decide if it's safe to fly
-    return Math.random() < 0.2 ? "keepFlying" : "land";
-}
-
 
 /**
  * Entry point function called by the simulation engine.
@@ -96,11 +84,11 @@ function main(context, previousState) {
     state.velocity = vary(99.99, 5, 0.0, 199.99).toFixed(DecimalPrecision);
 
     // 0.5 +/- 5%, Min 0.5, Max 1.0
-    state.batteryLevel = vary(0.5, 5, 0.2, battery_full).toFixed(DecimalPrecision);
+    state.batteryLevel = vary(0.5, 5, 0.1, battery_full).toFixed(DecimalPrecision);
 
     state.batteryStatus = getBatteryStatus(state.batteryLevel);
 
-    // Hard coding for now
+    // Calculate flight status using previous state
     state.flightStatus = getFlightStatus();
 
     var coords = varylocation(center_latitude, center_longitude, distance_vary);
@@ -126,11 +114,24 @@ function varylocation(latitude, longitude, distance) {
 }
 
 function getFlightStatus() {
-    // Using state vars such as speed, acceleration and altitude, verify status
-    // hard coding for now
-    if (current_status >= flight_simulation.length) current_status = 0;
-    return flight_simulation[current_status++];
+    var data = FlightPath[state.flightPosition++];
+    if (state.flightPosition >= FlightPath.length) state.flightPosition = 0;
+    return data;
 }
+
+//var getFlightStatus = (function () {
+//    var flight_simulation = [0, 1, 2, 1, 3, 1, 4];
+//    var currentIndex = 0;
+//    var maxIndex = flight_simulation.length - 1;
+
+//    return {
+//        next: function () {
+//            if (currentIndex < 0 || currentIndex > maxIndex) currentIndex = 0;
+//            return flight_simulation[currentIndex++];
+//        }
+//    };
+//}());
+
 
 function getBatteryStatus(level) {
     var status;
