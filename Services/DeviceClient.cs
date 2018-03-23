@@ -159,7 +159,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 throw new TelemetrySendTimeoutException("Message delivery timed out with " + e.Message, e);
             }
-            catch(IOException e)
+            catch (IOException e)
             {
                 this.log.Error("Message delivery IOExcepotion",
                     () => new
@@ -171,6 +171,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     });
 
                 throw new TelemetrySendIOException("Message delivery I/O failed with " + e.Message, e);
+            }
+            catch (AggregateException aggEx) when (aggEx.InnerException != null)
+            {
+                var e = aggEx.InnerException;
+
+                this.log.Error("Message delivery failed",
+                    () => new
+                    {
+                        Protocol = this.protocol.ToString(),
+                        ExceptionMessage = e.Message,
+                        Exception = e.GetType().FullName,
+                        e.InnerException
+                    });
+
+                throw new TelemetrySendException("Message delivery failed with " + e.Message, e);
             }
             catch (Exception e)
             {

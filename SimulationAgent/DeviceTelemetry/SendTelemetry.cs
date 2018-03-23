@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
@@ -38,7 +39,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         public void Run()
         {
             // Clone state to deal with concurrent access to the underlying data
-            var state = CloneObject(this.context.DeviceState);
+            Dictionary<string, object> state;
+            lock (this.context.DeviceState)
+            {
+                state = CloneObject(this.context.DeviceState);
+            }
 
             this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
             if ((bool) state["online"] == false)
@@ -73,6 +78,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
             try
             {
+                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.SendingTelemetry);
+
                 /**
                  * ContinueWith allows to easily manage the exceptions here, with the ability to change
                  * the code to synchronous or asynchronous, via TaskContinuationOptions.
@@ -88,7 +95,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
                             if (t.IsCanceled)
                             {
-                                this.log.Error("The telemetry sending task has been cancelled", () => new { this.deviceId, t.Exception });
+                                this.log.Warn("The telemetry sending task has been cancelled", () => new { this.deviceId, t.Exception });
                             }
                             else if (t.IsFaulted)
                             {

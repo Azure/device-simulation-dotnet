@@ -53,10 +53,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         /// </summary>
         public bool IsDeviceActive
         {
-            get
-            {
-                return this.status == ActorStatus.Updating;
-            }
+            get { return this.status == ActorStatus.Updating; }
         }
 
         public DeviceStateActor(
@@ -107,8 +104,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                     // Prepare the dependencies
                     case ActorStatus.None:
                         this.updateDeviceStateLogic.Setup(this, this.deviceId, this.deviceModel);
+
+                        // Note: we do not need to lock `this.DeviceState` at this time
+                        // because the simulation hasn't started yet
                         this.DeviceState = this.SetupTelemetryAndProperties(this.deviceModel);
                         this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState });
+
                         this.MoveForward();
                         return;
 
@@ -121,6 +122,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                             this.updateDeviceStateLogic.Run();
                             this.MoveForward();
                         }
+
                         return;
                 }
 

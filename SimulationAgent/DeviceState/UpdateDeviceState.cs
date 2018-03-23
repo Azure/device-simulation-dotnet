@@ -59,6 +59,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                     ["deviceModel"] = this.deviceModel.Name
                 };
 
+                // Lock the state until all the simulation scripts are complete, so that for example
+                // telemetry cannot be sent in the middle of some script running
                 lock (this.context.DeviceState)
                 {
                     foreach (var script in this.deviceModel.Simulation.Scripts)
@@ -68,9 +70,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                             scriptContext,
                             this.context.DeviceState);
                     }
-                }
 
-                this.log.Debug("New device telemetry data calculated", () => new { this.deviceId, deviceState = this.context.DeviceState });
+                    // This is inside the lock to avoid exceptions like "Collection was modified"
+                    // which could be caused by a method call changing the state.
+                    this.log.Debug("New device telemetry data calculated",
+                        () => new { this.deviceId, deviceState = this.context.DeviceState });
+                }
             }
             else
             {
