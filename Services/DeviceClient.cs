@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json.Linq;
@@ -18,7 +19,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task ConnectAsync();
         Task DisconnectAsync();
         Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema);
-        Task UpdateTwinAsync(Device device);
+        Task UpdatePropertiesAsync(ISmartDictionary properties);
         Task RegisterMethodsForDeviceAsync(IDictionary<string, Script> methods, Dictionary<string, object> deviceState);
     }
 
@@ -105,33 +106,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             await this.SendRawMessageAsync(eventMessage);
         }
 
-        public Task UpdateTwinAsync(Device device)
+        /// <summary>
+        /// Updates the reported properties in the device twin on the IoT Hub
+        /// </summary>
+        public async Task UpdatePropertiesAsync(ISmartDictionary properties)
         {
-            /* TEMPORARY DISABLED
-            if (!this.connected) await this.ConnectAsync();
-
-            var azureTwin = await this.rateLimiting.LimitTwinReadsAsync(
-                () => this.client.GetTwinAsync());
-
-            // Remove properties
-            var props = azureTwin.Properties.Reported.GetEnumerator();
-            while (props.MoveNext())
+            try
             {
-                var current = (KeyValuePair<string, object>) props.Current;
+                var reportedProperties = SmartDictionaryToTwinCollection(properties);
 
-                if (!device.Twin.ReportedProperties.ContainsKey(current.Key))
+                await this.client.UpdateReportedPropertiesAsync(reportedProperties);
+
+                this.log.Debug("Update reported properties for device", () => new
                 {
-                    this.log.Debug("Removing key", () => new { current.Key });
-                    azureTwin.Properties.Reported[current.Key] = null;
-                }
+                    this.deviceId,
+                    ReportedProperties = reportedProperties
+                });
             }
-
-            // Write properties
-            var reportedProperties = DictionaryToTwinCollection(device.Twin.ReportedProperties);
-            await this.rateLimiting.LimitTwinWritesAsync(
-                () => this.client.UpdateReportedPropertiesAsync(reportedProperties));
-            */
-            return Task.CompletedTask;
+            catch (Exception e)
+            {
+                this.log.Error("Update reported properties failed",
+                    () => new
+                    {
+                        Protocol = this.protocol.ToString(),
+                        ExceptionMessage = e.Message,
+                        Exception = e.GetType().FullName,
+                        e.InnerException
+                    });
+            }
         }
 
         private async Task SendRawMessageAsync(Message message)
@@ -158,17 +160,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        private static TwinCollection DictionaryToTwinCollection(Dictionary<string, JToken> x)
+        private static TwinCollection SmartDictionaryToTwinCollection(ISmartDictionary dictionary)
         {
             var result = new TwinCollection();
 
-            if (x != null)
+            if (dictionary != null)
             {
-                foreach (KeyValuePair<string, JToken> item in x)
+                var items = dictionary.GetAll();
+
+                foreach (KeyValuePair<string, object> item in items)
                 {
                     try
                     {
-                        result[item.Key] = item.Value;
+                        // Use JToken for serialization
+                        result[item.Key] = JToken.FromObject(item.Value);
                     }
                     catch (Exception e)
                     {

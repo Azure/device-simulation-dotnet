@@ -37,6 +37,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         void SendingTelemetry();
         void TelemetryDelivered();
         void TelemetryFailed();
+
+        void DevicePropertiesUpdateScheduled(long time);
+        void DevicePropertiesUpdateRetryScheduled(long time);
+        void UpdatingDeviceProperties();
+        void DevicePropertiesUpdated();
+        void DevicePropertiesUpdateFailed();
     }
 
     public class ActorsLogger : IActorsLogger
@@ -52,7 +58,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         private string actorLogFile;
         private string deviceLogFile;
         private string registryLogFile;
-        private string twinLogFile;
+        private string propertiesLogFile;
         private string connectionsLogFile;
         private string telemetryLogFile;
 
@@ -72,7 +78,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.deviceLogFile = this.path + Path.DirectorySeparatorChar + "_." + this.deviceId + ".log";
             this.actorLogFile = this.path + Path.DirectorySeparatorChar + "actors." + this.actorName + ".log";
             this.registryLogFile = this.path + Path.DirectorySeparatorChar + "registry.log";
-            this.twinLogFile = this.path + Path.DirectorySeparatorChar + "twins.log";
+            this.propertiesLogFile = this.path + Path.DirectorySeparatorChar + "properties.log";
             this.connectionsLogFile = this.path + Path.DirectorySeparatorChar + "connections.log";
             this.telemetryLogFile = this.path + Path.DirectorySeparatorChar + "telemetry.log";
 
@@ -111,8 +117,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Fetch scheduled " + msg);
-            this.LogRegistry("Fetch scheduled " + msg);
+            this.Log("Fetch scheduled at: " + msg);
+            this.LogRegistry("Fetch scheduled at: " + msg);
         }
 
         public void FetchingDevice()
@@ -152,8 +158,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Device registration scheduled " + msg);
-            this.LogRegistry("Registration scheduled " + msg);
+            this.Log("Device registration scheduled at: " + msg);
+            this.LogRegistry("Registration scheduled at: " + msg);
         }
 
         public void RegisteringDevice()
@@ -185,8 +191,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Twin tagging scheduled " + msg);
-            this.LogTwin("Twin tagging scheduled " + msg);
+            this.Log("Twin tagging scheduled at: " + msg);
+            this.LogProperties("Twin tagging scheduled at: " + msg);
         }
 
         public void TaggingDeviceTwin()
@@ -194,7 +200,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             this.Log("Tagging twin");
-            this.LogTwin("Tagging");
+            this.LogProperties("Tagging");
         }
 
         public void DeviceTwinTagged()
@@ -202,7 +208,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             this.Log("Twin tagged");
-            this.LogTwin("Twin tagged");
+            this.LogProperties("Twin tagged");
         }
 
         public void DeviceTwinTaggingFailed()
@@ -210,7 +216,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             this.Log("Twin tagging FAILED");
-            this.LogTwin("Twin tagg FAILED");
+            this.LogProperties("Twin tag FAILED");
         }
 
         public void DeviceConnectionScheduled(long time)
@@ -218,8 +224,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Device connection scheduled " + msg);
-            this.LogConnection("Connection scheduled " + msg);
+            this.Log("Device connection scheduled at: " + msg);
+            this.LogConnection("Connection scheduled at: " + msg);
         }
 
         public void ConnectingDevice()
@@ -251,8 +257,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Telemetry scheduled " + msg);
-            this.LogTelemetry("Scheduled " + msg);
+            this.Log("Telemetry scheduled at: " + msg);
+            this.LogTelemetry("Scheduled at: " + msg);
         }
 
         public void TelemetryRetryScheduled(long time)
@@ -260,8 +266,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Telemetry retry scheduled " + msg);
-            this.LogTelemetry("Retry scheduled " + msg);
+            this.Log("Telemetry retry scheduled at: " + msg);
+            this.LogTelemetry("Retry scheduled at: " + msg);
         }
 
         public void SendingTelemetry()
@@ -286,6 +292,48 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
             this.Log("Telemetry FAILED");
             this.LogTelemetry("FAILED");
+        }
+
+        public void DevicePropertiesUpdateScheduled(long time)
+        {
+            if (!this.enabled) return;
+
+            var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
+            this.Log("Device properties update scheduled at: " + msg);
+            this.LogProperties("Device properties update scheduled at: " + msg);
+        }
+
+        public void DevicePropertiesUpdateRetryScheduled(long time)
+        {
+            if (!this.enabled) return;
+
+            var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
+            this.Log("Device properties update retry scheduled at: " + msg);
+            this.LogProperties("Retry scheduled at: " + msg);
+        }
+
+        public void UpdatingDeviceProperties()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Updating device properties");
+            this.LogProperties("Updating");
+        }
+
+        public void DevicePropertiesUpdated()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Device properties updated");
+            this.LogProperties("Updated");
+        }
+
+        public void DevicePropertiesUpdateFailed()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Device properties update FAILED");
+            this.LogProperties("Device properties update FAILED");
         }
 
         private void Log(string msg)
@@ -326,13 +374,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
                 $"{now} - {this.deviceId} - {msg}\n");
         }
 
-        private void LogTwin(string msg)
+        private void LogProperties(string msg)
         {
             if (!this.enabled) return;
 
             var now = DateTimeOffset.UtcNow.ToString(DATE_FORMAT);
             this.WriteToFile(
-                this.twinLogFile,
+                this.propertiesLogFile,
                 $"{now} - {this.deviceId} - {msg}\n");
         }
 

@@ -24,6 +24,14 @@
             }
         ]
     },
+    "Properties": {
+        "Type": "Chiller",
+        "Firmware": "1.0",
+        "Model": "CH101",
+        "Location": "Building 2",
+        "Latitude": 47.640792,
+        "Longitude": -122.126258
+    },
     "Telemetry": [
         {
             "Interval": "00:00:10",
