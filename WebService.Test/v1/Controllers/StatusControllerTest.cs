@@ -184,8 +184,6 @@ namespace WebService.Test.v1.Controllers
             Assert.Contains("https://portal.azure.com/", result.Properties["PreprovisionedIoTHubMetricsUrl"]);
         }
 
-
-
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public async Task ItReturnsPreprovisionedIoTHubInUse()
         {
