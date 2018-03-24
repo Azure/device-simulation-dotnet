@@ -12,6 +12,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 {
     public interface IDeviceConnectionActor
     {
+        ISmartDictionary DeviceState { get; }
+        ISmartDictionary DeviceProperties { get; }
         IDeviceClient Client { get; set; }
         Device Device { get; set; }
         bool Connected { get; }
@@ -76,6 +78,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         /// to retrieve the state and prepare the telemetry messages
         /// </summary>
         private IDeviceStateActor deviceStateActor;
+
+        public ISmartDictionary DeviceState => this.deviceStateActor.DeviceState;
+        public ISmartDictionary DeviceProperties => this.deviceStateActor.DeviceProperties;
 
         /// <summary>
         /// Azure IoT Hub client shared by Connect and SendTelemetry

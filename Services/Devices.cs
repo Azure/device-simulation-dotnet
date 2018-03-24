@@ -12,6 +12,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Device = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Device;
 using TransportType = Microsoft.Azure.Devices.Client.TransportType;
 
@@ -27,7 +28,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Get a client for the device
         /// </summary>
-        IDeviceClient GetClient(Device device, IoTHubProtocol protocol);
+        IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter);
 
         /// <summary>
         /// Get the device from the registry
@@ -110,16 +111,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Get a client for the device
         /// </summary>
-        public IDeviceClient GetClient(Device device, IoTHubProtocol protocol)
+        public IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter)
         {
             this.SetupHub();
 
             var sdkClient = this.GetDeviceSdkClient(device, protocol);
+            var methods = new DeviceMethods(sdkClient, this.log, scriptInterpreter);
 
             return new DeviceClient(
                 device.Id,
                 protocol,
                 sdkClient,
+                methods,
                 this.log);
         }
 

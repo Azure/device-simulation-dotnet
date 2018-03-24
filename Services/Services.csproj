@@ -20,6 +20,18 @@
     <None Update="data\devicemodels\elevator-01.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="data\devicemodels\scripts\EmergencyValveRelease-method.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="data\devicemodels\scripts\FirmwareUpdate-method.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="data\devicemodels\scripts\IncreasePressure-method.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="data\devicemodels\scripts\Reboot-method.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="data\devicemodels\truck-01.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

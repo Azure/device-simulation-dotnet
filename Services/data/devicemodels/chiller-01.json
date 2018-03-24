@@ -1,45 +1,76 @@
 {
-    "SchemaVersion": "1.0.0",
-    "Id": "chiller-01",
-    "Version": "0.0.1",
-    "Name": "Chiller",
-    "Description": "Chiller with external temperature, humidity and pressure sensors.",
-    "Protocol": "MQTT",
-    "Simulation": {
-        "InitialState": {
-            "online": true,
-            "temperature": 75.0,
-            "temperature_unit": "F",
-            "humidity": 70.0,
-            "humidity_unit": "%",
-            "pressure": 150.0,
-            "pressure_unit": "psig",
-            "simulation_state": "normal_pressure"
-        },
-        "Interval": "00:00:10",
-        "Scripts": [
-            {
-                "Type": "javascript",
-                "Path": "chiller-01-state.js"
-            }
-        ]
+  "SchemaVersion": "1.0.0",
+  "Id": "chiller-01",
+  "Version": "0.0.1",
+  "Name": "Chiller",
+  "Description": "Chiller with external temperature, humidity and pressure sensors.",
+  "Protocol": "MQTT",
+  "Simulation": {
+    "InitialState": {
+      "online": true,
+      "temperature": 75.0,
+      "temperature_unit": "F",
+      "humidity": 70.0,
+      "humidity_unit": "%",
+      "pressure": 150.0,
+      "pressure_unit": "psig",
+      "simulation_state": "normal_pressure"
     },
-    "Telemetry": [
-        {
-            "Interval": "00:00:10",
-            "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
-            "MessageSchema": {
-                "Name": "chiller-sensors;v1",
-                "Format": "JSON",
-                "Fields": {
-                    "temperature": "double",
-                    "temperature_unit": "text",
-                    "humidity": "double",
-                    "humidity_unit": "text",
-                    "pressure": "double",
-                    "pressure_unit": "text"
-                }
-            }
-        }
+    "Interval": "00:00:10",
+    "Scripts": [
+      {
+        "Type": "javascript",
+        "Path": "chiller-01-state.js"
+      }
     ]
+  },
+  "Properties": {
+      "Type": "Chiller",
+      "Firmware": "1.0",
+      "Model": "CH101",
+      "Location": "Building 2",
+      "Latitude": 47.640792,
+      "Longitude": -122.126258
+  },
+  "Tags": {
+      "Location": "Building 2",
+      "Floor": "2",
+      "Campus": "Redmond"
+  },
+  "Telemetry": [
+    {
+      "Interval": "00:00:10",
+      "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
+      "MessageSchema": {
+        "Name": "chiller-sensors;v1",
+        "Format": "JSON",
+        "Fields": {
+          "temperature": "double",
+          "temperature_unit": "text",
+          "humidity": "double",
+          "humidity_unit": "text",
+          "pressure": "double",
+          "pressure_unit": "text"
+        }
+      }
+    }
+  ],
+  "CloudToDeviceMethods": {
+    "Reboot": {
+      "Type": "javascript",
+      "Path": "Reboot-method.js"
+    },
+    "FirmwareUpdate": {
+      "Type": "javascript",
+      "Path": "FirmwareUpdate-method.js"
+    },
+    "EmergencyValveRelease": {
+      "Type": "javascript",
+      "Path": "EmergencyValveRelease-method.js"
+    },
+    "IncreasePressure": {
+      "Type": "javascript",
+      "Path": "IncreasePressure-method.js"
+    }
+  }
 }
