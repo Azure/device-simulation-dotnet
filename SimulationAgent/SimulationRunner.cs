@@ -64,7 +64,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Contains all the actors sending telemetry
         private readonly IDictionary<string, IDeviceTelemetryActor> deviceTelemetryActors;
 
-        // RatingConfig to reset all counters
+        // Service used to reset all rateLimiting counters
         private readonly IRateLimiting rateLimiting;
 
         // The thread responsible for updating devices/sensors state
