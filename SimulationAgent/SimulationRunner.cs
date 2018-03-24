@@ -64,6 +64,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Contains all the actors sending telemetry
         private readonly IDictionary<string, IDeviceTelemetryActor> deviceTelemetryActors;
 
+        // RatingConfig to reset all counters
+        private readonly IRateLimiting rateLimiting;
+
         // The thread responsible for updating devices/sensors state
         private Thread devicesStateThread;
 
@@ -87,6 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         public SimulationRunner(
             IRateLimitingConfig ratingConfig,
+            IRateLimiting rateLimiting,
             ILogger logger,
             IDeviceModels deviceModels,
             IDeviceModelsGeneration deviceModelsOverriding,
@@ -106,6 +110,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.startLock = new { };
             this.running = false;
             this.starting = false;
+            this.rateLimiting = rateLimiting;
 
             this.deviceStateActors = new ConcurrentDictionary<string, IDeviceStateActor>();
             this.deviceConnectionActors = new ConcurrentDictionary<string, IDeviceConnectionActor>();
@@ -236,6 +241,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.deviceTelemetryActors.Clear();
                 this.deviceConnectionActors.Clear();
                 this.starting = false;
+
+                // Reset rateLimiting counters
+                this.rateLimiting.ResetCounters();
             }
         }
 

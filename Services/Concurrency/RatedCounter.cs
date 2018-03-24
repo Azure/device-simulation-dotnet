@@ -199,6 +199,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             return speed;
         }
 
+        public void ResetCounter()
+        {
+            lock (this.timestamps)
+            {
+                this.timestamps.Clear();
+            }
+        }
+
         private void LogThroughput()
         {
             if (this.log.LogLevel <= LogLevel.Debug)

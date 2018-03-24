@@ -12,6 +12,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         long GetPauseForNextTwinWrite();
         long GetPauseForNextMessage();
         double GetThroughputForMessages();
+        void ResetCounters();
     }
 
     public class RateLimiting : IRateLimiting
@@ -55,6 +56,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             //       Parallel.For in the simulation runner.
             //       https://github.com/Azure/device-simulation-dotnet/issues/79
             log.Info("Rate limiting started. This message should appear only once in the logs.", () => { });
+        }
+
+        public void ResetCounters()
+        {
+            this.connections.ResetCounter();
+            this.registryOperations.ResetCounter();
+            this.twinReads.ResetCounter();
+            this.twinWrites.ResetCounter();
+            this.messaging.ResetCounter();
         }
 
         public long GetPauseForNextConnection()

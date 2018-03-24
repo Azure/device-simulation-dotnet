@@ -57,6 +57,7 @@ namespace SimulationAgent.Test
 
             this.target = new SimulationRunner(
                 this.ratingConfig.Object,
+                this.rateLimiting.Object,
                 this.logger.Object,
                 this.deviceModels.Object,
                 this.deviceModelsOverriding.Object,
