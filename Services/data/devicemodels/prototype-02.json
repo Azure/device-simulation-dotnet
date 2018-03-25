@@ -1,0 +1,71 @@
+{
+    "SchemaVersion": "1.0.0",
+    "Id": "prototype-02",
+    "Version": "0.0.1",
+    "Name": "Faulty Prototyping Device",
+    "Description": "Prototyping device with temperature, pressure and GPS. Device is moving.",
+    "Protocol": "MQTT",
+    "Simulation": {
+        "InitialState": {
+            "online": true,
+            "temperature": 85.0,
+            "temperature_unit": "F",
+            "pressure": 150.0,
+            "pressure_unit": "psig",
+            "latitude": 47.620433,
+            "longitude": -122.350987
+        },
+        "Interval": "00:00:10",
+        "Scripts": [
+            {
+                "Type": "javascript",
+                "Path": "prototype-02-state.js"
+
+            }
+        ]
+    },
+    "Properties": {
+        "Type": "Prototyping",
+        "Firmware": "1.0.0",
+        "FirmwareUpdateStatus": "",
+        "Location": "Field",
+        "Latitude": 47.620433,
+        "Longitude": -122.350987
+    },
+    "Telemetry": [
+        {
+            "Interval": "00:00:10",
+            "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\",\"latitude\":${latitude},\"longitude\":${longitude}}",
+            "MessageSchema": {
+                "Name": "prototype-sensors;v1",
+                "Format": "JSON",
+                "Fields": {
+                    "temperature": "double",
+                    "temperature_unit": "text",
+                    "pressure": "double",
+                    "pressure_unit": "text",
+                    "latitude": "double",
+                    "longitude": "double"
+                }
+            }
+        }
+    ],
+    "CloudToDeviceMethods": {
+        "Reboot": {
+            "Type": "javascript",
+            "Path": "Reboot-method.js"
+        },
+        "FirmwareUpdate": {
+          "Type": "javascript",
+          "Path": "FirmwareUpdate-method.js"
+        },
+        "DecreaseTemperature": {
+            "Type": "javascript",
+            "Path": "TemperatureDecrease-method.js"
+        },
+        "IncreaseTemperature": {
+            "Type": "javascript",
+            "Path": "TemperatureIncrease-method.js"
+        }
+    }
+}

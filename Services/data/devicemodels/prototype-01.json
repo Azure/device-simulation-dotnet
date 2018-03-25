@@ -1,0 +1,80 @@
+{
+    "SchemaVersion": "1.0.0",
+    "Id": "prototype-01",
+    "Version": "0.0.1",
+    "Name": "Prototyping Device",
+    "Description": "Prototyping device with temperature, pressure and GPS.",
+    "Protocol": "MQTT",
+    "Simulation": {
+        "InitialState": {
+            "online": true,
+            "temperature": 65.0,
+            "temperature_unit": "F",
+            "pressure": 150.0,
+            "pressure_unit": "psig",
+            "latitude": 47.612514,
+            "longitude": -122.204184,
+            "moving": false
+        },
+        "Interval": "00:00:10",
+        "Scripts": [
+            {
+                "Type": "javascript",
+                "Path": "prototype-01-state.js"
+
+            }
+        ]
+    },
+    "Properties": {
+        "Type": "Prototyping",
+        "Firmware": "1.0.0",
+        "FirmwareUpdateStatus": "",
+        "Location": "Field",
+        "Latitude": 47.612514,
+        "Longitude": -122.204184
+    },
+    "Telemetry": [
+        {
+            "Interval": "00:00:10",
+            "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\",\"latitude\":${latitude},\"longitude\":${longitude}}",
+            "MessageSchema": {
+                "Name": "prototype-sensors;v1",
+                "Format": "JSON",
+                "Fields": {
+                    "temperature": "double",
+                    "temperature_unit": "text",
+                    "pressure": "double",
+                    "pressure_unit": "text",
+                    "latitude": "double",
+                    "longitude": "double"
+                }
+            }
+        }
+    ],
+    "CloudToDeviceMethods": {
+        "Reboot": {
+            "Type": "javascript",
+            "Path": "Reboot-method.js"
+        },
+        "FirmwareUpdate": {
+            "Type": "javascript",
+            "Path": "FirmwareUpdate-method.js"
+        },
+        "StartMoving": {
+            "Type": "javascript",
+            "Path": "StartMovingDevice-method.js"
+        },
+        "StopMoving": {
+            "Type": "javascript",
+            "Path": "StopMovingDevice-method.js"
+        },
+        "DecreaseTemperature": {
+            "Type": "javascript",
+            "Path": "TemperatureDecrease-method.js"
+        },
+        "IncreaseTemperature": {
+            "Type": "javascript",
+            "Path": "TemperatureIncrease-method.js"
+        }
+    }
+}
