@@ -197,15 +197,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             this.log.Debug("Updating state from the script", () => new { data, this.deviceState });
 
             // Update device state with the script data passed
-            lock (this.deviceState)
+            for (int i = 0; i < stateChanges.Count; i++)
             {
-                for (int i = 0; i < stateChanges.Count; i++)
-                {
-                    key = stateChanges.Keys.ElementAt(i);
-                    value = stateChanges.Values.ElementAt(i);
-                    this.log.Debug("state change", () => new { key, value });
-                    this.deviceState.Set(key, value);
-                }
+                key = stateChanges.Keys.ElementAt(i);
+                value = stateChanges.Values.ElementAt(i);
+                this.log.Debug("state change", () => new { key, value });
+                this.deviceState.Set(key, value);
             }
         }
 
@@ -216,10 +213,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             this.log.Debug("Updating device property from the script", () => new { key, value });
 
             // Update device property at key with the script value passed
-            lock (this.deviceProperties)
-            {
-                this.deviceProperties.Set(key, value);
-            }
+            this.deviceProperties.Set(key, value);
         }
     }
 }

@@ -83,7 +83,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         public ISmartDictionary DeviceProperties => this.deviceStateActor.DeviceProperties;
 
         /// <summary>
-        /// Azure IoT Hub client shared by Connect and SendTelemetry
+        /// Azure IoT Hub client shared by Connect, Properties, and SendTelemetry
         /// </summary>
         public IDeviceClient Client { get; set; }
 

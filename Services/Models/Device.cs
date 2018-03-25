@@ -16,7 +16,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public bool Connected { get; set; }
         public bool Enabled { get; set; }
         public DateTimeOffset LastStatusUpdated { get; set; }
-        public DeviceTwin Twin { get; set; }
         public string IoTHubHostName { get; set; }
         public string AuthPrimaryKey { get; set; }
 
@@ -28,7 +27,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             bool connected,
             bool enabled,
             DateTimeOffset lastStatusUpdated,
-            DeviceTwin twin,
             string primaryKey,
             string ioTHubHostName)
         {
@@ -39,12 +37,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.Connected = connected;
             this.Enabled = enabled;
             this.LastStatusUpdated = lastStatusUpdated;
-            this.Twin = twin;
             this.IoTHubHostName = ioTHubHostName;
             this.AuthPrimaryKey = primaryKey;
         }
 
-        public Device(Azure.Devices.Device azureDevice, DeviceTwin twin, string ioTHubHostName) :
+        public Device(Azure.Devices.Device azureDevice, string ioTHubHostName) :
             this(
                 eTag: azureDevice.ETag,
                 id: azureDevice.Id,
@@ -53,21 +50,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
                 connected: azureDevice.ConnectionState.Equals(DeviceConnectionState.Connected),
                 enabled: azureDevice.Status.Equals(DeviceStatus.Enabled),
                 lastStatusUpdated: azureDevice.StatusUpdatedTime,
-                twin: twin,
                 ioTHubHostName: ioTHubHostName,
                 primaryKey: azureDevice.Authentication.SymmetricKey.PrimaryKey)
         {
-        }
-
-        public Device(Azure.Devices.Device azureDevice, Twin azureTwin, string ioTHubHostName) :
-            this(azureDevice, new DeviceTwin(azureTwin), ioTHubHostName)
-        {
-        }
-
-        public Device SetReportedProperty(string key, JToken value)
-        {
-            this.Twin.ReportedProperties[key] = value;
-            return this;
         }
     }
 }

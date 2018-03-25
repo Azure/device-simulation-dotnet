@@ -13,8 +13,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 {
     public interface IDevicePropertiesActor
     {
+        ISmartDictionary DeviceProperties { get; }
         ISmartDictionary DeviceState { get; }
         IDeviceClient Client { get; }
+        Device Device { get; }
 
         void Setup(
             string deviceId,
@@ -65,7 +67,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         private IDeviceConnectionActor deviceConnectionActor;
 
         /// <summary>
-        /// State maintained by the state actor
+        /// Device properties maintained by the device state actor
+        /// </summary>
+        public ISmartDictionary DeviceProperties => this.deviceStateActor.DeviceProperties;
+
+        /// <summary>
+        /// Device state maintained by the device state actor
         /// </summary>
         public ISmartDictionary DeviceState => this.deviceStateActor.DeviceState;
 
@@ -146,27 +153,71 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         // Run the next step and return a description about what happened
         public string Run()
         {
-            // TODO branch for twin updates to IoT Hub located at:
-            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
+            this.log.Debug(this.status.ToString(), () => new { this.deviceId });
+
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            if (now < this.whenToRun) return null;
+
+            switch (this.status)
+            {
+                case ActorStatus.ReadyToStart:
+                    if (!this.deviceConnectionActor.Connected) return "device not connected yet";
+
+                    this.whenToRun = 0;
+                    this.HandleEvent(ActorEvents.Started);
+                    return "started";
+
+                case ActorStatus.ReadyToUpdate:
+                    this.status = ActorStatus.Updating;
+                    this.actorLogger.UpdatingDeviceProperties();
+                    this.updatePropertiesLogic.Run();
+                    return "updated properties";
+            }
+
             return null;
         }
 
         public void Stop()
         {
-            // TODO branch for twin updates to IoT Hub located at:
-            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
+            this.log.Debug("Device properties actor stopped",
+                () => new { this.deviceId, Status = this.status.ToString() });
+
+            this.status = ActorStatus.Stopped;
         }
 
         private void SchedulePropertiesUpdate()
         {
-            // TODO branch for twin updates to IoT Hub located at:
-            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
+            // considering the throttling settings, when can the properties can be updated
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            this.whenToRun = now + this.rateLimiting.GetPauseForNextTwinWrite();
+
+            this.status = ActorStatus.ReadyToUpdate;
+
+            this.actorLogger.DevicePropertiesUpdateScheduled(this.whenToRun);
+            this.log.Debug("Device properties update scheduled",
+                () => new
+                {
+                    this.deviceId,
+                    Status = this.status.ToString(),
+                    When = this.log.FormatDate(this.whenToRun)
+                });
         }
 
         private void SchedulePropertiesUpdateRetry()
         {
-            // TODO branch for twin updates to IoT Hub located at:
-            //      https://github.com/Azure/device-simulation-dotnet/tree/send-twin-updates
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var pauseMsec = this.rateLimiting.GetPauseForNextTwinWrite();
+            this.whenToRun = now + pauseMsec;
+            this.status = ActorStatus.ReadyToUpdate;
+
+            this.actorLogger.DevicePropertiesUpdateRetryScheduled(this.whenToRun);
+            this.log.Debug("Device properties update retry scheduled",
+                () => new
+                {
+                    this.deviceId,
+                    Status = this.status.ToString(),
+                    When = this.log.FormatDate(this.whenToRun)
+                });
         }
     }
 }
