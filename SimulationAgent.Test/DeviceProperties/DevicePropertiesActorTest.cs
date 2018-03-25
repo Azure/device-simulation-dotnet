@@ -1,16 +1,16 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using Moq;
+using SimulationAgent.Test.helpers;
 using Xunit;
 using Xunit.Abstractions;
-using SimulationAgent.Test.helpers;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
-using System;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties.DevicePropertiesActor;
 
 namespace SimulationAgent.Test.DeviceProperties

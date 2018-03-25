@@ -19,8 +19,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task ConnectAsync();
         Task DisconnectAsync();
         Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema);
-        Task UpdatePropertiesAsync(ISmartDictionary properties);
-        Task RegisterMethodsForDeviceAsync(IDictionary<string, Script> methods, Dictionary<string, object> deviceState);
+        Task UpdateTwinAsync(Device device);
+        Task RegisterMethodsForDeviceAsync(IDictionary<string, Script> methods, ISmartDictionary deviceState, ISmartDictionary deviceProperties);
+        Task UpdatePropertiesAsync(ISmartDictionary deviceProperties);
     }
 
     public class DeviceClient : IDeviceClient
@@ -36,6 +37,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly string deviceId;
         private readonly IoTHubProtocol protocol;
         private readonly Azure.Devices.Client.DeviceClient client;
+        private readonly IDeviceMethods deviceMethods;
         private readonly ILogger log;
 
         private bool connected;
@@ -46,11 +48,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             string deviceId,
             IoTHubProtocol protocol,
             Azure.Devices.Client.DeviceClient client,
+            IDeviceMethods deviceMethods,
             ILogger logger)
         {
             this.deviceId = deviceId;
             this.protocol = protocol;
             this.client = client;
+            this.deviceMethods = deviceMethods;
             this.log = logger;
         }
 
@@ -75,17 +79,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        public Task RegisterMethodsForDeviceAsync(
+        public async Task RegisterMethodsForDeviceAsync(
             IDictionary<string, Script> methods,
-            Dictionary<string, object> deviceState)
+            ISmartDictionary deviceState,
+            ISmartDictionary deviceProperties)
         {
-            /* TEMPORARY DISABLED
             this.log.Debug("Attempting to register device methods",
                 () => new { this.deviceId });
 
-            await this.deviceMethods.RegisterMethodsAsync(this.deviceId, methods, deviceState);
-            */
-            return Task.CompletedTask;
+            await this.deviceMethods.RegisterMethodsAsync(this.deviceId, methods, deviceState, deviceProperties);
         }
 
         public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
@@ -184,6 +186,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             return result;
+        }
+
+        public Task UpdateTwinAsync(Device device)
+        {
+            throw new NotImplementedException();
         }
     }
 }
