@@ -15,7 +15,7 @@
  */
 
 /*jslint unparam: true*/
-function main(context, previousState, previousProperties) {
+function main(context, previousState) {
 
     log("Starting 'Emergency Valve Release' method simulation");
 
