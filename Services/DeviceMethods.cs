@@ -142,7 +142,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     this.deviceState,
                     this.deviceProperties);
 
-                this.log.Debug("Executed method for device", () => new { this.deviceId, methodRequest.Name });
+                this.log.Debug("Executed method for device", () => new { this.deviceId, methodRequest.Name, this.deviceState, this.deviceProperties });
             }
             catch (Exception e)
             {
