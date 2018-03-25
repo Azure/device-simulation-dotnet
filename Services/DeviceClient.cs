@@ -21,6 +21,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema);
         Task UpdateTwinAsync(Device device);
         Task RegisterMethodsForDeviceAsync(IDictionary<string, Script> methods, ISmartDictionary deviceState, ISmartDictionary deviceProperties);
+        Task UpdatePropertiesAsync(ISmartDictionary deviceProperties);
     }
 
     public class DeviceClient : IDeviceClient
@@ -185,6 +186,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             return result;
+        }
+
+        public Task UpdateTwinAsync(Device device)
+        {
+            throw new NotImplementedException();
         }
     }
 }
