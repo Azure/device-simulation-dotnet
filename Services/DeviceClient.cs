@@ -49,15 +49,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IoTHubProtocol protocol,
             Azure.Devices.Client.DeviceClient client,
             IDeviceMethods deviceMethods,
-            IDevicePropertiesRequest propertiesUpdateRequest,
             ILogger logger)
         {
             this.deviceId = deviceId;
             this.protocol = protocol;
             this.client = client;
             this.deviceMethods = deviceMethods;
-            this.propertiesUpdateRequest = propertiesUpdateRequest;
             this.log = logger;
+
+            this.propertiesUpdateRequest = new DevicePropertiesRequest(client, this.log);
         }
 
         public async Task ConnectAsync()

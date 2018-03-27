@@ -14,6 +14,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task RegisterDevicePropertiesUpdateAsync(
             string deviceId,
             ISmartDictionary deviceProperties);
+
+        Task OnPropertyUpdateRequested(
+            TwinCollection desiredProperties,
+            object userContext);
     }
 
     public class DevicePropertiesRequest : IDevicePropertiesRequest
@@ -63,8 +67,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 {
                     foreach (KeyValuePair<string, object> item in desiredProperties)
                     {
-                        // Update existing property or create new property if key doesn't exist.
-                        this.deviceProperties.Set(item.Key, item.Value);
+                        // Only update if key doesn't exist or value has changed 
+                        if (!this.deviceProperties.Has(item.Key) ||
+                            (this.deviceProperties.Has(item.Key) &&
+                            this.deviceProperties.Get(item.Key) != item.Value))
+                        {
+                            // Update existing property or create new property if key doesn't exist.
+                            this.deviceProperties.Set(item.Key, item.Value);
+                        }
                     }
                 }
                 catch (Exception e)
