@@ -122,12 +122,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             var sdkClient = this.GetDeviceSdkClient(device, protocol);
             var methods = new DeviceMethods(sdkClient, this.log, scriptInterpreter);
+            var propertiesRequest = new DevicePropertiesRequest(sdkClient, this.log);
 
             return new DeviceClient(
                 device.Id,
                 protocol,
                 sdkClient,
                 methods,
+                propertiesRequest,
                 this.log);
         }
 

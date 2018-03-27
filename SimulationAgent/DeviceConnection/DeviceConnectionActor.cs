@@ -79,7 +79,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         /// </summary>
         private IDeviceStateActor deviceStateActor;
 
+        /// <summary>
+        /// Device state maintained by the device state actor
+        /// </summary>
         public ISmartDictionary DeviceState => this.deviceStateActor.DeviceState;
+
+        /// <summary>
+        /// Device properties maintained by the device state actor
+        /// </summary>
         public ISmartDictionary DeviceProperties => this.deviceStateActor.DeviceProperties;
 
         /// <summary>
