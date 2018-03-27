@@ -7,18 +7,19 @@
 
 "use strict";
 
-var center_latitude = 47.612514;
-var center_longitude = -122.204184;
-var stable_altitude = 90.2345;
+const center_latitude = 47.612514;
+const center_longitude = -122.204184;
+const stable_altitude = 90.2345;
 
-var altitude_vary = 5.012;
-var distance_vary = 10;
-var battery_full = 1.0;
+const altitude_vary = 5.012;
+const distance_vary = 10;
+const battery_full = 1.0;
 
 const GeoSpatialPrecision = 6;
 const DecimalPrecision = 2;
 
-const FlightPath = ["0", "1", "2", "1", "3", "1", "4"];
+const FlightPath = ["0", "1", "1", "1", "2", "1", "1", "1", "1", "1", "1", "1", "1", "1", "3", "1", "1", "1", "1", "1", "4"];
+const DeliveryIdPrefix = "fdd-del-";
 
 // Default state
 var state = {
@@ -35,7 +36,8 @@ var state = {
     longitude: center_longitude,
     altitude: stable_altitude,
     flightStatus: "0",
-    flightPosition: 0
+    flightPosition: 0,
+    deliveryId: ""
 };
 
 /**
@@ -88,6 +90,10 @@ function main(context, previousState) {
 
     state.batteryStatus = getBatteryStatus(state.batteryLevel);
 
+    if (state.flightPosition == 0) {
+        state.deliveryId = createUUID();
+    }
+
     // Calculate flight status using previous state
     state.flightStatus = getFlightStatus();
 
@@ -118,6 +124,18 @@ function getFlightStatus() {
     if (state.flightPosition >= FlightPath.length) state.flightPosition = 0;
     return data;
 }
+
+function createUUID() {
+    var dt = new Date().getTime();
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        var r = (dt + Math.random() * 16) % 16 | 0;
+        dt = Math.floor(dt / 16);
+        return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+
+    return uuid;
+}
+
 
 //var getFlightStatus = (function () {
 //    var flight_simulation = [0, 1, 2, 1, 3, 1, 4];

@@ -8,6 +8,7 @@
   "Simulation": {
     "InitialState": {
       "online": true,
+      "deliveryId": "",
       "temperature": 75.0,
       "temperature_unit": "F",
       "velocity": 0.0,
@@ -32,7 +33,7 @@
     "Type": "Drone",
     "Firmware": "1.0",
     "Model": "DJI-Phantom",
-    "OwnerId": "patterns-n-practices",
+    "OwnerId": "Fabrikam",
     "origin_latitude": 44.234567,
     "origin_longitude": 30.456789,
     "destination_latitude": 88.234567,
@@ -46,11 +47,12 @@
   "Telemetry": [
     {
       "Interval": "00:00:05",
-      "MessageTemplate": "{\"velocity\":\"${velocity}\",\"acceleration\":\"${acceleration}\",\"position\":\"${latitude}|${longitude}|${altitude}\",\"flightStatus\":\"${flightStatus}\"}",
+      "MessageTemplate": "{\"deliveryId\":\"${deliveryId}\",\"velocity\":\"${velocity}\",\"acceleration\":\"${acceleration}\",\"position\":\"${latitude}|${longitude}|${altitude}\",\"flightStatus\":\"${flightStatus}\"}",
       "MessageSchema": {
         "Name": "drone-event-sensor;v1",
         "Format": "JSON",
         "Fields": {
+          "deliveryId": "text",
           "velocity": "double",
           "velocity_unit": "text",
           "acceleration": "double",
@@ -64,11 +66,12 @@
     },
     {
       "Interval": "00:00:20",
-      "MessageTemplate": "{\"temperature\":\"${temperature}\",\"batteryStatus\":\"${batteryStatus}\",\"batteryLevel\":\"${batteryLevel}\"}",
+      "MessageTemplate": "{\"deliveryId\":\"${deliveryId}\",\"temperature\":\"${temperature}\",\"batteryStatus\":\"${batteryStatus}\",\"batteryLevel\":\"${batteryLevel}\"}",
       "MessageSchema": {
         "Name": "drone-state-sensor;v1",
         "Format": "JSON",
         "Fields": {
+          "deliveryId": "text",
           "temperature": "double",
           "temperature_unit": "text",
           "batteryStatus": "text",
