@@ -18,9 +18,11 @@ var state = {
  *
  * @param context        The context contains current time, device model and id
  * @param previousState  The device state since the last iteration
+ * @param previousProperties  The device properties since the last iteration
  */
+
 /*jslint unparam: true*/
-function main(context, previousState) {
+function main(context, previousState, previousProperties) {
 
     // Reboot - devices goes offline and comes online after 20 seconds
     log("Executing reboot simulation function.");

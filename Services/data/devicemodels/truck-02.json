@@ -54,11 +54,11 @@
         },
         "DecreaseCargoTemperature": {
             "Type": "javascript",
-            "Path": "TBD.js"
+            "Path": "TempDecrease-method.js"
         },
         "IncreaseCargoTemperature": {
             "Type": "javascript",
-            "Path": "TBD.js"
+            "Path": "TempIncrease-method.js"
         }
     }
 }
