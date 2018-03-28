@@ -5,6 +5,7 @@
 /*global updateProperty*/
 /*global sleep*/
 /*jslint node: true*/
+/*jslint todo: true*/
 
 "use strict";
 
@@ -19,13 +20,8 @@
 /*jslint unparam: true*/
 function main(context, previousState, previousProperties) {
 
-    log("Starting 'Emergency Valve Release' method simulation");
+    log("Executing JavaScript EmptyTank function.");
 
-    var state = {   
-        simulation_state: "normal_pressure",
-        pressure: 150
-    };
-    updateState(state);
-
-    log("'Emergency Valve Release' method simulation completed");
+    // TODO: This method is not implemented
+    // https://github.com/Azure/device-simulation-dotnet/issues/44
 }

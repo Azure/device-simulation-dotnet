@@ -40,7 +40,7 @@ Content-Type: application/JSON
           "cargotemperature": 38,
           "cargotemperature_unit": "F"
         },
-        "Interval": "00:00:05",
+        "Interval": "00:00:10",
         "Scripts": [
           {
             "Type": "javascript",
@@ -95,11 +95,11 @@ Content-Type: application/JSON
       "CloudToDeviceMethods": {
         "DecreaseCargoTemperature": {
           "Type": "javascript",
-          "Path": "TBD.js"
+          "Path": "TempDecrease-method.js"
         },
         "IncreaseCargoTemperature": {
           "Type": "javascript",
-          "Path": "TBD.js"
+          "Path": "TempIncrease-method.js"
         }
       },
       "$metadata": {
