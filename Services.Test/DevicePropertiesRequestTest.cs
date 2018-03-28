@@ -52,7 +52,7 @@ namespace Services.Test
             desiredProps[KEY1] = NEW_VALUE;
 
             // Act
-            this.target.OnPropertyUpdateRequested(desiredProps, null);
+            this.target.OnPropertyUpdateRequestedCallback(desiredProps, null);
             var result = reportedProps.Get(KEY1);
 
             // Assert
@@ -73,7 +73,7 @@ namespace Services.Test
             desiredProps[NEW_KEY] = NEW_VALUE;
 
             // Act
-            this.target.OnPropertyUpdateRequested(desiredProps, null);
+            this.target.OnPropertyUpdateRequestedCallback(desiredProps, null);
             var result = reportedProps.Get(NEW_KEY);
 
             // Assert
@@ -96,8 +96,7 @@ namespace Services.Test
             };
 
             // Act
-            this.target.OnPropertyUpdateRequested(desiredProps, null);
-            var result = reportedProps.Get(KEY1);
+            this.target.OnPropertyUpdateRequestedCallback(desiredProps, null);
 
             // Assert
             Assert.False(reportedProps.Changed);
