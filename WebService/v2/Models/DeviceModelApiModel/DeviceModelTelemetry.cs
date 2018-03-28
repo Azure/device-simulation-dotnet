@@ -2,7 +2,8 @@
 
 using System;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Helpers;
 using Newtonsoft.Json;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
 
@@ -58,17 +59,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
 
         public void ValidateInputRequest(ILogger log)
         {
-            const string NO_ETAG = "The custom device model doesn't contain a ETag";
+            const string NO_INTERVAL = "Device model telemetry must contains a valid interval";
+            const string NO_MESSAGE_TEMPLATE = "Device model telemetry must contains a valid message template";
+            const string NO_MESSAGE_SCHEMA = "Device model telemetry must contains a valid message schema";
 
-            // A message must contain a validate interval
             try
             {
-
+                IntervalHelper.ValidateInterval(this.Interval);
             }
-            catch (Exception)
+            catch (InvalidIntervalException exception)
             {
+                log.Error(NO_INTERVAL, () => new { deviceModelTelemetry = this, exception });
+                throw new BadRequestException(NO_INTERVAL);
+            }
 
-                throw;
+            if (string.IsNullOrEmpty(this.MessageTemplate))
+            {
+                log.Error(NO_MESSAGE_TEMPLATE, () => new { deviceModelTelemetry = this });
+                throw new BadRequestException(NO_MESSAGE_TEMPLATE);
+            }
+
+            if (this.MessageSchema.IsEmpty())
+            {
+                log.Error(NO_MESSAGE_SCHEMA, () => new { deviceModelTelemetry = this });
+                throw new BadRequestException(NO_MESSAGE_SCHEMA);
             }
         }
     }

@@ -41,6 +41,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Controller
         public async Task<DeviceModelApiModel> PostAsync(
             [FromBody] DeviceModelApiModel deviceModel)
         {
+            deviceModel?.ValidateInputRequest(this.log);
+
             if (deviceModel == null)
             {
                 this.log.Warn("No data or invalid data provided", () => new { deviceModel });
@@ -49,6 +51,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Controller
 
             return DeviceModelApiModel.FromServiceModel(
                 await this.deviceModelsService.InsertAsync(deviceModel.ToServiceModel()));
+        }
+
+        [HttpPut("{id}")]
+        public async Task<DeviceModelApiModel> PutAsync(
+            [FromBody] DeviceModelApiModel deviceModel,
+            string id = "")
+        {
+            deviceModel?.ValidateInputRequest(this.log);
+
+            if (deviceModel == null)
+            {
+                this.log.Warn("No data or invalid data provided", () => new { deviceModel });
+                throw new BadRequestException("No data or invalid data provided.");
+            }
+
+            return DeviceModelApiModel.FromServiceModel(
+                await this.deviceModelsService.UpsertAsync(deviceModel.ToServiceModel(id)));
         }
 
         [HttpDelete("{id}")]

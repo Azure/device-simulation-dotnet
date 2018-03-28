@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
 
@@ -64,6 +63,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
             }
 
             return result;
+        }
+
+        public bool IsEmpty()
+        {
+            return string.IsNullOrEmpty(this.Name)
+                   || string.IsNullOrEmpty(this.Format)
+                   || (this.Fields == null || this.Fields.Count == 0);
         }
     }
 }

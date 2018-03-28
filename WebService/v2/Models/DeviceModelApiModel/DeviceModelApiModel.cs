@@ -2,12 +2,11 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using System.Linq;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Helpers;
-using Newtonsoft.Json;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Exceptions;
+using Newtonsoft.Json;
 
 // TODO: tests
 // TODO: handle errors
@@ -41,12 +40,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
         [JsonProperty(PropertyName = "Type")]
         public string Type { get; set; }
 
-        //[JsonProperty(PropertyName = "Created", NullValueHandling = NullValueHandling.Ignore)]
-        //public string Created { get; set; }
-
-        //[JsonProperty(PropertyName = "Modified", NullValueHandling = NullValueHandling.Ignore)]
-        //public string Modified { get; set; }
-
         [JsonProperty(PropertyName = "Simulation")]
         public DeviceModelSimulation Simulation { get; set; }
 
@@ -62,8 +55,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
         {
-            { "$type", "DeviceModel;" + v1.Version.NUMBER },
-            { "$uri", "/" + v1.Version.PATH + "/devicemodels/" + this.Id },
+            { "$type", "DeviceModel;" + v2.Version.NUMBER },
+            { "$uri", "/" + v2.Version.PATH + "/devicemodels/" + this.Id },
             { "$created", this.created.ToString(DATE_FORMAT) },
             { "$modified", this.modified.ToString(DATE_FORMAT) }
         };
@@ -105,25 +98,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
                 CloudToDeviceMethods = null
             };
 
-            // TODO check if object works above
-            // Map the list of Properties
-            //if (this.Properties != null && this.Properties.Count > 0)
-            //{
-            //    result.Properties = new Dictionary<string, object>();
-            //    foreach (KeyValuePair<string, object> prop in this.Properties)
-            //    {
-            //        var fieldValue = DeviceModelSimulationScript.ToServiceModel(prop.Value);
-            //        result.CloudToDeviceMethods.Add(prop.Key, fieldValue);
-            //    }
-            //}
-
             // Map the list of CloudToDeviceMethods
             if (this.CloudToDeviceMethods != null && this.CloudToDeviceMethods.Count > 0)
             {
                 result.CloudToDeviceMethods = new Dictionary<string, Script>();
                 foreach (KeyValuePair<string, DeviceModelSimulationScript> method in this.CloudToDeviceMethods)
                 {
-                    var fieldValue = DeviceModelSimulationScript.ToServiceModel(method.Value);
+                    var fieldValue = method.Value.ToServiceModel();
                     result.CloudToDeviceMethods.Add(method.Key, fieldValue);
                 }
             }
@@ -159,9 +140,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
                 result.Telemetry.Add(DeviceModelTelemetry.FromServiceModel(message));
             }
 
-            foreach (var method in value.CloudToDeviceMethods)
+            if (value.CloudToDeviceMethods?.Count > 0)
             {
-                result.CloudToDeviceMethods.Add(method.Key, DeviceModelSimulationScript.FromServiceModel(method.Value));
+                foreach (var method in value.CloudToDeviceMethods)
+                {
+                    result.CloudToDeviceMethods.Add(method.Key, DeviceModelSimulationScript.FromServiceModel(method.Value));
+                }
             }
 
             return result;
@@ -169,12 +153,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
 
         public void ValidateInputRequest(ILogger log)
         {
-            const string NO_ETAG = "The custom device model doesn't contain a ETag";
-            const string NO_PROTOCOL = "The device model doesn't contain a name";
-            const string ZERO_TELEMETRY = "The simulation has zero telemetry";
-            const string END_TIME_BEFORE_START_TIME = "The simulation End Time must be after the Start Time";
-            const string INVALID_DATE = "Invalid date format";
-            const string CANNOT_RUN_IN_THE_PAST = "The simulation end date is in the past";
+            const string NO_ETAG = "The custom device model doesn't contain an ETag";
+            const string NO_PROTOCOL = "The device model doesn't contain a protocol";
+            const string NO_ID = "The device model doesn't contain an id";
+            const string ZERO_TELEMETRY = "The device model has zero telemetry";
 
             // A custom device model must contain a ETag
             if (this.Type == "CustomModel" && this.ETag == String.Empty)
@@ -190,6 +172,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
                 throw new BadRequestException(NO_PROTOCOL);
             }
 
+            // A device model must contain an Id
+            if (this.Id == String.Empty)
+            {
+                log.Error(NO_ID, () => new { deviceModel = this });
+                throw new BadRequestException(NO_ID);
+            }
+
             // A device model must contain at least one telemetry
             if (this.Telemetry.Count < 1)
             {
@@ -197,32 +186,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
                 throw new BadRequestException(ZERO_TELEMETRY);
             }
 
-            try
+            // Validate telmetry
+            foreach (var telemetry in this.Telemetry)
             {
-                foreach(var telemetry in this.Telemetry)
-                {
-                    telemetry.ValidateInputRequest(log);
-                }
-
-                // The start time must be before the end time
-                if (startTime.HasValue && endTime.HasValue && startTime.Value.Ticks >= endTime.Value.Ticks)
-                {
-                    log.Error(END_TIME_BEFORE_START_TIME, () => new { simulation = this });
-                    throw new BadRequestException(END_TIME_BEFORE_START_TIME);
-                }
-
-                // The end time cannot be in the past
-                if (endTime.HasValue && endTime.Value.Ticks <= now.Ticks)
-                {
-                    log.Error(CANNOT_RUN_IN_THE_PAST, () => new { simulation = this });
-                    throw new BadRequestException(CANNOT_RUN_IN_THE_PAST);
-                }
+                telemetry.ValidateInputRequest(log);
             }
-            catch (InvalidDateFormatException e)
-            {
-                log.Error(INVALID_DATE, () => new { simulation = this });
-                throw new BadRequestException(INVALID_DATE, e);
-            }
+
+            this.Simulation.ValidateInputRequest(log);
         }
     }
 }
