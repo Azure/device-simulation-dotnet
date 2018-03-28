@@ -69,8 +69,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     {
                         // Only update if key doesn't exist or value has changed 
                         if (!this.deviceProperties.Has(item.Key) ||
-                            (this.deviceProperties.Has(item.Key) &&
-                            this.deviceProperties.Get(item.Key) != item.Value))
+                            (item.Value.ToString() != this.deviceProperties.Get(item.Key).ToString()))
                         {
                             // Update existing property or create new property if key doesn't exist.
                             this.deviceProperties.Set(item.Key, item.Value);

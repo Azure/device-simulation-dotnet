@@ -94,6 +94,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task RegisterDesiredPropertiesUpdateAsync(ISmartDictionary deviceProperties)
         {
+            this.log.Debug("Attempting to register desired property notifications for device",
+                () => new { this.deviceId });
+
             await this.propertiesUpdateRequest.RegisterDevicePropertiesUpdateAsync(this.deviceId, deviceProperties);
         }
 

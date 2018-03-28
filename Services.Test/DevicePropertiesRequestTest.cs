@@ -40,7 +40,7 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void SmartDictionary_Should_Update_When_DesiredPropertiesChange()
+        public void SmartDictionary_Should_UpdateValue_When_DesiredPropertiesChange()
         {
             // Arrange
             const string NEW_VALUE = "new value";
@@ -59,6 +59,49 @@ namespace Services.Test
             Assert.Equal(result, NEW_VALUE);
         }
 
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void SmartDictionary_Should_HaveNewItem_When_NewDesiredPropertyAdded()
+        {
+            // Arrange
+            const string NEW_KEY = "new key";
+            const string NEW_VALUE = "new value";
+
+            ISmartDictionary reportedProps = GetTestProperties();
+            this.target.RegisterDevicePropertiesUpdateAsync(DEVICE_ID, reportedProps);
+
+            TwinCollection desiredProps = new TwinCollection();
+            desiredProps[NEW_KEY] = NEW_VALUE;
+
+            // Act
+            this.target.OnPropertyUpdateRequested(desiredProps, null);
+            var result = reportedProps.Get(NEW_KEY);
+
+            // Assert
+            Assert.Equal(result, NEW_VALUE);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void SmartDictionary_Should_Not_Update_When_DesiredPropertiesValueIsTheSame()
+        {
+            // Arrange
+            ISmartDictionary reportedProps = GetTestProperties();
+            reportedProps.ResetChanged();
+            Assert.False(reportedProps.Changed);
+
+            this.target.RegisterDevicePropertiesUpdateAsync(DEVICE_ID, reportedProps);
+
+            TwinCollection desiredProps = new TwinCollection
+            {
+                [KEY1] = VALUE1 // This should be the same value in props
+            };
+
+            // Act
+            this.target.OnPropertyUpdateRequested(desiredProps, null);
+            var result = reportedProps.Get(KEY1);
+
+            // Assert
+            Assert.False(reportedProps.Changed);
+        }
 
         private SdkClient GetSdkClient()
         {
