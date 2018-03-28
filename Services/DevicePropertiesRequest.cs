@@ -64,7 +64,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             this.log.Info("Desired property update requested", () => new { this.deviceId, desiredProperties });
 
-            if (desiredProperties.Count > 0)
+            if (desiredProperties != null && desiredProperties.Count > 0)
             {
                 // This is where custom code for handling specific desired property changes could be added.
                 // For the purposes of the simulation service, we have chosen to write the desired properties
