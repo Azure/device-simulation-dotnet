@@ -46,7 +46,7 @@ namespace Services.Test
             const string NEW_VALUE = "new value";
 
             ISmartDictionary reportedProps = GetTestProperties();
-            this.target.RegisterDevicePropertiesUpdateAsync(DEVICE_ID, reportedProps);
+            this.target.RegisterDevicePropertyUpdatesAsync(DEVICE_ID, reportedProps);
 
             TwinCollection desiredProps = new TwinCollection();
             desiredProps[KEY1] = NEW_VALUE;
@@ -67,7 +67,7 @@ namespace Services.Test
             const string NEW_VALUE = "new value";
 
             ISmartDictionary reportedProps = GetTestProperties();
-            this.target.RegisterDevicePropertiesUpdateAsync(DEVICE_ID, reportedProps);
+            this.target.RegisterDevicePropertyUpdatesAsync(DEVICE_ID, reportedProps);
 
             TwinCollection desiredProps = new TwinCollection();
             desiredProps[NEW_KEY] = NEW_VALUE;
@@ -88,7 +88,7 @@ namespace Services.Test
             reportedProps.ResetChanged();
             Assert.False(reportedProps.Changed);
 
-            this.target.RegisterDevicePropertiesUpdateAsync(DEVICE_ID, reportedProps);
+            this.target.RegisterDevicePropertyUpdatesAsync(DEVICE_ID, reportedProps);
 
             TwinCollection desiredProps = new TwinCollection
             {

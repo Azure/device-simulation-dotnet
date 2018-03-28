@@ -11,7 +11,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface IDevicePropertiesRequest
     {
-        Task RegisterDevicePropertiesUpdateAsync(
+        Task RegisterDevicePropertyUpdatesAsync(
             string deviceId,
             ISmartDictionary deviceProperties);
 
@@ -34,7 +34,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.deviceId = string.Empty;
         }
 
-        public async Task RegisterDevicePropertiesUpdateAsync(string deviceId, ISmartDictionary deviceProperties)
+        public async Task RegisterDevicePropertyUpdatesAsync(string deviceId, ISmartDictionary deviceProperties)
         {
             if (this.deviceId != string.Empty)
             {

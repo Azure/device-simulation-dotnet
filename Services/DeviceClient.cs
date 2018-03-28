@@ -97,7 +97,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log.Debug("Attempting to register desired property notifications for device",
                 () => new { this.deviceId });
 
-            await this.propertiesUpdateRequest.RegisterDevicePropertiesUpdateAsync(this.deviceId, deviceProperties);
+            await this.propertiesUpdateRequest.RegisterDevicePropertyUpdatesAsync(this.deviceId, deviceProperties);
         }
 
         public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
