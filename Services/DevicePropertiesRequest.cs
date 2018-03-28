@@ -66,8 +66,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             if (desiredProperties.Count > 0)
             {
+                // This is where custom code for handling specific desired property changes could be added.
+                // For the purposes of the simulation service, we have chosen to write the desired properties
+                // directly to the reported properties. 
+
                 try
                 {
+
                     foreach (KeyValuePair<string, object> item in desiredProperties)
                     {
                         // Only update if key doesn't exist or value has changed 
