@@ -47,6 +47,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             this.log.Debug("Setting up callback for desired properties updates.", () => new { this.deviceId });
 
+            // Set callback that IoT Hub calls whenever the client receives a state update (desired or reported).
+            // This has the side-effect of subscribing to the PATCH topic on the service.
+            // https://docs.microsoft.com/dotnet/api/microsoft.azure.devices.client.deviceclient.setdesiredpropertyupdatecallbackasync
             await this.client.SetDesiredPropertyUpdateCallbackAsync(OnPropertyUpdateRequested, null);
 
             this.log.Debug("Callback for desired properties updates setup successfully", () => new { this.deviceId });
