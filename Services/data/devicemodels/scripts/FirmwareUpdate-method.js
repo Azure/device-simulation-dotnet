@@ -10,13 +10,14 @@
 
 // Default state
 var state = {
-    online: true,
-    Firmware: "1.0.0",
-    DeviceMethodStatus: "Updating Firmware"
+    online: true
 };
 
 // Default device properties
-var properties = {};
+var properties = {
+    Firmware: "1.0.0",
+    DeviceMethodStatus: "Updating Firmware"
+};
 
 /**
  * Restore the global state using data from the previous iteration.
@@ -50,41 +51,46 @@ function restoreSimulation(previousState, previousProperties) {
 /*jslint unparam: true*/
 function main(context, previousState, previousProperties) {
 
+    // Restore the global device properties and the global state before
+    // generating the new telemetry, so that the telemetry can apply changes
+    // using the previous function state.
+    restoreSimulation(previousState, previousProperties);
+
     // Reboot - devices goes offline and comes online after 20 seconds
     log("Executing firmware update simulation function, firmware version passed:" + context.Firmware);
 
-    // update the state to offline & firmware updating
+    var DeviceMethodStatusKey = "DeviceMethodStatus";
+    var FirmwareKey = "Firmware";
+
+    // update the status to offline & firmware updating
     state.online = false;
     state.CalculateRandomizedTelemetry = false;
     var status = "Command received, updating firmware version to ";
     status = status.concat(context.Firmware);
-    state.DeviceMethodStatus = status;
-    updateState(state);
+    updateProperty(DeviceMethodStatusKey, status);
     sleep(5000);
 
     log("Image Downloading...");
-    state.DeviceMethodStatus = "Image Downloading...";
-    updateState(state);
+    status = "Image Downloading...";
+    updateProperty(DeviceMethodStatusKey, status);
     sleep(7500);
 
     log("Executing firmware update simulation function, firmware version passed:" + context.Firmware);
-    state.DeviceMethodStatus = "Downloaded, applying firmware...";
-    updateState(state);
+    status = "Downloaded, applying firmware...";
+    updateProperty(DeviceMethodStatusKey, status);
     sleep(5000);
 
-    state.DeviceMethodStatus = "Rebooting...";
-    updateState(state);
+    status = "Rebooting...";
+    updateProperty(DeviceMethodStatusKey, status);
     sleep(5000);
 
-    state.DeviceMethodStatus = "Firmware Updated.";
-    state.Firmware = properties.Firmware = context.Firmware;
-    updateProperty(state);
-    updateProperty(properties);
+    status = "Firmware Updated.";
+    updateProperty(DeviceMethodStatusKey, status);
+    properties.Firmware = context.Firmware;
+    updateProperty(FirmwareKey, context.Firmware);
     sleep(7500);
 
     state.CalculateRandomizedTelemetry = true;
     state.online = true;
-    state.DeviceMethodStatus = "";
     updateState(state);
-
 }
