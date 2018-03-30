@@ -47,9 +47,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             this.log.Debug("Setting up callback for desired properties updates.", () => new { this.deviceId });
 
-            // Set callback that IoT Hub calls whenever the client receives a state update (desired or reported).
-            // This has the side-effect of subscribing to the PATCH topic on the service.
-            // https://docs.microsoft.com/dotnet/api/microsoft.azure.devices.client.deviceclient.setdesiredpropertyupdatecallbackasync
+            // Set callback that IoT Hub calls whenever the client receives a desired properties state update.
             await this.client.SetDesiredPropertyUpdateCallbackAsync(OnPropertyUpdateRequestedCallback, null);
 
             this.log.Debug("Callback for desired properties updates setup successfully", () => new { this.deviceId });
@@ -64,33 +62,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             this.log.Info("Desired property update requested", () => new { this.deviceId, desiredProperties });
 
-            // TODO Revisit if this check for desired properties can be removed
-            // https://github.com/Azure/device-simulation-dotnet/issues/185 
-            if (desiredProperties != null && desiredProperties.Count > 0)
+            // This is where custom code for handling specific desired property changes could be added.
+            // For the purposes of the simulation service, we have chosen to write the desired properties
+            // directly to the reported properties. 
+            try
             {
-                // This is where custom code for handling specific desired property changes could be added.
-                // For the purposes of the simulation service, we have chosen to write the desired properties
-                // directly to the reported properties. 
-                try
+                foreach (KeyValuePair<string, object> item in desiredProperties)
                 {
-                    foreach (KeyValuePair<string, object> item in desiredProperties)
+                    // Only update if key doesn't exist or value has changed 
+                    if (!this.deviceProperties.Has(item.Key) ||
+                        (item.Value.ToString() != this.deviceProperties.Get(item.Key).ToString()))
                     {
-                        // Only update if key doesn't exist or value has changed 
-                        if (!this.deviceProperties.Has(item.Key) ||
-                            (item.Value.ToString() != this.deviceProperties.Get(item.Key).ToString()))
-                        {
-                            // Update existing property or create new property if key doesn't exist.
-                            this.deviceProperties.Set(item.Key, item.Value);
-                        }
+                        // Update existing property or create new property if key doesn't exist.
+                        this.deviceProperties.Set(item.Key, item.Value);
                     }
                 }
-                catch (Exception e)
-                {
-                    this.log.Error("Error updating internal device state properties", () => new { e, this.deviceId, desiredProperties });
-                }
-
-                this.log.Debug("Desired property update successfully reported to internal state", () => new { this.deviceId, desiredProperties });
             }
+            catch (Exception e)
+            {
+                this.log.Error("Error updating internal device state properties", () => new { e, this.deviceId, desiredProperties });
+            }
+
+            this.log.Debug("Desired property update successfully reported to internal state", () => new { this.deviceId, desiredProperties });
 
             return Task.CompletedTask;
         }
