@@ -6,9 +6,9 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry
 {
@@ -17,6 +17,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         Dictionary<string, object> DeviceState { get; }
         IDeviceClient Client { get; }
         DeviceModel.DeviceModelMessage Message { get; }
+        long TotalMessagesCount { get; }
+        long FailedMessagesCount { get; }
 
         void Setup(
             string deviceId,
@@ -47,8 +49,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         public enum ActorEvents
         {
             Started,
-            TelemetryDeliveryFailed,
-            TelemetryDelivered,
+            SendingTelemetry,
+            TelemetrySendFailure,
+            TelemetryDelivered
         }
 
         private readonly ILogger log;
@@ -60,6 +63,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         private string deviceId;
         private DeviceModel deviceModel;
         private long whenToRun;
+        private long totalMessagesCount;
+        private long failedMessagesCount;
 
         /// <summary>
         /// Reference to the actor managing the device state, used
@@ -87,6 +92,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         /// </summary>
         public IDeviceClient Client => this.deviceConnectionActor.Client;
 
+        /// <summary>
+        /// Total messages count created by the connection actor
+        /// </summary>
+        public long TotalMessagesCount => this.totalMessagesCount;
+
+        /// <summary>
+        /// Failed messages count created by the connection actor
+        /// </summary>
+        public long FailedMessagesCount => this.failedMessagesCount;
+
         public DeviceTelemetryActor(
             ILogger logger,
             IActorsLogger actorLogger,
@@ -104,6 +119,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             this.deviceModel = null;
             this.deviceId = null;
             this.deviceStateActor = null;
+            this.totalMessagesCount = 0;
+            this.failedMessagesCount = 0;
         }
 
         /// <summary>
@@ -150,14 +167,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                     this.actorLogger.ActorStarted();
                     this.ScheduleTelemetry();
                     break;
+
+                case ActorEvents.SendingTelemetry:
+                    this.totalMessagesCount++;
+                    break;
+
                 case ActorEvents.TelemetryDelivered:
                     this.actorLogger.TelemetryDelivered();
                     this.ScheduleTelemetry();
                     break;
-                case ActorEvents.TelemetryDeliveryFailed:
+
+                case ActorEvents.TelemetrySendFailure:
+                    this.failedMessagesCount++;
                     this.actorLogger.TelemetryFailed();
                     this.ScheduleTelemetryRetry();
                     break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(e), e, null);
             }
@@ -197,7 +222,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             var availableSchedule = now + this.rateLimiting.GetPauseForNextMessage();
 
             // looking at the simulation settings, when should the message be sent
-            // note: this.whenToExecute contains the time when the last msg was sent
+            // note: this.whenToRun contains the time when the last msg was sent
             var optimalSchedule = this.whenToRun + (long) this.Message.Interval.TotalMilliseconds;
 
             this.whenToRun = Math.Max(optimalSchedule, availableSchedule);
@@ -215,6 +240,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
         private void ScheduleTelemetryRetry()
         {
+            // TODO: Work in progress - CPU perf optimization
+
+            // Ignore the retry, just schedule the next message
+            this.ScheduleTelemetry();
+
+            // TODO: back off? - this retry logic is probably overloading the CPU
+
+            /*
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var pauseMsec = this.rateLimiting.GetPauseForNextMessage();
             this.whenToRun = now + pauseMsec;
@@ -228,6 +261,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                     Status = this.status.ToString(),
                     When = this.log.FormatDate(this.whenToRun)
                 });
+            */
         }
     }
 }

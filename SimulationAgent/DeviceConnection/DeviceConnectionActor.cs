@@ -15,6 +15,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         IDeviceClient Client { get; set; }
         Device Device { get; set; }
         bool Connected { get; }
+        long FailedDeviceConnectionsCount { get; }
+        long FailedTwinUpdatesCount { get; }
+        long SimulationErrorsCount { get; }
 
         void Setup(string deviceId, DeviceModel deviceModel, IDeviceStateActor deviceStateActor, ConnectionLoopSettings loopSettings);
         void Run();
@@ -70,6 +73,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private DeviceModel deviceModel;
         private long whenToRun;
         private ConnectionLoopSettings loopSettings;
+        private long failedDeviceConnectionsCount;
+        private long failedTwinUpdatesCount;
+        private long failedRegistrationsCount;
+        private long failedFetchCount;
 
         /// <summary>
         /// Reference to the actor managing the device state, used
@@ -97,6 +104,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         /// </summary>
         public DeviceModel.DeviceModelMessage Message { get; private set; }
 
+        /// <summary>
+        /// Failed device connections counter
+        /// </summary>
+        public long FailedDeviceConnectionsCount => this.failedDeviceConnectionsCount;
+
+        /// <summary>
+        /// Failed device twin updates counter
+        /// </summary>
+        public long FailedTwinUpdatesCount => this.failedTwinUpdatesCount;
+
+        /// <summary>
+        /// Simulation error counter in DeviceConnectionActor
+        /// </summary>
+        public long SimulationErrorsCount => this.failedRegistrationsCount +
+            this.failedFetchCount +
+            this.FailedTwinUpdatesCount +
+            this.FailedDeviceConnectionsCount;
+
         public DeviceConnectionActor(
             ILogger logger,
             IActorsLogger actorLogger,
@@ -123,7 +148,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.deviceModel = null;
             this.deviceId = null;
             this.deviceStateActor = null;
-        }
+
+            this.failedDeviceConnectionsCount = 0;
+            this.failedTwinUpdatesCount = 0;
+            this.failedRegistrationsCount = 0;
+            this.failedFetchCount = 0;
+    }
 
         /// <summary>
         /// Invoke this method before calling Execute(), to initialize the actor
@@ -183,6 +213,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     if (this.loopSettings.SchedulableFetches <= 0) return;
                     this.loopSettings.SchedulableFetches--;
 
+                    this.failedFetchCount++;
                     this.actorLogger.DeviceFetchFailed();
                     this.ScheduleFetch();
                     break;
@@ -207,6 +238,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     if (this.loopSettings.SchedulableRegistrations <= 0) return;
                     this.loopSettings.SchedulableRegistrations--;
 
+                    this.failedRegistrationsCount++;
                     this.actorLogger.DeviceRegistrationFailed();
                     this.ScheduleRegistration();
                     break;
@@ -214,7 +246,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 case ActorEvents.DeviceTwinTaggingFailed:
                     if (this.loopSettings.SchedulableTaggings <= 0) return;
                     this.loopSettings.SchedulableTaggings--;
-
+                    
+                    this.failedTwinUpdatesCount++;
                     this.actorLogger.DeviceTwinTaggingFailed();
                     this.ScheduleDeviceTagging();
                     break;
@@ -230,6 +263,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     break;
 
                 case ActorEvents.ConnectionFailed:
+                    this.failedDeviceConnectionsCount++;
                     this.actorLogger.DeviceConnectionFailed();
                     this.ScheduleConnection();
                     break;

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
@@ -29,6 +30,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private const string PREPROVISIONED_IOTHUB_INUSE_KEY = "PreprovisionedIoTHubInUse";
         private const string PREPROVISIONED_IOTHUB_METRICS_KEY = "PreprovisionedIoTHubMetricsUrl";
         private const string ACTIVE_DEVICES_COUNT_KEY = "ActiveDevicesCount";
+        private const string TOTAL_MESSAGES_COUNT_KEY = "TotalMessagesCount";
+        private const string FAILED_MESSAGES_COUNT_KEY = "FailedMessagesCount";
+        private const string MESSAGES_PER_SECOND_KEY = "MessagesPerSecond";
+        private const string FAILED_DEVICE_CONNECTIONS_COUNT_KEY = "FailedDeviceConnectionsCount";
+        private const string FAILED_DEVICE_TWIN_UPDATES_COUNT_KEY = "FailedDeviceTwinUpdatesCount";
+        private const string SIMULATION_ERRORS_COUNT_KEY = "SimulationErrorsCount";
 
         private readonly IPreprovisionedIotHub preprovisionedIotHub;
         private readonly IStorageAdapterClient storage;
@@ -38,6 +45,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private readonly IDeploymentConfig deploymentConfig;
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly ISimulationRunner simulationRunner;
+        private readonly IRateLimiting rateReporter;
 
         public StatusController(
             IPreprovisionedIotHub preprovisionedIotHub,
@@ -47,7 +55,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             IServicesConfig servicesConfig,
             IDeploymentConfig deploymentConfig,
             IIotHubConnectionStringManager connectionStringManager,
-            ISimulationRunner simulationRunner)
+            ISimulationRunner simulationRunner,
+            IRateLimiting rateLimiting)
         {
             this.preprovisionedIotHub = preprovisionedIotHub;
             this.storage = storage;
@@ -57,17 +66,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             this.deploymentConfig = deploymentConfig;
             this.connectionStringManager = connectionStringManager;
             this.simulationRunner = simulationRunner;
+            this.rateReporter = rateLimiting;
         }
 
+        // TODO: reduce method complexity, refactor out some logic
         [HttpGet]
-        public async Task<StatusApiModel> Get()
+        public async Task<StatusApiModel> GetAsync()
         {
             var result = new StatusApiModel();
             var statusMsg = SERVICE_IS_HEALTHY;
             var errors = new List<string>();
 
             // Simulation status
-            var simulationIsRunning = await this.IsSimulationRunning(errors);
+            var simulationIsRunning = await this.CheckIsSimulationRunningAsync(errors);
             var isRunning = simulationIsRunning.HasValue && simulationIsRunning.Value;
             result.Properties.Add(SIMULATION_RUNNING_KEY,
                 simulationIsRunning.HasValue
@@ -75,7 +86,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                     : "unknown");
 
             // Storage status
-            var storageStatus = await this.CheckStorageStatus(errors);
+            var storageStatus = await this.CheckStorageStatusAsync(errors);
             result.Dependencies.Add("Storage", storageStatus?.Item2);
             var statusIsOk = storageStatus.Item1;
 
@@ -87,7 +98,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                     : JSON_FALSE);
             if (isHubPreprovisioned)
             {
-                var preprovisioneHubStatus = await this.CheckAzureIoTHubStatus(errors);
+                var preprovisioneHubStatus = await this.CheckAzureIoTHubStatusAsync(errors);
                 statusIsOk = statusIsOk && preprovisioneHubStatus.Item1;
 
                 result.Dependencies.Add(PREPROVISIONED_IOTHUB_KEY, preprovisioneHubStatus?.Item2);
@@ -102,9 +113,39 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 }
             }
 
-            // Active devices status
+            /*
+             * TODO: move counters to the solution endpoint, so that when we run multiple simulations, each simulation
+             * will have its own counters. Also, when simulations will be distributed over multiple VMs, counters will
+             * need to be aggregated (vs than kept in memory).
+             */
+
+            // Active devices count
             string activeDevicesCount = this.GetActiveDevicesCount(isRunning).ToString();
             result.Properties.Add(ACTIVE_DEVICES_COUNT_KEY, activeDevicesCount);
+
+            // Total telemetry messages count
+            string totalMessagesCount = this.GetTotalMessagesCount(isRunning).ToString();
+            result.Properties.Add(TOTAL_MESSAGES_COUNT_KEY, totalMessagesCount);
+
+            // Failed telemetry messages count
+            string failedMessagesCount = this.GetFailedMessagesCount(isRunning).ToString();
+            result.Properties.Add(FAILED_MESSAGES_COUNT_KEY, failedMessagesCount);
+
+            // Telemetry messages thoughput
+            string messagesPerSecond = this.GetMessagesPerSecond(isRunning).ToString("F");
+            result.Properties.Add(MESSAGES_PER_SECOND_KEY, messagesPerSecond);
+
+            // Failed device connections count
+            string failedDeviceConnectionsCount = this.GetFailedDeviceConnectionsCount(isRunning).ToString();
+            result.Properties.Add(FAILED_DEVICE_CONNECTIONS_COUNT_KEY, failedDeviceConnectionsCount);
+
+            // Failed device connections count
+            string failedDeviceTwinUpdatesCount = this.GetFailedDeviceTwinUpdatesCount(isRunning).ToString();
+            result.Properties.Add(FAILED_DEVICE_TWIN_UPDATES_COUNT_KEY, failedDeviceTwinUpdatesCount);
+
+            // Simulation errors count
+            string simulationErrorsCount = this.GetSimulationErrorsCount(isRunning).ToString();
+            result.Properties.Add(SIMULATION_ERRORS_COUNT_KEY, simulationErrorsCount);
 
             // Prepare status message and response
             if (!statusIsOk)
@@ -125,7 +166,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         }
 
         // Check whether the simulation is running, and populate errors if any
-        private async Task<bool?> IsSimulationRunning(List<string> errors)
+        private async Task<bool?> CheckIsSimulationRunningAsync(List<string> errors)
         {
             bool? simulationRunning = null;
             try
@@ -143,7 +184,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         }
 
         // Check the storage dependency status
-        private async Task<Tuple<bool, string>> CheckStorageStatus(ICollection<string> errors)
+        private async Task<Tuple<bool, string>> CheckStorageStatusAsync(ICollection<string> errors)
         {
             Tuple<bool, string> result;
             try
@@ -164,7 +205,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         }
 
         // Check IoT Hub dependency status
-        private async Task<Tuple<bool, string>> CheckAzureIoTHubStatus(ICollection<string> errors)
+        private async Task<Tuple<bool, string>> CheckAzureIoTHubStatusAsync(ICollection<string> errors)
         {
             Tuple<bool, string> result;
             try
@@ -229,11 +270,53 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                    $"/providers/Microsoft.Devices/IotHubs/{this.deploymentConfig.AzureIothubName}/Metrics";
         }
 
-        private int GetActiveDevicesCount(bool isRunning)
+        private long GetActiveDevicesCount(bool isRunning)
         {
             if (!isRunning) return 0;
 
-            return this.simulationRunner.GetActiveDevicesCount();
+            return this.simulationRunner.ActiveDevicesCount;
+        }
+
+        private long GetTotalMessagesCount(bool isRunning)
+        {
+            if (!isRunning) return 0;
+
+            return this.simulationRunner.TotalMessagesCount;
+        }
+
+        private long GetFailedMessagesCount(bool isRunning)
+        {
+            if (!isRunning) return 0;
+
+            return this.simulationRunner.FailedMessagesCount;
+        }
+
+        private double GetMessagesPerSecond(bool isRunning)
+        {
+            if (!isRunning) return 0;
+
+            return this.rateReporter.GetThroughputForMessages();
+        }
+
+        private long GetFailedDeviceConnectionsCount(bool isRunning)
+        {
+            if (!isRunning) return 0;
+
+            return this.simulationRunner.FailedDeviceConnectionsCount;
+        }
+
+        private long GetFailedDeviceTwinUpdatesCount(bool isRunning)
+        {
+            if (!isRunning) return 0;
+
+            return this.simulationRunner.FailedDeviceTwinUpdatesCount;
+        }
+
+        private long GetSimulationErrorsCount(bool isRunning)
+        {
+            if (!isRunning) return 0;
+
+            return this.simulationRunner.SimulationErrorsCount;
         }
     }
 }

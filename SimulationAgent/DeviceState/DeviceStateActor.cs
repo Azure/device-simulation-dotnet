@@ -13,6 +13,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
     {
         Dictionary<string, object> DeviceState { get; }
         bool IsDeviceActive { get; }
+        long SimulationErrorsCount { get; }
         void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices);
         void Run();
     }
@@ -26,6 +27,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         }
 
         public const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
+
+        private readonly ILogger log;
+        private readonly UpdateDeviceState updateDeviceStateLogic;
+        private string deviceId;
+        private DeviceModel deviceModel;
+        private long whenCanIUpdate;
+        private int startDelayMsecs;
+        private ActorStatus status;
+        private long simulationErrorsCount;
 
         /// <summary>
         /// The virtual state of the simulated device. The state is
@@ -43,19 +53,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         /// </summary>
         public bool IsDeviceActive
         {
-            get
-            {
-                return this.status == ActorStatus.Updating;
-            }
+            get { return this.status == ActorStatus.Updating; }
         }
-
-        private readonly ILogger log;
-        private readonly UpdateDeviceState updateDeviceStateLogic;
-        private string deviceId;
-        private DeviceModel deviceModel;
-        private long whenCanIUpdate;
-        private int startDelayMsecs;
-        private ActorStatus status;
 
         public DeviceStateActor(
             ILogger logger,
@@ -64,7 +63,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
             this.log = logger;
             this.updateDeviceStateLogic = updateDeviceStateLogic;
             this.status = ActorStatus.None;
+            this.simulationErrorsCount = 0;
         }
+
+        /// <summary>
+        /// Simulation error counter in DeviceStateActor
+        /// </summary>
+        public long SimulationErrorsCount => this.simulationErrorsCount;
 
         /// <summary>
         /// Invoke this method before calling Start(), to initialize the actor
@@ -99,8 +104,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                     // Prepare the dependencies
                     case ActorStatus.None:
                         this.updateDeviceStateLogic.Setup(this, this.deviceId, this.deviceModel);
+
+                        // Note: we do not need to lock `this.DeviceState` at this time
+                        // because the simulation hasn't started yet
                         this.DeviceState = this.SetupTelemetryAndProperties(this.deviceModel);
                         this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState });
+
                         this.MoveForward();
                         return;
 
@@ -113,6 +122,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                             this.updateDeviceStateLogic.Run();
                             this.MoveForward();
                         }
+
                         return;
                 }
 
@@ -120,6 +130,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
             }
             catch (Exception e)
             {
+                this.simulationErrorsCount++;
                 this.log.Error("Device state process failed", () => new { e });
             }
         }
