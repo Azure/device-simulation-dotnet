@@ -61,26 +61,26 @@ namespace SimulationAgent.Test.DeviceTelemetry
             Assert.Equal(0, failedMessagesCount);
         }
 
-//        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-//        public void ItReturnsTheNumberOfFailedMessages()
-//        {
-//            // Arrange
-//            const int FAILED_MESSAGES_COUNT = 5;
-//            SetupDeviceTelemetryActor();
-//            DeviceTelemetryActor.ActorEvents messageFailed = DeviceTelemetryActor.ActorEvents.TelemetrySendUnknownFailure;
-//
-//            // Act
-//            for(int i = 0; i < FAILED_MESSAGES_COUNT; i++)
-//            {
-//                this.target.HandleEvent(messageFailed);
-//            }
-//
-//            // Get results
-//            long failedMessagesCount = this.target.FailedMessagesCount;
-//
-//            // Assert
-//            Assert.Equal(FAILED_MESSAGES_COUNT, failedMessagesCount);
-//        }
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReturnsTheNumberOfFailedMessages()
+        {
+            // Arrange
+            const int FAILED_MESSAGES_COUNT = 5;
+            SetupDeviceTelemetryActor();
+            DeviceTelemetryActor.ActorEvents messageFailed = DeviceTelemetryActor.ActorEvents.TelemetrySendFailure;
+
+            // Act
+            for(int i = 0; i < FAILED_MESSAGES_COUNT; i++)
+            {
+                this.target.HandleEvent(messageFailed);
+            }
+
+            // Get results
+            long failedMessagesCount = this.target.FailedMessagesCount;
+
+            // Assert
+            Assert.Equal(FAILED_MESSAGES_COUNT, failedMessagesCount);
+        }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void TheNumberOfTotalMessagesIsZeroAtStart()
