@@ -36,7 +36,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         Task DeleteAsync(string id);
     }
-    class CustomDeviceModels : ICustomDeviceModels
+    public class CustomDeviceModels : ICustomDeviceModels
     {
         private const string STORAGE_COLLECTION = "deviceModels";
 
