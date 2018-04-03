@@ -9,7 +9,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 {
     public class DevicePropertiesApiModel
     {
-        [JsonProperty(PropertyName = "ReportedProperties")]
+        [JsonProperty(PropertyName = "Reported")]
         public HashSet<string> ReportedProperties { get; set; }
 
         [JsonProperty(PropertyName = "$metadata")]

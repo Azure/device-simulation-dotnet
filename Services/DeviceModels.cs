@@ -108,12 +108,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         this.PreparePropNames(set, item.Value, item.Key);
                     }
                 });
-                var result = new HashSet<string>();
-                foreach (string prop in set)
-                {
-                    result.Add("Properties.Reported." + prop);
-                }
-                return result;
+                return set;
             }
 
             return null;
