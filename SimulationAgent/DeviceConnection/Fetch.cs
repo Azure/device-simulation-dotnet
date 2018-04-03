@@ -4,6 +4,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection
@@ -51,6 +52,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     this.log.Debug("Device not found", () => new { this.deviceId, timeSpent });
                     this.context.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceNotFound);
                 }
+            }
+            catch(ExternalDependencyException e)
+            {
+                this.log.Error("External dependency error while fetching the device", () => new { this.deviceId, e });
+                this.context.HandleEvent(DeviceConnectionActor.ActorEvents.FetchFailed);
             }
             catch (Exception e)
             {

@@ -22,7 +22,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     {
         void Start(Services.Models.Simulation simulation);
         void Stop();
-        int GetActiveDevicesCount();
+        long ActiveDevicesCount { get; }
+        long TotalMessagesCount { get; }
+        long FailedMessagesCount { get; }
+        long FailedDeviceConnectionsCount { get; }
+        long FailedDeviceTwinUpdatesCount { get; }
+        long SimulationErrorsCount { get; }
     }
 
     public class SimulationRunner : ISimulationRunner
@@ -63,6 +68,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Contains all the actors sending device property updates to Azure IoT Hub
         private readonly IDictionary<string, IDevicePropertiesActor> devicePropertiesActors;
 
+        // Service used to reset all rateLimiting counters
+        private readonly IRateLimiting rateLimiting;
+
         // The thread responsible for updating devices/sensors state
         private Thread devicesStateThread;
 
@@ -84,8 +92,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Flag signaling whether the simulation has started and is running (to avoid contentions)
         private bool running;
 
+        // Counter for simulation error
+        private long simulationErrors;
+
         public SimulationRunner(
             IRateLimitingConfig ratingConfig,
+            IRateLimiting rateLimiting,
             ILogger logger,
             IDeviceModels deviceModels,
             IDeviceModelsGeneration deviceModelsOverriding,
@@ -105,6 +117,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.startLock = new { };
             this.running = false;
             this.starting = false;
+            this.rateLimiting = rateLimiting;
 
             this.deviceStateActors = new ConcurrentDictionary<string, IDeviceStateActor>();
             this.deviceConnectionActors = new ConcurrentDictionary<string, IDeviceConnectionActor>();
@@ -154,6 +167,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.running = false;
                     this.starting = false;
                     this.log.Error("Failed to create devices", () => new { e });
+                    this.IncreamentSimulationErrorsCount();
 
                     // Return and retry
                     return;
@@ -179,10 +193,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     }
                     catch (ResourceNotFoundException)
                     {
+                        this.IncreamentSimulationErrorsCount();
                         this.log.Error("The device model doesn't exist", () => new { model.Id });
                     }
                     catch (Exception e)
                     {
+                        this.IncreamentSimulationErrorsCount();
                         this.log.Error("Unexpected error preparing the device model", () => new { model.Id, e });
                     }
                 }
@@ -194,17 +210,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.starting = false;
 
                 // Start threads
-                this.devicesStateThread = new Thread(this.UpdateDevicesStateThread);
-                this.devicesStateThread.Start();
+                this.TryToStartStateThread();
 
-                this.devicesConnectionThread = new Thread(this.ConnectDevicesThread);
-                this.devicesConnectionThread.Start();
+                this.TryToStartConnectionThread();
 
-                this.devicesTelemetryThread = new Thread(this.SendTelemetryThread);
-                this.devicesTelemetryThread.Start();
+                this.TryToStartTelemetryThread();
 
-                this.devicesPropertiesThread = new Thread(this.UpdatePropertiesThread);
-                this.devicesPropertiesThread.Start();
+                this.TryToStartPropertiesThread();
             }
         }
 
@@ -246,11 +258,32 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.deviceConnectionActors.Clear();
                 this.devicePropertiesActors.Clear();
                 this.starting = false;
+
+                // Reset rateLimiting counters
+                this.rateLimiting.ResetCounters();
             }
         }
 
         // Method to return the count of active devices
-        public int GetActiveDevicesCount() => this.deviceStateActors.Count(a => a.Value.IsDeviceActive);
+        public long ActiveDevicesCount => this.deviceStateActors.Count(a => a.Value.IsDeviceActive);
+
+        // Method to return the count of total messages
+        public long TotalMessagesCount => this.deviceTelemetryActors.Sum(a => a.Value.TotalMessagesCount);
+
+        // Method to return the count of deliver failed messages
+        public long FailedMessagesCount => this.deviceTelemetryActors.Sum(a => a.Value.FailedMessagesCount);
+
+        // Method to return the count of connection failed devices
+        public long FailedDeviceConnectionsCount => this.deviceConnectionActors.Sum(a => a.Value.FailedDeviceConnectionsCount);
+
+        // Method to return the count of twin update failed devices
+        public long FailedDeviceTwinUpdatesCount => this.deviceConnectionActors.Sum(a => a.Value.FailedTwinUpdatesCount);
+
+        // Method to return the count of simulation errors
+        public long SimulationErrorsCount => this.simulationErrors +
+                this.deviceConnectionActors.Sum(a => a.Value.SimulationErrorsCount) +
+                this.deviceStateActors.Sum(a => a.Value.SimulationErrorsCount) +
+                this.deviceTelemetryActors.Sum(a => a.Value.FailedMessagesCount);
 
         private DeviceModel GetDeviceModel(string id, Services.Models.Simulation.DeviceModelOverride overrides)
         {
@@ -461,6 +494,71 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             {
                 this.log.Warn("Unable to stop the devices state thread in a clean way", () => new { e });
             }
+        }
+
+        private void TryToStartTelemetryThread()
+        {
+            this.devicesTelemetryThread = new Thread(this.SendTelemetryThread);
+            try
+            {
+                this.devicesTelemetryThread.Start();
+            }
+            catch (Exception e)
+            {
+                this.IncreamentSimulationErrorsCount();
+                this.log.Error("Unable to start the telemetry thread", () => new { e });
+                throw new Exception("Unable to start the telemetry thread", e);
+            }
+        }
+
+        private void TryToStartConnectionThread()
+        {
+            this.devicesConnectionThread = new Thread(this.ConnectDevicesThread);
+            try
+            {
+                this.devicesConnectionThread.Start();
+            }
+            catch (Exception e)
+            {
+                this.IncreamentSimulationErrorsCount();
+                this.log.Error("Unable to start the device connection thread", () => new { e });
+                throw new Exception("Unable to start the device connection thread", e);
+            }
+        }
+
+        private void TryToStartStateThread()
+        {
+            this.devicesStateThread = new Thread(this.UpdateDevicesStateThread);
+            try
+            {
+                this.devicesStateThread.Start();
+            }
+            catch (Exception e)
+            {
+                this.IncreamentSimulationErrorsCount();
+                this.log.Error("Unable to start the device state thread", () => new { e });
+                throw new Exception("Unable to start the device state thread", e);
+            }
+        }
+
+        private void TryToStartPropertiesThread()
+        {
+            this.devicesPropertiesThread = new Thread(this.UpdatePropertiesThread);
+            try
+            {
+                this.devicesPropertiesThread.Start();
+            }
+            catch (Exception e)
+            {
+                this.IncreamentSimulationErrorsCount();
+                this.log.Error("Unable to start the device properties thread", () => new { e });
+                throw new Exception("Unable to start the device properties thread", e);
+            }
+        }
+
+        private void IncreamentSimulationErrorsCount()
+        {
+            Interlocked.Increment(ref this.simulationErrors);
         }
     }
 }

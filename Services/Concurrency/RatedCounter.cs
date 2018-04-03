@@ -177,17 +177,41 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             return false;
         }
 
-        private void LogThroughput()
+        /// <summary>
+        /// Get messages throughput.
+        /// </summary>
+        /// <returns>Throughput: messages per second</returns>
+        public double GetThroughputForMessages()
         {
-            if (this.log.LogLevel <= LogLevel.Debug && this.timestamps.Count > 1)
+            double speed = 0;
+            lock (this.timestamps)
             {
-                double speed;
-                lock (this.timestamps)
+                if (this.timestamps.Count > 1)
                 {
+                    // Time range in milliseconds
                     long time = this.timestamps.Last() - this.timestamps.First();
+
+                    // Unit for speed is messages per second
                     speed = (1000 * (double) this.timestamps.Count / time * 10) / 10;
                 }
+            }
 
+            return speed;
+        }
+
+        public void ResetCounter()
+        {
+            lock (this.timestamps)
+            {
+                this.timestamps.Clear();
+            }
+        }
+
+        private void LogThroughput()
+        {
+            if (this.log.LogLevel <= LogLevel.Debug)
+            {
+                double speed = this.GetThroughputForMessages();
                 this.log.Info(this.name, () => new { speed });
             }
         }
