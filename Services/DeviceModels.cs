@@ -52,9 +52,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IServicesConfig config;
         private readonly ILogger log;
         private readonly IStorageAdapterClient storage;
-
-        private List<string> deviceModelFiles;
-        private List<DeviceModel> deviceModels;
+        
         private CustomDeviceModels customDeviceModels;
         private StockDeviceModels stockDeviceModels;
 
