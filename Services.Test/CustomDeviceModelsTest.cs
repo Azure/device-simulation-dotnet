@@ -52,7 +52,7 @@ namespace Services.Test
         public void CreateCustomDeviceModel()
         {
             // Arrange
-            var deviceModel = new DeviceModel { Id = "Id_1", ETag = "Etag_1" };
+            var deviceModel = new DeviceModel { ETag = "Etag_1" };
             this.UpdateDeviceModelInStorage(deviceModel);
 
             // Act
@@ -60,7 +60,6 @@ namespace Services.Test
 
             // Assert
             Assert.NotNull(result);
-            Assert.IsType<String>(result.Id);
             Assert.Equal(deviceModel.ETag, result.ETag);
         }
 
@@ -106,25 +105,25 @@ namespace Services.Test
             Assert.Equal("newETag", deviceModel.ETag);
         }
 
-        //[Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        //public void CreateNewCustomDeviceModelsIfNotExisted()
-        //{
-        //    // Arrange
-        //    var deviceModel = new DeviceModel { Id = "id", ETag = "Etag" };
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void CreateNewCustomDeviceModelsIfNotExisted()
+        {
+            // Arrange
+            var deviceModel = new DeviceModel { Id = "id", ETag = "Etag" };
 
-        //    this.ThereIsNoCustomDeviceModelsByIdInTheStorage(deviceModel.Id);
-        //    this.UpdateDeviceModelInStorage(deviceModel);
+            this.ThereIsNoCustomDeviceModelsByIdInTheStorage(deviceModel.Id);
+            this.UpdateDeviceModelInStorage(deviceModel);
 
-        //    // Act
-        //    this.target.UpsertAsync(deviceModel).Wait();
+            // Act
+            this.target.UpsertAsync(deviceModel).Wait();
 
-        //    // Assert
-        //    this.storage.Verify(x => x.UpdateAsync(
-        //        STORAGE_COLLECTION,
-        //        It.IsAny<string>(),
-        //        It.IsAny<string>(),
-        //        null));
-        //}
+            // Assert
+            this.storage.Verify(x => x.UpdateAsync(
+                STORAGE_COLLECTION,
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                null));
+        }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void CustomDeviceModelsCanNotBeUpsertedIfEtagNotMatch()
@@ -143,8 +142,15 @@ namespace Services.Test
 
         private void SaveDeviceModelInStorage(DeviceModel deviceModel)
         {
-            this.storage.Setup(x => x.GetAsync(STORAGE_COLLECTION, It.IsAny<string>()))
-                            .ReturnsAsync(new ValueApiModel { ETag = "oldEtag", Data = JsonConvert.SerializeObject(deviceModel) });
+            var result = new ValueApiModel
+            {
+                ETag = deviceModel.ETag,
+                Data = JsonConvert.SerializeObject(deviceModel)
+            };
+
+            this.storage
+                .Setup(x => x.GetAsync(STORAGE_COLLECTION, It.IsAny<string>()))
+                .ReturnsAsync(result);
         }
 
         private void ThereAreNoCustomDeviceModelsInTheStorage()
@@ -158,7 +164,7 @@ namespace Services.Test
         {
             this.storage
                 .Setup(x => x.GetAsync(STORAGE_COLLECTION, id))
-                .ReturnsAsync((ValueApiModel)null);
+                .Throws<ResourceNotFoundException>();
         }
 
         private void UpdateDeviceModelInStorage(DeviceModel deviceModel)
