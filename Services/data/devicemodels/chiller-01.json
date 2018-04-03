@@ -4,7 +4,7 @@
     "Version": "0.0.1",
     "Name": "Chiller",
     "Description": "Chiller with external temperature, humidity and pressure sensors.",
-    "Protocol": "MQTT",
+    "Protocol": "AMQP",
     "Simulation": {
         "InitialState": {
             "online": true,
