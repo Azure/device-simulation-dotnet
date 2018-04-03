@@ -49,6 +49,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 await this.context.Client.ConnectAsync();
                 await this.context.Client.RegisterMethodsForDeviceAsync(this.deviceModel.CloudToDeviceMethods, this.context.DeviceState, this.context.DeviceProperties);
+                await this.context.Client.RegisterDesiredPropertiesUpdateAsync(this.context.DeviceProperties);
+
                 var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
                 this.log.Debug("Device connected", () => new { this.deviceId, timeSpent });
                 this.context.HandleEvent(DeviceConnectionActor.ActorEvents.Connected);
