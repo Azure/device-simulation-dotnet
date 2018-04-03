@@ -4,7 +4,7 @@
     "Version": "0.0.1",
     "Name": "Truck",
     "Description": "Truck with GPS, speed and cargo temperature sensors",
-    "Protocol": "MQTT",
+    "Protocol": "AMQP",
     "Simulation": {
         "InitialState": {
             "online": true,
