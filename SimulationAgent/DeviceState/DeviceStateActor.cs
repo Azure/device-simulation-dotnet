@@ -31,6 +31,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         public ISmartDictionary DeviceProperties { get; set; }
 
         public const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
+        public const string SUPPORTED_METHODS_KEY = "SupportedMethods";
 
         /// <summary>
         /// The device is considered active when the state is being updated.
@@ -152,6 +153,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         {
             var properties = new SmartDictionary();
 
+            // Add SupportedMethods property with methods listed in device model
+            properties.Set(SUPPORTED_METHODS_KEY, string.Join(",", this.deviceModel.CloudToDeviceMethods.Keys));
+
+            // Add properties listed in device model
             foreach (var property in model.Properties)
             {
                 properties.Set(property.Key, JToken.FromObject(property.Value));
