@@ -9,6 +9,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 // TODO: tests
 // TODO: handle errors
@@ -18,6 +19,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     {
         IEnumerable<DeviceModel> GetList();
         DeviceModel Get(string id);
+        HashSet<string> GetPropNames();
     }
 
     public class DeviceModels : IDeviceModels
@@ -91,6 +93,51 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log.Debug("Device model files", () => new { this.deviceModelFiles });
 
             return this.deviceModelFiles;
+        }
+
+        public HashSet<string> GetPropNames()
+        {
+            var list = this.GetList().ToList();
+            if (list.Count > 0)
+            {
+                var set = new HashSet<string>();
+                list.ForEach(m =>
+                {
+                    foreach (var item in m.Properties)
+                    {
+                        this.PreparePropNames(set, item.Value, item.Key);
+                    }
+                });
+                var result = new HashSet<string>();
+                foreach (string prop in set)
+                {
+                    result.Add("Properties.Reported." + prop);
+                }
+                return result;
+            }
+
+            return null;
+        }
+
+        private void PreparePropNames(HashSet<string> set, object obj, string prefix)
+        {
+            if (obj is JValue)
+            {
+                set.Add(prefix);
+                return;
+            }
+
+            if (obj is bool || obj is string || double.TryParse(obj.ToString(), out _))
+            {
+                set.Add(prefix);
+                return;
+            }
+
+            foreach (var item in (obj as JToken).Values())
+            {
+                var path = item.Path;
+                this.PreparePropNames(set, item, $"{prefix}.{(path.Contains(".") ? path.Substring(path.LastIndexOf('.') + 1) : path)}");
+            }
         }
     }
 }
