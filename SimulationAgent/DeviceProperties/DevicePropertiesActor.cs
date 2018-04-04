@@ -34,6 +34,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         {
             None,
             ReadyToStart,
+            WaitingToUpdate,
             ReadyToUpdate,
             Updating,
             Stopped
@@ -42,6 +43,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         public enum ActorEvents
         {
             Started,
+            PropertiesUpdateSkipped,
             PropertiesUpdateFailed,
             PropertiesUpdated,
         }
@@ -137,6 +139,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                     this.actorLogger.ActorStarted();
                     this.SchedulePropertiesUpdate();
                     break;
+                case ActorEvents.PropertiesUpdateSkipped:
+                    this.actorLogger.DevicePropertiesUpdateSkipped();
+                    this.SchedulePropertiesUpdate();
+                    break;
                 case ActorEvents.PropertiesUpdated:
                     this.actorLogger.DevicePropertiesUpdated();
                     this.SchedulePropertiesUpdate();
@@ -167,6 +173,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                     this.HandleEvent(ActorEvents.Started);
                     return "started";
 
+                case ActorStatus.WaitingToUpdate:
+                    if(!this.DeviceProperties.Changed)
+                    {
+                        this.actorLogger.DevicePropertiesUpdateSkipped();
+                        return "no properties to update";
+                    }
+                    this.SchedulePropertiesUpdate();
+                    return "scheduled properties update";
+
                 case ActorStatus.ReadyToUpdate:
                     this.status = ActorStatus.Updating;
                     this.actorLogger.UpdatingDeviceProperties();
@@ -187,6 +202,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
         private void SchedulePropertiesUpdate()
         {
+            if (!this.DeviceProperties.Changed)
+            {
+                // There are no new device properties changes to push
+                this.status = ActorStatus.WaitingToUpdate;
+
+                this.actorLogger.DevicePropertiesUpdateSkipped();
+                this.log.Debug("No device properties to update", () => new { this.deviceId });
+                return;
+            }
+
             // considering the throttling settings, when can the properties can be updated
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             this.whenToRun = now + this.rateLimiting.GetPauseForNextTwinWrite();

@@ -40,6 +40,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
         void DevicePropertiesUpdateScheduled(long time);
         void DevicePropertiesUpdateRetryScheduled(long time);
+        void DevicePropertiesUpdateSkipped();
         void UpdatingDeviceProperties();
         void DevicePropertiesUpdated();
         void DevicePropertiesUpdateFailed();
@@ -310,6 +311,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
             this.Log("Device properties update retry scheduled at: " + msg);
             this.LogProperties("Retry scheduled at: " + msg);
+        }
+
+        public void DevicePropertiesUpdateSkipped()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Device properties update skipped, no properties to update");
+            this.LogProperties("Skipped");
         }
 
         public void UpdatingDeviceProperties()
