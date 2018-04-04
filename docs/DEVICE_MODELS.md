@@ -36,7 +36,7 @@ and how to simulate a device behavior.
             "temperature": 75.0,
             "temperature_unit": "F"
         },
-        "Interval": "00:00:10"
+        "Interval": "00:00:10",
         "Scripts": [
             {
                 "Type": "javascript",
