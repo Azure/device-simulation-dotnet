@@ -94,7 +94,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         public void SetAll(Dictionary<string, object> newState)
         {
-            this.dictionary = newState;
+            this.dictionary = new ConcurrentDictionary<string, object>(newState);
             this.Changed = true;
         }
     }

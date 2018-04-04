@@ -59,7 +59,9 @@ namespace Services.Test.Simulation
                 ["temperature_unit"] = "device-123",
                 ["humidity"] = 70.2,
                 ["humidity_unit"] = "%",
-                ["lights_on"] = false
+                ["lights_on"] = false,
+                ["pressure"] = 150.0,
+                ["pressure_unit"] = "psig"
             };
 
             deviceState.SetAll(state);
@@ -74,6 +76,8 @@ namespace Services.Test.Simulation
             Assert.IsType<Double>(deviceState.Get("humidity"));
             Assert.IsType<string>(deviceState.Get("humidity_unit"));
             Assert.IsType<bool>(deviceState.Get("lights_on"));
+            Assert.IsType<Double>(deviceState.Get("pressure"));
+            Assert.IsType<string>(deviceState.Get("pressure_unit"));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

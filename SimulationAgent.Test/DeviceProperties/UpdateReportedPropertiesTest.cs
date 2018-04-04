@@ -41,7 +41,7 @@ namespace SimulationAgent.Test.DeviceProperties
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void Nothing_Changed_Should_Call_Handle_Event_Properties_Updated()
+        public void Nothing_Changed_Should_Call_Handle_Event_Properties_Update_Skipped()
         {
             // Arrange
             this.SetupPropertiesActorProperties();
@@ -53,7 +53,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.target.Run();
 
             // Assert
-            this.devicePropertiesActor.Verify(x => x.HandleEvent(ActorEvents.PropertiesUpdated));
+            this.devicePropertiesActor.Verify(x => x.HandleEvent(ActorEvents.PropertiesUpdateSkipped));
 
             // should exit before reaching get all device properties
             this.devicePropertiesActor.Verify(x => x.DeviceProperties.GetAll(), Times.Never());
