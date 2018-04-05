@@ -16,7 +16,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         ISmartDictionary DeviceProperties { get; }
         ISmartDictionary DeviceState { get; }
         IDeviceClient Client { get; }
-        Device Device { get; }
 
         void Setup(
             string deviceId,
@@ -82,11 +81,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         /// Azure IoT Hub client
         /// </summary>
         public IDeviceClient Client => this.deviceConnectionActor.Client;
-
-        /// <summary>
-        /// Azure IoT Hub Device instance
-        /// </summary>
-        public Device Device => this.deviceConnectionActor.Device;
 
         public DevicePropertiesActor(
             ILogger logger,
