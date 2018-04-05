@@ -1,0 +1,76 @@
+{
+    "SchemaVersion": "1.0.0",
+    "Id": "chiller-02",
+    "Version": "0.0.1",
+    "Name": "Faulty Chiller",
+    "Description": "Faulty chiller with wrong pressure sensor. Pressure too high.",
+    "Protocol": "MQTT",
+    "Simulation": {
+        "InitialState": {
+            "online": true,
+            "temperature": 75.0,
+            "temperature_unit": "F",
+            "humidity": 70.0,
+            "humidity_unit": "%",
+            "pressure": 250.0,
+            "pressure_unit": "psig",
+            "simulation_state": "high_pressure"
+        },
+        "Interval": "00:00:10",
+        "Scripts": [
+            {
+                "Type": "javascript",
+                "Path": "chiller-02-state.js"
+            }
+        ]
+    },
+    "Properties": {
+        "Type": "Chiller",
+        "Firmware": "1.0",
+        "Model": "CH101",
+        "Location": "Building 43",
+        "Latitude": 47.639318,
+        "Longitude": -122.134271
+    },
+    "Tags": {
+        "Location": "Building 43",
+        "Floor": "3",
+        "Campus": "Redmond"
+    },
+    "Telemetry": [
+        {
+            "Interval": "00:00:10",
+            "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
+            "MessageSchema": {
+                "Name": "chiller-sensors;v1",
+                "Format": "JSON",
+                "Fields": {
+                    "temperature": "double",
+                    "temperature_unit": "text",
+                    "humidity": "double",
+                    "humidity_unit": "text",
+                    "pressure": "double",
+                    "pressure_unit": "text"
+                }
+            }
+        }
+    ],
+    "CloudToDeviceMethods": {
+        "Reboot": {
+            "Type": "javascript",
+            "Path": "Reboot-method.js"
+        },
+        "FirmwareUpdate": {
+            "Type": "javascript",
+            "Path": "FirmwareUpdate-method.js"
+        },
+        "EmergencyValveRelease": {
+            "Type": "javascript",
+            "Path": "EmergencyValveRelease-method.js"
+        },
+        "IncreasePressure": {
+            "Type": "javascript",
+            "Path": "IncreasePressure-method.js"
+        }
+    }
+}

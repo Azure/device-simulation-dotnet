@@ -1,7 +1,5 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-/* CODE TEMPORARILY COMMENTED OUT
-
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -19,7 +17,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task RegisterMethodsAsync(
             string deviceId,
             IDictionary<string, Script> methods,
-            Dictionary<string, object> deviceState);
+            ISmartDictionary deviceState,
+            ISmartDictionary deviceProperties);
     }
 
     public class DeviceMethods : IDeviceMethods
@@ -28,8 +27,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly ILogger log;
         private readonly IScriptInterpreter scriptInterpreter;
         private IDictionary<string, Script> cloudToDeviceMethods;
-        private Dictionary<string, object> deviceState;
+        private ISmartDictionary deviceState;
+        private ISmartDictionary deviceProperties;
         private string deviceId;
+        private bool isRegistered;
 
         public DeviceMethods(
             Azure.Devices.Client.DeviceClient client,
@@ -40,14 +41,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log = logger;
             this.scriptInterpreter = scriptInterpreter;
             this.deviceId = string.Empty;
+            this.isRegistered = false;
         }
 
         public async Task RegisterMethodsAsync(
             string deviceId,
             IDictionary<string, Script> methods,
-            Dictionary<string, object> deviceState)
+            ISmartDictionary deviceState,
+            ISmartDictionary deviceProperties)
         {
-            if (this.deviceId != string.Empty)
+            if (this.isRegistered)
             {
                 this.log.Error("Application error, each device must have a separate instance", () => { });
                 throw new Exception("Application error, each device must have a separate instance of " + this.GetType().FullName);
@@ -56,6 +59,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.deviceId = deviceId;
             this.cloudToDeviceMethods = methods;
             this.deviceState = deviceState;
+            this.deviceProperties = deviceProperties;
 
             this.log.Debug("Setting up methods for device.", () => new
             {
@@ -76,6 +80,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     methodName = item.Key
                 });
             }
+
+            this.isRegistered = true;
         }
 
         public Task<MethodResponse> ExecuteMethodAsync(MethodRequest methodRequest, object userContext)
@@ -136,9 +142,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.scriptInterpreter.Invoke(
                     this.cloudToDeviceMethods[methodRequest.Name],
                     scriptContext,
-                    this.deviceState);
+                    this.deviceState,
+                    this.deviceProperties);
 
-                this.log.Debug("Executed method for device", () => new { this.deviceId, methodRequest.Name });
+                this.log.Debug("Executed method for device", () => new { this.deviceId, methodRequest.Name, this.deviceState, this.deviceProperties });
             }
             catch (Exception e)
             {
@@ -161,4 +168,3 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
     }
 }
-*/

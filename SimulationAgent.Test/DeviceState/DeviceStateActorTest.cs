@@ -6,8 +6,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Moq;
 using SimulationAgent.Test.helpers;
-using System;
-using System.Collections.Generic;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -66,18 +64,7 @@ namespace SimulationAgent.Test.DeviceState
             int postion = 1;
             int total = 10;
             var deviceModel = new DeviceModel { Id = DEVICE_ID };
-            var deviceState = new Dictionary<string, object>
-            {
-                { DEVICE_ID, new Object { } }
-            };
-
-            this.scriptInterpreter
-                .Setup(x => x.Invoke(
-                    It.IsAny<Script>(),
-                    It.IsAny<Dictionary<string, object>>(),
-                    It.IsAny<Dictionary<string, object>>()))
-                .Returns(deviceState);
-
+           
             this.target.Setup(DEVICE_ID, deviceModel, postion, total);
         }
     }

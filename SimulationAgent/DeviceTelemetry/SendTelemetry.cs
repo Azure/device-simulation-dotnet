@@ -38,15 +38,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
         public void Run()
         {
-            // Clone state to deal with concurrent access to the underlying data
-            Dictionary<string, object> state;
-            lock (this.context.DeviceState)
-            {
-                state = CloneObject(this.context.DeviceState);
-            }
+            var state = this.context.DeviceState.GetAll();
 
             this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
-            if ((bool) state["online"] == false)
+            if ((bool)state["online"] == false)
             {
                 // device could be rebooting, updating firmware, etc.
                 this.log.Debug("No telemetry will be sent as the device is offline...", () => new { this.deviceId });
@@ -90,25 +85,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                 this.context.Client
                     .SendMessageAsync(msg, this.message.MessageSchema)
                     .ContinueWith(t =>
-                        {
-                            var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
+                    {
+                        var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
 
-                            if (t.IsCanceled)
-                            {
-                                this.log.Warn("The telemetry sending task has been cancelled", () => new { this.deviceId, t.Exception });
-                            }
-                            else if (t.IsFaulted)
-                            {
-                                var exception = t.Exception.InnerExceptions.FirstOrDefault();
-                                this.log.Error(GetLogErrorMessage(exception), () => new { this.deviceId, exception });
-                                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendFailure);
-                            }
-                            else if (t.IsCompleted)
-                            {
-                                this.log.Debug("Telemetry delivered", () => new { this.deviceId, timeSpent, MessageSchema = this.message.MessageSchema.Name });
-                                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
-                            }
-                        },
+                        if (t.IsCanceled)
+                        {
+                            this.log.Warn("The telemetry sending task has been cancelled", () => new { this.deviceId, t.Exception });
+                        }
+                        else if (t.IsFaulted)
+                        {
+                            var exception = t.Exception.InnerExceptions.FirstOrDefault();
+                            this.log.Error(GetLogErrorMessage(exception), () => new { this.deviceId, exception });
+                            this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendFailure);
+                        }
+                        else if (t.IsCompleted)
+                        {
+                            this.log.Debug("Telemetry delivered", () => new { this.deviceId, timeSpent, MessageSchema = this.message.MessageSchema.Name });
+                            this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
+                        }
+                    },
                         TaskContinuationOptions.ExecuteSynchronously);
             }
             catch (Exception e)
@@ -133,12 +128,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             }
 
             return e != null ? "Telemetry send unknown error" : string.Empty;
-        }
-
-        // Copy an object by value
-        private static T CloneObject<T>(T source)
-        {
-            return JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(source));
         }
 
         /*

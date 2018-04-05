@@ -19,8 +19,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task ConnectAsync();
         Task DisconnectAsync();
         Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema);
-        Task UpdateTwinAsync(Device device);
-        Task RegisterMethodsForDeviceAsync(IDictionary<string, Script> methods, Dictionary<string, object> deviceState);
+        Task RegisterMethodsForDeviceAsync(IDictionary<string, Script> methods, ISmartDictionary deviceState, ISmartDictionary deviceProperties);
+        Task RegisterDesiredPropertiesUpdateAsync(ISmartDictionary deviceProperties);
+        Task UpdatePropertiesAsync(ISmartDictionary deviceProperties);
     }
 
     public class DeviceClient : IDeviceClient
@@ -36,6 +37,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly string deviceId;
         private readonly IoTHubProtocol protocol;
         private readonly Azure.Devices.Client.DeviceClient client;
+        private readonly IDeviceMethods deviceMethods;
+        private readonly IDevicePropertiesRequest propertiesUpdateRequest;
         private readonly ILogger log;
 
         private bool connected;
@@ -46,12 +49,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             string deviceId,
             IoTHubProtocol protocol,
             Azure.Devices.Client.DeviceClient client,
+            IDeviceMethods deviceMethods,
             ILogger logger)
         {
             this.deviceId = deviceId;
             this.protocol = protocol;
             this.client = client;
+            this.deviceMethods = deviceMethods;
             this.log = logger;
+
+            this.propertiesUpdateRequest = new DeviceProperties(client, this.log);
         }
 
         public async Task ConnectAsync()
@@ -75,17 +82,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        public Task RegisterMethodsForDeviceAsync(
+        public async Task RegisterMethodsForDeviceAsync(
             IDictionary<string, Script> methods,
-            Dictionary<string, object> deviceState)
+            ISmartDictionary deviceState,
+            ISmartDictionary deviceProperties)
         {
-            /* TEMPORARY DISABLED
             this.log.Debug("Attempting to register device methods",
                 () => new { this.deviceId });
 
-            await this.deviceMethods.RegisterMethodsAsync(this.deviceId, methods, deviceState);
-            */
-            return Task.CompletedTask;
+            await this.deviceMethods.RegisterMethodsAsync(this.deviceId, methods, deviceState, deviceProperties);
+        }
+
+        public async Task RegisterDesiredPropertiesUpdateAsync(ISmartDictionary deviceProperties)
+        {
+            this.log.Debug("Attempting to register desired property notifications for device",
+                () => new { this.deviceId });
+
+            await this.propertiesUpdateRequest.RegisterChangeUpdateAsync(this.deviceId, deviceProperties);
         }
 
         public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
@@ -106,33 +119,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             await this.SendRawMessageAsync(eventMessage);
         }
 
-        public Task UpdateTwinAsync(Device device)
+        /// <summary>
+        /// Updates the reported properties in the device twin on the IoT Hub
+        /// </summary>
+        public async Task UpdatePropertiesAsync(ISmartDictionary properties)
         {
-            /* TEMPORARY DISABLED
-            if (!this.connected) await this.ConnectAsync();
-
-            var azureTwin = await this.rateLimiting.LimitTwinReadsAsync(
-                () => this.client.GetTwinAsync());
-
-            // Remove properties
-            var props = azureTwin.Properties.Reported.GetEnumerator();
-            while (props.MoveNext())
+            try
             {
-                var current = (KeyValuePair<string, object>) props.Current;
+                var reportedProperties = SmartDictionaryToTwinCollection(properties);
 
-                if (!device.Twin.ReportedProperties.ContainsKey(current.Key))
+                await this.client.UpdateReportedPropertiesAsync(reportedProperties);
+
+                this.log.Debug("Update reported properties for device", () => new
                 {
-                    this.log.Debug("Removing key", () => new { current.Key });
-                    azureTwin.Properties.Reported[current.Key] = null;
-                }
+                    this.deviceId,
+                    ReportedProperties = reportedProperties
+                });
             }
-
-            // Write properties
-            var reportedProperties = DictionaryToTwinCollection(device.Twin.ReportedProperties);
-            await this.rateLimiting.LimitTwinWritesAsync(
-                () => this.client.UpdateReportedPropertiesAsync(reportedProperties));
-            */
-            return Task.CompletedTask;
+            catch (Exception e)
+            {
+                this.log.Error("Update reported properties failed",
+                    () => new
+                    {
+                        Protocol = this.protocol.ToString(),
+                        ExceptionMessage = e.Message,
+                        Exception = e.GetType().FullName,
+                        e.InnerException
+                    });
+            }
         }
 
         private async Task SendRawMessageAsync(Message message)
@@ -202,17 +216,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        private static TwinCollection DictionaryToTwinCollection(Dictionary<string, JToken> x)
+        private static TwinCollection SmartDictionaryToTwinCollection(ISmartDictionary dictionary)
         {
             var result = new TwinCollection();
 
-            if (x != null)
+            if (dictionary != null)
             {
-                foreach (KeyValuePair<string, JToken> item in x)
+                var items = dictionary.GetAll();
+
+                foreach (KeyValuePair<string, object> item in items)
                 {
                     try
                     {
-                        result[item.Key] = item.Value;
+                        // Use JToken for serialization
+                        result[item.Key] = JToken.FromObject(item.Value);
                     }
                     catch (Exception e)
                     {

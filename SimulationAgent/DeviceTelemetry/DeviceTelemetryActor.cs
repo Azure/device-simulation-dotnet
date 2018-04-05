@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -14,7 +13,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 {
     public interface IDeviceTelemetryActor
     {
-        Dictionary<string, object> DeviceState { get; }
+        ISmartDictionary DeviceState { get; }
         IDeviceClient Client { get; }
         DeviceModel.DeviceModelMessage Message { get; }
         long TotalMessagesCount { get; }
@@ -85,7 +84,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         /// <summary>
         /// State maintained by the state actor
         /// </summary>
-        public Dictionary<string, object> DeviceState => this.deviceStateActor.DeviceState;
+        public ISmartDictionary DeviceState => this.deviceStateActor.DeviceState;
 
         /// <summary>
         /// Azure IoT Hub client created by the connection actor

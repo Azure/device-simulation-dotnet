@@ -1,0 +1,62 @@
+{
+    "SchemaVersion": "1.0.0",
+    "Id": "elevator-02",
+    "Version": "0.0.1",
+    "Name": "Faulty Elevator",
+    "Description": "Elevator with floor, vibration and temperature sensors. Elevator blocked on 4th floor.",
+    "Protocol": "MQTT",
+    "Simulation": {
+        "InitialState": {
+            "online": true,
+            "floor": 4,
+            "vibration": 10.0,
+            "vibration_unit": "mm",
+            "temperature": 75.0,
+            "temperature_unit": "F"
+        },
+        "Interval": "00:00:10",
+        "Scripts": [
+            {
+                "Type": "javascript",
+                "Path": "elevator-02-state.js"
+            }
+        ]
+    },
+    "Properties": {
+        "Type": "Elevator",
+        "Location": "Building 17",
+        "Latitude": 47.643786,
+        "Longitude": -122.128047
+    },
+    "Telemetry": [
+        {
+            "Interval": "00:00:10",
+            "MessageTemplate": "{\"floor\":${floor},\"vibration\":${vibration},\"vibration_unit\":\"${vibration_unit}\",\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\"}",
+            "MessageSchema": {
+                "Name": "elevator-sensors;v1",
+                "Format": "JSON",
+                "Fields": {
+                    "floor": "integer",
+                    "vibration": "double",
+                    "vibration_unit": "text",
+                    "temperature": "double",
+                    "temperature_unit": "text"
+                }
+            }
+        }
+    ],
+    "CloudToDeviceMethods": {
+        "FirmwareUpdate": {
+            "Type": "javascript",
+            "Path": "FirmwareUpdate-method.js"
+        },
+        "StopElevator": {
+            "Type": "javascript",
+            "Path": "StopElevator-method.js"
+        },
+        "StartElevator": {
+            "Type": "javascript",
+            "Path": "StartElevator-method.js"
+        }
+    }
+}

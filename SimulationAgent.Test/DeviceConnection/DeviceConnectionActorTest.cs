@@ -2,6 +2,7 @@
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Moq;
@@ -15,6 +16,7 @@ namespace SimulationAgent.Test.DeviceConnection
         private readonly Mock<ILogger> logger;
         private readonly Mock<IActorsLogger> actorLogger;
         private readonly Mock<IRateLimitingConfig> rateLimitingConfig;
+        private readonly Mock<IScriptInterpreter> scriptInterpreter;
         private readonly Mock<IRateLimiting> rateLimiting;
         private readonly Mock<Fetch> fetchLogic;
         private readonly Mock<Register> registerLogic;
@@ -30,6 +32,7 @@ namespace SimulationAgent.Test.DeviceConnection
             this.logger = new Mock<ILogger>();
             this.actorLogger = new Mock<IActorsLogger>();
             this.rateLimitingConfig = new Mock<IRateLimitingConfig>();
+            this.scriptInterpreter = new Mock<IScriptInterpreter>();
             this.devices = new Mock<IDevices>();
             this.rateLimiting = new Mock<IRateLimiting>();
             this.fetchLogic = new Mock<Fetch>(
@@ -43,6 +46,7 @@ namespace SimulationAgent.Test.DeviceConnection
                 this.logger.Object);
             this.connectLogic = new Mock<Connect>(
                 this.devices.Object,
+                this.scriptInterpreter.Object,
                 this.logger.Object);
             this.deviceStateActor = new Mock<IDeviceStateActor>();
             this.loopSettings = new Mock<ConnectionLoopSettings>(

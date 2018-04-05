@@ -11,23 +11,27 @@ using Jint.Parser;
 using Jint.Parser.Ast;
 using Jint.Runtime.Descriptors;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 {
     public interface IJavascriptInterpreter
     {
-        Dictionary<string, object> Invoke(
+        void Invoke(
             string filename,
             Dictionary<string, object> context,
-            Dictionary<string, object> state);
+            ISmartDictionary state,
+            ISmartDictionary properties);
     }
 
     public class JavascriptInterpreter : IJavascriptInterpreter
     {
         private readonly ILogger log;
         private readonly string folder;
-        private Dictionary<string, object> deviceState;
+        private ISmartDictionary deviceState;
+        private ISmartDictionary deviceProperties;
 
         // The following are static to improve overall performance
         // TODO make the class a singleton - https://github.com/Azure/device-simulation-dotnet/issues/45
@@ -46,14 +50,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         /// <summary>
         /// Load a JS file and execute the main() function, passing in
         /// context information and the output from the previous execution.
-        /// Returns a map of values.
+        /// Modifies the internal device state with the latest values.
         /// </summary>
-        public Dictionary<string, object> Invoke(
+        public void Invoke(
             string filename,
             Dictionary<string, object> context,
-            Dictionary<string, object> state)
+            ISmartDictionary state,
+            ISmartDictionary properties)
         {
             this.deviceState = state;
+            this.deviceProperties = properties;
 
             var engine = new Engine();
 
@@ -61,10 +67,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             // logging into the service logs
             engine.SetValue("log", new Action<object>(this.JsLog));
 
-            //register callback for state updates
+            // register callback for state updates
             engine.SetValue("updateState", new Action<JsValue>(this.UpdateState));
 
-            //register sleep function for javascript use
+            // register callback for property updates
+            engine.SetValue("updateProperty", new Action<string, object>(this.UpdateProperty));
+
+            // register sleep function for javascript use
             engine.SetValue("sleep", new Action<int>(this.Sleep));
 
             try
@@ -84,16 +93,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 }
 
                 this.log.Debug("Executing JS function", () => new { filename });
-                JsValue output = engine.Execute(program).Invoke("main", context, this.deviceState);
 
-                var result = this.JsValueToDictionary(output);
-                this.log.Debug("JS function success", () => new { filename, result });
-                return result;
+                JsValue output = engine.Execute(program).Invoke(
+                    "main",
+                    context,
+                    this.deviceState.GetAll(),
+                    this.deviceProperties.GetAll());
+
+                // update the internal device state with the new state
+                this.UpdateState(output);
+
+                this.log.Debug("JS function success", () => new { filename, output });
             }
             catch (Exception e)
             {
                 this.log.Error("JS function failure", () => new { e.Message, e.GetType().FullName });
-                return new Dictionary<string, object>();
             }
         }
 
@@ -178,26 +192,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         {
             string key;
             object value;
-            Dictionary<string, object> stateChanges;
+            Dictionary<string, object> stateChanges = this.JsValueToDictionary(data);
 
             this.log.Debug("Updating state from the script", () => new { data, this.deviceState });
 
-            stateChanges = this.JsValueToDictionary((JsValue) data);
-
-            //Update device state with the script data passed
-            lock (this.deviceState)
+            // Update device state with the script data passed
+            for (int i = 0; i < stateChanges.Count; i++)
             {
-                for (int i = 0; i < stateChanges.Count; i++)
-                {
-                    key = stateChanges.Keys.ElementAt(i);
-                    value = stateChanges.Values.ElementAt(i);
-                    if (this.deviceState.ContainsKey(key))
-                    {
-                        this.log.Debug("state change", () => new { key, value });
-                        this.deviceState[key] = value;
-                    }
-                }
+                key = stateChanges.Keys.ElementAt(i);
+                value = stateChanges.Values.ElementAt(i);
+                this.log.Debug("state change", () => new { key, value });
+                this.deviceState.Set(key, value);
             }
+        }
+
+        // TODO: Move this out of the scriptinterpreter class into DeviceStateActor to keep this class stateless
+        //       https://github.com/Azure/device-simulation-dotnet/issues/45
+        private void UpdateProperty(string key, object value)
+        {
+            this.log.Debug("Updating device property from the script", () => new { key, value });
+
+            // Update device property at key with the script value passed
+            this.deviceProperties.Set(key, value);
         }
     }
 }

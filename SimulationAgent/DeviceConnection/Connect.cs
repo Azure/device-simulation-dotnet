@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection
 {
@@ -14,16 +15,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
     public class Connect : IDeviceConnectionLogic
     {
         private readonly IDevices devices;
+        private readonly IScriptInterpreter scriptInterpreter;
         private readonly ILogger log;
         private string deviceId;
-        private IoTHubProtocol protocol;
+        private DeviceModel deviceModel;
         private IDeviceConnectionActor context;
 
         public Connect(
             IDevices devices,
+            IScriptInterpreter scriptInterpreter,
             ILogger logger)
         {
             this.log = logger;
+            this.scriptInterpreter = scriptInterpreter;
             this.devices = devices;
         }
 
@@ -31,7 +35,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         {
             this.context = context;
             this.deviceId = deviceId;
-            this.protocol = deviceModel.Protocol;
+            this.deviceModel = deviceModel;
         }
 
         public async Task RunAsync()
@@ -40,10 +44,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
             try
             {
-                this.context.Client = this.devices.GetClient(this.context.Device, this.protocol);
+                this.context.Client = this.devices.GetClient(this.context.Device, this.deviceModel.Protocol, this.scriptInterpreter);
 
                 var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 await this.context.Client.ConnectAsync();
+                await this.context.Client.RegisterMethodsForDeviceAsync(this.deviceModel.CloudToDeviceMethods, this.context.DeviceState, this.context.DeviceProperties);
+                await this.context.Client.RegisterDesiredPropertiesUpdateAsync(this.context.DeviceProperties);
 
                 var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
                 this.log.Debug("Device connected", () => new { this.deviceId, timeSpent });

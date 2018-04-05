@@ -7,11 +7,13 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.Devices.Common.Exceptions;
 using Microsoft.Azure.Devices.Shared;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Device = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Device;
 using TransportType = Microsoft.Azure.Devices.Client.TransportType;
 
@@ -27,7 +29,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Get a client for the device
         /// </summary>
-        IDeviceClient GetClient(Device device, IoTHubProtocol protocol);
+        IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter);
 
         /// <summary>
         /// Get the device from the registry
@@ -62,6 +64,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
     public class Devices : IDevices
     {
+        // Simulated devices are marked with a tag "IsSimulated = Y"
+        public const string SIMULATED_TAG_KEY = "IsSimulated";
+        public const string SIMULATED_TAG_VALUE = "Y";
+
         // The registry might be in an inconsistent state after several requests, this limit
         // is used to recreate the registry manager instance every once in a while, while starting
         // the simulation. When the simulation is running the registry is not used anymore.
@@ -115,16 +121,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Get a client for the device
         /// </summary>
-        public IDeviceClient GetClient(Device device, IoTHubProtocol protocol)
+        public IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter)
         {
             this.SetupHub();
 
             var sdkClient = this.GetDeviceSdkClient(device, protocol);
+            var methods = new DeviceMethods(sdkClient, this.log, scriptInterpreter);
 
             return new DeviceClient(
                 device.Id,
                 protocol,
                 sdkClient,
+                methods,
                 this.log);
         }
 
@@ -145,7 +153,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var device = await this.GetRegistry().GetDeviceAsync(deviceId);
                 if (device != null)
                 {
-                    result = new Device(device, (Twin) null, this.ioTHubHostName);
+                    result = new Device(device, this.ioTHubHostName);
                 }
                 else
                 {
@@ -184,7 +192,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 device = await this.GetRegistry().AddDeviceAsync(device);
 
-                return new Device(device, (Twin) null, this.ioTHubHostName);
+                return new Device(device, this.ioTHubHostName);
             }
             catch (Exception e)
             {
@@ -202,11 +210,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.SetupHub();
 
             this.log.Debug("Writing device twin and adding the `IsSimulated` Tag",
-                () => new { deviceId, DeviceTwin.SIMULATED_TAG_KEY, DeviceTwin.SIMULATED_TAG_VALUE });
+                () => new { deviceId, SIMULATED_TAG_KEY, SIMULATED_TAG_VALUE });
 
             var twin = new Twin
             {
-                Tags = { [DeviceTwin.SIMULATED_TAG_KEY] = DeviceTwin.SIMULATED_TAG_VALUE }
+                Tags = { [SIMULATED_TAG_KEY] = SIMULATED_TAG_VALUE }
             };
             await this.GetRegistry().UpdateTwinAsync(deviceId, twin, "*");
         }

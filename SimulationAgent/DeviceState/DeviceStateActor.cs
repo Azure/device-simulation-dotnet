@@ -6,12 +6,14 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState
 {
     public interface IDeviceStateActor
     {
-        Dictionary<string, object> DeviceState { get; }
+        ISmartDictionary DeviceState { get; }
+        ISmartDictionary DeviceProperties { get; }
         bool IsDeviceActive { get; }
         long SimulationErrorsCount { get; }
         void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices);
@@ -26,7 +28,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
             Updating
         }
 
+        public ISmartDictionary DeviceState { get; set; }
+        public ISmartDictionary DeviceProperties { get; set; }
+
         public const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
+        public const string SUPPORTED_METHODS_KEY = "SupportedMethods";
 
         private readonly ILogger log;
         private readonly UpdateDeviceState updateDeviceStateLogic;
@@ -36,12 +42,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         private int startDelayMsecs;
         private ActorStatus status;
         private long simulationErrorsCount;
-
-        /// <summary>
-        /// The virtual state of the simulated device. The state is
-        /// periodically updated using an external script.
-        /// </summary>
-        public Dictionary<string, object> DeviceState { get; set; }
 
         /// <summary>
         /// The device is considered active when the state is being updated.
@@ -75,7 +75,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         /// Invoke this method before calling Start(), to initialize the actor
         /// with details like the device model and message type to simulate.
         /// If this method is not called before Start(), the application will
-        /// thrown an exception.
+        /// throw an exception.
         /// Setup() should be called only once, typically after the constructor.
         /// </summary>
         public void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices)
@@ -104,12 +104,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                     // Prepare the dependencies
                     case ActorStatus.None:
                         this.updateDeviceStateLogic.Setup(this, this.deviceId, this.deviceModel);
-
-                        // Note: we do not need to lock `this.DeviceState` at this time
-                        // because the simulation hasn't started yet
-                        this.DeviceState = this.SetupTelemetryAndProperties(this.deviceModel);
-                        this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState });
-
+                        this.DeviceState = this.GetInitialState(this.deviceModel);
+                        this.DeviceProperties = this.GetInitialProperties(this.deviceModel);
+                        this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState, this.DeviceProperties });
                         this.MoveForward();
                         return;
 
@@ -156,27 +153,45 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
             throw new Exception("Application error, MoveForward() should not be invoked when status = " + this.status);
         }
 
-        private Dictionary<string, object> SetupTelemetryAndProperties(DeviceModel deviceModel)
+        /// <summary>
+        /// Initializes device properties from the device model.
+        /// </summary>
+        private ISmartDictionary GetInitialProperties(DeviceModel model)
         {
-            // put telemetry properties in state
-            Dictionary<string, object> state = CloneObject(deviceModel.Simulation.InitialState);
+            var properties = new SmartDictionary();
 
-            // Ensure the state contains the "online" key
-            if (!state.ContainsKey("online"))
+            // Add SupportedMethods property with methods listed in device model
+            properties.Set(SUPPORTED_METHODS_KEY, string.Join(",", this.deviceModel.CloudToDeviceMethods.Keys));
+
+            // Add properties listed in device model
+            foreach (var property in model.Properties)
             {
-                state["online"] = true;
+                properties.Set(property.Key, JToken.FromObject(property.Value));
             }
 
-            // TODO: think about whether these should be pulled from the hub instead of disk
-            // (the device model); i.e. what if someone has modified the hub twin directly
-            // put reported properties from device model into state
-            foreach (var property in deviceModel.Properties)
-                state.Add(property.Key, property.Value);
+            return properties;
+        }
 
-            // TODO:This is used to control whether telemetry is calculated in UpdateDeviceState.
-            // methods can turn telemetry off/on; e.g. setting temp high- turnoff, set low, turn on
-            // it would be better to do this at the telemetry item level - we should add this in the future
-            state.Add(CALC_TELEMETRY, true);
+        /// <summary>
+        /// Initializes device state from the device model.
+        /// </summary>
+        private ISmartDictionary GetInitialState(DeviceModel model)
+        {
+            var initialState = CloneObject(model.Simulation.InitialState);
+
+            var state = new SmartDictionary(initialState);
+
+            // Ensure the state contains the "online" key
+            if (!state.Has("online"))
+            {
+                state.Set("online", true);
+            }
+
+            // TODO: This is used to control whether telemetry is calculated in UpdateDeviceState.
+            //       methods can turn telemetry off/on; e.g. setting temp high- turnoff, set low, turn on
+            //       it would be better to do this at the telemetry item level - we should add this in the future
+            //       https://github.com/Azure/device-simulation-dotnet/issues/174
+            state.Set(CALC_TELEMETRY, true);
 
             return state;
         }

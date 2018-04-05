@@ -36,11 +36,13 @@ and how to simulate a device behavior.
             "temperature": 75.0,
             "temperature_unit": "F"
         },
-        "Script": {
-            "Type": "javascript",
-            "Path": "elevator-01-state.js",
-            "Interval": "00:00:05"
-        }
+        "Interval": "00:00:10",
+        "Scripts": [
+            {
+                "Type": "javascript",
+                "Path": "elevator-01-state.js",
+            }
+        ]
     },
     "Properties": {
         "Type": "Elevator",
@@ -88,11 +90,11 @@ and how to simulate a device behavior.
     "CloudToDeviceMethods": {
         "StopElevator": {
             "Type": "javascript",
-            "Path": "TBD.js"
+            "Path": "StopElevator-method.js"
         },
         "StartElevator": {
             "Type": "javascript",
-            "Path": "TBD.js"
+            "Path": "StartElevator-method.js"
         }
     }
 }

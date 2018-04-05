@@ -8,6 +8,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
 using Moq;
@@ -34,6 +35,7 @@ namespace SimulationAgent.Test
         private readonly Mock<IDeviceStateActor> deviceStateActor;
         private readonly Mock<IDeviceConnectionActor> deviceConnectionActor;
         private readonly Mock<IDeviceTelemetryActor> deviceTelemetryActor;
+        private readonly Mock<IDevicePropertiesActor> devicePropertiesActor;
         private readonly Mock<IRateLimiting> rateLimiting;
         private readonly Mock<UpdateDeviceState> updateDeviceStateLogic;
         private readonly SimulationRunner target;
@@ -51,6 +53,7 @@ namespace SimulationAgent.Test
             this.deviceStateActor = new Mock<IDeviceStateActor>();
             this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
             this.deviceTelemetryActor = new Mock<IDeviceTelemetryActor>();
+            this.devicePropertiesActor = new Mock<IDevicePropertiesActor>();
             this.updateDeviceStateLogic = new Mock<UpdateDeviceState>();
             this.rateLimiting = new Mock<IRateLimiting>();
             this.ratingConfig.Setup(x => x.DeviceMessagesPerSecond).Returns(10);
@@ -305,6 +308,8 @@ namespace SimulationAgent.Test
 
             this.SetupDeviceTelemetryActor();
 
+            this.SetupDevicePropertiesActor();
+
             this.SetupActiveDeviceStatus();
         }
 
@@ -320,6 +325,13 @@ namespace SimulationAgent.Test
             this.factory
                 .Setup(x => x.Resolve<IDeviceTelemetryActor>())
                 .Returns(this.deviceTelemetryActor.Object);
+        }
+
+        private void SetupDevicePropertiesActor()
+        {
+            this.factory
+                .Setup(x => x.Resolve<IDevicePropertiesActor>())
+                .Returns(this.devicePropertiesActor.Object);
         }
 
         private void SetupDeviceConnectionActor()
