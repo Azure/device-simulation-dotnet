@@ -33,14 +33,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         void DeviceConnectionFailed();
 
         void TelemetryScheduled(long time);
-        void TelemetryRetryScheduled(long time);
         void SendingTelemetry();
         void TelemetryDelivered();
         void TelemetryFailed();
 
-        void DevicePropertiesUpdateScheduled(long time);
-        void DevicePropertiesUpdateRetryScheduled(long time);
-        void DevicePropertiesUpdateSkipped();
+        void DevicePropertiesUpdateScheduled(long time, bool isRetry);
         void UpdatingDeviceProperties();
         void DevicePropertiesUpdated();
         void DevicePropertiesUpdateFailed();
@@ -262,15 +259,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.LogTelemetry("Scheduled at: " + msg);
         }
 
-        public void TelemetryRetryScheduled(long time)
-        {
-            if (!this.enabled) return;
-
-            var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Telemetry retry scheduled at: " + msg);
-            this.LogTelemetry("Retry scheduled at: " + msg);
-        }
-
         public void SendingTelemetry()
         {
             if (!this.enabled) return;
@@ -295,30 +283,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.LogTelemetry("FAILED");
         }
 
-        public void DevicePropertiesUpdateScheduled(long time)
+        public void DevicePropertiesUpdateScheduled(long time, bool isRetry)
         {
             if (!this.enabled) return;
 
             var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Device properties update scheduled at: " + msg);
-            this.LogProperties("Device properties update scheduled at: " + msg);
-        }
 
-        public void DevicePropertiesUpdateRetryScheduled(long time)
-        {
-            if (!this.enabled) return;
-
-            var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Device properties update retry scheduled at: " + msg);
-            this.LogProperties("Retry scheduled at: " + msg);
-        }
-
-        public void DevicePropertiesUpdateSkipped()
-        {
-            if (!this.enabled) return;
-
-            this.Log("Device properties update skipped, no properties to update");
-            this.LogProperties("Skipped");
+            if (isRetry)
+            {
+                this.Log("Device properties update retry scheduled at: " + msg);
+                this.LogProperties("Retry scheduled at: " + msg);
+            }
+            else
+            {
+                this.Log("Device properties update scheduled at: " + msg);
+                this.LogProperties("Device properties update scheduled at: " + msg);
+            }
         }
 
         public void UpdatingDeviceProperties()

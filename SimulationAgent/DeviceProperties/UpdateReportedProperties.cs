@@ -33,14 +33,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
             try
             {
-                if (!this.context.DeviceProperties.Changed)
-                {
-                    // There are no new device properties changes to push
-                    this.log.Debug("No device properties to update...", () => new { this.deviceId });
-                    this.context.HandleEvent(DevicePropertiesActor.ActorEvents.PropertiesUpdateSkipped);
-                    return;
-                }
-      
                 var properties = this.context.DeviceProperties.GetAll();
                 var state = this.context.DeviceState.GetAll();
 

@@ -34,7 +34,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         {
             None,
             ReadyToStart,
-            WaitingToUpdate,
+            WaitingForChanges,
             ReadyToUpdate,
             Updating,
             Stopped
@@ -43,7 +43,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         public enum ActorEvents
         {
             Started,
-            PropertiesUpdateSkipped,
             PropertiesUpdateFailed,
             PropertiesUpdated,
         }
@@ -137,19 +136,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             {
                 case ActorEvents.Started:
                     this.actorLogger.ActorStarted();
-                    this.SchedulePropertiesUpdate();
-                    break;
-                case ActorEvents.PropertiesUpdateSkipped:
-                    this.actorLogger.DevicePropertiesUpdateSkipped();
-                    this.SchedulePropertiesUpdate();
                     break;
                 case ActorEvents.PropertiesUpdated:
                     this.actorLogger.DevicePropertiesUpdated();
-                    this.SchedulePropertiesUpdate();
+                    this.status = ActorStatus.WaitingForChanges;
                     break;
                 case ActorEvents.PropertiesUpdateFailed:
                     this.actorLogger.DevicePropertiesUpdateFailed();
-                    this.SchedulePropertiesUpdateRetry();
+                    this.SchedulePropertiesUpdate(isRetry: true);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(e), e, null);
@@ -168,19 +162,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             {
                 case ActorStatus.ReadyToStart:
                     if (!this.deviceConnectionActor.Connected) return "device not connected yet";
-
                     this.whenToRun = 0;
                     this.HandleEvent(ActorEvents.Started);
                     return "started";
 
-                case ActorStatus.WaitingToUpdate:
-                    if(!this.DeviceProperties.Changed)
-                    {
-                        this.actorLogger.DevicePropertiesUpdateSkipped();
-                        return "no properties to update";
-                    }
+                case ActorStatus.WaitingForChanges:
+                    if (!this.DeviceProperties.Changed) return "no properties to update";
                     this.SchedulePropertiesUpdate();
-                    return "scheduled properties update";
+                    return "properties update scheduled";
 
                 case ActorStatus.ReadyToUpdate:
                     this.status = ActorStatus.Updating;
@@ -200,48 +189,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             this.status = ActorStatus.Stopped;
         }
 
-        private void SchedulePropertiesUpdate()
+        private void SchedulePropertiesUpdate(bool isRetry = false)
         {
-            if (!this.DeviceProperties.Changed)
-            {
-                // There are no new device properties changes to push
-                this.status = ActorStatus.WaitingToUpdate;
-
-                this.actorLogger.DevicePropertiesUpdateSkipped();
-                this.log.Debug("No device properties to update", () => new { this.deviceId });
-                return;
-            }
-
             // considering the throttling settings, when can the properties can be updated
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            this.whenToRun = now + this.rateLimiting.GetPauseForNextTwinWrite();
-
-            this.status = ActorStatus.ReadyToUpdate;
-
-            this.actorLogger.DevicePropertiesUpdateScheduled(this.whenToRun);
-            this.log.Debug("Device properties update scheduled",
-                () => new
-                {
-                    this.deviceId,
-                    Status = this.status.ToString(),
-                    When = this.log.FormatDate(this.whenToRun)
-                });
-        }
-
-        private void SchedulePropertiesUpdateRetry()
-        {
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var pauseMsec = this.rateLimiting.GetPauseForNextTwinWrite();
             this.whenToRun = now + pauseMsec;
             this.status = ActorStatus.ReadyToUpdate;
 
-            this.actorLogger.DevicePropertiesUpdateRetryScheduled(this.whenToRun);
-            this.log.Debug("Device properties update retry scheduled",
+            this.actorLogger.DevicePropertiesUpdateScheduled(this.whenToRun, isRetry);
+            this.log.Debug("Device properties update scheduled",
                 () => new
                 {
                     this.deviceId,
                     Status = this.status.ToString(),
-                    When = this.log.FormatDate(this.whenToRun)
+                    When = this.log.FormatDate(this.whenToRun),
+                    isRetry
                 });
         }
     }
