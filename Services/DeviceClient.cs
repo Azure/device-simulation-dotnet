@@ -58,7 +58,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.deviceMethods = deviceMethods;
             this.log = logger;
 
-            this.propertiesUpdateRequest = new DevicePropertiesRequest(client, this.log);
+            this.propertiesUpdateRequest = new DeviceProperties(client, this.log);
         }
 
         public async Task ConnectAsync()
@@ -98,7 +98,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log.Debug("Attempting to register desired property notifications for device",
                 () => new { this.deviceId });
 
-            await this.propertiesUpdateRequest.RegisterDevicePropertyUpdatesAsync(this.deviceId, deviceProperties);
+            await this.propertiesUpdateRequest.RegisterChangeUpdateAsync(this.deviceId, deviceProperties);
         }
 
         public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)

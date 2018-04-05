@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
@@ -36,7 +37,7 @@ namespace Services.Test
             this.client = new Mock<IDeviceClient>();
             this.logger = new Mock<ILogger>();
 
-            this.target = new DevicePropertiesRequest(sdkClient, this.logger.Object);
+            this.target = new DeviceProperties(sdkClient, this.logger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -46,13 +47,16 @@ namespace Services.Test
             const string NEW_VALUE = "new value";
 
             ISmartDictionary reportedProps = GetTestProperties();
-            this.target.RegisterDevicePropertyUpdatesAsync(DEVICE_ID, reportedProps);
+            this.target.RegisterChangeUpdateAsync(DEVICE_ID, reportedProps);
 
             TwinCollection desiredProps = new TwinCollection();
             desiredProps[KEY1] = NEW_VALUE;
 
             // Act
-            this.target.OnPropertyUpdateRequestedCallback(desiredProps, null);
+            // Use reflection to invoke private callback
+            MethodInfo methodInfo = this.target.GetType().GetMethod("OnChangeCallback", BindingFlags.Instance | BindingFlags.NonPublic);
+            methodInfo.Invoke(this.target, new object[] { desiredProps, null });
+
             var result = reportedProps.Get(KEY1);
 
             // Assert
@@ -67,13 +71,16 @@ namespace Services.Test
             const string NEW_VALUE = "new value";
 
             ISmartDictionary reportedProps = GetTestProperties();
-            this.target.RegisterDevicePropertyUpdatesAsync(DEVICE_ID, reportedProps);
+            this.target.RegisterChangeUpdateAsync(DEVICE_ID, reportedProps);
 
             TwinCollection desiredProps = new TwinCollection();
             desiredProps[NEW_KEY] = NEW_VALUE;
 
             // Act
-            this.target.OnPropertyUpdateRequestedCallback(desiredProps, null);
+            // Use reflection to invoke private callback
+            MethodInfo methodInfo = this.target.GetType().GetMethod("OnChangeCallback", BindingFlags.Instance | BindingFlags.NonPublic);
+            methodInfo.Invoke(this.target, new object[] { desiredProps, null });
+
             var result = reportedProps.Get(NEW_KEY);
 
             // Assert
@@ -88,15 +95,17 @@ namespace Services.Test
             reportedProps.ResetChanged();
             Assert.False(reportedProps.Changed);
 
-            this.target.RegisterDevicePropertyUpdatesAsync(DEVICE_ID, reportedProps);
-
+            this.target.RegisterChangeUpdateAsync(DEVICE_ID, reportedProps);
+            
             TwinCollection desiredProps = new TwinCollection
             {
                 [KEY1] = VALUE1 // This should be the same value in props
             };
 
             // Act
-            this.target.OnPropertyUpdateRequestedCallback(desiredProps, null);
+            // Use reflection to invoke private callback
+            MethodInfo methodInfo = this.target.GetType().GetMethod("OnChangeCallback", BindingFlags.Instance | BindingFlags.NonPublic);
+            methodInfo.Invoke(this.target, new object[] { desiredProps, null });
 
             // Assert
             Assert.False(reportedProps.Changed);

@@ -11,32 +11,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface IDevicePropertiesRequest
     {
-        Task RegisterDevicePropertyUpdatesAsync(
+        Task RegisterChangeUpdateAsync(
             string deviceId,
             ISmartDictionary deviceProperties);
-
-        Task OnPropertyUpdateRequestedCallback(
-            TwinCollection desiredProperties,
-            object userContext);
     }
 
-    public class DevicePropertiesRequest : IDevicePropertiesRequest
+    public class DeviceProperties : IDevicePropertiesRequest
     {
         private readonly Azure.Devices.Client.DeviceClient client;
         private readonly ILogger log;
         private string deviceId;
         private ISmartDictionary deviceProperties;
+        private bool isRegistered;
 
-        public DevicePropertiesRequest(Azure.Devices.Client.DeviceClient client, ILogger logger)
+        public DeviceProperties(Azure.Devices.Client.DeviceClient client, ILogger logger)
         {
             this.client = client;
             this.log = logger;
             this.deviceId = string.Empty;
+            this.isRegistered = false;
         }
 
-        public async Task RegisterDevicePropertyUpdatesAsync(string deviceId, ISmartDictionary deviceProperties)
+        public async Task RegisterChangeUpdateAsync(string deviceId, ISmartDictionary deviceProperties)
         {
-            if (this.deviceId != string.Empty)
+            if (isRegistered)
             {
                 this.log.Error("Application error, each device must have a separate instance", () => { });
                 throw new Exception("Application error, each device must have a separate instance of " + this.GetType().FullName);
@@ -48,17 +46,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log.Debug("Setting up callback for desired properties updates.", () => new { this.deviceId });
 
             // Set callback that IoT Hub calls whenever the client receives a desired properties state update.
-            await this.client.SetDesiredPropertyUpdateCallbackAsync(OnPropertyUpdateRequestedCallback, null);
+            await this.client.SetDesiredPropertyUpdateCallbackAsync(OnChangeCallback, null);
 
             this.log.Debug("Callback for desired properties updates setup successfully", () => new { this.deviceId });
+
+            this.isRegistered = true;
         }
 
         /// <summary>
-        /// When a desired property change is requested, update the internal the device state properties
+        /// When a desired property change is requested, update the internal device state properties
         /// which will be reported to the hub. If there is a new desired property that does not exist in
         /// the reported properties, it will be added.
         /// </summary>
-        public Task OnPropertyUpdateRequestedCallback(TwinCollection desiredProperties, object userContext)
+        private Task OnChangeCallback(TwinCollection desiredProperties, object userContext)
         {
             this.log.Info("Desired property update requested", () => new { this.deviceId, desiredProperties });
 
@@ -80,10 +80,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Error updating internal device state properties", () => new { e, this.deviceId, desiredProperties });
+                this.log.Error("Error updating device properties to desired values", () => new { e, this.deviceId, desiredProperties });
             }
 
-            this.log.Debug("Desired property update successfully reported to internal state", () => new { this.deviceId, desiredProperties });
+            this.log.Debug("Device properties updated to desired values", () => new { this.deviceId, desiredProperties });
 
             return Task.CompletedTask;
         }
