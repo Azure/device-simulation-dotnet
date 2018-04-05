@@ -75,6 +75,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private DeviceModel deviceModel;
         private long whenToRun;
         private ConnectionLoopSettings loopSettings;
+        private bool tagged;
         private long failedDeviceConnectionsCount;
         private long failedTwinUpdatesCount;
         private long failedRegistrationsCount;
@@ -165,7 +166,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.failedTwinUpdatesCount = 0;
             this.failedRegistrationsCount = 0;
             this.failedFetchCount = 0;
-    }
+        }
 
         /// <summary>
         /// Invoke this method before calling Execute(), to initialize the actor
@@ -185,6 +186,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.deviceId = deviceId;
             this.deviceStateActor = deviceStateActor;
             this.loopSettings = loopSettings;
+            this.tagged = false;
 
             this.fetchLogic.Setup(this, this.deviceId, this.deviceModel);
             this.registerLogic.Setup(this, this.deviceId, this.deviceModel);
@@ -258,7 +260,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 case ActorEvents.DeviceTwinTaggingFailed:
                     if (this.loopSettings.SchedulableTaggings <= 0) return;
                     this.loopSettings.SchedulableTaggings--;
-                    
+
                     this.failedTwinUpdatesCount++;
                     this.actorLogger.DeviceTwinTaggingFailed();
                     this.ScheduleDeviceTagging();
@@ -266,11 +268,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
                 case ActorEvents.FetchCompleted:
                     this.actorLogger.DeviceFetched();
-                    this.ScheduleConnection();
+                    if (!this.tagged)
+                    {
+                        this.ScheduleDeviceTagging();
+                    }
+                    else
+                    {
+                        this.ScheduleConnection();
+                    }
                     break;
 
                 case ActorEvents.DeviceTwinTagged:
                     this.actorLogger.DeviceTwinTagged();
+                    this.tagged = true;
                     this.ScheduleConnection();
                     break;
 
