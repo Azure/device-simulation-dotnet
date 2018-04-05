@@ -41,25 +41,6 @@ namespace SimulationAgent.Test.DeviceProperties
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void Nothing_Changed_Should_Call_Handle_Event_Properties_Update_Skipped()
-        {
-            // Arrange
-            this.SetupPropertiesActorProperties();
-            this.SetupPropertiesActorStateOffline();
-            this.SetupPropertiesChangedToFalse();
-            this.target.Setup(this.devicePropertiesActor.Object, DEVICE_ID);
-
-            // Act
-            this.target.Run();
-
-            // Assert
-            this.devicePropertiesActor.Verify(x => x.HandleEvent(ActorEvents.PropertiesUpdateSkipped));
-
-            // should exit before reaching get all device properties
-            this.devicePropertiesActor.Verify(x => x.DeviceProperties.GetAll(), Times.Never());
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void Device_Offline_Should_Call_Handle_Event_Update_Failed()
         {
             // Arrange
