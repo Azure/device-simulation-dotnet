@@ -40,7 +40,6 @@ namespace SimulationAgent.Test.DeviceProperties
             this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
             this.properties = new Mock<ISmartDictionary>();
             this.client = new Mock<IDeviceClient>();
-
             this.loopSettings = new Mock<PropertiesLoopSettings>(
                 this.rateLimitingConfig.Object);
 

@@ -145,6 +145,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
             this.updatePropertiesLogic.Setup(this, this.deviceId);
             this.deviceTagLogic.Setup(this, this.deviceId);
+
+            this.updatePropertiesLogic.Setup(this, this.deviceId);
             this.actorLogger.Setup(deviceId, "Properties");
 
             this.status = ActorStatus.ReadyToStart;
