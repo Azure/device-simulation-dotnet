@@ -4,6 +4,7 @@ using System;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
@@ -44,6 +45,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.deviceStateActor = new Mock<IDeviceStateActor>();
             this.devices = new Mock<IDevices>();
 
+            this.rateLimitingConfig.Setup(x => x.RegistryOperationsPerMinute).Returns(600);
             this.loopSettings = new Mock<PropertiesLoopSettings>(
                 this.rateLimitingConfig.Object);
 
@@ -88,14 +90,17 @@ namespace SimulationAgent.Test.DeviceProperties
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsTheNumberOfFailedTwinUpdates()
+        public void Should_Return_CountOfFailedTwinUpdates_When_TwinUpdateFails()
         {
             // Arrange
             const int FAILED_DEVICE_TWIN_UPDATES_COUNT = 5;
 
-            this.deviceConnectionActor.SetupProperty(x => x.FailedTwinUpdatesCount, 0);
+            //this.SetupDevicePropertiesActor();
+            this.target.Setup(DEVICE_ID,
+                this.deviceStateActor.Object,
+                SetupDeviceConnectionActor(),
+                this.loopSettings.Object);
 
-            this.SetupDevicePropertiesActor();
             ActorEvents deviceTwinTaggingFailed = ActorEvents.DeviceTwinTaggingFailed;
 
             // Act
@@ -126,6 +131,28 @@ namespace SimulationAgent.Test.DeviceProperties
                 this.deviceStateActor.Object,
                 this.deviceConnectionActor.Object,
                 this.loopSettings.Object);
+        }
+
+        private DeviceConnectionActor SetupDeviceConnectionActor()
+        {
+            Mock<IScriptInterpreter> scriptInterpreter = new Mock<IScriptInterpreter>();
+            Mock<Fetch> fetchLogic = new Mock<Fetch>(
+                this.devices.Object,
+                this.logger.Object);
+            Mock<Register> registerLogic = new Mock<Register>(
+                this.devices.Object,
+                this.logger.Object);
+            Mock<Connect> connectLogic = new Mock<Connect>(
+                this.devices.Object,
+                scriptInterpreter.Object,
+                this.logger.Object);
+            return new DeviceConnectionActor(
+                this.logger.Object,
+                this.actorsLogger.Object,
+                this.rateLimiting.Object,
+                fetchLogic.Object,
+                registerLogic.Object,
+                connectLogic.Object);
         }
     }
 }
