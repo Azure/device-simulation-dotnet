@@ -30,6 +30,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         private IDeviceActor context;
 
+        // Add time the event was written as a telemetry property
+        private const string OCCURRENCE_TIME_PROPERTY = "occurrenceUtcTime";
+        private const string DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:sszzz";
+
         public SendTelemetry(
             DependencyResolution.IFactory factory,
             ILogger logger)
@@ -145,13 +149,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                             msg = msg.Replace("${" + value.Key + "}", value.Value.ToString());
                         }
 
-                        // Prepend some fields as per pnpiotct request
-                        var format = $"{{\"device_id\":\"{this.deviceId}\",\"sensor_type\":\"{message.MessageSchema.Name}\",\"time_sent\":\"{DateTimeOffset.Now.ToUniversalTime()}\",";
+                        var format = $"{{\"{OCCURRENCE_TIME_PROPERTY}\":\"{DateTimeOffset.UtcNow.ToString(DATE_FORMAT)}\",";
                         msg = msg.Replace("{", "");
                         msg = String.Concat(format, msg);
                     }
-
-
 
                     this.log.Debug("SendTelemetry...",
                         () => new { this.deviceId, MessageSchema = message.MessageSchema.Name, msg });

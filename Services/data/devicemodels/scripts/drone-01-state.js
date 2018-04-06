@@ -7,34 +7,60 @@
 
 "use strict";
 
-const center_latitude = 47.612514;
-const center_longitude = -122.204184;
-const stable_altitude = 90.2345;
+// Position control
+const DefaultLatitude = 47.476075;
+const DefaultLongitude = -122.192026;
+const DistanceVariation = 10;
 
-const altitude_vary = 5.012;
-const distance_vary = 10;
-const battery_full = 1.0;
+// Altitude control
+const DefaultAltitude = 0.0;
+const AverageAltitude = 499.99;
+const AltitudeVariation = 5;
 
+// Battery control
+const MinBatteryLevel = 0.1;
+const MaxBatteryLevel = 1.0;
+const BatteryVariation = 2;
+
+// Temperature control
+const AverageTemperature = 75.00;
+const MinTemperature = 60.00;
+const MaxTemperature = 110.00;
+const TemperatureVariation = 5;
+
+// Velocity control
+const AverageVelocity = 60.00;
+const MinVelocity = 20.00;
+const MaxVelocity = 120.00;
+const VelocityVariation = 5;
+
+// Acceleration control
+const AverageAcceleration = 2.50;
+const MinAcceleration = 0.01;
+const MaxAcceleration = 9.99;
+const AccelerationVariation = 1;
+
+// Display control for position and other attributes
 const GeoSpatialPrecision = 6;
 const DecimalPrecision = 2;
 
-const FlightPath = ["0", "1", "1", "1", "2", "1", "1", "1", "1", "1", "1", "1", "1", "1", "3", "1", "1", "1", "1", "1", "4"];
-const DeliveryIdPrefix = "fdd-del-";
+// TODO: Introduce multiple flightpaths to spike up the app
+const FlightPath = ["0", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "2", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "3", "1", "1", "1", "1", "1", "1", "1", "1", "1", "4"];
 
 // Default state
 var state = {
     online: true,
-    temperature: 75.0,
+    temperature: AverageTemperature,
     temperature_unit: "F",
     velocity: 0.0,
     velocity_unit: "mm/sec",
     acceleration: 0.0,
     acceleration_unit: "mm/sec^2",
     batteryStatus: "full",
-    batteryLevel: battery_full,
-    latitude: center_latitude,
-    longitude: center_longitude,
-    altitude: stable_altitude,
+    batteryLevel: MaxBatteryLevel,
+    latitude: DefaultLatitude,
+    longitude: DefaultLongitude,
+    altitude: DefaultAltitude,
     flightStatus: "0",
     flightPosition: 0,
     deliveryId: ""
@@ -78,17 +104,13 @@ function main(context, previousState) {
     // the telemetry can apply changes using the previous function state.
     restoreState(previousState);
 
-    // 75F +/- 5%,  Min 25F, Max 100F
-    state.temperature = vary(75, 2, 60, 100).toFixed(DecimalPrecision);
+    state.temperature = vary(AverageTemperature, TemperatureVariation, MinTemperature, MaxTemperature).toFixed(DecimalPrecision);
+    state.acceleration = vary(AverageAcceleration, AccelerationVariation, MinAcceleration, MaxAcceleration).toFixed(DecimalPrecision);
+    state.velocity = vary(AverageVelocity, VelocityVariation, MinVelocity, MaxVelocity).toFixed(DecimalPrecision);
 
-    state.acceleration = vary(5.0, 5, 0.0, 9.9).toFixed(DecimalPrecision);
-
-    state.velocity = vary(99.99, 5, 0.0, 199.99).toFixed(DecimalPrecision);
-
-    // 0.5 +/- 5%, Min 0.5, Max 1.0
-    state.batteryLevel = vary(0.5, 5, 0.1, battery_full).toFixed(DecimalPrecision);
-
-    state.batteryStatus = getBatteryStatus(state.batteryLevel);
+    // Generate steadily decreasing battery levels
+    state.batteryLevel = vary(Number(state.batteryLevel), BatteryVariation, MinBatteryLevel, Number(state.batteryLevel)).toFixed(DecimalPrecision);
+    state.batteryStatus = getBatteryStatus(Number(state.batteryLevel));
 
     if (state.flightPosition == 0) {
         state.deliveryId = createUUID();
@@ -97,11 +119,13 @@ function main(context, previousState) {
     // Calculate flight status using previous state
     state.flightStatus = getFlightStatus();
 
-    var coords = varylocation(center_latitude, center_longitude, distance_vary);
-    state.latitude = coords.latitude.toFixed(GeoSpatialPrecision);
-    state.longitude = coords.longitude.toFixed(GeoSpatialPrecision);
+    // Use the last coordinates to calculate the next set with a given variation
+    var coords = varylocation(Number(state.latitude), Number(state.longitude), DistanceVariation);
+    state.latitude = Number(coords.latitude).toFixed(GeoSpatialPrecision);
+    state.longitude = Number(coords.longitude).toFixed(GeoSpatialPrecision);
 
-    state.altitude = vary(stable_altitude, 5, stable_altitude - altitude_vary, stable_altitude + altitude_vary).toFixed(DecimalPrecision);
+    // Fluctuate altitude between given variation constant by more or less
+    state.altitude = vary(AverageAltitude, AltitudeVariation, AverageAltitude - AltitudeVariation, AverageAltitude + AltitudeVariation).toFixed(DecimalPrecision);
 
     return state;
 }
@@ -136,34 +160,26 @@ function createUUID() {
     return uuid;
 }
 
-
-//var getFlightStatus = (function () {
-//    var flight_simulation = [0, 1, 2, 1, 3, 1, 4];
-//    var currentIndex = 0;
-//    var maxIndex = flight_simulation.length - 1;
-
-//    return {
-//        next: function () {
-//            if (currentIndex < 0 || currentIndex > maxIndex) currentIndex = 0;
-//            return flight_simulation[currentIndex++];
-//        }
-//    };
-//}());
-
-
 function getBatteryStatus(level) {
     var status;
+    log("Level: ");
+    log(typeof (level));
+    log(level);
+
     switch (true) {
-        case level == 0.0:
+        case level == 0.00:
             status = "dead";
             break;
-        case level >= 0.1 && level <= 0.3:
+        case level >= 0.01 && level <= 0.10:
             status = "critical";
             break;
-        case level >= 0.4 && level <= 0.6:
+        case level >= 0.11 && level <= 0.30:
             status = "low";
             break;
-        case level >= 0.7 && level <= 0.9:
+        case level >= 0.31 && level <= 0.50:
+            status = "medium";
+            break;
+        case level >= 0.51 && level <= 0.99:
             status = "high";
             break;
         case level == 1.0:

@@ -4,7 +4,7 @@
       "commandName": "Project",
       "environmentVariables": {
         "PCS_STORAGEADAPTER_WEBSERVICE_URL": "http://localhost:9022/v1",
-        "PCS_IOTHUB_CONNSTRING": "HostName=drone-simulator43692.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=AZSRRy8ChCGOf8DBNR5/PrRa4l7vk0G16n4XumEkOwQ="
+        "PCS_IOTHUB_CONNSTRING": "HostName=poltergeistd028b.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=6Cv/UJJnVwGKc3qfG3AzvQH1rMKY/P89Lah6dNfGL28="
       }
     }
   }
