@@ -18,7 +18,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         Device Device { get; set; }
         bool Connected { get; }
         long FailedDeviceConnectionsCount { get; }
-        long FailedTwinUpdatesCount { get; }
+        long FailedTwinUpdatesCount { get; set; }
         long SimulationErrorsCount { get; }
 
         void Setup(string deviceId, DeviceModel deviceModel, IDeviceStateActor deviceStateActor, ConnectionLoopSettings loopSettings);
@@ -27,9 +27,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         void Stop();
     }
 
-    /**
-     * TODO: when the device exists already, check whether it is tagged
-     */
     public class DeviceConnectionActor : IDeviceConnectionActor
     {
         private enum ActorStatus
@@ -40,8 +37,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             Fetching,
             ReadyToRegister,
             Registering,
-            ReadyToTagDeviceTwin,
-            TaggingDeviceTwin,
             ReadyToConnect,
             Connecting,
             Done,
@@ -56,8 +51,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             FetchCompleted,
             RegistrationFailed,
             DeviceRegistered,
-            DeviceTwinTaggingFailed,
-            DeviceTwinTagged,
             Connected,
             ConnectionFailed
         }
@@ -67,7 +60,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private readonly IRateLimiting rateLimiting;
         private readonly IDeviceConnectionLogic fetchLogic;
         private readonly IDeviceConnectionLogic registerLogic;
-        private readonly IDeviceConnectionLogic deviceTwinTagLogic;
         private readonly IDeviceConnectionLogic connectLogic;
 
         private ActorStatus status;
@@ -75,7 +67,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private DeviceModel deviceModel;
         private long whenToRun;
         private ConnectionLoopSettings loopSettings;
-        private bool tagged;
         private long failedDeviceConnectionsCount;
         private long failedTwinUpdatesCount;
         private long failedRegistrationsCount;
@@ -125,7 +116,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         /// <summary>
         /// Failed device twin updates counter
         /// </summary>
-        public long FailedTwinUpdatesCount => this.failedTwinUpdatesCount;
+        public long FailedTwinUpdatesCount
+        {
+            get => this.failedTwinUpdatesCount;
+            set => this.failedTwinUpdatesCount = value;
+        }
 
         /// <summary>
         /// Simulation error counter in DeviceConnectionActor
@@ -141,7 +136,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             IRateLimiting rateLimiting,
             Fetch fetchLogic,
             Register registerLogic,
-            DeviceTwinTag deviceTwinTagLogic,
             Connect connectLogic)
         {
             this.log = logger;
@@ -150,7 +144,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
             this.fetchLogic = fetchLogic;
             this.registerLogic = registerLogic;
-            this.deviceTwinTagLogic = deviceTwinTagLogic;
             this.connectLogic = connectLogic;
 
             this.Message = null;
@@ -186,11 +179,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.deviceId = deviceId;
             this.deviceStateActor = deviceStateActor;
             this.loopSettings = loopSettings;
-            this.tagged = false;
 
             this.fetchLogic.Setup(this, this.deviceId, this.deviceModel);
             this.registerLogic.Setup(this, this.deviceId, this.deviceModel);
-            this.deviceTwinTagLogic.Setup(this, this.deviceId, this.deviceModel);
             this.connectLogic.Setup(this, this.deviceId, this.deviceModel);
             this.actorLogger.Setup(deviceId, "Connection");
 
@@ -241,11 +232,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     break;
 
                 case ActorEvents.DeviceRegistered:
-                    if (this.loopSettings.SchedulableTaggings <= 0) return;
-                    this.loopSettings.SchedulableTaggings--;
-
                     this.actorLogger.DeviceRegistered();
-                    this.ScheduleDeviceTagging();
+                    this.ScheduleConnection();
                     break;
 
                 case ActorEvents.RegistrationFailed:
@@ -257,30 +245,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     this.ScheduleRegistration();
                     break;
 
-                case ActorEvents.DeviceTwinTaggingFailed:
-                    if (this.loopSettings.SchedulableTaggings <= 0) return;
-                    this.loopSettings.SchedulableTaggings--;
-
-                    this.failedTwinUpdatesCount++;
-                    this.actorLogger.DeviceTwinTaggingFailed();
-                    this.ScheduleDeviceTagging();
-                    break;
-
                 case ActorEvents.FetchCompleted:
                     this.actorLogger.DeviceFetched();
-                    if (!this.tagged)
-                    {
-                        this.ScheduleDeviceTagging();
-                    }
-                    else
-                    {
-                        this.ScheduleConnection();
-                    }
-                    break;
-
-                case ActorEvents.DeviceTwinTagged:
-                    this.actorLogger.DeviceTwinTagged();
-                    this.tagged = true;
                     this.ScheduleConnection();
                     break;
 
@@ -331,12 +297,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     this.actorLogger.ConnectingDevice();
                     this.connectLogic.RunAsync();
                     return;
-
-                case ActorStatus.ReadyToTagDeviceTwin:
-                    this.status = ActorStatus.TaggingDeviceTwin;
-                    this.actorLogger.TaggingDeviceTwin();
-                    this.deviceTwinTagLogic.RunAsync();
-                    return;
             }
         }
 
@@ -366,24 +326,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
             this.actorLogger.RegistrationScheduled(this.whenToRun);
             this.log.Debug("Registration scheduled",
-                () => new
-                {
-                    this.deviceId,
-                    Status = this.status.ToString(),
-                    When = this.log.FormatDate(this.whenToRun)
-                });
-        }
-
-        private void ScheduleDeviceTagging()
-        {
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            // note: we overwrite the twin, so no Read operation is needed
-            var pauseMsec = this.rateLimiting.GetPauseForNextTwinWrite();
-            this.whenToRun = now + pauseMsec;
-            this.status = ActorStatus.ReadyToTagDeviceTwin;
-
-            this.actorLogger.DeviceTwinTaggingScheduled(this.whenToRun);
-            this.log.Debug("Device twin tagging scheduled",
                 () => new
                 {
                     this.deviceId,

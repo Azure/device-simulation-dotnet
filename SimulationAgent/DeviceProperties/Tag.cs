@@ -1,52 +1,50 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties
 {
     /// <summary>
     /// Add twin information to the new device twin
     /// </summary>
-    public class DeviceTwinTag : IDeviceConnectionLogic
+    public class Tag : IDevicePropertiesLogic
     {
         private readonly IDevices devices;
         private readonly ILogger log;
         private string deviceId;
-        private IDeviceConnectionActor context;
+        private IDevicePropertiesActor context;
 
-        public DeviceTwinTag(IDevices devices, ILogger logger)
+        public Tag(IDevices devices, ILogger logger)
         {
             this.log = logger;
             this.devices = devices;
         }
 
-        public void Setup(IDeviceConnectionActor context, string deviceId, DeviceModel deviceModel)
+        public void Setup(IDevicePropertiesActor context, string deviceId)
         {
             this.context = context;
             this.deviceId = deviceId;
         }
 
-        public async Task RunAsync()
+        public void Run()
         {
             this.log.Debug("Adding tag to device twin...", () => new { this.deviceId });
             try
             {
                 var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                await this.devices.AddTagAsync(this.deviceId);
+                this.devices.AddTagAsync(this.deviceId);
 
                 var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
                 this.log.Debug("Device tag added", () => new { this.deviceId, timeSpent });
 
-                this.context.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceTwinTagged);
+                this.context.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTwinTagged);
             }
             catch (Exception e)
             {
                 this.log.Error("Error while tagging the device twin", () => new { this.deviceId, e });
-                this.context.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceTwinTaggingFailed);
+                this.context.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTwinTaggingFailed);
             }
         }
     }

@@ -22,8 +22,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         public double SchedulableFetches { get; set; }
         public double SchedulableRegistrations { get; set; }
-        public double SchedulableTaggings { get; set; }
-
+        
         public ConnectionLoopSettings(IRateLimitingConfig ratingConfig)
         {
             this.ratingConfig = ratingConfig;
@@ -35,6 +34,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             // Prioritize connections and registrations, so that devices connect as soon as possible
             this.SchedulableFetches = Math.Max(1, this.ratingConfig.RegistryOperationsPerMinute / 25);
             this.SchedulableRegistrations = Math.Max(1, this.ratingConfig.RegistryOperationsPerMinute / 10);
+        }
+    }
+
+    public class PropertiesLoopSettings
+    {
+        public const int MIN_LOOP_DURATION = 500;
+
+        private readonly IRateLimitingConfig ratingConfig;
+
+        public double SchedulableTaggings { get; set; }
+
+        public PropertiesLoopSettings(IRateLimitingConfig ratingConfig)
+        {
+            this.ratingConfig = ratingConfig;
+            this.NewLoop();
+        }
+
+        public void NewLoop()
+        {
             this.SchedulableTaggings = Math.Max(1, this.ratingConfig.RegistryOperationsPerMinute / 25);
         }
     }

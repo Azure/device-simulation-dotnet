@@ -41,6 +41,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Set of counter to optimize scheduling
         private readonly ConnectionLoopSettings connectionLoopSettings;
 
+        // Set of counters to optimize scheduling
+        private readonly PropertiesLoopSettings propertiesLoopSettings;
+
         // Service used to load device models details
         private readonly IDeviceModels deviceModels;
 
@@ -106,6 +109,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             IFactory factory)
         {
             this.connectionLoopSettings = new ConnectionLoopSettings(ratingConfig);
+            this.propertiesLoopSettings = new PropertiesLoopSettings(ratingConfig);
 
             this.log = logger;
             this.deviceModels = deviceModels;
@@ -339,6 +343,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             while (this.running)
             {
+                this.propertiesLoopSettings.NewLoop();
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 foreach (var device in this.devicePropertiesActors)
                 {
@@ -425,7 +430,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             // Create one device properties actor for each device
             var devicePropertiesActor = this.factory.Resolve<IDevicePropertiesActor>();
-            devicePropertiesActor.Setup(deviceId, deviceStateActor, deviceConnectionActor);
+            devicePropertiesActor.Setup(deviceId, deviceStateActor, deviceConnectionActor, this.propertiesLoopSettings);
             this.devicePropertiesActors.Add(key, devicePropertiesActor);
 
             // Create one telemetry actor for each telemetry message to be sent

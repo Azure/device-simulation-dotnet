@@ -9,6 +9,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
@@ -98,11 +99,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
             // Registrations required by Autofac, these classes implement the same interface
             builder.RegisterType<Connect>().As<Connect>();
-            builder.RegisterType<DeviceTwinTag>().As<DeviceTwinTag>();
+            builder.RegisterType<Tag>().As<Tag>();
             builder.RegisterType<Fetch>().As<Fetch>();
             builder.RegisterType<Register>().As<Register>();
             builder.RegisterType<UpdateDeviceState>().As<UpdateDeviceState>();
             builder.RegisterType<SendTelemetry>().As<SendTelemetry>();
+            builder.RegisterType<UpdateReportedProperties>().As<UpdateReportedProperties>();
         }
 
         private static void RegisterFactory(IContainer container)

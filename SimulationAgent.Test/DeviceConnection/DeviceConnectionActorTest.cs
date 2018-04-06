@@ -20,7 +20,6 @@ namespace SimulationAgent.Test.DeviceConnection
         private readonly Mock<IRateLimiting> rateLimiting;
         private readonly Mock<Fetch> fetchLogic;
         private readonly Mock<Register> registerLogic;
-        private readonly Mock<DeviceTwinTag> deviceTwinTagLogic;
         private readonly Mock<IDevices> devices;
         private readonly Mock<Connect> connectLogic;
         private readonly Mock<IDeviceStateActor> deviceStateActor;
@@ -41,9 +40,6 @@ namespace SimulationAgent.Test.DeviceConnection
             this.registerLogic = new Mock<Register>(
                 this.devices.Object,
                 this.logger.Object);
-            this.deviceTwinTagLogic = new Mock<DeviceTwinTag>(
-                this.devices.Object,
-                this.logger.Object);
             this.connectLogic = new Mock<Connect>(
                 this.devices.Object,
                 this.scriptInterpreter.Object,
@@ -61,7 +57,6 @@ namespace SimulationAgent.Test.DeviceConnection
                 this.rateLimiting.Object,
                 this.fetchLogic.Object,
                 this.registerLogic.Object,
-                this.deviceTwinTagLogic.Object,
                 this.connectLogic.Object);
         }
 
@@ -109,26 +104,6 @@ namespace SimulationAgent.Test.DeviceConnection
 
             // Assert
             Assert.Equal(0, failedTwinUpdateCount);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsTheNumberOfFailedTwinUpdates()
-        {
-            // Arrange
-            const int FAILED_DEVICE_TWIN_UPDATES_COUNT = 5;
-            this.SetupDeviceConnectionActor();
-            DeviceConnectionActor.ActorEvents deviceTwinTaggingFailed = DeviceConnectionActor.ActorEvents.DeviceTwinTaggingFailed;
-
-            // Act
-            for (int i = 0; i < FAILED_DEVICE_TWIN_UPDATES_COUNT; i++)
-            {
-                this.target.HandleEvent(deviceTwinTaggingFailed);
-            }
-
-            long failedTwinUpdateCount = this.target.FailedTwinUpdatesCount;
-
-            // Assert
-            Assert.Equal(FAILED_DEVICE_TWIN_UPDATES_COUNT, failedTwinUpdateCount);
         }
 
         private void SetupDeviceConnectionActor()
