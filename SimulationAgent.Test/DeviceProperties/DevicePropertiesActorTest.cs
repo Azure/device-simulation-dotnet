@@ -20,7 +20,6 @@ namespace SimulationAgent.Test.DeviceProperties
     public class DevicePropertiesActorTest
     {
         private readonly Mock<ILogger> logger;
-
         private readonly Mock<IActorsLogger> actorsLogger;
         private readonly Mock<IRateLimiting> rateLimiting;
         private readonly Mock<IRateLimitingConfig> rateLimitingConfig;
