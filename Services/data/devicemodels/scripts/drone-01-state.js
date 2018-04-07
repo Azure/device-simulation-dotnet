@@ -162,9 +162,6 @@ function createUUID() {
 
 function getBatteryStatus(level) {
     var status;
-    log("Level: ");
-    log(typeof (level));
-    log(level);
 
     switch (true) {
         case level == 0.00:

@@ -33,6 +33,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         // Add time the event was written as a telemetry property
         private const string OCCURRENCE_TIME_PROPERTY = "occurrenceUtcTime";
         private const string DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:sszzz";
+        private const string DEVICE_ID_PROPERTY = "deviceId";
 
         public SendTelemetry(
             DependencyResolution.IFactory factory,
@@ -149,7 +150,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                             msg = msg.Replace("${" + value.Key + "}", value.Value.ToString());
                         }
 
-                        var format = $"{{\"{OCCURRENCE_TIME_PROPERTY}\":\"{DateTimeOffset.UtcNow.ToString(DATE_FORMAT)}\",";
+                        var format = $"{{\"{OCCURRENCE_TIME_PROPERTY}\":\"{DateTimeOffset.UtcNow.ToString()}\",\"{DEVICE_ID_PROPERTY}\":\"{this.deviceId}\",";
                         msg = msg.Replace("{", "");
                         msg = String.Concat(format, msg);
                     }
