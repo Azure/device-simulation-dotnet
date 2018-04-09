@@ -93,19 +93,6 @@ namespace SimulationAgent.Test.DeviceConnection
             Assert.Equal(FAILED_DEVICE_CONNECTIONS_COUNT, failedDeviceConnectionCount);
         }
 
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void TheNumberOfFailedTwinUpdatesIsZeroAtStart()
-        {
-            // Arrange
-            this.SetupDeviceConnectionActor();
-
-            // Act
-            long failedTwinUpdateCount = this.target.FailedTwinUpdatesCount;
-
-            // Assert
-            Assert.Equal(0, failedTwinUpdateCount);
-        }
-
         private void SetupDeviceConnectionActor()
         {
             string DEVICE_ID = "01";

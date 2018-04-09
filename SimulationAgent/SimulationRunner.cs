@@ -281,13 +281,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         public long FailedDeviceConnectionsCount => this.deviceConnectionActors.Sum(a => a.Value.FailedDeviceConnectionsCount);
 
         // Method to return the count of twin update failed devices
-        public long FailedDeviceTwinUpdatesCount => this.deviceConnectionActors.Sum(a => a.Value.FailedTwinUpdatesCount);
+        public long FailedDeviceTwinUpdatesCount => this.devicePropertiesActors.Sum(a => a.Value.FailedTwinUpdatesCount);
 
         // Method to return the count of simulation errors
         public long SimulationErrorsCount => this.simulationErrors +
                 this.deviceConnectionActors.Sum(a => a.Value.SimulationErrorsCount) +
                 this.deviceStateActors.Sum(a => a.Value.SimulationErrorsCount) +
-                this.deviceTelemetryActors.Sum(a => a.Value.FailedMessagesCount);
+                this.deviceTelemetryActors.Sum(a => a.Value.FailedMessagesCount) +
+                this.devicePropertiesActors.Sum(a => a.Value.SimulationErrorsCount);
 
         private DeviceModel GetDeviceModel(string id, Services.Models.Simulation.DeviceModelOverride overrides)
         {

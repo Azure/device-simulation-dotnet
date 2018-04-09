@@ -31,6 +31,7 @@ namespace SimulationAgent.Test.DeviceProperties
         private readonly Mock<PropertiesLoopSettings> loopSettings;
 
         private const string DEVICE_ID = "01";
+        private const int TWIN_WRITES_PER_SECOND = 10;
 
         private DevicePropertiesActor target;
 
@@ -43,17 +44,9 @@ namespace SimulationAgent.Test.DeviceProperties
             this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
             this.deviceStateActor = new Mock<IDeviceStateActor>();
             this.devices = new Mock<IDevices>();
-
-            this.rateLimitingConfig.Setup(x => x.RegistryOperationsPerMinute).Returns(600);
-            this.loopSettings = new Mock<PropertiesLoopSettings>(
-                this.rateLimitingConfig.Object);
-
-            this.updatePropertiesLogic = new Mock<UpdateReportedProperties>(
-                this.logger.Object);
-
-            this.deviceTagLogic = new Mock<Tag>(
-                devices.Object,
-                this.logger.Object);
+            this.loopSettings = new Mock<PropertiesLoopSettings>(this.rateLimitingConfig.Object);
+            this.updatePropertiesLogic = new Mock<UpdateReportedProperties>(this.logger.Object);
+            this.deviceTagLogic = new Mock<Tag>(devices.Object, this.logger.Object);
 
             this.CreateNewDevicePropertiesActor();
         }
@@ -62,7 +55,7 @@ namespace SimulationAgent.Test.DeviceProperties
         public void Setup_Called_Twice_Should_Throw_Already_Initialized_Exception()
         {
             // Arrange
-            CreateNewDevicePropertiesActor();
+            this.CreateNewDevicePropertiesActor();
 
             // Act
             this.SetupDevicePropertiesActor();
@@ -78,7 +71,7 @@ namespace SimulationAgent.Test.DeviceProperties
         {
             // Arrange
             const ActorEvents OUT_OF_RANGE_EVENT = (ActorEvents) 123;
-            CreateNewDevicePropertiesActor();
+            this.CreateNewDevicePropertiesActor();
 
             // Act
             this.SetupDevicePropertiesActor();
@@ -92,13 +85,14 @@ namespace SimulationAgent.Test.DeviceProperties
         public void Should_Return_CountOfFailedTwinUpdates_When_TwinUpdateFails()
         {
             // Arrange
-            const int FAILED_DEVICE_TWIN_UPDATES_COUNT = 5;
+            const int FAILED_DEVICE_TWIN_UPDATES_COUNT = 3;
+            this.CreateNewDevicePropertiesActor();
+            this.SetupDevicePropertiesActor();
+            this.SetupRateLimitingConfig();
+            this.loopSettings.Object.NewLoop(); // resets SchedulableTaggings
 
-            //this.SetupDevicePropertiesActor();
-            this.target.Setup(DEVICE_ID,
-                this.deviceStateActor.Object,
-                SetupDeviceConnectionActor(),
-                this.loopSettings.Object);
+            // The constructor should initialize count as zero.
+            Assert.Equal(0, this.target.FailedTwinUpdatesCount);
 
             ActorEvents deviceTwinTaggingFailed = ActorEvents.DeviceTwinTaggingFailed;
 
@@ -112,6 +106,19 @@ namespace SimulationAgent.Test.DeviceProperties
 
             // Assert
             Assert.Equal(FAILED_DEVICE_TWIN_UPDATES_COUNT, failedTwinUpdateCount);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void TheNumberOfFailedTwinUpdatesIsZeroAtStart()
+        {
+            // Arrange
+            this.CreateNewDevicePropertiesActor();
+
+            // Act
+            long failedTwinUpdateCount = this.target.FailedTwinUpdatesCount;
+
+            // Assert
+            Assert.Equal(0, failedTwinUpdateCount);
         }
 
         private void CreateNewDevicePropertiesActor()
@@ -132,7 +139,12 @@ namespace SimulationAgent.Test.DeviceProperties
                 this.loopSettings.Object);
         }
 
-        private DeviceConnectionActor SetupDeviceConnectionActor()
+        private void SetupRateLimitingConfig()
+        {
+            this.rateLimitingConfig.SetupGet(x => x.TwinWritesPerSecond).Returns(TWIN_WRITES_PER_SECOND);
+        }
+
+        private DeviceConnectionActor GetDeviceConnectionActor()
         {
             Mock<IScriptInterpreter> scriptInterpreter = new Mock<IScriptInterpreter>();
             Mock<Fetch> fetchLogic = new Mock<Fetch>(

@@ -17,6 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         ISmartDictionary DeviceState { get; }
         IDeviceClient Client { get; }
         long FailedTwinUpdatesCount { get; }
+        long SimulationErrorsCount { get; }
 
         void Setup(
             string deviceId,
@@ -67,6 +68,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         private string deviceId;
         private long whenToRun;
         private PropertiesLoopSettings loopSettings;
+        private long failedTwinUpdatesCount;
 
         /// <summary>
         /// Reference to the actor managing the device state, used
@@ -97,10 +99,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         /// <summary>
         /// Failed device twin updates counter
         /// </summary>
-        public long FailedTwinUpdatesCount {
-            get => this.deviceConnectionActor.FailedTwinUpdatesCount;
-            set => this.deviceConnectionActor.FailedTwinUpdatesCount = value;
-        }
+        public long FailedTwinUpdatesCount => this.failedTwinUpdatesCount;
+
+        /// <summary>
+        /// Simulation error counter in DeviceConnectionActor
+        /// </summary>
+        public long SimulationErrorsCount => this.FailedTwinUpdatesCount;
 
         public DevicePropertiesActor(
             ILogger logger,
@@ -119,6 +123,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             this.deviceId = null;
             this.deviceStateActor = null;
             this.deviceConnectionActor = null;
+
+            this.failedTwinUpdatesCount = 0;
         }
 
         /// <summary>
@@ -169,7 +175,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                     if (this.loopSettings.SchedulableTaggings <= 0) return;
                     this.loopSettings.SchedulableTaggings--;
 
-                    this.FailedTwinUpdatesCount++;
+                    this.failedTwinUpdatesCount++;
                     this.actorLogger.DeviceTwinTaggingFailed();
                     this.ScheduleDeviceTagging();
                     break;
@@ -180,7 +186,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                     break;
 
                 case ActorEvents.PropertiesUpdateFailed:
-                    this.FailedTwinUpdatesCount++;
+                    this.failedTwinUpdatesCount++;
                     this.actorLogger.DevicePropertiesUpdateFailed();
                     this.SchedulePropertiesUpdate(isRetry: true);
                     break;

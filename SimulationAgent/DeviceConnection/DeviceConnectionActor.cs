@@ -18,7 +18,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         Device Device { get; set; }
         bool Connected { get; }
         long FailedDeviceConnectionsCount { get; }
-        long FailedTwinUpdatesCount { get; set; }
         long SimulationErrorsCount { get; }
 
         void Setup(string deviceId, DeviceModel deviceModel, IDeviceStateActor deviceStateActor, ConnectionLoopSettings loopSettings);
@@ -68,7 +67,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private long whenToRun;
         private ConnectionLoopSettings loopSettings;
         private long failedDeviceConnectionsCount;
-        private long failedTwinUpdatesCount;
         private long failedRegistrationsCount;
         private long failedFetchCount;
 
@@ -114,20 +112,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         public long FailedDeviceConnectionsCount => this.failedDeviceConnectionsCount;
 
         /// <summary>
-        /// Failed device twin updates counter
-        /// </summary>
-        public long FailedTwinUpdatesCount
-        {
-            get => this.failedTwinUpdatesCount;
-            set => this.failedTwinUpdatesCount = value;
-        }
-
-        /// <summary>
         /// Simulation error counter in DeviceConnectionActor
         /// </summary>
         public long SimulationErrorsCount => this.failedRegistrationsCount +
             this.failedFetchCount +
-            this.FailedTwinUpdatesCount +
             this.FailedDeviceConnectionsCount;
 
         public DeviceConnectionActor(
@@ -156,7 +144,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.deviceStateActor = null;
 
             this.failedDeviceConnectionsCount = 0;
-            this.failedTwinUpdatesCount = 0;
             this.failedRegistrationsCount = 0;
             this.failedFetchCount = 0;
         }

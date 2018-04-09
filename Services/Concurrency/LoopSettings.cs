@@ -39,6 +39,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
     public class PropertiesLoopSettings
     {
+        private const int SHARED_TWIN_WRITES_ALLOCATION = 2;
+
         public const int MIN_LOOP_DURATION = 500;
 
         private readonly IRateLimitingConfig ratingConfig;
@@ -53,7 +55,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         public void NewLoop()
         {
-            this.SchedulableTaggings = Math.Max(1, this.ratingConfig.RegistryOperationsPerMinute / 25);
+            // In order for other threads to be able to schedule twin opertations,
+            // divide by a constant value to prevent the tagging thread from having
+            // first priority over twin writes all of the time.
+            this.SchedulableTaggings = Math.Max(1, this.ratingConfig.TwinWritesPerSecond / SHARED_TWIN_WRITES_ALLOCATION);
         }
     }
 }
