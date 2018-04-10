@@ -189,15 +189,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Twin tagging scheduled at: " + msg);
-            this.LogProperties("Twin tagging scheduled at: " + msg);
+            this.Log("Device tagging scheduled at: " + msg);
+            this.LogProperties("Device tagging scheduled at: " + msg);
         }
 
         public void TaggingDevice()
         {
             if (!this.enabled) return;
 
-            this.Log("Tagging twin");
+            this.Log("Tagging device");
             this.LogProperties("Tagging");
         }
 
@@ -205,16 +205,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         {
             if (!this.enabled) return;
 
-            this.Log("Twin tagged");
-            this.LogProperties("Twin tagged");
+            this.Log("Device tagged");
+            this.LogProperties("Device tagged");
         }
 
         public void DeviceTaggingFailed()
         {
             if (!this.enabled) return;
 
-            this.Log("Twin tagging FAILED");
-            this.LogProperties("Twin tag FAILED");
+            this.Log("Device tagging FAILED");
+            this.LogProperties("Device tag FAILED");
         }
 
         public void DeviceConnectionScheduled(long time)
