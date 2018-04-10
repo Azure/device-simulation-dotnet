@@ -38,10 +38,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Application logger
         private readonly ILogger log;
 
-        // Set of counter to optimize scheduling
+        // Settings to optimize scheduling
         private readonly ConnectionLoopSettings connectionLoopSettings;
 
-        // Set of counters to optimize scheduling
+        // Settings to optimize scheduling
         private readonly PropertiesLoopSettings propertiesLoopSettings;
 
         // Service used to load device models details

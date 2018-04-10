@@ -91,7 +91,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.SetupRateLimitingConfig();
             this.loopSettings.Object.NewLoop(); // resets SchedulableTaggings
 
-            // The constructor should initialize count as zero.
+            // The constructor should initialize count to zero.
             Assert.Equal(0, this.target.FailedTwinUpdatesCount);
 
             ActorEvents deviceTwinTaggingFailed = ActorEvents.DeviceTaggingFailed;

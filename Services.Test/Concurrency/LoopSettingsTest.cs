@@ -1,7 +1,5 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
-using System.Threading;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Moq;
 using Services.Test.helpers;
@@ -36,7 +34,7 @@ namespace Services.Test.Concurrency
 
             // Assert
             // In order for other threads to be able to schedule twin opertations,
-            // value should at least 1 but less than the limit per second.
+            // value should be at least 1 but less than the limit per second.
             Assert.True(this.propertiesTarget.SchedulableTaggings >= 1);
             Assert.True(this.propertiesTarget.SchedulableTaggings < TWIN_WRITES_PER_SECOND);
         }
