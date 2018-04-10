@@ -22,10 +22,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         void DeviceRegistered();
         void DeviceRegistrationFailed();
 
-        void DeviceTwinTaggingScheduled(long time);
-        void TaggingDeviceTwin();
-        void DeviceTwinTagged();
-        void DeviceTwinTaggingFailed();
+        void DeviceTaggingScheduled(long time);
+        void TaggingDevice();
+        void DeviceTagged();
+        void DeviceTaggingFailed();
 
         void DeviceConnectionScheduled(long time);
         void ConnectingDevice();
@@ -184,7 +184,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.LogRegistry("Registration FAILED");
         }
 
-        public void DeviceTwinTaggingScheduled(long time)
+        public void DeviceTaggingScheduled(long time)
         {
             if (!this.enabled) return;
 
@@ -193,7 +193,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.LogProperties("Twin tagging scheduled at: " + msg);
         }
 
-        public void TaggingDeviceTwin()
+        public void TaggingDevice()
         {
             if (!this.enabled) return;
 
@@ -201,7 +201,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.LogProperties("Tagging");
         }
 
-        public void DeviceTwinTagged()
+        public void DeviceTagged()
         {
             if (!this.enabled) return;
 
@@ -209,7 +209,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.LogProperties("Twin tagged");
         }
 
-        public void DeviceTwinTaggingFailed()
+        public void DeviceTaggingFailed()
         {
             if (!this.enabled) return;
 

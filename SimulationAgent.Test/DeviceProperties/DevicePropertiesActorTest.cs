@@ -25,7 +25,7 @@ namespace SimulationAgent.Test.DeviceProperties
         private readonly Mock<IRateLimitingConfig> rateLimitingConfig;
         private readonly Mock<IDevices> devices;
         private readonly Mock<UpdateReportedProperties> updatePropertiesLogic;
-        private readonly Mock<Tag> deviceTagLogic;
+        private readonly Mock<SetDeviceTag> deviceTagLogic;
         private readonly Mock<IDeviceConnectionActor> deviceConnectionActor;
         private readonly Mock<IDeviceStateActor> deviceStateActor;
         private readonly Mock<PropertiesLoopSettings> loopSettings;
@@ -46,7 +46,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.devices = new Mock<IDevices>();
             this.loopSettings = new Mock<PropertiesLoopSettings>(this.rateLimitingConfig.Object);
             this.updatePropertiesLogic = new Mock<UpdateReportedProperties>(this.logger.Object);
-            this.deviceTagLogic = new Mock<Tag>(devices.Object, this.logger.Object);
+            this.deviceTagLogic = new Mock<SetDeviceTag>(devices.Object, this.logger.Object);
 
             this.CreateNewDevicePropertiesActor();
         }
@@ -94,7 +94,7 @@ namespace SimulationAgent.Test.DeviceProperties
             // The constructor should initialize count as zero.
             Assert.Equal(0, this.target.FailedTwinUpdatesCount);
 
-            ActorEvents deviceTwinTaggingFailed = ActorEvents.DeviceTwinTaggingFailed;
+            ActorEvents deviceTwinTaggingFailed = ActorEvents.DeviceTaggingFailed;
 
             // Act
             for (int i = 0; i < FAILED_DEVICE_TWIN_UPDATES_COUNT; i++)
@@ -109,7 +109,7 @@ namespace SimulationAgent.Test.DeviceProperties
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void TheNumberOfFailedTwinUpdatesIsZeroAtStart()
+        public void Should_ReturnZeroForFailedTwinUpdates_When_Started()
         {
             // Arrange
             this.CreateNewDevicePropertiesActor();

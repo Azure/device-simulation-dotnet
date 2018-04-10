@@ -41,8 +41,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         {
             None,
             ReadyToStart,
-            ReadyToTagDeviceTwin,
-            TaggingDeviceTwin,
+            ReadyToTagDevice,
+            TaggingDevice,
             WaitingForChanges,
             ReadyToUpdate,
             Updating,
@@ -52,8 +52,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         public enum ActorEvents
         {
             Started,
-            DeviceTwinTaggingFailed,
-            DeviceTwinTagged,
+            DeviceTaggingFailed,
+            DeviceTagged,
             PropertiesUpdateFailed,
             PropertiesUpdated,
         }
@@ -62,7 +62,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         private readonly IActorsLogger actorLogger;
         private readonly IRateLimiting rateLimiting;
         private readonly IDevicePropertiesLogic updatePropertiesLogic;
-        private readonly IDevicePropertiesLogic deviceTagLogic;
+        private readonly IDevicePropertiesLogic deviceSetDeviceTagLogic;
 
         private ActorStatus status;
         private string deviceId;
@@ -111,13 +111,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             IActorsLogger actorLogger,
             IRateLimiting rateLimiting,
             UpdateReportedProperties updatePropertiesLogic,
-            Tag deviceTagLogic)
+            SetDeviceTag deviceSetDeviceTagLogic)
         {
             this.log = logger;
             this.actorLogger = actorLogger;
             this.rateLimiting = rateLimiting;
             this.updatePropertiesLogic = updatePropertiesLogic;
-            this.deviceTagLogic = deviceTagLogic;
+            this.deviceSetDeviceTagLogic = deviceSetDeviceTagLogic;
 
             this.status = ActorStatus.None;
             this.deviceId = null;
@@ -150,7 +150,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             this.loopSettings = loopSettings;
 
             this.updatePropertiesLogic.Setup(this, this.deviceId);
-            this.deviceTagLogic.Setup(this, this.deviceId);
+            this.deviceSetDeviceTagLogic.Setup(this, this.deviceId);
 
             this.updatePropertiesLogic.Setup(this, this.deviceId);
             this.actorLogger.Setup(deviceId, "Properties");
@@ -166,17 +166,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                     this.actorLogger.ActorStarted();
                     break;
 
-                case ActorEvents.DeviceTwinTagged:
-                    this.actorLogger.DeviceTwinTagged();
+                case ActorEvents.DeviceTagged:
+                    this.actorLogger.DeviceTagged();
                     this.status = ActorStatus.WaitingForChanges;
                     break;
 
-                case ActorEvents.DeviceTwinTaggingFailed:
+                case ActorEvents.DeviceTaggingFailed:
                     if (this.loopSettings.SchedulableTaggings <= 0) return;
                     this.loopSettings.SchedulableTaggings--;
 
                     this.failedTwinUpdatesCount++;
-                    this.actorLogger.DeviceTwinTaggingFailed();
+                    this.actorLogger.DeviceTaggingFailed();
                     this.ScheduleDeviceTagging();
                     break;
 
@@ -212,10 +212,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                     this.HandleEvent(ActorEvents.Started);
                     return "started";
 
-                case ActorStatus.ReadyToTagDeviceTwin:
-                    this.status = ActorStatus.TaggingDeviceTwin;
-                    this.actorLogger.TaggingDeviceTwin();
-                    this.deviceTagLogic.Run();
+                case ActorStatus.ReadyToTagDevice:
+                    this.status = ActorStatus.TaggingDevice;
+                    this.actorLogger.TaggingDevice();
+                    this.deviceSetDeviceTagLogic.Run();
                     return "device tag scheduled";
 
                 case ActorStatus.WaitingForChanges:
@@ -266,9 +266,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             // note: we overwrite the twin, so no Read operation is needed
             var pauseMsec = this.rateLimiting.GetPauseForNextTwinWrite();
             this.whenToRun = now + pauseMsec;
-            this.status = ActorStatus.ReadyToTagDeviceTwin;
+            this.status = ActorStatus.ReadyToTagDevice;
 
-            this.actorLogger.DeviceTwinTaggingScheduled(this.whenToRun);
+            this.actorLogger.DeviceTaggingScheduled(this.whenToRun);
             this.log.Debug("Device twin tagging scheduled",
                 () => new
                 {

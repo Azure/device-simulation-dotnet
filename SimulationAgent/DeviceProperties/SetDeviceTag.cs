@@ -9,14 +9,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
     /// <summary>
     /// Add twin information to the new device twin
     /// </summary>
-    public class Tag : IDevicePropertiesLogic
+    public class SetDeviceTag : IDevicePropertiesLogic
     {
         private readonly IDevices devices;
         private readonly ILogger log;
         private string deviceId;
         private IDevicePropertiesActor context;
 
-        public Tag(IDevices devices, ILogger logger)
+        public SetDeviceTag(IDevices devices, ILogger logger)
         {
             this.log = logger;
             this.devices = devices;
@@ -39,12 +39,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                 var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
                 this.log.Debug("Device tag added", () => new { this.deviceId, timeSpent });
 
-                this.context.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTwinTagged);
+                this.context.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTagged);
             }
             catch (Exception e)
             {
                 this.log.Error("Error while tagging the device twin", () => new { this.deviceId, e });
-                this.context.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTwinTaggingFailed);
+                this.context.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTaggingFailed);
             }
         }
     }
