@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
+# Copyright (c) Microsoft. All rights reserved.
+# Note: Windows Bash doesn't support shebang extra params
+set -e
 
 # Usage:
 # Run the service in the local environment:  ./scripts/run
 # Run the service inside a Docker container: ./scripts/run -s
 # Run the service inside a Docker container: ./scripts/run --in-sandbox
-# Run only the web service:                  ./scripts/run --webservice
-# Run only the simulation:                   ./scripts/run --simulation
 # Run the storage dependency:                ./scripts/run --storage
 # Show how to use this script:               ./scripts/run -h
 # Show how to use this script:               ./scripts/run --help
@@ -13,7 +14,6 @@
 # Debug|Release
 CONFIGURATION=Release
 
-set -e
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )/"
 source "$APP_HOME/scripts/.functions.sh"
 
@@ -26,8 +26,6 @@ help() {
     echo "Usage:"
     echo "  Run the service in the local environment:  ./scripts/run"
     echo "  Run the service inside a Docker container: ./scripts/run -s | --in-sandbox"
-    echo "  Run only the web service:                  ./scripts/run --webservice"
-    echo "  Run only the simulation:                   ./scripts/run --simulation"
     echo "  Run the storage dependency:                ./scripts/run --storage"
     echo "  Show how to use this script:               ./scripts/run -h | --help"
 }
@@ -59,6 +57,12 @@ run_in_sandbox() {
         docker run -it \
             -p 9003:9003 \
             -e PCS_IOTHUB_CONNSTRING \
+            -e PCS_STORAGEADAPTER_WEBSERVICE_URL \
+            -e PCS_AUTH_REQUIRED \
+            -e PCS_CORS_WHITELIST \
+            -e PCS_AUTH_ISSUER \
+            -e PCS_AUTH_AUDIENCE \
+            -e PCS_TWIN_READ_WRITE_ENABLED \
             -v "$PCS_CACHE/sandbox/.config:/root/.config" \
             -v "$PCS_CACHE/sandbox/.dotnet:/root/.dotnet" \
             -v "$PCS_CACHE/sandbox/.nuget:/root/.nuget" \
@@ -80,20 +84,9 @@ prepare_for_run() {
     dotnet restore --verbosity=quiet
 }
 
-run_all() {
-    echo "Starting simulation agent and web service..."
-    dotnet run --configuration $CONFIGURATION --project WebService/*.csproj & \
-        dotnet run --configuration $CONFIGURATION --project SimulationAgent/*.csproj
-}
-
-run_webservice() {
-    echo "Starting web service..."
+run() {
+    echo "Starting simulation service..."
     dotnet run --configuration $CONFIGURATION --project WebService/*.csproj
-}
-
-run_simulation() {
-    echo "Starting simulation agent..."
-    dotnet run --configuration $CONFIGURATION --project SimulationAgent/*.csproj
 }
 
 run_storageadapter() {
@@ -109,13 +102,7 @@ elif [[ "$1" == "--in-sandbox" || "$1" == "-s" ]]; then
     run_in_sandbox
 elif [[ "$1" == "" ]]; then
     prepare_for_run
-    run_all
-elif [[ "$1" == "--webservice" ]]; then
-    prepare_for_run
-    run_webservice
-elif [[ "$1" == "--simulation" ]]; then
-    prepare_for_run
-    run_simulation
+    run
 elif [[ "$1" == "--storage" ]]; then
     run_storageadapter
 fi

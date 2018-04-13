@@ -53,7 +53,7 @@ namespace Services.Test.Concurrency
          * The test takes about 1 minute, so it is disabled by default.
          */
         //[Fact]
-        [Fact(Skip="Test used only while debugging"), Trait(Constants.TYPE, Constants.UNIT_TEST), Trait(Constants.SPEED, Constants.SLOW_TEST)]
+        [Fact(Skip="Skipping test used only while debugging"), Trait(Constants.TYPE, Constants.UNIT_TEST), Trait(Constants.SPEED, Constants.SLOW_TEST)]
         public void ItPausesWhenNeeded_DebuggingTest()
         {
             log.WriteLine("Starting test at " + DateTimeOffset.UtcNow.ToString("HH:mm:ss.fff"));

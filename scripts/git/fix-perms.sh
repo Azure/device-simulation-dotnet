@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
+# Copyright (c) Microsoft. All rights reserved.
+# Note: Windows Bash doesn't support shebang extra params
+set -e
 
 # Sometimes when creating bash scripts in Windows, bash scripts will not have
 # the +x flag carried over to Linux/MacOS. This script should help setting the
 # permission flags right.
 
-set -e
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && cd .. && pwd )/"
 cd $APP_HOME
 

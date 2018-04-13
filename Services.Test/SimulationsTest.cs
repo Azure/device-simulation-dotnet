@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Moq;
@@ -26,7 +27,9 @@ namespace Services.Test
 
         private readonly Mock<IDeviceModels> deviceModels;
         private readonly Mock<IStorageAdapterClient> storage;
+        private readonly Mock<IDevices> devices;
         private readonly Mock<ILogger> logger;
+        private readonly Mock<IIotHubConnectionStringManager> connStringManager;
         private readonly Simulations target;
         private readonly List<DeviceModel> models;
 
@@ -37,7 +40,8 @@ namespace Services.Test
             this.deviceModels = new Mock<IDeviceModels>();
             this.storage = new Mock<IStorageAdapterClient>();
             this.logger = new Mock<ILogger>();
-
+            this.devices = new Mock<IDevices>();
+            this.connStringManager = new Mock<IIotHubConnectionStringManager>();
             this.models = new List<DeviceModel>
             {
                 new DeviceModel { Id = "01" },
@@ -46,7 +50,7 @@ namespace Services.Test
                 new DeviceModel { Id = "AA" }
             };
 
-            this.target = new Simulations(this.deviceModels.Object, this.storage.Object, this.logger.Object);
+            this.target = new Simulations(this.deviceModels.Object, this.storage.Object, this.connStringManager.Object, this.devices.Object, this.logger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -179,14 +183,14 @@ namespace Services.Test
             {
                 Id = SIMULATION_ID,
                 Enabled = false,
-                Etag = "oldETag"
+                ETag = "oldETag"
             };
             this.target.UpsertAsync(simulation).Wait();
 
             // Assert
             this.storage.Verify(
                 x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.IsAny<string>(), "oldETag"));
-            Assert.Equal("newETag", simulation.Etag);
+            Assert.Equal("newETag", simulation.ETag);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -216,6 +220,41 @@ namespace Services.Test
             Assert.ThrowsAsync<ResourceOutOfDateException>(() => this.target.UpsertAsync(s1Updated));
         }
 
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ThereAreNoNullPropertiesInTheDeviceModel()
+        {
+            // Arrange
+            this.ThereAreSomeDeviceModels();
+            this.ThereAreNoSimulationsInTheStorage();
+
+            // Arrange the simulation data returned by the storage adapter
+            var simulation = new SimulationModel
+            {
+                Id = SIMULATION_ID,
+                ETag = "ETag0",
+                Enabled = true,
+                Version = 1
+            };
+            var updatedValue = new ValueApiModel
+            {
+                Key = SIMULATION_ID,
+                Data = JsonConvert.SerializeObject(simulation),
+                ETag = simulation.ETag
+            };
+            this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(updatedValue);
+
+            // Act
+            this.target.UpsertAsync(simulation).Wait();
+
+            // Assert
+            this.storage.Verify(x => x.UpdateAsync(
+                STORAGE_COLLECTION,
+                SIMULATION_ID,
+                It.Is<string>(s => !s.Contains("null")),
+                "ETag0"));
+        }
+
         private void ThereAreSomeDeviceModels()
         {
             this.deviceModels.Setup(x => x.GetList()).Returns(this.models);
@@ -226,7 +265,7 @@ namespace Services.Test
             this.storage.Setup(x => x.GetAllAsync(STORAGE_COLLECTION)).ReturnsAsync(new ValueListApiModel());
             // In case the test inserts a record, return a valid storage object
             this.storage.Setup(x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.IsAny<string>(), "*"))
-                .ReturnsAsync(new ValueApiModel { Key = SIMULATION_ID, Data = "{}", ETag = "someEtag" });
+                .ReturnsAsync(new ValueApiModel { Key = SIMULATION_ID, Data = "{}", ETag = "someETag" });
         }
 
         private void ThereIsAnEnabledSimulationInTheStorage()
@@ -236,7 +275,7 @@ namespace Services.Test
                 Id = SIMULATION_ID,
                 Created = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 Modified = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
-                Etag = "etag0",
+                ETag = "ETag0",
                 Enabled = true,
                 Version = 1
             };
@@ -246,7 +285,7 @@ namespace Services.Test
             {
                 Key = SIMULATION_ID,
                 Data = JsonConvert.SerializeObject(simulation),
-                ETag = simulation.Etag
+                ETag = simulation.ETag
             };
             list.Items.Add(value);
 

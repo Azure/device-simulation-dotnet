@@ -4,7 +4,7 @@
       "commandName": "Project",
       "environmentVariables": {
         "PCS_STORAGEADAPTER_WEBSERVICE_URL": "http://localhost:9022/v1",
-        "PCS_IOTHUB_CONNSTRING": "EnterHubConnString"
+        "PCS_IOTHUB_CONNSTRING": "your Azure IoT Hub connection string"
       }
     }
   }
