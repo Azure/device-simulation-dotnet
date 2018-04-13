@@ -345,6 +345,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             while (this.running)
             {
                 this.propertiesLoopSettings.NewLoop();
+
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 foreach (var device in this.devicePropertiesActors)
                 {

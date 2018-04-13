@@ -22,7 +22,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         public double SchedulableFetches { get; set; }
         public double SchedulableRegistrations { get; set; }
-        
+
         public ConnectionLoopSettings(IRateLimitingConfig ratingConfig)
         {
             this.ratingConfig = ratingConfig;

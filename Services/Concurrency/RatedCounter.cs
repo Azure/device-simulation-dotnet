@@ -83,7 +83,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             }
 
             this.name = name;
-
             this.eventsPerTimeUnit = rate;
             this.timeUnitLength = timeUnitLength;
 

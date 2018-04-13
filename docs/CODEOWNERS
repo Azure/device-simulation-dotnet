@@ -4,9 +4,9 @@
 
 LICENSE             @timlaverty @dluc @ppathan
 
-.gitattributes      @dluc @timlaverty
-.travis.yml         @dluc @timlaverty
+.gitattributes      @dluc @timlaverty @ppathan
+.travis.yml         @dluc @timlaverty @ppathan
 
 scripts/            @dluc @timlaverty @ppathan
-WebService/Auth/    @dluc @timlaverty
-Services/Runtime/   @dluc @timlaverty
+WebService/Auth/    @dluc @timlaverty @ppathan
+Services/Runtime/   @dluc @timlaverty @ppathan
