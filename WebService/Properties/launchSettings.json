@@ -14,7 +14,7 @@
       "launchUrl": "http://localhost:9003/v1/status",
       "environmentVariables": {
         "PCS_STORAGEADAPTER_WEBSERVICE_URL": "http://localhost:9022/v1",
-        "PCS_IOTHUB_CONNSTRING": "$(PCS_IOTHUB_CONNSTRING)"
+        "PCS_IOTHUB_CONNSTRING": "your Azure IoT Hub connection string"
       }
     },
     "WebService": {
@@ -22,7 +22,8 @@
       "launchBrowser": true,
       "launchUrl": "http://localhost:9003/v1/status",
       "environmentVariables": {
-        "PCS_IOTHUB_CONNSTRING": "$(PCS_IOTHUB_CONNSTRING)"
+        "PCS_STORAGEADAPTER_WEBSERVICE_URL": "http://localhost:9022/v1",
+        "PCS_IOTHUB_CONNSTRING": "your Azure IoT Hub connection string"
       },
       "applicationUrl": "http://localhost:9003/v1/status"
     }

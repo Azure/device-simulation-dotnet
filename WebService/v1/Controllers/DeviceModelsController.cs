@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers
 {
@@ -20,13 +21,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         [HttpGet]
         public DeviceModelListApiModel Get()
         {
-            return new DeviceModelListApiModel(this.deviceModelsService.GetList());
+            return DeviceModelListApiModel.FromServiceModel(this.deviceModelsService.GetList());
         }
 
         [HttpGet("{id}")]
         public DeviceModelApiModel Get(string id)
         {
-            return new DeviceModelApiModel(this.deviceModelsService.Get(id));
+            return DeviceModelApiModel.FromServiceModel(this.deviceModelsService.Get(id));
         }
     }
 }

@@ -6,8 +6,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
 {
     /// <summary>
     /// This exception is thrown when a client attempts to update a resource
-    /// providing the wrong Etag value. The client should retrieve the
-    /// resource again, to have the new Etag, and retry.
+    /// providing the wrong ETag value. The client should retrieve the
+    /// resource again, to have the new ETag, and retry.
     /// </summary>
     public class ResourceOutOfDateException : Exception
     {

@@ -15,11 +15,13 @@
             "cargotemperature": 49.0,
             "cargotemperature_unit": "F"
         },
-        "Script": {
-            "Type": "javascript",
-            "Path": "truck-02-state.js",
-            "Interval": "00:00:05"
-        }
+        "Interval": "00:00:10",
+        "Scripts": [
+            {
+                "Type": "javascript",
+                "Path": "truck-02-state.js"
+            }
+        ]
     },
     "Properties": {
         "Type": "Truck",
@@ -45,18 +47,18 @@
             }
         }
     ],
-  "CloudToDeviceMethods": {
-      "FirmwareUpdate": {
-        "Type": "javascript",
-        "Path": "FirmwareUpdate-method.js"
-      },
-      "DecreaseCargoTemperature": {
-        "Type": "javascript",
-        "Path": "TBD.js"
-      },
-      "IncreaseCargoTemperature": {
-        "Type": "javascript",
-        "Path": "TBD.js"
-      }
-  }
+    "CloudToDeviceMethods": {
+        "FirmwareUpdate": {
+            "Type": "javascript",
+            "Path": "FirmwareUpdate-method.js"
+        },
+        "DecreaseCargoTemperature": {
+            "Type": "javascript",
+            "Path": "TempDecrease-method.js"
+        },
+        "IncreaseCargoTemperature": {
+            "Type": "javascript",
+            "Path": "TempIncrease-method.js"
+        }
+    }
 }
