@@ -169,7 +169,7 @@ Other resources
 Contributing to the solution
 ============================
 
-Please follow our [contribution guidelines](CONTRIBUTING.md).  We love PRs too.
+Please follow our [contribution guidelines](docs/CONTRIBUTING.md).  We love PRs too.
 
 Troubleshooting
 ===============

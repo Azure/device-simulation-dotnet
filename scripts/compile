@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
+# Copyright (c) Microsoft. All rights reserved.
+# Note: Windows Bash doesn't support shebang extra params
+set -e
 
 # Usage:
 # Compile the project in the local environment:  ./scripts/compile
 # Compile the project inside a Docker container: ./scripts/compile -s
 # Compile the project inside a Docker container: ./scripts/compile --in-sandbox
 
-set -e
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )/"
 source "$APP_HOME/scripts/.functions.sh"
 

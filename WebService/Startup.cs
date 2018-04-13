@@ -5,17 +5,21 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using ILogger = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics.ILogger;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 {
     public class Startup
     {
+        private ISimulation simulationAgent;
+
         // Initialized in `Startup`
         public IConfigurationRoot Configuration { get; }
 
@@ -72,18 +76,49 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
             app.UseMvc();
 
+            // Start simulation agent thread
+            appLifetime.ApplicationStarted.Register(this.StartAgent);
+            appLifetime.ApplicationStopping.Register(this.StopAgent);
+
             // If you want to dispose of resources that have been resolved in the
             // application container, register for the "ApplicationStopped" event.
             appLifetime.ApplicationStopped.Register(() => this.ApplicationContainer.Dispose());
+        }
+
+        private void StartAgent()
+        {
+            // Temporary workaround to allow twin JSON deserialization in IoT SDK
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
+            {
+                CheckAdditionalContent = false
+            };
+
+            this.simulationAgent = this.ApplicationContainer.Resolve<ISimulation>();
+            this.simulationAgent.RunAsync();
+        }
+
+        private void StopAgent()
+        {
+            this.simulationAgent.Stop();
         }
 
         private void PrintBootstrapInfo(IContainer container)
         {
             var log = container.Resolve<ILogger>();
             var config = container.Resolve<IConfig>();
-            log.Info("Web service started", () => new { Uptime.ProcessId });
+            log.Warn("Service started", () => new { Uptime.ProcessId, LogLevel = config.LoggingConfig.LogLevel.ToString() });
+
+            log.Info("Web service auth required: " + config.ClientAuthConfig.AuthRequired, () => { });
+
             log.Info("Device Models folder: " + config.ServicesConfig.DeviceModelsFolder, () => { });
             log.Info("Scripts folder:      " + config.ServicesConfig.DeviceModelsScriptsFolder, () => { });
+
+            log.Info("Connections per sec:  " + config.RateLimitingConfig.ConnectionsPerSecond, () => { });
+            log.Info("Registry ops per sec: " + config.RateLimitingConfig.RegistryOperationsPerMinute, () => { });
+            log.Info("Twin reads per sec:   " + config.RateLimitingConfig.TwinReadsPerSecond, () => { });
+            log.Info("Twin writes per sec:  " + config.RateLimitingConfig.TwinWritesPerSecond, () => { });
+            log.Info("Messages per second:  " + config.RateLimitingConfig.DeviceMessagesPerSecond, () => { });
+            log.Info("Messages per day:     " + config.RateLimitingConfig.DeviceMessagesPerDay, () => { });
         }
     }
 }

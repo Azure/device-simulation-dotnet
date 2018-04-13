@@ -393,7 +393,7 @@ namespace Services.Test.Concurrency
          * with a limit of 20 events/second.
          */
         //[Fact]
-        [Fact(Skip = "Test used only while debugging"), Trait(Constants.TYPE, Constants.UNIT_TEST), Trait(Constants.SPEED, Constants.SLOW_TEST)]
+        [Fact(Skip = "Skipping test used only while debugging"), Trait(Constants.TYPE, Constants.UNIT_TEST), Trait(Constants.SPEED, Constants.SLOW_TEST)]
         public void ItObtainsTheDesiredFrequency_DebuggingTest()
         {
             log.WriteLine("Starting test at " + DateTimeOffset.UtcNow.ToString("HH:mm:ss.fff"));
