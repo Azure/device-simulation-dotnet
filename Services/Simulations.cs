@@ -134,7 +134,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             // Create default simulation
             if (!string.IsNullOrEmpty(template) && template.ToLowerInvariant() == "default")
             {
-                var types = this.deviceModels.GetList();
+                var types = await this.deviceModels.GetListAsync();
                 simulation.DeviceModels = new List<Models.Simulation.DeviceModelRef>();
                 foreach (var type in types)
                 {
