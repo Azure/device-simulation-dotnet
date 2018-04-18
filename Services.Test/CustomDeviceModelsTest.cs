@@ -8,13 +8,12 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Moq;
 using Newtonsoft.Json;
 using Services.Test.helpers;
-using System;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Services.Test
 {
-    public class CustomDeviceModelsTest
+  public class CustomDeviceModelsTest
     {
         private const string STORAGE_COLLECTION = "deviceModels";
 
@@ -39,7 +38,7 @@ namespace Services.Test
         public void InitialListIsEmpty()
         {
             // Arrange
-            this.ThereAreNoCustomDeviceModelsInTheStorage();
+            this.ThereAreNoCustomDeviceModelsInStorage();
 
             // Act
             var result = this.target.GetListAsync().Result;
@@ -102,7 +101,7 @@ namespace Services.Test
                 It.IsAny<string>(),
                 "oldEtag"));
 
-            Assert.Equal("newETag", deviceModel.ETag);
+            Assert.Equal(updatedDeviceModel.ETag, deviceModel.ETag);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -111,7 +110,7 @@ namespace Services.Test
             // Arrange
             var deviceModel = new DeviceModel { Id = "id", ETag = "Etag" };
 
-            this.ThereIsNoCustomDeviceModelsByIdInTheStorage(deviceModel.Id);
+            this.ThereIsNoCustomDeviceModelByIdInStorage(deviceModel.Id);
             this.UpdateDeviceModelInStorage(deviceModel);
 
             // Act
@@ -126,7 +125,7 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void CustomDeviceModelsCanNotBeUpsertedIfEtagNotMatch()
+        public void CustomDeviceModelsCanNotBeUpsertedIfEtagDoesNotMatch()
         {
             // Arrange
             var deviceModel = new DeviceModel { ETag = "oldEtag" };
@@ -153,14 +152,14 @@ namespace Services.Test
                 .ReturnsAsync(result);
         }
 
-        private void ThereAreNoCustomDeviceModelsInTheStorage()
+        private void ThereAreNoCustomDeviceModelsInStorage()
         {
             this.storage
                 .Setup(x => x.GetAllAsync(STORAGE_COLLECTION))
                 .ReturnsAsync(new ValueListApiModel());
         }
 
-        private void ThereIsNoCustomDeviceModelsByIdInTheStorage(string id)
+        private void ThereIsNoCustomDeviceModelByIdInStorage(string id)
         {
             this.storage
                 .Setup(x => x.GetAsync(STORAGE_COLLECTION, id))

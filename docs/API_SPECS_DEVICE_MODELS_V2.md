@@ -127,58 +127,58 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-    "ETag": "0000-0000-0000",
-    "Id": "00000000-000000-0000-0000-000000",
-    "Version": "0.0.0",
-    "Name": "Chiller",
-    "Description": "Chiller with external temperature, humidity and pressure sensors.",
-    "Protocol": "MQTT",
-    "Type": "",
-    "Simulation": {
-        "InitialState": {
-            "online": true,
-            "temperature": 75,
-            "temperature_unit": "F",
-            "humidity": 70,
-            "humidity_unit": "%",
-            "pressure": 150,
-            "pressure_unit": "psig",
-            "simulation_state": "normal_pressure"
-        },
-        "Interval": "00:00:10",
-        "Scripts": [
-            {
-                "Type": "javascript",
-                "Path": "chiller-01-state.js"
-            }
-        ]
+  "ETag": "0000-0000-0000",
+  "Id": "00000000-000000-0000-0000-000000",
+  "Version": "0.0.0",
+  "Name": "Chiller",
+  "Description": "Chiller with external temperature, humidity and pressure sensors.",
+  "Protocol": "MQTT",
+  "Type": "",
+  "Simulation": {
+    "InitialState": {
+      "online": true,
+      "temperature": 75,
+      "temperature_unit": "F",
+      "humidity": 70,
+      "humidity_unit": "%",
+      "pressure": 150,
+      "pressure_unit": "psig",
+      "simulation_state": "normal_pressure"
     },
-    "Properties": {},
-    "Telemetry": [
-        {
-            "Interval": "00:00:10",
-            "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
-            "MessageSchema": {
-                "Name": "chiller-sensors;v1",
-                "Format": "JSON",
-                "Fields": {
-                    "temperature": "Double",
-                    "temperature_unit": "Text",
-                    "humidity": "Double",
-                    "humidity_unit": "Text",
-                    "pressure": "Double",
-                    "pressure_unit": "Text"
-                }
-            }
+    "Interval": "00:00:10",
+    "Scripts": [
+      {
+        "Type": "javascript",
+        "Path": "chiller-01-state.js"
+      }
+    ]
+  },
+  "Properties": {},
+  "Telemetry": [
+    {
+      "Interval": "00:00:10",
+      "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
+      "MessageSchema": {
+        "Name": "chiller-sensors;v1",
+        "Format": "JSON",
+        "Fields": {
+            "temperature": "Double",
+            "temperature_unit": "Text",
+            "humidity": "Double",
+            "humidity_unit": "Text",
+            "pressure": "Double",
+            "pressure_unit": "Text"
         }
-    ],
-    "CloudToDeviceMethods": {},
-    "$metadata": {
-        "$type": "DeviceModel;2",
-        "$uri": "/v2/devicemodels/00000000-000000-0000-0000-000000",
-        "$created": "2018-03-29T23:33:03+00:00",
-        "$modified": "2018-03-29T23:33:03+00:00"
+      }
     }
+  ],
+  "CloudToDeviceMethods": {},
+  "$metadata": {
+    "$type": "DeviceModel;2",
+    "$uri": "/v2/devicemodels/00000000-000000-0000-0000-000000",
+    "$created": "2018-03-29T23:33:03+00:00",
+    "$modified": "2018-03-29T23:33:03+00:00"
+  }
 }
 ```
 
@@ -200,52 +200,52 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-	"ETag": "",
-    "Id": "",
-    "Version": "0.0.1",
-    "Name": "Chiller",
-    "Description": "Chiller with external temperature, humidity and pressure sensors.",
-    "Protocol": "MQTT",
-    "Type": "",
-    "Simulation": {
-        "InitialState": {
-            "online": true,
-            "temperature": 75,
-            "temperature_unit": "F",
-            "humidity": 70,
-            "humidity_unit": "%",
-            "pressure": 150,
-            "pressure_unit": "psig",
-            "simulation_state": "normal_pressure"
-        },
-        "Interval": "00:00:10",
-        "Scripts": [
-            {
-                "Type": "javascript",
-                "Path": "chiller-01-state.js"
-            }
-        ]
+  "ETag": "",
+  "Id": "",
+  "Version": "0.0.1",
+  "Name": "Chiller",
+  "Description": "Chiller with external temperature, humidity and pressure sensors.",
+  "Protocol": "MQTT",
+  "Type": "",
+  "Simulation": {
+    "InitialState": {
+      "online": true,
+      "temperature": 75,
+      "temperature_unit": "F",
+      "humidity": 70,
+      "humidity_unit": "%",
+      "pressure": 150,
+      "pressure_unit": "psig",
+      "simulation_state": "normal_pressure"
     },
-    "Properties": {},
-    "Telemetry": [
-        {
-            "Interval": "00:00:10",
-            "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
-            "MessageSchema": {
-                "Name": "chiller-sensors;v1",
-                "Format": "JSON",
-                "Fields": {
-                    "temperature": "Double",
-                    "temperature_unit": "Text",
-                    "humidity": "Double",
-                    "humidity_unit": "Text",
-                    "pressure": "Double",
-                    "pressure_unit": "Text"
-                }
-            }
+    "Interval": "00:00:10",
+    "Scripts": [
+      {
+        "Type": "javascript",
+        "Path": "chiller-01-state.js"
+      }
+    ]
+  },
+  "Properties": {},
+  "Telemetry": [
+    {
+      "Interval": "00:00:10",
+      "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
+      "MessageSchema": {
+        "Name": "chiller-sensors;v1",
+        "Format": "JSON",
+        "Fields": {
+          "temperature": "Double",
+          "temperature_unit": "Text",
+          "humidity": "Double",
+          "humidity_unit": "Text",
+          "pressure": "Double",
+          "pressure_unit": "Text"
         }
-    ],
-    "CloudToDeviceMethods": {},
+      }
+    }
+  ],
+  "CloudToDeviceMethods": {},
 }
 ```
 
@@ -256,58 +256,58 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-    "ETag": "00000000-000000-0000-0000-000000",
-	"Id": "00000000-000000-0000-0000-000000",
-	"Version": "0.0.1",
-	"Name": "Chiller",
-	"Description": "Chiller with external temperature, humidity and pressure sensors.",
-	"Protocol": "MQTT",
-	"Type": "",
-	"Simulation": {
-		"InitialState": {
-			"online": true,
-			"temperature": 75,
-			"temperature_unit": "F",
-			"humidity": 70,
-			"humidity_unit": "%",
-			"pressure": 150,
-			"pressure_unit": "psig",
-			"simulation_state": "normal_pressure"
-		},
-		"Interval": "00:00:10",
-		"Scripts": [
-			{
-				"Type": "javascript",
-				"Path": "chiller-01-state.js"
-			}
-		]
+  "ETag": "00000000-000000-0000-0000-000000",
+  "Id": "00000000-000000-0000-0000-000000",
+  "Version": "0.0.1",
+  "Name": "Chiller",
+  "Description": "Chiller with external temperature, humidity and pressure sensors.",
+  "Protocol": "MQTT",
+  "Type": "",
+  "Simulation": {
+	"InitialState": {
+	  "online": true,
+	  "temperature": 75,
+	  "temperature_unit": "F",
+	  "humidity": 70,
+	  "humidity_unit": "%",
+	  "pressure": 150,
+	  "pressure_unit": "psig",
+	  "simulation_state": "normal_pressure"
 	},
-	"Properties": {},
-	"Telemetry": [
-		{
-			"Interval": "00:00:10",
-			"MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
-			"MessageSchema": {
-				"Name": "chiller-sensors;v1",
-				"Format": "JSON",
-				"Fields": {
-					"temperature": "Double",
-					"temperature_unit": "Text",
-					"humidity": "Double",
-					"humidity_unit": "Text",
-					"pressure": "Double",
-					"pressure_unit": "Text"
-				}
-			}
+	"Interval": "00:00:10",
+	"Scripts": [
+	  {
+		"Type": "javascript",
+		"Path": "chiller-01-state.js"
+	  }
+	]
+  },
+  "Properties": {},
+  "Telemetry": [
+	{
+	  "Interval": "00:00:10",
+	  "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
+	  "MessageSchema": {
+		"Name": "chiller-sensors;v1",
+		"Format": "JSON",
+		"Fields": {
+		  "temperature": "Double",
+		  "temperature_unit": "Text",
+		  "humidity": "Double",
+		  "humidity_unit": "Text",
+		  "pressure": "Double",
+		  "pressure_unit": "Text"
 		}
-	],
-	"CloudToDeviceMethods": {},
-	"$metadata": {
-        "$type": "DeviceModel;2",
-        "$uri": "/v2/devicemodels/00000000-000000-0000-0000-000000",
-        "$created": "2018-03-29T23:33:03+00:00",
-        "$modified": "2018-03-29T23:33:03+00:00"
-    }
+	  }
+	}
+  ],
+  "CloudToDeviceMethods": {},
+  "$metadata": {
+    "$type": "DeviceModel;2",
+    "$uri": "/v2/devicemodels/00000000-000000-0000-0000-000000",
+    "$created": "2018-03-29T23:33:03+00:00",
+    "$modified": "2018-03-29T23:33:03+00:00"
+  }
 }
 ```
 
@@ -335,52 +335,52 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-	"ETag": "",
-    "Id": "00000000-000000-0000-0000-000000",
-    "Version": "0.0.1",
-    "Name": "Chiller",
-    "Description": "Chiller with external temperature, humidity and pressure sensors.",
-    "Protocol": "MQTT",
-    "Type": "",
-    "Simulation": {
-        "InitialState": {
-            "online": true,
-            "temperature": 75,
-            "temperature_unit": "F",
-            "humidity": 70,
-            "humidity_unit": "%",
-            "pressure": 150,
-            "pressure_unit": "psig",
-            "simulation_state": "normal_pressure"
-        },
-        "Interval": "00:00:10",
-        "Scripts": [
-            {
-                "Type": "javascript",
-                "Path": "chiller-01-state.js"
-            }
-        ]
+  "ETag": "",
+  "Id": "00000000-000000-0000-0000-000000",
+  "Version": "0.0.1",
+  "Name": "Chiller",
+  "Description": "Chiller with external temperature, humidity and pressure sensors.",
+  "Protocol": "MQTT",
+  "Type": "",
+  "Simulation": {
+    "InitialState": {
+      "online": true,
+      "temperature": 75,
+      "temperature_unit": "F",
+      "humidity": 70,
+      "humidity_unit": "%",
+      "pressure": 150,
+      "pressure_unit": "psig",
+      "simulation_state": "normal_pressure"
     },
-    "Properties": {},
-    "Telemetry": [
-        {
-            "Interval": "00:00:10",
-            "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
-            "MessageSchema": {
-                "Name": "chiller-sensors;v1",
-                "Format": "JSON",
-                "Fields": {
-                    "temperature": "Double",
-                    "temperature_unit": "Text",
-                    "humidity": "Double",
-                    "humidity_unit": "Text",
-                    "pressure": "Double",
-                    "pressure_unit": "Text"
-                }
-            }
+    "Interval": "00:00:10",
+    "Scripts": [
+      {
+        "Type": "javascript",
+        "Path": "chiller-01-state.js"
+      }
+    ]
+  },
+  "Properties": {},
+  "Telemetry": [
+    {
+      "Interval": "00:00:10",
+      "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
+      "MessageSchema": {
+        "Name": "chiller-sensors;v1",
+        "Format": "JSON",
+        "Fields": {
+          "temperature": "Double",
+          "temperature_unit": "Text",
+          "humidity": "Double",
+          "humidity_unit": "Text",
+          "pressure": "Double",
+          "pressure_unit": "Text"
         }
-    ],
-    "CloudToDeviceMethods": {},
+      }
+    }
+  ],
+  "CloudToDeviceMethods": {},
 }
 ```
 
@@ -391,58 +391,58 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-    "ETag": "00000000-000000-0000-0000-000000",
-	"Id": "00000000-000000-0000-0000-000000",
-	"Version": "0.0.1",
-	"Name": "Chiller",
-	"Description": "Chiller with external temperature, humidity and pressure sensors.",
-	"Protocol": "MQTT",
-	"Type": "",
-	"Simulation": {
-		"InitialState": {
-			"online": true,
-			"temperature": 75,
-			"temperature_unit": "F",
-			"humidity": 70,
-			"humidity_unit": "%",
-			"pressure": 150,
-			"pressure_unit": "psig",
-			"simulation_state": "normal_pressure"
-		},
-		"Interval": "00:00:10",
-		"Scripts": [
-			{
-				"Type": "javascript",
-				"Path": "chiller-01-state.js"
-			}
-		]
+  "ETag": "00000000-000000-0000-0000-000000",
+  "Id": "00000000-000000-0000-0000-000000",
+  "Version": "0.0.1",
+  "Name": "Chiller",
+  "Description": "Chiller with external temperature, humidity and pressure sensors.",
+  "Protocol": "MQTT",
+  "Type": "",
+  "Simulation": {
+	"InitialState": {
+	  "online": true,
+	  "temperature": 75,
+	  "temperature_unit": "F",
+	  "humidity": 70,
+	  "humidity_unit": "%",
+	  "pressure": 150,
+	  "pressure_unit": "psig",
+	  "simulation_state": "normal_pressure"
 	},
-	"Properties": {},
-	"Telemetry": [
-		{
-			"Interval": "00:00:10",
-			"MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
-			"MessageSchema": {
-				"Name": "chiller-sensors;v1",
-				"Format": "JSON",
-				"Fields": {
-					"temperature": "Double",
-					"temperature_unit": "Text",
-					"humidity": "Double",
-					"humidity_unit": "Text",
-					"pressure": "Double",
-					"pressure_unit": "Text"
-				}
-			}
+	"Interval": "00:00:10",
+	"Scripts": [
+	  {
+		"Type": "javascript",
+		"Path": "chiller-01-state.js"
+	  }
+	]
+  },
+  "Properties": {},
+  "Telemetry": [
+	{
+	  "Interval": "00:00:10",
+	  "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
+	  "MessageSchema": {
+		"Name": "chiller-sensors;v1",
+		"Format": "JSON",
+		"Fields": {
+		  "temperature": "Double",
+		  "temperature_unit": "Text",
+		  "humidity": "Double",
+		  "humidity_unit": "Text",
+		  "pressure": "Double",
+		  "pressure_unit": "Text"
 		}
-	],
-	"CloudToDeviceMethods": {},
-	"$metadata": {
-        "$type": "DeviceModel;2",
-        "$uri": "/v2/devicemodels/00000000-000000-0000-0000-000000",
-        "$created": "2018-03-29T23:33:03+00:00",
-        "$modified": "2018-03-29T23:33:03+00:00"
-    }
+	  }
+	}
+  ],
+  "CloudToDeviceMethods": {},
+  "$metadata": {
+    "$type": "DeviceModel;2",
+    "$uri": "/v2/devicemodels/00000000-000000-0000-0000-000000",
+    "$created": "2018-03-29T23:33:03+00:00",
+    "$modified": "2018-03-29T23:33:03+00:00"
+  }
 }
 ```
 

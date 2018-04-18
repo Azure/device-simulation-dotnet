@@ -2,7 +2,7 @@
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2
 {
-    /// <summary>Web service API version 1 information</summary>
+    /// <summary>Web service API version 2 information</summary>
     public static class Version
     {
         /// <summary>Number used for routing HTTP requests</summary>
@@ -12,6 +12,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2
         public const string PATH = "v" + NUMBER;
 
         /// <summary>Date when the API version has been published</summary>
-        public const string DATE = "201803";
+        public const string DATE = "201804";
     }
 }
