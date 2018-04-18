@@ -5,7 +5,7 @@ API specifications - Device Models v2
 
 ### Get a list of device models that can be simulated
 
-The list of device models contains stock device models ( which is injected into the service 
+The list of device models contains stock device models (which is injected into the service 
 using a list of configuration files, which are automatically discovered when the service starts) 
 and custom device models which are stored in document DB.
 
@@ -93,11 +93,11 @@ Content-Type: application/JSON
       "CloudToDeviceMethods": {
         "DecreaseCargoTemperature": {
           "Type": "javascript",
-          "Path": "TBD.js"
+          "Path": "TempDecrease-method.js"
         },
         "IncreaseCargoTemperature": {
           "Type": "javascript",
-          "Path": "TBD.js"
+          "Path": "TempIncrease-method.js"
         }
       },
       "$metadata": {
@@ -108,7 +108,7 @@ Content-Type: application/JSON
   ],
   "$metadata": {
     "$type": "DeviceModelList;1",
-    "$uri": "/v1/devicemodels"
+    "$uri": "/v2/devicemodels"
   }
 }
 ```
@@ -317,6 +317,8 @@ Content-Type: application/json; charset=utf-8
 
 Directly modify the configuration files stored in the file system.
 
+[Device model docs](https://docs.microsoft.com/en-us/azure/iot-suite/iot-suite-remote-monitoring-test#define-the-characteristics-of-the-new-device-type)
+
 ### Modifying custom device models
 
 Custom device models can be modified by calling PUT and passing the existing 
@@ -455,5 +457,5 @@ Stock device models can be deleted by removing its configuration file from the f
 Custom device models can be deleted using the DELETE method with its ID.
 
 ```
-DELETE /v1/devicemodels/${id}
+DELETE /v2/devicemodels/${id}
 ```
