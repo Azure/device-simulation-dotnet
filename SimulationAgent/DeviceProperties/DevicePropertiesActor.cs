@@ -164,6 +164,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             {
                 case ActorEvents.Started:
                     this.actorLogger.ActorStarted();
+                    this.status = ActorStatus.ReadyToTagDevice;
                     break;
 
                 case ActorEvents.DeviceTagged:
