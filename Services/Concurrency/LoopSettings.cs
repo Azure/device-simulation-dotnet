@@ -55,7 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         public void NewLoop()
         {
-            // In order for other threads to be able to schedule twin opertations,
+            // In order for other threads to be able to schedule twin operations,
             // divide by a constant value to prevent the tagging thread from having
             // first priority over twin writes all of the time.
             this.SchedulableTaggings = Math.Max(1, this.ratingConfig.TwinWritesPerSecond / SHARED_TWIN_WRITES_ALLOCATION);

@@ -32,7 +32,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
     /// <summary>
     /// The Device Properties Actor is responsible for sending updates
-    /// to the IoT Hub Device Twin. This includes adding an intial tag to 
+    /// to the IoT Hub Device Twin. This includes adding an initial tag to 
     /// the device twin, and pushing changes to the device properties.
     /// </summary>
     public class DevicePropertiesActor : IDevicePropertiesActor
