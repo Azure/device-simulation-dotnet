@@ -19,8 +19,14 @@
 /*jslint unparam: true*/
 function main(context, previousState, previousProperties) {
 
-    log("Executing JavaScript StartElevator function.");
+    log("Executing JavaScript StartElevator method.");
 
-    // TODO: This method is not implemented
-    // https://github.com/Azure/device-simulation-dotnet/issues/44
+    var state = {
+        moving: true
+    };
+    log("Starting elevator.");
+    updateState(state);
+
+    log("'StartElevator' method simulation completed");
+
 }

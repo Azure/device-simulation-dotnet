@@ -40,7 +40,8 @@
                     "vibration": "double",
                     "vibration_unit": "text",
                     "temperature": "double",
-                    "temperature_unit": "text"
+                    "temperature_unit": "text",
+                    "moving": "boolean"
                 }
             }
         }

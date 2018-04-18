@@ -19,8 +19,14 @@
 /*jslint unparam: true*/
 function main(context, previousState, previousProperties) {
 
-    log("Executing JavaScript StopMoving function.");
+    log("Executing JavaScript StopMoving method.");
 
-    // TODO: This method is not implemented
-    // https://github.com/Azure/device-simulation-dotnet/issues/44
+    var state = {
+        moving: false
+    };
+    log("Stopping device movement.");
+    updateState(state);
+
+    log("'StopMoving' method simulation completed");
+
 }

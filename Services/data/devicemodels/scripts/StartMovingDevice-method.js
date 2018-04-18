@@ -19,8 +19,14 @@
 /*jslint unparam: true*/
 function main(context, previousState, previousProperties) {
 
-    log("Executing JavaScript StartMoving function.");
+    log("Executing JavaScript StartMoving method.");
 
-    // TODO: This method is not implemented
-    // https://github.com/Azure/device-simulation-dotnet/issues/44
+    var state = {
+        moving: true
+    };
+    log("Starting device movement.");
+    updateState(state);
+
+    log("'StartMoving' method simulation completed");
+
 }

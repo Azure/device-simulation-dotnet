@@ -55,8 +55,16 @@
             "Path": "Reboot-method.js"
         },
         "FirmwareUpdate": {
-          "Type": "javascript",
-          "Path": "FirmwareUpdate-method.js"
+            "Type": "javascript",
+            "Path": "FirmwareUpdate-method.js"
+        },
+        "StartMoving": {
+            "Type": "javascript",
+            "Path": "StartMovingDevice-method.js"
+        },
+        "StopMoving": {
+            "Type": "javascript",
+            "Path": "StopMovingDevice-method.js"
         },
         "DecreaseTemperature": {
             "Type": "javascript",

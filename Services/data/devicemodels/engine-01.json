@@ -57,13 +57,9 @@
             "Type": "javascript",
             "Path": "RestartEngine-method.js"
         },
-        "EmptyTank": {
+        "SetFuelLevel": {
             "Type": "javascript",
-            "Path": "EmptyTank-method.js"
-        },
-        "FillTank": {
-            "Type": "javascript",
-            "Path": "FillTank-method.js"
+            "Path": "SetFuelLevel-method.js"
         }
     }
 }

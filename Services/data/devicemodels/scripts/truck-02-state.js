@@ -94,8 +94,11 @@ function main(context, previousState, previousProperties) {
     // 30 +/- 5%,  Min 0, Max 80
     state.speed = vary(30, 5, 0, 80);
 
-    // 49 +/- 1%,  Min 35, Max 50
-    state.cargotemperature = vary(49, 1, 35, 50);
+    log("Cargo temperature = " + state.cargotemperature);
+
+    // current temperature +/- 1%,  Min/Max: current +/- 15
+    state.cargotemperature = vary(state.cargotemperature, 1, state.cargotemperature - 15, state.cargotemperature + 15);
+
 
     return state;
 }
