@@ -4,7 +4,6 @@
 /*global updateState*/
 /*global sleep*/
 /*jslint node: true*/
-/*jslint todo: true*/
 
 "use strict";
 
