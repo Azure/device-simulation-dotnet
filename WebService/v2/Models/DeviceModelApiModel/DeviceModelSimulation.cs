@@ -44,7 +44,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
         }
 
         // Map service model to API model
-        public static DeviceModelSimulation FromServiceModel(DeviceModel.StateSimulation value)
+        public static DeviceModelSimulation FromServiceModel(StateSimulation value)
         {
             if (value == null) return null;
 
