@@ -1,20 +1,15 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Controllers;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.DeviceModelApiModel;
 using Moq;
 using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using WebService.Test.helpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -27,7 +22,7 @@ namespace WebService.Test.v2.Controllers
         private readonly Mock<ILogger> logger;
         private readonly DeviceModelsController target;
 
-        public DeviceModelsControllerTest(ITestOutputHelper lo)
+        public DeviceModelsControllerTest()
         {
             this.deviceModelsService = new Mock<IDeviceModels>();
             this.logger = new Mock<ILogger>();
