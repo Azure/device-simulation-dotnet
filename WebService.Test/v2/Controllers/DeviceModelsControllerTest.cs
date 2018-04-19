@@ -86,14 +86,14 @@ namespace WebService.Test.v2.Controllers
             // Arrange
             const string id = "deviceModelId";
             var deviceModel = this.GetDeviceModelById(id);
-            DeviceModelApiModel devoveModelAPIModel = GetValidDeviceModelApiModel(id);
+            DeviceModelApiModel deviceModelAPIModel = GetValidDeviceModelApiModel(id);
 
             this.deviceModelsService
                 .Setup(x => x.InsertAsync(It.IsAny<DeviceModel>()))
                 .ReturnsAsync(deviceModel);
 
             // Act
-            var result = await this.target.PostAsync(devoveModelAPIModel);
+            var result = await this.target.PostAsync(deviceModelAPIModel);
 
             // Assert
             Assert.NotNull(result);
@@ -117,14 +117,14 @@ namespace WebService.Test.v2.Controllers
             // Arrange
             const string id = "deviceModelId";
             var deviceModel = this.GetDeviceModelById(id);
-            DeviceModelApiModel devoveModelAPIModel = GetValidDeviceModelApiModel(id);
+            DeviceModelApiModel deviceModelAPIModel = GetValidDeviceModelApiModel(id);
 
             this.deviceModelsService
                 .Setup(x => x.UpsertAsync(It.IsAny<DeviceModel>()))
                 .ReturnsAsync(deviceModel);
 
             // Act
-            var result = await this.target.PutAsync(devoveModelAPIModel);
+            var result = await this.target.PutAsync(deviceModelAPIModel);
 
             // Assert
             Assert.NotNull(result);
