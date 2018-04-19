@@ -22,10 +22,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         void DeviceRegistered();
         void DeviceRegistrationFailed();
 
-        void DeviceTwinTaggingScheduled(long time);
-        void TaggingDeviceTwin();
-        void DeviceTwinTagged();
-        void DeviceTwinTaggingFailed();
+        void DeviceTaggingScheduled(long time);
+        void TaggingDevice();
+        void DeviceTagged();
+        void DeviceTaggingFailed();
 
         void DeviceConnectionScheduled(long time);
         void ConnectingDevice();
@@ -184,37 +184,37 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.LogRegistry("Registration FAILED");
         }
 
-        public void DeviceTwinTaggingScheduled(long time)
+        public void DeviceTaggingScheduled(long time)
         {
             if (!this.enabled) return;
 
             var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
-            this.Log("Twin tagging scheduled at: " + msg);
-            this.LogProperties("Twin tagging scheduled at: " + msg);
+            this.Log("Device tagging scheduled at: " + msg);
+            this.LogProperties("Device tagging scheduled at: " + msg);
         }
 
-        public void TaggingDeviceTwin()
+        public void TaggingDevice()
         {
             if (!this.enabled) return;
 
-            this.Log("Tagging twin");
+            this.Log("Tagging device");
             this.LogProperties("Tagging");
         }
 
-        public void DeviceTwinTagged()
+        public void DeviceTagged()
         {
             if (!this.enabled) return;
 
-            this.Log("Twin tagged");
-            this.LogProperties("Twin tagged");
+            this.Log("Device tagged");
+            this.LogProperties("Device tagged");
         }
 
-        public void DeviceTwinTaggingFailed()
+        public void DeviceTaggingFailed()
         {
             if (!this.enabled) return;
 
-            this.Log("Twin tagging FAILED");
-            this.LogProperties("Twin tag FAILED");
+            this.Log("Device tagging FAILED");
+            this.LogProperties("Device tag FAILED");
         }
 
         public void DeviceConnectionScheduled(long time)
