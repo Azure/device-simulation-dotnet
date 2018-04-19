@@ -16,23 +16,33 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         ISmartDictionary DeviceProperties { get; }
         ISmartDictionary DeviceState { get; }
         IDeviceClient Client { get; }
+        long FailedTwinUpdatesCount { get; }
+        long SimulationErrorsCount { get; }
 
         void Setup(
             string deviceId,
             IDeviceStateActor deviceStateActor,
-            IDeviceConnectionActor deviceConnectionActor);
+            IDeviceConnectionActor deviceConnectionActor,
+            PropertiesLoopSettings loopSettings);
 
         string Run();
         void HandleEvent(DevicePropertiesActor.ActorEvents e);
         void Stop();
     }
 
+    /// <summary>
+    /// The Device Properties Actor is responsible for sending updates
+    /// to the IoT Hub Device Twin. This includes adding an initial tag to 
+    /// the device twin, and pushing changes to the device properties.
+    /// </summary>
     public class DevicePropertiesActor : IDevicePropertiesActor
     {
         private enum ActorStatus
         {
             None,
             ReadyToStart,
+            ReadyToTagDevice,
+            TaggingDevice,
             WaitingForChanges,
             ReadyToUpdate,
             Updating,
@@ -42,6 +52,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         public enum ActorEvents
         {
             Started,
+            DeviceTaggingFailed,
+            DeviceTagged,
             PropertiesUpdateFailed,
             PropertiesUpdated,
         }
@@ -50,10 +62,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         private readonly IActorsLogger actorLogger;
         private readonly IRateLimiting rateLimiting;
         private readonly IDevicePropertiesLogic updatePropertiesLogic;
+        private readonly IDevicePropertiesLogic deviceSetDeviceTagLogic;
 
         private ActorStatus status;
         private string deviceId;
         private long whenToRun;
+        private PropertiesLoopSettings loopSettings;
+        private long failedTwinUpdatesCount;
 
         /// <summary>
         /// Reference to the actor managing the device state, used
@@ -81,21 +96,35 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         /// </summary>
         public IDeviceClient Client => this.deviceConnectionActor.Client;
 
+        /// <summary>
+        /// Failed device twin updates counter
+        /// </summary>
+        public long FailedTwinUpdatesCount => this.failedTwinUpdatesCount;
+
+        /// <summary>
+        /// Simulation error counter in DeviceConnectionActor
+        /// </summary>
+        public long SimulationErrorsCount => this.FailedTwinUpdatesCount;
+
         public DevicePropertiesActor(
             ILogger logger,
             IActorsLogger actorLogger,
             IRateLimiting rateLimiting,
-            IDevicePropertiesLogic updatePropertiesLogic)
+            UpdateReportedProperties updatePropertiesLogic,
+            SetDeviceTag deviceSetDeviceTagLogic)
         {
             this.log = logger;
             this.actorLogger = actorLogger;
             this.rateLimiting = rateLimiting;
             this.updatePropertiesLogic = updatePropertiesLogic;
+            this.deviceSetDeviceTagLogic = deviceSetDeviceTagLogic;
 
             this.status = ActorStatus.None;
             this.deviceId = null;
             this.deviceStateActor = null;
             this.deviceConnectionActor = null;
+
+            this.failedTwinUpdatesCount = 0;
         }
 
         /// <summary>
@@ -105,7 +134,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         public void Setup(
             string deviceId,
             IDeviceStateActor deviceStateActor,
-            IDeviceConnectionActor deviceConnectionActor)
+            IDeviceConnectionActor deviceConnectionActor,
+            PropertiesLoopSettings loopSettings)
         {
             if (this.status != ActorStatus.None)
             {
@@ -117,6 +147,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             this.deviceId = deviceId;
             this.deviceStateActor = deviceStateActor;
             this.deviceConnectionActor = deviceConnectionActor;
+            this.loopSettings = loopSettings;
+
+            this.updatePropertiesLogic.Setup(this, this.deviceId);
+            this.deviceSetDeviceTagLogic.Setup(this, this.deviceId);
 
             this.updatePropertiesLogic.Setup(this, this.deviceId);
             this.actorLogger.Setup(deviceId, "Properties");
@@ -130,15 +164,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             {
                 case ActorEvents.Started:
                     this.actorLogger.ActorStarted();
+                    this.status = ActorStatus.ReadyToTagDevice;
                     break;
+
+                case ActorEvents.DeviceTagged:
+                    this.actorLogger.DeviceTagged();
+                    this.status = ActorStatus.WaitingForChanges;
+                    break;
+
+                case ActorEvents.DeviceTaggingFailed:
+                    if (this.loopSettings.SchedulableTaggings <= 0) return;
+                    this.loopSettings.SchedulableTaggings--;
+
+                    this.failedTwinUpdatesCount++;
+                    this.actorLogger.DeviceTaggingFailed();
+                    this.ScheduleDeviceTagging();
+                    break;
+
                 case ActorEvents.PropertiesUpdated:
                     this.actorLogger.DevicePropertiesUpdated();
                     this.status = ActorStatus.WaitingForChanges;
                     break;
+
                 case ActorEvents.PropertiesUpdateFailed:
+                    this.failedTwinUpdatesCount++;
                     this.actorLogger.DevicePropertiesUpdateFailed();
                     this.SchedulePropertiesUpdate(isRetry: true);
                     break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(e), e, null);
             }
@@ -159,6 +212,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                     this.whenToRun = 0;
                     this.HandleEvent(ActorEvents.Started);
                     return "started";
+
+                case ActorStatus.ReadyToTagDevice:
+                    this.status = ActorStatus.TaggingDevice;
+                    this.actorLogger.TaggingDevice();
+                    this.deviceSetDeviceTagLogic.Run();
+                    return "device tag scheduled";
 
                 case ActorStatus.WaitingForChanges:
                     if (!this.DeviceProperties.Changed) return "no properties to update";
@@ -199,6 +258,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                     Status = this.status.ToString(),
                     When = this.log.FormatDate(this.whenToRun),
                     isRetry
+                });
+        }
+
+        private void ScheduleDeviceTagging()
+        {
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            // note: we overwrite the twin, so no Read operation is needed
+            var pauseMsec = this.rateLimiting.GetPauseForNextTwinWrite();
+            this.whenToRun = now + pauseMsec;
+            this.status = ActorStatus.ReadyToTagDevice;
+
+            this.actorLogger.DeviceTaggingScheduled(this.whenToRun);
+            this.log.Debug("Device twin tagging scheduled",
+                () => new
+                {
+                    this.deviceId,
+                    Status = this.status.ToString(),
+                    When = this.log.FormatDate(this.whenToRun)
                 });
         }
     }
