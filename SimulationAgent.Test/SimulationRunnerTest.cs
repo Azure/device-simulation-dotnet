@@ -217,7 +217,7 @@ namespace SimulationAgent.Test
 
             this.SetupSimulationReadyToStart();
 
-            this.deviceConnectionActor
+            this.devicePropertiesActor
                 .Setup(x => x.FailedTwinUpdatesCount)
                 .Returns(FAILED_DEVICE_TWIN_UPDATES_COUNT);
 
