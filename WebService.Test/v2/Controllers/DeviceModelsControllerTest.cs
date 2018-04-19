@@ -12,7 +12,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using WebService.Test.helpers;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace WebService.Test.v2.Controllers
 {
