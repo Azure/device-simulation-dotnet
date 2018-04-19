@@ -38,8 +38,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Application logger
         private readonly ILogger log;
 
-        // Set of counter to optimize scheduling
+        // Settings to optimize scheduling
         private readonly ConnectionLoopSettings connectionLoopSettings;
+
+        // Settings to optimize scheduling
+        private readonly PropertiesLoopSettings propertiesLoopSettings;
 
         // Service used to load device models details
         private readonly IDeviceModels deviceModels;
@@ -106,6 +109,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             IFactory factory)
         {
             this.connectionLoopSettings = new ConnectionLoopSettings(ratingConfig);
+            this.propertiesLoopSettings = new PropertiesLoopSettings(ratingConfig);
 
             this.log = logger;
             this.deviceModels = deviceModels;
@@ -277,13 +281,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         public long FailedDeviceConnectionsCount => this.deviceConnectionActors.Sum(a => a.Value.FailedDeviceConnectionsCount);
 
         // Method to return the count of twin update failed devices
-        public long FailedDeviceTwinUpdatesCount => this.deviceConnectionActors.Sum(a => a.Value.FailedTwinUpdatesCount);
+        public long FailedDeviceTwinUpdatesCount => this.devicePropertiesActors.Sum(a => a.Value.FailedTwinUpdatesCount);
 
         // Method to return the count of simulation errors
         public long SimulationErrorsCount => this.simulationErrors +
                 this.deviceConnectionActors.Sum(a => a.Value.SimulationErrorsCount) +
                 this.deviceStateActors.Sum(a => a.Value.SimulationErrorsCount) +
-                this.deviceTelemetryActors.Sum(a => a.Value.FailedMessagesCount);
+                this.deviceTelemetryActors.Sum(a => a.Value.FailedMessagesCount) +
+                this.devicePropertiesActors.Sum(a => a.Value.SimulationErrorsCount);
 
         private DeviceModel GetDeviceModel(string id, Services.Models.Simulation.DeviceModelOverride overrides)
         {
@@ -339,6 +344,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             while (this.running)
             {
+                this.propertiesLoopSettings.NewLoop();
+
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 foreach (var device in this.devicePropertiesActors)
                 {
@@ -425,7 +432,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             // Create one device properties actor for each device
             var devicePropertiesActor = this.factory.Resolve<IDevicePropertiesActor>();
-            devicePropertiesActor.Setup(deviceId, deviceStateActor, deviceConnectionActor);
+            devicePropertiesActor.Setup(deviceId, deviceStateActor, deviceConnectionActor, this.propertiesLoopSettings);
             this.devicePropertiesActors.Add(key, devicePropertiesActor);
 
             // Create one telemetry actor for each telemetry message to be sent
