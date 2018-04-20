@@ -14,7 +14,6 @@ CONFIGURATION=Release
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && cd .. && pwd )/"
 source "$APP_HOME/scripts/.functions.sh"
 
-
 compile() {
     check_dependency_dotnet
 
