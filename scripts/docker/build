@@ -14,6 +14,11 @@ CONFIGURATION=Release
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && cd .. && pwd )/"
 source "$APP_HOME/scripts/.functions.sh"
 
+echo "== Info from build script =="
+echo "APP_HOME=$APP_HOME"
+docker version
+echo "== =="
+
 compile() {
     check_dependency_dotnet
 
