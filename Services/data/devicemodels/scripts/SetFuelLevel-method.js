@@ -2,8 +2,6 @@
 
 /*global log*/
 /*global updateState*/
-/*global updateProperty*/
-/*global sleep*/
 /*jslint node: true*/
 
 "use strict";
@@ -20,16 +18,14 @@
 function main(context, previousState, previousProperties) {
 
     // General info indicating that this method is being called
-    log("Executing JavaScript SetFuelLevel method.");
+    log("Executing JavaScript 'SetFuelLevel' method simulation.");
 
     // Input validation. Make sure that thew new
     // fuel level is within the allowable range
     var newFuelLevel = context.FuelLevel;
-    if (isNaN(newFuelLevel)) {
-        newFuelLevel = 0;
+    if (isNaN(newFuelLevel) || !newFuelLevel || newFuelLevel < 0 || newFuelLevel > 70) {
+        throw new Error("Invalid fuel level specified. Fuel level must be betwee 0 and 70.");
     }
-    newFuelLevel = Math.max(newFuelLevel, 0);
-    newFuelLevel = Math.min(newFuelLevel, 70);
 
     log("Setting fuel level to: " + newFuelLevel);
 
@@ -39,5 +35,4 @@ function main(context, previousState, previousProperties) {
     updateState(state);
 
     log("'SetFuelLevel' method simulation completed.");
-
 }
