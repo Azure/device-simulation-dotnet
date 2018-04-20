@@ -72,7 +72,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 // TODO: HTTP clients don't "connect", find out how HTTP connections are measured and throttled
                 //       https://github.com/Azure/device-simulation-dotnet/issues/85
+                // Kirpas: Rate limiting the connections is degrading our guidance perf
                 await this.rateLimiting.LimitConnectionsAsync(() => this.client.OpenAsync());
+                //await this.client.OpenAsync();
                 this.connected = true;
             }
         }
@@ -144,8 +146,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 if (!this.connected) await this.ConnectAsync();
 
+                // Kirpas: Below code is degrading the perf for our guidance target
                 await this.rateLimiting.LimitMessagesAsync(
                     () => this.client.SendEventAsync(message));
+                //await this.client.SendEventAsync(message);
 
                 this.log.Debug("SendRawMessageAsync for device", () => new
                 {

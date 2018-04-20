@@ -198,7 +198,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
             this.setupDone = true;
 
-            this.deviceId = DEVICE_ID_PREFIX + deviceModel.Id + "." + position;
+            // Kirpas - Simplest way to make sure that simulations running on different boxes create unique devices
+            //this.deviceId = DEVICE_ID_PREFIX + deviceModel.Id + "." + position;
+            this.deviceId = System.Environment.MachineName + "." + deviceModel.Id + "." + position;
 
             this.DeviceState = this.SetupTelemetryAndProperties(deviceModel);
             this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState });

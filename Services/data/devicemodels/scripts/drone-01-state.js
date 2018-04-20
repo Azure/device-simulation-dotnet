@@ -25,8 +25,8 @@ const BatteryVariation = 2;
 // Temperature control
 const AverageTemperature = 75.00;
 const MinTemperature = 60.00;
-const MaxTemperature = 110.00;
-const TemperatureVariation = 5;
+const MaxTemperature = 120.00;
+const TemperatureVariation = 15;
 
 // Velocity control
 const AverageVelocity = 60.00;
