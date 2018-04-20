@@ -2,7 +2,6 @@
 
 /*global log*/
 /*global updateState*/
-/*global sleep*/
 /*jslint node: true*/
 
 "use strict";
@@ -18,7 +17,7 @@
 /*jslint unparam: true*/
 function main(context, previousState, previousProperties) {
 
-    log("Executing JavaScript StartMoving method.");
+    log("Executing JavaScript 'StartMovingDevice' method simulation.");
 
     var state = {
         moving: true
@@ -26,6 +25,5 @@ function main(context, previousState, previousProperties) {
     log("Starting device movement.");
     updateState(state);
 
-    log("'StartMoving' method simulation completed");
-
+    log("'StartMovingDevice' method simulation completed");
 }
