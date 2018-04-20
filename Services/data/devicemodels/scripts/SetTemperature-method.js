@@ -2,8 +2,6 @@
 
 /*global log*/
 /*global updateState*/
-/*global updateProperty*/
-/*global sleep*/
 /*jslint node: true*/
 
 "use strict";
@@ -20,24 +18,21 @@
 function main(context, previousState, previousProperties) {
 
     // General info indicating that this method is being called
-    log("Executing JavaScript SetTemperature method.");
+    log("Executing JavaScript 'SetTemperature' method simulation.");
 
     // Input validation. Make sure that thew new
     // temperature is within the allowable range
-    var newTemperature = context.CargoTemperature;
-    if (isNaN(newTemperature)) {
-        newTemperature = 0;
+    var newTemperature = context.Temperature;
+    if (isNaN(newTemperature) || !newTemperature || newTemperature < 0 || newTemperature > 100) {
+        throw new Error("Invalid temperature specified. Temperature must be betwee 0 and 100.");
     }
-    newTemperature = Math.max(newTemperature, 0);
-    newTemperature = Math.min(newTemperature, 100);
 
     log("Setting temperature to: " + newTemperature);
 
     var state = {
-        cargotemperature: newTemperature
+        temperature: newTemperature
     };
     updateState(state);
 
     log("'SetTemperature' method simulation completed.");
-
 }
