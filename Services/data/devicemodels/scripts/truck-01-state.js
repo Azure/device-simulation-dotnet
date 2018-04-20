@@ -17,8 +17,8 @@ var state = {
     longitude: center_longitude,
     speed: 80.0,
     speed_unit: "mph",
-    cargotemperature: 38.0,
-    cargotemperature_unit: "F"
+    temperature: 38.0,
+    temperature_unit: "F"
 };
 
 // Default properties
@@ -95,7 +95,7 @@ function main(context, previousState, previousProperties) {
     state.speed = vary(30, 5, 0, 80);
 
     // current temperature +/- 1%,  Min/Max: current +/- 15
-    state.cargotemperature = vary(state.cargotemperature, 1, state.cargotemperature - 15, state.cargotemperature + 15);
+    state.temperature = vary(state.temperature, 1, state.temperature - 15, state.temperature + 15);
 
     return state;
 }
