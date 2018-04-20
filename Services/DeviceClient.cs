@@ -2,11 +2,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json.Linq;
@@ -16,16 +16,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface IDeviceClient
     {
         IoTHubProtocol Protocol { get; }
-
         Task ConnectAsync();
-
         Task DisconnectAsync();
-
         Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema);
-
-        Task UpdateTwinAsync(Device device);
-
-        Task RegisterMethodsForDeviceAsync(IDictionary<string, Script> methods, Dictionary<string, object> deviceState);
+        Task RegisterMethodsForDeviceAsync(IDictionary<string, Script> methods, ISmartDictionary deviceState, ISmartDictionary deviceProperties);
+        Task RegisterDesiredPropertiesUpdateAsync(ISmartDictionary deviceProperties);
+        Task UpdatePropertiesAsync(ISmartDictionary deviceProperties);
     }
 
     public class DeviceClient : IDeviceClient
@@ -42,7 +38,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IoTHubProtocol protocol;
         private readonly Azure.Devices.Client.DeviceClient client;
         private readonly IDeviceMethods deviceMethods;
-        private readonly IRateLimiting rateLimiting;
+        private readonly IDevicePropertiesRequest propertiesUpdateRequest;
         private readonly ILogger log;
 
         private bool connected;
@@ -54,16 +50,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IoTHubProtocol protocol,
             Azure.Devices.Client.DeviceClient client,
             IDeviceMethods deviceMethods,
-            IRateLimiting rateLimiting,
             ILogger logger)
         {
             this.deviceId = deviceId;
             this.protocol = protocol;
             this.client = client;
             this.deviceMethods = deviceMethods;
-            this.rateLimiting = rateLimiting;
             this.log = logger;
-            this.connected = false;
+
+            this.propertiesUpdateRequest = new DeviceProperties(client, this.log);
         }
 
         public async Task ConnectAsync()
@@ -72,9 +67,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 // TODO: HTTP clients don't "connect", find out how HTTP connections are measured and throttled
                 //       https://github.com/Azure/device-simulation-dotnet/issues/85
-                // Kirpas: Rate limiting the connections is degrading our guidance perf
-                await this.rateLimiting.LimitConnectionsAsync(() => this.client.OpenAsync());
-                //await this.client.OpenAsync();
+                await this.client.OpenAsync();
                 this.connected = true;
             }
         }
@@ -91,12 +84,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task RegisterMethodsForDeviceAsync(
             IDictionary<string, Script> methods,
-            Dictionary<string, object> deviceState)
+            ISmartDictionary deviceState,
+            ISmartDictionary deviceProperties)
         {
             this.log.Debug("Attempting to register device methods",
                 () => new { this.deviceId });
 
-            await this.deviceMethods.RegisterMethodsAsync(this.deviceId, methods, deviceState);
+            await this.deviceMethods.RegisterMethodsAsync(this.deviceId, methods, deviceState, deviceProperties);
+        }
+
+        public async Task RegisterDesiredPropertiesUpdateAsync(ISmartDictionary deviceProperties)
+        {
+            this.log.Debug("Attempting to register desired property notifications for device",
+                () => new { this.deviceId });
+
+            await this.propertiesUpdateRequest.RegisterChangeUpdateAsync(this.deviceId, deviceProperties);
         }
 
         public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
@@ -106,55 +108,98 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             eventMessage.Properties.Add(MESSAGE_SCHEMA_PROPERTY, schema.Name);
             eventMessage.Properties.Add(CONTENT_PROPERTY, "JSON");
 
-            await this.SendRawMessageAsync(eventMessage);
+            eventMessage.ContentType = "application/json";
+            eventMessage.ContentEncoding = "utf-8";
+            eventMessage.MessageSchema = schema.Name;
+            eventMessage.CreationTimeUtc = DateTime.UtcNow;
 
-            this.log.Debug("SendMessageAsync for device", () => new
-            {
-                this.deviceId
-            });
+            this.log.Debug("Sending message from device",
+                () => new { this.deviceId, Schema = schema.Name });
+
+            await this.SendRawMessageAsync(eventMessage);
         }
 
-        public async Task UpdateTwinAsync(Device device)
+        /// <summary>
+        /// Updates the reported properties in the device twin on the IoT Hub
+        /// </summary>
+        public async Task UpdatePropertiesAsync(ISmartDictionary properties)
         {
-            if (!this.connected) await this.ConnectAsync();
-
-            var azureTwin = await this.rateLimiting.LimitTwinReadsAsync(
-                () => this.client.GetTwinAsync());
-
-            // Remove properties
-            var props = azureTwin.Properties.Reported.GetEnumerator();
-            while (props.MoveNext())
+            try
             {
-                var current = (KeyValuePair<string, object>) props.Current;
+                var reportedProperties = SmartDictionaryToTwinCollection(properties);
 
-                if (!device.Twin.ReportedProperties.ContainsKey(current.Key))
+                await this.client.UpdateReportedPropertiesAsync(reportedProperties);
+
+                this.log.Debug("Update reported properties for device", () => new
                 {
-                    this.log.Debug("Removing key", () => new { current.Key });
-                    azureTwin.Properties.Reported[current.Key] = null;
-                }
+                    this.deviceId,
+                    ReportedProperties = reportedProperties
+                });
             }
-
-            // Write properties
-            var reportedProperties = DictionaryToTwinCollection(device.Twin.ReportedProperties);
-            await this.rateLimiting.LimitTwinWritesAsync(
-                () => this.client.UpdateReportedPropertiesAsync(reportedProperties));
+            catch (Exception e)
+            {
+                this.log.Error("Update reported properties failed",
+                    () => new
+                    {
+                        Protocol = this.protocol.ToString(),
+                        ExceptionMessage = e.Message,
+                        Exception = e.GetType().FullName,
+                        e.InnerException
+                    });
+            }
         }
 
         private async Task SendRawMessageAsync(Message message)
         {
             try
             {
-                if (!this.connected) await this.ConnectAsync();
-
-                // Kirpas: Below code is degrading the perf for our guidance target
-                await this.rateLimiting.LimitMessagesAsync(
-                    () => this.client.SendEventAsync(message));
-                //await this.client.SendEventAsync(message);
+                await this.client.SendEventAsync(message);
 
                 this.log.Debug("SendRawMessageAsync for device", () => new
                 {
                     this.deviceId
                 });
+            }
+            catch (TimeoutException e)
+            {
+                this.log.Error("Message delivery timed out",
+                    () => new
+                    {
+                        Protocol = this.protocol.ToString(),
+                        ExceptionMessage = e.Message,
+                        Exception = e.GetType().FullName,
+                        e.InnerException
+                    });
+
+                throw new TelemetrySendTimeoutException("Message delivery timed out with " + e.Message, e);
+            }
+            catch (IOException e)
+            {
+                this.log.Error("Message delivery IOExcepotion",
+                    () => new
+                    {
+                        Protocol = this.protocol.ToString(),
+                        ExceptionMessage = e.Message,
+                        Exception = e.GetType().FullName,
+                        e.InnerException
+                    });
+
+                throw new TelemetrySendIOException("Message delivery I/O failed with " + e.Message, e);
+            }
+            catch (AggregateException aggEx) when (aggEx.InnerException != null)
+            {
+                var e = aggEx.InnerException;
+
+                this.log.Error("Message delivery failed",
+                    () => new
+                    {
+                        Protocol = this.protocol.ToString(),
+                        ExceptionMessage = e.Message,
+                        Exception = e.GetType().FullName,
+                        e.InnerException
+                    });
+
+                throw new TelemetrySendException("Message delivery failed with " + e.Message, e);
             }
             catch (Exception e)
             {
@@ -166,20 +211,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         Exception = e.GetType().FullName,
                         e.InnerException
                     });
+
+                throw new TelemetrySendException("Message delivery failed with " + e.Message, e);
             }
         }
 
-        private static TwinCollection DictionaryToTwinCollection(Dictionary<string, JToken> x)
+        private static TwinCollection SmartDictionaryToTwinCollection(ISmartDictionary dictionary)
         {
             var result = new TwinCollection();
 
-            if (x != null)
+            if (dictionary != null)
             {
-                foreach (KeyValuePair<string, JToken> item in x)
+                var items = dictionary.GetAll();
+
+                foreach (KeyValuePair<string, object> item in items)
                 {
                     try
                     {
-                        result[item.Key] = item.Value;
+                        // Use JToken for serialization
+                        result[item.Key] = JToken.FromObject(item.Value);
                     }
                     catch (Exception e)
                     {

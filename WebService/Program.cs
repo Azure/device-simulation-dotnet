@@ -12,7 +12,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         // Application entry point
         public static void Main(string[] args)
         {
-            var config = new Config(new ConfigData(new Logger(Uptime.ProcessId, LogLevel.Info)));
+            IConfig config = new Config(new ConfigData(new Logger(Uptime.ProcessId)));
 
             /*
             Kestrel is a cross-platform HTTP server based on libuv,

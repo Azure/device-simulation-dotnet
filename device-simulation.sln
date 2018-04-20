@@ -18,7 +18,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{71
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
 		.travis.yml = .travis.yml
-		CONTRIBUTING.md = CONTRIBUTING.md
 		device-simulation.sln.DotSettings = device-simulation.sln.DotSettings
 		LICENSE = LICENSE
 		README.md = README.md
@@ -72,11 +71,20 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "content", "content", "{39EA
 		scripts\docker\content\run.sh = scripts\docker\content\run.sh
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{BB0785BA-B08C-4370-854D-CFED0B0BECBF}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{0680130C-7156-4118-BE65-4734BA92638B}"
 ProjectSection(SolutionItems) = preProject
-	.github\CODEOWNERS = .github\CODEOWNERS
-	.github\ISSUE_TEMPLATE.md = .github\ISSUE_TEMPLATE.md
-	.github\PULL_REQUEST_TEMPLATE.md = .github\PULL_REQUEST_TEMPLATE.md
+	docs\CODEOWNERS = docs\CODEOWNERS
+	docs\ISSUE_TEMPLATE.md = docs\ISSUE_TEMPLATE.md
+	docs\PULL_REQUEST_TEMPLATE.md = docs\PULL_REQUEST_TEMPLATE.md
+	docs\CODE_OF_CONDUCT.md = docs\CODE_OF_CONDUCT.md
+	docs\CONTRIBUTING.md = docs\CONTRIBUTING.md
+	docs\API_SPECS_DEVICE_MODELS.md = docs\API_SPECS_DEVICE_MODELS.md
+	docs\API_SPECS_SERVICE.md = docs\API_SPECS_SERVICE.md
+	docs\API_SPECS_SIMULATIONS.md = docs\API_SPECS_SIMULATIONS.md
+	docs\DEVICE_MODELS.md = docs\DEVICE_MODELS.md
+	docs\INDEX.md = docs\INDEX.md
+	docs\BREAKING_CHANGES.md = docs\BREAKING_CHANGES.md
+	docs\ENVIRONMENT_VARIABLES.md = docs\ENVIRONMENT_VARIABLES.md
 EndProjectSection
 EndProject
 Global
@@ -130,6 +138,6 @@ Global
 		{DEF8CFF7-B332-4BA3-AB0B-8F7AC3275054} = {2B58D756-04D5-427F-9161-E1B45D35682A}
 		{4C88469C-C551-435D-AE2C-36C58EE686A5} = {2B58D756-04D5-427F-9161-E1B45D35682A}
 		{39EA50D7-B4CD-41C4-85EA-E53E89E9BC98} = {DEF8CFF7-B332-4BA3-AB0B-8F7AC3275054}
-		{BB0785BA-B08C-4370-854D-CFED0B0BECBF} = {71787873-D1A0-4D9E-BC84-942E0FB3841E}
+		{0680130C-7156-4118-BE65-4734BA92638B} = {71787873-D1A0-4D9E-BC84-942E0FB3841E}
 	EndGlobalSection
 EndGlobal

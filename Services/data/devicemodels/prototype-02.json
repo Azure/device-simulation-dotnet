@@ -15,11 +15,13 @@
             "latitude": 47.620433,
             "longitude": -122.350987
         },
-        "Script": {
-            "Type": "javascript",
-            "Path": "prototype-02-state.js",
-            "Interval": "00:00:05"
-        }
+        "Interval": "00:00:10",
+        "Scripts": [
+            {
+                "Type": "javascript",
+                "Path": "prototype-02-state.js"
+            }
+        ]
     },
     "Properties": {
         "Type": "Prototyping",
@@ -48,7 +50,7 @@
         }
     ],
     "CloudToDeviceMethods": {
-       "Reboot": {
+        "Reboot": {
             "Type": "javascript",
             "Path": "Reboot-method.js"
         },
@@ -58,11 +60,11 @@
         },
         "DecreaseTemperature": {
             "Type": "javascript",
-            "Path": "TBD.js"
+            "Path": "TemperatureDecrease-method.js"
         },
         "IncreaseTemperature": {
             "Type": "javascript",
-            "Path": "TBD.js"
+            "Path": "TemperatureIncrease-method.js"
         }
     }
 }

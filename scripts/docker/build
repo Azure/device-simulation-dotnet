@@ -1,4 +1,7 @@
-#!/usr/bin/env bash -e
+#!/usr/bin/env bash
+# Copyright (c) Microsoft. All rights reserved.
+# Note: Windows Bash doesn't support shebang extra params
+set -e
 
 # Note: use lowercase names for the Docker images
 DOCKER_IMAGE="kirpasingh/drone-iot"
@@ -32,16 +35,12 @@ build_docker_image() {
 
     rm -fR out/docker
     rm -fR WebService/bin/Docker
-    rm -fR SimulationAgent/bin/Docker
 
     mkdir -p out/docker/webservice
-    mkdir -p out/docker/simulationagent
 
     dotnet publish WebService      --configuration $CONFIGURATION --output bin/Docker
-    dotnet publish SimulationAgent --configuration $CONFIGURATION --output bin/Docker
 
     cp -pR WebService/bin/Docker/*       out/docker/webservice/
-    cp -pR SimulationAgent/bin/Docker/*  out/docker/simulationagent/
 
     cp scripts/docker/.dockerignore              out/docker/
     cp scripts/docker/Dockerfile                 out/docker/

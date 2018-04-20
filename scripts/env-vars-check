@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Copyright (c) Microsoft. All rights reserved.
 
 if [[ -z "$PCS_IOTHUB_CONNSTRING" ]]; then
     echo "Error: the PCS_IOTHUB_CONNSTRING environment variable is not defined."

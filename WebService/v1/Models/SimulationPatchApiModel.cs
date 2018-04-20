@@ -6,8 +6,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 {
     public class SimulationPatchApiModel
     {
-        [JsonProperty(PropertyName = "Etag")]
-        public string Etag { get; set; }
+        [JsonProperty(PropertyName = "ETag")]
+        public string ETag { get; set; }
 
         [JsonProperty(PropertyName = "Enabled")]
         public bool? Enabled { get; set; }
@@ -22,7 +22,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         {
             return new Services.Models.SimulationPatch
             {
-                Etag = this.Etag,
+                ETag = this.ETag,
                 Id = id,
                 Enabled = this.Enabled
             };

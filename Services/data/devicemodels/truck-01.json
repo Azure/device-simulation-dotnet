@@ -4,7 +4,7 @@
     "Version": "0.0.1",
     "Name": "Truck",
     "Description": "Truck with GPS, speed and cargo temperature sensors",
-    "Protocol": "MQTT",
+    "Protocol": "AMQP",
     "Simulation": {
         "InitialState": {
             "online": true,
@@ -15,11 +15,13 @@
             "cargotemperature": 38.0,
             "cargotemperature_unit": "F"
         },
-        "Script": {
-            "Type": "javascript",
-            "Path": "truck-01-state.js",
-            "Interval": "00:00:05"
-        }
+        "Interval": "00:00:10",
+        "Scripts": [
+            {
+                "Type": "javascript",
+                "Path": "truck-01-state.js"
+            }
+        ]
     },
     "Properties": {
         "Type": "Truck",
@@ -45,18 +47,18 @@
             }
         }
     ],
-  "CloudToDeviceMethods": {
-      "FirmwareUpdate": {
-        "Type": "javascript",
-        "Path": "FirmwareUpdate-method.js"
-      },
-      "DecreaseCargoTemperature": {
-        "Type": "javascript",
-        "Path": "TBD.js"
-      },
-      "IncreaseCargoTemperature": {
-        "Type": "javascript",
-        "Path": "TBD.js"
-      }
-  }
+    "CloudToDeviceMethods": {
+        "FirmwareUpdate": {
+            "Type": "javascript",
+            "Path": "FirmwareUpdate-method.js"
+        },
+        "DecreaseCargoTemperature": {
+            "Type": "javascript",
+            "Path": "TemperatureDecrease-method.js"
+        },
+        "IncreaseCargoTemperature": {
+            "Type": "javascript",
+            "Path": "TemperatureIncrease-method.js"
+        }
+    }
 }

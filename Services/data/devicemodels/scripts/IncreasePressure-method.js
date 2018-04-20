@@ -12,10 +12,11 @@
  *
  * @param context        The context contains current time, device model and id, not used
  * @param previousState  The device state since the last iteration, not used
+ * @param previousProperties  The device properties since the last iteration
  */
 
 /*jslint unparam: true*/
-function main(context, previousState) {
+function main(context, previousState, previousProperties) {
 
     log("Starting 'Increase Pressure' method simulation (5 seconds)");
 

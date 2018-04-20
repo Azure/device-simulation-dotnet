@@ -22,6 +22,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
     public class DeviceModels : IDeviceModels
     {
+        // ID used for custom device models, where the list of sensors is provided by the user
+        public const string CUSTOM_DEVICE_MODEL_ID = "custom";
+
         private const string EXT = ".json";
 
         private readonly IServicesConfig config;

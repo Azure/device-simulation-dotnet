@@ -1,11 +1,11 @@
+:: Copyright (c) Microsoft. All rights reserved.
+
 @ECHO off & setlocal enableextensions enabledelayedexpansion
 
 :: Usage:
 :: Run the service in the local environment:  scripts\run
 :: Run the service inside a Docker container: scripts\run -s
 :: Run the service inside a Docker container: scripts\run --in-sandbox
-:: Run only the web service:                  scripts\run --webservice
-:: Run only the simulation:                   scripts\run --simulation
 :: Run the storage dependency:                scripts\run --storage
 :: Show how to use this script:               scripts\run -h
 :: Show how to use this script:               scripts\run --help
@@ -24,24 +24,22 @@ IF "%1"=="/?" GOTO :Help
 IF "%1"=="--help" GOTO :Help
 IF "%1"=="-s" GOTO :RunInSandbox
 IF "%1"=="--in-sandbox" GOTO :RunInSandbox
-IF "%1"=="--webservice" GOTO :RunWebService
-IF "%1"=="--simulation" GOTO :RunSimulation
 IF "%1"=="--storage" GOTO :RunStorageAdapter
+GOTO :Run
+
 
 :Help
 
     echo "Usage:"
     echo "  Run the service in the local environment:  ./scripts/run"
     echo "  Run the service inside a Docker container: ./scripts/run -s | --in-sandbox"
-    echo "  Run only the web service:                  ./scripts/run --webservice"
-    echo "  Run only the simulation:                   ./scripts/run --simulation"
     echo "  Run the storage dependency:                ./scripts/run --storage"
     echo "  Show how to use this script:               ./scripts/run -h | --help"
 
     goto :END
 
 
-:RunLocally
+:Run
 
     :: Check dependencies
     dotnet --version > NUL 2>&1
@@ -55,53 +53,8 @@ IF "%1"=="--storage" GOTO :RunStorageAdapter
     call dotnet restore
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
-    echo Starting simulation agent and web service...
-    start "" dotnet run --configuration %CONFIGURATION% --project SimulationAgent/SimulationAgent.csproj
-    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
-
-    start "" dotnet run --configuration %CONFIGURATION% --project WebService/WebService.csproj
-    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
-
-    goto :END
-
-
-:RunWebService
-
-    :: Check dependencies
-    dotnet --version > NUL 2>&1
-    IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOTNET
-
-    :: Check settings
-    call .\scripts\env-vars-check.cmd
-    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
-
-    :: Restore nuget packages and compile the application
-    call dotnet restore
-    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
-
-    echo Starting web service...
+    echo Starting simulation service...
     dotnet run --configuration %CONFIGURATION% --project WebService/WebService.csproj
-    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
-
-    goto :END
-
-
-:RunSimulation
-
-    :: Check dependencies
-    dotnet --version > NUL 2>&1
-    IF %ERRORLEVEL% NEQ 0 GOTO MISSING_DOTNET
-
-    :: Check settings
-    call .\scripts\env-vars-check.cmd
-    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
-
-    :: Restore nuget packages and compile the application
-    call dotnet restore
-    IF %ERRORLEVEL% NEQ 0 GOTO FAIL
-
-    echo Starting simulation agent...
-    dotnet run --configuration %CONFIGURATION% --project SimulationAgent/SimulationAgent.csproj
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
     goto :END
@@ -132,6 +85,12 @@ IF "%1"=="--storage" GOTO :RunStorageAdapter
     docker run -it ^
         -p 9003:9003 ^
         -e PCS_IOTHUB_CONNSTRING ^
+        -e PCS_STORAGEADAPTER_WEBSERVICE_URL ^
+        -e PCS_AUTH_REQUIRED ^
+        -e PCS_CORS_WHITELIST ^
+        -e PCS_AUTH_ISSUER ^
+        -e PCS_AUTH_AUDIENCE ^
+        -e PCS_TWIN_READ_WRITE_ENABLED ^
         -v %PCS_CACHE%\sandbox\.config:/root/.config ^
         -v %PCS_CACHE%\sandbox\.dotnet:/root/.dotnet ^
         -v %PCS_CACHE%\sandbox\.nuget:/root/.nuget ^
@@ -143,6 +102,7 @@ IF "%1"=="--storage" GOTO :RunStorageAdapter
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
     goto :END
+
 
 :RunStorageAdapter
 
