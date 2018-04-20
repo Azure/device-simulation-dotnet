@@ -121,14 +121,21 @@ var state = {
 /**
  * Restore the global state using data from the previous iteration.
  *
- * @param previousState The output of main() from the previous iteration
+ * @param previousState device state from the previous iteration
+ * @param previousProperties device properties from the previous iteration
  */
-function restoreState(previousState) {
+function restoreSimulation(previousState, previousProperties) {
     // If the previous state is null, force a default state
-    if (previousState !== undefined && previousState !== null) {
+    if (previousState) {
         state = previousState;
     } else {
         log("Using default state");
+    }
+
+    if (previousProperties) {
+        properties = previousProperties;
+    } else {
+        log("Using default properties");
     }
 }
 
@@ -164,9 +171,10 @@ function varyfloor(current, min, max) {
  */
 function main(context, previousState) {
 
-    // Restore the global state before generating the new telemetry, so that
-    // the telemetry can apply changes using the previous function state.
-    restoreState(previousState);
+    // Restore the global device properties and the global state before
+    // generating the new telemetry, so that the telemetry can apply changes
+    // using the previous function state.
+    restoreSimulation(previousState, previousProperties);
 
     if (state.moving) {
         state.floor = varyfloor(state.floor, 1, floors);
@@ -255,8 +263,9 @@ while a moving device with multiple sensors might have more properties, like:
     "longitude": -122.296307,
     "speed": 30.0,
     "speed_unit": "mph",
-    "cargotemperature": 38.0,
-    "cargotemperature_unit": "F"
+    "temperature": 38.0,
+    "temperature_unit": "F",
+    "moving": false
 }
 ```
 
