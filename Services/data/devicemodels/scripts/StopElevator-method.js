@@ -2,7 +2,6 @@
 
 /*global log*/
 /*global updateState*/
-/*global sleep*/
 /*jslint node: true*/
 
 "use strict";
@@ -18,7 +17,7 @@
 /*jslint unparam: true*/
 function main(context, previousState, previousProperties) {
 
-    log("Executing JavaScript StopElevator method.");
+    log("Executing JavaScript 'StopElevator' method simulation.");
 
     var state = {
         moving: false
