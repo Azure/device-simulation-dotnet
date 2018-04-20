@@ -4,12 +4,12 @@ MAINTAINER Devis Lucato (https://github.com/dluc)
 
 LABEL Tags="Azure,IoT,Solutions,Simulation,.NET"
 
-ARG user=pcsuser
+#ARG user=pcsuser
 
-RUN useradd -m -s /bin/bash -U $user
+#RUN useradd -m -s /bin/bash -U $user
 
 COPY . /app/
-RUN chown -R $user.$user /app
+#RUN chown -R $user.$user /app
 WORKDIR /app
 
 RUN \
@@ -29,4 +29,4 @@ VOLUME ["/app/data"]
 
 ENTRYPOINT ["/bin/bash", "/app/run.sh"]
 
-USER $user
+#USER $user
