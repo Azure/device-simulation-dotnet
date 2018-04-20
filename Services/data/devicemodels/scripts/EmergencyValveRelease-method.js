@@ -19,7 +19,7 @@
 /*jslint unparam: true*/
 function main(context, previousState, previousProperties) {
 
-    log("Starting 'Emergency Valve Release' method simulation");
+    log("Starting 'EmergencyValveRelease' method simulation.");
 
     var state = {   
         simulation_state: "normal_pressure",
