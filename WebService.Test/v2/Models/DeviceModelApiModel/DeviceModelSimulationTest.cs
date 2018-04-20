@@ -75,7 +75,7 @@ namespace WebService.Test.v2.Models
             // Act
             var ex = Record.Exception(() => deviceModelSimulation.ValidateInputRequest(this.logger.Object));
 
-            // assert
+            // Assert
             Assert.IsType<BadRequestException>(ex);
         }
 
@@ -93,7 +93,7 @@ namespace WebService.Test.v2.Models
             // Act
             var ex = Record.Exception(() => deviceModelSimulation.ValidateInputRequest(this.logger.Object));
 
-            // assert
+            // Assert
             Assert.IsType<BadRequestException>(ex);
         }
 

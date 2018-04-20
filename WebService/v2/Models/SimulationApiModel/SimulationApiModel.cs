@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Helpers;
 using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.SimulationApiModel

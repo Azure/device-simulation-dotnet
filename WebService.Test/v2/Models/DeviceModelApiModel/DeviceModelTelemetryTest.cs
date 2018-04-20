@@ -74,7 +74,7 @@ namespace WebService.Test.v2.Models
             // Act
             var ex = Record.Exception(() => telemetry.ValidateInputRequest(this.logger.Object));
 
-            // assert
+            // Assert
             Assert.IsType<BadRequestException>(ex);
         }
 
@@ -92,7 +92,7 @@ namespace WebService.Test.v2.Models
             // Act
             var ex = Record.Exception(() => telemetry.ValidateInputRequest(this.logger.Object));
 
-            // assert
+            // Assert
             Assert.IsType<BadRequestException>(ex);
         }
 
@@ -110,7 +110,7 @@ namespace WebService.Test.v2.Models
             // Act
             var ex = Record.Exception(() => telemetry.ValidateInputRequest(this.logger.Object));
 
-            // assert
+            // Assert
             Assert.IsType<BadRequestException>(ex);
         }
 

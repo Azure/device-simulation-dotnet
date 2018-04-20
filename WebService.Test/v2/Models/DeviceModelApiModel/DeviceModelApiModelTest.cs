@@ -59,7 +59,7 @@ namespace WebService.Test.v2.Models
             // Act
             var ex = Record.Exception(() => deviceModelApiModel.ValidateInputRequest(this.logger.Object));
 
-            // assert
+            // Assert
             Assert.Null(ex);
         }
 
@@ -77,7 +77,7 @@ namespace WebService.Test.v2.Models
             // Act
             var ex = Record.Exception(() => deviceModelApiModel.ValidateInputRequest(this.logger.Object));
 
-            // assert
+            // Assert
             Assert.IsType<BadRequestException>(ex);
         }
 
@@ -95,7 +95,7 @@ namespace WebService.Test.v2.Models
             // Act
             var ex = Record.Exception(() => deviceModelApiModel.ValidateInputRequest(this.logger.Object));
 
-            // assert
+            // Assert
             Assert.IsType<BadRequestException>(ex);
         }
 
@@ -113,7 +113,7 @@ namespace WebService.Test.v2.Models
             // Act
             var ex = Record.Exception(() => deviceModelApiModel.ValidateInputRequest(this.logger.Object));
 
-            // assert
+            // Assert
             Assert.IsType<BadRequestException>(ex);
         }
 
@@ -131,7 +131,7 @@ namespace WebService.Test.v2.Models
             // Act
             var ex = Record.Exception(() => deviceModelApiModel.ValidateInputRequest(this.logger.Object));
 
-            // assert
+            // Assert
             Assert.IsType<BadRequestException>(ex);
         }
 
@@ -150,7 +150,7 @@ namespace WebService.Test.v2.Models
             // Act
             var ex = Record.Exception(() => deviceModelApiModel.ValidateInputRequest(this.logger.Object));
 
-            // assert
+            // Assert
             Assert.IsType<BadRequestException>(ex);
         }
 
