@@ -59,21 +59,17 @@
             "Type": "javascript",
             "Path": "FirmwareUpdate-method.js"
         },
-        "StartMoving": {
+        "StartMovingDevice": {
             "Type": "javascript",
             "Path": "StartMovingDevice-method.js"
         },
-        "StopMoving": {
+        "StopMovingDevice": {
             "Type": "javascript",
             "Path": "StopMovingDevice-method.js"
         },
-        "DecreaseTemperature": {
+        "SetTemperature": {
             "Type": "javascript",
-            "Path": "TemperatureDecrease-method.js"
-        },
-        "IncreaseTemperature": {
-            "Type": "javascript",
-            "Path": "TemperatureIncrease-method.js"
+            "Path": "SetTemperature-method.js"
         }
     }
 }
