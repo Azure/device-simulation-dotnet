@@ -18,7 +18,7 @@
 /*jslint unparam: true*/
 function main(context, previousState, previousProperties) {
 
-    log("Starting 'Increase Pressure' method simulation (5 seconds)");
+    log("Executing JavaScript 'IncreasePressure' method simulation (5 seconds)");
 
     // Pause the simulation and change the simulation mode so that the
     // temperature will fluctuate at ~250 when it resumes
