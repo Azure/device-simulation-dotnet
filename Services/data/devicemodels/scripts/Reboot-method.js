@@ -25,7 +25,7 @@ var state = {
 function main(context, previousState, previousProperties) {
 
     // Reboot - devices goes offline and comes online after 20 seconds
-    log("Executing reboot simulation function.");
+    log("Executing JavaScript 'Reboot' method simulation.");
 
     state.DeviceMethodStatus = "Rebooting device...";
     state.CalculateRandomizedTelemetry = false;
@@ -47,4 +47,5 @@ function main(context, previousState, previousProperties) {
     state.DeviceMethodStatus = "";
     updateState(state);
 
+    log("'Reboot' method simulation completed.");
 }
