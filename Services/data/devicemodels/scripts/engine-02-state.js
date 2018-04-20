@@ -79,6 +79,8 @@ function main(context, previousState, previousProperties) {
     // 10 +/- 5%,  Min 0, Max 20
     if (state.fuellevel > 0) {
         state.vibration = vary(10, 5, 0, 20);
+    } else {
+        state.vibration = 0;
     }
 
     return state;
