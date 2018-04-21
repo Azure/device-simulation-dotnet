@@ -13,7 +13,7 @@ using Xunit.Abstractions;
 
 namespace Services.Test
 {
-  public class CustomDeviceModelsTest
+    public class CustomDeviceModelsTest
     {
         private const string STORAGE_COLLECTION = "deviceModels";
 
