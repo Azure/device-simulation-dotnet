@@ -40,7 +40,7 @@ namespace WebService.Test.v2.Models
         public void ItReturnsNullWhenDeviceModelApiModelOverrideIsEmpty()
         {
             // Arrange
-            var deviceModelApiModelOverride = this.GetDeviceModelApiModelOverride();
+            var deviceModelApiModelOverride = this.GetEmptyDeviceModelApiModelOverride();
 
             // Act
             var result = deviceModelApiModelOverride.ToServiceModel();

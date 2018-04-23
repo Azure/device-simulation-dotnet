@@ -2,7 +2,6 @@
 
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.SimulationApiModel;
-using System;
 using System.Collections.Generic;
 using WebService.Test.helpers;
 using Xunit;

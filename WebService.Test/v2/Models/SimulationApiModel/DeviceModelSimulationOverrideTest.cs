@@ -24,10 +24,10 @@ namespace WebService.Test.v2.Models
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsDeviceModelSimulationlOverrideFromAPIModel()
+        public void ItReturnsDeviceModelSimulationlOverrideFromApiModel()
         {
             // Arrange
-            var deviceModelSimulationOverrideApiModel = this.GetDeviceModelSimulationOverrideAPIModel();
+            var deviceModelSimulationOverrideApiModel = this.GetDeviceModelSimulationOverrideApiModel();
 
             // Act
             var result = deviceModelSimulationOverrideApiModel.ToServiceModel();
@@ -37,7 +37,7 @@ namespace WebService.Test.v2.Models
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsNullWhenDeviceModelSimulationOverrideAPIModelIsEmpty()
+        public void ItReturnsNullWhenDeviceModelSimulationOverrideApiModelIsEmpty()
         {
             // Arrange
             var deviceModelSimulationOverrideApiModel = this.GetEmptyDeviceModelSimulationOverrideAPIModel();
@@ -56,7 +56,7 @@ namespace WebService.Test.v2.Models
             return deviceModelSimulationOverrideApiModel;
         }
 
-        private DeviceModelSimulationOverride GetDeviceModelSimulationOverrideAPIModel()
+        private DeviceModelSimulationOverride GetDeviceModelSimulationOverrideApiModel()
         {
             var deviceModelSimulationOverrideApiModel = new DeviceModelSimulationOverride()
             {
