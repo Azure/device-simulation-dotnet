@@ -76,6 +76,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<DeviceModel> GetAsync(string id)
         {
+            if (string.IsNullOrEmpty(id))
+            {
+                throw new InvalidInputException("Device model id cannot be empty! ");
+            }
+
             var item = await this.storage.GetAsync(STORAGE_COLLECTION, id);
             var deviceModel = JsonConvert.DeserializeObject<DeviceModel>(item.Data);
             deviceModel.ETag = item.ETag;
@@ -108,14 +113,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<DeviceModel> UpsertAsync(DeviceModel deviceModel)
         {
-            var Id = deviceModel.Id;
-            var ETag = deviceModel.ETag;
+            var id = deviceModel.Id;
+            var eTag = deviceModel.ETag;
 
             try
             {
-                var item = await this.GetAsync(Id);
+                var item = await this.GetAsync(id);
 
-                if (item.ETag == ETag)
+                if (item.ETag == eTag)
                 {
                     // Replace a custom device model
                     deviceModel.Created = item.Created;
@@ -123,9 +128,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     
                     var result = await this.storage.UpdateAsync(
                         STORAGE_COLLECTION,
-                        Id,
+                        id,
                         JsonConvert.SerializeObject(deviceModel),
-                        ETag);
+                        eTag);
 
                     // Return the new ETag provided by the storage
                     deviceModel.ETag = result.ETag;
