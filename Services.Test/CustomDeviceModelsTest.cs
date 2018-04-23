@@ -85,7 +85,7 @@ namespace Services.Test
         public void CustomDeviceModelsCanBeUpserted()
         {
             // Arrange
-            var deviceModel = new DeviceModel { ETag = "oldEtag" };
+            var deviceModel = new DeviceModel { Id= "id", ETag = "oldEtag" };
             var updatedDeviceModel = new DeviceModel  { ETag = "newETag" };
 
             this.SaveDeviceModelInStorage(deviceModel);
