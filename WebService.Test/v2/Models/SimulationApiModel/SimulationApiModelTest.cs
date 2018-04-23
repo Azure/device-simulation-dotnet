@@ -127,8 +127,8 @@ namespace WebService.Test.v2.Models
         private void SetupConnectionStringManager()
         {
             this.connectionStringManager
-                            .Setup(x => x.ValidateConnectionStringAsync(It.IsAny<string>()))
-                            .Returns(Task.CompletedTask);
+                .Setup(x => x.ValidateConnectionStringAsync(It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
         }
 
         private SimulationApiModel GetInvalidSimulationApiModel(Func<SimulationApiModel, SimulationApiModel> func)
