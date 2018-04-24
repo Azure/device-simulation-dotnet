@@ -17,7 +17,7 @@
 /*jslint unparam: true*/
 function main(context, previousState, previousProperties) {
 
-    log("Executing JavaScript 'StartMovingDevice' method simulation.");
+    log("Executing 'StartMovingDevice' JavaScript method simulation.");
 
     var state = {
         moving: true
@@ -25,5 +25,5 @@ function main(context, previousState, previousProperties) {
     log("Starting device movement.");
     updateState(state);
 
-    log("'StartMovingDevice' method simulation completed");
+    log("'StartMovingDevice' JavaScript method simulation completed.");
 }

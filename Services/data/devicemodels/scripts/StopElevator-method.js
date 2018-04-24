@@ -17,7 +17,7 @@
 /*jslint unparam: true*/
 function main(context, previousState, previousProperties) {
 
-    log("Executing JavaScript 'StopElevator' method simulation.");
+    log("Executing 'StopElevator' JavaScript method simulation.");
 
     var state = {
         moving: false
@@ -25,5 +25,5 @@ function main(context, previousState, previousProperties) {
     log("Stopping elevator.");
     updateState(state);
 
-    log("'StopElevator' method simulation completed");
+    log("'StopElevator' JavaScript method simulation completed.");
 }

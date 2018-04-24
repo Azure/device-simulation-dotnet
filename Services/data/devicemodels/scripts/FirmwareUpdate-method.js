@@ -57,7 +57,7 @@ function main(context, previousState, previousProperties) {
     restoreSimulation(previousState, previousProperties);
 
     // Reboot - devices goes offline and comes online after 20 seconds
-    log("Executing firmware update simulation function, firmware version passed:" + context.Firmware);
+    log("Executing 'FirmwareUpdate' JavaScript method; Firmware version passed:" + context.Firmware);
 
     var DeviceMethodStatusKey = "DeviceMethodStatus";
     var FirmwareKey = "Firmware";
@@ -93,4 +93,7 @@ function main(context, previousState, previousProperties) {
     state.CalculateRandomizedTelemetry = true;
     state.online = true;
     updateState(state);
+
+    log("'FirmwareUpdate' JavaScript method simulation completed.");
+
 }

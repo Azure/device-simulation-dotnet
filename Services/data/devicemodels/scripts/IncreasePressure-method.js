@@ -18,7 +18,7 @@
 /*jslint unparam: true*/
 function main(context, previousState, previousProperties) {
 
-    log("Executing JavaScript 'IncreasePressure' method simulation (5 seconds)");
+    log("Executing 'IncreasePressure' JavaScript method simulation (5 seconds).");
 
     // Pause the simulation and change the simulation mode so that the
     // temperature will fluctuate at ~250 when it resumes
@@ -62,5 +62,5 @@ function main(context, previousState, previousProperties) {
     state.CalculateRandomizedTelemetry = true;
     updateState(state);
 
-    log("'Increase Pressure' method simulation completed");
+    log("'IncreasePressure' JavaScript method simulation completed.");
 }

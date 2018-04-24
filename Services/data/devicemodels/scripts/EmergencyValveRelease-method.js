@@ -19,7 +19,7 @@
 /*jslint unparam: true*/
 function main(context, previousState, previousProperties) {
 
-    log("Starting 'EmergencyValveRelease' method simulation.");
+    log("Starting 'EmergencyValveRelease' JavaScript method simulation.");
 
     var state = {   
         simulation_state: "normal_pressure",
@@ -27,5 +27,5 @@ function main(context, previousState, previousProperties) {
     };
     updateState(state);
 
-    log("'Emergency Valve Release' method simulation completed");
+    log("'Emergency Valve Release' JavaScript method simulation completed.");
 }

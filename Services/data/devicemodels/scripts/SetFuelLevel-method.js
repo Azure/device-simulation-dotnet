@@ -18,7 +18,7 @@
 function main(context, previousState, previousProperties) {
 
     // General info indicating that this method is being called
-    log("Executing JavaScript 'SetFuelLevel' method simulation.");
+    log("Executing 'SetFuelLevel' JavaScript method simulation.");
 
     // Input validation. Make sure that thew new
     // fuel level is within the allowable range
@@ -34,5 +34,5 @@ function main(context, previousState, previousProperties) {
     };
     updateState(state);
 
-    log("'SetFuelLevel' method simulation completed.");
+    log("'SetFuelLevel' JavaScript method simulation completed.");
 }

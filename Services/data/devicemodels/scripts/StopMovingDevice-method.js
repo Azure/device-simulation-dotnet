@@ -17,7 +17,7 @@
 /*jslint unparam: true*/
 function main(context, previousState, previousProperties) {
 
-    log("Executing JavaScript 'StopMovingDevice' method simulation.");
+    log("Executing 'StopMovingDevice' JavaScript method simulation.");
 
     var state = {
         moving: false
@@ -25,5 +25,5 @@ function main(context, previousState, previousProperties) {
     log("Stopping device movement.");
     updateState(state);
 
-    log("'StopMovingDevice' method simulation completed");
+    log("'StopMovingDevice' JavaScript method simulation completed.");
 }
