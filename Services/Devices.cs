@@ -81,9 +81,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // CPU usage.
         private const int SDK_CLIENT_TIMEOUT = 10000;
 
-        // ID prefix of the simulated devices, used with Azure IoT Hub
-        private const string DEVICE_ID_PREFIX = "Simulated.";
-
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly ILogger log;
 
@@ -297,7 +294,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public string GenerateId(string deviceModelId, int position)
         {
-            return DEVICE_ID_PREFIX + deviceModelId + "." + position;
+            return deviceModelId + "." + position;
         }
 
         // This call can throw an exception, which is fine when the exception happens during a method
