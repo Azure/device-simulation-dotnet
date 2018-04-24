@@ -56,6 +56,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Controller
                     throw new BadRequestException("No data or invalid data provided.");
                 }
 
+                // Simulation can be created with `template=default` other than created with input data
                 simulation = new SimulationApiModel();
             }
 
