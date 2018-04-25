@@ -8,4 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Services\Services.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Simulation\DeviceStatusLogic\" />
+  </ItemGroup>
 </Project>

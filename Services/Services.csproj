@@ -33,8 +33,10 @@
     <None Remove="data\devicemodels\scripts\RestartEngine-method.js" />
     <None Remove="data\devicemodels\scripts\StartDevice-method.js" />
     <None Remove="data\devicemodels\scripts\StartElevator-method.js" />
+    <None Remove="data\devicemodels\scripts\StartMovingDevice-method.js" />
     <None Remove="data\devicemodels\scripts\StopDevice-method.js" />
     <None Remove="data\devicemodels\scripts\StopElevator-method.js" />
+    <None Remove="data\devicemodels\scripts\StopMovingDevice-method.js" />
     <None Remove="data\devicemodels\scripts\TempDecrease-method.js" />
     <None Remove="data\devicemodels\scripts\TempIncrease-method.js" />
     <None Remove="data\devicemodels\scripts\truck-01-state.js" />
