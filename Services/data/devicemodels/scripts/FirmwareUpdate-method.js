@@ -95,5 +95,4 @@ function main(context, previousState, previousProperties) {
     updateState(state);
 
     log("'FirmwareUpdate' JavaScript method simulation completed.");
-
 }

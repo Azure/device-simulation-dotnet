@@ -100,7 +100,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                     this.deviceState.GetAll(),
                     this.deviceProperties.GetAll());
 
-                this.log.Debug("JS function success", () => new { filename });
+                this.log.Debug("JS function success", () => new { filename, this.deviceState });
             }
             catch (Exception e)
             {
