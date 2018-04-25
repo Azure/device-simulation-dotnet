@@ -94,16 +94,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 
                 this.log.Debug("Executing JS function", () => new { filename });
 
-                JsValue output = engine.Execute(program).Invoke(
+                engine.Execute(program).Invoke(
                     "main",
                     context,
                     this.deviceState.GetAll(),
                     this.deviceProperties.GetAll());
 
-                // update the internal device state with the new state
-                this.UpdateState(output);
-
-                this.log.Debug("JS function success", () => new { filename, output });
+                this.log.Debug("JS function success", () => new { filename });
             }
             catch (Exception e)
             {

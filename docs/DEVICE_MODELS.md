@@ -183,7 +183,7 @@ function main(context, previousState, previousProperties) {
     // 75 +/- 1%,  Min 25, Max 100
     state.temperature = vary(75, 1, 25, 100);
 
-    return state;
+    updateState(state);
 }
 ```
 
@@ -358,14 +358,13 @@ Functions are stored  in Javascript files, which are loaded and executed at
 runtime, using [Jint](https://github.com/sebastienros/jint), a Javascript
 interpreter for .NET.
 
-The Javascript files must have a `main` function, and accept two parameters:
+The Javascript files must have a `main` function, and accept three parameters:
 1. a context object which contains two properties:
     1. `currentTime` as a string with format `yyyy-MM-dd'T'HH:mm:sszzz`
     2. `deviceId`, e.g. "Simulated.Elevator.123"
     3. `deviceModel`, e.g. "Elevator"
-2. a `state` object, which is the value returned by the function in the
-   previous call. This is device state maintained by the simulation service,
-   and used to generate telemetry messages.
+2. a `previousState` object, which contains state values that may have been previously set by a JavaScript function call.
+3. a `previousProperties` object, which contains property values that may have been previously set by a JavaScript function call.
 
 The `main` function returns the new device state. Example:
 
@@ -376,7 +375,7 @@ function main(context, previousState, previousProperties) {
     // time or device details.
     // Execute some logic, updating 'state'
 
-    return state;
+    updateState(state);
 }
 ```
 
@@ -404,6 +403,6 @@ function main(context, previousState, previousProperties) {
 
     // ...
 
-    return state;
+    updateState(state);
 }
 ```

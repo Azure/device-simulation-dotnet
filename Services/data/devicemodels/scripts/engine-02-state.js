@@ -83,5 +83,5 @@ function main(context, previousState, previousProperties) {
         state.vibration = 0;
     }
 
-    return state;
+    updateState(state);
 }

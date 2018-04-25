@@ -126,5 +126,5 @@ function main(context, previousState, previousProperties) {
         state.longitude = coords.longitude;
     }
 
-    return state;
+    updateState(state);
 }
