@@ -66,9 +66,13 @@
             "Type": "javascript",
             "Path": "StopMovingDevice-method.js"
         },
-        "SetTemperature": {
+        "DecreaseTemperature": {
             "Type": "javascript",
-            "Path": "SetTemperature-method.js"
-        }
+            "Path": "TempDecrease-method.js"
+        },
+        "IncreaseTemperature": {
+            "Type": "javascript",
+            "Path": "TempIncrease-method.js"
+        }    
     }
 }

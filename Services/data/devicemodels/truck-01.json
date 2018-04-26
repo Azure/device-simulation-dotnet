@@ -52,9 +52,13 @@
             "Type": "javascript",
             "Path": "FirmwareUpdate-method.js"
         },
-        "SetTemperature": {
+        "DecreaseCargoTemperature": {
             "Type": "javascript",
-            "Path": "SetTemperature-method.js"
-        }
+            "Path": "TempDecrease-method.js"
+        },
+        "IncreaseCargoTemperature": {
+            "Type": "javascript",
+            "Path": "TempIncrease-method.js"
+        }    
     }
 }
