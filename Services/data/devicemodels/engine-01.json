@@ -64,6 +64,6 @@
         "FillTank": {
             "Type": "javascript",
             "Path": "FillTank-method.js"
-        }    
+        }
     }
 }

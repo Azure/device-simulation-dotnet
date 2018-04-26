@@ -73,6 +73,6 @@
         "IncreaseTemperature": {
             "Type": "javascript",
             "Path": "TempIncrease-method.js"
-        }    
+        }
     }
 }

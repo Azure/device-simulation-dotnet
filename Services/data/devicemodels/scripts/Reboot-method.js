@@ -20,7 +20,6 @@ var state = {
  * @param previousState  The device state since the last iteration
  * @param previousProperties  The device properties since the last iteration
  */
-
 /*jslint unparam: true*/
 function main(context, previousState, previousProperties) {
 
