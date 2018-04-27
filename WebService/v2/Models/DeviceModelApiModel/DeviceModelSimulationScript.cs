@@ -84,6 +84,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
             }
         }
 
+        /*
+        {
+            "Type": "internal",
+            "Path": "math.random.withinrange",
+            "Params": {
+                "temperature": {
+                    "Min"  : "1",
+                    "Max"  : "12",
+                    "Step" : 1,
+                    "Unit" : "C"
+                },
+                "pressure": {
+                    "Min"  : "10",
+                    "Max"  : "90",
+                    "Step" : 1,
+                    "Unit" : "psi"
+                },
+            }
+        }
+        */
         private void ValidateParams(ILogger log)
         {
             if (this.Params == null)

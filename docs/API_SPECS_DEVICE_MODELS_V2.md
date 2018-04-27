@@ -1,13 +1,17 @@
 API specifications - Device Models v2
-==================================
+=====================================
+
+There are two types of device models:
+1. Stock device models, compiled into the service
+2. Custom device models, created by an application/a user
 
 ## Get device models
 
 ### Get a list of device models that can be simulated
 
-The list of device models contains stock device models (which is injected into the service 
-using a list of configuration files, which are automatically discovered when the service starts) 
-and custom device models which are stored in document DB.
+The list of device models contains stock device models (which is injected into
+the service using a list of configuration files automatically discovered when
+the service starts) and custom device models which are stored in a database.
 
 Request:
 ```
@@ -186,10 +190,12 @@ Content-Type: application/json; charset=utf-8
 
 ### Creating stock device models
 
-To create a new stock device model, a new configuration file is added to the folder
-where the configuration files are stored, and the microservice is restarted or re-deployed.
+To create a new device model, a new JSON configuration file is added to the
+folder where the configuration files are stored, and the microservice is
+restarted or re-deployed.
 
-The service configuration allows specifying the path where these files are stored.
+The service configuration (`appsettings.ini`) allows to specify the path where
+these files are stored.
 
 ### Creating custom device models
 
@@ -200,13 +206,10 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-  "ETag": "",
-  "Id": "",
   "Version": "0.0.1",
   "Name": "Chiller",
   "Description": "Chiller with external temperature, humidity and pressure sensors.",
   "Protocol": "MQTT",
-  "Type": "",
   "Simulation": {
     "InitialState": {
       "online": true,
@@ -226,13 +229,18 @@ Content-Type: application/json; charset=utf-8
       }
     ]
   },
-  "Properties": {},
+  "Properties": {
+    "Type": "Truck",
+    "Location": "Field",
+    "Latitude": 47.445301,
+    "Longitude": -122.296307
+  },
   "Telemetry": [
     {
       "Interval": "00:00:10",
       "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
       "MessageSchema": {
-        "Name": "chiller-sensors;v1",
+        "Name": "Chiller;v1",
         "Format": "JSON",
         "Fields": {
           "temperature": "Double",
@@ -245,7 +253,7 @@ Content-Type: application/json; charset=utf-8
       }
     }
   ],
-  "CloudToDeviceMethods": {},
+  "CloudToDeviceMethods": {}
 }
 ```
 
@@ -256,13 +264,13 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-  "ETag": "00000000-000000-0000-0000-000000",
-  "Id": "00000000-000000-0000-0000-000000",
+  "ETag": "12345678-9941-4499-ba1b-123456789012",
+  "Id": "12345678-c6c0-49ae-9bfa-123456789012",
   "Version": "0.0.1",
   "Name": "Chiller",
   "Description": "Chiller with external temperature, humidity and pressure sensors.",
   "Protocol": "MQTT",
-  "Type": "",
+  "Type": "custom",
   "Simulation": {
 	"InitialState": {
 	  "online": true,
@@ -282,13 +290,18 @@ Content-Type: application/json; charset=utf-8
 	  }
 	]
   },
-  "Properties": {},
+  "Properties": {
+    "Type": "Truck",
+    "Location": "Field",
+    "Latitude": 47.445301,
+    "Longitude": -122.296307
+  },
   "Telemetry": [
 	{
 	  "Interval": "00:00:10",
 	  "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
 	  "MessageSchema": {
-		"Name": "chiller-sensors;v1",
+		"Name": "Chiller;v1",
 		"Format": "JSON",
 		"Fields": {
 		  "temperature": "Double",
@@ -304,7 +317,7 @@ Content-Type: application/json; charset=utf-8
   "CloudToDeviceMethods": {},
   "$metadata": {
     "$type": "DeviceModel;2",
-    "$uri": "/v2/devicemodels/00000000-000000-0000-0000-000000",
+    "$uri": "/v2/devicemodels/12345678-c6c0-49ae-9bfa-123456789012",
     "$created": "2018-03-29T23:33:03+00:00",
     "$modified": "2018-03-29T23:33:03+00:00"
   }
@@ -315,18 +328,19 @@ Content-Type: application/json; charset=utf-8
 
 ### Modifying stock device models
 
-Directly modify the configuration files stored in the file system.
+Directly modify the JSON configuration files stored in the file system.
 
-[Device model docs](https://docs.microsoft.com/en-us/azure/iot-suite/iot-suite-remote-monitoring-test#define-the-characteristics-of-the-new-device-type)
+[Device model docs](https://docs.microsoft.com/azure/iot-suite/iot-suite-remote-monitoring-test#define-the-characteristics-of-the-new-device-type)
 
 ### Modifying custom device models
 
 Custom device models can be modified by calling PUT and passing the existing 
-device model ID. This should be coupled with a GET to pull the existing device
-model content, editing it, the calling PUT with the modification(s).
+device model ETag and ID. The PUT request should be preceded by a GET request,
+to pull the existing device model content, before editing it and sending the
+modification(s).
 
-When trying to modify a device model which its id is not in the storage, we will
-automatically create a new model in the storage.
+If a client sends a PUT request with a non-existent ID, the service automatically
+creates a new model and stores it in the database.
 
 Request:
 ```
@@ -335,13 +349,13 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-  "ETag": "",
-  "Id": "00000000-000000-0000-0000-000000",
+  "ETag": "12345678-abcd-1c4a-fa9b-123456789012",
+  "Id": "12345678-c6c0-49ae-9bfa-123456789012",
   "Version": "0.0.1",
   "Name": "Chiller",
   "Description": "Chiller with external temperature, humidity and pressure sensors.",
   "Protocol": "MQTT",
-  "Type": "",
+  "Type": "custom",
   "Simulation": {
     "InitialState": {
       "online": true,
@@ -450,7 +464,16 @@ Content-Type: application/json; charset=utf-8
 
 ### Deleting a stock device model
 
-Stock device models can be deleted by removing its configuration file from the file system. 
+Stock device models can be deleted only by removing its configuration file
+from the file system. 
+
+```
+DELETE /v2/devicemodels/${id}
+```
+Response:
+```
+403 Forbidden
+```
 
 ### Deleteing a custom device model
 
@@ -458,4 +481,8 @@ Custom device models can be deleted using the DELETE method with its ID.
 
 ```
 DELETE /v2/devicemodels/${id}
+```
+Response:
+```
+200 OK
 ```
