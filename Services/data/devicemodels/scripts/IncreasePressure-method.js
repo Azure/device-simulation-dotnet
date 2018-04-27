@@ -20,7 +20,7 @@ function main(context, previousState, previousProperties) {
     log("Executing 'IncreasePressure' JavaScript method simulation (5 seconds).");
 
     // Pause the simulation and change the simulation mode so that the
-    // temperature will fluctuate at ~250 when it resumes
+    // pressure will fluctuate at ~250 when it resumes
     var state = {
         simulation_state: "high_pressure",
         CalculateRandomizedTelemetry: false
