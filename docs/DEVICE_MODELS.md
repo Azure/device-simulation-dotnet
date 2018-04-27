@@ -40,7 +40,7 @@ and how to simulate a device behavior.
         "Scripts": [
             {
                 "Type": "javascript",
-                "Path": "elevator-01-state.js",
+                "Path": "elevator-01-state.js"
             }
         ]
     },
@@ -52,35 +52,15 @@ and how to simulate a device behavior.
     },
     "Telemetry": [
         {
-            "Interval": "00:00:05",
-            "MessageTemplate": "{\"floor\":${floor}}",
+            "Interval": "00:00:10",
+            "MessageTemplate": "{\"floor\":${floor},\"vibration\":${vibration},\"vibration_unit\":\"${vibration_unit}\",\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\"}",
             "MessageSchema": {
-                "Name": "elevator-floor;v1",
+                "Name": "elevator-sensors;v1",
                 "Format": "JSON",
                 "Fields": {
-                    "floor": "integer"
-                }
-            }
-        },
-        {
-            "Interval": "00:00:05",
-            "MessageTemplate": "{\"vibration\":${vibration},\"vibration_unit\":\"${vibration_unit}\"}",
-            "MessageSchema": {
-                "Name": "elevator-vibration;v1",
-                "Format": "JSON",
-                "Fields": {
+                    "floor": "integer",
                     "vibration": "double",
-                    "vibration_unit": "text"
-                }
-            }
-        },
-        {
-            "Interval": "00:00:05",
-            "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\"}",
-            "MessageSchema": {
-                "Name": "elevator-temperature;v1",
-                "Format": "JSON",
-                "Fields": {
+                    "vibration_unit": "text",
                     "temperature": "double",
                     "temperature_unit": "text"
                 }
@@ -88,6 +68,10 @@ and how to simulate a device behavior.
         }
     ],
     "CloudToDeviceMethods": {
+        "FirmwareUpdate": {
+            "Type": "javascript",
+            "Path": "FirmwareUpdate-method.js"
+        },
         "StopElevator": {
             "Type": "javascript",
             "Path": "StopElevator-method.js"
@@ -103,6 +87,11 @@ and how to simulate a device behavior.
 **Device Model Javascript simulation example**
 
 ```javascript
+/*global log*/
+/*global updateState*/
+/*global updateProperty*/
+/*jslint node: true*/
+
 "use strict";
 
 var floors = 15;
@@ -118,17 +107,27 @@ var state = {
     moving: true
 };
 
+// Default properties
+var properties = {};
+
 /**
  * Restore the global state using data from the previous iteration.
  *
- * @param previousState The output of main() from the previous iteration
+ * @param previousState device state from the previous iteration
+ * @param previousProperties device properties from the previous iteration
  */
-function restoreState(previousState) {
+function restoreSimulation(previousState, previousProperties) {
     // If the previous state is null, force a default state
-    if (previousState !== undefined && previousState !== null) {
+    if (previousState) {
         state = previousState;
     } else {
         log("Using default state");
+    }
+
+    if (previousProperties) {
+        properties = previousProperties;
+    } else {
+        log("Using default properties");
     }
 }
 
@@ -158,15 +157,20 @@ function varyfloor(current, min, max) {
 
 /**
  * Entry point function called by the simulation engine.
+ * Returns updated simulation state.
+ * Device property updates must call updateProperties() to persist.
  *
- * @param context        The context contains current time, device model and id
- * @param previousState  The device state since the last iteration
+ * @param context             The context contains current time, device model and id
+ * @param previousState       The device state since the last iteration
+ * @param previousProperties  The device properties since the last iteration
  */
-function main(context, previousState) {
+/*jslint unparam: true*/
+function main(context, previousState, previousProperties) {
 
-    // Restore the global state before generating the new telemetry, so that
-    // the telemetry can apply changes using the previous function state.
-    restoreState(previousState);
+    // Restore the global device properties and the global state before
+    // generating the new telemetry, so that the telemetry can apply changes
+    // using the previous function state.
+    restoreSimulation(previousState, previousProperties);
 
     if (state.moving) {
         state.floor = varyfloor(state.floor, 1, floors);
@@ -179,7 +183,7 @@ function main(context, previousState) {
     // 75 +/- 1%,  Min 25, Max 100
     state.temperature = vary(75, 1, 25, 100);
 
-    return state;
+    updateState(state);
 }
 ```
 
@@ -255,8 +259,9 @@ while a moving device with multiple sensors might have more properties, like:
     "longitude": -122.296307,
     "speed": 30.0,
     "speed_unit": "mph",
-    "cargotemperature": 38.0,
-    "cargotemperature_unit": "F"
+    "temperature": 38.0,
+    "temperature_unit": "F",
+    "moving": false
 }
 ```
 
@@ -340,9 +345,9 @@ device state. For example:
 
 ```
 "CloudToDeviceMethods": {
-    "Start": {
+    "FirmwareUpdate": {
         "Type": "javascript",
-        "Path": "truck-start.js"
+        "Path": "FirmwareUpdate-method.js"
     }
 }
 ```
@@ -353,32 +358,31 @@ Functions are stored  in Javascript files, which are loaded and executed at
 runtime, using [Jint](https://github.com/sebastienros/jint), a Javascript
 interpreter for .NET.
 
-The Javascript files must have a `main` function, and accept two parameters:
+The Javascript files must have a `main` function, and accept three parameters:
 1. a context object which contains two properties:
     1. `currentTime` as a string with format `yyyy-MM-dd'T'HH:mm:sszzz`
     2. `deviceId`, e.g. "Simulated.Elevator.123"
     3. `deviceModel`, e.g. "Elevator"
-2. a `state` object, which is the value returned by the function in the
-   previous call. This is device state maintained by the simulation service,
-   and used to generate telemetry messages.
+2. a `previousState` object, which contains state values that may have been previously set by a JavaScript function call.
+3. a `previousProperties` object, which contains property values that may have been previously set by a JavaScript function call.
 
 The `main` function returns the new device state. Example:
 
 ```javascript
-function main(context, state) {
+function main(context, previousState, previousProperties) {
 
     // Use context if the simulation depends on
     // time or device details.
     // Execute some logic, updating 'state'
 
-    return state;
+    updateState(state);
 }
 ```
 
 #### Debugging script files
 
 While it's not possible to attach a debugger to the Javascript interpreter,
-it's possible to log information in the service log. For convenience, the
+it is possible to log information in the service log. For convenience, the
 application provides a `log()` function which can be used to save information
 useful to track and debug the function execution. In cases of syntax errors,
 the interpreter will fail, and the service log will contain some information
@@ -387,7 +391,7 @@ about the `Jint.Runtime.JavaScriptException` exception occurred.
 Logging example:
 
 ```javascript
-function main(context, state) {
+function main(context, previousState, previousProperties) {
 
     log("This message will appear in the service logs.");
 
@@ -399,6 +403,6 @@ function main(context, state) {
 
     // ...
 
-    return state;
+    updateState(state);
 }
 ```

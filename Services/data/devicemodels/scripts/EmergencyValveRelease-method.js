@@ -15,11 +15,10 @@
  * @param previousState  The device state since the last iteration
  * @param previousProperties  The device properties since the last iteration
  */
-
 /*jslint unparam: true*/
 function main(context, previousState, previousProperties) {
 
-    log("Starting 'Emergency Valve Release' method simulation");
+    log("Starting 'EmergencyValveRelease' JavaScript method simulation.");
 
     var state = {   
         simulation_state: "normal_pressure",
@@ -27,5 +26,5 @@ function main(context, previousState, previousProperties) {
     };
     updateState(state);
 
-    log("'Emergency Valve Release' method simulation completed");
+    log("'Emergency Valve Release' JavaScript method simulation completed.");
 }

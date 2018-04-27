@@ -96,5 +96,5 @@ function main(context, previousState, previousProperties) {
     // 75 +/- 1%,  Min 25, Max 100
     state.temperature = vary(75, 1, 25, 100);
 
-    return state;
+    updateState(state);
 }

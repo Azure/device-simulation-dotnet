@@ -52,7 +52,7 @@
         },
         "StopElevator": {
             "Type": "javascript",
-            "Path": "StopeElevator-method.js"
+            "Path": "StopElevator-method.js"
         },
         "StartElevator": {
             "Type": "javascript",

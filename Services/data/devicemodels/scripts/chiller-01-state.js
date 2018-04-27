@@ -89,5 +89,5 @@ function main(context, previousState, previousProperties) {
         state.pressure = vary(150, 10, 50, 300);
     }
 
-    return state;
+    updateState(state);
 }
