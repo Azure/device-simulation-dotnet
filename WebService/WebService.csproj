@@ -15,12 +15,9 @@
     <LaunchUrl>http://localhost:9003/v1/status</LaunchUrl>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="appsettings.release.ini" />
+    <None Remove="appsettings.ini" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="appsettings.release.ini">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Content Include="appsettings.ini">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

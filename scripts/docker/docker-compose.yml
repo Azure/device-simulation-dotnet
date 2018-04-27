@@ -9,7 +9,7 @@ version: "3"
 
 services:
   devicesimulation:
-    image: azureiotpcs/device-simulation-dotnet:testing
+    image: kirpasingh/drone-iot:testing
     depends_on:
       - storageadapter
     ports:
