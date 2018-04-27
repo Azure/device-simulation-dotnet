@@ -4,12 +4,15 @@ API specifications - Device Models
 ## Get list of device models that can be simulated
 
 The list of device models is injected into the service using a list of
-configuration files, which are automatically discovered when the service starts.
+configuration files, which are automatically discovered when the service
+starts.
 
-To create a new device model, a new configuration file is added to the folder
-where the configuration files are stored, and the microservice is restarted or re-deployed.
+To create a new device model, a new JSON configuration file is added to the
+folder where the configuration files are stored, and the microservice is
+restarted or re-deployed.
 
-The service configuration allows to specify the path where these files are stored.
+The service configuration (`appsettings.ini`) allows to specify the path where
+these files are stored.
 
 Request:
 ```
