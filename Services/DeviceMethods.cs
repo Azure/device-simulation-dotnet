@@ -1,14 +1,14 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Threading.Tasks;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
@@ -50,6 +50,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             ISmartDictionary deviceState,
             ISmartDictionary deviceProperties)
         {
+            if (methods == null) return;
+
             if (this.isRegistered)
             {
                 this.log.Error("Application error, each device must have a separate instance", () => { });

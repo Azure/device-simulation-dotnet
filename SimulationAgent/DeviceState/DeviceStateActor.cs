@@ -160,6 +160,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         {
             var properties = new SmartDictionary();
 
+            if (model.Properties == null || this.deviceModel.CloudToDeviceMethods == null) return properties;
+
             // Add SupportedMethods property with methods listed in device model
             properties.Set(SUPPORTED_METHODS_KEY, string.Join(",", this.deviceModel.CloudToDeviceMethods.Keys));
 
@@ -179,7 +181,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         {
             var initialState = CloneObject(model.Simulation.InitialState);
 
-            var state = new SmartDictionary(initialState);
+            var state = new SmartDictionary(initialState ?? new Dictionary<string, object>());
 
             // Ensure the state contains the "online" key
             if (!state.Has("online"))

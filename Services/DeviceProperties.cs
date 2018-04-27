@@ -41,7 +41,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             this.deviceId = deviceId;
-            this.deviceProperties = deviceProperties;
+            this.deviceProperties = deviceProperties ?? new SmartDictionary();
 
             this.log.Debug("Setting up callback for desired properties updates.", () => new { this.deviceId });
 
