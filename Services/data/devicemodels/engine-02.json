@@ -8,11 +8,11 @@
     "Simulation": {
         "InitialState": {
             "online": true,
-            "fuellevel": 0.0,
+            "fuellevel": 0.01,
             "fuellevel_unit": "Gal",
             "coolant": 7500.0,
             "coolant_unit": "ohm",
-            "vibration": 0.0,
+            "vibration": 0.01,
             "vibration_unit": "mm"
         },
         "Interval": "00:00:10",
