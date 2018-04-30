@@ -92,7 +92,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
                 Protocol = (IoTHubProtocol)Enum.Parse(typeof(IoTHubProtocol), this.Protocol, true),
                 Simulation = DeviceModelSimulation.ToServiceModel(this.Simulation),
                 Properties = new Dictionary<string, object>(this.Properties),
-                Telemetry = this.Telemetry.Select(x => DeviceModelTelemetry.ToServiceModel(x)).ToList(),
+                Telemetry = this.Telemetry.Select(DeviceModelTelemetry.ToServiceModel).ToList(),
                 CloudToDeviceMethods = null
             };
 
