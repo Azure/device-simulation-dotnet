@@ -67,30 +67,13 @@ namespace WebService.Test.v2.Models
         public void ItThrowsBadRequestExceptionForInvalidProtocol()
         {
             // Arrange
-            Func<DeviceModelApiModel, DeviceModelApiModel> invalidProtocol = delegate (DeviceModelApiModel model)
+            DeviceModelApiModel InvalidProtocol(DeviceModelApiModel model)
             {
                 model.Protocol = "";
                 return model;
-            };
-            var deviceModelApiModel = GetInvalidDeviceModelApiModel(invalidProtocol);
+            }
 
-            // Act
-            var ex = Record.Exception(() => deviceModelApiModel.ValidateInputRequest(this.logger.Object));
-
-            // Assert
-            Assert.IsType<BadRequestException>(ex);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItThrowsBadRequestExceptionForInvalidId()
-        {
-            // Arrange
-            Func<DeviceModelApiModel, DeviceModelApiModel> invalidId = delegate (DeviceModelApiModel model)
-            {
-                model.Id = "";
-                return model;
-            };
-            var deviceModelApiModel = GetInvalidDeviceModelApiModel(invalidId);
+            var deviceModelApiModel = this.GetInvalidDeviceModelApiModel(InvalidProtocol);
 
             // Act
             var ex = Record.Exception(() => deviceModelApiModel.ValidateInputRequest(this.logger.Object));
@@ -103,12 +86,13 @@ namespace WebService.Test.v2.Models
         public void ItThrowsBadRequestExceptionForInvalidTelemetry()
         {
             // Arrange
-            Func<DeviceModelApiModel, DeviceModelApiModel> invalidTelemetry = delegate (DeviceModelApiModel model)
+            DeviceModelApiModel InvalidTelemetry(DeviceModelApiModel model)
             {
                 model.Telemetry = new List<DeviceModelTelemetry>();
                 return model;
-            };
-            var deviceModelApiModel = GetInvalidDeviceModelApiModel(invalidTelemetry);
+            }
+
+            var deviceModelApiModel = this.GetInvalidDeviceModelApiModel(InvalidTelemetry);
 
             // Act
             var ex = Record.Exception(() => deviceModelApiModel.ValidateInputRequest(this.logger.Object));
@@ -121,12 +105,13 @@ namespace WebService.Test.v2.Models
         public void ItThrowsBadRequestExceptionForInvalidSimulation()
         {
             // Arrange
-            Func<DeviceModelApiModel, DeviceModelApiModel> invalidSimulation = delegate (DeviceModelApiModel model)
+            DeviceModelApiModel InvaildSimulation(DeviceModelApiModel model)
             {
                 model.Simulation = new DeviceModelSimulation();
                 return model;
-            };
-            var deviceModelApiModel = GetInvalidDeviceModelApiModel(invalidSimulation);
+            }
+
+            var deviceModelApiModel = this.GetInvalidDeviceModelApiModel(InvaildSimulation);
 
             // Act
             var ex = Record.Exception(() => deviceModelApiModel.ValidateInputRequest(this.logger.Object));
@@ -139,16 +124,16 @@ namespace WebService.Test.v2.Models
         public void ItThrowsBadRequestExceptionForCustomModelWithInvalidEtag()
         {
             // Arrange
-            Func<DeviceModelApiModel, DeviceModelApiModel> invalidEtag = delegate (DeviceModelApiModel model)
+            DeviceModelApiModel InvalidEtag(DeviceModelApiModel model)
             {
-                model.Type = "CustomModel";
                 model.ETag = "";
                 return model;
-            };
-            var deviceModelApiModel = GetInvalidDeviceModelApiModel(invalidEtag);
+            }
+
+            var deviceModelApiModel = this.GetInvalidDeviceModelApiModel(InvalidEtag);
 
             // Act
-            var ex = Record.Exception(() => deviceModelApiModel.ValidateInputRequest(this.logger.Object));
+            var ex = Record.Exception(() => deviceModelApiModel.ValidateInputRequest(this.logger.Object, true));
 
             // Assert
             Assert.IsType<BadRequestException>(ex);

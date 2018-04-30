@@ -9,33 +9,36 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Hel
 {
     public static class IntervalHelper
     {
-        public static void ValidateInterval(string Interval)
+        public static void ValidateInterval(string interval)
         {
             const string NOT_VALID = "Invalid interval";
             const string EMPTY_INTERVAL = "Empty interval";
+            bool hasError = false;
 
-            if (string.IsNullOrEmpty(Interval))
+            if (string.IsNullOrEmpty(interval))
             {
                 // Log happens upstream
                 throw new InvalidIntervalException(EMPTY_INTERVAL);
             }
-            else
+         
+            try
             {
-                try
-                {
-                    TimeSpan t = TimeSpan.Parse(Interval);
+                TimeSpan t = TimeSpan.Parse(interval);
 
-                    if (t == TimeSpan.Zero)
-                    {
-                        // Log happens upstream
-                        throw new InvalidIntervalException(NOT_VALID);
-                    }
-                }
-                catch (Exception)
+                if (t == TimeSpan.Zero)
                 {
-                    // Log happens upstream
-                    throw new InvalidIntervalException(NOT_VALID);
+                    hasError = true;
                 }
+            }
+            catch (Exception)
+            {
+                hasError = true;
+            }
+
+            if (hasError)
+            {
+                // Log happens upstream
+                throw new InvalidIntervalException(NOT_VALID);
             }
         }
     }

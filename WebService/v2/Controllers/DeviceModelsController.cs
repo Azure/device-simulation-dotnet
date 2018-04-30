@@ -43,8 +43,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Controller
         {
             if (deviceModel == null)
             {
-                this.log.Warn("No data or invalid data provided", () => new { deviceModel });
-                throw new BadRequestException("No data or invalid data provided.");
+                this.log.Warn("No data provided", () => new {});
+                throw new BadRequestException("No data provided.");
             }
 
             deviceModel.ValidateInputRequest(this.log);
@@ -60,11 +60,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Controller
         {
             if (deviceModel == null)
             {
-                this.log.Warn("No data or invalid data provided", () => new { deviceModel });
-                throw new BadRequestException("No data or invalid data provided.");
+                this.log.Warn("No data provided", () => new {});
+                throw new BadRequestException("No data provided.");
             }
 
-            deviceModel.ValidateInputRequest(this.log);
+            deviceModel.ValidateInputRequest(this.log, true);
 
             return DeviceModelApiModel.FromServiceModel(
                 await this.deviceModelsService.UpsertAsync(deviceModel.ToServiceModel(id)));

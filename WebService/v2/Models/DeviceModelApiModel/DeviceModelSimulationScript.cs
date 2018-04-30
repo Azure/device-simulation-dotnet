@@ -63,8 +63,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
         public void ValidateInputRequest(ILogger log)
         {
             const string INTERNAL = "internal";
-            const string NO_TYPE = "Script must contains a valid type";
-            const string NO_PATH = "Script must contains a valid path";
+            const string NO_TYPE = "Simulation script type cannot be empty";
+            const string NO_PATH = "Simulation script path cannot be empty";
 
             if (string.IsNullOrEmpty(this.Type))
             {
@@ -108,41 +108,42 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
         {
             if (this.Params == null)
             {
-                this.ThrowInvalidParams(log);
+                this.ThrowInvalidParamsError(log);
             }
             
             var rootObject = JObject.Parse(this.Params.ToString());
-            var values = rootObject.First?.First;
 
             foreach (var token in rootObject)
             {
                 var value = token.Value;
                 if (value == null)
                 {
-                    this.ThrowInvalidParams(log);
+                    this.ThrowInvalidParamsError(log);
                 }
-
-                this.CheckProperties(log, value);
             }
         }
 
+        // Min/Max might not be needed by future scripts
+        // TODO: the actural function (E.g: 'math.random.withinrange')
+        // should provide a validation method
+        /*
         private void CheckProperties(ILogger log, JToken propValue)
         {
-            string min = CheckProperty(log, propValue, "Min");
-            string max = CheckProperty(log, propValue, "Max");
-            CheckProperty(log, propValue, "Step");
-            CheckProperty(log, propValue, "Unit");
+            string min = this.CheckProperty(log, propValue, "Min");
+            string max = this.CheckProperty(log, propValue, "Max");
+            this.CheckProperty(log, propValue, "Step");
+            this.CheckProperty(log, propValue, "Unit");
 
             if (Int32.TryParse(min, out int minValue) && Int32.TryParse(max, out int maxValue))
             {
                 if (minValue >= maxValue)
                 {
-                    this.ThrowInvalidParams(log);
+                    this.ThrowInvalidParamsError(log);
                 }
             }
             else
             {
-                this.ThrowInvalidParams(log);
+                this.ThrowInvalidParamsError(log);
             }
         }
 
@@ -152,15 +153,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
             
             if (string.IsNullOrEmpty(value))
             {
-                this.ThrowInvalidParams(log);
+                this.ThrowInvalidParamsError(log);
             }
 
             return value;
         }
+        */
 
-        private void ThrowInvalidParams(ILogger log)
+        private void ThrowInvalidParamsError(ILogger log)
         {
-            const string NO_PARAMS = "Script must contains a valid params";
+            const string NO_PARAMS = "Script must contains valid parameters";
             log.Error(NO_PARAMS, () => new { Script = this });
             throw new BadRequestException(NO_PARAMS);
         }

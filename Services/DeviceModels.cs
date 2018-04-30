@@ -8,6 +8,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 // TODO: tests
@@ -53,25 +54,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly ILogger log;
         private readonly IStorageAdapterClient storage;
         
-        private CustomDeviceModels customDeviceModels;
-        private StockDeviceModels stockDeviceModels;
+        private readonly ICustomDeviceModels customDeviceModels;
+        private readonly IStockDeviceModels stockDeviceModels;
 
         public DeviceModels(
             IStorageAdapterClient storage,
-            ICustomDeviceModels CustomDeviceModels,
-            IStockDeviceModels StockDeviceModels,
+            ICustomDeviceModels customDeviceModels,
+            IStockDeviceModels stockDeviceModels,
             IServicesConfig config,
             ILogger logger)
         {
             this.storage = storage;
             this.config = config;
             this.log = logger;
-            this.stockDeviceModels = new StockDeviceModels(
-                this.config,
-                this.log);
-            this.customDeviceModels = new CustomDeviceModels(
-                this.storage,
-                this.log);
+            this.stockDeviceModels = stockDeviceModels;
+            this.customDeviceModels = customDeviceModels;
         }
 
         /// <summary>
@@ -79,22 +76,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<IEnumerable<DeviceModel>> GetListAsync()
         {
-            var deviceModels = new List<DeviceModel>();
+            List<DeviceModel> deviceModels;
 
             try
             {
-                var stockDeviceModels = this.stockDeviceModels.GetList();
-                var customDeviceModels = await this.customDeviceModels.GetListAsync();
-                deviceModels = stockDeviceModels
-                    .Concat(customDeviceModels)
+                var stockDeviceModelsList = this.stockDeviceModels.GetList();
+                var customDeviceModelsList = await this.customDeviceModels.GetListAsync();
+                deviceModels = stockDeviceModelsList
+                    .Concat(customDeviceModelsList)
                     .ToList();
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to load Device Model ",
+                this.log.Error("Unable to load Device Models ",
                     () => new { e.Message, Exception = e });
 
-                throw new Exception("Unable to load Device Model : " + e.Message, e);
+                throw new ExternalDependencyException("Unable to load Device Models : ", e);
             }
 
             return deviceModels;
@@ -120,6 +117,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<DeviceModel> InsertAsync(DeviceModel deviceModel)
         {
+            if (this.CheckDeviceModelExistence(deviceModel.Id))
+            {
+                throw new ConflictingResourceException("Device model with id '" + deviceModel.Id + "'already existed!");
+            }
+
             try
             {
                 var result = await this.customDeviceModels.InsertAsync(deviceModel);
@@ -138,12 +140,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<DeviceModel> UpsertAsync(DeviceModel deviceModel)
         {
+            if (this.CheckDeviceModelExistence(deviceModel.Id))
+            {
+                throw new ConflictingResourceException("Device model with id '" + deviceModel.Id + "'already existed!");
+            }
+
             try
             {
                 var result = await this.customDeviceModels.UpsertAsync(deviceModel);
                 deviceModel.ETag = result.ETag;
             }
-            catch(ConflictingResourceException exception)
+            catch (ConflictingResourceException exception)
             {
                 this.log.Error("Unable to update deivce model :'", () => new { exception });
             }
@@ -160,7 +167,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task DeleteAsync(string id)
         {
+            if (this.CheckDeviceModelExistence(id))
+            {
+                throw new UnauthorizedAccessException("Cannot delete a stock device model");
+            }
+
             await this.customDeviceModels.DeleteAsync(id);
+        }
+
+        private bool CheckDeviceModelExistence(string id)
+        {
+            return  this.stockDeviceModels.GetList().Any(model => model.Id == id);
         }
     }
 }

@@ -86,14 +86,14 @@ namespace WebService.Test.v2.Controllers
             // Arrange
             const string id = "deviceModelId";
             var deviceModel = this.GetDeviceModelById(id);
-            DeviceModelApiModel deviceModelAPIModel = GetValidDeviceModelApiModel(id);
+            DeviceModelApiModel deviceModelApiModel = GetValidDeviceModelApiModel(id);
 
             this.deviceModelsService
                 .Setup(x => x.InsertAsync(It.IsAny<DeviceModel>()))
                 .ReturnsAsync(deviceModel);
 
             // Act
-            var result = await this.target.PostAsync(deviceModelAPIModel);
+            var result = await this.target.PostAsync(deviceModelApiModel);
 
             // Assert
             Assert.NotNull(result);
@@ -117,14 +117,14 @@ namespace WebService.Test.v2.Controllers
             // Arrange
             const string id = "deviceModelId";
             var deviceModel = this.GetDeviceModelById(id);
-            DeviceModelApiModel deviceModelAPIModel = GetValidDeviceModelApiModel(id);
+            DeviceModelApiModel deviceModelApiModel = GetValidDeviceModelApiModel(id);
 
             this.deviceModelsService
                 .Setup(x => x.UpsertAsync(It.IsAny<DeviceModel>()))
                 .ReturnsAsync(deviceModel);
 
             // Act
-            var result = await this.target.PutAsync(deviceModelAPIModel);
+            var result = await this.target.PutAsync(deviceModelApiModel);
 
             // Assert
             Assert.NotNull(result);
@@ -162,6 +162,7 @@ namespace WebService.Test.v2.Controllers
             {
                 Id = id,
                 Protocol = "AMQP",
+                ETag = "Etag",
                 Telemetry = new List<DeviceModelTelemetry>()
                 {
                     new DeviceModelTelemetry()

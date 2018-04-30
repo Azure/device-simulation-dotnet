@@ -33,7 +33,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models
 
             return new DeviceModelListApiModel
             {
-                Items = value.Select(item => DeviceModelApiModel.DeviceModelApiModel.FromServiceModel(item)).Where(x => x != null).ToList()
+                Items = value.Select(DeviceModelApiModel.DeviceModelApiModel.FromServiceModel).Where(x => x != null).ToList()
             };
         }
     }

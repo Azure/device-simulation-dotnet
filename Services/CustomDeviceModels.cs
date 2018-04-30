@@ -26,7 +26,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Create a custom device model.
         /// </summary>
-        Task<DeviceModel> InsertAsync(DeviceModel deviceModel);
+        Task<DeviceModel> InsertAsync(DeviceModel deviceModel, bool generateId = true);
 
         /// <summary>
         /// Create or replace a custom device model.
@@ -59,12 +59,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public async Task<IEnumerable<DeviceModel>> GetListAsync()
         {
             var data = await this.storage.GetAllAsync(STORAGE_COLLECTION);
+            const string CUSTOMMODEL = "CustomModel";
             var results = new List<DeviceModel>();
             foreach (var item in data.Items)
             {
                 var deviceModel = JsonConvert.DeserializeObject<DeviceModel>(item.Data);
                 deviceModel.ETag = item.ETag;
-                deviceModel.Type = "CustomModel";
+                deviceModel.Type = CUSTOMMODEL;
                 results.Add(deviceModel);
             }
 
@@ -78,6 +79,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (string.IsNullOrEmpty(id))
             {
+                this.log.Error("Device model id cannot be empty!", () => {});
                 throw new InvalidInputException("Device model id cannot be empty! ");
             }
 
@@ -90,11 +92,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Create a custom device model.
         /// </summary>
-        public async Task<DeviceModel> InsertAsync(DeviceModel deviceModel)
+        public async Task<DeviceModel> InsertAsync(DeviceModel deviceModel, bool generateId = true)
         {
             deviceModel.Created = DateTimeOffset.UtcNow;
             deviceModel.Modified = deviceModel.Created;
-            deviceModel.Id = Guid.NewGuid().ToString();
+
+            if (generateId)
+            {
+                deviceModel.Id = Guid.NewGuid().ToString();
+            }
+
+            this.log.Debug("[InsertAsync] Create custom device model: ", () => new { deviceModel });
 
             // Note: using UpdateAsync because the service generates the ID
             var result = await this.storage.UpdateAsync(
@@ -125,7 +133,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     // Replace a custom device model
                     deviceModel.Created = item.Created;
                     deviceModel.Modified = DateTimeOffset.UtcNow;
-                    
+
+                    this.log.Debug("[UpdateAysnc] Modify a custom device model: ", () => new { deviceModel });
+
                     var result = await this.storage.UpdateAsync(
                         STORAGE_COLLECTION,
                         id,
@@ -138,20 +148,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 else
                 {
                     this.log.Error("Invalid ETag. Current Device Model ETag is:'", () => new { ETag = item.ETag });
-                    throw new ConflictingResourceException("Invalid ETag. Running simulation ETag is:'" + item.ETag + "'.");
+                    throw new ConflictingResourceException("Invalid ETag. Device Model ETag is:'" + item.ETag + "'.");
                 }
             }
             catch (ResourceNotFoundException)
             {
-                this.log.Info("Creating new device model via PUT.", () => { });
+                this.log.Info("Creating new device model via PUT.", () => new { deviceModel });
 
-                var result = await this.InsertAsync(deviceModel);
+                var result = await this.InsertAsync(deviceModel, false);
                 deviceModel.ETag = result.ETag;
             }
-            catch(Exception exception)
+            catch (ConflictingResourceException)
             {
-                this.log.Error("Something went wrong when modify the device model.", () => new { exception });
-                throw exception;
+                throw;
+            }
+            catch (Exception exception)
+            {
+                this.log.Error("Something went wrong while inserting/updating the device model.", () => new { exception });
+                throw;
             }
 
             return deviceModel;

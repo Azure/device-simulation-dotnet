@@ -41,12 +41,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Filters
                      || context.Exception is Services.Exceptions.InvalidIotHubConnectionStringFormatException
                      || context.Exception is WebService.v2.Exceptions.InvalidIotHubConnectionStringFormatException
                      || context.Exception is IotHubConnectionException)
-        {
+            {
                 context.Result = this.GetResponse(HttpStatusCode.BadRequest, context.Exception);
             }
             else if (context.Exception is InvalidConfigurationException)
             {
                 context.Result = this.GetResponse(HttpStatusCode.InternalServerError, context.Exception);
+            }
+            else if (context.Exception is UnauthorizedAccessException)
+            {
+                context.Result = this.GetResponse(HttpStatusCode.Forbidden, context.Exception);
             }
             else if (context.Exception != null)
             {

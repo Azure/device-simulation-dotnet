@@ -47,14 +47,14 @@ namespace Services.Test
         {
             // Arrange
             this.ThereAreThreeCustomDeviceModels();
-            this.ThereAreTenStockDeviceModels();
-            const int totalModelCount = 13;
+            this.ThereAreThreeStockDeviceModels();
+            const int TOTAL_MODEL_COUNT = 6;
 
             // Act
             var result = this.target.GetListAsync().Result;
 
             // Assert
-            Assert.Equal(totalModelCount, result.Count());
+            Assert.Equal(TOTAL_MODEL_COUNT, result.Count());
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -62,14 +62,14 @@ namespace Services.Test
         {
             // Arrange
             this.ThereAreNoCustomDeviceModels();
-            this.ThereAreTenStockDeviceModels();
-            const int totalModelCount = 10;
+            this.ThereAreThreeStockDeviceModels();
+            const int TOTAL_MODEL_COUNT = 3;
 
             // Act
             var result = this.target.GetListAsync().Result;
 
             // Assert
-            Assert.Equal(totalModelCount, result.Count());
+            Assert.Equal(TOTAL_MODEL_COUNT, result.Count());
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -78,13 +78,13 @@ namespace Services.Test
             // Arrange
             this.ThereAreThreeCustomDeviceModels();
             this.ThereAreNoStockDeviceModels();
-            const int totalModelCount = 3;
+            const int TOTAL_MODEL_COUNT = 3;
 
             // Act
             var result = this.target.GetListAsync().Result;
 
             // Assert
-            Assert.Equal(totalModelCount, result.Count());
+            Assert.Equal(TOTAL_MODEL_COUNT, result.Count());
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -92,14 +92,14 @@ namespace Services.Test
         {
             // Arrange
             this.ThereAreThreeCustomDeviceModels();
-            this.ThereAreTenStockDeviceModels();
-            const string deviceModelId = "chiller-01";
+            this.ThereAreThreeStockDeviceModels();
+            const string DEVICE_MODEL_ID = "chiller-01";
 
             // Act
-            var result = this.target.GetAsync(deviceModelId).Result;
+            var result = this.target.GetAsync(DEVICE_MODEL_ID).Result;
 
             // Assert
-            Assert.Equal(deviceModelId, result.Id);
+            Assert.Equal(DEVICE_MODEL_ID, result.Id);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -107,7 +107,7 @@ namespace Services.Test
         {
             // Arrange
             this.ThereAreThreeCustomDeviceModels();
-            this.ThereAreTenStockDeviceModels();
+            this.ThereAreThreeStockDeviceModels();
 
             // Act
             var ex = Record.Exception(() => this.target.GetAsync(It.IsAny<string>()).Result);
@@ -117,42 +117,38 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItInvokeStorageServiceWhenDeleteDeviceModel()
+        public void ItInvokeCustomDeviceModelsServiceWhenDeleteDeviceModel()
         {
-            // Arrange
-            this.ThereAreThreeCustomDeviceModels();
-            this.ThereAreTenStockDeviceModels();
-
             // Act
             this.target.DeleteAsync(It.IsAny<string>()).Wait();
 
             // Assert
-            this.storage.Verify(
-                x => x.DeleteAsync(STORAGE_COLLECTION, It.IsAny<string>()));
+            this.customDeviceModels.Verify(
+                x => x.DeleteAsync(It.IsAny<string>()));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItInsertsDeviceModelToStorage()
         {
             // Arrange
-            const string etag = "etag";
-            var deviceModel = new DeviceModel() { ETag = etag };
+            const string ETAG = "etag";
+            var deviceModel = new DeviceModel() { ETag = ETAG };
 
             this.customDeviceModels
-                .Setup(x => x.InsertAsync(It.IsAny<DeviceModel>()))
+                .Setup(x => x.InsertAsync(It.IsAny<DeviceModel>(), true))
                 .Returns(Task.FromResult(deviceModel));
             this.storage.Setup(x => x.UpdateAsync(
                     STORAGE_COLLECTION,
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     null))
-                .Returns(Task.FromResult(new ValueApiModel() { ETag = etag }));
+                .Returns(Task.FromResult(new ValueApiModel() { ETag = ETAG }));
 
             // Act
             var result = this.target.InsertAsync(deviceModel).Result;
 
             // Assert
-            Assert.Equal(etag, result.ETag);
+            Assert.Equal(ETAG, result.ETag);
             Assert.Equal(result.Created, result.Modified);
         }
 
@@ -182,36 +178,41 @@ namespace Services.Test
 
         private void ThereAreNoCustomDeviceModels()
         {
-            this.storage
-                .Setup(x => x.GetAllAsync(STORAGE_COLLECTION))
-                .ReturnsAsync(new ValueListApiModel());
+            this.customDeviceModels
+                .Setup(x => x.GetListAsync())
+                .ReturnsAsync(new List<DeviceModel>());
         }
 
         private void ThereAreNoStockDeviceModels()
         {
-            this.config.Setup(x => x.DeviceModelsFolder).Returns("./data/");
+            this.stockDeviceModels
+                .Setup(x => x.GetList())
+                .Returns(new List<DeviceModel>());
         }
 
-        private void ThereAreTenStockDeviceModels()
+        private void ThereAreThreeStockDeviceModels()
         {
-            this.config.Setup(x => x.DeviceModelsFolder).Returns("./data/devicemodels/");
+            var deviceModelsList = new List<DeviceModel>()
+            {
+                new DeviceModel() { Id = "chiller-01", ETag = "eTag_1"},
+                new DeviceModel() { Id = "chiller-02", ETag = "eTag_2"},
+                new DeviceModel() { Id = "chiller-03", ETag = "eTag_3"}
+            };
+            this.stockDeviceModels.Setup(x => x.GetList()).Returns(deviceModelsList);
         }
 
         private void ThereAreThreeCustomDeviceModels()
         {
-            var customDeviceAPIModels = new ValueListApiModel()
+            var deviceModelsList = new List<DeviceModel>()
             {
-                Items = new List<ValueApiModel>()
-                {
-                    new ValueApiModel() { Data = "{\"ETag\":\"\",\"Id\":\"custom_01\"}" },
-                    new ValueApiModel() { Data = "{\"ETag\":\"\",\"Id\":\"custom_02\"}" },
-                    new ValueApiModel() { Data = "{\"ETag\":\"\",\"Id\":\"custom_03\"}" }
-                }
+                new DeviceModel() { Id = "1", ETag = "eTag_1"},
+                new DeviceModel() { Id = "2", ETag = "eTag_2"},
+                new DeviceModel() { Id = "3", ETag = "eTag_3"}
             };
 
-            this.storage
-                .Setup(x => x.GetAllAsync(STORAGE_COLLECTION))
-                .ReturnsAsync(customDeviceAPIModels);
+            this.customDeviceModels
+                .Setup(x => x.GetListAsync())
+                .ReturnsAsync(deviceModelsList);
         }
     }
 }

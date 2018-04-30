@@ -20,9 +20,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
     public class StockDeviceModels : IStockDeviceModels
     {
-        // ID used for custom device models, where the list of sensors is provided by the user
-        public const string CUSTOM_DEVICE_MODEL_ID = "custom";
-
         private const string EXT = ".json";
 
         private readonly IServicesConfig config;
@@ -45,6 +42,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.deviceModels != null) return this.deviceModels;
 
+            const string STOCKMODEL = "StockModel";
             this.deviceModels = new List<DeviceModel>();
 
             try
@@ -53,7 +51,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 foreach (var f in files)
                 {
                     var c = JsonConvert.DeserializeObject<DeviceModel>(File.ReadAllText(f));
-                    c.Type = "StockModel";
+                    c.Type = STOCKMODEL;
                     this.deviceModels.Add(c);
                 }
             }
@@ -77,7 +75,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             this.log.Warn("Device model not found", () => new { id });
 
-            throw new ResourceNotFoundException();
+            throw new ResourceNotFoundException("Device model not found with id: '" + id + "'.");
         }
 
         private List<string> GetDeviceModelFiles()

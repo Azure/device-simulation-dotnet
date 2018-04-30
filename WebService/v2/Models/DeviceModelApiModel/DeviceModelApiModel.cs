@@ -81,8 +81,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
         {
             this.Id = id;
 
-            var now = DateTimeOffset.UtcNow;
-
             var result = new DeviceModel
             {
                 ETag = this.ETag,
@@ -125,7 +123,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
                 Name = value.Name,
                 Description = value.Description,
                 created = value.Created,
-                modified =value.Modified,
+                modified = value.Modified,
                 Protocol = value.Protocol.ToString(),
                 Simulation = DeviceModelSimulation.FromServiceModel(value.Simulation)
             };
@@ -151,15 +149,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
             return result;
         }
 
-        public void ValidateInputRequest(ILogger log)
+        public void ValidateInputRequest(ILogger log, bool isCreating = false)
         {
             const string NO_ETAG = "The custom device model doesn't contain an ETag";
             const string NO_PROTOCOL = "The device model doesn't contain a protocol";
-            const string NO_ID = "The device model doesn't contain an id";
             const string ZERO_TELEMETRY = "The device model has zero telemetry";
 
             // A custom device model must contain a ETag
-            if (this.Type == "CustomModel" && this.ETag == String.Empty)
+            if (isCreating && this.ETag == String.Empty)
             {
                 log.Error(NO_ETAG, () => new { deviceModel = this });
                 throw new BadRequestException(NO_ETAG);
@@ -172,13 +169,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
                 throw new BadRequestException(NO_PROTOCOL);
             }
 
-            // A device model must contain an Id
-            if (this.Id == String.Empty)
-            {
-                log.Error(NO_ID, () => new { deviceModel = this });
-                throw new BadRequestException(NO_ID);
-            }
-
             // A device model must contain at least one telemetry
             if (this.Telemetry.Count < 1)
             {
@@ -186,7 +176,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.Dev
                 throw new BadRequestException(ZERO_TELEMETRY);
             }
 
-            // Validate telmetry
+            // Validate telemetry
             foreach (var telemetry in this.Telemetry)
             {
                 telemetry.ValidateInputRequest(log);
