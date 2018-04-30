@@ -122,6 +122,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
                 Version = value.Version,
                 Name = value.Name,
                 Description = value.Description,
+                Type = value.Type,
                 created = value.Created,
                 modified = value.Modified,
                 Protocol = value.Protocol.ToString(),
