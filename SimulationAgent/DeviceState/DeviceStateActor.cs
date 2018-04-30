@@ -33,6 +33,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
 
         public const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
         public const string SUPPORTED_METHODS_KEY = "SupportedMethods";
+        public const string TELEMETRY_KEY = "Telemetry";
 
         private readonly ILogger log;
         private readonly UpdateDeviceState updateDeviceStateLogic;
@@ -159,8 +160,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         private ISmartDictionary GetInitialProperties(DeviceModel model)
         {
             var properties = new SmartDictionary();
-
+            
             if (model.Properties == null || this.deviceModel.CloudToDeviceMethods == null) return properties;
+
+            // Add telemetry property
+            properties.Set(TELEMETRY_KEY, JToken.FromObject(this.deviceModel.GetTelemetryReportedProperty(this.log)));
 
             // Add SupportedMethods property with methods listed in device model
             properties.Set(SUPPORTED_METHODS_KEY, string.Join(",", this.deviceModel.CloudToDeviceMethods.Keys));

@@ -77,7 +77,11 @@ function main(context, previousState, previousProperties) {
     state.coolant = vary(7500, 5, 200, 10000);
 
     // 10 +/- 5%,  Min 0, Max 20
-    state.vibration = vary(10, 5, 0, 20);
+    if (state.fuellevel > 0) {
+        state.vibration = vary(10, 5, 0, 20);
+    } else {
+        state.vibration = 0;
+    }
 
-    return state;
+    updateState(state);
 }

@@ -55,16 +55,24 @@
             "Path": "Reboot-method.js"
         },
         "FirmwareUpdate": {
-          "Type": "javascript",
-          "Path": "FirmwareUpdate-method.js"
+            "Type": "javascript",
+            "Path": "FirmwareUpdate-method.js"
+        },
+        "StartMovingDevice": {
+            "Type": "javascript",
+            "Path": "StartMovingDevice-method.js"
+        },
+        "StopMovingDevice": {
+            "Type": "javascript",
+            "Path": "StopMovingDevice-method.js"
         },
         "DecreaseTemperature": {
             "Type": "javascript",
-            "Path": "TemperatureDecrease-method.js"
+            "Path": "TempDecrease-method.js"
         },
         "IncreaseTemperature": {
             "Type": "javascript",
-            "Path": "TemperatureIncrease-method.js"
+            "Path": "TempIncrease-method.js"
         }
     }
 }

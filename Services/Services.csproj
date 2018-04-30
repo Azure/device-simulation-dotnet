@@ -47,6 +47,9 @@
     <None Update="data\devicemodels\scripts\FillTank-method.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="data\devicemodels\scripts\SetFuelLevel-method.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="data\devicemodels\scripts\prototype-02-state.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -74,7 +77,7 @@
     <None Update="data\devicemodels\scripts\Reboot-method.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="data\devicemodels\scripts\RestartEngine-method.js">
+    <None Update="data\devicemodels\scripts\SetTemperature-method.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="data\devicemodels\scripts\StartElevator-method.js">

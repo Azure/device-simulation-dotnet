@@ -40,8 +40,8 @@ Content-Type: application/JSON
           "longitude": -122.296307,
           "speed": 30,
           "speed_unit": "mph",
-          "cargotemperature": 38,
-          "cargotemperature_unit": "F"
+          "temperature": 38,
+          "temperature_unit": "F"
         },
         "Interval": "00:00:10",
         "Scripts": [
@@ -84,25 +84,21 @@ Content-Type: application/JSON
         },
         {
           "Interval": "00:00:05",
-          "MessageTemplate": "{\"cargotemperature\":${cargotemperature},\"cargotemperature_unit\":\"${cargotemperature_unit}\"}",
+          "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\"}",
           "MessageSchema": {
-            "Name": "truck-cargotemperature;v1",
+            "Name": "truck-temperature;v1",
             "Format": "JSON",
             "Fields": {
-              "cargotemperature": "Double",
-              "cargotemperature_unit": "Text"
+              "temperature": "Double",
+              "temperature_unit": "Text"
             }
           }
         }
       ],
       "CloudToDeviceMethods": {
-        "DecreaseCargoTemperature": {
+        "SetTemperature": {
           "Type": "javascript",
-          "Path": "TempDecrease-method.js"
-        },
-        "IncreaseCargoTemperature": {
-          "Type": "javascript",
-          "Path": "TempIncrease-method.js"
+          "Path": "SetTemperature-method.js"
         }
       },
       "$metadata": {
