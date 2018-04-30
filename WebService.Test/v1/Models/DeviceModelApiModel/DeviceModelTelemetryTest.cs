@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.DeviceModelApiModel;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -10,7 +10,7 @@ using WebService.Test.helpers;
 using Xunit;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
 
-namespace WebService.Test.v2.Models
+namespace WebService.Test.v1.Models
 {
     public class DeviceModelTelemetryTest
     {
@@ -64,12 +64,13 @@ namespace WebService.Test.v2.Models
         public void ItThrowsBadRequestExceptionForInvalidInterval()
         {
             // Arrange
-            Func<DeviceModelTelemetry, DeviceModelTelemetry> invalidInterval = delegate (DeviceModelTelemetry model)
+            DeviceModelTelemetry InvalidInterval(DeviceModelTelemetry model)
             {
                 model.Interval = "";
                 return model;
-            };
-            var telemetry = GetInvalidDeviceModelTelemetry(invalidInterval);
+            }
+
+            var telemetry = this.GetInvalidDeviceModelTelemetry(InvalidInterval);
 
             // Act
             var ex = Record.Exception(() => telemetry.ValidateInputRequest(this.logger.Object));
@@ -82,12 +83,13 @@ namespace WebService.Test.v2.Models
         public void ItThrowsBadRequestExceptionForInvalidMessageTemplate()
         {
             // Arrange
-            Func<DeviceModelTelemetry, DeviceModelTelemetry> invalidMessageTemplate = delegate (DeviceModelTelemetry model)
+            DeviceModelTelemetry InvalidMessageTemplate(DeviceModelTelemetry model)
             {
                 model.MessageTemplate = "";
                 return model;
-            };
-            var telemetry = GetInvalidDeviceModelTelemetry(invalidMessageTemplate);
+            }
+
+            var telemetry = this.GetInvalidDeviceModelTelemetry(InvalidMessageTemplate);
 
             // Act
             var ex = Record.Exception(() => telemetry.ValidateInputRequest(this.logger.Object));
@@ -100,12 +102,13 @@ namespace WebService.Test.v2.Models
         public void ItThrowsBadRequestExceptionForInvalidMessageSchema()
         {
             // Arrange
-            Func<DeviceModelTelemetry, DeviceModelTelemetry> invalidMessageSchema = delegate (DeviceModelTelemetry model)
+            DeviceModelTelemetry InvalidMessageSchema(DeviceModelTelemetry model)
             {
                 model.MessageSchema = new DeviceModelTelemetryMessageSchema();
                 return model;
-            };
-            var telemetry = GetInvalidDeviceModelTelemetry(invalidMessageSchema);
+            }
+
+            var telemetry = this.GetInvalidDeviceModelTelemetry(InvalidMessageSchema);
 
             // Act
             var ex = Record.Exception(() => telemetry.ValidateInputRequest(this.logger.Object));

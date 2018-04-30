@@ -3,11 +3,9 @@
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.DeviceModelApiModel;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.SimulationApiModel;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel;
 using Moq;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -15,7 +13,7 @@ using WebService.Test.helpers;
 using Xunit;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 
-namespace WebService.Test.v2.Models
+namespace WebService.Test.v1.Models
 {
     public class SimulationApiModelTest
     {
@@ -73,12 +71,13 @@ namespace WebService.Test.v2.Models
         public async Task ItThrowsBadRequestExceptionForInvalidDeviceModels()
         {
             // Arrange
-            Func<SimulationApiModel, SimulationApiModel> invalidDeviceModels = delegate (SimulationApiModel model)
+            SimulationApiModel InvalidDeviceModels(SimulationApiModel model)
             {
                 model.DeviceModels = new List<SimulationDeviceModelRef>();
                 return model;
-            };
-            var simulationApiModel = GetInvalidSimulationApiModel(invalidDeviceModels);
+            }
+
+            var simulationApiModel = this.GetInvalidSimulationApiModel(InvalidDeviceModels);
             this.SetupConnectionStringManager();
 
             // Assert
@@ -89,18 +88,13 @@ namespace WebService.Test.v2.Models
         public async Task ItThrowsBadRequestExceptionForInvalidDeviceModelsCount()
         {
             // Arrange
-            Func<SimulationApiModel, SimulationApiModel> invalidDeviceModels = delegate (SimulationApiModel model)
+            SimulationApiModel InvalidDeviceModels(SimulationApiModel model)
             {
-                model.DeviceModels = new List<SimulationDeviceModelRef>()
-                {
-                    new SimulationDeviceModelRef()
-                    {
-                        Count = 0
-                    }
-                };
+                model.DeviceModels = new List<SimulationDeviceModelRef>() { new SimulationDeviceModelRef() { Count = 0 } };
                 return model;
-            };
-            var simulationApiModel = GetInvalidSimulationApiModel(invalidDeviceModels);
+            }
+
+            var simulationApiModel = this.GetInvalidSimulationApiModel(InvalidDeviceModels);
             this.SetupConnectionStringManager();
 
             // Assert
@@ -111,13 +105,14 @@ namespace WebService.Test.v2.Models
         public async Task ItThrowsBadRequestExceptionForInvalidTimes()
         {
             // Arrange
-            Func<SimulationApiModel, SimulationApiModel> invalidTimes = delegate (SimulationApiModel model)
+            SimulationApiModel InvalidDates(SimulationApiModel model)
             {
                 model.StartTime = "2017-05-31T01:21:37+00:00";
                 model.EndTime = "2017-05-31T01:21:37+00:00";
                 return model;
-            };
-            var simulationApiModel = GetInvalidSimulationApiModel(invalidTimes);
+            }
+
+            var simulationApiModel = this.GetInvalidSimulationApiModel(InvalidDates);
             this.SetupConnectionStringManager();
 
             // Assert

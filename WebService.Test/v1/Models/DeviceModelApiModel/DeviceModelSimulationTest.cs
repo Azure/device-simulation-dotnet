@@ -2,8 +2,8 @@
 
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.DeviceModelApiModel;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -11,7 +11,7 @@ using WebService.Test.helpers;
 using Xunit;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
 
-namespace WebService.Test.v2.Models
+namespace WebService.Test.v1.Models
 {
     public class DeviceModelSimulationTest
     {
@@ -65,12 +65,13 @@ namespace WebService.Test.v2.Models
         public void ItThrowsBadRequestExceptionForInvalidInterval()
         {
             // Arrange
-            Func<DeviceModelSimulation, DeviceModelSimulation> invalidInterval = delegate (DeviceModelSimulation model)
+            DeviceModelSimulation InvalidInterval(DeviceModelSimulation model)
             {
                 model.Interval = "";
                 return model;
-            };
-            var deviceModelSimulation = GetInvalidDeviceModelSimulation(invalidInterval);
+            }
+
+            var deviceModelSimulation = this.GetInvalidDeviceModelSimulation(InvalidInterval);
 
             // Act
             var ex = Record.Exception(() => deviceModelSimulation.ValidateInputRequest(this.logger.Object));
@@ -83,12 +84,13 @@ namespace WebService.Test.v2.Models
         public void ItThrowsBadRequestExceptionForInvalidScript()
         {
             // Arrange
-            Func<DeviceModelSimulation, DeviceModelSimulation> invalidScript = delegate (DeviceModelSimulation model)
+            DeviceModelSimulation InvalidScript(DeviceModelSimulation model)
             {
                 model.Scripts = new List<DeviceModelSimulationScript>();
                 return model;
-            };
-            var deviceModelSimulation = GetInvalidDeviceModelSimulation(invalidScript);
+            }
+
+            var deviceModelSimulation = this.GetInvalidDeviceModelSimulation(InvalidScript);
 
             // Act
             var ex = Record.Exception(() => deviceModelSimulation.ValidateInputRequest(this.logger.Object));

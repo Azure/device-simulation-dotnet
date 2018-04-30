@@ -2,7 +2,7 @@
 
 using System;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Exceptions
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions
 {
     public class InvalidIntervalException : Exception
     {

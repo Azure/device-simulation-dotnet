@@ -1,14 +1,13 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v2.Models.SimulationApiModel;
-using System;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel;
 using System.Collections.Generic;
 using System.Linq;
 using WebService.Test.helpers;
 using Xunit;
 
-namespace WebService.Test.v2.Models
+namespace WebService.Test.v1.Models
 {
     public class DeviceModelSimulationScriptOverrideTest
     {
