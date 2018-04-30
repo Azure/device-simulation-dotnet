@@ -87,10 +87,10 @@ function main(context, previousState, previousProperties) {
 
     if (state.moving) {
         state.floor = varyfloor(state.floor, 1, floors);
-        // 10 +/- 5%,  Min 0, Max 20
-        state.vibration = vary(10, 5, 0, 20);
+        // 10 +/- 5%,  Min 0.01, Max 20
+        state.vibration = vary(10, 5, 0.01, 20);
     } else {
-        state.vibration = 0;
+        state.vibration = 0.01;
     }
 
     // 75 +/- 1%,  Min 25, Max 100
