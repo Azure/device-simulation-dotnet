@@ -61,7 +61,7 @@ function main(context, previousState, previousProperties) {
         return;
     }
 
-    // Pause the simulation while filling the tank
+    // Pause the simulation while emptying the tank
     state.CalculateRandomizedTelemetry = false;
     updateState(state);
 

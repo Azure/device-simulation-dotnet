@@ -52,10 +52,6 @@
             "Type": "javascript",
             "Path": "FirmwareUpdate-method.js"
         },
-        "Restart": {
-            "Type": "javascript",
-            "Path": "RestartEngine-method.js"
-        },
         "EmptyTank": {
             "Type": "javascript",
             "Path": "EmptyTank-method.js"
