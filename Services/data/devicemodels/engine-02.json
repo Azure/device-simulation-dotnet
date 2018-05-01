@@ -8,11 +8,11 @@
     "Simulation": {
         "InitialState": {
             "online": true,
-            "fuellevel": 0.01,
+            "fuellevel": 0.0,
             "fuellevel_unit": "Gal",
             "coolant": 7500.0,
             "coolant_unit": "ohm",
-            "vibration": 0.01,
+            "vibration": 0.0,
             "vibration_unit": "mm"
         },
         "Interval": "00:00:10",
@@ -51,10 +51,6 @@
         "FirmwareUpdate": {
             "Type": "javascript",
             "Path": "FirmwareUpdate-method.js"
-        },
-        "Restart": {
-            "Type": "javascript",
-            "Path": "RestartEngine-method.js"
         },
         "EmptyTank": {
             "Type": "javascript",
