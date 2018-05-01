@@ -312,10 +312,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             while (this.running)
             {
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                foreach (var device in this.deviceStateActors)
+
+                // Kirpas: Francis found this bug with update state taking several seconds
+                // His workaround of using parallel for may fix this issue
+                System.Threading.Tasks.Parallel.ForEach(this.deviceStateActors, device =>
                 {
                     device.Value.Run();
-                }
+                });
+
+                //foreach (var device in this.deviceStateActors)
+                //{
+                //    device.Value.Run();
+                //}
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                 this.log.Info("Device state loop completed", () => new { durationMsecs });
@@ -329,10 +337,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             {
                 this.connectionLoopSettings.NewLoop();
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                foreach (var device in this.deviceConnectionActors)
+
+                // Kirpas: Francis found this bug with update state taking several seconds
+                // His workaround of using parallel for may fix this issue
+                System.Threading.Tasks.Parallel.ForEach(this.deviceConnectionActors, device =>
                 {
                     device.Value.Run();
-                }
+                });
+
+                //foreach (var device in this.deviceConnectionActors)
+                //{
+                //    device.Value.Run();
+                //}
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                 this.log.Info("Device state loop completed", () => new { durationMsecs });
@@ -347,10 +363,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.propertiesLoopSettings.NewLoop();
 
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                foreach (var device in this.devicePropertiesActors)
+
+                // Kirpas: Francis found this bug with update state taking several seconds
+                // His workaround of using parallel for may fix this issue
+                System.Threading.Tasks.Parallel.ForEach(this.devicePropertiesActors, device =>
                 {
                     device.Value.Run();
-                }
+                });
+
+                //foreach (var device in this.devicePropertiesActors)
+                //{
+                //    device.Value.Run();
+                //}
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                 this.log.Info("Device properties loop completed", () => new { durationMsecs });
@@ -377,7 +401,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 }
 
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                foreach (var telemetry in this.deviceTelemetryActors)
+
+                // Kirpas: Francis found this bug with update state taking several seconds
+                // His workaround of using parallel for may fix this issue
+                System.Threading.Tasks.Parallel.ForEach(this.deviceTelemetryActors, telemetry =>
                 {
                     var stat = telemetry.Value.Run();
                     if (this.log.InfoIsEnabled)
@@ -391,7 +418,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                             stats["nothingToDo"]++;
                         }
                     }
-                }
+                });
+
+                //foreach (var telemetry in this.deviceTelemetryActors)
+                //{
+                //    var stat = telemetry.Value.Run();
+                //    if (this.log.InfoIsEnabled)
+                //    {
+                //        if (stat != null)
+                //        {
+                //            stats[stat] = stats.ContainsKey(stat) ? stats[stat] + 1 : 1;
+                //        }
+                //        else
+                //        {
+                //            stats["nothingToDo"]++;
+                //        }
+                //    }
+                //}
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                 this.log.Info("Telemetry loop completed", () => new { durationMsecs, stats });
