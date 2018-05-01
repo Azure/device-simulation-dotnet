@@ -56,7 +56,7 @@ function main(context, previousState, previousProperties) {
     var fullFuelLevel = 70;
     var increment = fullFuelLevel / 5;
 
-    if (state.fuellevel == 0.01) {
+    if (state.fuellevel == 0) {
         log("Exiting 'EmptyTank' JavaScript method. Fuel tank is already empty.");
         return;
     }
@@ -90,7 +90,7 @@ function main(context, previousState, previousProperties) {
     sleep(1000);
 
     // Decrease
-    state.fuellevel = 0.01;
+    state.fuellevel = 0;
     updateState(state);
     log("Fuel level decreased to " + state.fuellevel);
     sleep(1000);
