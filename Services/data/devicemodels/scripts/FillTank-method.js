@@ -61,9 +61,7 @@ function main(context, previousState, previousProperties) {
         return;
     }
 
-    // Pause the simulation and change the simulation mode
-    // while filling the tank
-    state.simulation_state = "filling fuel tank";
+    // Pause the simulation while filling the tank
     state.CalculateRandomizedTelemetry = false;
     updateState(state);
 
