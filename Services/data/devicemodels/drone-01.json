@@ -4,7 +4,7 @@
 	"Version": "0.0.1",
 	"Name": "Poltergeist",
 	"Description": "Delivery carrier drone with multiple sensors.",
-	"Protocol": "AMQP",
+	"Protocol": "MQTT",
 	"Simulation": {
 		"InitialState": {
 			"online": true,
