@@ -83,7 +83,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
             }
         }
 
-        /*
+        /* Current Scripts structure:
         {
             "Type": "internal",
             "Path": "math.random.withinrange",
@@ -102,6 +102,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
                 },
             }
         }
+        Min/Max might not be needed by future scripts.
+        TODO: the actural function (E.g: 'math.random.withinrange') should provide a validation method.
         */
         private void ValidateParams(ILogger log)
         {
@@ -121,43 +123,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
                 }
             }
         }
-
-        // Min/Max might not be needed by future scripts
-        // TODO: the actural function (E.g: 'math.random.withinrange')
-        // should provide a validation method
-        /*
-        private void CheckProperties(ILogger log, JToken propValue)
-        {
-            string min = this.CheckProperty(log, propValue, "Min");
-            string max = this.CheckProperty(log, propValue, "Max");
-            this.CheckProperty(log, propValue, "Step");
-            this.CheckProperty(log, propValue, "Unit");
-
-            if (Int32.TryParse(min, out int minValue) && Int32.TryParse(max, out int maxValue))
-            {
-                if (minValue >= maxValue)
-                {
-                    this.ThrowInvalidParamsError(log);
-                }
-            }
-            else
-            {
-                this.ThrowInvalidParamsError(log);
-            }
-        }
-
-        private string CheckProperty(ILogger log, JToken propValue, string key)
-        {
-            string value = propValue.SelectToken(key).ToString();
-            
-            if (string.IsNullOrEmpty(value))
-            {
-                this.ThrowInvalidParamsError(log);
-            }
-
-            return value;
-        }
-        */
 
         private void ThrowInvalidParamsError(ILogger log)
         {
