@@ -158,14 +158,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var result = await this.InsertAsync(deviceModel, false);
                 deviceModel.ETag = result.ETag;
             }
-            catch (ConflictingResourceException)
-            {
-                throw;
-            }
             catch (Exception exception)
             {
-                this.log.Error("Something went wrong while inserting/updating the device model.", () => new { exception });
-                throw;
+                this.log.Error("Something went wrong while upserting the device model.", () => new { exception });
             }
 
             return deviceModel;

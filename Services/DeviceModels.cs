@@ -151,13 +151,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var result = await this.customDeviceModels.UpsertAsync(deviceModel);
                 deviceModel.ETag = result.ETag;
             }
-            catch (ConflictingResourceException exception)
-            {
-                this.log.Error("Unable to update deivce model ", () => new { exception });
-            }
             catch (Exception exception)
             {
-                this.log.Error("Unable to update deivce model ", () => new { exception });
+                this.log.Error("Unable to update device model ", () => new { exception });
             }
 
             return deviceModel;
