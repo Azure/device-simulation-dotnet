@@ -58,7 +58,7 @@ function main(context, previousState, previousProperties) {
     // Reboot - devices goes offline and comes online after 20 seconds
     log("Executing 'FirmwareUpdate' JavaScript method; Firmware version passed:" + context.Firmware);
 
-    var DeviceMethodStatusKey = "DeviceMethodStatus";
+    var DeviceMethodStatusKey = "FirmwareUpdateStatus";
     var FirmwareKey = "Firmware";
 
     // update the status to offline & firmware updating
