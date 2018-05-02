@@ -85,7 +85,6 @@ ProjectSection(SolutionItems) = preProject
 	docs\INDEX.md = docs\INDEX.md
 	docs\BREAKING_CHANGES.md = docs\BREAKING_CHANGES.md
 	docs\ENVIRONMENT_VARIABLES.md = docs\ENVIRONMENT_VARIABLES.md
-	docs\API_SPECS_DEVICE_MODELS_V2.md = docs\API_SPECS_DEVICE_MODELS_V2.md
 EndProjectSection
 EndProject
 Global

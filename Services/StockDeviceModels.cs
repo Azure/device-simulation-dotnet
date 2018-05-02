@@ -21,6 +21,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public class StockDeviceModels : IStockDeviceModels
     {
         private const string EXT = ".json";
+        private const string STOCKMODEL = "StockModel";
 
         private readonly IServicesConfig config;
         private readonly ILogger log;
@@ -42,7 +43,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.deviceModels != null) return this.deviceModels;
 
-            const string STOCKMODEL = "StockModel";
             this.deviceModels = new List<DeviceModel>();
 
             try
@@ -75,7 +75,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             this.log.Warn("Device model not found", () => new { id });
 
-            throw new ResourceNotFoundException("Device model not found with id: '" + id + "'.");
+            throw new ResourceNotFoundException("Device model not found: " + id);
         }
 
         private List<string> GetDeviceModelFiles()

@@ -41,6 +41,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public class CustomDeviceModels : ICustomDeviceModels
     {
         private const string STORAGE_COLLECTION = "deviceModels";
+        private const string CUSTOMMODEL = "CustomModel";
 
         private readonly IStorageAdapterClient storage;
         private readonly ILogger log;
@@ -59,7 +60,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public async Task<IEnumerable<DeviceModel>> GetListAsync()
         {
             var data = await this.storage.GetAllAsync(STORAGE_COLLECTION);
-            const string CUSTOMMODEL = "CustomModel";
             var results = new List<DeviceModel>();
             foreach (var item in data.Items)
             {
@@ -102,7 +102,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 deviceModel.Id = Guid.NewGuid().ToString();
             }
 
-            this.log.Debug("[InsertAsync] Create custom device model: ", () => new { deviceModel });
+            this.log.Debug("Create custom device model: ", () => new { deviceModel });
 
             // Note: using UpdateAsync because the service generates the ID
             var result = await this.storage.UpdateAsync(
@@ -134,7 +134,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     deviceModel.Created = item.Created;
                     deviceModel.Modified = DateTimeOffset.UtcNow;
 
-                    this.log.Debug("[UpdateAysnc] Modify a custom device model: ", () => new { deviceModel });
+                    this.log.Debug("Modify a custom device model: ", () => new { deviceModel });
 
                     var result = await this.storage.UpdateAsync(
                         STORAGE_COLLECTION,
@@ -147,7 +147,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
                 else
                 {
-                    this.log.Error("Invalid ETag. Current Device Model ETag is:'", () => new { ETag = item.ETag });
+                    this.log.Error("Invalid ETag'", () => new { CurrentETag = item.ETag, ETagProvided = eTag });
                     throw new ConflictingResourceException("Invalid ETag. Device Model ETag is:'" + item.ETag + "'.");
                 }
             }

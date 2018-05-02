@@ -119,7 +119,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.CheckDeviceModelExistence(deviceModel.Id))
             {
-                throw new ConflictingResourceException("Device model with id '" + deviceModel.Id + "'already existed!");
+                throw new ConflictingResourceException("Device model with id '" + deviceModel.Id + "' already exists!");
             }
 
             try
@@ -142,7 +142,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.CheckDeviceModelExistence(deviceModel.Id))
             {
-                throw new ConflictingResourceException("Device model with id '" + deviceModel.Id + "'already existed!");
+                this.log.Info("Unable to create a new device model, device model already exists.", () => new { deviceModel });
+                throw new ConflictingResourceException("Device model with id '" + deviceModel.Id + "' already exists!");
             }
 
             try
@@ -152,11 +153,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (ConflictingResourceException exception)
             {
-                this.log.Error("Unable to update deivce model :'", () => new { exception });
+                this.log.Error("Unable to update deivce model ", () => new { exception });
             }
             catch (Exception exception)
             {
-                this.log.Error("Unable to update deivce model :'", () => new { exception });
+                this.log.Error("Unable to update deivce model ", () => new { exception });
             }
 
             return deviceModel;
@@ -169,6 +170,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.CheckDeviceModelExistence(id))
             {
+                this.log.Info("Unable to delete a stock device model.", () => new {});
                 throw new UnauthorizedAccessException("Cannot delete a stock device model");
             }
 
@@ -177,7 +179,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         private bool CheckDeviceModelExistence(string id)
         {
-            return  this.stockDeviceModels.GetList().Any(model => model.Id == id);
+            return  this.stockDeviceModels.GetList().Any(model => id.Equals(model.Id, StringComparison.InvariantCultureIgnoreCase));
         }
     }
 }
