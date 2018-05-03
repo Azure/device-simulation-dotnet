@@ -153,6 +153,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             try
             {
+                // Check if client is not null here
+
                 await this.client.SendEventAsync(message);
 
                 this.log.Debug("SendRawMessageAsync for device", () => new

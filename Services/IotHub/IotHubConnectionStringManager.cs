@@ -191,7 +191,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
             try
             {
-                await registryManager.GetDevicesAsync(1, CancellationToken.None);
+                var query = registryManager.CreateQuery("Select * from devices", 100);
+                while (query.HasMoreResults)
+                {
+                    await query.GetNextAsTwinAsync();
+                }
             }
             catch (Exception e)
             {

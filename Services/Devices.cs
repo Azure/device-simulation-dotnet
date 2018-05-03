@@ -79,7 +79,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // When sending telemetry or other operations, wait only for 10 seconds. This setting sets how
         // throttling affects the application. The default SDK value is 4 minutes, which causes high
         // CPU usage.
-        private const int SDK_CLIENT_TIMEOUT = 10000;
+        private const int SDK_CLIENT_TIMEOUT = 60000;
 
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly ILogger log;
