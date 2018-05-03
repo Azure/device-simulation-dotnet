@@ -16,7 +16,7 @@ var state = {
 // Default device properties
 var properties = {
     Firmware: "1.0.0",
-    DeviceMethodStatus: "Updating Firmware"
+    FirmwareUpdateStatus: "Updating Firmware"
 };
 
 /**
