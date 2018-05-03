@@ -294,7 +294,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public string GenerateId(string deviceModelId, int position)
         {
-            return deviceModelId + "." + position;
+            // Since we're running across a cluster, devise a strategy to get unique names
+            // According to https://forums.docker.com/t/net-core-linux-get-docker-container-id-in-code/32725
+            // Environment.MachineName returns the GUID of the container
+            return Environment.MachineName + "_" + deviceModelId + "." + position;
         }
 
         // This call can throw an exception, which is fine when the exception happens during a method
