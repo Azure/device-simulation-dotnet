@@ -79,7 +79,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
 
             if (this.Type == INTERNAL)
             {
-                this.ValidateParams(log);
+                this.ValidateInternalScriptParams(log);
             }
         }
 
@@ -105,7 +105,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
         Min/Max might not be needed by future scripts.
         TODO: the actural function (E.g: 'math.random.withinrange') should provide a validation method.
         */
-        private void ValidateParams(ILogger log)
+        private void ValidateInternalScriptParams(ILogger log)
         {
             if (this.Params == null)
             {
