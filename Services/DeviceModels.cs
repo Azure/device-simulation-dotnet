@@ -3,16 +3,11 @@
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 
-// TODO: tests
-// TODO: handle errors
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface IDeviceModels
@@ -47,25 +42,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     {
         // ID used for custom device models, where the list of sensors is provided by the user
         public const string CUSTOM_DEVICE_MODEL_ID = "custom";
-
-        private const string EXT = ".json";
-
-        private readonly IServicesConfig config;
-        private readonly ILogger log;
-        private readonly IStorageAdapterClient storage;
         
+        private readonly ILogger log;
         private readonly ICustomDeviceModels customDeviceModels;
         private readonly IStockDeviceModels stockDeviceModels;
 
         public DeviceModels(
-            IStorageAdapterClient storage,
             ICustomDeviceModels customDeviceModels,
             IStockDeviceModels stockDeviceModels,
-            IServicesConfig config,
             ILogger logger)
         {
-            this.storage = storage;
-            this.config = config;
             this.log = logger;
             this.stockDeviceModels = stockDeviceModels;
             this.customDeviceModels = customDeviceModels;

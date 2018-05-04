@@ -4,7 +4,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Moq;
 using Services.Test.helpers;
@@ -20,7 +19,6 @@ namespace Services.Test
         private const string STORAGE_COLLECTION = "deviceModels";
 
         private readonly Mock<IStorageAdapterClient> storage;
-        private readonly Mock<IServicesConfig> config;
         private readonly Mock<ILogger> logger;
         private readonly Mock<ICustomDeviceModels> customDeviceModels;
         private readonly Mock<IStockDeviceModels> stockDeviceModels;
@@ -30,15 +28,12 @@ namespace Services.Test
         public DeviceModelsTest()
         {
             this.storage = new Mock<IStorageAdapterClient>();
-            this.config = new Mock<IServicesConfig>();
             this.logger = new Mock<ILogger>();
             this.customDeviceModels = new Mock<ICustomDeviceModels>();
             this.stockDeviceModels = new Mock<IStockDeviceModels>();
             this.target = new DeviceModels(
-                this.storage.Object,
                 this.customDeviceModels.Object,
                 this.stockDeviceModels.Object,
-                this.config.Object,
                 this.logger.Object);
         }
 

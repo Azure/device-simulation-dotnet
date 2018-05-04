@@ -102,7 +102,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 deviceModel.Id = Guid.NewGuid().ToString();
             }
 
-            this.log.Debug("Create custom device model: ", () => new { deviceModel });
+            this.log.Debug("Creating a custom device model.", () => new { deviceModel });
 
             // Note: using UpdateAsync because the service generates the ID
             var result = await this.storage.UpdateAsync(
@@ -134,7 +134,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     deviceModel.Created = item.Created;
                     deviceModel.Modified = DateTimeOffset.UtcNow;
 
-                    this.log.Debug("Modify a custom device model: ", () => new { deviceModel });
+                    this.log.Debug("Modifying a custom device model via PUT.", () => new { deviceModel });
 
                     var result = await this.storage.UpdateAsync(
                         STORAGE_COLLECTION,
@@ -147,13 +147,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
                 else
                 {
-                    this.log.Error("Invalid ETag'", () => new { CurrentETag = item.ETag, ETagProvided = eTag });
+                    this.log.Error("Invalid ETag.", () => new { CurrentETag = item.ETag, ETagProvided = eTag });
                     throw new ConflictingResourceException("Invalid ETag. Device Model ETag is:'" + item.ETag + "'.");
                 }
             }
             catch (ResourceNotFoundException)
             {
-                this.log.Info("Creating new device model via PUT.", () => new { deviceModel });
+                this.log.Info("Creating a new device model via PUT.", () => new { deviceModel });
 
                 var result = await this.InsertAsync(deviceModel, false);
                 deviceModel.ETag = result.ETag;
