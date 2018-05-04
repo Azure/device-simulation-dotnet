@@ -74,10 +74,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to load Device Models ",
+                this.log.Error("Unable to load Device Models",
                     () => new { e.Message, Exception = e });
 
-                throw new ExternalDependencyException("Unable to load Device Models : ", e);
+                throw new ExternalDependencyException("Unable to load Device Models", e);
             }
 
             return deviceModels;
@@ -128,7 +128,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.CheckDeviceModelExistence(deviceModel.Id))
             {
-                this.log.Info("Unable to create a new device model, device model already exists.", () => new { deviceModel });
+                this.log.Info("Unable to create a new device model; device model already exists.", () => new { deviceModel });
                 throw new ConflictingResourceException("Device model with id '" + deviceModel.Id + "' already exists!");
             }
 
