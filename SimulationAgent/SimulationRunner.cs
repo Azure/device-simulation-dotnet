@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -187,8 +188,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 {
                     try
                     {
-                        // Load device model from disk and merge with overrides
-                        var deviceModel = this.GetDeviceModel(model.Id, model.Override);
+                        // Load device model and merge with overrides
+                        var task = this.GetDeviceModelAsync(model.Id, model.Override);
+                        task.Wait(TimeSpan.FromSeconds(30));
+                        var deviceModel  = task.Result;
 
                         for (var i = 0; i < model.Count; i++)
                         {
@@ -290,14 +293,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.deviceTelemetryActors.Sum(a => a.Value.FailedMessagesCount) +
                 this.devicePropertiesActors.Sum(a => a.Value.SimulationErrorsCount);
 
-        private DeviceModel GetDeviceModel(string id, Services.Models.Simulation.DeviceModelOverride overrides)
+        private async Task<DeviceModel> GetDeviceModelAsync(string id, Services.Models.Simulation.DeviceModelOverride overrides)
         {
             var modelDef = new DeviceModel();
             if (id.ToLowerInvariant() != DeviceModels.CUSTOM_DEVICE_MODEL_ID.ToLowerInvariant())
             {
-                var task = this.deviceModels.GetAsync(id);
-                task.Wait(TimeSpan.FromMinutes(1));
-                modelDef = task.Result;
+                modelDef = await this.deviceModels.GetAsync(id);
             }
             else
             {
