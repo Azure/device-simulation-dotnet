@@ -200,11 +200,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     }
                     catch (AggregateException ae)
                     {
+                        this.IncreamentSimulationErrorsCount();
                         ae.Handle((x) =>
                         {
                             if (x is ResourceNotFoundException)
                             {
-                                this.IncreamentSimulationErrorsCount();
                                 this.log.Error("The device model doesn't exist", () => new { model.Id });
                                 return true;
                             }
