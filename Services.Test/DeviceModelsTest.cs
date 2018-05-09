@@ -7,6 +7,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Moq;
 using Services.Test.helpers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -123,6 +124,18 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public async Task ItThrowsExceptionWhenDeleteDeviceModelFailed()
+        {
+            // Arrange
+            this.customDeviceModels
+                .Setup(x => x.DeleteAsync(It.IsAny<string>()))
+                .ThrowsAsync(new Exception());
+
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(() => this.target.DeleteAsync(It.IsAny<string>()));
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItInsertsDeviceModelToStorage()
         {
             // Arrange
@@ -148,11 +161,23 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public async Task ItThrowsExternalDependencyExceptionWhenInsertDeviceModelFailed()
+        {
+            // Arrange
+            this.customDeviceModels
+                .Setup(x => x.InsertAsync(It.IsAny<DeviceModel>(), true))
+                .ThrowsAsync(new Exception());
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ExternalDependencyException>(() => this.target.InsertAsync(It.IsAny<DeviceModel>()));
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItUpsertsDeviceModelInStorage()
         {
             // Arrange
-            const string etag = "etag";
-            var deviceModel = new DeviceModel() { ETag = etag };
+            const string ETAG = "etag";
+            var deviceModel = new DeviceModel() { ETag = ETAG };
 
             this.customDeviceModels
                 .Setup(x => x.UpsertAsync(It.IsAny<DeviceModel>()))
@@ -161,14 +186,26 @@ namespace Services.Test
                     STORAGE_COLLECTION,
                     It.IsAny<string>(),
                     It.IsAny<string>(),
-                    etag))
-                .Returns(Task.FromResult(new ValueApiModel() { ETag = etag }));
+                    ETAG))
+                .Returns(Task.FromResult(new ValueApiModel() { ETag = ETAG }));
 
             // Act
-            var result = this.target.InsertAsync(deviceModel).Result;
+            var result = this.target.UpsertAsync(deviceModel).Result;
 
             // Assert
-            Assert.Equal(etag, result.ETag);
+            Assert.Equal(ETAG, result.ETag);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public async Task ItThrowsExternalDependencyExceptionWhenUpsertDeviceModelFailed()
+        {
+            // Arrange
+            this.customDeviceModels
+                .Setup(x => x.UpsertAsync(It.IsAny<DeviceModel>()))
+                .ThrowsAsync(new Exception());
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ExternalDependencyException>(() => this.target.UpsertAsync(It.IsAny<DeviceModel>()));
         }
 
         private void ThereAreNoCustomDeviceModels()

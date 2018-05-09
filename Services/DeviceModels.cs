@@ -103,7 +103,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<DeviceModel> InsertAsync(DeviceModel deviceModel)
         {
-            if (this.CheckDeviceModelExistence(deviceModel.Id))
+            if (this.CheckStockDeviceModelExistence(deviceModel?.Id ?? ""))
             {
                 throw new ConflictingResourceException("Device model with id '" + deviceModel.Id + "' already exists!");
             }
@@ -127,10 +127,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<DeviceModel> UpsertAsync(DeviceModel deviceModel)
         {
-            if (this.CheckDeviceModelExistence(deviceModel.Id))
+            if (this.CheckStockDeviceModelExistence(deviceModel?.Id ?? ""))
             {
-                this.log.Info("Unable to create a new device model; device model already exists.", () => new { deviceModel });
-                throw new ConflictingResourceException("Device model with id '" + deviceModel.Id + "' already exists!");
+                this.log.Error("Unable to update a stock device model", () => new { deviceModel });
+                throw new ConflictingResourceException("Unable to update a stock device model");
             }
 
             try
@@ -152,7 +152,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task DeleteAsync(string id)
         {
-            if (this.CheckDeviceModelExistence(id))
+            if (this.CheckStockDeviceModelExistence(id))
             {
                 this.log.Info("Unable to delete a stock device model.", () => new { Id = id });
                 throw new UnauthorizedAccessException("Cannot delete a stock device model");
@@ -169,9 +169,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        private bool CheckDeviceModelExistence(string id)
+        private bool CheckStockDeviceModelExistence(string id)
         {
-            return  this.stockDeviceModels.GetList().Any(model => id.Equals(model.Id, StringComparison.InvariantCultureIgnoreCase));
+            return !string.IsNullOrEmpty(id) && this.stockDeviceModels.GetList().Any(model => id.Equals(model.Id, StringComparison.InvariantCultureIgnoreCase));
         }
     }
 }
