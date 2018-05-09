@@ -151,6 +151,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     throw new ConflictingResourceException("Invalid ETag. Device Model ETag is:'" + item.ETag + "'.");
                 }
             }
+            catch (ConflictingResourceException)
+            {
+                throw;
+            }
             catch (ResourceNotFoundException)
             {
                 this.log.Info("Creating a new device model via PUT.", () => new { deviceModel });
@@ -160,7 +164,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception exception)
             {
-                this.log.Error("Something went wrong while upserting the device model.", () => new { exception });
+                this.log.Error("Something went wrong while upserting the device model.", () => new { deviceModel });
+                throw new ExternalDependencyException("Failed to upsert", exception);
             }
 
             return deviceModel;

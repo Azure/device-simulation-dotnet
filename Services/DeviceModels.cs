@@ -113,9 +113,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var result = await this.customDeviceModels.InsertAsync(deviceModel);
                 deviceModel.ETag = result.ETag;
             }
-            catch (Exception e)
+            catch (Exception exception)
             {
-                this.log.Error("Unable to create a new device model", () => new { Exception = e });
+                this.log.Error("Unable to create a new device model", () => new { exception });
+                throw new ExternalDependencyException("Failed to insert", exception);
             }
 
             return deviceModel;
@@ -140,6 +141,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             catch (Exception exception)
             {
                 this.log.Error("Unable to update device model ", () => new { exception });
+                throw new ExternalDependencyException("Failed to upsert", exception);
             }
 
             return deviceModel;
@@ -152,11 +154,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.CheckDeviceModelExistence(id))
             {
-                this.log.Info("Unable to delete a stock device model.", () => new {});
+                this.log.Info("Unable to delete a stock device model.", () => new { Id = id });
                 throw new UnauthorizedAccessException("Cannot delete a stock device model");
             }
 
-            await this.customDeviceModels.DeleteAsync(id);
+            try
+            {
+                await this.customDeviceModels.DeleteAsync(id);
+            }
+            catch (Exception exception)
+            {
+                this.log.Error("Unable to delete device model ", () => new { exception });
+                throw;
+            }
         }
 
         private bool CheckDeviceModelExistence(string id)
