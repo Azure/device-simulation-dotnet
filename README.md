@@ -72,7 +72,7 @@ are configured. See the documentation below for more information.
 1. Follow the [Storage quickstart instructions][storageadapter-url] for setting
    up and running the Storage Adapter microservice, which should be listening
    at http://127.0.0.1:9022
-1. Open the solution in Visual Studio
+1. Open the solution in Visual Studio or VS Code
 1. Define the following environment variable:
    * `PCS_IOTHUB_CONNSTRING` = {your Azure IoT Hub connection string}
 1. Start the WebService project (e.g. press F5)
