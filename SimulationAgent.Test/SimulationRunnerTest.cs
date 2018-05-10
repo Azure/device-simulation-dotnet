@@ -1,8 +1,5 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -14,6 +11,8 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
 using Moq;
 using SimulationAgent.Test.helpers;
+using System;
+using System.Collections.Generic;
 using Xunit;
 using Xunit.Abstractions;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
@@ -38,7 +37,6 @@ namespace SimulationAgent.Test
         private readonly Mock<IDeviceTelemetryActor> deviceTelemetryActor;
         private readonly Mock<IDevicePropertiesActor> devicePropertiesActor;
         private readonly Mock<IRateLimiting> rateLimiting;
-        private readonly Mock<UpdateDeviceState> updateDeviceStateLogic;
         private readonly SimulationRunner target;
 
         public SimulationRunnerTest(ITestOutputHelper log)
