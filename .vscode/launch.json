@@ -1,0 +1,60 @@
+{
+   // Use IntelliSense to find out which attributes exist for C# debugging
+   // Use hover for the description of the existing attributes
+   // For further information visit https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
+   "version": "0.2.0",
+   "configurations": [
+        {
+            "env": {
+                // See https://docs.microsoft.com/aspnet/core/fundamentals/environments
+                "ASPNETCORE_ENVIRONMENT": "Development",
+
+                // These environment variables are used in appsettings.ini
+                "PCS_IOTHUB_CONNSTRING": "your Azure IoT Hub connection string",
+                "PCS_STORAGEADAPTER_WEBSERVICE_URL": "http://localhost:9022/v1",
+                "PCS_LOG_LEVEL": "Debug",
+                "PCS_AUTH_REQUIRED": "false",
+                "PCS_AUTH_ISSUER": "",
+                "PCS_AUTH_AUDIENCE": "",
+                "PCS_CORS_WHITELIST": "",
+                "PCS_SUBSCRIPTION_DOMAIN": "",
+                "PCS_SUBSCRIPTION_ID": "",
+                "PCS_RESOURCE_GROUP": "",
+                "PCS_IOHUB_NAME": ""
+            },
+            "stopAtEntry": false,
+            "justMyCode":false,
+            "enableStepFiltering": true,
+            "name": "Run Service",
+            "launchBrowser": {
+                "enabled": false,
+                "args": "${auto-detect-url}",
+                "windows": {
+                    "command": "cmd.exe",
+                    "args": "/C start ${auto-detect-url}"
+                },
+                "osx": {
+                    "command": "open"
+                },
+                "linux": {
+                    "command": "xdg-open"
+                }
+            },
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceRoot}/WebService/bin/Debug/netcoreapp2.0/Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.dll",
+            "args": [],
+            "cwd": "${workspaceRoot}/WebService/bin/Debug/netcoreapp2.0",
+            // For more information about the 'console' field, see https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md#console-terminal-window
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "name": ".NET Core Attach",
+            "type": "coreclr",
+            "request": "attach",
+            "processId": "${command:pickProcess}"
+        }
+    ]
+}

@@ -170,6 +170,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 // file, or in the PCS_IOTHUB_CONNSTRING environment variable. When
                 // working with VisualStudio, the environment variable can be set in the
                 // WebService project settings, under the "Debug" tab.
+                Console.BackgroundColor = ConsoleColor.Red;
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine(" Azure IoT Hub connection string not configured ");
+                Console.WriteLine("");
+                Console.ResetColor();
+
+                Console.BackgroundColor = ConsoleColor.Black;
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("If you are running the service in Docker or a VM:");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(" * The service configuration is stored in appsettings.ini.");
+                Console.WriteLine(" * If the file references an environment variable, check the environment configuration.");
+                Console.WriteLine("");
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("If you are running the service from an IDE (VS, Rider, etc.):");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(" * The service configuration is stored in appsettings.ini, if the file references an environment variable:");
+                Console.WriteLine("   - Visual Studio: check the WebService project settings (or check WebService/Properties/launchSettings.json)");
+                Console.WriteLine("   - Visual Studio for Mac: check the WebService project settings (or check WebService/WebService.csproj)");
+                Console.WriteLine("   - Visual Studio Code: check .vscode/launch.json"); 
+                Console.WriteLine("   - IntelliJ Rider: check your Run Configuration (or files under .idea folder)");
+                Console.WriteLine("   - Check also your develoment environment, where you might have environment variables set");
+                Console.ResetColor();
+
                 throw new Exception("The service configuration is incomplete. " +
                                     "Please provide your Azure IoT Hub connection string. " +
                                     "For more information, see the environment variables " +
