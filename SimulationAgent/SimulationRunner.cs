@@ -189,28 +189,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     try
                     {
                         // Load device model and merge with overrides
-                        var task = this.GetDeviceModelAsync(model.Id, model.Override);
-                        task.Wait(TimeSpan.FromSeconds(30));
-                        var deviceModel  = task.Result;
+                        var deviceModel  = this.GetDeviceModel(model.Id, model.Override);
 
                         for (var i = 0; i < model.Count; i++)
                         {
                             this.CreateActorsForDevice(deviceModel, i, total);
                         }
-                    }
-                    catch (AggregateException ae)
-                    {
-                        this.IncreamentSimulationErrorsCount();
-                        ae.Handle((exception) =>
-                        {
-                            if (exception is ResourceNotFoundException)
-                            {
-                                this.log.Error("The device model doesn't exist", () => new { model.Id });
-                            } else {
-                                this.log.Error("Unexpected error", () => new { exception });
-                            }
-                            return true;
-                        });
                     }
                     catch (Exception e)
                     {
@@ -302,12 +286,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.deviceTelemetryActors.Sum(a => a.Value.FailedMessagesCount) +
                 this.devicePropertiesActors.Sum(a => a.Value.SimulationErrorsCount);
 
-        private async Task<DeviceModel> GetDeviceModelAsync(string id, Services.Models.Simulation.DeviceModelOverride overrides)
+        private DeviceModel GetDeviceModel(string id, Services.Models.Simulation.DeviceModelOverride overrides)
         {
             var modelDef = new DeviceModel();
             if (id.ToLowerInvariant() != DeviceModels.CUSTOM_DEVICE_MODEL_ID.ToLowerInvariant())
             {
-                modelDef = await this.deviceModels.GetAsync(id);
+                try
+                {
+                    var task = this.deviceModels.GetAsync(id);
+                    task.Wait(TimeSpan.FromSeconds(30));
+                    modelDef = task.Result;
+                }
+                catch (AggregateException ae)
+                {
+                    throw new ExternalDependencyException("Unable to load device model", ae.InnerException);
+                }
             }
             else
             {

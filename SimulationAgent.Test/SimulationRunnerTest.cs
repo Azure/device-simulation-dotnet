@@ -277,7 +277,7 @@ namespace SimulationAgent.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItAbleToStartWithDeviceModelsException()
+        public void ItHandlesLoadDeviceModelException()
         {
             // Arrange
             const int ACTIVE_DEVICES_COUNT = 7;
@@ -295,11 +295,11 @@ namespace SimulationAgent.Test
             Assert.Null(ex);
         }
 
-        private SimulationModel GenerateSimulationModel(int ACTIVE_DEVICES_COUNT)
+        private SimulationModel GenerateSimulationModel(int activeDevicesCount)
         {
             var models = new List<DeviceModelRef>
             {
-                new DeviceModelRef { Id = "01", Count = ACTIVE_DEVICES_COUNT }
+                new DeviceModelRef { Id = "01", Count = activeDevicesCount }
             };
 
             return new SimulationModel
