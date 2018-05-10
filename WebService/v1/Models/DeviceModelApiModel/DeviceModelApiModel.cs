@@ -170,6 +170,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
                 throw new BadRequestException(NO_PROTOCOL);
             }
 
+            this.ValidateProtocol(this.Protocol);
+
             // A device model must contain at least one telemetry
             if (this.Telemetry.Count < 1)
             {
@@ -184,6 +186,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
             }
 
             this.Simulation.ValidateInputRequest(log);
+        }
+
+        private void ValidateProtocol(string protocol)
+        {
+            if (!Enum.TryParse(protocol, true, out IoTHubProtocol _))
+            {
+                throw new BadRequestException(protocol + " is not a member of the IoTHubProtocol enumeration.");
+            }
         }
     }
 }

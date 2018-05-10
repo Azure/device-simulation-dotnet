@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -273,6 +274,25 @@ namespace SimulationAgent.Test
                 FAILED_DEVICE_CONNECTIONS_COUNT +
                 FAILED_MESSAGES_PER_DEVICE_COUNT) * ACTIVE_DEVICES_COUNT;
             Assert.Equal(EXPECT_RESULT, result);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItAbleToStartWithDeviceModelsException()
+        {
+            // Arrange
+            const int ACTIVE_DEVICES_COUNT = 7;
+
+            var simulation = this.GenerateSimulationModel(ACTIVE_DEVICES_COUNT);
+
+            this.deviceModels
+                .Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ThrowsAsync(new AggregateException());
+
+            // Act
+            var ex = Record.Exception(() => this.target.Start(simulation));
+
+            // Assert
+            Assert.Null(ex);
         }
 
         private SimulationModel GenerateSimulationModel(int ACTIVE_DEVICES_COUNT)

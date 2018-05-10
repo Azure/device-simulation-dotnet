@@ -67,19 +67,28 @@ namespace WebService.Test.v1.Models
         public void ItThrowsBadRequestExceptionForInvalidProtocol()
         {
             // Arrange
-            DeviceModelApiModel InvalidProtocol(DeviceModelApiModel model)
+            DeviceModelApiModel EmptyProtocol(DeviceModelApiModel model)
             {
                 model.Protocol = "";
                 return model;
             }
 
+            DeviceModelApiModel InvalidProtocol(DeviceModelApiModel model)
+            {
+                model.Protocol = "AMTT";
+                return model;
+            }
+
             var deviceModelApiModel = this.GetInvalidDeviceModelApiModel(InvalidProtocol);
+            var deviceModelApiModelWithEmptyProtocol = this.GetInvalidDeviceModelApiModel(EmptyProtocol);
 
             // Act
             var ex = Record.Exception(() => deviceModelApiModel.ValidateInputRequest(this.logger.Object));
+            var exception = Record.Exception(() => deviceModelApiModelWithEmptyProtocol.ValidateInputRequest(this.logger.Object));
 
             // Assert
             Assert.IsType<BadRequestException>(ex);
+            Assert.IsType<BadRequestException>(exception);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

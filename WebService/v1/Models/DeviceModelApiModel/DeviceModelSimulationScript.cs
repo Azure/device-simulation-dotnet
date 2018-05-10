@@ -10,6 +10,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
 {
     public class DeviceModelSimulationScript
     {
+        private const string INTERNAL = "internal";
+
         [JsonProperty(PropertyName = "Type")]
         public string Type { get; set; }
 
@@ -61,7 +63,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
 
         public void ValidateInputRequest(ILogger log)
         {
-            const string INTERNAL = "internal";
             const string NO_TYPE = "Simulation script type cannot be empty";
             const string NO_PATH = "Simulation script path cannot be empty";
 

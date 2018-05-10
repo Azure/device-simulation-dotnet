@@ -185,7 +185,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         {
             var initialState = CloneObject(model.Simulation.InitialState);
 
-            var state = new SmartDictionary(initialState ?? new Dictionary<string, object>());
+            var state = new SmartDictionary(initialState);
 
             // Ensure the state contains the "online" key
             if (!state.Has("online"))

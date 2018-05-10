@@ -131,8 +131,8 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-  "ETag": "0000-0000-0000",
-  "Id": "00000000-000000-0000-0000-000000",
+  "ETag": "12345678-9941-4499-ba1b-123456789012",
+  "Id": "12345678-c6c0-49ae-9bfa-123456789012",
   "Version": "0.0.0",
   "Name": "Chiller",
   "Description": "Chiller with external temperature, humidity and pressure sensors.",
@@ -179,7 +179,7 @@ Content-Type: application/json; charset=utf-8
   "CloudToDeviceMethods": {},
   "$metadata": {
     "$type": "DeviceModel;2",
-    "$uri": "/v1/devicemodels/00000000-000000-0000-0000-000000",
+    "$uri": "/v1/devicemodels/12345678-9941-4499-ba1b-123456789012",
     "$created": "2018-03-29T23:33:03+00:00",
     "$modified": "2018-03-29T23:33:03+00:00"
   }
@@ -405,8 +405,8 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-  "ETag": "00000000-000000-0000-0000-000000",
-  "Id": "00000000-000000-0000-0000-000000",
+  "ETag": "12345678-abcd-1c4a-fa9b-123456789012",
+  "Id": "12345678-c6c0-49ae-9bfa-123456789012",
   "Version": "0.0.1",
   "Name": "Chiller",
   "Description": "Chiller with external temperature, humidity and pressure sensors.",
@@ -453,7 +453,7 @@ Content-Type: application/json; charset=utf-8
   "CloudToDeviceMethods": {},
   "$metadata": {
     "$type": "DeviceModel;2",
-    "$uri": "/v1/devicemodels/00000000-000000-0000-0000-000000",
+    "$uri": "/v1/devicemodels/12345678-c6c0-49ae-9bfa-123456789012",
     "$created": "2018-03-29T23:33:03+00:00",
     "$modified": "2018-03-29T23:33:03+00:00"
   }
@@ -475,7 +475,7 @@ Response:
 403 Forbidden
 ```
 
-### Deleteing a custom device model
+### Deleting a custom device model
 
 Custom device models can be deleted using the DELETE method with its ID.
 
