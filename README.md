@@ -61,6 +61,10 @@ How to use the microservice
 
 ## Running the service locally, e.g. for development tasks
 
+The service can be started from any C# IDE and from the command line.
+The only difference you might notice, is how environment variables
+are configured. See the documentation below for more information.
+
 1. [Install .NET Core 2.x][dotnet-install]
 1. Install any recent edition of Visual Studio (Windows/MacOS) or Visual
    Studio Code (Windows/MacOS/Linux).
@@ -69,17 +73,12 @@ How to use the microservice
    up and running the Storage Adapter microservice, which should be listening
    at http://127.0.0.1:9022
 1. Open the solution in Visual Studio
-1. Edit the WebService project properties, and define the following environment
-   variable:
+1. Define the following environment variable:
    * `PCS_IOTHUB_CONNSTRING` = {your Azure IoT Hub connection string}
 1. Start the WebService project (e.g. press F5)
 1. Test if the service is running, opening http://127.0.0.1:9003/v1/status
 1. Using an HTTP client like [Postman][postman-url],
    use the [RESTful API][wiki-createsim-url] to create a simulation.
-
-The service can be executed from any C# IDE and from the command line.
-The only difference you will probably notice, is how environment variables
-are configured. See the documentation below for more information.
 
 ## Project Structure
 
@@ -136,13 +135,16 @@ service URL environment variables, described previously.
 The service configuration is accessed via ASP.NET Core configuration
 adapters, and stored in [appsettings.ini](WebService/appsettings.ini).
 The INI format allows to store values in a readable format, with comments.
+
 The configuration also supports references to environment variables, e.g. to
-import credentials and network details.
+import credentials and network details. Environment variables are not
+mandatory though, you can for example edit appsettings.ini and write
+credentials directly in the file. Just be careful not sharing the changes,
+e.g. sending a Pull Request or checking in the changes in git.
 
 The configuration file in the repository references some environment
 variables that need to be defined. Depending on the OS and the IDE used,
 there are several ways to manage environment variables.
-
 
 1. If you're using Visual Studio or Visual Studio for Mac, the environment
    variables are loaded from the project settings. Right click on WebService,
