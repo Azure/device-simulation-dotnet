@@ -11,7 +11,6 @@
 // Position control
 const DefaultLatitude = 47.476075;
 const DefaultLongitude = -122.192026;
-const DistanceVariation = 10;
 
 // Altitude control
 const DefaultAltitude = 0.0;
@@ -139,8 +138,11 @@ function main(context, previousState, previousProperties) {
     // Calculate flight status using previous state
     state.flightStatus = getFlightStatus();
 
+    // Between -1.5 and 1.5 miles around start location
+    var distance = roundTo(vary(0.05, 2500, -1.5, 1.5), 2);
+
     // Use the last coordinates to calculate the next set with a given variation
-    var coords = varylocation(Number(state.latitude), Number(state.longitude), DistanceVariation);
+    var coords = varylocation(Number(state.latitude), Number(state.longitude), distance);
     state.latitude = Number(coords.latitude).toFixed(GeoSpatialPrecision);
     state.longitude = Number(coords.longitude).toFixed(GeoSpatialPrecision);
 
@@ -158,9 +160,27 @@ function varylocation(latitude, longitude, distance) {
     // Convert to meters, use Earth radius, convert to radians
     var radians = (distance * 1609.344 / 6378137) * (180 / Math.PI);
     return {
-        latitude: latitude + radians,
-        longitude: longitude + radians / Math.cos(latitude * Math.PI / 180)
+        latitude: roundTo((latitude + radians), GeoSpatialPrecision),
+        longitude: roundTo((longitude + radians / Math.cos(latitude * Math.PI / 180)), GeoSpatialPrecision)
     };
+}
+
+function roundTo(n, digits) {
+    var negative = false;
+    if (digits === undefined) {
+        digits = 0;
+    }
+    if (n < 0) {
+        negative = true;
+        n = n * -1;
+    }
+    var multiplicator = Math.pow(10, digits);
+    n = parseFloat((n * multiplicator).toFixed(11));
+    n = (Math.round(n) / multiplicator).toFixed(digits);
+    if (negative) {
+        n = (n * -1).toFixed(digits);
+    }
+    return n;
 }
 
 function getFlightStatus() {
