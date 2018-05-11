@@ -53,7 +53,6 @@ namespace SimulationAgent.Test
             this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
             this.deviceTelemetryActor = new Mock<IDeviceTelemetryActor>();
             this.devicePropertiesActor = new Mock<IDevicePropertiesActor>();
-            this.updateDeviceStateLogic = new Mock<UpdateDeviceState>();
             this.rateLimiting = new Mock<IRateLimiting>();
             this.ratingConfig.Setup(x => x.DeviceMessagesPerSecond).Returns(10);
 
