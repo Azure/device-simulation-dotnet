@@ -170,6 +170,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 // file, or in the PCS_IOTHUB_CONNSTRING environment variable. When
                 // working with VisualStudio, the environment variable can be set in the
                 // WebService project settings, under the "Debug" tab.
+
+                ShowIoTHubConnStringInstructions ();
+
                 throw new Exception("The service configuration is incomplete. " +
                                     "Please provide your Azure IoT Hub connection string. " +
                                     "For more information, see the environment variables " +
@@ -187,6 +190,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 StorageAdapterApiTimeout = configData.GetInt(STORAGE_ADAPTER_API_TIMEOUT_KEY),
                 TwinReadWriteEnabled = configData.GetBool(TWIN_READ_WRITE_ENABLED_KEY, true)
             };
+        }
+
+        private static void ShowIoTHubConnStringInstructions()
+        {
+            WriteLine(ConsoleColor.Yellow, ConsoleColor.Red, "Azure IoT Hub connection string not configured");
+            WriteLine(ConsoleColor.White, ConsoleColor.Black, "");
+            WriteLine(ConsoleColor.Yellow, ConsoleColor.Black, "If you are running the service in Docker or a VM:");
+            WriteLine(ConsoleColor.White, ConsoleColor.Black, "");
+            WriteLine(ConsoleColor.White, ConsoleColor.Black, "* The service configuration is stored in appsettings.ini.");
+            WriteLine(ConsoleColor.White, ConsoleColor.Black, "* If the file references an environment variable, check the environment configuration.");
+            WriteLine(ConsoleColor.White, ConsoleColor.Black, "");
+            WriteLine(ConsoleColor.Yellow, ConsoleColor.Black, "If you are running the service from an IDE (VS, Rider, etc.):");
+            WriteLine(ConsoleColor.White, ConsoleColor.Black, "");
+            WriteLine(ConsoleColor.White, ConsoleColor.Black, "* The service configuration is stored in appsettings.ini. If the file references an environment variable:");
+            WriteLine(ConsoleColor.White, ConsoleColor.Black, "  - Visual Studio: check the WebService project settings (or check WebService/Properties/launchSettings.json)");
+            WriteLine(ConsoleColor.White, ConsoleColor.Black, "  - Visual Studio for Mac: check the WebService project settings (or check WebService/WebService.csproj)");
+            WriteLine(ConsoleColor.White, ConsoleColor.Black, "  - Visual Studio Code: check .vscode/launch.json");
+            WriteLine(ConsoleColor.White, ConsoleColor.Black, "  - IntelliJ Rider: check your Run Configuration (or files under .idea folder)");
+            WriteLine(ConsoleColor.White, ConsoleColor.Black, "  - Check also your develoment environment, where you might have environment variables set");
+            WriteLine(ConsoleColor.White, ConsoleColor.Black, "");
+        }
+
+        private static void WriteLine(ConsoleColor fg, ConsoleColor bg, string text)
+        {
+            Console.BackgroundColor = bg;
+            Console.ForegroundColor = fg;
+            Console.WriteLine (" {0,-120}", text);
+            Console.ResetColor ();
         }
 
         private static IRateLimitingConfig GetRateLimitingConfig(IConfigData configData)
