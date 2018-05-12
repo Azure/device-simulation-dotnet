@@ -4,7 +4,7 @@
     "Version": "0.0.1",
     "Name": "Truck",
     "Description": "Truck with GPS, speed and cargo temperature sensors",
-    "Protocol": "MQTT",
+    "Protocol": "AMQP",
     "Simulation": {
         "InitialState": {
             "online": true,
@@ -12,14 +12,16 @@
             "longitude": -122.296307,
             "speed": 30.0,
             "speed_unit": "mph",
-            "cargotemperature": 38.0,
-            "cargotemperature_unit": "F"
+            "temperature": 38.0,
+            "temperature_unit": "F"
         },
-        "Script": {
-            "Type": "javascript",
-            "Path": "truck-01-state.js",
-            "Interval": "00:00:05"
-        }
+        "Interval": "00:00:10",
+        "Scripts": [
+            {
+                "Type": "javascript",
+                "Path": "truck-01-state.js"
+            }
+        ]
     },
     "Properties": {
         "Type": "Truck",
@@ -30,7 +32,7 @@
     "Telemetry": [
         {
             "Interval": "00:00:10",
-            "MessageTemplate": "{\"latitude\":${latitude},\"longitude\":${longitude},\"speed\": ${speed},\"speed_unit\":\"${speed_unit}\",\"cargotemperature\":${cargotemperature},\"cargotemperature_unit\":\"${cargotemperature_unit}\"}",
+            "MessageTemplate": "{\"latitude\":${latitude},\"longitude\":${longitude},\"speed\": ${speed},\"speed_unit\":\"${speed_unit}\",\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\"}",
             "MessageSchema": {
                 "Name": "truck-sensors;v1",
                 "Format": "JSON",
@@ -39,24 +41,24 @@
                     "longitude": "double",
                     "speed": "double",
                     "speed_unit": "text",
-                    "cargotemperature": "double",
-                    "cargotemperature_unit": "text"
+                    "temperature": "double",
+                    "temperature_unit": "text"
                 }
             }
         }
     ],
-  "CloudToDeviceMethods": {
-      "FirmwareUpdate": {
-        "Type": "javascript",
-        "Path": "FirmwareUpdate-method.js"
-      },
-      "DecreaseCargoTemperature": {
-        "Type": "javascript",
-        "Path": "TBD.js"
-      },
-      "IncreaseCargoTemperature": {
-        "Type": "javascript",
-        "Path": "TBD.js"
-      }
-  }
+    "CloudToDeviceMethods": {
+        "FirmwareUpdate": {
+            "Type": "javascript",
+            "Path": "FirmwareUpdate-method.js"
+        },
+        "DecreaseCargoTemperature": {
+            "Type": "javascript",
+            "Path": "TempDecrease-method.js"
+        },
+        "IncreaseCargoTemperature": {
+            "Type": "javascript",
+            "Path": "TempIncrease-method.js"
+        }
+    }
 }

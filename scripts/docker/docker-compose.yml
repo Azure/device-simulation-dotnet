@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft. All rights reserved.
+
 # Usage:
 # - install Docker Compose, see https://docs.docker.com/compose/install
 # - open a console and `cd` into the folder that contains this file
@@ -13,8 +15,18 @@ services:
     ports:
       - "9003:9003"
     environment:
-      - PCS_IOTHUB_CONNSTRING=${PCS_IOTHUB_CONNSTRING}
+      - PCS_IOTHUB_CONNSTRING
       - PCS_STORAGEADAPTER_WEBSERVICE_URL=http://storageadapter:9022/v1
+      - PCS_AUTH_REQUIRED
+      - PCS_CORS_WHITELIST
+      - PCS_AUTH_ISSUER
+      - PCS_AUTH_AUDIENCE
+      - PCS_TWIN_READ_WRITE_ENABLED
+      - PCS_LOG_LEVEL
+      - PCS_SUBSCRIPTION_DOMAIN
+      - PCS_SUBSCRIPTION_ID
+      - PCS_RESOURCE_GROUP
+      - PCS_IOHUB_NAME
     #volumes:
     #  - ./sample-volume:/app/data:ro
   storageadapter:
@@ -22,4 +34,4 @@ services:
     ports:
       - "9022:9022"
     environment:
-      - PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING=${PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING}
+      - PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING

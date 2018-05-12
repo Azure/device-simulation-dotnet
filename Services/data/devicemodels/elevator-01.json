@@ -4,7 +4,7 @@
     "Version": "0.0.1",
     "Name": "Elevator",
     "Description": "Elevator with floor, vibration and temperature sensors.",
-    "Protocol": "MQTT",
+    "Protocol": "AMQP",
     "Simulation": {
         "InitialState": {
             "online": true,
@@ -14,11 +14,13 @@
             "temperature": 75.0,
             "temperature_unit": "F"
         },
-        "Script": {
-            "Type": "javascript",
-            "Path": "elevator-01-state.js",
-            "Interval": "00:00:05"
-        }
+        "Interval": "00:00:10",
+        "Scripts": [
+            {
+                "Type": "javascript",
+                "Path": "elevator-01-state.js"
+            }
+        ]
     },
     "Properties": {
         "Type": "Elevator",
@@ -43,18 +45,18 @@
             }
         }
     ],
-  "CloudToDeviceMethods": {
-      "FirmwareUpdate": {
-        "Type": "javascript",
-        "Path": "FirmwareUpdate-method.js"
-      },
-      "StopElevator": {
-        "Type": "javascript",
-        "Path": "TBD.js"
-      },
-      "StartElevator": {
-        "Type": "javascript",
-        "Path": "TBD.js"
-      }
-  }
+    "CloudToDeviceMethods": {
+        "FirmwareUpdate": {
+            "Type": "javascript",
+            "Path": "FirmwareUpdate-method.js"
+        },
+        "StopElevator": {
+            "Type": "javascript",
+            "Path": "StopElevator-method.js"
+        },
+        "StartElevator": {
+            "Type": "javascript",
+            "Path": "StartElevator-method.js"
+        }
+    }
 }

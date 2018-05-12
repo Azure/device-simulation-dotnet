@@ -1,6 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 /*global log*/
+/*global updateState*/
+/*global updateProperty*/
+/*global sleep*/
 /*jslint node: true*/
 
 "use strict";
@@ -17,23 +20,35 @@ var state = {
     simulation_state: "high_pressure"
 };
 
+// Default device properties
+var properties = {};
+
 /**
  * Restore the global state using data from the previous iteration.
  *
- * @param previousState The output of main() from the previous iteration
+ * @param previousState device state from the previous iteration
+ * @param previousProperties device properties from the previous iteration
  */
-function restoreState(previousState) {
+function restoreSimulation(previousState, previousProperties) {
     // If the previous state is null, force a default state
-    if (previousState !== undefined && previousState !== null) {
+    if (previousState) {
         state = previousState;
     } else {
         log("Using default state");
+    }
+
+    if (previousProperties) {
+        properties = previousProperties;
+    } else {
+        log("Using default properties");
     }
 }
 
 /**
  * Simple formula generating a random value around the average
  * in between min and max
+ *
+ * @returns random value with given parameters
  */
 function vary(avg, percentage, min, max) {
     var value = avg * (1 + ((percentage / 100) * (2 * Math.random() - 1)));
@@ -44,16 +59,20 @@ function vary(avg, percentage, min, max) {
 
 /**
  * Entry point function called by the simulation engine.
+ * Returns updated simulation state.
+ * Device property updates must call updateProperties() to persist.
  *
- * @param context        The context contains current time, device model and id
- * @param previousState  The device state since the last iteration
+ * @param context             The context contains current time, device model and id
+ * @param previousState       The device state since the last iteration
+ * @param previousProperties  The device properties since the last iteration
  */
 /*jslint unparam: true*/
-function main(context, previousState) {
+function main(context, previousState, previousProperties) {
 
-    // Restore the global state before generating the new telemetry, so that
-    // the telemetry can apply changes using the previous function state.
-    restoreState(previousState);
+    // Restore the global device properties and the global state before
+    // generating the new telemetry, so that the telemetry can apply changes
+    // using the previous function state.
+    restoreSimulation(previousState, previousProperties);
 
     // 75F +/- 5%,  Min 25F, Max 100F
     state.temperature = vary(75, 5, 25, 100);
@@ -70,5 +89,5 @@ function main(context, previousState) {
         state.pressure = vary(150, 10, 50, 300);
     }
 
-    return state;
+    updateState(state);
 }

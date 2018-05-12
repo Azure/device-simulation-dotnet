@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright (c) Microsoft. All rights reserved.
+# Note: Windows Bash doesn't support shebang extra params
+set -e
 
 # Example usage (see "travis help" for more information):
 #  travis help
@@ -13,7 +16,6 @@
 #  travis token --pro
 #  travis whatsup --pro
 
-set -e
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )/"
 cd $APP_HOME
 

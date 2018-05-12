@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Copyright (c) Microsoft. All rights reserved.
 
 COL_NO="\033[0m" # no color
 COL_ERR="\033[1;31m" # light red
@@ -19,7 +20,7 @@ check_dependency_dotnet() {
     if [[ -z "$TEST" ]]; then
         echo "ERROR: 'dotnet' command not found."
         echo "Install .NET Core 2 and make sure the 'dotnet' command is in the PATH."
-        echo ".NET Core installation: https://dotnet.github.io"
+        echo ".NET Core 2 installation: https://dotnet.github.io"
         exit 1
     fi
     set -e

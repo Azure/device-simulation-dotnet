@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft. All rights reserved.
+
 ### Custom
 
 _dev/
@@ -11,7 +13,7 @@ _dev/
 .cache/**
 target/**
 .travis
-.vscode
+.vscode/**
 
 
 ### MacOS
@@ -448,3 +450,8 @@ bld/
 
 
 # Overrides
+
+# White list
+
+!.vscode/launch.json
+!.vscode/tasks.json
