@@ -33,7 +33,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         public PerDayCounter(int rate, string name, ILogger logger)
             : base(rate, 86400 * 1000, name, logger)
         {
-            throw new NotSupportedException("Daily counters are not supported yet due to memory constraints.");
+            throw new NotSupportedException("Daily counters are not supported yet, due to memory constraints.");
         }
     }
 
@@ -83,7 +83,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             }
 
             this.name = name;
-
             this.eventsPerTimeUnit = rate;
             this.timeUnitLength = timeUnitLength;
 
@@ -92,11 +91,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             this.log.Info("New counter", () => new { name, rate, timeUnitLength });
         }
 
-        // Increase the counter, taking a pause if the caller is going too fast.
-        // Return a boolean indicating whether a pause was required.
-        public async Task<bool> IncreaseAsync(CancellationToken token)
+        public long GetPause()
         {
-            long pause;
+            long pauseMsecs;
 
             this.LogThroughput();
 
@@ -113,7 +110,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 if (this.timestamps.Count < this.eventsPerTimeUnit)
                 {
                     this.timestamps.Enqueue(now);
-                    return false;
+                    return 0;
                 }
 
                 long when;
@@ -133,51 +130,89 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                     when = oneUnitTimeAgo + (long) this.timeUnitLength;
                 }
 
-                pause = when - now;
+                pauseMsecs = when - now;
 
                 this.timestamps.Enqueue(when);
 
                 // Ignore short pauses
-                if (pause < 1.01)
+                if (pauseMsecs < 1.01)
                 {
-                    return false;
+                    return 0;
                 }
             }
 
             // The caller is send too many events, if this happens you
             // should consider redesigning the simulation logic to run
             // slower, rather than relying purely on the counter
-            if (pause > 60000)
+            if (pauseMsecs > 60000)
             {
-                this.log.Warn("Pausing for more than a minute",
-                    () => new { this.name, seconds = pause / 1000 });
+                this.log.Info("Pausing for more than a minute",
+                    () => new { this.name, seconds = pauseMsecs / 1000 });
             }
-            else if (pause > 5000)
+            else if (pauseMsecs > 15000)
             {
-                this.log.Warn("Pausing for several seconds",
-                    () => new { this.name, seconds = pause / 1000 });
+                this.log.Info("Pausing for several seconds",
+                    () => new { this.name, seconds = pauseMsecs / 1000 });
             }
             else
             {
-                this.log.Info("Pausing", () => new { this.name, millisecs = pause });
+                this.log.Info("Pausing", () => new { this.name, millisecs = pauseMsecs });
             }
 
-            await Task.Delay((int) pause, token);
+            return pauseMsecs;
+        }
 
-            return true;
+        // Increase the counter, taking a pause if the caller is going too fast.
+        // Return a boolean indicating whether a pause was required.
+        public async Task<bool> IncreaseAsync(CancellationToken token)
+        {
+            var pauseMsecs = this.GetPause();
+
+            if (pauseMsecs > 0)
+            {
+                await Task.Delay((int) pauseMsecs, token);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Get messages throughput.
+        /// </summary>
+        /// <returns>Throughput: messages per second</returns>
+        public double GetThroughputForMessages()
+        {
+            double speed = 0;
+            lock (this.timestamps)
+            {
+                if (this.timestamps.Count > 1)
+                {
+                    // Time range in milliseconds
+                    long time = this.timestamps.Last() - this.timestamps.First();
+
+                    // Unit for speed is messages per second
+                    speed = (1000 * (double) this.timestamps.Count / time * 10) / 10;
+                }
+            }
+
+            return speed;
+        }
+
+        public void ResetCounter()
+        {
+            lock (this.timestamps)
+            {
+                this.timestamps.Clear();
+            }
         }
 
         private void LogThroughput()
         {
-            if (this.log.LogLevel <= LogLevel.Debug && this.timestamps.Count > 1)
+            if (this.log.LogLevel <= LogLevel.Debug)
             {
-                double speed = 0;
-                lock (this.timestamps)
-                {
-                    long time = this.timestamps.Last() - this.timestamps.First();
-                    speed = (int) (1000 * (double) this.timestamps.Count / time * 10) / 10;
-                }
-                this.log.Info(this.name + "/second", () => new { speed });
+                double speed = this.GetThroughputForMessages();
+                this.log.Info(this.name, () => new { speed });
             }
         }
 

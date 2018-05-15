@@ -1,3 +1,5 @@
+:: Copyright (c) Microsoft. All rights reserved.
+
 @ECHO off & setlocal enableextensions enabledelayedexpansion
 
 :: strlen("\scripts\git\") => 13
@@ -7,8 +9,7 @@ SET APP_HOME=%APP_HOME:~0,-13%
 cd %APP_HOME%
 
 IF "%1"=="--with-sandbox" goto :WITH_SANDBOX
-IF "%1"=="--no-sandbox" goto :WITHOUT_SANDBOX
-goto :USAGE
+goto :WITHOUT_SANDBOX
 
 :: - - - - - - - - - - - - - -
 
@@ -48,18 +49,6 @@ goto :USAGE
     git config --local alias.stashdiff "stash show --patience"
 
     goto :END
-
-:USAGE
-    echo ERROR: sandboxing mode not specified.
-    echo.
-    echo The pre-commit hook can run in two different modes:
-    echo   With sandbox: the build process runs inside a Docker container so you don't need to install .NET Core and other dependencies
-    echo   Without sandbox: the build process runs using .NET Core and other dependencies from your workstation
-    echo.
-    echo Usage:
-    echo .\scripts\git\setup --with-sandbox
-    echo .\scripts\git\setup --no-sandbox
-    exit /B 1
 
 :FAIL
     echo Command failed

@@ -1,19 +1,9 @@
 #!/usr/bin/env bash
-
+# Copyright (c) Microsoft. All rights reserved.
+# Note: Windows Bash doesn't support shebang extra params
 set -e
-APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && cd .. && pwd )/"
 
-usage() {
-    echo "ERROR: sandboxing mode not specified."
-    echo ""
-    echo "The pre-commit hook can run in two different modes:"
-    echo "  With sandbox: the build process runs inside a Docker container so you don't need to install .NET Core and other dependencies"
-    echo "  Without sandbox: the build process runs using .NET Core and other dependencies from your workstation"
-    echo ""
-    echo "Usage:"
-    echo "./scripts/git/setup --with-sandbox"
-    echo "./scripts/git/setup --no-sandbox"
-}
+APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && cd .. && pwd )/"
 
 failed() {
     echo "Git hooks setup failed"
@@ -40,6 +30,16 @@ install_precommit_hook() {
     echo "Done."
 }
 
+uninstall_precommit_hook() {
+    echo "Removing pre-commit hook..."
+
+    cd $APP_HOME/.git/hooks || failed
+    set +e
+    rm -f ./pre-commit
+    set -e
+    echo "Done."
+}
+
 git_setup() {
     git config --local core.whitespace trailing-space,space-before-tab
     git config --local core.autocrlf false
@@ -58,11 +58,10 @@ git_setup() {
     git config --local alias.stashdiff 'stash show --patience'
 }
 
-SANDBOX_MODE="$1"
-if [[ "$SANDBOX_MODE" == "" || "$SANDBOX_MODE" == "--no-sandbox" || "$SANDBOX_MODE" == "--with-sandbox" ]]; then
-    install_precommit_hook
+if [[ "$1" == "--disable" || "$1" == "--uninstall"|| "$1" == "--remove" ]]; then
+    uninstall_precommit_hook
 else
-    usage
+    install_precommit_hook
 fi
 
 git_setup

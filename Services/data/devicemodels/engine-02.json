@@ -15,11 +15,13 @@
             "vibration": 0.0,
             "vibration_unit": "mm"
         },
-        "Script": {
-            "Type": "javascript",
-            "Path": "engine-02-state.js",
-            "Interval": "00:00:05"
-        }
+        "Interval": "00:00:10",
+        "Scripts": [
+            {
+                "Type": "javascript",
+                "Path": "engine-02-state.js"
+            }
+        ]
     },
     "Properties": {
         "Type": "Engine",
@@ -45,22 +47,18 @@
             }
         }
     ],
-  "CloudToDeviceMethods": {
-      "FirmwareUpdate": {
-        "Type": "javascript",
-        "Path": "FirmwareUpdate-method.js"
-      },
-      "Restart": {
-        "Type": "javascript",
-        "Path": "TBD.js"
-      },
-      "EmptyTank": {
-        "Type": "javascript",
-        "Path": "TBD.js"
-      },
-      "FillTank": {
-        "Type": "javascript",
-        "Path": "TBD.js"
-      }
-  }
+    "CloudToDeviceMethods": {
+        "FirmwareUpdate": {
+            "Type": "javascript",
+            "Path": "FirmwareUpdate-method.js"
+        },
+        "EmptyTank": {
+            "Type": "javascript",
+            "Path": "EmptyTank-method.js"
+        },
+        "FillTank": {
+            "Type": "javascript",
+            "Path": "FillTank-method.js"
+        }
+    }
 }

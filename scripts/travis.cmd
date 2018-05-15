@@ -1,3 +1,5 @@
+:: Copyright (c) Microsoft. All rights reserved.
+
 @ECHO off & setlocal enableextensions enabledelayedexpansion
 
 :: Example usage (see "travis help" for more information:

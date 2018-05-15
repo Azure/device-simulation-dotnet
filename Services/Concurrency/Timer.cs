@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+/* CODE TEMPORARILY COMMENTED OUT
+
 using System;
 using System.Threading;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -82,3 +84,4 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         }
     }
 }
+*/

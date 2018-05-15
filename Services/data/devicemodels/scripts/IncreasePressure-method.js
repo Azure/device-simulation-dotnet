@@ -12,15 +12,15 @@
  *
  * @param context        The context contains current time, device model and id, not used
  * @param previousState  The device state since the last iteration, not used
+ * @param previousProperties  The device properties since the last iteration
  */
-
 /*jslint unparam: true*/
-function main(context, previousState) {
+function main(context, previousState, previousProperties) {
 
-    log("Starting 'Increase Pressure' method simulation (5 seconds)");
+    log("Executing 'IncreasePressure' JavaScript method simulation (5 seconds).");
 
     // Pause the simulation and change the simulation mode so that the
-    // temperature will fluctuate at ~250 when it resumes
+    // pressure will fluctuate at ~250 when it resumes
     var state = {
         simulation_state: "high_pressure",
         CalculateRandomizedTelemetry: false
@@ -61,5 +61,5 @@ function main(context, previousState) {
     state.CalculateRandomizedTelemetry = true;
     updateState(state);
 
-    log("'Increase Pressure' method simulation completed");
+    log("'IncreasePressure' JavaScript method simulation completed.");
 }

@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 /*global log*/
+/*global updateState*/
+/*global updateProperty*/
 /*jslint node: true*/
 
 "use strict";
@@ -15,21 +17,31 @@ var state = {
     longitude: center_longitude,
     speed: 80.0,
     speed_unit: "mph",
-    cargotemperature: 49.0,
-    cargotemperature_unit: "F"
+    temperature: 49.0,
+    temperature_unit: "F"
 };
+
+// Default properties
+var properties = {};
 
 /**
  * Restore the global state using data from the previous iteration.
  *
- * @param previousState The output of main() from the previous iteration
+ * @param previousState device state from the previous iteration
+ * @param previousProperties device properties from the previous iteration
  */
-function restoreState(previousState) {
+function restoreSimulation(previousState, previousProperties) {
     // If the previous state is null, force a default state
-    if (previousState !== undefined && previousState !== null) {
+    if (previousState) {
         state = previousState;
     } else {
         log("Using default state");
+    }
+
+    if (previousProperties) {
+        properties = previousProperties;
+    } else {
+        log("Using default properties");
     }
 }
 
@@ -59,16 +71,20 @@ function varylocation(latitude, longitude, distance) {
 
 /**
  * Entry point function called by the simulation engine.
+ * Returns updated simulation state.
+ * Device property updates must call updateProperties() to persist.
  *
- * @param context        The context contains current time, device model and id
- * @param previousState  The device state since the last iteration
+ * @param context             The context contains current time, device model and id
+ * @param previousState       The device state since the last iteration
+ * @param previousProperties  The device properties since the last iteration
  */
 /*jslint unparam: true*/
-function main(context, previousState) {
+function main(context, previousState, previousProperties) {
 
-    // Restore the global state before generating the new telemetry, so that
-    // the telemetry can apply changes using the previous function state.
-    restoreState(previousState);
+    // Restore the global device properties and the global state before
+    // generating the new telemetry, so that the telemetry can apply changes
+    // using the previous function state.
+    restoreSimulation(previousState, previousProperties);
 
     // 0.1 miles around some location
     var coords = varylocation(center_latitude, center_longitude, 0.1);
@@ -78,8 +94,8 @@ function main(context, previousState) {
     // 30 +/- 5%,  Min 0, Max 80
     state.speed = vary(30, 5, 0, 80);
 
-    // 49 +/- 1%,  Min 35, Max 50
-    state.cargotemperature = vary(49, 1, 35, 50);
+    // current temperature +/- 1%,  Min/Max: current +/- 15
+    state.temperature = vary(state.temperature, 1, state.temperature - 15, state.temperature + 15);
 
-    return state;
+    updateState(state);
 }

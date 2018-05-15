@@ -2,13 +2,25 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <LangVersion>7</LangVersion>
+    <IsPackable>false</IsPackable>
     <AssemblyName>Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService</AssemblyName>
     <RootNamespace>Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(RunConfiguration)' == 'Default' ">
     <StartAction>Project</StartAction>
     <EnvironmentVariables>
-      <Variable name="PCS_IOTHUB_CONNSTRING" value="HostName={Your Azure IoT Hub hostname};SharedAccessKeyName=iothubowner;SharedAccessKey={SECRET KEY}" />
+      <Variable name="ASPNETCORE_ENVIRONMENT" value="Development" />
+      <Variable name="PCS_IOTHUB_CONNSTRING" value="your Azure IoT Hub connection string" />
+      <Variable name="PCS_STORAGEADAPTER_WEBSERVICE_URL" value="http://localhost:9022/v1" />
+      <Variable name="PCS_LOG_LEVEL" value="Debug" />
+      <Variable name="PCS_AUTH_REQUIRED" value="false" />
+      <Variable name="PCS_AUTH_ISSUER" value="" />
+      <Variable name="PCS_AUTH_AUDIENCE" value="" />
+      <Variable name="PCS_CORS_WHITELIST" value="" />
+      <Variable name="PCS_SUBSCRIPTION_DOMAIN" value="" />
+      <Variable name="PCS_SUBSCRIPTION_ID" value="" />
+      <Variable name="PCS_RESOURCE_GROUP" value="" />
+      <Variable name="PCS_IOHUB_NAME" value="" />
     </EnvironmentVariables>
     <ApplicationURL>http://localhost:9003</ApplicationURL>
     <LaunchUrl>http://localhost:9003/v1/status</LaunchUrl>
@@ -24,10 +36,11 @@
     <PackageReference Include="Microsoft.AspNetCore" Version="2.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="2.0.0" />
-    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="2.1.4" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="2.1.5" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Services\Services.csproj" />
+    <ProjectReference Include="..\SimulationAgent\SimulationAgent.csproj" />
   </ItemGroup>
   <ProjectExtensions>
     <MonoDevelop>

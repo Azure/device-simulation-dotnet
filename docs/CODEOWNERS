@@ -1,0 +1,12 @@
+# For more info see https://help.github.com/articles/about-codeowners
+
+# Order is important; the last matching pattern takes the most precedence.
+
+LICENSE             @timlaverty @dluc @ppathan
+
+.gitattributes      @dluc @timlaverty @ppathan
+.travis.yml         @dluc @timlaverty @ppathan
+
+scripts/            @dluc @timlaverty @ppathan
+WebService/Auth/    @dluc @timlaverty @ppathan
+Services/Runtime/   @dluc @timlaverty @ppathan

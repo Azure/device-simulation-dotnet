@@ -16,11 +16,13 @@
             "longitude": -122.204184,
             "moving": false
         },
-        "Script": {
-            "Type": "javascript",
-            "Path": "prototype-01-state.js",
-            "Interval": "00:00:05"
-        }
+        "Interval": "00:00:10",
+        "Scripts": [
+            {
+                "Type": "javascript",
+                "Path": "prototype-01-state.js"
+            }
+        ]
     },
     "Properties": {
         "Type": "Prototyping",
@@ -54,24 +56,24 @@
             "Path": "Reboot-method.js"
         },
         "FirmwareUpdate": {
-          "Type": "javascript",
-          "Path": "FirmwareUpdate-method.js"
-        },
-        "StartMoving": {
             "Type": "javascript",
-            "Path": "TBD.js"
+            "Path": "FirmwareUpdate-method.js"
         },
-        "StopMoving": {
+        "StartMovingDevice": {
             "Type": "javascript",
-            "Path": "TBD.js"
+            "Path": "StartMovingDevice-method.js"
+        },
+        "StopMovingDevice": {
+            "Type": "javascript",
+            "Path": "StopMovingDevice-method.js"
         },
         "DecreaseTemperature": {
             "Type": "javascript",
-            "Path": "TBD.js"
+            "Path": "TempDecrease-method.js"
         },
         "IncreaseTemperature": {
             "Type": "javascript",
-            "Path": "TBD.js"
+            "Path": "TempIncrease-method.js"
         }
     }
 }
