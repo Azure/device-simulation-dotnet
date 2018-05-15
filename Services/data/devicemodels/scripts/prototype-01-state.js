@@ -61,15 +61,38 @@ function vary(avg, percentage, min, max) {
 }
 
 /**
+ * Ensure that a value is within a specified range
+ * 
+ * @returns 'value' parameter guarnteed to be within 'min' and 'max' values
+ */
+function ensureRange(value, min, max) {
+    if (value < min) {
+        value = min;
+    } else if (value > max) {
+        value = max;
+    }
+
+    return value;
+}
+
+/**
  * Generate a random geolocation at some distance (in miles)
  * from a given location
  */
 function varylocation(latitude, longitude, distance) {
     // Convert to meters, use Earth radius, convert to radians
     var radians = (distance * 1609.344 / 6378137) * (180 / Math.PI);
+
+    latitude += radians,
+    longitude += radians / Math.cos(latitude * Math.PI / 180)
+
+    // Ensure valid latitude and longitude
+    latitude = ensureRange(latitude, -90, 90);
+    longitude = ensureRange(longitude, -180, 180);
+
     return {
-        latitude: latitude + radians,
-        longitude: longitude + radians / Math.cos(latitude * Math.PI / 180)
+        latitude: latitude,
+        longitude: longitude
     };
 }
 
@@ -90,18 +113,18 @@ function main(context, previousState, previousProperties) {
     // using the previous function state.
     restoreSimulation(previousState, previousProperties);
 
-    // 65 +/- 1%,  Min 35, Max 100
-    state.temperature = vary(65, 1, 35, 100);
+    // temperature +/- 1%,  Min 35, Max 100
+    state.temperature = vary(state.temperature, 1, 35, 100);
 
     // 150 +/- 5%,  Min 50, Max 300
     state.pressure = vary(150, 5, 50, 300);
 
     // 0.1 miles around some location
     if (state.moving) {
-        var coords = varylocation(center_latitude, center_longitude, 0.1);
+        var coords = varylocation(state.latitude, state.longitude, 0.1);
         state.latitude = coords.latitude;
         state.longitude = coords.longitude;
     }
 
-    return state;
+    updateState(state);
 }

@@ -16,7 +16,7 @@ var state = {
 // Default device properties
 var properties = {
     Firmware: "1.0.0",
-    DeviceMethodStatus: "Updating Firmware"
+    FirmwareUpdateStatus: "Updating Firmware"
 };
 
 /**
@@ -47,7 +47,6 @@ function restoreSimulation(previousState, previousProperties) {
  * @param previousState  The device state since the last iteration, not used
  * @param previousProperties  The device properties since the last iteration
  */
-
 /*jslint unparam: true*/
 function main(context, previousState, previousProperties) {
 
@@ -57,9 +56,9 @@ function main(context, previousState, previousProperties) {
     restoreSimulation(previousState, previousProperties);
 
     // Reboot - devices goes offline and comes online after 20 seconds
-    log("Executing firmware update simulation function, firmware version passed:" + context.Firmware);
+    log("Executing 'FirmwareUpdate' JavaScript method; Firmware version passed:" + context.Firmware);
 
-    var DeviceMethodStatusKey = "DeviceMethodStatus";
+    var DevicePropertyKey = "FirmwareUpdateStatus";
     var FirmwareKey = "Firmware";
 
     // update the status to offline & firmware updating
@@ -67,25 +66,25 @@ function main(context, previousState, previousProperties) {
     state.CalculateRandomizedTelemetry = false;
     var status = "Command received, updating firmware version to ";
     status = status.concat(context.Firmware);
-    updateProperty(DeviceMethodStatusKey, status);
+    updateProperty(DevicePropertyKey, status);
     sleep(5000);
 
     log("Image Downloading...");
     status = "Image Downloading...";
-    updateProperty(DeviceMethodStatusKey, status);
+    updateProperty(DevicePropertyKey, status);
     sleep(7500);
 
     log("Executing firmware update simulation function, firmware version passed:" + context.Firmware);
     status = "Downloaded, applying firmware...";
-    updateProperty(DeviceMethodStatusKey, status);
+    updateProperty(DevicePropertyKey, status);
     sleep(5000);
 
     status = "Rebooting...";
-    updateProperty(DeviceMethodStatusKey, status);
+    updateProperty(DevicePropertyKey, status);
     sleep(5000);
 
     status = "Firmware Updated.";
-    updateProperty(DeviceMethodStatusKey, status);
+    updateProperty(DevicePropertyKey, status);
     properties.Firmware = context.Firmware;
     updateProperty(FirmwareKey, context.Firmware);
     sleep(7500);
@@ -93,4 +92,6 @@ function main(context, previousState, previousProperties) {
     state.CalculateRandomizedTelemetry = true;
     state.online = true;
     updateState(state);
+
+    log("'FirmwareUpdate' JavaScript method simulation completed.");
 }

@@ -76,8 +76,8 @@ function main(context, previousState, previousProperties) {
     // using the previous function state.
     restoreSimulation(previousState, previousProperties);
 
-    // 85 +/- 25%,  Min 35, Max 100
-    state.temperature = vary(85, 25, 35, 100);
+    // temperature +/- 25%,  Min 35, Max 100
+    state.temperature = vary(state.temperature, 25, 35, 100);
 
-    return state;
+    updateState(state);
 }
