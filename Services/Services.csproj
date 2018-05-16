@@ -31,6 +31,8 @@
     <None Remove="data\devicemodels\scripts\prototype-02-state.js" />
     <None Remove="data\devicemodels\scripts\reboot-method.js" />
     <None Remove="data\devicemodels\scripts\RestartEngine-method.js" />
+    <None Remove="data\devicemodels\scripts\SetFuelLevel-method.js" />
+    <None Remove="data\devicemodels\scripts\SetTemperature-method.js" />
     <None Remove="data\devicemodels\scripts\StartDevice-method.js" />
     <None Remove="data\devicemodels\scripts\StartElevator-method.js" />
     <None Remove="data\devicemodels\scripts\StartMovingDevice-method.js" />
@@ -89,9 +91,6 @@
     <None Update="data\devicemodels\scripts\FillTank-method.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="data\devicemodels\scripts\SetFuelLevel-method.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="data\devicemodels\scripts\prototype-02-state.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -117,9 +116,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="data\devicemodels\scripts\Reboot-method.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="data\devicemodels\scripts\SetTemperature-method.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="data\devicemodels\scripts\StartElevator-method.js">

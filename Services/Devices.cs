@@ -76,11 +76,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // When working with batches, this is the max size that the batch insert and delete APIs allow
         private const int REGISTRY_MAX_BATCH_SIZE = 100;
 
-        // When sending telemetry or other operations, wait only for 10 seconds. This setting sets how
-        // throttling affects the application. The default SDK value is 4 minutes, which causes high
-        // CPU usage.
-        private const int SDK_CLIENT_TIMEOUT = 60000;
-
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly ILogger log;
 
@@ -89,6 +84,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private IRegistryManager registry;
         private int registryCount;
         private bool setupDone;
+        private IServicesConfig servicesConfig;
 
         public Devices(
             IServicesConfig config,
@@ -102,6 +98,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.twinReadsWritesEnabled = config.TwinReadWriteEnabled;
             this.registryCount = -1;
             this.setupDone = false;
+            this.servicesConfig = config;
         }
 
         /// <summary>
@@ -379,7 +376,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             sdkClient.SetRetryPolicy(new Azure.Devices.Client.NoRetry());
-            sdkClient.OperationTimeoutInMilliseconds = SDK_CLIENT_TIMEOUT;
+
+            // When sending telemetry or other operations, wait only for preconfigured number of milliseconds. 
+            // This setting sets how throttling affects the application. The default SDK value is 4 minutes, 
+            // that causes high CPU usage. However extreme lower values such as 10000 milliseconds causes 
+            // memory leaks leading to simulator crashing and termination of telemetry.
+            sdkClient.OperationTimeoutInMilliseconds = (uint)this.servicesConfig.IoTSdkConnectTimeout;
 
             return sdkClient;
         }

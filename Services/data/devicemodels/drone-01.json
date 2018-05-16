@@ -24,7 +24,7 @@
 			"batteryStatus": "full",
 			"batteryLevel": 1.0
 		},
-		"Interval": "00:00:05",
+		"Interval": "00:00:02",
 		"Scripts": [{
 			"Type": "javascript",
 			"Path": "drone-01-state.js"
@@ -46,7 +46,7 @@
 		"Campus": "Redmond"
 	},
 	"Telemetry": [{
-			"Interval": "00:00:05",
+			"Interval": "00:00:02",
 			"MessageTemplate": "{\"sensorType\":\"drone-event-sensor;v1\",\"deliveryId\":\"${deliveryId}\",\"velocity\":\"${velocity}\",\"acceleration\":\"${acceleration}\",\"position\":\"${latitude}|${longitude}|${altitude}\",\"flightStatus\":\"${flightStatus}\"}",
 			"MessageSchema": {
 				"Name": "drone-event-sensor;v1",
@@ -65,7 +65,7 @@
 			}
 		},
 		{
-			"Interval": "00:00:20",
+			"Interval": "00:00:10",
 			"MessageTemplate": "{\"sensorType\":\"drone-state-sensor;v1\",\"deliveryId\":\"${deliveryId}\",\"temperature\":\"${temperature}\",\"batteryStatus\":\"${batteryStatus}\",\"batteryLevel\":\"${batteryLevel}\"}",
 			"MessageSchema": {
 				"Name": "drone-state-sensor;v1",
