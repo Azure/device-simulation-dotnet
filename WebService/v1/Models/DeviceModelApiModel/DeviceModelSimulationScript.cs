@@ -2,6 +2,7 @@
 
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -10,8 +11,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
 {
     public class DeviceModelSimulationScript
     {
-        private const string INTERNAL = "internal";
-
         [JsonProperty(PropertyName = "Type")]
         public string Type { get; set; }
 
@@ -78,7 +77,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
                 throw new BadRequestException(NO_PATH);
             }
 
-            if (this.Type == INTERNAL)
+            if (this.Type == ScriptInterpreter.INTERNAL_SCRIPT)
             {
                 this.ValidateInternalScriptParams(log);
             }

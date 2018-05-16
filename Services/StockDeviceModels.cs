@@ -45,9 +45,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             this.deviceModels = new List<DeviceModel>();
 
+            List<string> files;
+
             try
             {
-                var files = this.GetDeviceModelFiles();
+                files = this.GetDeviceModelFiles();
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to load Device Model files",
+                    () => new { e.Message, Exception = e });
+
+                throw;
+            }
+
+            try
+            {
                 foreach (var f in files)
                 {
                     var c = JsonConvert.DeserializeObject<DeviceModel>(File.ReadAllText(f));
@@ -57,10 +70,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to load Device Model configuration",
+                this.log.Error("Unable to parse Device Model files",
                     () => new { e.Message, Exception = e });
 
-                throw new InvalidConfigurationException("Unable to load Device Model configuration: " + e.Message, e);
+                throw new InvalidConfigurationException("Unable to parse Device Model files: " + e.Message, e);
             }
 
             return this.deviceModels;
