@@ -161,15 +161,17 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task ItThrowsExternalDependencyExceptionWhenInsertDeviceModelFailed()
+        public async Task ItThrowsExceptionWhenInsertDeviceModelFailed()
         {
             // Arrange
+            var deviceModel = new DeviceModel() { Id = "id" };
+
             this.customDeviceModels
                 .Setup(x => x.InsertAsync(It.IsAny<DeviceModel>(), true))
                 .ThrowsAsync(new Exception());
 
             // Act & Assert
-            await Assert.ThrowsAsync<ExternalDependencyException>(() => this.target.InsertAsync(It.IsAny<DeviceModel>()));
+            await Assert.ThrowsAsync<Exception>(() => this.target.InsertAsync(deviceModel));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -197,15 +199,17 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task ItThrowsExternalDependencyExceptionWhenUpsertDeviceModelFailed()
+        public async Task ItThrowsExceptionWhenUpsertDeviceModelFailed()
         {
             // Arrange
+            var deviceModel = new DeviceModel() { Id = "id" };
+
             this.customDeviceModels
                 .Setup(x => x.UpsertAsync(It.IsAny<DeviceModel>()))
                 .ThrowsAsync(new Exception());
 
             // Act & Assert
-            await Assert.ThrowsAsync<ExternalDependencyException>(() => this.target.UpsertAsync(It.IsAny<DeviceModel>()));
+            await Assert.ThrowsAsync<Exception>(() => this.target.UpsertAsync(deviceModel));
         }
 
         private void ThereAreNoCustomDeviceModels()

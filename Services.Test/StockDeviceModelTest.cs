@@ -6,6 +6,8 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Moq;
 using Services.Test.helpers;
+using System;
+using System.IO;
 using System.Linq;
 using Xunit;
 
@@ -33,23 +35,26 @@ namespace Services.Test
             // Arrange
             this.config.Setup(x => x.DeviceModelsFolder).Returns("./data/devicemodels/");
             // Note, based on current setup, simulation service has 10 stock models available.
-            const int stockModelCount = 10;
+            const int STOCK_MODEL_COUNT = 10;
 
             // Act
             var result = this.target.GetList();
 
             // Assert
-            Assert.Equal(stockModelCount, result.Count());
+            Assert.Equal(STOCK_MODEL_COUNT, result.Count());
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItThrowsInvalidConfigurationExceptionWhenConfigrationFailed()
+        public void ItThrowsDirectoryNotFoundExceptionWhenLoadDeviceModelFilesFailed()
         {
+            // Arrange
+            this.config.Setup(x => x.DeviceModelsFolder).Returns("./fake/path/");
+
             // Act
             var ex = Record.Exception(() => this.target.GetList());
 
             // Assert
-            Assert.IsType<InvalidConfigurationException>(ex);
+            Assert.IsType<DirectoryNotFoundException>(ex);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -57,13 +62,13 @@ namespace Services.Test
         {
             // Arrange
             this.config.Setup(x => x.DeviceModelsFolder).Returns("./data/devicemodels/");
-            const string stockModelId = "chiller-01";
+            const string STOCK_MODEL_ID = "chiller-01";
 
             // Act
-            var result = this.target.Get(stockModelId);
+            var result = this.target.Get(STOCK_MODEL_ID);
 
             // Assert
-            Assert.Equal(stockModelId, result.Id);
+            Assert.Equal(STOCK_MODEL_ID, result.Id);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -71,10 +76,10 @@ namespace Services.Test
         {
             // Arrange
             this.config.Setup(x => x.DeviceModelsFolder).Returns("./data/devicemodels/");
-            const string stockModelId = "fake_id";
+            const string STOCK_MODEL_ID = "fake_id";
 
             // Act
-            var ex = Record.Exception(() => this.target.Get(stockModelId));
+            var ex = Record.Exception(() => this.target.Get(STOCK_MODEL_ID));
 
             // Assert
             Assert.IsType<ResourceNotFoundException>(ex);
