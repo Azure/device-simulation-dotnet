@@ -83,22 +83,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             throw new ResourceNotFoundException();
         }
 
-        private List<string> GetDeviceModelFiles()
-        {
-            if (this.deviceModelFiles != null) return this.deviceModelFiles;
-
-            this.log.Debug("Device models folder", () => new { this.config.DeviceModelsFolder });
-
-            var fileEntries = Directory.GetFiles(this.config.DeviceModelsFolder);
-
-            this.deviceModelFiles = fileEntries.Where(fileName => fileName.EndsWith(EXT)).ToList();
-
-            this.log.Debug("Device model files", () => new { this.deviceModelFiles });
-
-            return this.deviceModelFiles;
-        }
-
-        public HashSet<string> GetPropNames()
+        public HashSet<string> GetPropertyNames()
         {
             var list = this.GetList().ToList();
             if (list.Count > 0)
@@ -117,6 +102,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             return null;
+        }
+
+        private List<string> GetDeviceModelFiles()
+        {
+            if (this.deviceModelFiles != null) return this.deviceModelFiles;
+
+            this.log.Debug("Device models folder", () => new { this.config.DeviceModelsFolder });
+
+            var fileEntries = Directory.GetFiles(this.config.DeviceModelsFolder);
+
+            this.deviceModelFiles = fileEntries.Where(fileName => fileName.EndsWith(EXT)).ToList();
+
+            this.log.Debug("Device model files", () => new { this.deviceModelFiles });
+
+            return this.deviceModelFiles;
         }
 
         private void PreparePropNames(HashSet<string> set, object obj, string prefix)

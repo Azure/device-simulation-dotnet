@@ -25,9 +25,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         }
 
         /// <summary>Map a service model to the corresponding API model</summary>
-        public DevicePropertiesApiModel(HashSet<string> deviceproerties)
+        public DevicePropertiesApiModel(HashSet<string> deviceProperties)
         {
-            this.ReportedProperties = deviceproerties;
+            this.ReportedProperties = deviceProperties;
         }
     }
 }
