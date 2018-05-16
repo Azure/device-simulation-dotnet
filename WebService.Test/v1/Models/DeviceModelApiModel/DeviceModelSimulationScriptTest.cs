@@ -2,6 +2,7 @@
 
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel;
 using Moq;
 using WebService.Test.helpers;
@@ -48,7 +49,7 @@ namespace WebService.Test.v1.Models
         {
             var script = new DeviceModelSimulationScript
             {
-                Type = "javascript",
+                Type = ScriptInterpreter.JAVASCRIPT_SCRIPT,
                 Path = "scripts"
             };
 
@@ -59,7 +60,7 @@ namespace WebService.Test.v1.Models
         {
             var script = new Script
             {
-                Type = "javascript",
+                Type = ScriptInterpreter.JAVASCRIPT_SCRIPT,
                 Path = "scripts"
             };
 

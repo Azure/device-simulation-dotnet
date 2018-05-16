@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
@@ -19,7 +20,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         public Script()
         {
-            this.Type = "javascript";
+            this.Type = ScriptInterpreter.JAVASCRIPT_SCRIPT;
             this.Path = "scripts" + System.IO.Path.DirectorySeparatorChar;
             this.Params = null;
         }

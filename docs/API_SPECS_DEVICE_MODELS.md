@@ -405,7 +405,7 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-  "ETag": "12345678-abcd-1c4a-fa9b-123456789012",
+  "ETag": "78901216-efab-9bfa-ab32-789012123456",
   "Id": "12345678-c6c0-49ae-9bfa-123456789012",
   "Version": "0.0.1",
   "Name": "Chiller",

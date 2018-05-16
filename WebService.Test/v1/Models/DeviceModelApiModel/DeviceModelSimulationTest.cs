@@ -7,6 +7,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceM
 using Moq;
 using System;
 using System.Collections.Generic;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using WebService.Test.helpers;
 using Xunit;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
@@ -107,14 +108,14 @@ namespace WebService.Test.v1.Models
 
         private DeviceModelSimulation GetDeviceModelSimulation()
         {
-            var deviceModelSimulation = new DeviceModelSimulation()
+            var deviceModelSimulation = new DeviceModelSimulation
             {
                 Interval = "00:00:10",
-                Scripts = new List<DeviceModelSimulationScript>()
+                Scripts = new List<DeviceModelSimulationScript>
                 {
-                    new DeviceModelSimulationScript()
+                    new DeviceModelSimulationScript
                     {
-                        Type = "javascript",
+                        Type = ScriptInterpreter.JAVASCRIPT_SCRIPT,
                         Path = "script"
                     }
                 }
@@ -125,14 +126,14 @@ namespace WebService.Test.v1.Models
 
         private StateSimulation GetDeviceModelStateSimulation()
         {
-            var deviceModelSimulation = new StateSimulation()
+            var deviceModelSimulation = new StateSimulation
             {
                 Interval= TimeSpan.FromSeconds(10),
-                Scripts = new List<Script>()
+                Scripts = new List<Script>
                 {
-                    new Script()
+                    new Script
                     {
-                        Type = "javascript",
+                        Type = ScriptInterpreter.JAVASCRIPT_SCRIPT,
                         Path = "scripts"
                     }
                 }

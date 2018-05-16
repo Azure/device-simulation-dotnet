@@ -38,11 +38,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task DeleteAsync(string id);
     }
 
+    /// <summary>
+    /// Proxy to stock and custom device models services.
+    /// Note: the exceptions are generated in the stock and custom device
+    /// models services and surface as-is without any more catch/wrapping here.
+    /// </summary>
     public class DeviceModels : IDeviceModels
     {
         // ID used for custom device models, where the list of sensors is provided by the user
         public const string CUSTOM_DEVICE_MODEL_ID = "custom";
-        
+
         private readonly ILogger log;
         private readonly ICustomDeviceModels customDeviceModels;
         private readonly IStockDeviceModels stockDeviceModels;
@@ -62,23 +67,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<IEnumerable<DeviceModel>> GetListAsync()
         {
-            List<DeviceModel> deviceModels;
-
-            try
-            {
-                var stockDeviceModelsList = this.stockDeviceModels.GetList();
-                var customDeviceModelsList = await this.customDeviceModels.GetListAsync();
-                deviceModels = stockDeviceModelsList
-                    .Concat(customDeviceModelsList)
-                    .ToList();
-            }
-            catch (Exception e)
-            {
-                this.log.Error("Unable to load Device Models",
-                    () => new { e.Message, Exception = e });
-
-                throw new ExternalDependencyException("Unable to load Device Models", e);
-            }
+            var stockDeviceModelsList = this.stockDeviceModels.GetList();
+            var customDeviceModelsList = await this.customDeviceModels.GetListAsync();
+            var deviceModels = stockDeviceModelsList
+                .Concat(customDeviceModelsList)
+                .ToList();
 
             return deviceModels;
         }
@@ -103,21 +96,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<DeviceModel> InsertAsync(DeviceModel deviceModel)
         {
-            if (this.CheckStockDeviceModelExistence(deviceModel?.Id ?? ""))
+            if (this.CheckStockDeviceModelExistence(deviceModel.Id))
             {
-                throw new ConflictingResourceException("Device model with id '" + deviceModel.Id + "' already exists!");
+                throw new ConflictingResourceException(
+                    "Device model with id '" + deviceModel.Id + "' already exists!");
             }
 
-            try
-            {
-                var result = await this.customDeviceModels.InsertAsync(deviceModel);
-                deviceModel.ETag = result.ETag;
-            }
-            catch (Exception exception)
-            {
-                this.log.Error("Unable to create a new device model", () => new { exception });
-                throw new ExternalDependencyException("Failed to insert", exception);
-            }
+            var result = await this.customDeviceModels.InsertAsync(deviceModel);
+            deviceModel.ETag = result.ETag;
 
             return deviceModel;
         }
@@ -127,22 +113,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<DeviceModel> UpsertAsync(DeviceModel deviceModel)
         {
-            if (this.CheckStockDeviceModelExistence(deviceModel?.Id ?? ""))
+            if (this.CheckStockDeviceModelExistence(deviceModel.Id))
             {
-                this.log.Error("Unable to update a stock device model", () => new { deviceModel });
-                throw new ConflictingResourceException("Unable to update a stock device model");
+                this.log.Error("Stock device models cannot be updated",
+                    () => new { deviceModel });
+                throw new ConflictingResourceException(
+                    "Stock device models cannot be updated");
             }
 
-            try
-            {
-                var result = await this.customDeviceModels.UpsertAsync(deviceModel);
-                deviceModel.ETag = result.ETag;
-            }
-            catch (Exception exception)
-            {
-                this.log.Error("Unable to update device model ", () => new { exception });
-                throw new ExternalDependencyException("Failed to upsert", exception);
-            }
+            var result = await this.customDeviceModels.UpsertAsync(deviceModel);
+            deviceModel.ETag = result.ETag;
 
             return deviceModel;
         }
@@ -154,24 +134,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.CheckStockDeviceModelExistence(id))
             {
-                this.log.Info("Unable to delete a stock device model.", () => new { Id = id });
-                throw new UnauthorizedAccessException("Cannot delete a stock device model");
+                this.log.Info("Stock device models cannot be deleted",
+                    () => new { Id = id });
+                throw new UnauthorizedAccessException(
+                    "Stock device models cannot be deleted");
             }
 
-            try
-            {
-                await this.customDeviceModels.DeleteAsync(id);
-            }
-            catch (Exception exception)
-            {
-                this.log.Error("Unable to delete device model ", () => new { exception });
-                throw;
-            }
+            await this.customDeviceModels.DeleteAsync(id);
         }
 
+        /// <summary>
+        /// Returns True if there is a stock model with the given Id
+        /// </summary>
         private bool CheckStockDeviceModelExistence(string id)
         {
-            return !string.IsNullOrEmpty(id) && this.stockDeviceModels.GetList().Any(model => id.Equals(model.Id, StringComparison.InvariantCultureIgnoreCase));
+            if (string.IsNullOrEmpty(id)) return false;
+
+            return this.stockDeviceModels.GetList()
+                .Any(model => id.Equals(model.Id, StringComparison.InvariantCultureIgnoreCase));
         }
     }
 }

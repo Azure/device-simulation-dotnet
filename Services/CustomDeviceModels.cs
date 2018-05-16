@@ -17,12 +17,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// Get list of custom device models.
         /// </summary>
         Task<IEnumerable<DeviceModel>> GetListAsync();
-        
+
         /// <summary>
         /// Get a custom device model.
         /// </summary>
         Task<DeviceModel> GetAsync(string id);
-        
+
         /// <summary>
         /// Create a custom device model.
         /// </summary>
@@ -38,6 +38,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         Task DeleteAsync(string id);
     }
+
     public class CustomDeviceModels : ICustomDeviceModels
     {
         private const string STORAGE_COLLECTION = "deviceModels";
@@ -59,17 +60,38 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<IEnumerable<DeviceModel>> GetListAsync()
         {
-            var data = await this.storage.GetAllAsync(STORAGE_COLLECTION);
-            var results = new List<DeviceModel>();
-            foreach (var item in data.Items)
+            ValueListApiModel data;
+
+            try
             {
-                var deviceModel = JsonConvert.DeserializeObject<DeviceModel>(item.Data);
-                deviceModel.ETag = item.ETag;
-                deviceModel.Type = CUSTOMMODEL;
-                results.Add(deviceModel);
+                data = await this.storage.GetAllAsync(STORAGE_COLLECTION);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to load device models from storage",
+                    () => new { e.Message, Exception = e });
+                throw new ExternalDependencyException("Unable to load device models from storage", e);
             }
 
-            return results;
+            try
+            {
+                var results = new List<DeviceModel>();
+                foreach (var item in data.Items)
+                {
+                    var deviceModel = JsonConvert.DeserializeObject<DeviceModel>(item.Data);
+                    deviceModel.ETag = item.ETag;
+                    deviceModel.Type = CUSTOMMODEL;
+                    results.Add(deviceModel);
+                }
+
+                return results;
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to parse device models loaded from storage",
+                    () => new { e.Message, Exception = e });
+                throw new ExternalDependencyException("Unable to parse device models loaded from storage", e);
+            }
         }
 
         /// <summary>
@@ -79,7 +101,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (string.IsNullOrEmpty(id))
             {
-                this.log.Error("Device model id cannot be empty!", () => {});
+                this.log.Error("Device model id cannot be empty!", () => { });
                 throw new InvalidInputException("Device model id cannot be empty! ");
             }
 
@@ -104,14 +126,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             this.log.Debug("Creating a custom device model.", () => new { deviceModel });
 
-            // Note: using UpdateAsync because the service generates the ID
-            var result = await this.storage.UpdateAsync(
-                STORAGE_COLLECTION,
-                deviceModel.Id,
-                JsonConvert.SerializeObject(deviceModel),
-                null);
+            try
+            {
+                // Note: using UpdateAsync because the service generates the ID
+                var result = await this.storage.UpdateAsync(
+                    STORAGE_COLLECTION,
+                    deviceModel.Id,
+                    JsonConvert.SerializeObject(deviceModel),
+                    null);
 
-            deviceModel.ETag = result.ETag;
+                deviceModel.ETag = result.ETag;
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Failed to insert new device model into storage",
+                    () => new { deviceModel, generateId, e });
+                throw new ExternalDependencyException(
+                    "Failed to insert new device model into storage", e);
+            }
 
             return deviceModel;
         }
@@ -176,7 +208,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task DeleteAsync(string id)
         {
-            await this.storage.DeleteAsync(STORAGE_COLLECTION, id);
+            try
+            {
+                await this.storage.DeleteAsync(STORAGE_COLLECTION, id);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Something went wrong while deleting the device model.", () => new { id, e });
+                throw new ExternalDependencyException("Failed to delete the device model", e);
+            }
         }
     }
 }
