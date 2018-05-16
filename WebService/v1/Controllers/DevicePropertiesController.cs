@@ -21,7 +21,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         [HttpGet]
         public DevicePropertiesApiModel GetDevicePropertiesAsync()
         {
-            return new DevicePropertiesApiModel(this.deviceModelsService.GetPropNames());
+            return new DevicePropertiesApiModel(this.deviceModelsService.GetPropertyNames());
         }
     }
 }
