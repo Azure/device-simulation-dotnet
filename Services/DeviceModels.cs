@@ -104,6 +104,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             if (list.Count > 0)
             {
                 var set = new HashSet<string>();
+                /* The properties from this model is only intended to provide a default set when the application loads for the first time.
+                 The properties added after startup will come from the new API located in IOT Hub Manager. The UI will merge both the results. */
                 list.ForEach(m =>
                 {
                     foreach (var item in m.Properties)
@@ -134,6 +136,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             foreach (var item in (obj as JToken).Values())
             {
                 var path = item.Path;
+                /* Convert
+                 * Device : {
+                 *          Reported : Properties
+                 *          }
+                 *          
+                 * to Device.Reported.Properties and keep adding to hashset
+                 */
                 this.PreparePropNames(set, item, $"{prefix}.{(path.Contains(".") ? path.Substring(path.LastIndexOf('.') + 1) : path)}");
             }
         }
