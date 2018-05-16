@@ -19,7 +19,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     {
         IEnumerable<DeviceModel> GetList();
         DeviceModel Get(string id);
-        HashSet<string> GetPropNames();
+        HashSet<string> GetPropertyNames();
     }
 
     public class DeviceModels : IDeviceModels
