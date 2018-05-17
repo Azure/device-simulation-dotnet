@@ -129,25 +129,6 @@ namespace WebService.Test.v1.Models
             Assert.IsType<BadRequestException>(ex);
         }
 
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItThrowsBadRequestExceptionForCustomModelWithInvalidEtag()
-        {
-            // Arrange
-            DeviceModelApiModel InvalidEtag(DeviceModelApiModel model)
-            {
-                model.ETag = "";
-                return model;
-            }
-
-            var deviceModelApiModel = this.GetInvalidDeviceModelApiModel(InvalidEtag);
-
-            // Act
-            var ex = Record.Exception(() => deviceModelApiModel.ValidateInputRequest(this.logger.Object, true));
-
-            // Assert
-            Assert.IsType<BadRequestException>(ex);
-        }
-
         private DeviceModelApiModel GetValidDeviceModelApiModel()
         {
             var deviceModelApiModel = new DeviceModelApiModel

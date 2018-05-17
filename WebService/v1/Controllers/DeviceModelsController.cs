@@ -64,7 +64,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data provided.");
             }
 
-            deviceModel.ValidateInputRequest(this.log, true);
+            deviceModel.ValidateInputRequest(this.log);
 
             return DeviceModelApiModel.FromServiceModel(
                 await this.deviceModelsService.UpsertAsync(deviceModel.ToServiceModel(id)));

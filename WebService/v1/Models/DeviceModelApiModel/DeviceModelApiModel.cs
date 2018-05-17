@@ -150,18 +150,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
             return result;
         }
 
-        public void ValidateInputRequest(ILogger log, bool isUpserting = false)
+        public void ValidateInputRequest(ILogger log)
         {
-            const string NO_ETAG = "The device model doesn't contain an ETag";
             const string NO_PROTOCOL = "The device model doesn't contain a protocol";
             const string ZERO_TELEMETRY = "The device model has zero telemetry";
-
-            // A custom device model must contain a ETag when upserting
-            if (isUpserting && this.ETag == String.Empty)
-            {
-                log.Error(NO_ETAG, () => new { deviceModel = this });
-                throw new BadRequestException(NO_ETAG);
-            }
 
             // A device model must contain a protocol
             if (this.Protocol == String.Empty)
