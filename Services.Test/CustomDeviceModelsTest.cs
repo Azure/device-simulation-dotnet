@@ -102,8 +102,8 @@ namespace Services.Test
         public void CustomDeviceModelsCanBeUpserted()
         {
             // Arrange
-            var deviceModel = new DeviceModel { Id= "id", ETag = "oldEtag" };
-            var updatedDeviceModel = new DeviceModel  { ETag = "newETag" };
+            var deviceModel = new DeviceModel { Id = "id", ETag = "oldEtag" };
+            var updatedDeviceModel = new DeviceModel  { Id = "id", ETag = "newETag" };
 
             this.SaveDeviceModelInStorage(deviceModel);
             this.UpdateDeviceModelInStorage(updatedDeviceModel);
@@ -116,8 +116,9 @@ namespace Services.Test
                 STORAGE_COLLECTION,
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                "oldEtag"));
+                "oldEtag"), Times.Once());
 
+            Assert.Equal(updatedDeviceModel.Id, deviceModel.Id);
             Assert.Equal(updatedDeviceModel.ETag, deviceModel.ETag);
         }
 
