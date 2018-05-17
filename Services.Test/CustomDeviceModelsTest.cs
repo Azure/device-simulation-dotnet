@@ -202,6 +202,87 @@ namespace Services.Test
             Assert.ThrowsAsync<Exception>(() => this.target.DeleteAsync(It.IsAny<string>()));
         }
 
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItThrowsExternalDependencyExceptionWhenGetAllDeviceModelFailed()
+        {
+            // Arrange
+            this.storage
+                .Setup(x => x.GetAllAsync(It.IsAny<string>()))
+                .ThrowsAsync(new Exception());
+
+            // Act & Assert
+            Assert.ThrowsAsync<ExternalDependencyException>(() => this.target.DeleteAsync(It.IsAny<string>()));
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItThrowsExceptionWhenGetListOfDeviceModelsDeserializeFailed()
+        {
+            // Arrange
+            this.SetupAListOfInvalidDeviceModelsInStorage();
+
+            // Act & Assert
+            Assert.ThrowsAsync<Exception>(() => this.target.GetListAsync());
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReturnsAListOfCustomDeviceModels()
+        {
+            // Arrange
+            const string UPDATED_ETAG = "etag";
+            this.SetupAListOfDeviceModelsInStorage(UPDATED_ETAG);
+
+            // Act
+            var result = this.target.GetListAsync().Result;
+
+            // Assert
+            foreach (var model in result)
+            {
+                Assert.Equal("CustomModel", model.Type);
+                Assert.Equal(UPDATED_ETAG, model.ETag);
+            }
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItThrowsExceptionWhenGetDeviceModelByIdFailed()
+        {
+            // Act & Assert
+            Assert.ThrowsAsync<Exception>(() => this.target.GetAsync(String.Empty));
+        }
+
+        private void SetupAListOfDeviceModelsInStorage(string etag)
+        {
+            var deviceModel = new DeviceModel { Id = "id", ETag = etag };
+            var list = new ValueListApiModel();
+            var value = new ValueApiModel
+            {
+                Key = "key",
+                Data = JsonConvert.SerializeObject(deviceModel),
+                ETag = deviceModel.ETag
+            };
+            list.Items.Add(value);
+
+            this.storage
+                .Setup(x => x.GetAllAsync(It.IsAny<string>()))
+                .ReturnsAsync(list);
+        }
+
+        private void SetupAListOfInvalidDeviceModelsInStorage()
+        {
+            var obj = new { id = "id", eTag = "Etag" };
+            var list = new ValueListApiModel();
+            var value = new ValueApiModel
+            {
+                Key = "key",
+                Data = JsonConvert.SerializeObject(obj),
+                ETag = "etag"
+            };
+            list.Items.Add(value);
+
+            this.storage
+                .Setup(x => x.GetAllAsync(It.IsAny<string>()))
+                .ReturnsAsync(list);
+        }
+
         private void SetupStorageToThrowException()
         {
             this.storage

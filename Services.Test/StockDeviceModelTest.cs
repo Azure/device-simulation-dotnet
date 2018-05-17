@@ -42,6 +42,10 @@ namespace Services.Test
 
             // Assert
             Assert.Equal(STOCK_MODEL_COUNT, result.Count());
+            foreach (var model in result)
+            {
+                Assert.Equal("StockModel", model.Type);
+            }
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

@@ -66,6 +66,11 @@ namespace Services.Test
 
             // Assert
             Assert.Equal(TOTAL_MODEL_COUNT, result.Count());
+
+            foreach (var model in result)
+            {
+                Assert.Equal("StockModel", model.Type);
+            }
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -81,6 +86,11 @@ namespace Services.Test
 
             // Assert
             Assert.Equal(TOTAL_MODEL_COUNT, result.Count());
+
+            foreach (var model in result)
+            {
+                Assert.Equal("CustomModel", model.Type);
+            }
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -230,9 +240,9 @@ namespace Services.Test
         {
             var deviceModelsList = new List<DeviceModel>()
             {
-                new DeviceModel() { Id = "chiller-01", ETag = "eTag_1"},
-                new DeviceModel() { Id = "chiller-02", ETag = "eTag_2"},
-                new DeviceModel() { Id = "chiller-03", ETag = "eTag_3"}
+                new DeviceModel() { Id = "chiller-01", ETag = "eTag_1", Type = "StockModel"},
+                new DeviceModel() { Id = "chiller-02", ETag = "eTag_2", Type = "StockModel"},
+                new DeviceModel() { Id = "chiller-03", ETag = "eTag_3", Type = "StockModel"}
             };
             this.stockDeviceModels.Setup(x => x.GetList()).Returns(deviceModelsList);
         }
@@ -241,9 +251,9 @@ namespace Services.Test
         {
             var deviceModelsList = new List<DeviceModel>()
             {
-                new DeviceModel() { Id = "1", ETag = "eTag_1"},
-                new DeviceModel() { Id = "2", ETag = "eTag_2"},
-                new DeviceModel() { Id = "3", ETag = "eTag_3"}
+                new DeviceModel() { Id = "1", ETag = "eTag_1", Type = "CustomModel"},
+                new DeviceModel() { Id = "2", ETag = "eTag_2", Type = "CustomModel"},
+                new DeviceModel() { Id = "3", ETag = "eTag_3", Type = "CustomModel"}
             };
 
             this.customDeviceModels

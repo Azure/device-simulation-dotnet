@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
@@ -28,6 +29,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
     public class DeviceModel
     {
+        [JsonIgnore]
         public string ETag { get; set; }
         public string Id { get; set; }
         public string Version { get; set; }
