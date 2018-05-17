@@ -8,6 +8,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Moq;
 using Newtonsoft.Json;
 using Services.Test.helpers;
+using System;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -48,7 +49,23 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void CreateCustomDeviceModel()
+        public void ItCreatesCustomDeviceModelsWithProvidedIdInStorage()
+        {
+            // Arrange
+            var deviceModel = new DeviceModel { Id = "id", ETag = "Etag_1" };
+            this.UpdateDeviceModelInStorage(deviceModel);
+
+            // Act
+            DeviceModel result = this.target.InsertAsync(deviceModel, false).Result;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(deviceModel.Id, result.Id);
+            Assert.Equal(deviceModel.ETag, result.ETag);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItCreatesCustomDeviceModelsWithGuidInStorage()
         {
             // Arrange
             var deviceModel = new DeviceModel { ETag = "Etag_1" };
@@ -59,9 +76,9 @@ namespace Services.Test
 
             // Assert
             Assert.NotNull(result);
+            Assert.NotNull(result.Id);
             Assert.Equal(deviceModel.ETag, result.ETag);
         }
-
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void CreatedCustomDeviceModelsAreStored()
@@ -71,14 +88,14 @@ namespace Services.Test
             this.UpdateDeviceModelInStorage(deviceModel);
 
             // Act
-            this.target.InsertAsync(deviceModel).Wait();
+            this.target.InsertAsync(deviceModel).Wait(TimeSpan.FromSeconds(30));
 
             // Assert
             this.storage.Verify(x => x.UpdateAsync(
                 STORAGE_COLLECTION,
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                null));
+                null), Times.Once());
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -105,7 +122,7 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void CreateNewCustomDeviceModelsIfNotExisted()
+        public void ItCreatesDeviceModelWhenDeviceModelNotFoundInUpserting()
         {
             // Arrange
             var deviceModel = new DeviceModel { Id = "id", ETag = "Etag" };
@@ -114,7 +131,7 @@ namespace Services.Test
             this.UpdateDeviceModelInStorage(deviceModel);
 
             // Act
-            this.target.UpsertAsync(deviceModel).Wait();
+            this.target.UpsertAsync(deviceModel).Wait(TimeSpan.FromSeconds(30));
 
             // Assert
             this.storage.Verify(x => x.UpdateAsync(
@@ -125,18 +142,74 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void CustomDeviceModelsCanNotBeUpsertedIfEtagDoesNotMatch()
+        public void ItThrowsConflictingResourceExceptionIfEtagDoesNotMatchInUpserting()
         {
             // Arrange
-            var deviceModel = new DeviceModel { ETag = "oldEtag" };
-            var updatedDeviceModel = new DeviceModel { ETag = "newETag" };
+            var deviceModelInStorage = new DeviceModel { ETag = "ETag" };
+            var deviceModel = new DeviceModel { ETag = "not-matching-Etag" };
+            
+            this.UpdateDeviceModelInStorage(deviceModelInStorage);
 
-            this.SaveDeviceModelInStorage(deviceModel);
-            this.UpdateDeviceModelInStorage(updatedDeviceModel);
+            // Act & Assert
+            Assert.ThrowsAsync<ConflictingResourceException>(() => this.target.UpsertAsync(deviceModel));
+        }
 
-            // Act + Assert
-            var modifiedEtagModel = new DeviceModel { ETag = "Non-exist-Etag" };
-            Assert.ThrowsAsync<ConflictingResourceException>(() => this.target.UpsertAsync(modifiedEtagModel));
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItThrowsExceptionWhenInsertDeviceModelFailed()
+        {
+            // Arrange
+            this.SetupStorageToThrowException();
+
+            // Act & Assert
+            Assert.ThrowsAsync<Exception>(() => this.target.InsertAsync(It.IsAny<DeviceModel>()));
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItThrowsExceptionWhenUpsertDeviceModelFailed()
+        {
+            // Arrange
+            this.SetupStorageToThrowException();
+
+            // Act & Assert
+            Assert.ThrowsAsync<Exception>(() => this.target.UpsertAsync(It.IsAny<DeviceModel>()));
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItThrowsExternalDependencyExceptionWhenFailedFetchingDeviceModelInStorage()
+        {
+            // Arrange
+            var deviceModel = new DeviceModel { Id = "id", ETag = "Etag" };
+
+            // Act
+            var ex = Record.Exception(() => this.target.UpsertAsync(deviceModel).Result);
+
+            // Assert
+            Assert.IsType<ExternalDependencyException>(ex.InnerException);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItThrowsExceptionWhenDeleteDeviceModelFailed()
+        {
+            // Arrange
+            this.storage
+                .Setup(x => x.DeleteAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>()))
+                .ThrowsAsync(new Exception());
+
+            // Act & Assert
+            Assert.ThrowsAsync<Exception>(() => this.target.DeleteAsync(It.IsAny<string>()));
+        }
+
+        private void SetupStorageToThrowException()
+        {
+            this.storage
+                .Setup(x => x.UpdateAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>()))
+                .ThrowsAsync(new Exception());
         }
 
         private void SaveDeviceModelInStorage(DeviceModel deviceModel)
