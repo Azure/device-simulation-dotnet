@@ -170,5 +170,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             Double = 50,
             DateTime = 60
         }
+
+        public enum DeviceModelType
+        {
+            CustomModel,
+            StockModel
+        }
     }
 }

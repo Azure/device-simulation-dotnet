@@ -21,7 +21,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public class StockDeviceModels : IStockDeviceModels
     {
         private const string EXT = ".json";
-        private const string STOCKMODEL = "StockModel";
 
         private readonly IServicesConfig config;
         private readonly ILogger log;
@@ -64,7 +63,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 foreach (var f in files)
                 {
                     var c = JsonConvert.DeserializeObject<DeviceModel>(File.ReadAllText(f));
-                    c.Type = STOCKMODEL;
+                    c.Type = DeviceModel.DeviceModelType.StockModel.ToString();
                     this.deviceModels.Add(c);
                 }
             }

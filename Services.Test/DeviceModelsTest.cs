@@ -69,7 +69,7 @@ namespace Services.Test
 
             foreach (var model in result)
             {
-                Assert.Equal("StockModel", model.Type);
+                Assert.Equal(DeviceModel.DeviceModelType.StockModel.ToString(), model.Type);
             }
         }
 
@@ -89,7 +89,7 @@ namespace Services.Test
 
             foreach (var model in result)
             {
-                Assert.Equal("CustomModel", model.Type);
+                Assert.Equal(DeviceModel.DeviceModelType.CustomModel.ToString(), model.Type);
             }
         }
 

@@ -42,7 +42,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public class CustomDeviceModels : ICustomDeviceModels
     {
         private const string STORAGE_COLLECTION = "deviceModels";
-        private const string CUSTOMMODEL = "CustomModel";
 
         private readonly IStorageAdapterClient storage;
         private readonly ILogger log;
@@ -80,7 +79,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 {
                     var deviceModel = JsonConvert.DeserializeObject<DeviceModel>(item.Data);
                     deviceModel.ETag = item.ETag;
-                    deviceModel.Type = CUSTOMMODEL;
+                    deviceModel.Type = DeviceModel.DeviceModelType.CustomModel.ToString();
                     results.Add(deviceModel);
                 }
 

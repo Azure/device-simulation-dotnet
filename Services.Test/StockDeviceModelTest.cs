@@ -9,6 +9,7 @@ using Services.Test.helpers;
 using System;
 using System.IO;
 using System.Linq;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Xunit;
 
 namespace Services.Test
@@ -44,7 +45,7 @@ namespace Services.Test
             Assert.Equal(STOCK_MODEL_COUNT, result.Count());
             foreach (var model in result)
             {
-                Assert.Equal("StockModel", model.Type);
+                Assert.Equal(DeviceModel.DeviceModelType.StockModel.ToString(), model.Type);
             }
         }
 
