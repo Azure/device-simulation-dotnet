@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Services.Test.helpers;
@@ -212,6 +213,16 @@ namespace Services.Test
 
             // Assert
             Assert.False(this.target.Changed);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItCanBeInitializedWithNullValue()
+        {
+            // Act
+            this.target = new SmartDictionary(null);
+
+            // Assert
+            Assert.True(this.target.Changed);
         }
 
         private SmartDictionary GetEmptyProperties()
