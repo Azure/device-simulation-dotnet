@@ -65,7 +65,7 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItCreatesCustomDeviceModelsWithGuidInStorage()
+        public void ItCreatesCustomDeviceModelsWithETagInStorage()
         {
             // Arrange
             var deviceModel = new DeviceModel { ETag = "Etag_1" };
@@ -159,20 +159,55 @@ namespace Services.Test
         public void ItThrowsExceptionWhenInsertDeviceModelFailed()
         {
             // Arrange
-            this.SetupStorageToThrowException();
+            var deviceModel = new DeviceModel { Id = "id", ETag = "Etag" };
+            this.storage
+                .Setup(x => x.UpdateAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>()))
+                .ThrowsAsync(new Exception());
 
             // Act & Assert
-            Assert.ThrowsAsync<Exception>(() => this.target.InsertAsync(It.IsAny<DeviceModel>()));
+            Assert.ThrowsAsync<Exception>(() => this.target.InsertAsync(deviceModel));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItThrowsExceptionWhenUpsertDeviceModelFailed()
+        public void ItThrowsExceptionWhenUpsertDeviceModelFailedWithStorageGetAsyncById()
         {
             // Arrange
-            this.SetupStorageToThrowException();
+            var deviceModel = new DeviceModel { Id = "id", ETag = "Etag" };
 
             // Act & Assert
-            Assert.ThrowsAsync<Exception>(() => this.target.UpsertAsync(It.IsAny<DeviceModel>()));
+            Assert.ThrowsAsync<Exception>(() => this.target.UpsertAsync(deviceModel));
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItThrowsExceptionWhenUpsertDeviceModelFailedWithStorageUpdate()
+        {
+            // Arrange
+            var deviceModel = new DeviceModel { Id = "id", ETag = "Etag" };
+            var value = new ValueApiModel
+            {
+                Key = "key",
+                Data = JsonConvert.SerializeObject(deviceModel),
+                ETag = deviceModel.ETag
+            };
+            this.storage
+                .Setup(x => x.GetAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>()))
+                .ReturnsAsync(value);
+            this.storage
+                .Setup(x => x.UpdateAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>()))
+                .ThrowsAsync(new Exception());
+
+            // Act & Assert
+            Assert.ThrowsAsync<Exception>(() => this.target.UpsertAsync(deviceModel));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -281,17 +316,6 @@ namespace Services.Test
             this.storage
                 .Setup(x => x.GetAllAsync(It.IsAny<string>()))
                 .ReturnsAsync(list);
-        }
-
-        private void SetupStorageToThrowException()
-        {
-            this.storage
-                .Setup(x => x.UpdateAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>()))
-                .ThrowsAsync(new Exception());
         }
 
         private void SaveDeviceModelInStorage(DeviceModel deviceModel)
