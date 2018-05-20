@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
@@ -25,10 +24,12 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task ItThrowsOnInvalidConnStringFormat()
+        public void ItThrowsOnInvalidConnStringFormat()
         {
             // Assert
-            await Assert.ThrowsAsync<InvalidIotHubConnectionStringFormatException>(() => this.target.RedactAndStoreAsync("foobar"));
+            Assert.ThrowsAsync<InvalidIotHubConnectionStringFormatException>(
+                    async () => await this.target.RedactAndStoreAsync("foobar"))
+                .Wait(Constants.TEST_TIMEOUT);
         }
     }
 }

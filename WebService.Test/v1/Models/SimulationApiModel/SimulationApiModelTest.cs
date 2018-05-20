@@ -68,7 +68,7 @@ namespace WebService.Test.v1.Models
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task ItThrowsBadRequestExceptionForInvalidDeviceModels()
+        public void ItThrowsBadRequestExceptionForInvalidDeviceModels()
         {
             // Arrange
             SimulationApiModel InvalidDeviceModels(SimulationApiModel model)
@@ -81,11 +81,13 @@ namespace WebService.Test.v1.Models
             this.SetupConnectionStringManager();
 
             // Assert
-            await Assert.ThrowsAsync<BadRequestException>(() => simulationApiModel.ValidateInputRequest(this.logger.Object, this.connectionStringManager.Object));
+            Assert.ThrowsAsync<BadRequestException>(
+                    async () => await simulationApiModel.ValidateInputRequest(this.logger.Object, this.connectionStringManager.Object))
+                .Wait(Constants.TEST_TIMEOUT);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task ItThrowsBadRequestExceptionForInvalidDeviceModelsCount()
+        public void ItThrowsBadRequestExceptionForInvalidDeviceModelsCount()
         {
             // Arrange
             SimulationApiModel InvalidDeviceModels(SimulationApiModel model)
@@ -98,11 +100,13 @@ namespace WebService.Test.v1.Models
             this.SetupConnectionStringManager();
 
             // Assert
-            await Assert.ThrowsAsync<BadRequestException>(() => simulationApiModel.ValidateInputRequest(this.logger.Object, this.connectionStringManager.Object));
+            Assert.ThrowsAsync<BadRequestException>(
+                async () => await simulationApiModel.ValidateInputRequest(this.logger.Object, this.connectionStringManager.Object))
+                .Wait(Constants.TEST_TIMEOUT);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task ItThrowsBadRequestExceptionForInvalidTimes()
+        public void ItThrowsBadRequestExceptionForInvalidTimes()
         {
             // Arrange
             SimulationApiModel InvalidDates(SimulationApiModel model)
@@ -116,7 +120,9 @@ namespace WebService.Test.v1.Models
             this.SetupConnectionStringManager();
 
             // Assert
-            await Assert.ThrowsAsync<BadRequestException>(() => simulationApiModel.ValidateInputRequest(this.logger.Object, this.connectionStringManager.Object));
+            Assert.ThrowsAsync<BadRequestException>(
+                async () => await simulationApiModel.ValidateInputRequest(this.logger.Object, this.connectionStringManager.Object))
+                .Wait(Constants.TEST_TIMEOUT);
         }
 
         private void SetupConnectionStringManager()

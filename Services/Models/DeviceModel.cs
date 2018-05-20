@@ -29,8 +29,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
     public class DeviceModel
     {
+        // Note: Storage records' payload don't contain the ETag.
+        //       ETag is defined by the storage engine, e.g. with a dedicated field.
         [JsonIgnore]
         public string ETag { get; set; }
+
         public string Id { get; set; }
         public string Version { get; set; }
         public string Name { get; set; }

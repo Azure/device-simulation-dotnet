@@ -135,7 +135,8 @@ namespace Services.Test
         {
             // Act + Assert
             Assert.ThrowsAsync<InvalidInputException>(
-                () => this.target.InsertAsync(new SimulationModel(), "mytemplate"));
+                    async () => await this.target.InsertAsync(new SimulationModel(), "mytemplate"))
+                .Wait(Constants.TEST_TIMEOUT);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

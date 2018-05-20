@@ -32,24 +32,24 @@ namespace WebService.Test.v1.Controllers
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task GetReturnsTheListOfDeviceModels()
+        public void GetReturnsTheListOfDeviceModels()
         {
             // Arrange
             var deviceModels = this.GetDeviceModels();
-            
+
             this.deviceModelsService
                 .Setup(x => x.GetListAsync())
                 .ReturnsAsync(deviceModels);
 
             // Act
-            var result = await this.target.GetAsync();
+            var result = this.target.GetAsync().Result;
 
             // Assert
             Assert.Equal(deviceModels.Count, result.Items.Count);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task GetReturnsTheDeviceModelById()
+        public void GetReturnsTheDeviceModelById()
         {
             // Arrange
             const string ID = "deviceModelId";
@@ -60,7 +60,7 @@ namespace WebService.Test.v1.Controllers
                 .ReturnsAsync(deviceModel);
 
             // Act
-            var result = await this.target.GetAsync(ID);
+            var result = this.target.GetAsync(ID).Result;
 
             // Assert
             Assert.NotNull(result);
@@ -68,20 +68,20 @@ namespace WebService.Test.v1.Controllers
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task GetReturnsNullWithInvalidId()
+        public void GetReturnsNullWithInvalidId()
         {
             // Arrange
             const string ID = "deviceModelId";
 
             // Act
-            var result = await this.target.GetAsync(ID);
+            var result = this.target.GetAsync(ID).Result;
 
             // Assert
             Assert.Null(result);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task PostCreatesTheDeviceModelWithValidInput()
+        public void PostCreatesTheDeviceModelWithValidInput()
         {
             // Arrange
             const string ID = "deviceModelId";
@@ -93,7 +93,7 @@ namespace WebService.Test.v1.Controllers
                 .ReturnsAsync(deviceModel);
 
             // Act
-            var result = await this.target.PostAsync(deviceModelApiModel);
+            var result = this.target.PostAsync(deviceModelApiModel).Result;
 
             // Assert
             Assert.NotNull(result);
@@ -101,18 +101,20 @@ namespace WebService.Test.v1.Controllers
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task PostThrowsErrorWithInvalidInput()
+        public void PostThrowsErrorWithInvalidInput()
         {
             // Arrange
             const string ID = "deviceModelId";
             var deviceModel = this.GetDeviceModelById(ID);
 
             // Act & Assert
-            await Assert.ThrowsAsync<BadRequestException>(() => this.target.PostAsync(DeviceModelApiModel.FromServiceModel(deviceModel)));
+            Assert.ThrowsAsync<BadRequestException>(
+                    async () => await this.target.PostAsync(DeviceModelApiModel.FromServiceModel(deviceModel)))
+                .Wait(Constants.TEST_TIMEOUT);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task PutCreatesTheDeviceModelWithValidInput()
+        public void PutCreatesTheDeviceModelWithValidInput()
         {
             // Arrange
             const string ID = "deviceModelId";
@@ -124,7 +126,7 @@ namespace WebService.Test.v1.Controllers
                 .ReturnsAsync(deviceModel);
 
             // Act
-            var result = await this.target.PutAsync(deviceModelApiModel);
+            var result = this.target.PutAsync(deviceModelApiModel).Result;
 
             // Assert
             Assert.NotNull(result);
@@ -132,27 +134,30 @@ namespace WebService.Test.v1.Controllers
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task PutThrowsErrorWithInvalidInput()
+        public void PutThrowsErrorWithInvalidInput()
         {
             // Arrange
             const string ID = "deviceModelId";
             var deviceModel = this.GetDeviceModelById(ID);
 
             // Act & Assert
-            await Assert.ThrowsAsync<BadRequestException>(() => this.target.PutAsync(DeviceModelApiModel.FromServiceModel(deviceModel)));
+            Assert.ThrowsAsync<BadRequestException>(
+                async () => await this.target.PutAsync(DeviceModelApiModel.FromServiceModel(deviceModel)))
+                .Wait(Constants.TEST_TIMEOUT);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task DeleteInvokesDeviceModelServiceWithId()
+        public void DeleteInvokesDeviceModelServiceWithId()
         {
             // Arrange
             const string ID = "deviceModelId";
 
             // Act
-            await this.target.DeleteAsync(ID);
+            this.target.DeleteAsync(ID)
+                .Wait(Constants.TEST_TIMEOUT);
 
             // Assert
-            this.deviceModelsService.Verify(x => x.DeleteAsync(ID));
+            this.deviceModelsService.Verify(x => x.DeleteAsync(ID), Times.Once);
         }
 
         private static DeviceModelApiModel GetValidDeviceModelApiModel(string id)

@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -8,7 +9,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Moq;
 using Newtonsoft.Json;
 using Services.Test.helpers;
-using System;
 using Xunit;
 using Xunit.Abstractions;
 

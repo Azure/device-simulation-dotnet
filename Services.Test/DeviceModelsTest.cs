@@ -1,5 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -7,10 +11,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Moq;
 using Services.Test.helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Services.Test
@@ -134,15 +134,16 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task ItThrowsExceptionWhenDeleteDeviceModelFailed()
+        public void ItThrowsExceptionWhenDeleteDeviceModelFailed()
         {
             // Arrange
             this.customDeviceModels
                 .Setup(x => x.DeleteAsync(It.IsAny<string>()))
-                .ThrowsAsync(new Exception());
+                .ThrowsAsync(new SomeException());
 
             // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => this.target.DeleteAsync(It.IsAny<string>()));
+            Assert.ThrowsAsync<SomeException>(async () => await this.target.DeleteAsync(It.IsAny<string>()))
+                .Wait(Constants.TEST_TIMEOUT);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -150,7 +151,7 @@ namespace Services.Test
         {
             // Arrange
             const string ETAG = "etag";
-            var deviceModel = new DeviceModel() { ETag = ETAG };
+            var deviceModel = new DeviceModel { ETag = ETAG };
 
             this.customDeviceModels
                 .Setup(x => x.InsertAsync(It.IsAny<DeviceModel>(), true))
@@ -160,7 +161,7 @@ namespace Services.Test
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     null))
-                .Returns(Task.FromResult(new ValueApiModel() { ETag = ETAG }));
+                .Returns(Task.FromResult(new ValueApiModel { ETag = ETAG }));
 
             // Act
             var result = this.target.InsertAsync(deviceModel).Result;
@@ -171,17 +172,18 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task ItThrowsExceptionWhenInsertDeviceModelFailed()
+        public void ItThrowsExceptionWhenInsertDeviceModelFailed()
         {
             // Arrange
-            var deviceModel = new DeviceModel() { Id = "id" };
+            var deviceModel = new DeviceModel { Id = "id" };
 
             this.customDeviceModels
                 .Setup(x => x.InsertAsync(It.IsAny<DeviceModel>(), true))
-                .ThrowsAsync(new Exception());
+                .ThrowsAsync(new SomeException());
 
             // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => this.target.InsertAsync(deviceModel));
+            Assert.ThrowsAsync<SomeException>(async () => await this.target.InsertAsync(deviceModel))
+                .Wait(Constants.TEST_TIMEOUT);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -189,7 +191,7 @@ namespace Services.Test
         {
             // Arrange
             const string ETAG = "etag";
-            var deviceModel = new DeviceModel() { ETag = ETAG };
+            var deviceModel = new DeviceModel { ETag = ETAG };
 
             this.customDeviceModels
                 .Setup(x => x.UpsertAsync(It.IsAny<DeviceModel>()))
@@ -209,17 +211,18 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task ItThrowsExceptionWhenUpsertDeviceModelFailed()
+        public void ItThrowsExceptionWhenUpsertDeviceModelFailed()
         {
             // Arrange
-            var deviceModel = new DeviceModel() { Id = "id" };
+            var deviceModel = new DeviceModel { Id = "id" };
 
             this.customDeviceModels
                 .Setup(x => x.UpsertAsync(It.IsAny<DeviceModel>()))
-                .ThrowsAsync(new Exception());
+                .ThrowsAsync(new SomeException());
 
             // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => this.target.UpsertAsync(deviceModel));
+            Assert.ThrowsAsync<SomeException>(async () => await this.target.UpsertAsync(deviceModel))
+                .Wait(Constants.TEST_TIMEOUT);
         }
 
         private void ThereAreNoCustomDeviceModels()
@@ -238,22 +241,22 @@ namespace Services.Test
 
         private void ThereAreThreeStockDeviceModels()
         {
-            var deviceModelsList = new List<DeviceModel>()
+            var deviceModelsList = new List<DeviceModel>
             {
-                new DeviceModel() { Id = "chiller-01", ETag = "eTag_1", Type = "StockModel"},
-                new DeviceModel() { Id = "chiller-02", ETag = "eTag_2", Type = "StockModel"},
-                new DeviceModel() { Id = "chiller-03", ETag = "eTag_3", Type = "StockModel"}
+                new DeviceModel { Id = "chiller-01", ETag = "eTag_1", Type = "StockModel" },
+                new DeviceModel { Id = "chiller-02", ETag = "eTag_2", Type = "StockModel" },
+                new DeviceModel { Id = "chiller-03", ETag = "eTag_3", Type = "StockModel" }
             };
             this.stockDeviceModels.Setup(x => x.GetList()).Returns(deviceModelsList);
         }
 
         private void ThereAreThreeCustomDeviceModels()
         {
-            var deviceModelsList = new List<DeviceModel>()
+            var deviceModelsList = new List<DeviceModel>
             {
-                new DeviceModel() { Id = "1", ETag = "eTag_1", Type = "CustomModel"},
-                new DeviceModel() { Id = "2", ETag = "eTag_2", Type = "CustomModel"},
-                new DeviceModel() { Id = "3", ETag = "eTag_3", Type = "CustomModel"}
+                new DeviceModel { Id = "1", ETag = "eTag_1", Type = "CustomModel" },
+                new DeviceModel { Id = "2", ETag = "eTag_2", Type = "CustomModel" },
+                new DeviceModel { Id = "3", ETag = "eTag_3", Type = "CustomModel" }
             };
 
             this.customDeviceModels
