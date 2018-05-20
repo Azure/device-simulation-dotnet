@@ -18,15 +18,12 @@ namespace Services.Test
     {
         private const string STORAGE_COLLECTION = "deviceModels";
 
-        private readonly ITestOutputHelper log;
         private readonly Mock<IStorageAdapterClient> storage;
         private readonly Mock<ILogger> logger;
         private readonly CustomDeviceModels target;
 
-        public CustomDeviceModelsTest(ITestOutputHelper log)
+        public CustomDeviceModelsTest()
         {
-            this.log = log;
-
             this.storage = new Mock<IStorageAdapterClient>();
             this.logger = new Mock<ILogger>();
 
