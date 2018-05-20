@@ -164,39 +164,52 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         [JsonConverter(typeof(StringEnumConverter))]
         public enum DeviceModelMessageSchemaFormat
         {
-            [EnumMember(Value = "Binary")] Binary = 0,
+            [EnumMember(Value = "Binary")]
+            Binary = 0,
 
-            [EnumMember(Value = "Text")] Text = 10,
+            [EnumMember(Value = "Text")]
+            Text = 10,
 
-            [EnumMember(Value = "JSON")] JSON = 20
+            [EnumMember(Value = "JSON")]
+            JSON = 20
         }
 
         [JsonConverter(typeof(StringEnumConverter))]
         public enum DeviceModelMessageSchemaType
         {
-            [EnumMember(Value = "Object")] Object = 0,
+            [EnumMember(Value = "Object")]
+            Object = 0,
 
-            [EnumMember(Value = "Binary")] Binary = 10,
+            [EnumMember(Value = "Binary")]
+            Binary = 10,
 
-            [EnumMember(Value = "Text")] Text = 20,
+            [EnumMember(Value = "Text")]
+            Text = 20,
 
-            [EnumMember(Value = "Boolean")] Boolean = 30,
+            [EnumMember(Value = "Boolean")]
+            Boolean = 30,
 
-            [EnumMember(Value = "Integer")] Integer = 40,
+            [EnumMember(Value = "Integer")]
+            Integer = 40,
 
-            [EnumMember(Value = "Double")] Double = 50,
+            [EnumMember(Value = "Double")]
+            Double = 50,
 
-            [EnumMember(Value = "DateTime")] DateTime = 60
+            [EnumMember(Value = "DateTime")]
+            DateTime = 60
         }
 
         [JsonConverter(typeof(StringEnumConverter))]
         public enum DeviceModelType
         {
-            [EnumMember(Value = "Undefined")] Undefined = 0,
+            [EnumMember(Value = "Undefined")]
+            Undefined = 0,
 
-            [EnumMember(Value = "Stock")] Stock = 10,
+            [EnumMember(Value = "Stock")]
+            Stock = 10,
 
-            [EnumMember(Value = "Custom")] Custom = 20
+            [EnumMember(Value = "Custom")]
+            Custom = 20
         }
     }
 }
