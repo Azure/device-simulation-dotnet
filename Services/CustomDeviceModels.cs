@@ -79,7 +79,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 {
                     var deviceModel = JsonConvert.DeserializeObject<DeviceModel>(item.Data);
                     deviceModel.ETag = item.ETag;
-                    deviceModel.Type = DeviceModel.DeviceModelType.CustomModel.ToString();
+                    deviceModel.Type = DeviceModel.DeviceModelType.Custom;
                     results.Add(deviceModel);
                 }
 

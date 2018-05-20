@@ -2,10 +2,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
@@ -38,8 +40,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public string Version { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public string Type { get; set; }
+        public DeviceModelType Type { get; set; }
         public IoTHubProtocol Protocol { get; set; }
+
         public StateSimulation Simulation { get; set; }
         public Dictionary<string, object> Properties { get; set; }
         public IList<DeviceModelMessage> Telemetry { get; set; }
@@ -54,7 +57,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.Version = "0.0.0";
             this.Name = string.Empty;
             this.Description = string.Empty;
-            this.Type = string.Empty;
+            this.Type = DeviceModelType.Custom;
             this.Protocol = IoTHubProtocol.AMQP;
             this.Simulation = new StateSimulation();
             this.Properties = new Dictionary<string, object>();
@@ -145,7 +148,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public class DeviceModelMessageSchema
         {
             public string Name { get; set; }
+
             public DeviceModelMessageSchemaFormat Format { get; set; }
+
             public IDictionary<string, DeviceModelMessageSchemaType> Fields { get; set; }
 
             public DeviceModelMessageSchema()
@@ -156,28 +161,42 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             }
         }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public enum DeviceModelMessageSchemaFormat
         {
-            Binary = 0,
-            Text = 10,
-            JSON = 20
+            [EnumMember(Value = "Binary")] Binary = 0,
+
+            [EnumMember(Value = "Text")] Text = 10,
+
+            [EnumMember(Value = "JSON")] JSON = 20
         }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public enum DeviceModelMessageSchemaType
         {
-            Object = 0,
-            Binary = 10,
-            Text = 20,
-            Boolean = 30,
-            Integer = 40,
-            Double = 50,
-            DateTime = 60
+            [EnumMember(Value = "Object")] Object = 0,
+
+            [EnumMember(Value = "Binary")] Binary = 10,
+
+            [EnumMember(Value = "Text")] Text = 20,
+
+            [EnumMember(Value = "Boolean")] Boolean = 30,
+
+            [EnumMember(Value = "Integer")] Integer = 40,
+
+            [EnumMember(Value = "Double")] Double = 50,
+
+            [EnumMember(Value = "DateTime")] DateTime = 60
         }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public enum DeviceModelType
         {
-            CustomModel,
-            StockModel
+            [EnumMember(Value = "Undefined")] Undefined = 0,
+
+            [EnumMember(Value = "Stock")] Stock = 10,
+
+            [EnumMember(Value = "Custom")] Custom = 20
         }
     }
 }

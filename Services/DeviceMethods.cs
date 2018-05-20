@@ -1,14 +1,14 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Threading.Tasks;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
@@ -102,12 +102,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var t = Task.Run(() => this.MethodExecution(methodRequest));
 
                 return Task.FromResult(new MethodResponse((int) HttpStatusCode.OK));
-
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 this.log.Error("Failed executing method.", () => new { methodRequest, e });
-                return Task.FromResult(new MethodResponse((int)HttpStatusCode.InternalServerError));
+                return Task.FromResult(new MethodResponse((int) HttpStatusCode.InternalServerError));
             }
         }
 

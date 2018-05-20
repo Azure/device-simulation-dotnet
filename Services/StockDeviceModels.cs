@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
@@ -63,7 +63,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 foreach (var f in files)
                 {
                     var c = JsonConvert.DeserializeObject<DeviceModel>(File.ReadAllText(f));
-                    c.Type = DeviceModel.DeviceModelType.StockModel.ToString();
+                    c.Type = DeviceModel.DeviceModelType.Stock;
                     this.deviceModels.Add(c);
                 }
             }

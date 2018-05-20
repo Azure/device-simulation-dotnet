@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -44,17 +43,18 @@ namespace Services.Test
             // Arrange
             this.ThereAreThreeCustomDeviceModels();
             this.ThereAreThreeStockDeviceModels();
-            const int TOTAL_MODEL_COUNT = 6;
 
             // Act
             var result = this.target.GetListAsync().Result;
 
             // Assert
-            Assert.Equal(TOTAL_MODEL_COUNT, result.Count());
+            Assert.Equal(6, result.Count());
+            Assert.Equal(3, result.Count(x => x.Type == DeviceModel.DeviceModelType.Custom));
+            Assert.Equal(3, result.Count(x => x.Type == DeviceModel.DeviceModelType.Stock));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsOnlyStockDeviceModels()
+        public void ItReturnsOnlyStockDeviceModelsIfThereAreNoCustomModels()
         {
             // Arrange
             this.ThereAreNoCustomDeviceModels();
@@ -66,15 +66,11 @@ namespace Services.Test
 
             // Assert
             Assert.Equal(TOTAL_MODEL_COUNT, result.Count());
-
-            foreach (var model in result)
-            {
-                Assert.Equal(DeviceModel.DeviceModelType.StockModel.ToString(), model.Type);
-            }
+            Assert.Equal(TOTAL_MODEL_COUNT, result.Count(x => x.Type == DeviceModel.DeviceModelType.Stock));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsOnlyCustomDeviceModels()
+        public void ItReturnsOnlyCustomDeviceModelsIfThereAreNoStockModels()
         {
             // Arrange
             this.ThereAreThreeCustomDeviceModels();
@@ -86,11 +82,7 @@ namespace Services.Test
 
             // Assert
             Assert.Equal(TOTAL_MODEL_COUNT, result.Count());
-
-            foreach (var model in result)
-            {
-                Assert.Equal(DeviceModel.DeviceModelType.CustomModel.ToString(), model.Type);
-            }
+            Assert.Equal(TOTAL_MODEL_COUNT, result.Count(x => x.Type == DeviceModel.DeviceModelType.Custom));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -243,9 +235,9 @@ namespace Services.Test
         {
             var deviceModelsList = new List<DeviceModel>
             {
-                new DeviceModel { Id = "chiller-01", ETag = "eTag_1", Type = "StockModel" },
-                new DeviceModel { Id = "chiller-02", ETag = "eTag_2", Type = "StockModel" },
-                new DeviceModel { Id = "chiller-03", ETag = "eTag_3", Type = "StockModel" }
+                new DeviceModel { Id = "chiller-01", ETag = "eTag_1", Type = DeviceModel.DeviceModelType.Stock },
+                new DeviceModel { Id = "chiller-02", ETag = "eTag_2", Type = DeviceModel.DeviceModelType.Stock },
+                new DeviceModel { Id = "chiller-03", ETag = "eTag_3", Type = DeviceModel.DeviceModelType.Stock }
             };
             this.stockDeviceModels.Setup(x => x.GetList()).Returns(deviceModelsList);
         }
@@ -254,9 +246,9 @@ namespace Services.Test
         {
             var deviceModelsList = new List<DeviceModel>
             {
-                new DeviceModel { Id = "1", ETag = "eTag_1", Type = "CustomModel" },
-                new DeviceModel { Id = "2", ETag = "eTag_2", Type = "CustomModel" },
-                new DeviceModel { Id = "3", ETag = "eTag_3", Type = "CustomModel" }
+                new DeviceModel { Id = "1", ETag = "eTag_1", Type = DeviceModel.DeviceModelType.Custom },
+                new DeviceModel { Id = "2", ETag = "eTag_2", Type = DeviceModel.DeviceModelType.Custom },
+                new DeviceModel { Id = "3", ETag = "eTag_3", Type = DeviceModel.DeviceModelType.Custom }
             };
 
             this.customDeviceModels

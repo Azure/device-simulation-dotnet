@@ -271,7 +271,7 @@ namespace Services.Test
             // Assert
             foreach (var model in result)
             {
-                Assert.Equal(DeviceModel.DeviceModelType.CustomModel.ToString(), model.Type);
+                Assert.Equal(DeviceModel.DeviceModelType.Custom, model.Type);
                 Assert.Equal(UPDATED_ETAG, model.ETag);
             }
         }

@@ -45,7 +45,7 @@ namespace Services.Test
             Assert.Equal(STOCK_MODEL_COUNT, result.Count());
             foreach (var model in result)
             {
-                Assert.Equal(DeviceModel.DeviceModelType.StockModel.ToString(), model.Type);
+                Assert.Equal(DeviceModel.DeviceModelType.Stock, model.Type);
             }
         }
 

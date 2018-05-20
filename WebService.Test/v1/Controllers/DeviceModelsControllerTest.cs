@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -8,8 +9,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel;
 using Moq;
 using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using WebService.Test.helpers;
 using Xunit;
 
@@ -162,34 +161,35 @@ namespace WebService.Test.v1.Controllers
 
         private static DeviceModelApiModel GetValidDeviceModelApiModel(string id)
         {
-            return new DeviceModelApiModel()
+            return new DeviceModelApiModel
             {
                 Id = id,
                 Protocol = "AMQP",
                 ETag = "Etag",
-                Telemetry = new List<DeviceModelTelemetry>()
+                Type = "Custom",
+                Telemetry = new List<DeviceModelTelemetry>
                 {
-                    new DeviceModelTelemetry()
+                    new DeviceModelTelemetry
                     {
                         Interval = "00:00:10",
                         MessageTemplate = "template",
-                        MessageSchema = new DeviceModelTelemetryMessageSchema()
+                        MessageSchema = new DeviceModelTelemetryMessageSchema
                         {
                             Name = "name",
                             Format = "JSON",
-                            Fields = new Dictionary<string, string>()
+                            Fields = new Dictionary<string, string>
                             {
                                 { "key", "value" }
                             }
                         }
                     }
                 },
-                Simulation = new DeviceModelSimulation()
+                Simulation = new DeviceModelSimulation
                 {
                     Interval = "00:00:10",
-                    Scripts = new List<DeviceModelSimulationScript>()
+                    Scripts = new List<DeviceModelSimulationScript>
                     {
-                        new DeviceModelSimulationScript()
+                        new DeviceModelSimulationScript
                         {
                             Type = "type",
                             Path = "path",
@@ -219,7 +219,8 @@ namespace WebService.Test.v1.Controllers
             var deviceModel = new DeviceModel
             {
                 Id = id,
-                ETag = "Etag_1"
+                ETag = "Etag_1",
+                Type = DeviceModel.DeviceModelType.Custom
             };
 
             return deviceModel;

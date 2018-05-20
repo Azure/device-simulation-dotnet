@@ -134,6 +134,7 @@ namespace WebService.Test.v1.Models
             var deviceModelApiModel = new DeviceModelApiModel
             {
                 Id = "id",
+                Type = "Custom",
                 ETag = "Etag_1",
                 Protocol = "AMQP",
                 Telemetry = new List<DeviceModelTelemetry>()
