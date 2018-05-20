@@ -104,10 +104,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 throw new InvalidInputException("Device model id cannot be empty! ");
             }
 
-            var item = await this.storage.GetAsync(STORAGE_COLLECTION, id);
-            var deviceModel = JsonConvert.DeserializeObject<DeviceModel>(item.Data);
-            deviceModel.ETag = item.ETag;
-            return deviceModel;
+            ValueApiModel item;
+            try
+            {
+                item = await this.storage.GetAsync(STORAGE_COLLECTION, id);
+            }
+            catch (ResourceNotFoundException)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to load device model from storage",
+                    () => new { id, e.Message, Exception = e });
+                throw new ExternalDependencyException("Unable to load device model from storage", e);
+            }
+
+            try
+            {
+                var deviceModel = JsonConvert.DeserializeObject<DeviceModel>(item.Data);
+                deviceModel.ETag = item.ETag;
+                return deviceModel;
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to parse device model loaded from storage",
+                    () => new { id, e.Message, Exception = e });
+                throw new ExternalDependencyException("Unable to parse device model loaded from storage", e);
+            }
         }
 
         /// <summary>
@@ -196,7 +220,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             catch (Exception exception)
             {
                 this.log.Error("Something went wrong while upserting the device model.", () => new { deviceModel });
-                throw new ExternalDependencyException("Failed to upsert", exception);
+                throw new ExternalDependencyException("Failed to upsert: " + exception.Message, exception);
             }
 
             return deviceModel;
