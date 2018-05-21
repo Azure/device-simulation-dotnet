@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
@@ -49,8 +50,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
             deviceModel.ValidateInputRequest(this.log);
 
-            return DeviceModelApiModel.FromServiceModel(
-                await this.deviceModelsService.InsertAsync(deviceModel.ToServiceModel()));
+            // When create a new device model, set device model type to custom
+            var model = deviceModel.ToServiceModel();
+            model.Type = DeviceModel.DeviceModelType.Custom;
+
+            return DeviceModelApiModel.FromServiceModel(await this.deviceModelsService.InsertAsync(model));
         }
 
         [HttpPut("{id}")]

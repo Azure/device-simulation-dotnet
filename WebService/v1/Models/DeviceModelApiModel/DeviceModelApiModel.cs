@@ -154,6 +154,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
         {
             const string NO_PROTOCOL = "The device model doesn't contain a protocol";
             const string ZERO_TELEMETRY = "The device model has zero telemetry";
+            const string INVALID_TYPE = "The device model has invalid type";
+
+            // A device model must contain a valid type.
+            // Note: null is OK.
+            if (this.Type != null && !Enum.TryParse(this.Type, true, out DeviceModel.DeviceModelType _))
+            {
+                log.Error(INVALID_TYPE, () => new { deviceModel = this });
+                throw new BadRequestException(INVALID_TYPE);
+            }
 
             // A device model must contain a protocol
             if (this.Protocol == String.Empty)
