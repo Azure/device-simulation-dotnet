@@ -149,7 +149,7 @@ function main(context, previousState, previousProperties) {
     // Fluctuate altitude between given variation constant by more or less
     state.altitude = vary(AverageAltitude, AltitudeVariation, AverageAltitude - AltitudeVariation, AverageAltitude + AltitudeVariation).toFixed(DecimalPrecision);
 
-    return state;
+    updateState(state);
 }
 
 /**
