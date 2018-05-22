@@ -242,7 +242,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             // TODO: Work in progress - CPU perf optimization
 
             // Ignore the retry, just schedule the next message
-
             this.ScheduleTelemetry();
 
             // TODO: back off? - this retry logic is probably overloading the CPU

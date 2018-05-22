@@ -6,45 +6,12 @@
     <RootNamespace>Microsoft.Azure.IoTSolutions.DeviceSimulation.Services</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="data\devicemodels\chiller-01.json" />
-    <None Remove="data\devicemodels\chiller-02.json" />
-    <None Remove="data\devicemodels\elevator-01.json" />
-    <None Remove="data\devicemodels\elevator-02.json" />
-    <None Remove="data\devicemodels\engine-01.json" />
-    <None Remove="data\devicemodels\engine-02.json" />
-    <None Remove="data\devicemodels\prototype-01.json" />
-    <None Remove="data\devicemodels\prototype-02.json" />
-    <None Remove="data\devicemodels\scripts\chiller-01-state.js" />
-    <None Remove="data\devicemodels\scripts\chiller-02-state.js" />
-    <None Remove="data\devicemodels\scripts\elevator-01-state.js" />
-    <None Remove="data\devicemodels\scripts\elevator-02-state.js" />
-    <None Remove="data\devicemodels\scripts\emergencyLanding-method.js" />
-    <None Remove="data\devicemodels\scripts\EmergencyValveRelease-method.js" />
-    <None Remove="data\devicemodels\scripts\EmptyTank-method.js" />
-    <None Remove="data\devicemodels\scripts\engine-01-state.js" />
-    <None Remove="data\devicemodels\scripts\engine-02-state.js" />
-    <None Remove="data\devicemodels\scripts\FillTank-method.js" />
-    <None Remove="data\devicemodels\scripts\FirmwareUpdate-method.js" />
-    <None Remove="data\devicemodels\scripts\IncreasePressure-method.js" />
+    <None Remove="data\devicemodels\drone-01.json" />
+    <None Remove="data\devicemodels\scripts\drone-01-state.js" />
     <None Remove="data\devicemodels\scripts\MoveDevice-method.js" />
-    <None Remove="data\devicemodels\scripts\prototype-01-state.js" />
-    <None Remove="data\devicemodels\scripts\prototype-02-state.js" />
-    <None Remove="data\devicemodels\scripts\Reboot-method.js" />
     <None Remove="data\devicemodels\scripts\RestartEngine-method.js" />
-    <None Remove="data\devicemodels\scripts\SetFuelLevel-method.js" />
-    <None Remove="data\devicemodels\scripts\SetTemperature-method.js" />
     <None Remove="data\devicemodels\scripts\StartDevice-method.js" />
-    <None Remove="data\devicemodels\scripts\StartElevator-method.js" />
-    <None Remove="data\devicemodels\scripts\StartMovingDevice-method.js" />
     <None Remove="data\devicemodels\scripts\StopDevice-method.js" />
-    <None Remove="data\devicemodels\scripts\StopElevator-method.js" />
-    <None Remove="data\devicemodels\scripts\StopMovingDevice-method.js" />
-    <None Remove="data\devicemodels\scripts\TempDecrease-method.js" />
-    <None Remove="data\devicemodels\scripts\TempIncrease-method.js" />
-    <None Remove="data\devicemodels\scripts\truck-01-state.js" />
-    <None Remove="data\devicemodels\scripts\truck-02-state.js" />
-    <None Remove="data\devicemodels\truck-01.json" />
-    <None Remove="data\devicemodels\truck-02.json" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="jint" Version="2.10.4" />
@@ -53,13 +20,5 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="2.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Update="data\devicemodels\drone-01.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="data\devicemodels\scripts\drone-01-state.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 </Project>

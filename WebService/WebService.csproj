@@ -26,9 +26,6 @@
     <LaunchUrl>http://localhost:9003/v1/status</LaunchUrl>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="appsettings.ini" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="appsettings.ini">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

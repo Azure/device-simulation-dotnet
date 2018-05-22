@@ -23,10 +23,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         private IDeviceTelemetryActor context;
         private DeviceModel.DeviceModelMessage message;
 
-        // Add time the event was written as a telemetry property
-        private const string OCCURRENCE_TIME_PROPERTY = "occurrenceUtcTime";
-        private const string DEVICE_ID_PROPERTY = "deviceId";
-
         public SendTelemetry(
             ILogger logger)
         {
@@ -64,11 +60,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             {
                 msg = msg.Replace("${" + value.Key + "}", value.Value.ToString());
             }
-
-            // Kirpas: Temporary fix as metadata is not correctly interpreted by streaming solutions such as ASA
-            var format = $"{{\"{OCCURRENCE_TIME_PROPERTY}\":\"{DateTimeOffset.UtcNow.ToString()}\",\"{DEVICE_ID_PROPERTY}\":\"{this.deviceId}\",";
-            msg = msg.Replace("{", "");
-            msg = String.Concat(format, msg);
 
             this.SendTelemetryMessage(msg);
         }

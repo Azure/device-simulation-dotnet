@@ -291,10 +291,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public string GenerateId(string deviceModelId, int position)
         {
-            // Since we're running across a cluster, devise a strategy to get unique names
-            // According to https://forums.docker.com/t/net-core-linux-get-docker-container-id-in-code/32725
-            // Environment.MachineName returns the GUID of the container
-            return Environment.MachineName + "_" + deviceModelId + "." + position;
+            return deviceModelId + "." + position;
         }
 
         // This call can throw an exception, which is fine when the exception happens during a method
@@ -380,7 +377,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             // When sending telemetry or other operations, wait only for preconfigured number of milliseconds. 
             // This setting sets how throttling affects the application. The default SDK value is 4 minutes, 
             // that causes high CPU usage. However extreme lower values such as 10000 milliseconds causes 
-            // memory leaks leading to simulator crashing and termination of telemetry.
+            // memory leaks at high scale ingestion, leading to termination of telemetry.
             sdkClient.OperationTimeoutInMilliseconds = (uint)this.servicesConfig.IoTSdkConnectTimeout;
 
             return sdkClient;

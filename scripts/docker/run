@@ -4,7 +4,7 @@
 set -e
 
 # Note: use lowercase names for the Docker images
-DOCKER_IMAGE="kirpasingh/drone-iot"
+DOCKER_IMAGE="azureiotpcs/device-simulation-dotnet"
 
 APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && cd .. && pwd )/"
 source "$APP_HOME/scripts/.functions.sh"

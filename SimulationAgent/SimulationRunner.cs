@@ -312,7 +312,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             while (this.running)
             {
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
                 foreach (var device in this.deviceStateActors)
                 {
                     device.Value.Run();
@@ -330,7 +329,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             {
                 this.connectionLoopSettings.NewLoop();
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
                 foreach (var device in this.deviceConnectionActors)
                 {
                     device.Value.Run();
@@ -349,7 +347,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.propertiesLoopSettings.NewLoop();
 
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
                 foreach (var device in this.devicePropertiesActors)
                 {
                     device.Value.Run();
@@ -380,7 +377,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 }
 
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
                 foreach (var telemetry in this.deviceTelemetryActors)
                 {
                     var stat = telemetry.Value.Run();
