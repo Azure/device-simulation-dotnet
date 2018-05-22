@@ -80,6 +80,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
         public DeviceModel ToServiceModel(string id = "")
         {
             this.Id = id;
+            Enum.TryParse(this.Type, true, out DeviceModel.DeviceModelType type);
 
             var result = new DeviceModel
             {
@@ -88,7 +89,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
                 Version = this.Version,
                 Name = this.Name,
                 Description = this.Description,
-                Type = (DeviceModel.DeviceModelType)Enum.Parse(typeof(DeviceModel.DeviceModelType), this.Type, true),
+                Type = type,
                 Protocol = (IoTHubProtocol)Enum.Parse(typeof(IoTHubProtocol), this.Protocol, true),
                 Simulation = DeviceModelSimulation.ToServiceModel(this.Simulation),
                 Properties = new Dictionary<string, object>(this.Properties),
@@ -154,11 +155,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
         {
             const string NO_PROTOCOL = "The device model doesn't contain a protocol";
             const string ZERO_TELEMETRY = "The device model has zero telemetry";
-            const string INVALID_TYPE = "The device model has invalid type";
+            const string INVALID_TYPE = "The device model has an invalid type";
 
-            // A device model must contain a valid type.
-            // Note: null is OK.
-            if (this.Type != null && !Enum.TryParse(this.Type, true, out DeviceModel.DeviceModelType _))
+            // We accept empty string, null and 'Custom' values
+            if (!string.IsNullOrEmpty(this.Type)
+                && (!Enum.TryParse(this.Type, true, out DeviceModel.DeviceModelType type)
+                    || type != DeviceModel.DeviceModelType.Custom))
             {
                 log.Error(INVALID_TYPE, () => new { deviceModel = this });
                 throw new BadRequestException(INVALID_TYPE);

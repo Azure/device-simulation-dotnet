@@ -50,11 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
             deviceModel.ValidateInputRequest(this.log);
 
-            // When create a new device model, set device model type to custom
-            var model = deviceModel.ToServiceModel();
-            model.Type = DeviceModel.DeviceModelType.Custom;
-
-            return DeviceModelApiModel.FromServiceModel(await this.deviceModelsService.InsertAsync(model));
+            return DeviceModelApiModel.FromServiceModel(await this.deviceModelsService.InsertAsync(deviceModel.ToServiceModel()));
         }
 
         [HttpPut("{id}")]

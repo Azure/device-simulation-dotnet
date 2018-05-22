@@ -141,6 +141,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             deviceModel.Created = DateTimeOffset.UtcNow;
             deviceModel.Modified = deviceModel.Created;
+            deviceModel.Type = DeviceModel.DeviceModelType.Custom;
 
             if (generateId)
             {
