@@ -6,11 +6,6 @@
     <RootNamespace>Microsoft.Azure.IoTSolutions.DeviceSimulation.Services</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="data\devicemodels\drone-01.json" />
-    <None Remove="data\devicemodels\scripts\drone-01-state.js" />
-    <None Remove="data\devicemodels\scripts\emergencyLanding-method.js" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="jint" Version="2.10.4" />
     <PackageReference Include="Microsoft.Azure.Devices" Version="1.6.0" />
     <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.7.0" />
