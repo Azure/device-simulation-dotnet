@@ -91,6 +91,7 @@ GOTO :Run
         -e PCS_AUTH_ISSUER ^
         -e PCS_AUTH_AUDIENCE ^
         -e PCS_TWIN_READ_WRITE_ENABLED ^
+		-e PCS_IOTSDK_CONNECT_TIMEOUT ^
         -v %PCS_CACHE%\sandbox\.config:/root/.config ^
         -v %PCS_CACHE%\sandbox\.dotnet:/root/.dotnet ^
         -v %PCS_CACHE%\sandbox\.nuget:/root/.nuget ^

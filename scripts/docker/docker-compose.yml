@@ -27,6 +27,7 @@ services:
       - PCS_SUBSCRIPTION_ID
       - PCS_RESOURCE_GROUP
       - PCS_IOHUB_NAME
+      - PCS_IOTSDK_CONNECT_TIMEOUT
     #volumes:
     #  - ./sample-volume:/app/data:ro
   storageadapter:
