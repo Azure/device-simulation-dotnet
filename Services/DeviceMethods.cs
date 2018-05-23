@@ -50,6 +50,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             ISmartDictionary deviceState,
             ISmartDictionary deviceProperties)
         {
+            if (methods == null) return;
+
             if (this.isRegistered)
             {
                 this.log.Error("Application error, each device must have a separate instance", () => { });
@@ -100,12 +102,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var t = Task.Run(() => this.MethodExecution(methodRequest));
 
                 return Task.FromResult(new MethodResponse((int) HttpStatusCode.OK));
-
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 this.log.Error("Failed executing method.", () => new { methodRequest, e });
-                return Task.FromResult(new MethodResponse((int)HttpStatusCode.InternalServerError));
+                return Task.FromResult(new MethodResponse((int) HttpStatusCode.InternalServerError));
             }
         }
 

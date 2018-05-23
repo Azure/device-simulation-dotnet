@@ -1,7 +1,5 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
-using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -13,6 +11,8 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
 using Moq;
 using SimulationAgent.Test.helpers;
+using System;
+using System.Collections.Generic;
 using Xunit;
 using Xunit.Abstractions;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
@@ -37,7 +37,6 @@ namespace SimulationAgent.Test
         private readonly Mock<IDeviceTelemetryActor> deviceTelemetryActor;
         private readonly Mock<IDevicePropertiesActor> devicePropertiesActor;
         private readonly Mock<IRateLimiting> rateLimiting;
-        private readonly Mock<UpdateDeviceState> updateDeviceStateLogic;
         private readonly SimulationRunner target;
 
         public SimulationRunnerTest(ITestOutputHelper log)
@@ -54,7 +53,6 @@ namespace SimulationAgent.Test
             this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
             this.deviceTelemetryActor = new Mock<IDeviceTelemetryActor>();
             this.devicePropertiesActor = new Mock<IDevicePropertiesActor>();
-            this.updateDeviceStateLogic = new Mock<UpdateDeviceState>();
             this.rateLimiting = new Mock<IRateLimiting>();
             this.ratingConfig.Setup(x => x.DeviceMessagesPerSecond).Returns(10);
 
@@ -275,11 +273,30 @@ namespace SimulationAgent.Test
             Assert.Equal(EXPECT_RESULT, result);
         }
 
-        private SimulationModel GenerateSimulationModel(int ACTIVE_DEVICES_COUNT)
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItHandlesLoadDeviceModelException()
+        {
+            // Arrange
+            const int ACTIVE_DEVICES_COUNT = 7;
+
+            var simulation = this.GenerateSimulationModel(ACTIVE_DEVICES_COUNT);
+
+            this.deviceModels
+                .Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ThrowsAsync(new AggregateException());
+
+            // Act
+            var ex = Record.Exception(() => this.target.Start(simulation));
+
+            // Assert
+            Assert.Null(ex);
+        }
+
+        private SimulationModel GenerateSimulationModel(int activeDevicesCount)
         {
             var models = new List<DeviceModelRef>
             {
-                new DeviceModelRef { Id = "01", Count = ACTIVE_DEVICES_COUNT }
+                new DeviceModelRef { Id = "01", Count = activeDevicesCount }
             };
 
             return new SimulationModel

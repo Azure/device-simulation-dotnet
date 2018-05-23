@@ -135,7 +135,8 @@ namespace Services.Test
         {
             // Act + Assert
             Assert.ThrowsAsync<InvalidInputException>(
-                () => this.target.InsertAsync(new SimulationModel(), "mytemplate"));
+                    async () => await this.target.InsertAsync(new SimulationModel(), "mytemplate"))
+                .Wait(Constants.TEST_TIMEOUT);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -144,11 +145,15 @@ namespace Services.Test
             // Arrange
             this.ThereAreSomeDeviceModels();
             this.ThereIsAnEnabledSimulationInTheStorage();
+            var s = new SimulationModel { Id = Guid.NewGuid().ToString(), Enabled = false };
 
             // Act + Assert
-            var s = new SimulationModel { Id = Guid.NewGuid().ToString(), Enabled = false };
-            Assert.ThrowsAsync<ConflictingResourceException>(() => this.target.InsertAsync(s));
-            Assert.ThrowsAsync<ConflictingResourceException>(() => this.target.UpsertAsync(s));
+            // This fails because only 1 solution can be created
+            Assert.ThrowsAsync<ConflictingResourceException>(async () => await this.target.InsertAsync(s))
+                .Wait(Constants.TEST_TIMEOUT);
+            // This fails because only "1" can be used as a simulation ID
+            Assert.ThrowsAsync<InvalidInputException>(async () => await this.target.UpsertAsync(s))
+                .Wait(Constants.TEST_TIMEOUT);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -196,28 +201,65 @@ namespace Services.Test
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void UpsertRequiresIdWhileInsertDoesNot()
         {
-            // Act
+            // Arrange
             var s1 = new SimulationModel();
             var s2 = new SimulationModel();
-            this.target.InsertAsync(s1);
+            this.ThereAreNoSimulationsInTheStorage();
+
+            // Act - No exception occurs
+            this.target.InsertAsync(s1).Wait(Constants.TEST_TIMEOUT);
 
             // Act + Assert
-            Assert.ThrowsAsync<InvalidInputException>(() => this.target.UpsertAsync(s2));
+            Assert.ThrowsAsync<InvalidInputException>(async () => await this.target.UpsertAsync(s2))
+                .Wait(Constants.TEST_TIMEOUT);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void UpsertUsesOptimisticConcurrency()
         {
             // Arrange
-            this.deviceModels.Setup(x => x.GetList()).Returns(this.models);
+            const string ETAG1 = "001";
+            const string ETAG2 = "002";
 
-            var id = Guid.NewGuid().ToString();
-            var s1 = new SimulationModel { Id = id, Enabled = false };
-            this.target.UpsertAsync(s1);
+            // Initial simulation 
+            var simulation1 = new SimulationModel { Id = SIMULATION_ID, ETag = ETAG1 };
+            var storageRecord1 = new ValueApiModel
+            {
+                Key = SIMULATION_ID,
+                Data = JsonConvert.SerializeObject(simulation1),
+                ETag = simulation1.ETag
+            };
+            var storageList1 = new ValueListApiModel();
+            storageList1.Items.Add(storageRecord1);
+            
+            // Simulation after update
+            var simulation2 = new SimulationModel { Id = SIMULATION_ID, ETag = ETAG2 };
+            var storageRecord2 = new ValueApiModel
+            {
+                Key = SIMULATION_ID,
+                Data = JsonConvert.SerializeObject(simulation2),
+                ETag = simulation2.ETag
+            };
+            var storageList2 = new ValueListApiModel();
+            storageList2.Items.Add(storageRecord2);
+            
+            // Initial setup - the ETag matches
+            this.storage.Setup(x => x.GetAllAsync(STORAGE_COLLECTION)).ReturnsAsync(storageList1);
+            this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(storageRecord2);
+
+            // Act - No exception because ETag matches
+            // Note: the call to UpsertAsync modifies the object, don't reuse the variable later
+            this.target.UpsertAsync(simulation1).Wait(Constants.TEST_TIMEOUT);
+
+            // Arrange - the ETag won't match
+            this.storage.Setup(x => x.GetAllAsync(STORAGE_COLLECTION)).ReturnsAsync(storageList2);
 
             // Act + Assert
-            var s1Updated = new SimulationModel { Id = id, Enabled = true };
-            Assert.ThrowsAsync<ResourceOutOfDateException>(() => this.target.UpsertAsync(s1Updated));
+            var simulationOutOfDate = new SimulationModel { Id = SIMULATION_ID, ETag = ETAG1 };
+            Assert.ThrowsAsync<ResourceOutOfDateException>(
+                    async () => await this.target.UpsertAsync(simulationOutOfDate))
+                .Wait(Constants.TEST_TIMEOUT);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -245,7 +287,7 @@ namespace Services.Test
                 .ReturnsAsync(updatedValue);
 
             // Act
-            this.target.UpsertAsync(simulation).Wait();
+            this.target.UpsertAsync(simulation).Wait(Constants.TEST_TIMEOUT);
 
             // Assert
             this.storage.Verify(x => x.UpdateAsync(
@@ -255,9 +297,25 @@ namespace Services.Test
                 "ETag0"));
         }
 
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void CreatingMultipleSimulationsViaUpsertIsNotAllowed()
+        {
+            // Arrange
+            this.ThereAreSomeDeviceModels();
+            this.ThereIsAnEnabledSimulationInTheStorage();
+            var s = new SimulationModel { Id = Guid.NewGuid().ToString(), Enabled = false };
+
+            // Act + Assert
+            // Note: the exception is 'InvalidInputException' because only id='1' is allowed. This will
+            // change in future when multiple simulation will be allowed.
+            Assert.ThrowsAsync<InvalidInputException>(async () => await this.target.UpsertAsync(s))
+                .Wait(Constants.TEST_TIMEOUT);
+        }
+
         private void ThereAreSomeDeviceModels()
         {
-            this.deviceModels.Setup(x => x.GetList()).Returns(this.models);
+            this.deviceModels.Setup(x => x.GetListAsync())
+                .ReturnsAsync(this.models);
         }
 
         private void ThereAreNoSimulationsInTheStorage()

@@ -18,6 +18,7 @@
     <Folder Include="IntegrationTests" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Services\Services.csproj" />
     <ProjectReference Include="..\WebService\WebService.csproj" />
   </ItemGroup>
 </Project>

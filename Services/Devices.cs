@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
+using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Common.Exceptions;
 using Microsoft.Azure.Devices.Shared;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
@@ -15,6 +15,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Device = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Device;
+using IotHubConnectionStringBuilder = Microsoft.Azure.Devices.IotHubConnectionStringBuilder;
 using TransportType = Microsoft.Azure.Devices.Client.TransportType;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
@@ -375,7 +376,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     throw new InvalidConfigurationException($"Unable to create a client for the given protocol ({protocol})");
             }
 
-            sdkClient.SetRetryPolicy(new Azure.Devices.Client.NoRetry());
+            sdkClient.SetRetryPolicy(new NoRetry());
             sdkClient.OperationTimeoutInMilliseconds = SDK_CLIENT_TIMEOUT;
 
             return sdkClient;
