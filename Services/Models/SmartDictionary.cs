@@ -38,7 +38,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         public SmartDictionary(IDictionary<string, object> dictionary)
         {
-            this.dictionary = new ConcurrentDictionary<string, object>(dictionary);
+            this.dictionary = new ConcurrentDictionary<string, object>(dictionary?? new Dictionary<string, object>());
             this.Changed = true;
         }
 

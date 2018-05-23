@@ -2,76 +2,86 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Newtonsoft.Json;
 
-// TODO: tests
-// TODO: handle errors
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface IDeviceModels
     {
-        IEnumerable<DeviceModel> GetList();
-        DeviceModel Get(string id);
+        /// <summary>
+        /// Get list of device models.
+        /// </summary>
+        Task<IEnumerable<DeviceModel>> GetListAsync();
+
+        /// <summary>
+        /// Get a device model.
+        /// </summary>
+        Task<DeviceModel> GetAsync(string id);
+
+        /// <summary>
+        /// Create a device model.
+        /// </summary>
+        Task<DeviceModel> InsertAsync(DeviceModel deviceModel);
+
+        /// <summary>
+        /// Create or replace a device model.
+        /// </summary>
+        Task<DeviceModel> UpsertAsync(DeviceModel deviceModel);
+
+        /// <summary>
+        /// Delete a custom device model.
+        /// </summary>
+        Task DeleteAsync(string id);
     }
 
+    /// <summary>
+    /// Proxy to stock and custom device models services.
+    /// Note: the exceptions are generated in the stock and custom device
+    /// models services and surface as-is without any more catch/wrapping here.
+    /// </summary>
     public class DeviceModels : IDeviceModels
     {
         // ID used for custom device models, where the list of sensors is provided by the user
         public const string CUSTOM_DEVICE_MODEL_ID = "custom";
 
-        private const string EXT = ".json";
-
-        private readonly IServicesConfig config;
         private readonly ILogger log;
-
-        private List<string> deviceModelFiles;
-        private List<DeviceModel> deviceModels;
+        private readonly ICustomDeviceModels customDeviceModels;
+        private readonly IStockDeviceModels stockDeviceModels;
 
         public DeviceModels(
-            IServicesConfig config,
+            ICustomDeviceModels customDeviceModels,
+            IStockDeviceModels stockDeviceModels,
             ILogger logger)
         {
-            this.config = config;
             this.log = logger;
-            this.deviceModelFiles = null;
-            this.deviceModels = null;
+            this.stockDeviceModels = stockDeviceModels;
+            this.customDeviceModels = customDeviceModels;
         }
 
-        public IEnumerable<DeviceModel> GetList()
+        /// <summary>
+        /// Get list of device models.
+        /// </summary>
+        public async Task<IEnumerable<DeviceModel>> GetListAsync()
         {
-            if (this.deviceModels != null) return this.deviceModels;
+            var stockDeviceModelsList = this.stockDeviceModels.GetList();
+            var customDeviceModelsList = await this.customDeviceModels.GetListAsync();
+            var deviceModels = stockDeviceModelsList
+                .Concat(customDeviceModelsList)
+                .ToList();
 
-            this.deviceModels = new List<DeviceModel>();
-
-            try
-            {
-                var files = this.GetDeviceModelFiles();
-                foreach (var f in files)
-                {
-                    var c = JsonConvert.DeserializeObject<DeviceModel>(File.ReadAllText(f));
-                    this.deviceModels.Add(c);
-                }
-            }
-            catch (Exception e)
-            {
-                this.log.Error("Unable to load Device Model configuration",
-                    () => new { e.Message, Exception = e });
-
-                throw new InvalidConfigurationException("Unable to load Device Model configuration: " + e.Message, e);
-            }
-
-            return this.deviceModels;
+            return deviceModels;
         }
 
-        public DeviceModel Get(string id)
+        /// <summary>
+        /// Get a device model.
+        /// </summary>
+        public async Task<DeviceModel> GetAsync(string id)
         {
-            var list = this.GetList();
+            var list = await this.GetListAsync();
             var item = list.FirstOrDefault(i => i.Id == id);
             if (item != null)
                 return item;
@@ -81,19 +91,67 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             throw new ResourceNotFoundException();
         }
 
-        private List<string> GetDeviceModelFiles()
+        /// <summary>
+        /// Create a device model.
+        /// </summary>
+        public async Task<DeviceModel> InsertAsync(DeviceModel deviceModel)
         {
-            if (this.deviceModelFiles != null) return this.deviceModelFiles;
+            if (this.CheckStockDeviceModelExistence(deviceModel.Id))
+            {
+                throw new ConflictingResourceException(
+                    "Device model with id '" + deviceModel.Id + "' already exists!");
+            }
 
-            this.log.Debug("Device models folder", () => new { this.config.DeviceModelsFolder });
+            var result = await this.customDeviceModels.InsertAsync(deviceModel);
+            deviceModel.ETag = result.ETag;
 
-            var fileEntries = Directory.GetFiles(this.config.DeviceModelsFolder);
+            return deviceModel;
+        }
 
-            this.deviceModelFiles = fileEntries.Where(fileName => fileName.EndsWith(EXT)).ToList();
+        /// <summary>
+        /// Create or replace a device model.
+        /// </summary>
+        public async Task<DeviceModel> UpsertAsync(DeviceModel deviceModel)
+        {
+            if (this.CheckStockDeviceModelExistence(deviceModel.Id))
+            {
+                this.log.Error("Stock device models cannot be updated",
+                    () => new { deviceModel });
+                throw new ConflictingResourceException(
+                    "Stock device models cannot be updated");
+            }
 
-            this.log.Debug("Device model files", () => new { this.deviceModelFiles });
+            var result = await this.customDeviceModels.UpsertAsync(deviceModel);
+            deviceModel.ETag = result.ETag;
 
-            return this.deviceModelFiles;
+            return deviceModel;
+        }
+
+        /// <summary>
+        /// Delete a custom device model.
+        /// </summary>
+        public async Task DeleteAsync(string id)
+        {
+            if (this.CheckStockDeviceModelExistence(id))
+            {
+                this.log.Info("Stock device models cannot be deleted",
+                    () => new { Id = id });
+                throw new UnauthorizedAccessException(
+                    "Stock device models cannot be deleted");
+            }
+
+            await this.customDeviceModels.DeleteAsync(id);
+        }
+
+        /// <summary>
+        /// Returns True if there is a stock model with the given Id
+        /// </summary>
+        private bool CheckStockDeviceModelExistence(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return false;
+
+            return this.stockDeviceModels.GetList()
+                .Any(model => id.Equals(model.Id, StringComparison.InvariantCultureIgnoreCase));
         }
     }
 }

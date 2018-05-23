@@ -62,7 +62,8 @@ namespace Services.Test
 
             // Act+Assert
             Assert.ThrowsAsync<ExternalDependencyException>(
-                () => this.target.CreateAsync("a-device-id")).Wait();
+                async () => await this.target.CreateAsync("a-device-id"))
+                .Wait(Constants.TEST_TIMEOUT);
             
             // Case 2: the code uses Wait(), and the exception is wrapped in AggregateException
             
@@ -72,7 +73,8 @@ namespace Services.Test
 
             // Act+Assert
             Assert.ThrowsAsync<ExternalDependencyException>(
-                () => this.target.CreateAsync("a-device-id")).Wait();
+                async () => await this.target.CreateAsync("a-device-id"))
+                .Wait(Constants.TEST_TIMEOUT);
         }
     }
 }

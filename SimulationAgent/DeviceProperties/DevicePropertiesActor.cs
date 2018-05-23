@@ -220,7 +220,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                     return "device tag scheduled";
 
                 case ActorStatus.WaitingForChanges:
-                    if (!this.DeviceProperties.Changed) return "no properties to update";
+                    if (!(this.DeviceProperties?.Changed ?? false)) return "no properties to update";
                     this.SchedulePropertiesUpdate();
                     return "properties update scheduled";
 
