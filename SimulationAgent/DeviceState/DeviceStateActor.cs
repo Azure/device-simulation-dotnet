@@ -160,6 +160,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         private ISmartDictionary GetInitialProperties(DeviceModel model)
         {
             var properties = new SmartDictionary();
+            
+            if (model.Properties == null || this.deviceModel.CloudToDeviceMethods == null) return properties;
 
             // Add telemetry property
             properties.Set(TELEMETRY_KEY, JToken.FromObject(this.deviceModel.GetTelemetryReportedProperty(this.log)));

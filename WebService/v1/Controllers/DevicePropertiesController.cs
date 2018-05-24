@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
@@ -19,9 +19,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         }
 
         [HttpGet]
-        public DevicePropertiesApiModel GetDevicePropertiesAsync()
+        public async Task<DevicePropertiesApiModel> GetDevicePropertiesAsync()
         {
-            return new DevicePropertiesApiModel(this.deviceModelsService.GetPropertyNames());
+            return new DevicePropertiesApiModel(await this.deviceModelsService.GetPropertyNamesAsync());
         }
     }
 }

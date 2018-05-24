@@ -16,13 +16,10 @@ namespace Services.Test
 {
     public class DeviceModelsGenerationTest
     {
-        /// <summary>The test logger</summary>
-        private readonly ITestOutputHelper log;
+        private readonly Mock<ILogger> logger;
+        private readonly DeviceModelsGeneration target;
 
-        private Mock<ILogger> logger;
-        private DeviceModelsGeneration target;
-
-        public DeviceModelsGenerationTest(ITestOutputHelper log)
+        public DeviceModelsGenerationTest()
         {
             this.logger = new Mock<ILogger>();
             this.target = new DeviceModelsGeneration(this.logger.Object);
@@ -36,15 +33,15 @@ namespace Services.Test
             {
                 Telemetry = new List<DeviceModelMessage>
                 {
-                    new DeviceModelMessage()
+                    new DeviceModelMessage
                     {
                         Interval = TimeSpan.Zero,
                         MessageTemplate = string.Empty,
-                        MessageSchema = new DeviceModelMessageSchema()
+                        MessageSchema = new DeviceModelMessageSchema
                         {
                             Name = "sensor-01",
                             Format = DeviceModelMessageSchemaFormat.JSON,
-                            Fields = new Dictionary<string, DeviceModelMessageSchemaType>()
+                            Fields = new Dictionary<string, DeviceModelMessageSchemaType>
                             {
                                 { "temp", new DeviceModelMessageSchemaType() }
                             }

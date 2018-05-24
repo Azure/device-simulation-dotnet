@@ -1,10 +1,5 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -15,6 +10,11 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnec
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
@@ -187,18 +187,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 {
                     try
                     {
-                        // Load device model from disk and merge with overrides
-                        var deviceModel = this.GetDeviceModel(model.Id, model.Override);
+                        // Load device model and merge with overrides
+                        var deviceModel  = this.GetDeviceModel(model.Id, model.Override);
 
                         for (var i = 0; i < model.Count; i++)
                         {
                             this.CreateActorsForDevice(deviceModel, i, total);
                         }
-                    }
-                    catch (ResourceNotFoundException)
-                    {
-                        this.IncreamentSimulationErrorsCount();
-                        this.log.Error("The device model doesn't exist", () => new { model.Id });
                     }
                     catch (Exception e)
                     {
@@ -295,7 +290,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             var modelDef = new DeviceModel();
             if (id.ToLowerInvariant() != DeviceModels.CUSTOM_DEVICE_MODEL_ID.ToLowerInvariant())
             {
-                modelDef = this.deviceModels.Get(id);
+                try
+                {
+                    var task = this.deviceModels.GetAsync(id);
+                    task.Wait(TimeSpan.FromSeconds(30));
+                    modelDef = task.Result;
+                }
+                catch (AggregateException ae)
+                {
+                    throw new ExternalDependencyException("Unable to load device model", ae.InnerException);
+                }
             }
             else
             {

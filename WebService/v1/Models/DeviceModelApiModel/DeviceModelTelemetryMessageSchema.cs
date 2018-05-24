@@ -1,8 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using System.Collections.Generic;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json;
+using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel
 {
@@ -25,7 +26,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
         }
 
         // Map service model to API model
-        public static DeviceModelTelemetryMessageSchema FromServiceModel(DeviceModel.DeviceModelMessageSchema value)
+        public static DeviceModelTelemetryMessageSchema FromServiceModel(DeviceModelMessageSchema value)
         {
             if (value == null) return null;
 
@@ -41,6 +42,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
             }
 
             return result;
+        }
+
+        // Map API model to service model
+        public static DeviceModelMessageSchema ToServiceModel(DeviceModelTelemetryMessageSchema value)
+        {
+            if (value == null) return null;
+
+            Enum.TryParse(value.Format, out DeviceModelMessageSchemaFormat format);
+            var result = new DeviceModelMessageSchema
+            {
+                Name = value.Name,
+                Format = format
+            };
+
+            foreach (var field in value.Fields)
+            {
+                Enum.TryParse(field.Value, out DeviceModelMessageSchemaType fieldValue);
+                result.Fields.Add(field.Key, fieldValue);
+            }
+
+            return result;
+        }
+
+        public bool IsEmpty()
+        {
+            return string.IsNullOrEmpty(this.Name)
+                   || string.IsNullOrEmpty(this.Format)
+                   || (this.Fields == null || this.Fields.Count == 0);
         }
     }
 }
