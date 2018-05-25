@@ -2,13 +2,8 @@
 
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel;
 using Moq;
-using Newtonsoft.Json.Linq;
 using WebService.Test.helpers;
 using Xunit;
 

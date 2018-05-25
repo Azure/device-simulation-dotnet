@@ -3,8 +3,6 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-// TODO: tests
-// TODO: handle errors
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 {
     public class DevicePropertiesApiModel
