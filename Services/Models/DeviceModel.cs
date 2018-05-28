@@ -171,7 +171,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             Text = 10,
 
             [EnumMember(Value = "JSON")]
-            JSON = 20
+            JSON = 20,
+
+            [EnumMember(Value = "PROTO")]
+            PROTO = 30
         }
 
         [JsonConverter(typeof(StringEnumConverter))]

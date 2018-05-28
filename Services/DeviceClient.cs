@@ -9,7 +9,9 @@ using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Google.Protobuf;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
@@ -103,13 +105,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
         {
-            var eventMessage = new Message(Encoding.UTF8.GetBytes(message));
+            var eventMessage = default(Message);
+
+            switch (schema.Format)
+            {
+                case (DeviceModel.DeviceModelMessageSchemaFormat.JSON):
+                    eventMessage = new Message(Encoding.UTF8.GetBytes(message));
+                    eventMessage.ContentType = "application/json";
+                    eventMessage.ContentEncoding = "utf-8";
+                    break;
+                case (DeviceModel.DeviceModelMessageSchemaFormat.PROTO):
+                    switch (schema.Name)
+                    {
+                        case ("GPSPacket;v1"):
+                            GPSPacket gpsPacket = JsonConvert.DeserializeObject<GPSPacket>(message);
+                            eventMessage = new Message(gpsPacket.ToByteArray());
+                            break;
+                    }
+                    break;
+            }
+
             eventMessage.Properties.Add(CREATION_TIME_PROPERTY, DateTimeOffset.UtcNow.ToString(DATE_FORMAT));
             eventMessage.Properties.Add(MESSAGE_SCHEMA_PROPERTY, schema.Name);
-            eventMessage.Properties.Add(CONTENT_PROPERTY, "JSON");
+            eventMessage.Properties.Add(CONTENT_PROPERTY, schema.Format.ToString());
 
-            eventMessage.ContentType = "application/json";
-            eventMessage.ContentEncoding = "utf-8";
             eventMessage.MessageSchema = schema.Name;
             eventMessage.CreationTimeUtc = DateTime.UtcNow;
 
