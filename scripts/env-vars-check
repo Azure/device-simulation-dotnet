@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
 # Copyright (c) Microsoft. All rights reserved.
 
-if [[ -z "$PCS_IOTHUB_CONNSTRING" ]]; then
+# Before checking all the env vars, detect whether secrets, usually encrypted, are available or not.
+# Secrets are not available when building a pull request, so the script will not check for those.
+detect_secrets() {
+    SECRETS_AVAILABLE="true"
+    if [ "$TRAVIS_PULL_REQUEST" != "" -a "$TRAVIS_PULL_REQUEST" != "false" ]; then
+        SECRETS_AVAILABLE="false"
+        echo "Warning: secrets and encrypted variables are not available when testing pull requests."
+    fi
+}
+
+detect_secrets
+
+if [[ -z "$PCS_IOTHUB_CONNSTRING" -a "$SECRETS_AVAILABLE" = "true" ]]; then
     echo "Error: the PCS_IOTHUB_CONNSTRING environment variable is not defined."
     exit 1
 fi
