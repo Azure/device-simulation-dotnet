@@ -13,7 +13,7 @@ detect_secrets() {
 
 detect_secrets
 
-if [[ -z "$PCS_IOTHUB_CONNSTRING" -a "$SECRETS_AVAILABLE" = "true" ]]; then
+if [[ -z "$PCS_IOTHUB_CONNSTRING" && "$SECRETS_AVAILABLE" = "true" ]]; then
     echo "Error: the PCS_IOTHUB_CONNSTRING environment variable is not defined."
     exit 1
 fi
