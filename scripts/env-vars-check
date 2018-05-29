@@ -5,7 +5,7 @@
 # Secrets are not available when building a pull request, so the script will not check for those.
 detect_secrets() {
     SECRETS_AVAILABLE="true"
-    if [ "$TRAVIS_PULL_REQUEST" != "" -a "$TRAVIS_PULL_REQUEST" != "false" ]; then
+    if [[ "$TRAVIS_PULL_REQUEST" != "" && "$TRAVIS_PULL_REQUEST" != "false" ]]; then
         SECRETS_AVAILABLE="false"
         echo "Warning: secrets and encrypted variables are not available when testing pull requests."
     fi
