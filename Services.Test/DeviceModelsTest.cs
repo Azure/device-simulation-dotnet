@@ -119,9 +119,9 @@ namespace Services.Test
 
             // Assert
             Assert.Equal(properties.Count, result.Count);
-            foreach(var key in result)
+            foreach(var prop in result)
             {
-                Assert.True(properties.ContainsKey(key));
+                Assert.True(properties.ContainsKey(prop.Id));
             }
         }
 

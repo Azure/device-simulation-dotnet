@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers;
 using Moq;
 using WebService.Test.helpers;
@@ -26,26 +26,29 @@ namespace WebService.Test.v1.Controllers
         public void ItReturnsTheListOfPropertyNames()
         {
             // Arrange
-            string[] propertiesArray =
+            var properties = new List<DeviceProperty>
             {
-                "Type",
-                "Firmware",
-                "Location",
-                "Model",
-                "Latitude",
-                "Longitude"
+                new DeviceProperty {Id = "Type"},
+                new DeviceProperty {Id = "Firmware"},
+                new DeviceProperty {Id = "Location"},
+                new DeviceProperty {Id = "Model"},
+                new DeviceProperty {Id = "Latitude"},
+                new DeviceProperty {Id = "Longitude"}
             };
-            var properties = new HashSet<string>(propertiesArray);
 
             this.deviceModelsService
                 .Setup(x => x.GetPropertyNamesAsync())
                 .ReturnsAsync(properties);
 
             // Act
-            var result = this.target.GetDevicePropertiesAsync().Result;
+            var result = this.target.GetAsync().Result;
 
             // Assert
-            Assert.True(result.ReportedProperties.Equals(properties));
+            Assert.Equal(properties.Count, result.Items.Count);
+            foreach(var prop in result.Items)
+            {
+                Assert.True(properties.Exists(x => x.Id == prop.Id));
+            }
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -58,7 +61,7 @@ namespace WebService.Test.v1.Controllers
 
             // Act & Assert
             Assert.ThrowsAsync<Exception>(
-                    async () => await this.target.GetDevicePropertiesAsync())
+                    async () => await this.target.GetAsync())
                 .Wait(Constants.TEST_TIMEOUT);
         }
     }
