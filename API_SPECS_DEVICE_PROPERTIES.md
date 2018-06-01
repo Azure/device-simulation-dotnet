@@ -21,18 +21,18 @@ Content-Type: application/JSON
     {
       "Id": "Type"
     },
-	{
-	  "Id": "Firmware"
-	},
-	{
-	  "Id": "Location"
-	},
-	{
-	  "Id": "Latitude"
-	},
-	{
-	  "Id": "Longitude"
-	}
+    {
+      "Id": "Firmware"
+    },
+    {
+      "Id": "Location"
+    },
+    {
+      "Id": "Latitude"
+    },
+    {
+      "Id": "Longitude"
+    }
   ],
   "$metadata": {
     "$type": "DevicePropertyList;1",
