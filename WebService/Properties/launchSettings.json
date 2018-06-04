@@ -6,7 +6,7 @@
       "launchUrl": "http://localhost:9003/v1/status",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "PCS_IOTHUB_CONNSTRING": "your Azure IoT Hub connection string",
+        "PCS_IOTHUB_CONNSTRING": "HostName=olaplayiot.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=Wthaz6Mj8tC27D6DQCm14N9NbzT995Ol39j0XmF7lvw=",
         "PCS_STORAGEADAPTER_WEBSERVICE_URL": "http://localhost:9022/v1",
         "PCS_LOG_LEVEL": "Debug",
         "PCS_AUTH_REQUIRED": "false",

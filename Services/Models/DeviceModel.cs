@@ -100,6 +100,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
                 var schema = new JObject
                 {
                     ["Name"] = t.MessageSchema.Name,
+                    ["ClassName"] = t.MessageSchema.ClassName,
                     ["Format"] = t.MessageSchema.Format.ToString(),
                     ["Fields"] = fields
                 };
@@ -149,6 +150,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         {
             public string Name { get; set; }
 
+            public string ClassName { get; set; }
+
             public DeviceModelMessageSchemaFormat Format { get; set; }
 
             public IDictionary<string, DeviceModelMessageSchemaType> Fields { get; set; }
@@ -156,6 +159,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             public DeviceModelMessageSchema()
             {
                 this.Name = string.Empty;
+                this.ClassName = string.Empty;
                 this.Format = DeviceModelMessageSchemaFormat.JSON;
                 this.Fields = new Dictionary<string, DeviceModelMessageSchemaType>();
             }
@@ -173,8 +177,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             [EnumMember(Value = "JSON")]
             JSON = 20,
 
-            [EnumMember(Value = "PROTO")]
-            PROTO = 30
+            [EnumMember(Value = "Protobuf")]
+            Protobuf = 30
         }
 
         [JsonConverter(typeof(StringEnumConverter))]

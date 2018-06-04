@@ -95,10 +95,9 @@ function main(context, previousState, previousProperties) {
     state.speed = vary(30, 5, 0, 80);
 
     // 1 +/- 12%,  Min 0, Max 8
-    state.heading = vary(state.heading, 1, 0, 8);
+    state.heading = vary(1, 12, 0, 8);
 
-    // current altitude +/- 1%,  Min/Max: current +/- 15
-    //state.altitude = vary(state.altitude, 30, state.altitude - 500, state.altitude + 500);
+    // current altitude +/- 2%,  Min/Max: current +/- 50
     state.altitude = vary(state.altitude, 2, state.altitude - 50, state.altitude + 50);
 
     // current accuracy +/- 5%,  Min/Max: current +/- 5
