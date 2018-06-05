@@ -109,10 +109,10 @@ namespace Services.Test
             properties.Add("Firmware", "1.0");
             properties.Add("Location", "Building 2");
             properties.Add("Model", "CH101");
-            var deivceModels = this.GetDeviceModelsWithProperties(properties);
+            var deviceModels = this.GetDeviceModelsWithProperties(properties);
             this.customDeviceModels
                 .Setup(x => x.GetListAsync())
-                .ReturnsAsync(deivceModels);
+                .ReturnsAsync(deviceModels);
 
             // Act
             var result = this.target.GetPropertyNamesAsync().Result;

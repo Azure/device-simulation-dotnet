@@ -183,7 +183,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
-        /// Transfrom property names to "Device.Reported.Properties"
+        /// Transform property names to "Device.Reported.Properties"
         /// </summary>
         private void PreparePropertyNames(HashSet<string> set, object obj, string prefix)
         {

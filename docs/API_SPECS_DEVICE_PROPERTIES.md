@@ -13,7 +13,7 @@ GET /v1/deviceproperties
 Response:
 ```
 200 OK
-Content-Type: application/JSON
+Content-Type: application/json
 ```
 ```json
 {

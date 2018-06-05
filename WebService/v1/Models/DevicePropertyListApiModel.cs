@@ -31,7 +31,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 
             return new DevicePropertyListApiModel
             {
-                Items = value.Select(DevicePropertyApiModel.FromServiceModel).Where(x => x != null).ToList()
+                Items = value
+                    .Select(DevicePropertyApiModel.FromServiceModel)
+                    .Where(x => x != null).ToList()
             };
         }
     }
