@@ -1,21 +1,18 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Google.Protobuf;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Protobuf.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
@@ -110,61 +107,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
         {
-            var eventMessage = default(Message);
-
             switch (schema.Format)
             {
-                case (DeviceModel.DeviceModelMessageSchemaFormat.JSON):
-                    eventMessage = new Message(Encoding.UTF8.GetBytes(message));
-                    eventMessage.ContentType = "application/json";
-                    eventMessage.ContentEncoding = "utf-8";
+                case DeviceModel.DeviceModelMessageSchemaFormat.JSON:
+                    await SendJsonMessageAsync(message, schema);
                     break;
-                case (DeviceModel.DeviceModelMessageSchemaFormat.Protobuf):
-                    string className = schema.ClassName;
-                    Type type = System.Reflection.Assembly.GetExecutingAssembly().GetType(schema.ClassName, false);
-
-                    if (type != null)
-                    {
-                        object jsonObj = JsonConvert.DeserializeObject(message, type);
-
-                        MethodInfo methodInfo = Utilities.GetExtensionMethod("imessage", "Google.Protobuf", "ToByteArray");
-                        if (methodInfo != null)
-                        {
-                            object result = methodInfo.Invoke(jsonObj, new object[] { jsonObj });
-                            if (result != null)
-                            {
-                                byte[] byteArray = result as byte[];
-                                eventMessage = new Message(byteArray);
-								eventMessage.Properties.Add(CLASSNAME_PROPERTY, schema.ClassName);
-                            }
-                        }
-                        else
-                        {
-                            throw new ResourceNotFoundException($"Method: ToByteArray not found in {schema.ClassName}");
-                        }
-                    }
-                    else
-                    {
-                        throw new ResourceNotFoundException($"Type: {schema.ClassName} not found");
-                    }
-
+                case DeviceModel.DeviceModelMessageSchemaFormat.Protobuf:
+                    await SendProtoMessageAsync(message, schema);
                     break;
                 default:
                     throw new UnknownMessageFormatException($"Message format {schema.Format.ToString()} is invalid. Check the Telemetry format against the permitted values Binary, Text, Json, Protobuf");
-					break;
             }
-
-            eventMessage.Properties.Add(CREATION_TIME_PROPERTY, DateTimeOffset.UtcNow.ToString(DATE_FORMAT));
-            eventMessage.Properties.Add(MESSAGE_SCHEMA_PROPERTY, schema.Name);
-            eventMessage.Properties.Add(CONTENT_PROPERTY, schema.Format.ToString());
-
-            eventMessage.MessageSchema = schema.Name;
-            eventMessage.CreationTimeUtc = DateTime.UtcNow;
-
-            this.log.Debug("Sending message from device",
-                () => new { this.deviceId, Schema = schema.Name });
-
-            await this.SendRawMessageAsync(eventMessage);
         }
 
         /// <summary>
@@ -262,6 +215,73 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 throw new TelemetrySendException("Message delivery failed with " + e.Message, e);
             }
+        }
+
+        private async Task SendProtoMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
+        {
+            var eventMessage = default(Message);
+            string className = schema.ClassName;
+            Type type = System.Reflection.Assembly.GetExecutingAssembly().GetType(schema.ClassName, false);
+
+            if (type != null)
+            {
+                object jsonObj = JsonConvert.DeserializeObject(message, type);
+
+                MethodInfo methodInfo = Utilities.GetExtensionMethod("imessage", "Google.Protobuf", "ToByteArray");
+                if (methodInfo != null)
+                {
+                    object result = methodInfo.Invoke(jsonObj, new object[] { jsonObj });
+                    if (result != null)
+                    {
+                        byte[] byteArray = result as byte[];
+                        eventMessage = new Message(byteArray);
+                        eventMessage.Properties.Add(CLASSNAME_PROPERTY, schema.ClassName);
+                    }
+                    else
+                    {
+                        throw new InvalidDataException("Json message transformation to byte array yielded null");
+                    }
+                }
+                else
+                {
+                    throw new ResourceNotFoundException($"Method: ToByteArray not found in {schema.ClassName}");
+                }
+            }
+            else
+            {
+                throw new ResourceNotFoundException($"Type: {schema.ClassName} not found");
+            }
+
+            eventMessage.Properties.Add(CREATION_TIME_PROPERTY, DateTimeOffset.UtcNow.ToString(DATE_FORMAT));
+            eventMessage.Properties.Add(MESSAGE_SCHEMA_PROPERTY, schema.Name);
+            eventMessage.Properties.Add(CONTENT_PROPERTY, schema.Format.ToString());
+
+            eventMessage.MessageSchema = schema.Name;
+            eventMessage.CreationTimeUtc = DateTime.UtcNow;
+
+            this.log.Debug("Sending message from device",
+                () => new { this.deviceId, Schema = schema.Name });
+
+            await this.SendRawMessageAsync(eventMessage);
+        }
+
+        private async Task SendJsonMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
+        {
+            var eventMessage = default(Message);
+
+            eventMessage = new Message(Encoding.UTF8.GetBytes(message));
+            eventMessage.ContentType = "application/json";
+            eventMessage.ContentEncoding = "utf-8";
+            eventMessage.Properties.Add(CREATION_TIME_PROPERTY, DateTimeOffset.UtcNow.ToString(DATE_FORMAT));
+            eventMessage.Properties.Add(MESSAGE_SCHEMA_PROPERTY, schema.Name);
+            eventMessage.Properties.Add(CONTENT_PROPERTY, schema.Format.ToString());
+            eventMessage.MessageSchema = schema.Name;
+            eventMessage.CreationTimeUtc = DateTime.UtcNow;
+
+            this.log.Debug("Sending message from device",
+                () => new { this.deviceId, Schema = schema.Name });
+
+            await this.SendRawMessageAsync(eventMessage);
         }
 
         private static TwinCollection SmartDictionaryToTwinCollection(ISmartDictionary dictionary)
