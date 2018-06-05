@@ -9,6 +9,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Moq;
+using Newtonsoft.Json.Linq;
 using Services.Test.helpers;
 using Xunit;
 
@@ -120,6 +121,48 @@ namespace Services.Test
             // Assert
             Assert.Equal(properties.Count, result.Count);
             foreach(var prop in result)
+            {
+                Assert.True(properties.ContainsKey(prop.Id));
+            }
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItPreparePropertyNamesOfDeviceModels()
+        {
+            // Arrange
+            var properties = new Dictionary<string, object>();
+            properties.Add("Type", "chiller");
+            properties.Add("FloorNumber", 12);
+            properties.Add("Enabled", true);
+            properties.Add("Location", "building 2");
+            properties.Add("Reported", JToken.FromObject(new { Type = "truck" }));
+            properties.Add("Model", "CH101");
+            
+            var deviceModels = this.GetDeviceModelsWithProperties(properties);
+            this.customDeviceModels
+                .Setup(x => x.GetListAsync())
+                .ReturnsAsync(deviceModels);
+
+            // Act
+            var result = this.target.GetPropertyNamesAsync().Result;
+
+            // Assert
+            Assert.Equal(properties.Count, result.Count);
+
+            /* Add key "Reported.Type" to check transform ability
+             * 
+             * From
+             * 
+             * Reported: {
+             *   Type: "truck"
+             * }
+             * 
+             * To
+             * 
+             * Reported.Type
+             */
+            properties.Add("Reported.Type", false);
+            foreach (var prop in result)
             {
                 Assert.True(properties.ContainsKey(prop.Id));
             }
@@ -287,6 +330,10 @@ namespace Services.Test
             {
                 new DeviceModel {
                     Id = "Id_1",
+                    Properties =  properties
+                },
+                new DeviceModel {
+                    Id = "Id_2",
                     Properties =  properties
                 }
             };
