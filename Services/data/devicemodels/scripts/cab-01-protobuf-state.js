@@ -18,7 +18,10 @@ var state = {
     speed: 80,
     heading: 0,
     altitude: 1000,
-    accuracy: 90
+    accuracy: 90,
+    x: 1,
+    y: 1,
+    z: 1
 };
 
 // Default properties
@@ -79,13 +82,30 @@ function varylocation(latitude, longitude, distance) {
  * @param previousProperties  The device properties since the last iteration
  */
 /*jslint unparam: true*/
-function main(context, previousState, previousProperties) {
+function main(context, previousState, previousProperties, scriptParams) {
 
     // Restore the global device properties and the global state before
     // generating the new telemetry, so that the telemetry can apply changes
     // using the previous function state.
     restoreSimulation(previousState, previousProperties);
 
+    if (scriptParams != null) {
+        switch (scriptParams.TelemetryType) {
+            case "GPSPacket;v1":
+                getGPSPacket();
+                break;
+            case "Coordinates;v1":
+                getCoordinates();
+                break;
+            default:
+                break;
+        }
+    }
+
+    updateState(state);
+}
+
+function getGPSPacket() {
     // 0.1 miles around some location
     var coords = varylocation(center_latitude, center_longitude, 0.1);
     state.latitude = coords.latitude;
@@ -102,5 +122,15 @@ function main(context, previousState, previousProperties) {
 
     // current accuracy +/- 5%,  Min/Max: current +/- 5
     state.accuracy = vary(state.accuracy, 5, state.accuracy - 5, state.accuracy + 5);
-    updateState(state);
+}
+
+function getCoordinates() {
+    // x +/- 5%,  Min 0, Max 360
+    state.x = vary(state.x, 5, 0, 360);
+
+    // y +/- 5%,  Min 0, Max 360
+    state.y = vary(state.y, 5, 0, 360);
+
+    // z +/- 5%,  Min 0, Max 360
+    state.z = vary(state.z, 5, 0, 360);
 }
