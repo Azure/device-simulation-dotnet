@@ -154,6 +154,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<List<DeviceProperty>> GetPropertyNamesAsync()
         {
+            /*
+             * This will only return the initial device properties that are listed in the Device Model,
+             * this will not return all of the properties that are actually associated with the device
+             * after start-up.
+             * The properties added after startup will come from the new API located in IOT Hub Manager.
+             * The UI will merge both these results.
+             * */
             var list = await this.GetListAsync();
             var set = new HashSet<string>();
 
@@ -183,10 +190,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
-        /// Transform property names to "Device.Reported.Properties"
+        /// Transforms property names from Json Object to "xxx.yyy.zzz" format
         /// </summary>
         private void PreparePropertyNames(HashSet<string> set, object obj, string prefix)
         {
+            /* Sample conversion:
+             * from -> Device : {
+             *              Reported : Properties
+             *              }
+             *          
+             * to -> Device.Reported.Properties
+             */
             if (obj is JValue)
             {
                 set.Add(prefix);
@@ -202,13 +216,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             foreach (var item in (obj as JToken).Values())
             {
                 var path = item.Path;
-                /* Convert
-                 * Device : {
-                 *          Reported : Properties
-                 *          }
-                 *          
-                 * to Device.Reported.Properties and keep adding to hashset
-                 */
                 this.PreparePropertyNames(set, item, $"{prefix}.{(path.Contains(".") ? path.Substring(path.LastIndexOf('.') + 1) : path)}");
             }
         }
