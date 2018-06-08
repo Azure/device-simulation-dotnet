@@ -7,32 +7,32 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 {
-    public class DevicePropertyListApiModel
+    public class DeviceModelPropertyListApiModel
     {
         [JsonProperty(PropertyName = "Items")]
-        public List<DevicePropertyApiModel> Items { get; set; }
+        public List<DeviceModelPropertyApiModel> Items { get; set; }
 
         [JsonProperty(PropertyName = "$metadata")]
         public Dictionary<string, string> Metadata => new Dictionary<string, string>
         {
-            { "$type", "DevicePropertyList;" + Version.NUMBER },
-            { "$uri", "/" + Version.PATH + "/deviceProperties" }
+            { "$type", "DeviceModelPropertyList;" + Version.NUMBER },
+            { "$uri", "/" + Version.PATH + "/devicemodelproperties" }
         };
 
-        public DevicePropertyListApiModel()
+        public DeviceModelPropertyListApiModel()
         {
-            this.Items = new List<DevicePropertyApiModel>();
+            this.Items = new List<DeviceModelPropertyApiModel>();
         }
 
         /// <summary>Map a service model to the corresponding API model</summary>
-        public static DevicePropertyListApiModel FromServiceModel(List<DeviceProperty> value)
+        public static DeviceModelPropertyListApiModel FromServiceModel(List<DeviceProperty> value)
         {
             if (value == null) return null;
 
-            return new DevicePropertyListApiModel
+            return new DeviceModelPropertyListApiModel
             {
                 Items = value
-                    .Select(DevicePropertyApiModel.FromServiceModel)
+                    .Select(DeviceModelPropertyApiModel.FromServiceModel)
                     .Where(x => x != null).ToList()
             };
         }

@@ -9,19 +9,19 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers
 {
     [Route(Version.PATH + "/[controller]"), TypeFilter(typeof(ExceptionsFilterAttribute))]
-    public class DevicePropertiesController : Controller
+    public class DeviceModelPropertiesController : Controller
     {
         private readonly IDeviceModels deviceModelsService;
 
-        public DevicePropertiesController(IDeviceModels deviceModelsService)
+        public DeviceModelPropertiesController(IDeviceModels deviceModelsService)
         {
             this.deviceModelsService = deviceModelsService;
         }
 
         [HttpGet]
-        public async Task<DevicePropertyListApiModel> GetAsync()
+        public async Task<DeviceModelPropertyListApiModel> GetAsync()
         {
-            return DevicePropertyListApiModel.FromServiceModel(await this.deviceModelsService.GetPropertyNamesAsync());
+            return DeviceModelPropertyListApiModel.FromServiceModel(await this.deviceModelsService.GetPropertyNamesAsync());
         }
     }
 }

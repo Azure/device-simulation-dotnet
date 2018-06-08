@@ -5,21 +5,21 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 {
-    public class DevicePropertyApiModel
+    public class DeviceModelPropertyApiModel
     {
         [JsonProperty(PropertyName = "Id")]
         public string Id { get; set; }
 
-        public DevicePropertyApiModel()
+        public DeviceModelPropertyApiModel()
         {
             this.Id = string.Empty;
         }
 
-        public static DevicePropertyApiModel FromServiceModel(DeviceProperty value)
+        public static DeviceModelPropertyApiModel FromServiceModel(DeviceProperty value)
         {
             if (value == null) return null;
 
-            return new DevicePropertyApiModel
+            return new DeviceModelPropertyApiModel
             {
                 Id = value.Id
             };

@@ -1,13 +1,13 @@
 API specifications - Device Properties
 ======================================
 
-## Get a list of device properties
+## Get a list of device model properties
 
-The list of device properties contains properties from all device models.
+The list of device model properties contains properties from all device models.
 
 Request:
 ```
-GET /v1/deviceproperties
+GET /v1/devicemodelproperties
 ```
 
 Response:
@@ -35,8 +35,8 @@ Content-Type: application/json
     }
   ],
   "$metadata": {
-    "$type": "DevicePropertyList;1",
-    "$uri": "/v1/deviceProperties"
+    "$type": "DeviceModelPropertyList;1",
+    "$uri": "/v1/devicemodelproperties"
   }
 }
 ```

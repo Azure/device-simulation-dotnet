@@ -12,15 +12,15 @@ using Xunit;
 
 namespace WebService.Test.v1.Controllers
 {
-    public class DevicePropertiesControllerTest
+    public class DeviceModelPropertiesControllerTest
     {
         private readonly Mock<IDeviceModels> deviceModelsService;
-        private readonly DevicePropertiesController target;
+        private readonly DeviceModelPropertiesController target;
 
-        public DevicePropertiesControllerTest()
+        public DeviceModelPropertiesControllerTest()
         {
             this.deviceModelsService = new Mock<IDeviceModels>();
-            this.target = new DevicePropertiesController(this.deviceModelsService.Object);
+            this.target = new DeviceModelPropertiesController(this.deviceModelsService.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
