@@ -154,13 +154,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<List<DeviceProperty>> GetPropertyNamesAsync()
         {
-            /*
-             * This will only return the device model properties,
-             * this will not return all of the properties that are actually
-             * associated with the devices after start-up.
-             * The properties added to devices after startup will come from the
-             * new API located in IOT Hub Manager.
-             * */
             var list = await this.GetListAsync();
             var set = new HashSet<string>();
 
