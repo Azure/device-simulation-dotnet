@@ -19,7 +19,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
         private DateTimeOffset created;
         private DateTimeOffset modified;
 
-        [JsonProperty(PropertyName = "ETag")]
+        [JsonProperty(PropertyName = "ETag", NullValueHandling = NullValueHandling.Ignore)]
         public string ETag { get; set; }
 
         [JsonProperty(PropertyName = "Id")]
@@ -56,14 +56,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
         {
             { "$type", "DeviceModel;" + v1.Version.NUMBER },
-            { "$uri", "/" + v1.Version.PATH + "/devicemodels/" + this.Id },
+            { "$uri", "/" + v1.Version.PATH + "/deviceModels/" + this.Id },
             { "$created", this.created.ToString(DATE_FORMAT) },
             { "$modified", this.modified.ToString(DATE_FORMAT) }
         };
 
+        private const string NO_PROTOCOL = "The device model doesn't contain a protocol";
+        private const string INVALID_PROTOCOL = "The device model has a invalid protocol";
+        private const string ZERO_TELEMETRY = "The device model has zero telemetry";
+        private string INVALID_TYPE = "The device model has an invalid type";
+
         public DeviceModelApiModel()
         {
-            this.ETag = string.Empty;
+            this.ETag = null;
             this.Id = string.Empty;
             this.Version = string.Empty;
             this.Name = string.Empty;
@@ -189,6 +194,47 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
             }
 
             this.Simulation.ValidateInputRequest(log);
+        }
+
+        public List<string> ValidationHelper()
+        {
+            List<string> errors = new List<string>();
+
+            // We accept empty string, null and 'Custom' values
+            if (!string.IsNullOrEmpty(this.Type)
+                && (!Enum.TryParse(this.Type, true, out DeviceModel.DeviceModelType type)
+                    || type != DeviceModel.DeviceModelType.Custom))
+            {
+                errors.Add(INVALID_TYPE);
+            }
+
+            // A device model must contain a protocol
+            if (this.Protocol == String.Empty)
+            {
+                errors.Add(NO_PROTOCOL);
+            }
+
+            // A device model must contai a valid protocol
+            if (!Enum.TryParse(this.Protocol, true, out IoTHubProtocol _))
+            {
+                errors.Add(INVALID_PROTOCOL);
+            }
+
+            // A device model must contain at least one telemetry
+            if (this.Telemetry.Count < 1)
+            {
+                errors.Add(ZERO_TELEMETRY);
+            }
+
+            // Validate telemetry
+            foreach (var telemetry in this.Telemetry)
+            {
+                errors = errors.Concat(telemetry.ValidationHelper()).ToList();
+            }
+
+            errors = errors.Concat(this.Simulation.ValidationHelper()).ToList();
+
+            return errors;
         }
 
         private void ValidateProtocol(string protocol)

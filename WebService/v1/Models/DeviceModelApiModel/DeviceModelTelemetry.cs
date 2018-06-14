@@ -1,10 +1,11 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
+using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;
 using Newtonsoft.Json;
-using System;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel
@@ -19,6 +20,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
 
         [JsonProperty(PropertyName = "MessageSchema")]
         public DeviceModelTelemetryMessageSchema MessageSchema { get; set; }
+
+        private const string NO_INTERVAL = "Device model telemetry must contains a valid interval";
+        private const string NO_MESSAGE_TEMPLATE = "Device model telemetry must contains a valid message template";
+        private const string NO_MESSAGE_SCHEMA = "Device model telemetry must contains a valid message schema";
 
         public DeviceModelTelemetry()
         {
@@ -59,10 +64,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
 
         public void ValidateInputRequest(ILogger log)
         {
-            const string NO_INTERVAL = "Device model telemetry must contains a valid interval";
-            const string NO_MESSAGE_TEMPLATE = "Device model telemetry must contains a valid message template";
-            const string NO_MESSAGE_SCHEMA = "Device model telemetry must contains a valid message schema";
-
             try
             {
                 IntervalHelper.ValidateInterval(this.Interval);
@@ -84,6 +85,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
                 log.Error(NO_MESSAGE_SCHEMA, () => new { deviceModelTelemetry = this });
                 throw new BadRequestException(NO_MESSAGE_SCHEMA);
             }
+        }
+
+        public List<string> ValidationHelper()
+        {
+            List<string> errors = new List<string>();
+            try
+            {
+                IntervalHelper.ValidateInterval(this.Interval);
+            }
+            catch (InvalidIntervalException)
+            {
+                errors.Add(NO_INTERVAL);
+            }
+
+            if (string.IsNullOrEmpty(this.MessageTemplate))
+            {
+                errors.Add(NO_MESSAGE_TEMPLATE);
+            }
+
+            if (this.MessageSchema.IsEmpty())
+            {
+                errors.Add(NO_MESSAGE_SCHEMA);
+            }
+
+            return errors;
         }
     }
 }

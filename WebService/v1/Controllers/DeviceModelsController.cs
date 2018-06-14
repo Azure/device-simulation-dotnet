@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
@@ -12,7 +12,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceM
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers
 {
-    [Route(Version.PATH + "/[controller]"), ExceptionsFilter]
+    [ExceptionsFilter]
     public class DeviceModelsController : Controller
     {
         private readonly IDeviceModels deviceModelsService;
@@ -26,19 +26,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             this.log = logger;
         }
 
-        [HttpGet]
+        [HttpGet(Version.PATH + "/[controller]")]
         public async Task<DeviceModelListApiModel> GetAsync()
         {
             return DeviceModelListApiModel.FromServiceModel(await this.deviceModelsService.GetListAsync());
         }
 
-        [HttpGet("{id}")]
+        [HttpGet(Version.PATH + "/[controller]/{id}")]
         public async Task<DeviceModelApiModel> GetAsync(string id)
         {
             return DeviceModelApiModel.FromServiceModel(await this.deviceModelsService.GetAsync(id));
         }
 
-        [HttpPost]
+        [HttpPost(Version.PATH + "/[controller]")]
         public async Task<DeviceModelApiModel> PostAsync(
             [FromBody] DeviceModelApiModel deviceModel)
         {
@@ -53,7 +53,29 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             return DeviceModelApiModel.FromServiceModel(await this.deviceModelsService.InsertAsync(deviceModel.ToServiceModel()));
         }
 
-        [HttpPut("{id}")]
+        [HttpPost(Version.PATH + "/[controller]!validate")]
+        public ActionResult Validate([FromBody] DeviceModelApiModel deviceModel)
+        {
+            if (deviceModel == null)
+            {
+                this.log.Warn("No data provided", () => { });
+                throw new BadRequestException("No data provided.");
+            }
+
+            var errors = deviceModel.ValidationHelper();
+
+            if (errors.Count > 0)
+            {
+                return new JsonResult(new DeviceModelApiValidation() {
+                    Success = false,
+                    Messages = errors
+                }) { StatusCode = (int)HttpStatusCode.BadRequest };
+            }
+
+            return new JsonResult(new DeviceModelApiValidation()) { StatusCode = (int)HttpStatusCode.OK };
+        }
+
+        [HttpPut(Version.PATH + "/[controller]/{id}")]
         public async Task<DeviceModelApiModel> PutAsync(
             [FromBody] DeviceModelApiModel deviceModel,
             string id = "")
@@ -70,7 +92,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 await this.deviceModelsService.UpsertAsync(deviceModel.ToServiceModel(id)));
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete(Version.PATH + "/[controller]/{id}")]
         public async Task DeleteAsync(string id)
         {
             await this.deviceModelsService.DeleteAsync(id);

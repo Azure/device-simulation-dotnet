@@ -103,7 +103,7 @@ namespace Services.Test.Models
             var y = JsonConvert.DeserializeObject<DeviceModel>(json);
 
             // Assert
-            Assert.Empty(y.ETag);
+            Assert.Null(y.ETag);
             Assert.Equal(x.Id, y.Id);
             Assert.Equal(x.Version, y.Version);
             Assert.Equal(x.Name, y.Name);

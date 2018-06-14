@@ -129,6 +129,31 @@ namespace WebService.Test.v1.Models
             Assert.IsType<BadRequestException>(ex);
         }
 
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReturnsErrorMessagesForInvalidDeviceModel()
+        {
+            // Arrange
+            DeviceModelApiModel InvalidTelemetry(DeviceModelApiModel model)
+            {
+                model.Telemetry = new List<DeviceModelTelemetry>();
+                model.Type = "Invalid type";
+                model.Protocol = "Invalid protocol";
+                return model;
+            }
+
+            var deviceModelApiModel = this.GetInvalidDeviceModelApiModel(InvalidTelemetry);
+
+            // Act
+            var result = deviceModelApiModel.ValidationHelper();
+
+            // Assert
+            Assert.NotNull(result);
+            foreach(var message in result)
+            {
+                Assert.False(string.IsNullOrEmpty(message));
+            }
+        }
+
         private DeviceModelApiModel GetValidDeviceModelApiModel()
         {
             var deviceModelApiModel = new DeviceModelApiModel

@@ -52,7 +52,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         public DeviceModel()
         {
-            this.ETag = string.Empty;
+            this.ETag = null;
             this.Id = string.Empty;
             this.Version = "0.0.0";
             this.Name = string.Empty;

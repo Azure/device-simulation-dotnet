@@ -22,6 +22,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
         [JsonProperty(PropertyName = "Scripts")]
         public List<DeviceModelSimulationScript> Scripts { get; set; }
 
+        private const string NO_INTERVAL = "Device model simulation state must contains a valid interval";
+        private const string NO_SCRIPTS = "Device model simulation state must contains a valid script";
+
         public DeviceModelSimulation()
         {
             this.InitialState = new Dictionary<string, object>();
@@ -59,9 +62,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
         // Required fields: Interval and Scripts
         public void ValidateInputRequest(ILogger log)
         {
-            const string NO_INTERVAL = "Device model simulation state must contains a valid interval";
-            const string NO_SCRIPTS = "Device model simulation state must contains a valid script";
-
             try
             {
                 IntervalHelper.ValidateInterval(this.Interval);
@@ -84,6 +84,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
                     script.ValidateInputRequest(log);
                 }
             }
+        }
+
+        public List<string> ValidationHelper()
+        {
+            List<string> errors = new List<string>();
+
+            try
+            {
+                IntervalHelper.ValidateInterval(this.Interval);
+            }
+            catch (InvalidIntervalException)
+            {
+                errors.Add(NO_INTERVAL);
+            }
+
+            // Allow user to have an empty list of scripts which may upload later
+            if (this.Scripts == null)
+            {
+                errors.Add(NO_SCRIPTS);
+            }
+
+            return errors;
         }
     }
 }

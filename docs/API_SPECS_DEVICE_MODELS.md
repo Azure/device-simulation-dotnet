@@ -15,7 +15,7 @@ the service starts) and custom device models which are stored in a database.
 
 Request:
 ```
-GET /v1/devicemodels
+GET /v1/deviceModels
 ```
 
 Response:
@@ -106,13 +106,13 @@ Content-Type: application/JSON
       },
       "$metadata": {
         "$type": "DeviceModel;1",
-        "$uri": "/v1/devicemodels/truck-01"
+        "$uri": "/v1/deviceModels/truck-01"
       }
     }
   ],
   "$metadata": {
     "$type": "DeviceModelList;1",
-    "$uri": "/v1/devicemodels"
+    "$uri": "/v1/deviceModels"
   }
 }
 ```
@@ -121,7 +121,7 @@ Content-Type: application/JSON
 
 Request:
 ```
-GET /v1/devicemodels/${id}
+GET /v1/deviceModels/${id}
 ```
 
 Response example:
@@ -179,7 +179,7 @@ Content-Type: application/json; charset=utf-8
   "CloudToDeviceMethods": {},
   "$metadata": {
     "$type": "DeviceModel;2",
-    "$uri": "/v1/devicemodels/12345678-9941-4499-ba1b-123456789012",
+    "$uri": "/v1/deviceModels/12345678-9941-4499-ba1b-123456789012",
     "$created": "2018-03-29T23:33:03+00:00",
     "$modified": "2018-03-29T23:33:03+00:00"
   }
@@ -201,7 +201,7 @@ these files are stored.
 
 Request:
 ```
-POST /v1/devicemodels/
+POST /v1/deviceModels/
 Content-Type: application/json; charset=utf-8
 ```
 ```json
@@ -317,7 +317,7 @@ Content-Type: application/json; charset=utf-8
   "CloudToDeviceMethods": {},
   "$metadata": {
     "$type": "DeviceModel;2",
-    "$uri": "/v1/devicemodels/12345678-c6c0-49ae-9bfa-123456789012",
+    "$uri": "/v1/deviceModels/12345678-c6c0-49ae-9bfa-123456789012",
     "$created": "2018-03-29T23:33:03+00:00",
     "$modified": "2018-03-29T23:33:03+00:00"
   }
@@ -344,7 +344,7 @@ creates a new model and stores it in the database.
 
 Request:
 ```
-PUT /v1/devicemodels/${id}
+PUT /v1/deviceModels/${id}
 Content-Type: application/json; charset=utf-8
 ```
 ```json
@@ -453,10 +453,156 @@ Content-Type: application/json; charset=utf-8
   "CloudToDeviceMethods": {},
   "$metadata": {
     "$type": "DeviceModel;2",
-    "$uri": "/v1/devicemodels/12345678-c6c0-49ae-9bfa-123456789012",
+    "$uri": "/v1/deviceModels/12345678-c6c0-49ae-9bfa-123456789012",
     "$created": "2018-03-29T23:33:03+00:00",
     "$modified": "2018-03-29T23:33:03+00:00"
   }
+}
+```
+
+## Validating a device model
+
+Request:
+```
+POST /v1/deviceModels!validate
+Content-Type: application/json; charset=utf-8
+```
+```json
+{
+  "Version": "0.0.1",
+  "Name": "Chiller",
+  "Description": "Chiller with external temperature, humidity and pressure sensors.",
+  "Protocol": "MQTT",
+  "Simulation": {
+    "InitialState": {
+      "online": true,
+      "temperature": 75,
+      "temperature_unit": "F",
+      "humidity": 70,
+      "humidity_unit": "%",
+      "pressure": 150,
+      "pressure_unit": "psig",
+      "simulation_state": "normal_pressure"
+    },
+    "Interval": "00:00:10",
+    "Scripts": [
+      {
+        "Type": "javascript",
+        "Path": "chiller-01-state.js"
+      }
+    ]
+  },
+  "Properties": {
+    "Type": "Truck",
+    "Location": "Field",
+    "Latitude": 47.445301,
+    "Longitude": -122.296307
+  },
+  "Telemetry": [
+    {
+      "Interval": "00:00:10",
+      "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
+      "MessageSchema": {
+        "Name": "Chiller;v1",
+        "Format": "JSON",
+        "Fields": {
+          "temperature": "Double",
+          "temperature_unit": "Text",
+          "humidity": "Double",
+          "humidity_unit": "Text",
+          "pressure": "Double",
+          "pressure_unit": "Text"
+        }
+      }
+    }
+  ],
+  "CloudToDeviceMethods": {}
+}
+```
+
+Response:
+```
+200 OK
+Content-Type: application/json; charset=utf-8
+```
+```json
+{
+  "Success": true
+}
+```
+
+Request:
+```
+POST /v1/deviceModels!validate
+Content-Type: application/json; charset=utf-8
+```
+```json
+{
+  "Version": "0.0.1",
+  "Name": "Chiller",
+  "Description": "Chiller with external temperature, humidity and pressure sensors.",
+  "Protocol": "Invalid protocol",
+  "Type": "Invalid protocol",
+  "Simulation": {
+    "InitialState": {
+      "online": true,
+      "temperature": 75,
+      "temperature_unit": "F",
+      "humidity": 70,
+      "humidity_unit": "%",
+      "pressure": 150,
+      "pressure_unit": "psig",
+      "simulation_state": "normal_pressure"
+    },
+    "Interval": "Invalid protocol",
+    "Scripts": [
+      {
+        "Type": "javascript",
+        "Path": "chiller-01-state.js"
+      }
+    ]
+  },
+  "Properties": {
+    "Type": "Truck",
+    "Location": "Field",
+    "Latitude": 47.445301,
+    "Longitude": -122.296307
+  },
+  "Telemetry": [
+    {
+      "Interval": "Invalid protocol",
+      "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
+      "MessageSchema": {
+        "Name": "Chiller;v1",
+        "Format": "JSON",
+        "Fields": {
+          "temperature": "Double",
+          "temperature_unit": "Text",
+          "humidity": "Double",
+          "humidity_unit": "Text",
+          "pressure": "Double",
+          "pressure_unit": "Text"
+        }
+      }
+    }
+  ],
+  "CloudToDeviceMethods": {}
+}
+```
+
+Response:
+```
+400 Bad Request
+```
+```json
+{
+  "Success": false,
+  "Messages": [
+	"The device model has an invalid type",
+	"The device model has a invalid protocol",
+	"Device model telemetry must contains a valid interval",
+	"Device model simulation state must contains a valid interval"
+  ]
 }
 ```
 
@@ -468,7 +614,7 @@ Stock device models can be deleted only by removing its configuration file
 from the file system. 
 
 ```
-DELETE /v1/devicemodels/${id}
+DELETE /v1/deviceModels/${id}
 ```
 Response:
 ```
@@ -480,7 +626,7 @@ Response:
 Custom device models can be deleted using the DELETE method with its ID.
 
 ```
-DELETE /v1/devicemodels/${id}
+DELETE /v1/deviceModels/${id}
 ```
 Response:
 ```

@@ -1,6 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -8,6 +11,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel;
 using Moq;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using WebService.Test.helpers;
 using Xunit;
@@ -108,7 +112,7 @@ namespace WebService.Test.v1.Controllers
 
             // Act & Assert
             Assert.ThrowsAsync<BadRequestException>(
-                    async () => await this.target.PostAsync(DeviceModelApiModel.FromServiceModel(deviceModel)))
+                async () => await this.target.PostAsync(DeviceModelApiModel.FromServiceModel(deviceModel)))
                 .Wait(Constants.TEST_TIMEOUT);
         }
 
@@ -157,6 +161,97 @@ namespace WebService.Test.v1.Controllers
 
             // Assert
             this.deviceModelsService.Verify(x => x.DeleteAsync(ID), Times.Once);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ValidationSuccessWithValidDeviceModel()
+        {
+            // Arrange
+            const string ID = "deviceModelId";
+            DeviceModelApiModel deviceModelApiModel = GetValidDeviceModelApiModel(ID);
+
+            // Act
+            var result = this.target.Validate(deviceModelApiModel) as JsonResult;
+            string json = JsonConvert.SerializeObject(result.Value);
+            DeviceModelApiValidation model = JsonConvert.DeserializeObject<DeviceModelApiValidation>(json);
+
+            // Assert
+            Assert.True(model.Success);
+            Assert.Null(model.Messages);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ValidationFailedWithInValidDeviceModel()
+        {
+            // Arrange
+            var InvalidProperties = new List<string>
+            {
+                "Invalid protocal",
+                "Invalid type",
+                "Invalid interval",
+                "Invalid frequency"
+            };
+            var invalidModel = new DeviceModelApiModel
+            {
+                Protocol = InvalidProperties[0],
+                ETag = "Etag",
+                Type = InvalidProperties[1],
+                Telemetry = new List<DeviceModelTelemetry>
+                {
+                    new DeviceModelTelemetry
+                    {
+                        Interval = InvalidProperties[2],
+                        MessageTemplate = "template",
+                        MessageSchema = new DeviceModelTelemetryMessageSchema
+                        {
+                            Name = "name",
+                            Format = "JSON",
+                            Fields = new Dictionary<string, string>
+                            {
+                                { "key", "value" }
+                            }
+                        }
+                    }
+                },
+                Simulation = new DeviceModelSimulation
+                {
+                    Interval = InvalidProperties[3],
+                    Scripts = new List<DeviceModelSimulationScript>
+                    {
+                        new DeviceModelSimulationScript
+                        {
+                            Type = "type",
+                            Path = "path",
+                            Params = JObject.Parse("{\"ccc\":{\"Min\":\"1\",\"Max\":\"11\",\"Step\":1,\"Unit\":\"y\"}}")
+                        }
+                    }
+                }
+            };
+
+            // Act
+            var result = this.target.Validate(invalidModel) as JsonResult;
+            string json = JsonConvert.SerializeObject(result.Value);
+            DeviceModelApiValidation model = JsonConvert.DeserializeObject<DeviceModelApiValidation>(json);
+
+            // Assert
+            Assert.False(model.Success);
+            Assert.NotNull(model.Messages);
+            Assert.Equal(InvalidProperties.Count, model.Messages.Count);
+        }
+
+        public static T GetValueFromJsonResult<T>(JsonResult jsonResult, string propertyName)
+        {
+            var allProperties = jsonResult.ContentType.GetType().GetProperties();
+            var property = allProperties.FirstOrDefault(p => string.CompareOrdinal(p.Name, propertyName) == 0);
+
+            if (null == property)
+                throw new ArgumentException("propertyName not found", nameof(propertyName));
+            return (T)property.GetValue(jsonResult.ContentType, null);
+        }
+
+        public static T GetValueFromActionResult<T>(ActionResult actionResult, string propertyName)
+        {
+            return GetValueFromJsonResult<T>((JsonResult)actionResult, propertyName);
         }
 
         private static DeviceModelApiModel GetValidDeviceModelApiModel(string id)

@@ -1,13 +1,13 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
+using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel;
 using Moq;
-using System;
-using System.Collections.Generic;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using WebService.Test.helpers;
 using Xunit;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
@@ -98,6 +98,29 @@ namespace WebService.Test.v1.Models
 
             // Assert
             Assert.IsType<BadRequestException>(ex);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReturnsErrorMessagesForInvalidDeviceModel()
+        {
+            // Arrange
+            DeviceModelSimulation InvalidScript(DeviceModelSimulation model)
+            {
+                model.Scripts = new List<DeviceModelSimulationScript>();
+                return model;
+            }
+
+            var deviceModelSimulation = this.GetInvalidDeviceModelSimulation(InvalidScript);
+
+            // Act
+            var result = deviceModelSimulation.ValidationHelper();
+
+            // Assert
+            Assert.NotNull(result);
+            foreach (var message in result)
+            {
+                Assert.False(string.IsNullOrEmpty(message));
+            }
         }
 
         private DeviceModelSimulation GetInvalidDeviceModelSimulation(Func<DeviceModelSimulation, DeviceModelSimulation> func)
