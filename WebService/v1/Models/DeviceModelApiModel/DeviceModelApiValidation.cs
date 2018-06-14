@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft. All rights reserved.
+
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel
