@@ -62,7 +62,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
         };
 
         private const string NO_PROTOCOL = "The device model doesn't contain a protocol";
-        private const string INVALID_PROTOCOL = "The device model has a invalid protocol";
+        private const string INVALID_PROTOCOL = "The device model has an invalid protocol";
         private const string ZERO_TELEMETRY = "The device model has zero telemetry";
         private string INVALID_TYPE = "The device model has an invalid type";
 
@@ -158,10 +158,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
 
         public void ValidateInputRequest(ILogger log)
         {
-            const string NO_PROTOCOL = "The device model doesn't contain a protocol";
-            const string ZERO_TELEMETRY = "The device model has zero telemetry";
-            const string INVALID_TYPE = "The device model has an invalid type";
-
             // We accept empty string, null and 'Custom' values
             if (!string.IsNullOrEmpty(this.Type)
                 && (!Enum.TryParse(this.Type, true, out DeviceModel.DeviceModelType type)
@@ -214,7 +210,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
                 errors.Add(NO_PROTOCOL);
             }
 
-            // A device model must contai a valid protocol
+            // A device model must contain a valid protocol
             if (!Enum.TryParse(this.Protocol, true, out IoTHubProtocol _))
             {
                 errors.Add(INVALID_PROTOCOL);
