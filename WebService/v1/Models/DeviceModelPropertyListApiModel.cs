@@ -10,7 +10,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
     public class DeviceModelPropertyListApiModel
     {
         [JsonProperty(PropertyName = "Items")]
-        public List<DeviceModelPropertyApiModel> Items { get; set; }
+        public HashSet<string> items { get; set; }
 
         [JsonProperty(PropertyName = "$metadata")]
         public Dictionary<string, string> Metadata => new Dictionary<string, string>
@@ -19,22 +19,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             { "$uri", "/" + Version.PATH + "/devicemodelproperties" }
         };
 
+        private const string reportedPrefix = "properties.reported.";
+
         public DeviceModelPropertyListApiModel()
         {
-            this.Items = new List<DeviceModelPropertyApiModel>();
+            this.items = new HashSet<string>();
         }
 
         /// <summary>Map a service model to the corresponding API model</summary>
-        public static DeviceModelPropertyListApiModel FromServiceModel(List<DeviceProperty> value)
+        public DeviceModelPropertyListApiModel(HashSet<string> value)
         {
-            if (value == null) return null;
-
-            return new DeviceModelPropertyListApiModel
-            {
-                Items = value
-                    .Select(DeviceModelPropertyApiModel.FromServiceModel)
-                    .Where(x => x != null).ToList()
-            };
+            items = new HashSet<string>();
+            foreach (string reported in value)
+                items.Add(reportedPrefix + reported);
         }
     }
 }

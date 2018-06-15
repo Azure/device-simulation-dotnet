@@ -122,7 +122,7 @@ namespace Services.Test
             Assert.Equal(properties.Count, result.Count);
             foreach(var prop in result)
             {
-                Assert.True(properties.ContainsKey(prop.Id));
+                Assert.True(properties.ContainsKey(prop));
             }
         }
 
@@ -164,7 +164,7 @@ namespace Services.Test
             properties.Add("Reported.Type", false);
             foreach (var prop in result)
             {
-                Assert.True(properties.ContainsKey(prop.Id));
+                Assert.True(properties.ContainsKey(prop));
             }
         }
 

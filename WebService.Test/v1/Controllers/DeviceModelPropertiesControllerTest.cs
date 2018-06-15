@@ -27,14 +27,9 @@ namespace WebService.Test.v1.Controllers
         public void ItReturnsTheListOfPropertyNames()
         {
             // Arrange
-            var properties = new List<DeviceProperty>
+            var properties = new HashSet<string>
             {
-                new DeviceProperty { Id = "Type" },
-                new DeviceProperty { Id = "Firmware" },
-                new DeviceProperty { Id = "Location" },
-                new DeviceProperty { Id = "Model" },
-                new DeviceProperty { Id = "Latitude" },
-                new DeviceProperty { Id = "Longitude" }
+                "Type", "Firmware" , "Location" ,"Model", "Latitude" ,"Longitude"
             };
 
             this.deviceModelsService
@@ -45,10 +40,10 @@ namespace WebService.Test.v1.Controllers
             var result = this.target.GetAsync().Result;
 
             // Assert
-            Assert.Equal(properties.Count, result.Items.Count);
-            foreach(var prop in result.Items)
+            Assert.Equal(properties.Count, result.items.Count);
+            foreach (var resultItem in result.items)
             {
-                Assert.True(properties.Exists(x => x.Id == prop.Id));
+                Assert.Contains(resultItem.Split('.')[2], properties);
             }
         }
 

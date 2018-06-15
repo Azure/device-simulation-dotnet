@@ -41,7 +41,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Get property names from all device models.
         /// </summary>
-        Task<List<DeviceProperty>> GetPropertyNamesAsync();
+        Task<HashSet<string>> GetPropertyNamesAsync();
     }
 
     /// <summary>
@@ -152,7 +152,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Get property names from all device models.
         /// </summary>
-        public async Task<List<DeviceProperty>> GetPropertyNamesAsync()
+        public async Task<HashSet<string>> GetPropertyNamesAsync()
         {
             /*
              * This will only return the device model properties,
@@ -175,7 +175,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
             }
 
-            return set.Select(x => new DeviceProperty { Id = x }).ToList();
+            return set;
         }
 
         /// <summary>
