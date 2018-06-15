@@ -19,7 +19,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             { "$uri", "/" + Version.PATH + "/devicemodelproperties" }
         };
 
-        private const string reportedPrefix = "properties.reported.";
+        private const string reportedPrefix = "Properties.Reported.";
 
         public DeviceModelPropertyListApiModel()
         {
