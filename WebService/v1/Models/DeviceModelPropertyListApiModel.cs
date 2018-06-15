@@ -16,7 +16,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         public Dictionary<string, string> Metadata => new Dictionary<string, string>
         {
             { "$type", "DeviceModelPropertyList;" + Version.NUMBER },
-            { "$uri", "/" + Version.PATH + "/devicemodelproperties" }
+            { "$uri", "/" + Version.PATH + "/deviceModelProperties" }
         };
 
         private const string reportedPrefix = "Properties.Reported.";
