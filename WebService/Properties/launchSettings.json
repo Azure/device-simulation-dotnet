@@ -6,7 +6,7 @@
       "launchUrl": "http://localhost:9003/v1/status",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "PCS_IOTHUB_CONNSTRING": "",
+        "PCS_IOTHUB_CONNSTRING": "your Azure IoT Hub connection string",
         "PCS_STORAGEADAPTER_WEBSERVICE_URL": "http://localhost:9022/v1",
         "PCS_LOG_LEVEL": "Debug",
         "PCS_AUTH_REQUIRED": "false",
