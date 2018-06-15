@@ -115,10 +115,6 @@ Content-Type: application/json; charset=utf-8
     {
       "Id": "engine-01",
       "Count": 1
-    },
-    {
-      "Id": "cab-01-proto",
-      "Count": 1
     }
   ],
   "$metadata": {
