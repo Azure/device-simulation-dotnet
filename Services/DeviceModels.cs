@@ -41,7 +41,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Get property names from all device models.
         /// </summary>
-        Task<HashSet<string>> GetPropertyNamesAsync();
+        Task<List<string>> GetPropertyNamesAsync();
     }
 
     /// <summary>
@@ -57,6 +57,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly ILogger log;
         private readonly ICustomDeviceModels customDeviceModels;
         private readonly IStockDeviceModels stockDeviceModels;
+        private const string REPORTED_PREFIX = "Properties.Reported.";
 
         public DeviceModels(
             ICustomDeviceModels customDeviceModels,
@@ -152,10 +153,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Get property names from all device models.
         /// </summary>
-        public async Task<HashSet<string>> GetPropertyNamesAsync()
+        public async Task<List<string>> GetPropertyNamesAsync()
         {
             var list = await this.GetListAsync();
-            var set = new HashSet<string>();
+            var properties = new HashSet<string>();
 
             foreach (var model in list)
             {
@@ -163,12 +164,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 {
                     foreach (var property in model.Properties)
                     {
-                        this.PreparePropertyNames(set, property.Value, property.Key);
+                        this.PreparePropertyNames(properties, property.Value, property.Key);
                     }
                 }
             }
-
-            return set;
+            List<string> result = new List<string>();
+            foreach (string property in properties)
+                result.Add(REPORTED_PREFIX + property);
+            return result;
         }
 
         /// <summary>
@@ -188,11 +191,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private void PreparePropertyNames(HashSet<string> set, object obj, string prefix)
         {
             /* Sample conversion:
-             * from -> Device : {
-             *              Reported : Properties
-             *              }
+             * from -> Foo : {
+             *                  Bar : Properties
+             *               }
              *          
-             * to -> Device.Reported.Properties
+             * to -> Foo.Bar.Properties
              */
             if (obj is JValue)
             {

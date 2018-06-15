@@ -122,49 +122,7 @@ namespace Services.Test
             Assert.Equal(properties.Count, result.Count);
             foreach(var prop in result)
             {
-                Assert.True(properties.ContainsKey(prop));
-            }
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItPreparePropertyNamesOfDeviceModels()
-        {
-            // Arrange
-            var properties = new Dictionary<string, object>();
-            properties.Add("Type", "chiller");
-            properties.Add("FloorNumber", 12);
-            properties.Add("Enabled", true);
-            properties.Add("Location", "building 2");
-            properties.Add("Reported", JToken.FromObject(new { Type = "truck" }));
-            properties.Add("Model", "CH101");
-            
-            var deviceModels = this.GetDeviceModelsWithProperties(properties);
-            this.customDeviceModels
-                .Setup(x => x.GetListAsync())
-                .ReturnsAsync(deviceModels);
-
-            // Act
-            var result = this.target.GetPropertyNamesAsync().Result;
-
-            // Assert
-            Assert.Equal(properties.Count, result.Count);
-
-            /* Add key "Reported.Type" to check transform ability
-             * 
-             * From
-             * 
-             * Reported: {
-             *   Type: "truck"
-             * }
-             * 
-             * To
-             * 
-             * Reported.Type
-             */
-            properties.Add("Reported.Type", false);
-            foreach (var prop in result)
-            {
-                Assert.True(properties.ContainsKey(prop));
+                Assert.True(properties.ContainsKey(prop.Split('.')[2]));
             }
         }
 

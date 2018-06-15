@@ -27,7 +27,7 @@ namespace WebService.Test.v1.Controllers
         public void ItReturnsTheListOfPropertyNames()
         {
             // Arrange
-            var properties = new HashSet<string>
+            var properties = new List<string>
             {
                 "Type", "Firmware" , "Location" ,"Model", "Latitude" ,"Longitude"
             };
@@ -40,10 +40,10 @@ namespace WebService.Test.v1.Controllers
             var result = this.target.GetAsync().Result;
 
             // Assert
-            Assert.Equal(properties.Count, result.items.Count);
-            foreach (var resultItem in result.items)
+            Assert.Equal(properties.Count, result.Items.Count);
+            foreach (var resultItem in result.Items)
             {
-                Assert.Contains(resultItem.Split('.')[2], properties);
+                Assert.Contains(resultItem, properties);
             }
         }
 

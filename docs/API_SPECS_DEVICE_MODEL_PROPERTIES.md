@@ -1,4 +1,4 @@
-API specifications - Device Properties
+API specifications - Device Model Properties
 ======================================
 
 ## Get a list of device model properties
