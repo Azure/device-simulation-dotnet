@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 
 using System.Collections.Generic;
 using System.Linq;
@@ -155,7 +155,7 @@ namespace Services.Test
         public void ItThrowsExceptionWhenDeleteDeviceModelFailed()
         {
             /* SomeException is required to verify that the exception thrown is the one 
-             * configured inn Arrange expression, and the test doesn't pass for the wrong 
+             * configured in Arrange expression, and the test doesn't pass for the wrong 
              * reason. That's why we use a helper class SomeException which
              * doesn't exist in the application. Configuring GetPropertyNameAsync to
              * throw SomeException allows us to verify that the exception thrown is
