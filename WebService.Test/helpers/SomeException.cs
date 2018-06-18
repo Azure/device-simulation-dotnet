@@ -9,7 +9,7 @@ namespace Services.Test.helpers
     /// and to verify that the system fails with the injected exception,
     /// i.e. not any exception, to be sure unit tests wouldn't pass in case
     /// a different exception is occurring, i.e. to avoid false positives.
-    ///</sumamry>
+    ///</summary>
     public class SomeException : Exception
     {
     }
