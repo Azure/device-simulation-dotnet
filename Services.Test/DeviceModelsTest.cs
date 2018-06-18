@@ -120,7 +120,7 @@ namespace Services.Test
 
             // Assert
             Assert.Equal(properties.Count, result.Count);
-            foreach(var prop in result)
+            foreach (var prop in result)
             {
                 Assert.True(properties.ContainsKey(prop.Split('.')[2]));
             }
@@ -154,6 +154,13 @@ namespace Services.Test
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItThrowsExceptionWhenDeleteDeviceModelFailed()
         {
+            /* SomeException is required to verify that the exception thrown is the one 
+             * configured inn Arrange expression, and the test doesn't pass for the wrong 
+             * reason. That's why we use a helper class SomeException which
+             * doesn't exist in the application. Configuring GetPropertyNameAsync to
+             * throw SomeException allows us to verify that the exception thrown is
+             * exactly SomeException and not something else. */
+
             // Arrange
             this.customDeviceModels
                 .Setup(x => x.DeleteAsync(It.IsAny<string>()))
