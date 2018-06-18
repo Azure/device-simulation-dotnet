@@ -6,7 +6,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers;
 using Moq;
-using Services.Test.helpers;
 using WebService.Test.helpers;
 using Xunit;
 
@@ -53,10 +52,10 @@ namespace WebService.Test.v1.Controllers
             // Arrange
             this.deviceModelsService
                 .Setup(x => x.GetPropertyNamesAsync())
-                .ThrowsAsync(new SomeException());
+                .ThrowsAsync(new Exception());
 
             // Act & Assert
-            Assert.ThrowsAsync<SomeException>(
+            Assert.ThrowsAsync<Exception>(
                     async () => await this.target.GetAsync())
                 .Wait(Constants.TEST_TIMEOUT);
         }
