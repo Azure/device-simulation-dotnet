@@ -73,7 +73,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         /// Modifies the internal device state with the latest values.
         /// </summary>
         public void Invoke(
-            string filename, object scriptParams,
+            string filename, 
+            object scriptParams,
             Dictionary<string, object> context,
             ISmartDictionary state,
             ISmartDictionary properties)
