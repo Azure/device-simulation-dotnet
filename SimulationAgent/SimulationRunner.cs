@@ -147,6 +147,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             {
                 if (this.running) return;
 
+                this.rateLimiting.SetCounters(simulation, this.log);
+
                 // Use `starting` to exit as soon as possible, to minimize the number 
                 // of threads pending on the lock statement
                 this.starting = true;

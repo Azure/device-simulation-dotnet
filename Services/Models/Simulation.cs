@@ -20,8 +20,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public DateTimeOffset Created { get; set; }
         public DateTimeOffset Modified { get; set; }
         public long Version { get; set; }
+        public int ConnectionsPerSecond { get; set; }
+        public int RegistryOperationsPerMinute { get; set; }
+        public int TwinReadsPerSecond { get; set; }
+        public int TwinWritesPerSecond { get; set; }
+        public int DeviceMessagesPerSecond { get; set; }
 
-        public DateTimeOffset? StartTime
+    public DateTimeOffset? StartTime
         {
             get => this.startTime;
             set => this.startTime = value ?? DateTimeOffset.MinValue;

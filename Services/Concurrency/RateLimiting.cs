@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
@@ -13,17 +14,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         long GetPauseForNextMessage();
         double GetThroughputForMessages();
         void ResetCounters();
-    }
+        void SetCounters(Models.Simulation simulation, ILogger log);
+  }
 
     public class RateLimiting : IRateLimiting
     {
         // Use separate objects to reduce internal contentions in the lock statement
 
-        private readonly PerSecondCounter connections;
-        private readonly PerMinuteCounter registryOperations;
-        private readonly PerSecondCounter twinReads;
-        private readonly PerSecondCounter twinWrites;
-        private readonly PerSecondCounter messaging;
+        private PerSecondCounter connections;
+        private PerMinuteCounter registryOperations;
+        private PerSecondCounter twinReads;
+        private PerSecondCounter twinWrites;
+        private PerSecondCounter messaging;
 
         // TODO: https://github.com/Azure/device-simulation-dotnet/issues/80
         //private readonly PerDayCounter messagingDaily;
@@ -55,6 +57,39 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             // TODO: enforce the single instance, compatibly with the use of
             //       Parallel.For in the simulation runner.
             //       https://github.com/Azure/device-simulation-dotnet/issues/79
+            log.Info("Rate limiting started. This message should appear only once in the logs.", () => { });
+        }
+
+        public void SetCounters(
+                Services.Models.Simulation simulation,
+                ILogger log)
+        {
+            if (simulation.ConnectionsPerSecond > 0)
+            {
+              this.connections = new PerSecondCounter(simulation.ConnectionsPerSecond, "Device connections", log);
+            }
+
+            if (simulation.RegistryOperationsPerMinute > 0)
+            {
+              this.registryOperations = new PerMinuteCounter(simulation.RegistryOperationsPerMinute, "Registry operations", log);
+            }
+
+            if (simulation.TwinReadsPerSecond > 0)
+            {
+              this.twinReads = new PerSecondCounter(simulation.TwinReadsPerSecond, "Twin reads", log);
+            }
+
+            if (simulation.TwinWritesPerSecond > 0)
+            {
+
+              this.twinWrites = new PerSecondCounter(simulation.TwinWritesPerSecond, "Twin writes", log);
+            }
+
+            if (simulation.DeviceMessagesPerSecond > 0)
+            {
+              this.messaging = new PerSecondCounter(simulation.DeviceMessagesPerSecond, "Device msg/sec", log);
+            }
+
             log.Info("Rate limiting started. This message should appear only once in the logs.", () => { });
         }
 

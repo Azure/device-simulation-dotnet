@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+ // Copyright (c) Microsoft. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -196,6 +196,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 simulation.Created = simulations[0].Created;
                 simulation.Modified = DateTimeOffset.UtcNow;
                 simulation.Version = simulations[0].Version + 1;
+                simulation.ConnectionsPerSecond = simulations[0].ConnectionsPerSecond;
+                simulation.TwinReadsPerSecond = simulations[0].TwinReadsPerSecond;
+                simulation.TwinWritesPerSecond = simulations[0].TwinWritesPerSecond;
+                simulation.RegistryOperationsPerMinute = simulations[0].RegistryOperationsPerMinute;
+                simulation.DeviceMessagesPerSecond = simulations[0].DeviceMessagesPerSecond;
             }
             else
             {
