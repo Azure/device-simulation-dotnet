@@ -113,7 +113,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     await SendJsonMessageAsync(message, schema);
                     break;
                 case DeviceModel.DeviceModelMessageSchemaFormat.Protobuf:
-                    await SendProtoMessageAsync(message, schema);
+                    await SendProtobufMessageAsync(message, schema);
                     break;
                 default:
                     throw new UnknownMessageFormatException($"Message format {schema.Format.ToString()} is invalid. Check the Telemetry format against the permitted values Binary, Text, Json, Protobuf");
@@ -217,7 +217,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        private async Task SendProtoMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
+        private async Task SendProtobufMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
         {
             var eventMessage = default(Message);
             string className = schema.ClassName;
