@@ -117,19 +117,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 throw new InvalidInputException("Unknown template name. Try 'default'.");
             }
 
-            var simulations = await this.GetListAsync();
-            if (simulations.Count > 0)
+            if (string.IsNullOrEmpty(simulation.Name))
             {
-                this.log.Warn("There is already a simulation", () => { });
+                this.log.Warn("Missing simulation name", () => new { });
+                throw new InvalidInputException("Simulation name is required.");
+            }
+
+            var simulations = await this.GetListAsync();
+            var activeSimulation = simulations.Where(a => a.Enabled);
+            if (activeSimulation != null && activeSimulation.Count() > 0)
+            {
+                this.log.Warn("There is already a running simulation", () => { });
                 throw new ConflictingResourceException(
-                    "There is already a simulation. Only one simulation can be created.");
+                    "There is already a simulation. Simulation cannot be created while another simulation is running.");
             }
 
             // Note: forcing the ID because only one simulation can be created
-            simulation.Id = SIMULATION_ID;
+            simulation.Id = Guid.NewGuid().ToString();
             simulation.Created = DateTimeOffset.UtcNow;
+            simulation.StartTime = simulation.Created;
             simulation.Modified = simulation.Created;
-            simulation.Version = 1;
 
             // Create default simulation
             if (!string.IsNullOrEmpty(template) && template.ToLowerInvariant() == "default")
@@ -153,9 +160,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             simulation.IotHubConnectionString = await this.connectionStringManager.RedactAndStoreAsync(simulation.IotHubConnectionString);
 
             // Note: using UpdateAsync because the service generates the ID
+
             var result = await this.storage.UpdateAsync(
                 STORAGE_COLLECTION,
-                SIMULATION_ID,
+                simulation.Id,
                 JsonConvert.SerializeObject(simulation),
                 "*");
 
@@ -168,63 +176,62 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// Create or Replace a simulation.
         /// The logic works under the assumption that there is only one simulation with id "1".
         /// </summary>
-        public async Task<Models.Simulation> UpsertAsync(Models.Simulation simulation)
+        public async Task<Models.Simulation> UpsertAsync(Models.Simulation inputSimulation)
         {
-            if (simulation.Id != SIMULATION_ID)
-            {
-                this.log.Warn("Invalid simulation ID. Only one simulation is allowed", () => { });
-                throw new InvalidInputException("Invalid simulation ID. Use ID '" + SIMULATION_ID + "'.");
-            }
-
-            var simulations = await this.GetListAsync();
-            if (simulations.Count > 0)
+            var simulation = await this.GetAsync(inputSimulation.Id);
+            if (simulation != null)
             {
                 this.log.Info("Modifying simulation via PUT.", () => { });
 
                 if (simulation.ETag == "*")
                 {
-                    simulation.ETag = simulations[0].ETag;
+                    inputSimulation.ETag = simulation.ETag;
                     this.log.Info("The client used ETag='*' choosing to overwrite the current simulation", () => { });
                 }
 
-                if (simulation.ETag != simulations[0].ETag)
+                if (inputSimulation.ETag != simulation.ETag)
                 {
-                    this.log.Error("Invalid ETag. Running simulation ETag is:'", () => new { simulations });
-                    throw new ResourceOutOfDateException("Invalid ETag. Running simulation ETag is:'" + simulations[0].ETag + "'.");
+                    this.log.Error("Invalid ETag. Running simulation ETag is:'", () => new { simulation });
+                    throw new ResourceOutOfDateException("Invalid ETag. Running simulation ETag is:'" + simulation.ETag + "'.");
                 }
 
-                simulation.Created = simulations[0].Created;
-                simulation.Modified = DateTimeOffset.UtcNow;
-                simulation.Version = simulations[0].Version + 1;
+                inputSimulation.Created = simulation.Created;
+                inputSimulation.Modified = DateTimeOffset.UtcNow;
+                inputSimulation.ConnectionsPerSecond = simulation.ConnectionsPerSecond;
+                inputSimulation.TwinReadsPerSecond = simulation.TwinReadsPerSecond;
+                inputSimulation.TwinWritesPerSecond = simulation.TwinWritesPerSecond;
+                inputSimulation.RegistryOperationsPerMinute = simulation.RegistryOperationsPerMinute;
+                inputSimulation.DeviceMessagesPerSecond = simulation.DeviceMessagesPerSecond;
+                inputSimulation.TotalMessagesSent = simulation.TotalMessagesSent;
             }
             else
             {
                 this.log.Info("Creating new simulation via PUT.", () => { });
                 // new simulation
-                simulation.Created = DateTimeOffset.UtcNow;
-                simulation.Modified = simulation.Created;
-                simulation.Version = 1;
+                inputSimulation.Created = DateTimeOffset.UtcNow;
+                inputSimulation.StartTime = simulation.Created;
+                inputSimulation.Modified = simulation.Created;
             }
 
             // Note: forcing the ID because only one simulation can be created
-            simulation.Id = SIMULATION_ID;
+            inputSimulation.Id = simulation.Id;
 
             // TODO if write to storage adapter fails, the iothub connection string 
             //      will still be stored to disk. Storing the encrypted string using
             //      storage adapter would address this
             //      https://github.com/Azure/device-simulation-dotnet/issues/129
-            simulation.IotHubConnectionString = await this.connectionStringManager.RedactAndStoreAsync(simulation.IotHubConnectionString);
+            inputSimulation.IotHubConnectionString = await this.connectionStringManager.RedactAndStoreAsync(simulation.IotHubConnectionString);
 
             var result = await this.storage.UpdateAsync(
                 STORAGE_COLLECTION,
-                SIMULATION_ID,
-                JsonConvert.SerializeObject(simulation),
-                simulation.ETag);
+                inputSimulation.Id,
+                JsonConvert.SerializeObject(inputSimulation),
+                inputSimulation.ETag);
 
             // Return the new ETag provided by the storage
-            simulation.ETag = result.ETag;
+            inputSimulation.ETag = result.ETag;
 
-            return simulation;
+            return inputSimulation;
         }
 
         /// <summary>
@@ -232,12 +239,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<Models.Simulation> MergeAsync(SimulationPatch patch)
         {
-            if (patch.Id != SIMULATION_ID)
-            {
-                this.log.Warn("Invalid simulation ID.", () => new { patch.Id });
-                throw new InvalidInputException("Invalid simulation ID. Use ID '" + SIMULATION_ID + "'.");
-            }
-
             var item = await this.storage.GetAsync(STORAGE_COLLECTION, patch.Id);
             var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
             simulation.ETag = item.ETag;
@@ -259,11 +260,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             simulation.Enabled = patch.Enabled.Value;
             simulation.Modified = DateTimeOffset.UtcNow;
-            simulation.Version += 1;
+
+            if (patch.Enabled == false)
+            {
+                simulation.EndTime = simulation.Modified;
+                simulation.TotalMessagesSent = patch.TotalMessagesSent;
+            }
 
             item = await this.storage.UpdateAsync(
                 STORAGE_COLLECTION,
-                SIMULATION_ID,
+                simulation.Id,
                 JsonConvert.SerializeObject(simulation),
                 patch.ETag);
 

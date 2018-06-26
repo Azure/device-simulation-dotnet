@@ -17,9 +17,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
     {
         private const string DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:sszzz";
 
-        private long version;
-        private DateTimeOffset created;
-        private DateTimeOffset modified;
+    private DateTimeOffset created;
+    private DateTimeOffset modified;
 
         [JsonProperty(PropertyName = "ETag")]
         public string ETag { get; set; }
@@ -27,8 +26,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "Id")]
         public string Id { get; set; }
 
-        [JsonProperty(PropertyName = "Enabled")]
-        public bool? Enabled { get; set; }
+    [JsonProperty(PropertyName = "Name")]
+    public string Name { get; set; }
+    
+    [JsonProperty(PropertyName = "Desc", NullValueHandling = NullValueHandling.Ignore)]
+    public string Description { get; set; }
+
+    [JsonProperty(PropertyName = "Enabled")]
+    public bool? Enabled { get; set; }
 
         [JsonProperty(PropertyName = "IoTHub")]
         public SimulationIotHub IotHub { get; set; }
@@ -42,28 +47,47 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "DeviceModels")]
         public IList<SimulationDeviceModelRef> DeviceModels { get; set; }
 
-        [JsonProperty(PropertyName = "$metadata", Order = 1000)]
-        public IDictionary<string, string> Metadata => new Dictionary<string, string>
+    [JsonProperty(PropertyName = "CPS", NullValueHandling = NullValueHandling.Ignore)]
+    public int ConnectionsPerSecond { get; set; }
+
+    [JsonProperty(PropertyName = "ROPM", NullValueHandling = NullValueHandling.Ignore)]
+    public int RegistryOperationsPerMinute { get; set; }
+
+    [JsonProperty(PropertyName = "TRPS", NullValueHandling = NullValueHandling.Ignore)]
+    public int TwinReadsPerSecond { get; set; }
+
+    [JsonProperty(PropertyName = "TWPS", NullValueHandling = NullValueHandling.Ignore)]
+    public int TwinWritesPerSecond { get; set; }
+
+    [JsonProperty(PropertyName = "DMPS", NullValueHandling = NullValueHandling.Ignore)]
+    public int DeviceMessagesPerSecond { get; set; }
+
+    [JsonProperty(PropertyName = "TotalMsgs", NullValueHandling = NullValueHandling.Ignore)]
+    public int TotalMessagesSent { get; set; }
+
+    [JsonProperty(PropertyName = "$metadata", Order = 1000)]
+    public IDictionary<string, string> Metadata => new Dictionary<string, string>
         {
-            { "$type", "Simulation;" + Version.NUMBER },
+            { "$type", "Simulation" },
             { "$uri", "/" + Version.PATH + "/simulations/" + this.Id },
-            { "$version", this.version.ToString() },
             { "$created", this.created.ToString(DATE_FORMAT) },
             { "$modified", this.modified.ToString(DATE_FORMAT) }
         };
 
-        // Default constructor used by web service requests
-        public SimulationApiModel()
-        {
-            this.Id = string.Empty;
+    // Default constructor used by web service requests
+    public SimulationApiModel()
+    {
+      this.Id = string.Empty;
+      this.Name = string.Empty;
 
-            // When unspecified, a simulation is enabled
-            this.Enabled = true;
-            this.IotHub = null;
-            this.StartTime = null;
-            this.EndTime = null;
-            this.DeviceModels = new List<SimulationDeviceModelRef>();
-        }
+      // When unspecified, a simulation is enabled
+      this.Enabled = true;
+      this.IotHub = null;
+      this.StartTime = null;
+      this.EndTime = null;
+      this.DeviceModels = new List<SimulationDeviceModelRef>();
+      this.TotalMessagesSent = 0;
+    }
 
         // Map API model to service model
         public Simulation ToServiceModel(string id = "")
@@ -72,17 +96,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
             var now = DateTimeOffset.UtcNow;
 
-            var result = new Simulation
-            {
-                ETag = this.ETag,
-                Id = this.Id,
-                // When unspecified, a simulation is enabled
-                Enabled = this.Enabled ?? true,
-                StartTime = DateHelper.ParseDateExpression(this.StartTime, now),
-                EndTime = DateHelper.ParseDateExpression(this.EndTime, now),
-                IotHubConnectionString = SimulationIotHub.ToServiceModel(this.IotHub),
-                DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList()
-            };
+      var result = new Simulation
+      {
+        ETag = this.ETag,
+        Id = this.Id,
+        Name = this.Name,
+        Description = this.Description,
+        // When unspecified, a simulation is enabled
+        Enabled = this.Enabled ?? true,
+        StartTime = DateHelper.ParseDateExpression(this.StartTime, now),
+        EndTime = DateHelper.ParseDateExpression(this.EndTime, now),
+        IotHubConnectionString = SimulationIotHub.ToServiceModel(this.IotHub),
+        DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList(),
+        ConnectionsPerSecond = this.ConnectionsPerSecond,
+        RegistryOperationsPerMinute = this.RegistryOperationsPerMinute,
+        TwinReadsPerSecond = this.TwinReadsPerSecond,
+        TwinWritesPerSecond = this.TwinWritesPerSecond,
+        DeviceMessagesPerSecond = this.DeviceMessagesPerSecond,
+        TotalMessagesSent = this.TotalMessagesSent
+      };
 
             return result;
         }
@@ -92,13 +124,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         {
             if (value == null) return null;
 
-            var result = new SimulationApiModel
-            {
-                ETag = value.ETag,
-                Id = value.Id,
-                Enabled = value.Enabled,
-                IotHub = new SimulationIotHub(value.IotHubConnectionString)
-            };
+      var result = new SimulationApiModel
+      {
+        ETag = value.ETag,
+        Id = value.Id,
+        Name = value.Name,
+        Description = value.Description,
+        Enabled = value.Enabled,
+        StartTime = value.StartTime.ToString(),
+        EndTime = value.EndTime.ToString(),
+        IotHub = new SimulationIotHub(value.IotHubConnectionString),
+        ConnectionsPerSecond = value.ConnectionsPerSecond,
+        RegistryOperationsPerMinute = value.RegistryOperationsPerMinute,
+        TwinReadsPerSecond = value.TwinReadsPerSecond,
+        TwinWritesPerSecond = value.TwinWritesPerSecond,
+        DeviceMessagesPerSecond = value.DeviceMessagesPerSecond,
+        TotalMessagesSent = value.TotalMessagesSent
+      };
 
             // Ignore the date if the simulation doesn't have a start time
             if (value.StartTime.HasValue && !value.StartTime.Value.Equals(DateTimeOffset.MinValue))
@@ -112,10 +154,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 result.EndTime = value.EndTime?.ToString(DATE_FORMAT);
             }
 
-            result.DeviceModels = SimulationDeviceModelRef.FromServiceModel(value.DeviceModels);
-            result.version = value.Version;
-            result.created = value.Created;
-            result.modified = value.Modified;
+      result.DeviceModels = SimulationDeviceModelRef.FromServiceModel(value.DeviceModels);
+      result.created = value.Created;
+      result.modified = value.Modified;
 
             return result;
         }

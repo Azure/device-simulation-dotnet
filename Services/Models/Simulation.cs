@@ -15,11 +15,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         public string ETag { get; set; }
         public string Id { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
         public bool Enabled { get; set; }
         public IList<DeviceModelRef> DeviceModels { get; set; }
         public DateTimeOffset Created { get; set; }
         public DateTimeOffset Modified { get; set; }
-        public long Version { get; set; }
+        public int ConnectionsPerSecond { get; set; }
+        public int RegistryOperationsPerMinute { get; set; }
+        public int TwinReadsPerSecond { get; set; }
+        public int TwinWritesPerSecond { get; set; }
+        public int DeviceMessagesPerSecond { get; set; }
+        public int TotalMessagesSent { get; set; }
 
         public DateTimeOffset? StartTime
         {

@@ -12,6 +12,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         [JsonProperty(PropertyName = "Enabled")]
         public bool? Enabled { get; set; }
 
+        [JsonProperty(PropertyName = "TotalMsgs", NullValueHandling = NullValueHandling.Ignore)]
+        public int TotalMessagesSent { get; set; }
+
         public SimulationPatchApiModel()
         {
             this.Enabled = null;
@@ -24,7 +27,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             {
                 ETag = this.ETag,
                 Id = id,
-                Enabled = this.Enabled
+                Enabled = this.Enabled,
+                TotalMessagesSent = this.TotalMessagesSent
             };
         }
     }

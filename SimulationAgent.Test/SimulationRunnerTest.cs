@@ -306,7 +306,6 @@ namespace SimulationAgent.Test
                 Modified = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 ETag = "ETag0",
                 Enabled = false,
-                Version = 1,
                 DeviceModels = models
             };
         }
