@@ -26,7 +26,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             ISmartDictionary properties);
 
         void Invoke(
-            string filename, object scriptParams,
+            string filename,
+            object scriptParams,
             Dictionary<string, object> context,
             ISmartDictionary state,
             ISmartDictionary properties);
