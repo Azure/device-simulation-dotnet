@@ -212,10 +212,6 @@ Content-Type: application/json; charset=utf-8
     {
       "Id": "truck-01",
       "Count": 1
-    },
-    {
-      "Id": "cab-01-proto",
-      "Count": 1
     }
   ]
 }
@@ -246,10 +242,6 @@ Content-Type: application/json; charset=utf-8
     {
       "Id": "elevator-01",
       "Count": 10
-    },
-    {
-      "Id": "cab-01-proto",
-      "Count": 15
     }
   ]
 }
@@ -277,10 +269,6 @@ Content-Type: application/json; charset=utf-8
     {
       "Id": "elevator-01",
       "Count": 10
-    },
-    {
-      "Id": "cab-01-proto",
-      "Count": 15
     }
   ],
   "$metadata": {
