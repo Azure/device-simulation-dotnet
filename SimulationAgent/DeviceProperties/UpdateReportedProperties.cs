@@ -30,6 +30,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         public void Run()
         {
             this.log.Debug("Sending device properties update...", () => new { this.deviceId });
+            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             try
             {
@@ -37,18 +38,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                 var state = this.context.DeviceState.GetAll();
 
                 this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
-                if ((bool)state["online"])
+                if ((bool) state["online"])
                 {
                     // Device could be rebooting, updating firmware, etc.
                     this.log.Debug("The device state says the device is online", () => new { this.deviceId });
 
                     // Update the device twin with the current device properites state
-                    var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                     this.context.Client.UpdatePropertiesAsync(this.context.DeviceProperties)
                         .ContinueWith(t =>
                         {
-                            var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
-                            this.log.Debug("Device property updates delivered", () => new { this.deviceId, timeSpent, Properties = properties});
+                            var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                            this.log.Debug("Device property updates delivered", () => new { timeSpentMsecs, this.deviceId, properties });
                             this.context.HandleEvent(DevicePropertiesActor.ActorEvents.PropertiesUpdated);
                         });
 
@@ -58,12 +58,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                 else
                 {
                     // Device could be rebooting, updating firmware, etc.
-                    this.log.Debug("No properties will be updated as the device is offline...", () => new { this.deviceId });
+                    var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                    this.log.Debug("No properties will be updated as the device is offline...", () => new { timeSpentMsecs, this.deviceId });
                     this.context.HandleEvent(DevicePropertiesActor.ActorEvents.PropertiesUpdateFailed);
                 }
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
-                this.log.Error("Device properties error", () => new { this.deviceId, e });
+                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                this.log.Error("Device properties error", () => new { timeSpentMsecs, this.deviceId, e });
                 this.context.HandleEvent(DevicePropertiesActor.ActorEvents.PropertiesUpdateFailed);
             }
         }

@@ -34,7 +34,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         {
             this.log.Debug("Adding tag to device twin...", () => new { this.deviceId });
 
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             try
             {
@@ -48,30 +48,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                 this.devices
                     .AddTagAsync(this.deviceId)
                     .ContinueWith(t =>
-                    {
-                        var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
+                        {
+                            var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
 
-                        if (t.IsCanceled)
-                        {
-                            this.log.Warn("The set device tag task has been cancelled", () => new { this.deviceId, t.Exception });
-                        }
-                        else if (t.IsFaulted)
-                        {
-                            var exception = t.Exception.InnerExceptions.FirstOrDefault();
-                            this.log.Error(GetLogErrorMessage(exception), () => new { this.deviceId, exception });
-                            this.context.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTaggingFailed);
-                        }
-                        else if (t.IsCompleted)
-                        {
-                            this.log.Debug("Device tag set", () => new { this.deviceId, timeSpent });
-                            this.context.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTagged);
-                        }
-                    },
-                    TaskContinuationOptions.ExecuteSynchronously);
+                            if (t.IsCanceled)
+                            {
+                                this.log.Warn("The set device tag task has been cancelled", () => new { timeSpentMsecs, this.deviceId, t.Exception });
+                            }
+                            else if (t.IsFaulted)
+                            {
+                                var exception = t.Exception.InnerExceptions.FirstOrDefault();
+                                this.log.Error(GetLogErrorMessage(exception), () => new { timeSpentMsecs, this.deviceId, exception });
+                                this.context.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTaggingFailed);
+                            }
+                            else if (t.IsCompleted)
+                            {
+                                this.log.Debug("Device tag set", () => new { timeSpentMsecs, this.deviceId });
+                                this.context.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTagged);
+                            }
+                        },
+                        TaskContinuationOptions.ExecuteSynchronously);
             }
             catch (Exception e)
             {
-                this.log.Error("Unexpected error while tagging the device twin", () => new { this.deviceId, e });
+                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                this.log.Error("Unexpected error while tagging the device twin", () => new { timeSpentMsecs, this.deviceId, e });
                 this.context.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTaggingFailed);
             }
         }

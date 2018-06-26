@@ -115,8 +115,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         /// Simulation error counter in DeviceConnectionActor
         /// </summary>
         public long SimulationErrorsCount => this.failedRegistrationsCount +
-            this.failedFetchCount +
-            this.FailedDeviceConnectionsCount;
+                                             this.failedFetchCount +
+                                             this.FailedDeviceConnectionsCount;
 
         public DeviceConnectionActor(
             ILogger logger,
