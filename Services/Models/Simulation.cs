@@ -151,6 +151,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             // Optional, used to customize the name of the message schema
             public string Name { get; set; }
 
+            public string ClassName { get; set; }
+
             // Optional, used to change the message format, e.g. from JSON to base64
             public DeviceModel.DeviceModelMessageSchemaFormat? Format { get; set; }
 
@@ -160,6 +162,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             public DeviceModelTelemetryMessageSchemaOverride()
             {
                 this.Name = null;
+                this.ClassName = null;
                 this.Format = null;
                 this.Fields = null;
             }
