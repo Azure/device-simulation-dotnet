@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +9,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Moq;
+using Newtonsoft.Json.Linq;
 using Services.Test.helpers;
 using Xunit;
 
@@ -101,6 +102,31 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReturnsPropertyNamesOfDeviceModels()
+        {
+            // Arrange
+            var properties = new Dictionary<string, object>();
+            properties.Add("Type", "chiller");
+            properties.Add("Firmware", "1.0");
+            properties.Add("Location", "Building 2");
+            properties.Add("Model", "CH101");
+            var deviceModels = this.GetDeviceModelsWithProperties(properties);
+            this.customDeviceModels
+                .Setup(x => x.GetListAsync())
+                .ReturnsAsync(deviceModels);
+
+            // Act
+            var result = this.target.GetPropertyNamesAsync().Result;
+
+            // Assert
+            Assert.Equal(properties.Count, result.Count);
+            foreach (var prop in result)
+            {
+                Assert.True(properties.ContainsKey(prop.Split('.')[2]));
+            }
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItThrowsResourceNotFoundExceptionWhenDeviceModelNotFound()
         {
             // Arrange
@@ -128,6 +154,13 @@ namespace Services.Test
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItThrowsExceptionWhenDeleteDeviceModelFailed()
         {
+            /* SomeException is required to verify that the exception thrown is the one 
+             * configured in Arrange expression, and the test doesn't pass for the wrong 
+             * reason. That's why we use a helper class SomeException which
+             * doesn't exist in the application. Configuring GetPropertyNameAsync to
+             * throw SomeException allows us to verify that the exception thrown is
+             * exactly SomeException and not something else. */
+
             // Arrange
             this.customDeviceModels
                 .Setup(x => x.DeleteAsync(It.IsAny<string>()))
@@ -254,6 +287,23 @@ namespace Services.Test
             this.customDeviceModels
                 .Setup(x => x.GetListAsync())
                 .ReturnsAsync(deviceModelsList);
+        }
+
+        private List<DeviceModel> GetDeviceModelsWithProperties(Dictionary<string, object> properties)
+        {
+            var deviceModels = new List<DeviceModel>
+            {
+                new DeviceModel {
+                    Id = "Id_1",
+                    Properties =  properties
+                },
+                new DeviceModel {
+                    Id = "Id_2",
+                    Properties =  properties
+                }
+            };
+
+            return deviceModels;
         }
     }
 }
