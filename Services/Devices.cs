@@ -77,10 +77,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // When working with batches, this is the max size that the batch insert and delete APIs allow
         private const int REGISTRY_MAX_BATCH_SIZE = 100;
 
-        // When sending telemetry or other operations, wait only for 10 seconds. This setting sets how
+        // When sending telemetry or other operations, wait only for 20 seconds. This setting sets how
         // throttling affects the application. The default SDK value is 4 minutes, which causes high
-        // CPU usage.
-        private const int SDK_CLIENT_TIMEOUT = 10000;
+        // CPU usage - TODO: to be revisited
+        private const int SDK_CLIENT_TIMEOUT = 20000;
 
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly ILogger log;
@@ -90,6 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private IRegistryManager registry;
         private int registryCount;
         private bool setupDone;
+        private string fixedDeviceKey;
 
         public Devices(
             IServicesConfig config,
@@ -110,10 +111,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public void SetCurrentIotHub()
         {
-            string connString = this.connectionStringManager.GetIotHubConnectionString();
-            this.registry = this.registry.CreateFromConnectionString(connString);
-            this.ioTHubHostName = IotHubConnectionStringBuilder.Create(connString).HostName;
-            this.log.Info("Selected active IoT Hub for devices", () => new { this.ioTHubHostName });
+            try
+            {
+                // Retrieve connection string from file/storage
+                string connString = this.connectionStringManager.GetIotHubConnectionString();
+
+                // Parse connection string, this triggers an exception if the string is invalid
+                IotHubConnectionStringBuilder cs = IotHubConnectionStringBuilder.Create(connString);
+
+                // Prepare registry class used to create/retrieve devices
+                this.registry = this.registry.CreateFromConnectionString(connString);
+                this.log.Debug("Device registry object ready", () => new { this.ioTHubHostName });
+
+                // Prepare hostname used to build device connection strings
+                this.ioTHubHostName = cs.HostName;
+                this.log.Info("Selected active IoT Hub for devices", () => new { this.ioTHubHostName });
+
+                // Prepare the auth key used for all the devices
+                this.fixedDeviceKey = cs.SharedAccessKey;
+                this.log.Debug("Device authentication key defined", () => new { this.ioTHubHostName });
+            }
+            catch (Exception e)
+            {
+                this.log.Error("IoT Hub connection setup failed", () => new { e });
+                throw;
+            }
         }
 
         /// <summary>
@@ -141,6 +163,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             this.SetupHub();
 
+            // NOTE: TEMPORARY CODE
+            return await Task.FromResult(new Device(
+                this.PrepareDeviceObject(deviceId, this.fixedDeviceKey),
+                this.ioTHubHostName));
+
+            /*
+
+            NOTE: TEMPORARY COMMENTED
+
             this.log.Debug("Fetching device from registry", () => new { deviceId });
 
             Device result = null;
@@ -148,7 +179,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             try
             {
-                var device = await this.GetRegistry().GetDeviceAsync(deviceId);
+                Azure.Devices.Device device = await this.GetRegistry().GetDeviceAsync(deviceId);
                 if (device != null)
                 {
                     result = new Device(device, this.ioTHubHostName);
@@ -172,7 +203,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 throw new ExternalDependencyException("Unable to fetch the IoT device");
             }
 
-            return result;
+            return result;*/
         }
 
         /// <summary>
@@ -237,7 +268,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     () => new { batchNumber, batchSize = batch.Count() });
 
                 BulkRegistryOperationResult result = await this.registry.AddDevices2Async(
-                    batch.Select(id => new Azure.Devices.Device(id)));
+                    //batch.Select(id => new Azure.Devices.Device(id)));
+                    batch.Select(id => this.PrepareDeviceObject(id, this.fixedDeviceKey)));
 
                 this.log.Info("Devices batch created",
                     () => new { batchNumber, result.IsSuccessful, result.Errors });
@@ -298,6 +330,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return deviceModelId + "." + position;
         }
 
+        // Create a Device object using a predefined authentication secret key
+        private Azure.Devices.Device PrepareDeviceObject(string id, string key)
+        {
+            var result = new Azure.Devices.Device(id)
+            {
+                Authentication = new AuthenticationMechanism
+                {
+                    Type = AuthenticationType.Sas,
+                    SymmetricKey = new SymmetricKey
+                    {
+                        PrimaryKey = key,
+                        SecondaryKey = key
+                    }
+                }
+            };
+
+            return result;
+        }
+
         // This call can throw an exception, which is fine when the exception happens during a method
         // call. We cannot allow the exception to occur in the constructor though, because it
         // would break DI.
@@ -305,7 +356,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.setupDone) return;
             this.SetCurrentIotHub();
-
             this.setupDone = true;
         }
 
@@ -353,6 +403,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         () => new { device.Id, device.IoTHubHostName });
 
                     sdkClient = Azure.Devices.Client.DeviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp_Tcp_Only);
+
+                    // Client with connection pooling - Apparently slower than indipendent connections
+                    // sdkClient = Azure.Devices.Client.DeviceClient.Create(
+                    //     this.ioTHubHostName,
+                    //     new DeviceAuthenticationWithRegistrySymmetricKey(device.Id, device.AuthPrimaryKey),
+                    //     new ITransportSettings[]
+                    //     {
+                    //         new AmqpTransportSettings(TransportType.Amqp_Tcp_Only)
+                    //         {
+                    //             AmqpConnectionPoolSettings = new AmqpConnectionPoolSettings
+                    //             {
+                    //                 Pooling = true,
+                    //                 MaxPoolSize = 65000
+                    //             }
+                    //         }
+                    //     });
                     break;
 
                 case IoTHubProtocol.MQTT:

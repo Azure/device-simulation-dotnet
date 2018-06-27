@@ -110,10 +110,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             switch (schema.Format)
             {
                 case DeviceModel.DeviceModelMessageSchemaFormat.JSON:
-                    await SendJsonMessageAsync(message, schema);
+                    await this.SendJsonMessageAsync(message, schema);
                     break;
                 case DeviceModel.DeviceModelMessageSchemaFormat.Protobuf:
-                    await SendProtobufMessageAsync(message, schema);
+                    await this.SendProtobufMessageAsync(message, schema);
                     break;
                 default:
                     throw new UnknownMessageFormatException($"Message format {schema.Format.ToString()} is invalid. Check the Telemetry format against the permitted values Binary, Text, Json, Protobuf");
@@ -125,23 +125,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task UpdatePropertiesAsync(ISmartDictionary properties)
         {
+            // Temp code to detect where the "The given key was not present in the dictionary" exception is coming from
+            var debugLineNumber = 0;
+
             try
             {
-                var reportedProperties = SmartDictionaryToTwinCollection(properties);
+                debugLineNumber++;
+                var reportedProperties = this.SmartDictionaryToTwinCollection(properties);
 
+                debugLineNumber++;
                 await this.client.UpdateReportedPropertiesAsync(reportedProperties);
 
+                debugLineNumber++;
                 this.log.Debug("Update reported properties for device", () => new
                 {
                     this.deviceId,
-                    ReportedProperties = reportedProperties
+                    reportedProperties
                 });
             }
             catch (Exception e)
             {
-                this.log.Error("Update reported properties failed",
+                this.log.Error("Failed to update reported properties",
                     () => new
                     {
+                        debugLineNumber,
                         Protocol = this.protocol.ToString(),
                         ExceptionMessage = e.Message,
                         Exception = e.GetType().FullName,
@@ -220,8 +227,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private async Task SendProtobufMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
         {
             var eventMessage = default(Message);
-            string className = schema.ClassName;
-            Type type = System.Reflection.Assembly.GetExecutingAssembly().GetType(schema.ClassName, false);
+            Type type = Assembly.GetExecutingAssembly().GetType(schema.ClassName, false);
 
             if (type != null)
             {
@@ -284,7 +290,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             await this.SendRawMessageAsync(eventMessage);
         }
 
-        private static TwinCollection SmartDictionaryToTwinCollection(ISmartDictionary dictionary)
+        private TwinCollection SmartDictionaryToTwinCollection(ISmartDictionary dictionary)
         {
             var result = new TwinCollection();
 
@@ -301,7 +307,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine(e);
+                        this.log.Error("Error while converting the dictionary to a twin collection", () => new { item.Key, item.Value, e });
                         throw;
                     }
                 }

@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -21,7 +22,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         long SimulationErrorsCount { get; }
 
         void Setup(string deviceId, DeviceModel deviceModel, IDeviceStateActor deviceStateActor, ConnectionLoopSettings loopSettings);
-        void Run();
+        Task RunAsync();
         void HandleEvent(DeviceConnectionActor.ActorEvents e);
         void Stop();
     }
@@ -253,7 +254,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             }
         }
 
-        public void Run()
+        public async Task RunAsync()
         {
             this.log.Debug(this.status.ToString(), () => new { this.deviceId });
 
@@ -270,19 +271,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 case ActorStatus.ReadyToFetch:
                     this.status = ActorStatus.Fetching;
                     this.actorLogger.FetchingDevice();
-                    this.fetchLogic.RunAsync();
+                    await this.fetchLogic.RunAsync();
                     return;
 
                 case ActorStatus.ReadyToRegister:
                     this.status = ActorStatus.Registering;
                     this.actorLogger.RegisteringDevice();
-                    this.registerLogic.RunAsync();
+                    await this.registerLogic.RunAsync();
                     return;
 
                 case ActorStatus.ReadyToConnect:
                     this.status = ActorStatus.Connecting;
                     this.actorLogger.ConnectingDevice();
-                    this.connectLogic.RunAsync();
+                    await this.connectLogic.RunAsync();
                     return;
             }
         }
