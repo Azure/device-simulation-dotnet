@@ -110,15 +110,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
             log.Info("Web service auth required: " + config.ClientAuthConfig.AuthRequired, () => { });
 
-            log.Info("Device Models folder:      " + config.ServicesConfig.DeviceModelsFolder, () => { });
-            log.Info("Scripts folder:            " + config.ServicesConfig.DeviceModelsScriptsFolder, () => { });
+            log.Info("Device Models folder: " + config.ServicesConfig.DeviceModelsFolder, () => { });
+            log.Info("Scripts folder:      " + config.ServicesConfig.DeviceModelsScriptsFolder, () => { });
 
-            log.Info("Connections per second:    " + config.RateLimitingConfig.ConnectionsPerSecond, () => { });
-            log.Info("Registry ops per minute:   " + config.RateLimitingConfig.RegistryOperationsPerMinute, () => { });
-            log.Info("Twin reads per second:     " + config.RateLimitingConfig.TwinReadsPerSecond, () => { });
-            log.Info("Twin writes per second:    " + config.RateLimitingConfig.TwinWritesPerSecond, () => { });
-            log.Info("Messages per second:       " + config.RateLimitingConfig.DeviceMessagesPerSecond, () => { });
-            log.Info("Messages per day:          " + config.RateLimitingConfig.DeviceMessagesPerDay, () => { });
+            log.Info("Connections per sec:  " + config.RateLimitingConfig.ConnectionsPerSecond, () => { });
+            log.Info("Registry ops per sec: " + config.RateLimitingConfig.RegistryOperationsPerMinute, () => { });
+            log.Info("Twin reads per sec:   " + config.RateLimitingConfig.TwinReadsPerSecond, () => { });
+            log.Info("Twin writes per sec:  " + config.RateLimitingConfig.TwinWritesPerSecond, () => { });
+            log.Info("Messages per second:  " + config.RateLimitingConfig.DeviceMessagesPerSecond, () => { });
+            log.Info("Messages per day:     " + config.RateLimitingConfig.DeviceMessagesPerDay, () => { });
         }
     }
 }

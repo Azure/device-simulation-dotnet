@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -22,7 +21,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         long SimulationErrorsCount { get; }
 
         void Setup(string deviceId, DeviceModel deviceModel, IDeviceStateActor deviceStateActor, ConnectionLoopSettings loopSettings);
-        Task RunAsync();
+        void Run();
         void HandleEvent(DeviceConnectionActor.ActorEvents e);
         void Stop();
     }
@@ -116,8 +115,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         /// Simulation error counter in DeviceConnectionActor
         /// </summary>
         public long SimulationErrorsCount => this.failedRegistrationsCount +
-                                             this.failedFetchCount +
-                                             this.FailedDeviceConnectionsCount;
+            this.failedFetchCount +
+            this.FailedDeviceConnectionsCount;
 
         public DeviceConnectionActor(
             ILogger logger,
@@ -254,7 +253,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             }
         }
 
-        public async Task RunAsync()
+        public void Run()
         {
             this.log.Debug(this.status.ToString(), () => new { this.deviceId });
 
@@ -271,19 +270,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 case ActorStatus.ReadyToFetch:
                     this.status = ActorStatus.Fetching;
                     this.actorLogger.FetchingDevice();
-                    await this.fetchLogic.RunAsync();
+                    this.fetchLogic.RunAsync();
                     return;
 
                 case ActorStatus.ReadyToRegister:
                     this.status = ActorStatus.Registering;
                     this.actorLogger.RegisteringDevice();
-                    await this.registerLogic.RunAsync();
+                    this.registerLogic.RunAsync();
                     return;
 
                 case ActorStatus.ReadyToConnect:
                     this.status = ActorStatus.Connecting;
                     this.actorLogger.ConnectingDevice();
-                    await this.connectLogic.RunAsync();
+                    this.connectLogic.RunAsync();
                     return;
             }
         }

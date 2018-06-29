@@ -4,7 +4,7 @@
     "Version": "0.0.1",
     "Name": "Faulty Truck",
     "Description": "Truck with GPS, speed and cargo temperature sensors. Temperature is higher than normal.",
-    "Protocol": "AMQP",
+    "Protocol": "MQTT",
     "Simulation": {
         "InitialState": {
             "online": true,

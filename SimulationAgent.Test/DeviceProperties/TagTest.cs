@@ -48,7 +48,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.target.Setup(this.devicePropertiesActor.Object, DEVICE_ID);
 
             // Act
-            this.target.RunAsync().Wait();
+            this.target.Run();
 
             // Assert
             this.devicePropertiesActor.Verify(x => x.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTagged));

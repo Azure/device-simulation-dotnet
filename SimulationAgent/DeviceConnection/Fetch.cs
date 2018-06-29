@@ -34,35 +34,33 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         public async Task RunAsync()
         {
             this.log.Debug("Fetching device...", () => new { this.deviceId });
-            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             try
             {
+                var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 var device = await this.devices.GetAsync(this.deviceId);
 
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
                 if (device != null)
                 {
                     this.context.Device = device;
-                    this.log.Debug("Device found", () => new { timeSpentMsecs, device.Id, device.Enabled });
+                    this.log.Debug("Device found", () => new { device.Id, timeSpent, device.Enabled });
                     this.context.HandleEvent(DeviceConnectionActor.ActorEvents.FetchCompleted);
                 }
                 else
                 {
-                    this.log.Debug("Device not found", () => new { timeSpentMsecs, this.deviceId });
+                    this.log.Debug("Device not found", () => new { this.deviceId, timeSpent });
                     this.context.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceNotFound);
                 }
             }
-            catch (ExternalDependencyException e)
+            catch(ExternalDependencyException e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Error("External dependency error while fetching the device", () => new { timeSpentMsecs, this.deviceId, e });
+                this.log.Error("External dependency error while fetching the device", () => new { this.deviceId, e });
                 this.context.HandleEvent(DeviceConnectionActor.ActorEvents.FetchFailed);
             }
             catch (Exception e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Error("Error while fetching the device", () => new { timeSpentMsecs, this.deviceId, e });
+                this.log.Error("Error while fetching the device", () => new { this.deviceId, e });
                 this.context.HandleEvent(DeviceConnectionActor.ActorEvents.FetchFailed);
             }
         }

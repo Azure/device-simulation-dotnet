@@ -1,13 +1,11 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry
 {
@@ -41,7 +39,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             var state = this.context.DeviceState.GetAll();
 
             this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
-            if ((bool) state["online"] == false)
+            if ((bool)state["online"] == false)
             {
                 // device could be rebooting, updating firmware, etc.
                 this.log.Debug("No telemetry will be sent as the device is offline...", () => new { this.deviceId });
@@ -69,7 +67,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             this.log.Debug("Calling SendMessageAsync...",
                 () => new { this.deviceId, MessageSchema = this.message.MessageSchema.Name, msg });
 
-            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             try
             {
@@ -85,34 +83,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                 this.context.Client
                     .SendMessageAsync(msg, this.message.MessageSchema)
                     .ContinueWith(t =>
-                        {
-                            var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                    {
+                        var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
 
-                            if (t.IsCanceled)
-                            {
-                                this.log.Warn("The telemetry sending task has been cancelled",
-                                    () => new { timeSpentMsecs, this.deviceId, t.Exception });
-                            }
-                            else if (t.IsFaulted)
-                            {
-                                var exception = t.Exception.InnerExceptions.FirstOrDefault();
-                                this.log.Error(GetLogErrorMessage(exception),
-                                    () => new { timeSpentMsecs, this.deviceId, exception });
-                                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendFailure);
-                            }
-                            else if (t.IsCompleted)
-                            {
-                                this.log.Debug("Telemetry delivered",
-                                    () => new { timeSpentMsecs, this.deviceId, MessageSchema = this.message.MessageSchema.Name });
-                                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
-                            }
-                        },
+                        if (t.IsCanceled)
+                        {
+                            this.log.Warn("The telemetry sending task has been cancelled", () => new { this.deviceId, t.Exception });
+                        }
+                        else if (t.IsFaulted)
+                        {
+                            var exception = t.Exception.InnerExceptions.FirstOrDefault();
+                            this.log.Error(GetLogErrorMessage(exception), () => new { this.deviceId, exception });
+                            this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendFailure);
+                        }
+                        else if (t.IsCompleted)
+                        {
+                            this.log.Debug("Telemetry delivered", () => new { this.deviceId, timeSpent, MessageSchema = this.message.MessageSchema.Name });
+                            this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
+                        }
+                    },
                         TaskContinuationOptions.ExecuteSynchronously);
             }
             catch (Exception e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Error("Unexpected error while sending telemetry", () => new { timeSpentMsecs, this.deviceId, e });
+                this.log.Error("Unexpected error while sending telemetry", () => new { this.deviceId, e });
                 this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendFailure);
             }
         }
@@ -177,7 +171,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
         private async Task SendTelemetryMessageAsync(string msg)
         {
-            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.SendingTelemetry);
 
@@ -185,32 +179,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             {
                 await this.context.Client.SendMessageAsync(msg, this.message.MessageSchema);
 
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Debug("Telemetry delivered", () => new { timeSpentMsecs, this.deviceId, MessageSchema = this.message.MessageSchema.Name });
+                var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
+                this.log.Debug("Telemetry delivered", () => new { this.deviceId, timeSpent, MessageSchema = this.message.MessageSchema.Name });
                 this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
             }
             catch (TelemetrySendTimeoutException exception)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Error("Telemetry send timeout error", () => new { timeSpentMsecs, this.deviceId, exception });
+                this.log.Error("Telemetry send timeout error", () => new { this.deviceId, exception });
                 this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendFailure);
             }
             catch (TelemetrySendIOException exception)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Error("Telemetry send I/O error", () => new { timeSpentMsecs, this.deviceId, exception });
+                this.log.Error("Telemetry send I/O error", () => new { this.deviceId, exception });
                 this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendFailure);
             }
             catch (TelemetrySendException exception)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Error("Telemetry send unknown error", () => new { timeSpentMsecs, this.deviceId, exception });
+                this.log.Error("Telemetry send unknown error", () => new { this.deviceId, exception });
                 this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendUnknownFailure);
             }
             catch (Exception exception)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Error("Unexpected error", () => new { timeSpentMsecs, this.deviceId, exception });
+                this.log.Error("Unexpected error", () => new { this.deviceId, exception });
                 this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendUnknownFailure);
             }
         }

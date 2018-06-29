@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -26,7 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             IDeviceConnectionActor deviceConnectionActor,
             PropertiesLoopSettings loopSettings);
 
-        Task<string> RunAsync();
+        string Run();
         void HandleEvent(DevicePropertiesActor.ActorEvents e);
         void Stop();
     }
@@ -199,7 +198,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         }
 
         // Run the next step and return a description about what happened
-        public async Task<string> RunAsync()
+        public string Run()
         {
             this.log.Debug(this.status.ToString(), () => new { this.deviceId });
 
@@ -217,7 +216,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                 case ActorStatus.ReadyToTagDevice:
                     this.status = ActorStatus.TaggingDevice;
                     this.actorLogger.TaggingDevice();
-                    await this.deviceSetDeviceTagLogic.RunAsync();
+                    this.deviceSetDeviceTagLogic.Run();
                     return "device tag scheduled";
 
                 case ActorStatus.WaitingForChanges:
@@ -228,7 +227,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                 case ActorStatus.ReadyToUpdate:
                     this.status = ActorStatus.Updating;
                     this.actorLogger.UpdatingDeviceProperties();
-                    await this.updatePropertiesLogic.RunAsync();
+                    this.updatePropertiesLogic.Run();
                     return "updated properties";
             }
 

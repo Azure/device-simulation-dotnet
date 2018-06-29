@@ -15,7 +15,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
@@ -82,9 +81,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private Thread devicesConnectionThread;
 
         // The thread responsible for sending telemetry to Azure IoT Hub
-        private Thread devicesTelemetryThread1;
-        private Thread devicesTelemetryThread2;
-        private Thread devicesTelemetryThread3;
+        private Thread devicesTelemetryThread;
 
         // The thread responsible for sending device property updates to Azure IoT Hub
         private Thread devicesPropertiesThread;
@@ -193,7 +190,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     try
                     {
                         // Load device model and merge with overrides
-                        var deviceModel = this.GetDeviceModel(model.Id, model.Override);
+                        var deviceModel  = this.GetDeviceModel(model.Id, model.Override);
 
                         for (var i = 0; i < model.Count; i++)
                         {
@@ -218,7 +215,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                 this.TryToStartConnectionThread();
 
-                this.TryToStartTelemetryThreads();
+                this.TryToStartTelemetryThread();
 
                 this.TryToStartPropertiesThread();
             }
@@ -253,7 +250,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 Thread.Sleep(3000);
                 this.TryToStopStateThread();
                 this.TryToStopConnectionThread();
-                this.TryToStopTelemetryThreads();
+                this.TryToStopTelemetryThread();
                 this.TryToStopPropertiesThread();
 
                 // Reset local state
@@ -285,10 +282,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         // Method to return the count of simulation errors
         public long SimulationErrorsCount => this.simulationErrors +
-                                             this.deviceConnectionActors.Sum(a => a.Value.SimulationErrorsCount) +
-                                             this.deviceStateActors.Sum(a => a.Value.SimulationErrorsCount) +
-                                             this.deviceTelemetryActors.Sum(a => a.Value.FailedMessagesCount) +
-                                             this.devicePropertiesActors.Sum(a => a.Value.SimulationErrorsCount);
+                this.deviceConnectionActors.Sum(a => a.Value.SimulationErrorsCount) +
+                this.deviceStateActors.Sum(a => a.Value.SimulationErrorsCount) +
+                this.deviceTelemetryActors.Sum(a => a.Value.FailedMessagesCount) +
+                this.devicePropertiesActors.Sum(a => a.Value.SimulationErrorsCount);
 
         private DeviceModel GetDeviceModel(string id, Services.Models.Simulation.DeviceModelOverride overrides)
         {
@@ -334,28 +331,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         private void ConnectDevicesThread()
         {
-            // Once x devices are attempting to connect, wait until they are done
-            // value 200 : value found executing some tests against S3. 250 works too with few connections timeouts, 500 seems too high
-            const int WAIT_EVERY = 200;
-            var tasks = new List<Task>();
-
             while (this.running)
             {
                 this.connectionLoopSettings.NewLoop();
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 foreach (var device in this.deviceConnectionActors)
                 {
-                    tasks.Add(device.Value.RunAsync());
-                    if (tasks.Count <= WAIT_EVERY) continue;
-
-                    Task.WaitAll(tasks.ToArray());
-                    tasks.Clear();
-                }
-
-                if (tasks.Count > 0)
-                {
-                    Task.WaitAll(tasks.ToArray());
-                    tasks.Clear();
+                    device.Value.Run();
                 }
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
@@ -366,11 +348,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         private void UpdatePropertiesThread()
         {
-            // Once x devices are attempting to connect, wait until they are done
-            // value 25 : tweaked after some tests against S3, to minimize the number of timeouts
-            const int WAIT_EVERY = 25;
-            var tasks = new List<Task>();
-
             while (this.running)
             {
                 this.propertiesLoopSettings.NewLoop();
@@ -378,17 +355,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 foreach (var device in this.devicePropertiesActors)
                 {
-                    tasks.Add(device.Value.RunAsync());
-                    if (tasks.Count <= WAIT_EVERY) continue;
-
-                    Task.WaitAll(tasks.ToArray());
-                    tasks.Clear();
-                }
-
-                if (tasks.Count > 0)
-                {
-                    Task.WaitAll(tasks.ToArray());
-                    tasks.Clear();
+                    device.Value.Run();
                 }
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
@@ -397,48 +364,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private void SendTelemetryThread1()
-        {
-            this.SendTelemetryThread(1, 3);
-        }
-
-        private void SendTelemetryThread2()
-        {
-            this.SendTelemetryThread(2, 3);
-        }
-
-        private void SendTelemetryThread3()
-        {
-            this.SendTelemetryThread(3, 3);
-        }
-
-        private void SendTelemetryThread(int threadPosition, int threadCount)
+        private void SendTelemetryThread()
         {
             if (this.deviceTelemetryActors.Count == 0)
             {
                 this.log.Warn("There is no telemetry to send, stopping the telemetry thread", () => { });
                 return;
             }
-
-            /**
-             * Examples:
-             *    threadCount = 3
-             *
-             *    Count = 20000
-             *    chunkSize = 6667
-             *    threadPosition 1:     0,  6667
-             *    threadPosition 2:  6667, 13334
-             *    threadPosition 3: 13334, 20000
-             *
-             *    Count = 11
-             *    chunkSize = 4
-             *    threadPosition 1: 0,  4
-             *    threadPosition 2: 4,  8
-             *    threadPosition 3: 8, 11
-             */
-            int chunkSize = (int) Math.Ceiling(this.deviceTelemetryActors.Count / (double) threadCount);
-            var firstDevice = chunkSize * (threadPosition - 1);
-            var lastDevice = Math.Min(chunkSize * threadPosition, this.deviceTelemetryActors.Count);
 
             var stats = new Dictionary<string, int>();
             while (this.running)
@@ -451,27 +383,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 }
 
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                var pos = 0;
                 foreach (var telemetry in this.deviceTelemetryActors)
                 {
-                    // Work only on a subset of all devices
-                    if (!(pos >= firstDevice && pos < lastDevice))
+                    var stat = telemetry.Value.Run();
+                    if (this.log.InfoIsEnabled)
                     {
-                        var stat = telemetry.Value.Run();
-                        if (this.log.InfoIsEnabled)
+                        if (stat != null)
                         {
-                            if (stat != null)
-                            {
-                                stats[stat] = stats.ContainsKey(stat) ? stats[stat] + 1 : 1;
-                            }
-                            else
-                            {
-                                stats["nothingToDo"]++;
-                            }
+                            stats[stat] = stats.ContainsKey(stat) ? stats[stat] + 1 : 1;
+                        }
+                        else
+                        {
+                            stats["nothingToDo"]++;
                         }
                     }
-
-                    pos++;
                 }
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
@@ -536,33 +461,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private void TryToStopTelemetryThreads()
+        private void TryToStopTelemetryThread()
         {
             try
             {
-                this.devicesTelemetryThread1.Interrupt();
+                this.devicesTelemetryThread.Interrupt();
             }
             catch (Exception e)
             {
-                this.log.Warn("Unable to stop the telemetry thread 1 in a clean way", () => new { e });
-            }
-
-            try
-            {
-                this.devicesTelemetryThread2.Interrupt();
-            }
-            catch (Exception e)
-            {
-                this.log.Warn("Unable to stop the telemetry thread 2 in a clean way", () => new { e });
-            }
-
-            try
-            {
-                this.devicesTelemetryThread3.Interrupt();
-            }
-            catch (Exception e)
-            {
-                this.log.Warn("Unable to stop the telemetry thread 3 in a clean way", () => new { e });
+                this.log.Warn("Unable to stop the telemetry thread in a clean way", () => new { e });
             }
         }
 
@@ -602,22 +509,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private void TryToStartTelemetryThreads()
+        private void TryToStartTelemetryThread()
         {
-            this.devicesTelemetryThread1 = new Thread(this.SendTelemetryThread1);
-            this.devicesTelemetryThread2 = new Thread(this.SendTelemetryThread2);
-            this.devicesTelemetryThread3 = new Thread(this.SendTelemetryThread3);
+            this.devicesTelemetryThread = new Thread(this.SendTelemetryThread);
             try
             {
-                this.devicesTelemetryThread1.Start();
-                this.devicesTelemetryThread2.Start();
-                this.devicesTelemetryThread3.Start();
+                this.devicesTelemetryThread.Start();
             }
             catch (Exception e)
             {
                 this.IncreamentSimulationErrorsCount();
-                this.log.Error("Unable to start the telemetry threads", () => new { e });
-                throw new Exception("Unable to start the telemetry threads", e);
+                this.log.Error("Unable to start the telemetry thread", () => new { e });
+                throw new Exception("Unable to start the telemetry thread", e);
             }
         }
 

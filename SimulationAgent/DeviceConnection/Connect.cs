@@ -41,24 +41,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         public async Task RunAsync()
         {
             this.log.Debug("Connecting...", () => new { this.deviceId });
-            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             try
             {
                 this.context.Client = this.devices.GetClient(this.context.Device, this.deviceModel.Protocol, this.scriptInterpreter);
 
+                var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 await this.context.Client.ConnectAsync();
                 await this.context.Client.RegisterMethodsForDeviceAsync(this.deviceModel.CloudToDeviceMethods, this.context.DeviceState, this.context.DeviceProperties);
                 await this.context.Client.RegisterDesiredPropertiesUpdateAsync(this.context.DeviceProperties);
 
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Debug("Device connected", () => new { timeSpentMsecs, this.deviceId });
+                var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
+                this.log.Debug("Device connected", () => new { this.deviceId, timeSpent });
                 this.context.HandleEvent(DeviceConnectionActor.ActorEvents.Connected);
             }
             catch (Exception e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Error("Connection error", () => new { timeSpentMsecs, this.deviceId, e });
+                this.log.Error("Connection error", () => new { this.deviceId, e });
                 this.context.HandleEvent(DeviceConnectionActor.ActorEvents.ConnectionFailed);
             }
         }
