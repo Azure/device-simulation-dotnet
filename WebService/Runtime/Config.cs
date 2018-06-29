@@ -31,11 +31,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
 
         // Deployment details
         IDeploymentConfig DeploymentConfig { get; }
+
+        // Multi-threading settings
+        IConcurrencyConfig ConcurrencyConfig { get; }
     }
 
     public class Config : IConfig
     {
         private const string APPLICATION_KEY = "DeviceSimulationService:";
+
         private const string PORT_KEY = APPLICATION_KEY + "webservice_port";
         private const string DEVICE_MODELS_FOLDER_KEY = APPLICATION_KEY + "device_models_folder";
         private const string DEVICE_MODELS_SCRIPTS_FOLDER_KEY = APPLICATION_KEY + "device_models_scripts_folder";
@@ -50,6 +54,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string DEVICE_MESSAGES_DAILY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "device_to_cloud_messages_per_day";
         private const string TWIN_READS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "twin_reads_per_second";
         private const string TWIN_WRITES_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "twin_writes_per_second";
+
+        private const string CONCURRENCY_KEY = APPLICATION_KEY + "Concurrency:";
+        private const string CONCURRENCY_TELEMETRY_THREADS = CONCURRENCY_KEY + "telemetry_threads";
+        private const string CONCURRENCY_MAX_PENDING_CONNECTIONS = CONCURRENCY_KEY + "max_pending_connections";
+        private const string CONCURRENCY_MAX_PENDING_TWIN_WRITES = CONCURRENCY_KEY + "max_pending_twin_writes";
+        private const string CONCURRENCY_MIN_DEVICE_TELEMETRY_LOOP_DURATION = CONCURRENCY_KEY + "min_device_telemetry_loop_duration";
+        private const string CONCURRENCY_MIN_DEVICE_STATE_LOOP_DURATION = CONCURRENCY_KEY + "min_device_state_loop_duration";
+        private const string CONCURRENCY_MIN_DEVICE_CONNECTION_LOOP_DURATION = CONCURRENCY_KEY + "min_device_connection_loop_duration";
+        private const string CONCURRENCY_MIN_DEVICE_PROPERTIES_LOOP_DURATION = CONCURRENCY_KEY + "min_device_properties_loop_duration";
 
         private const string STORAGE_ADAPTER_KEY = "StorageAdapterService:";
         private const string STORAGE_ADAPTER_API_URL_KEY = STORAGE_ADAPTER_KEY + "webservice_url";
@@ -88,6 +101,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         public IServicesConfig ServicesConfig { get; }
         public IRateLimitingConfig RateLimitingConfig { get; set; }
         public IDeploymentConfig DeploymentConfig { get; set; }
+        public IConcurrencyConfig ConcurrencyConfig { get; set; }
 
         public Config(IConfigData configData)
         {
@@ -97,6 +111,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             this.ClientAuthConfig = GetClientAuthConfig(configData);
             this.RateLimitingConfig = GetRateLimitingConfig(configData);
             this.DeploymentConfig = GetDeploymentConfig(configData);
+            this.ConcurrencyConfig = GetConcurrencyConfig(configData);
+        }
+
+        private static IConcurrencyConfig GetConcurrencyConfig(IConfigData configData)
+        {
+            var defaults = new ConcurrencyConfig();
+            return new ConcurrencyConfig
+            {
+                TelemetryThreads = configData.GetInt(CONCURRENCY_TELEMETRY_THREADS, defaults.TelemetryThreads),
+                MaxPendingConnections = configData.GetInt(CONCURRENCY_MAX_PENDING_CONNECTIONS, defaults.MaxPendingConnections),
+                MaxPendingTwinWrites = configData.GetInt(CONCURRENCY_MAX_PENDING_TWIN_WRITES, defaults.MaxPendingTwinWrites),
+                MinDeviceStateLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_STATE_LOOP_DURATION, defaults.MinDeviceStateLoopDuration),
+                MinDeviceConnectionLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_CONNECTION_LOOP_DURATION, defaults.MinDeviceConnectionLoopDuration),
+                MinDeviceTelemetryLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_TELEMETRY_LOOP_DURATION, defaults.MinDeviceTelemetryLoopDuration),
+                MinDevicePropertiesLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_PROPERTIES_LOOP_DURATION, defaults.MinDevicePropertiesLoopDuration)
+            };
         }
 
         private static IDeploymentConfig GetDeploymentConfig(IConfigData configData)
@@ -171,7 +201,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 // working with VisualStudio, the environment variable can be set in the
                 // WebService project settings, under the "Debug" tab.
 
-                ShowIoTHubConnStringInstructions ();
+                ShowIoTHubConnStringInstructions();
 
                 throw new Exception("The service configuration is incomplete. " +
                                     "Please provide your Azure IoT Hub connection string. " +
@@ -216,8 +246,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         {
             Console.BackgroundColor = bg;
             Console.ForegroundColor = fg;
-            Console.WriteLine (" {0,-120}", text);
-            Console.ResetColor ();
+            Console.WriteLine(" {0,-120}", text);
+            Console.ResetColor();
         }
 
         private static IRateLimitingConfig GetRateLimitingConfig(IConfigData configData)
