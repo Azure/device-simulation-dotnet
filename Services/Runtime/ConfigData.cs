@@ -16,6 +16,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         string GetString(string key, string defaultValue = "");
         bool GetBool(string key, bool defaultValue = false);
         int GetInt(string key, int defaultValue = 0);
+        uint GetUInt(string key, uint defaultValue = 0);
     }
 
     public class ConfigData : IConfigData
@@ -60,6 +61,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             try
             {
                 return Convert.ToInt32(this.GetString(key, defaultValue.ToString()));
+            }
+            catch (Exception e)
+            {
+                throw new InvalidConfigurationException($"Unable to load configuration value for '{key}'", e);
+            }
+        }
+
+        public uint GetUInt(string key, uint defaultValue = 0)
+        {
+            try
+            {
+                return Convert.ToUInt32(this.GetString(key, defaultValue.ToString()));
             }
             catch (Exception e)
             {

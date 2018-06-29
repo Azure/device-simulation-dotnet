@@ -77,13 +77,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // When working with batches, this is the max size that the batch insert and delete APIs allow
         private const int REGISTRY_MAX_BATCH_SIZE = 100;
 
-        // When sending telemetry or other operations, wait only for 10 seconds. This setting sets how
-        // throttling affects the application. The default SDK value is 4 minutes, which causes high
-        // CPU usage.
-        private const int SDK_CLIENT_TIMEOUT = 10000;
-
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly ILogger log;
+        private IServicesConfig config;
 
         private readonly bool twinReadsWritesEnabled;
         private string ioTHubHostName;
@@ -97,6 +93,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IRegistryManager registryManager,
             ILogger logger)
         {
+            this.config = config;
             this.connectionStringManager = connStringManager;
             this.registry = registryManager;
             this.log = logger;
@@ -305,7 +302,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.setupDone) return;
             this.SetCurrentIotHub();
-
             this.setupDone = true;
         }
 
@@ -377,7 +373,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             sdkClient.SetRetryPolicy(new NoRetry());
-            sdkClient.OperationTimeoutInMilliseconds = SDK_CLIENT_TIMEOUT;
+            sdkClient.OperationTimeoutInMilliseconds = this.config.IoTHubSdkDeviceClientTimeout;
 
             return sdkClient;
         }
