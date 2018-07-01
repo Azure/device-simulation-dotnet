@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json.Linq;
 
@@ -65,10 +66,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.client != null && !this.connected)
             {
-                // TODO: HTTP clients don't "connect", find out how HTTP connections are measured and throttled
-                //       https://github.com/Azure/device-simulation-dotnet/issues/85
-                await this.client.OpenAsync();
-                this.connected = true;
+                try
+                {
+                    // TODO: HTTP clients don't "connect", find out how HTTP connections are measured and throttled
+                    //       https://github.com/Azure/device-simulation-dotnet/issues/85
+                    await this.client.OpenAsync();
+                    this.connected = true;
+                }
+                catch (Microsoft.Azure.Devices.Client.Exceptions.UnauthorizedException e)
+                {
+                    // Note: this exception might not occur with HTTP
+                    // TODO: test for HTTP
+                    
+                    this.log.Error("Device connection auth failed", () => new { this.deviceId, this.protocol, e });
+                    throw new DeviceAuthFailedException(e);
+                }
             }
         }
 
