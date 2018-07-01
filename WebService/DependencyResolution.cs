@@ -100,7 +100,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             // Registrations required by Autofac, these classes implement the same interface
             builder.RegisterType<Connect>().As<Connect>();
             builder.RegisterType<SetDeviceTag>().As<SetDeviceTag>();
-            builder.RegisterType<Fetch>().As<Fetch>();
+            builder.RegisterType<CredentialsSetup>().As<CredentialsSetup>();
+            builder.RegisterType<FetchFromRegistry>().As<FetchFromRegistry>();
             builder.RegisterType<Register>().As<Register>();
             builder.RegisterType<UpdateDeviceState>().As<UpdateDeviceState>();
             builder.RegisterType<SendTelemetry>().As<SendTelemetry>();

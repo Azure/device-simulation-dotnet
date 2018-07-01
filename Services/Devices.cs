@@ -33,6 +33,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter);
 
         /// <summary>
+        /// Get the device without connecting to the registry, using a known connection string
+        /// </summary>
+        Device GetWithKnownCredentials(string deviceId);
+
+        /// <summary>
         /// Get the device from the registry
         /// </summary>
         Task<Device> GetAsync(string deviceId);
@@ -86,6 +91,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private IRegistryManager registry;
         private int registryCount;
         private bool setupDone;
+        private string fixedDeviceKey;
 
         public Devices(
             IServicesConfig config,
@@ -107,10 +113,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public void SetCurrentIotHub()
         {
-            string connString = this.connectionStringManager.GetIotHubConnectionString();
-            this.registry = this.registry.CreateFromConnectionString(connString);
-            this.ioTHubHostName = IotHubConnectionStringBuilder.Create(connString).HostName;
-            this.log.Info("Selected active IoT Hub for devices", () => new { this.ioTHubHostName });
+            try
+            {
+                // Retrieve connection string from file/storage
+                string connString = this.connectionStringManager.GetIotHubConnectionString();
+
+                // Parse connection string, this triggers an exception if the string is invalid
+                IotHubConnectionStringBuilder cs = IotHubConnectionStringBuilder.Create(connString);
+
+                // Prepare registry class used to create/retrieve devices
+                this.registry = this.registry.CreateFromConnectionString(connString);
+                this.log.Debug("Device registry object ready", () => new { this.ioTHubHostName });
+
+                // Prepare hostname used to build device connection strings
+                this.ioTHubHostName = cs.HostName;
+                this.log.Info("Selected active IoT Hub for devices", () => new { this.ioTHubHostName });
+
+                // Prepare the auth key used for all the devices
+                this.fixedDeviceKey = cs.SharedAccessKey;
+                this.log.Debug("Device authentication key defined", () => new { this.ioTHubHostName });
+            }
+            catch (Exception e)
+            {
+                this.log.Error("IoT Hub connection setup failed", () => new { e });
+                throw;
+            }
         }
 
         /// <summary>
@@ -132,6 +159,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
+        /// Get the device without connecting to the registry, using a known connection string
+        /// </summary>
+        public Device GetWithKnownCredentials(string deviceId)
+        {
+            this.SetupHub();
+
+            return new Device(
+                this.PrepareDeviceObject(deviceId, this.fixedDeviceKey),
+                this.ioTHubHostName);
+        }
+
+        /// <summary>
         /// Get the device from the registry
         /// </summary>
         public async Task<Device> GetAsync(string deviceId)
@@ -141,30 +180,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log.Debug("Fetching device from registry", () => new { deviceId });
 
             Device result = null;
-            var now = DateTimeOffset.UtcNow;
+            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             try
             {
-                var device = await this.GetRegistry().GetDeviceAsync(deviceId);
+                Azure.Devices.Device device = await this.GetRegistry().GetDeviceAsync(deviceId);
                 if (device != null)
                 {
                     result = new Device(device, this.ioTHubHostName);
                 }
                 else
                 {
-                    this.log.Debug("Device not found", () => new { deviceId });
+                    var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                    this.log.Debug("Device not found", () => new { timeSpentMsecs, deviceId });
                 }
+            }
+            catch (Exception e) when (e is TaskCanceledException || e.InnerException is TaskCanceledException)
+            {
+                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                this.log.Error("Get device task timed out", () => new { timeSpentMsecs, deviceId, e.Message });
+                throw new ExternalDependencyException("Get device task timed out", e);
             }
             catch (Exception e)
             {
-                if (e.InnerException != null && e.InnerException.GetType() == typeof(TaskCanceledException))
-                {
-                    var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now.ToUnixTimeMilliseconds();
-                    this.log.Error("Get device task timed out", () => new { timeSpent, deviceId, e.Message });
-                    throw;
-                }
-
-                this.log.Error("Unable to fetch the IoT device", () => new { deviceId, e });
+                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                this.log.Error("Unable to fetch the IoT device", () => new { timeSpentMsecs, deviceId, e });
                 throw new ExternalDependencyException("Unable to fetch the IoT device");
             }
 
@@ -177,22 +217,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public async Task<Device> CreateAsync(string deviceId)
         {
             this.SetupHub();
-            var now = DateTimeOffset.UtcNow;
+            var start = DateTimeOffset.UtcNow;
 
             try
             {
                 this.log.Debug("Creating device", () => new { deviceId });
 
                 var device = new Azure.Devices.Device(deviceId);
-
                 device = await this.GetRegistry().AddDeviceAsync(device);
 
                 return new Device(device, this.ioTHubHostName);
             }
             catch (Exception e)
             {
-                var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now.ToUnixTimeMilliseconds();
-                this.log.Error("Unable to create the device", () => new { timeSpent, deviceId, e });
+                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start.ToUnixTimeMilliseconds();
+                this.log.Error("Unable to create the device", () => new { timeSpentMsecs, deviceId, e });
                 throw new ExternalDependencyException("Unable to create the device", e);
             }
         }
@@ -234,7 +273,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     () => new { batchNumber, batchSize = batch.Count() });
 
                 BulkRegistryOperationResult result = await this.registry.AddDevices2Async(
-                    batch.Select(id => new Azure.Devices.Device(id)));
+                    //batch.Select(id => new Azure.Devices.Device(id)));
+                    batch.Select(id => this.PrepareDeviceObject(id, this.fixedDeviceKey)));
 
                 this.log.Info("Devices batch created",
                     () => new { batchNumber, result.IsSuccessful, result.Errors });
@@ -293,6 +333,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public string GenerateId(string deviceModelId, int position)
         {
             return deviceModelId + "." + position;
+        }
+
+        // Create a Device object using a predefined authentication secret key
+        private Azure.Devices.Device PrepareDeviceObject(string id, string key)
+        {
+            var result = new Azure.Devices.Device(id)
+            {
+                Authentication = new AuthenticationMechanism
+                {
+                    Type = AuthenticationType.Sas,
+                    SymmetricKey = new SymmetricKey
+                    {
+                        PrimaryKey = key,
+                        SecondaryKey = key
+                    }
+                }
+            };
+
+            return result;
         }
 
         // This call can throw an exception, which is fine when the exception happens during a method
