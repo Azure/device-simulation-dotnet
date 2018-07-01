@@ -12,14 +12,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
     /// <summary>
     /// Fetch the device from the registry if available
     /// </summary>
-    public class Fetch : IDeviceConnectionLogic
+    public class FetchFromRegistry : IDeviceConnectionLogic
     {
         private readonly IDevices devices;
         private readonly ILogger log;
         private string deviceId;
         private IDeviceConnectionActor context;
 
-        public Fetch(IDevices devices, ILogger logger)
+        public FetchFromRegistry(IDevices devices, ILogger logger)
         {
             this.log = logger;
             this.devices = devices;
