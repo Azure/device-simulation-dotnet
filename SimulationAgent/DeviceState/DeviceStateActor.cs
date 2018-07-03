@@ -14,6 +14,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
     {
         ISmartDictionary DeviceState { get; }
         ISmartDictionary DeviceProperties { get; }
+        string DeviceId { get; }
         bool IsDeviceActive { get; }
         long SimulationErrorsCount { get; }
         void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices);
@@ -56,6 +57,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         {
             get { return this.status == ActorStatus.Updating; }
         }
+
+        public string DeviceId => this.deviceId;
 
         public DeviceStateActor(
             ILogger logger,

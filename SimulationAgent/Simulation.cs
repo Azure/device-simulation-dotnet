@@ -1,6 +1,7 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved. 
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     public interface ISimulation
     {
         Task RunAsync();
+        Task DeleteDevices(List<string> ids);
         void Stop();
     }
 
@@ -87,6 +89,45 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.runner.Stop();
         }
 
+        /// <summary>
+        /// Delete a list of devices
+        /// </summary>
+        public async Task DeleteDevices(List<string> ids)
+        {
+            this.log.Info("Update simulation", () => { });
+            var simulation = (await this.simulations.GetListAsync()).FirstOrDefault();
+            var modelIds = this.parseModelId(ids);
+
+            if (simulation != null)
+            {
+                bool shouldUpdateSimulation = false;
+                foreach (var model in simulation.DeviceModels)
+                {
+                    if (modelIds.Contains(model.Id))
+                    {
+                        model.Count--;
+                        shouldUpdateSimulation = true;
+                    }
+                }
+
+                if (shouldUpdateSimulation)
+                {
+                    await this.simulations.UpsertAsync(simulation);
+                }
+            }
+
+            if (this.running)
+            {
+                this.log.Info("Deleting devices from running simulation", () => { });
+                await this.runner.DeleteDevices(ids);
+            }
+            else
+            {
+                this.log.Info("Deleting devices from hub", () => { });
+                await this.simulations.DeleteDevicesAsync(ids);
+            }
+        }
+
         private void CheckForDeletedSimulation(Services.Models.Simulation newSimulation)
         {
             if (newSimulation == null && this.simulation != null)
@@ -144,6 +185,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             {
                 this.runner.Start(this.simulation);
             }
+        }
+
+        private List<string> parseModelId(List<string> ids)
+        {
+            return ids.Select(s => s.Substring(0, s.LastIndexOf(('.')))).ToList<string>();
         }
     }
 }

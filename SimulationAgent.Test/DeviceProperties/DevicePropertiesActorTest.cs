@@ -157,13 +157,22 @@ namespace SimulationAgent.Test.DeviceProperties
                 this.devices.Object,
                 scriptInterpreter.Object,
                 this.logger.Object);
+            Mock<Deregister> deregisterLogic = new Mock<Deregister>(
+                this.devices.Object,
+                this.logger.Object);
+            Mock<Disconnect> disconnectLogic = new Mock<Disconnect>(
+                this.devices.Object,
+                scriptInterpreter.Object,
+                this.logger.Object);
             return new DeviceConnectionActor(
                 this.logger.Object,
                 this.actorsLogger.Object,
                 this.rateLimiting.Object,
                 fetchLogic.Object,
                 registerLogic.Object,
-                connectLogic.Object);
+                connectLogic.Object,
+                deregisterLogic.Object,
+                disconnectLogic.Object);
         }
     }
 }

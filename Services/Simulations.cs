@@ -46,6 +46,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task DeleteAsync(string id);
 
         /// <summary>
+        /// Delete a list of devices
+        /// </summary>
+        Task DeleteDevicesAsync(List<string> ids);
+
+        /// <summary>
         /// Get the ID of the devices in a simulation.
         /// </summary>
         IEnumerable<string> GetDeviceIds(Models.Simulation simulation);
@@ -283,6 +288,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             // Then delete the simulation from the storage
             await this.storage.DeleteAsync(STORAGE_COLLECTION, id);
+        }
+
+        /// <summary>
+        /// Delete a list of devices
+        /// </summary>
+        public async Task DeleteDevicesAsync(List<string> ids)
+        {
+            await this.devices.DeleteListAsync(ids);
         }
 
         /// <summary>

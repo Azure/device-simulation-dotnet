@@ -22,6 +22,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         void DeviceRegistered();
         void DeviceRegistrationFailed();
 
+        void DeregistrationScheduled(long time);
+        void DeregisteringDevice();
+        void DeviceDeregistered();
+        void DeviceDeregistrationFailed();
+
         void DeviceTaggingScheduled(long time);
         void TaggingDevice();
         void DeviceTagged();
@@ -30,6 +35,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         void DeviceConnectionScheduled(long time);
         void ConnectingDevice();
         void DeviceConnected();
+
+        void DeviceDisconnectionFailed();
+        void DeviceDisconnectionScheduled(long time);
+        void DisconnectingDevice();
+        void DeviceDisconnected();
         void DeviceConnectionFailed();
 
         void TelemetryScheduled(long time);
@@ -184,6 +194,40 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.LogRegistry("Registration FAILED");
         }
 
+        public void DeregistrationScheduled(long time)
+        {
+            if (!this.enabled) return;
+
+            var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
+            this.Log("Device deregistration scheduled at: " + msg);
+            this.LogRegistry("Deregistration scheduled at: " + msg);
+        }
+
+        public void DeregisteringDevice()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Deregistering device");
+            this.LogRegistry("Deregistering");
+        }
+
+        public void DeviceDeregistered()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Device deregistered");
+            this.LogRegistry("Deregistered");
+        }
+
+        public void DeviceDeregistrationFailed()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Device deregistration FAILED");
+            this.LogRegistry("Deregistration FAILED");
+        }
+
+
         public void DeviceTaggingScheduled(long time)
         {
             if (!this.enabled) return;
@@ -250,6 +294,39 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.LogConnection("FAILED");
         }
 
+        public void DeviceDisconnectionScheduled(long time)
+        {
+            if (!this.enabled) return;
+
+            var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
+            this.Log("Device disconnection scheduled at: " + msg);
+            this.LogConnection("Disconnection scheduled at: " + msg);
+        }
+
+        public void DisconnectingDevice()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Disconnecting device");
+            this.LogConnection("Disconnecting");
+        }
+
+        public void DeviceDisconnected()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Device disconnected");
+            this.LogConnection("C=Disconnected");
+        }
+
+        public void DeviceDisconnectionFailed()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Disconnection FAILED");
+            this.LogConnection("FAILED");
+        }
+        
         public void TelemetryScheduled(long time)
         {
             if (!this.enabled) return;

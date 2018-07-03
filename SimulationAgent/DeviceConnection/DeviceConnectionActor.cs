@@ -19,11 +19,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         bool Connected { get; }
         long FailedDeviceConnectionsCount { get; }
         long SimulationErrorsCount { get; }
-
+        bool IsDeleted { get; }
         void Setup(string deviceId, DeviceModel deviceModel, IDeviceStateActor deviceStateActor, ConnectionLoopSettings loopSettings);
         void Run();
         void HandleEvent(DeviceConnectionActor.ActorEvents e);
         void Stop();
+        void Delete();
     }
 
     public class DeviceConnectionActor : IDeviceConnectionActor
@@ -39,7 +40,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             ReadyToConnect,
             Connecting,
             Done,
-            Stopped
+            Stopped,
+            ReadyToDisconnect,
+            Disconnecting,
+            ReadyToDeregister,
+            Deregistering,
+            Deleted
         }
 
         public enum ActorEvents
@@ -50,8 +56,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             FetchCompleted,
             RegistrationFailed,
             DeviceRegistered,
+            DeviceDeregistered,
+            DeregisterationFailed,
             Connected,
-            ConnectionFailed
+            ConnectionFailed,
+            DisconnectionFailed,
+            Disconnected
         }
 
         private readonly ILogger log;
@@ -60,6 +70,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private readonly IDeviceConnectionLogic fetchLogic;
         private readonly IDeviceConnectionLogic registerLogic;
         private readonly IDeviceConnectionLogic connectLogic;
+        private readonly IDeviceConnectionLogic deregisterLogic;
+        private readonly IDeviceConnectionLogic disconnectLogic;
 
         private ActorStatus status;
         private string deviceId;
@@ -112,6 +124,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         public long FailedDeviceConnectionsCount => this.failedDeviceConnectionsCount;
 
         /// <summary>
+        /// Device is deleted
+        /// </summary>
+        public bool IsDeleted => this.status == ActorStatus.Deleted;
+
+        /// <summary>
         /// Simulation error counter in DeviceConnectionActor
         /// </summary>
         public long SimulationErrorsCount => this.failedRegistrationsCount +
@@ -124,7 +141,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             IRateLimiting rateLimiting,
             Fetch fetchLogic,
             Register registerLogic,
-            Connect connectLogic)
+            Connect connectLogic,
+            Deregister deregisterLogic,
+            Disconnect disconnectLogic)
         {
             this.log = logger;
             this.actorLogger = actorLogger;
@@ -133,6 +152,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.fetchLogic = fetchLogic;
             this.registerLogic = registerLogic;
             this.connectLogic = connectLogic;
+            this.deregisterLogic = deregisterLogic;
+            this.disconnectLogic = disconnectLogic;
 
             this.Message = null;
             this.Client = null;
@@ -170,6 +191,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.fetchLogic.Setup(this, this.deviceId, this.deviceModel);
             this.registerLogic.Setup(this, this.deviceId, this.deviceModel);
             this.connectLogic.Setup(this, this.deviceId, this.deviceModel);
+            this.deregisterLogic.Setup(this, this.deviceId, this.deviceModel);
+            this.disconnectLogic.Setup(this, this.deviceId, this.deviceModel);
             this.actorLogger.Setup(deviceId, "Connection");
 
             this.status = ActorStatus.ReadyToStart;
@@ -186,6 +209,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             catch (Exception e)
             {
                 this.log.Warn("Error while stopping", () => new { e });
+            }
+        }
+
+        public void Delete()
+        {
+            try
+            {
+                this.status = ActorStatus.ReadyToDisconnect;
+                this.actorLogger.DisconnectingDevice();
+            }
+            catch (Exception e)
+            {
+                this.log.Warn("Error while deleting", () => new { e });
             }
         }
 
@@ -248,6 +284,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     this.status = ActorStatus.Done;
                     break;
 
+                case ActorEvents.Disconnected:
+                    this.actorLogger.DeviceDisconnected();
+                    this.ScheduleDeregistration();
+                    break;
+
+                case ActorEvents.DeviceDeregistered:
+                    this.actorLogger.DeviceDeregistered();
+                    this.status = ActorStatus.Deleted;
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(e), e, null);
             }
@@ -283,6 +329,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     this.status = ActorStatus.Connecting;
                     this.actorLogger.ConnectingDevice();
                     this.connectLogic.RunAsync();
+                    return;
+
+                case ActorStatus.ReadyToDeregister:
+                    this.status = ActorStatus.Deregistering;
+                    this.actorLogger.DeregisteringDevice();
+                    this.deregisterLogic.RunAsync();
+                    return;
+
+                case ActorStatus.ReadyToDisconnect:
+                    this.status = ActorStatus.Disconnecting;
+                    this.actorLogger.DisconnectingDevice();
+                    this.disconnectLogic.RunAsync();
                     return;
             }
         }
@@ -330,6 +388,40 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
             this.actorLogger.DeviceConnectionScheduled(this.whenToRun);
             this.log.Debug("Connection scheduled",
+                () => new
+                {
+                    this.deviceId,
+                    Status = this.status.ToString(),
+                    When = this.log.FormatDate(this.whenToRun)
+                });
+        }
+
+        private void ScheduleDeregistration()
+        {
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var pauseMsec = this.rateLimiting.GetPauseForNextRegistryOperation();
+            this.whenToRun = now + pauseMsec;
+            this.status = ActorStatus.ReadyToDeregister;
+
+            this.actorLogger.DeregistrationScheduled(this.whenToRun);
+            this.log.Debug("Deregistration scheduled",
+                () => new
+                {
+                    this.deviceId,
+                    Status = this.status.ToString(),
+                    When = this.log.FormatDate(this.whenToRun)
+                });
+        }
+
+        private void ScheduleDisconnection()
+        {
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var pauseMsec = this.rateLimiting.GetPauseForNextConnection();
+            this.whenToRun = now + pauseMsec;
+            this.status = ActorStatus.ReadyToDisconnect;
+
+            this.actorLogger.DeviceDisconnectionScheduled(this.whenToRun);
+            this.log.Debug("Disconnection scheduled",
                 () => new
                 {
                     this.deviceId,

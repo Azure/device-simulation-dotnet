@@ -16,6 +16,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface IDeviceClient
     {
         IoTHubProtocol Protocol { get; }
+        string DeviceId { get; }
         Task ConnectAsync();
         Task DisconnectAsync();
         Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema);
@@ -43,6 +44,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         private bool connected;
 
+        public string DeviceId => this.deviceId;
         public IoTHubProtocol Protocol => this.protocol;
 
         public DeviceClient(

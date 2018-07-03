@@ -105,6 +105,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterType<UpdateDeviceState>().As<UpdateDeviceState>();
             builder.RegisterType<SendTelemetry>().As<SendTelemetry>();
             builder.RegisterType<UpdateReportedProperties>().As<UpdateReportedProperties>();
+            builder.RegisterType<Deregister>().As<Deregister>();
+            builder.RegisterType<Disconnect>().As<Disconnect>();
         }
 
         private static void RegisterFactory(IContainer container)

@@ -15,6 +15,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
@@ -22,6 +23,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     {
         void Start(Services.Models.Simulation simulation);
         void Stop();
+        Task DeleteDevices(List<string> ids);
         long ActiveDevicesCount { get; }
         long TotalMessagesCount { get; }
         long FailedMessagesCount { get; }
@@ -211,7 +213,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 // Start threads
                 this.TryToStartStateThread();
 
-                this.TryToStartConnectionThread();
+               this.TryToStartConnectionThread();
 
                 this.TryToStartTelemetryThread();
 
@@ -260,6 +262,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                 // Reset rateLimiting counters
                 this.rateLimiting.ResetCounters();
+            }
+        }
+
+        /// <summary>
+        /// Delete a list of devices
+        /// </summary>
+        public async Task DeleteDevices(List<string> ids)
+        {
+            foreach (var device in this.deviceConnectionActors)
+            {
+                var deviceId = device.Value.Client.DeviceId;
+
+                if (ids.Contains(deviceId))
+                {
+                    this.log.Info("Deleting device id ", () => new { deviceId });
+                    device.Value.Delete();
+                }
             }
         }
 
@@ -335,7 +354,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 foreach (var device in this.deviceConnectionActors)
                 {
-                    device.Value.Run();
+                    if (device.Value.IsDeleted)
+                    {
+                        this.DeleteActorsForDevice(device.Key);
+                    }
+                    else
+                    {
+                        device.Value.Run();
+                    }
                 }
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
@@ -565,6 +591,35 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.log.Error("Unable to start the device properties thread", () => new { e });
                 throw new Exception("Unable to start the device properties thread", e);
             }
+        }
+
+        private void DeleteActorsForDevice(string key)
+        {
+            var deviceId = this.deviceConnectionActors[key].Client.DeviceId;
+
+            this.log.Info("Remove connection actor for device id ", () => new { key });
+            this.deviceConnectionActors.Remove(key);
+
+            foreach (var actor in this.deviceTelemetryActors)
+            {
+                if (actor.Value.Client.DeviceId.Equals(deviceId))
+                {
+                    this.log.Info("Stop telemetry actor for deviceId ", () => new { key });
+                    actor.Value.Stop();
+
+                    this.log.Info("Remove telemetry actor for deviceId", () => new { key });
+                    this.deviceTelemetryActors.Remove(actor.Key);
+                }
+            }
+
+            this.log.Info("Stop property actor for deviceId ", () => new { key });
+            this.devicePropertiesActors[key].Stop();
+
+            this.log.Info("Remove property actor for deviceId", () => new { key });
+            this.devicePropertiesActors.Remove(key);
+
+            this.log.Info("Remove state actor for deviceId", () => new { key });
+            this.deviceStateActors.Remove(key);
         }
 
         private void IncreamentSimulationErrorsCount()

@@ -1,10 +1,12 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
@@ -15,17 +17,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
     [Route(Version.PATH + "/[controller]"), ExceptionsFilter]
     public class SimulationsController : Controller
     {
+        private const int MAX_DELETE_ITEMS = 100;
         private readonly ISimulations simulationsService;
         private readonly IIotHubConnectionStringManager connectionStringManager;
+        private readonly ISimulation simulationAgent;
+
         private readonly ILogger log;
 
         public SimulationsController(
             ISimulations simulationsService,
             IIotHubConnectionStringManager connectionStringManager,
+            ISimulation simulationAgent,
             ILogger logger)
         {
             this.simulationsService = simulationsService;
             this.connectionStringManager = connectionStringManager;
+            this.simulationAgent = simulationAgent;
             this.log = logger;
         }
 
@@ -79,6 +86,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
             return SimulationApiModel.FromServiceModel(
                 await this.simulationsService.UpsertAsync(simulation.ToServiceModel(id)));
+        }
+
+        [HttpPut("{id}/DeleteDevices")]
+        public async Task PutAsync(
+            [FromBody] DeviceListApiModel devices)
+        {
+            if (devices == null)
+            {
+                this.log.Warn("Invalid input data provided", () => new { devices });
+                throw new BadRequestException("Invalid input data provided.");
+            }
+
+            if (devices.Items.Count > MAX_DELETE_ITEMS)
+            {
+                this.log.Warn("Device count exceeded max allowed limit", () => new { MAX_DELETE_ITEMS });
+                throw new BadRequestException("Device count exceeded max allowed limit");
+            }
+
+            await this.simulationAgent.DeleteDevices(devices.Items);
         }
 
         [HttpPatch("{id}")]

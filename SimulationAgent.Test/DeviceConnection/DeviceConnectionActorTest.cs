@@ -1,4 +1,6 @@
-﻿using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+﻿// Copyright (c) Microsoft. All rights reserved.
+
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -20,8 +22,10 @@ namespace SimulationAgent.Test.DeviceConnection
         private readonly Mock<IRateLimiting> rateLimiting;
         private readonly Mock<Fetch> fetchLogic;
         private readonly Mock<Register> registerLogic;
+        private readonly Mock<Deregister> deregisterLogic;
         private readonly Mock<IDevices> devices;
         private readonly Mock<Connect> connectLogic;
+        private readonly Mock<Disconnect> disconnectLogic;
         private readonly Mock<IDeviceStateActor> deviceStateActor;
         private readonly Mock<ConnectionLoopSettings> loopSettings;
         private readonly DeviceConnectionActor target;
@@ -44,6 +48,13 @@ namespace SimulationAgent.Test.DeviceConnection
                 this.devices.Object,
                 this.scriptInterpreter.Object,
                 this.logger.Object);
+            this.deregisterLogic = new Mock<Deregister>(
+                this.devices.Object,
+                this.logger.Object);
+            this.disconnectLogic = new Mock<Disconnect>(
+                this.devices.Object,
+                this.scriptInterpreter.Object,
+                this.logger.Object);
             this.deviceStateActor = new Mock<IDeviceStateActor>();
             this.loopSettings = new Mock<ConnectionLoopSettings>(
                 this.rateLimitingConfig.Object);
@@ -57,7 +68,9 @@ namespace SimulationAgent.Test.DeviceConnection
                 this.rateLimiting.Object,
                 this.fetchLogic.Object,
                 this.registerLogic.Object,
-                this.connectLogic.Object);
+                this.connectLogic.Object,
+                this.deregisterLogic.Object,
+                this.disconnectLogic.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
