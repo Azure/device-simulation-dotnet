@@ -247,7 +247,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 this.log.Debug("Devices batch created",
                     () => new { batchNumber, result.IsSuccessful, ErrorsCount = result.Errors.Length });
+
+                var errors = this.AnalyzeBatchErrors(result);
+                if (errors > 0)
+                {
+                    throw new ExternalDependencyException($"Batch operation failed with {errors} errors");
+                }
             }
+
+            this.log.Info("Device creation completed",
+                () => new { Count = deviceIds.Count(), Batches = batches.Length, REGISTRY_MAX_BATCH_SIZE });
         }
 
         // Delete a list of devices
@@ -275,6 +284,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                     this.log.Debug("Devices batch deleted",
                         () => new { batchNumber, result.IsSuccessful, result.Errors });
+
+                    var errors = this.AnalyzeBatchErrors(result);
+                    if (errors > 0)
+                    {
+                        throw new ExternalDependencyException($"Batch operation failed with {errors} errors");
+                    }
                 }
             }
             catch (TooManyDevicesException error)
@@ -298,6 +313,39 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public string GenerateId(string deviceModelId, int position)
         {
             return deviceModelId + "." + position;
+        }
+
+        // Log the errors occurred during a batch operation
+        private int AnalyzeBatchErrors(BulkRegistryOperationResult result)
+        {
+            if (result.Errors.Length == 0) return 0;
+
+            var errorsByType = new Dictionary<string, int>();
+
+            // Ignore errors reporting that devices already exist
+            var errorToIgnore = ErrorCode.DeviceAlreadyExists.ToString();
+
+            foreach (var error in result.Errors)
+            {
+                var k = error.ErrorCode.ToString();
+                if (k == errorToIgnore) continue;
+
+                if (errorsByType.ContainsKey(k))
+                {
+                    errorsByType[k]++;
+                }
+                else
+                {
+                    errorsByType[k] = 1;
+                }
+            }
+
+            if (errorsByType.Count == 0) return 0;
+
+            this.log.Error("Some errors occurred in the batch operation",
+                () => new { errorsByType, result.Errors });
+
+            return errorsByType.Count;
         }
 
         // Create a Device object using a predefined authentication secret key
