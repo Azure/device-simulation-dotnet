@@ -59,6 +59,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string CONCURRENCY_KEY = APPLICATION_KEY + "Concurrency:";
         private const string CONCURRENCY_TELEMETRY_THREADS_KEY = CONCURRENCY_KEY + "telemetry_threads";
         private const string CONCURRENCY_MAX_PENDING_CONNECTIONS_KEY = CONCURRENCY_KEY + "max_pending_connections";
+        private const string CONCURRENCY_MAX_PENDING_TELEMETRY_KEY = CONCURRENCY_KEY + "max_pending_telemetry_messages";
         private const string CONCURRENCY_MAX_PENDING_TWIN_WRITES_KEY = CONCURRENCY_KEY + "max_pending_twin_writes";
         private const string CONCURRENCY_MIN_DEVICE_TELEMETRY_LOOP_DURATION_KEY = CONCURRENCY_KEY + "min_device_telemetry_loop_duration";
         private const string CONCURRENCY_MIN_DEVICE_STATE_LOOP_DURATION_KEY = CONCURRENCY_KEY + "min_device_state_loop_duration";
@@ -122,6 +123,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             {
                 TelemetryThreads = configData.GetInt(CONCURRENCY_TELEMETRY_THREADS_KEY, defaults.TelemetryThreads),
                 MaxPendingConnections = configData.GetInt(CONCURRENCY_MAX_PENDING_CONNECTIONS_KEY, defaults.MaxPendingConnections),
+                MaxPendingTelemetry = configData.GetInt(CONCURRENCY_MAX_PENDING_TELEMETRY_KEY, defaults.MaxPendingTelemetry),
                 MaxPendingTwinWrites = configData.GetInt(CONCURRENCY_MAX_PENDING_TWIN_WRITES_KEY, defaults.MaxPendingTwinWrites),
                 MinDeviceStateLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_STATE_LOOP_DURATION_KEY, defaults.MinDeviceStateLoopDuration),
                 MinDeviceConnectionLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_CONNECTION_LOOP_DURATION_KEY, defaults.MinDeviceConnectionLoopDuration),

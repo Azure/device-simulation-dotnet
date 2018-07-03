@@ -8,6 +8,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
     {
         int TelemetryThreads { get; }
         int MaxPendingConnections { get; }
+        int MaxPendingTelemetry { get; }
         int MaxPendingTwinWrites { get; }
         int MinDeviceStateLoopDuration { get; }
         int MinDeviceConnectionLoopDuration { get; }
@@ -19,6 +20,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
     {
         private const int DEFAULT_TELEMETRY_THREADS = 4;
         private const int DEFAULT_MAX_PENDING_CONNECTIONS = 200;
+        private const int DEFAULT_MAX_PENDING_TELEMETRY = 1000;
         private const int DEFAULT_MAX_PENDING_TWIN_WRITES = 50;
         private const int DEFAULT_MIN_DEVICE_STATE_LOOP_DURATION = 1000;
         private const int DEFAULT_MIN_DEVICE_CONNECTION_LOOP_DURATION = 1000;
@@ -26,13 +28,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         private const int DEFAULT_MIN_DEVICE_PROPERTIES_LOOP_DURATION = 2000;
 
         private const int MAX_TELEMETRY_THREADS = 20;
-        private const int MAX_MAX_PENDING_TWIN_WRITES = 500;
         private const int MAX_MAX_PENDING_CONNECTIONS = 1000;
+        private const int MAX_MAX_PENDING_TELEMETRY = 5000;
+        private const int MAX_MAX_PENDING_TWIN_WRITES = 500;
         private const int MAX_LOOP_DURATION = 2000;
 
         private int telemetryThreads;
-        private int maxPendingTwinWrites;
         private int maxPendingConnections;
+        private int maxPendingTelemetry;
+        private int maxPendingTwinWrites;
         private int minDeviceStateLoopDuration;
         private int minDeviceConnectionLoopDuration;
         private int minDeviceTelemetryLoopDuration;
@@ -43,6 +47,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             // Initialize object with default values
             this.TelemetryThreads = DEFAULT_TELEMETRY_THREADS;
             this.MaxPendingConnections = DEFAULT_MAX_PENDING_CONNECTIONS;
+            this.MaxPendingTelemetry = DEFAULT_MAX_PENDING_TELEMETRY;
             this.MaxPendingTwinWrites = DEFAULT_MAX_PENDING_TWIN_WRITES;
             this.MinDeviceStateLoopDuration = DEFAULT_MIN_DEVICE_STATE_LOOP_DURATION;
             this.MinDeviceConnectionLoopDuration = DEFAULT_MIN_DEVICE_CONNECTION_LOOP_DURATION;
@@ -90,6 +95,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 }
 
                 this.maxPendingConnections = value;
+            }
+        }
+
+        /// <summary>
+        /// While sending telemetry, limit the number of messages waiting to be delivered.
+        /// A low number will slow down the simulation.
+        /// A number too high will increase the number of threads, overloading the CPU.
+        /// </summary>
+        public int MaxPendingTelemetry
+        {
+            get => this.maxPendingTelemetry;
+            set
+            {
+                if (value < 1 || value > MAX_MAX_PENDING_TELEMETRY)
+                {
+                    throw new InvalidConfigurationException(
+                        "The max number of pending telemetry is not valid. " +
+                        "Use a value within 1 and " + MAX_MAX_PENDING_TELEMETRY);
+                }
+
+                this.maxPendingTelemetry = value;
             }
         }
 

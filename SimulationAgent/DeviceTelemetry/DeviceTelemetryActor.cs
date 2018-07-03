@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -26,7 +27,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             IDeviceStateActor deviceStateActor,
             IDeviceConnectionActor deviceConnectionActor);
 
-        string Run();
+        Task RunAsync();
         void HandleEvent(DeviceTelemetryActor.ActorEvents e);
         void Stop();
     }
@@ -159,6 +160,33 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         }
 
         public void HandleEvent(ActorEvents e)
+        // Run the next step and return a description about what happened
+        public async Task RunAsync()
+        {
+            this.log.Debug(this.status.ToString(), () => new { this.deviceId });
+
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            if (now < this.whenToRun) return;
+
+            switch (this.status)
+            {
+                case ActorStatus.ReadyToStart:
+                    if (!this.deviceConnectionActor.Connected) return;
+
+                    this.whenToRun = 0;
+                    this.HandleEvent(ActorEvents.Started);
+                    break;
+
+                case ActorStatus.ReadyToSend:
+                    if (!this.deviceConnectionActor.Connected) return;
+
+                    this.status = ActorStatus.Sending;
+                    this.actorLogger.SendingTelemetry();
+                    await this.sendTelemetryLogic.RunAsync();
+                    break;
+            }
+        }
+
         {
             switch (e)
             {
@@ -187,31 +215,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             }
         }
 
-        // Run the next step and return a description about what happened
-        public string Run()
         {
-            this.log.Debug(this.status.ToString(), () => new { this.deviceId });
-
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            if (now < this.whenToRun) return null;
-
-            switch (this.status)
-            {
-                case ActorStatus.ReadyToStart:
-                    if (!this.deviceConnectionActor.Connected) return "device not connected yet";
-
-                    this.whenToRun = 0;
-                    this.HandleEvent(ActorEvents.Started);
-                    return "started";
-
-                case ActorStatus.ReadyToSend:
-                    this.status = ActorStatus.Sending;
-                    this.actorLogger.SendingTelemetry();
-                    this.sendTelemetryLogic.Run();
-                    return "sent telemetry";
-            }
-
-            return null;
         }
 
         private void ScheduleTelemetry()

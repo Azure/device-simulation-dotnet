@@ -365,38 +365,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private void UpdatePropertiesThread()
-        {
-            // Once x devices are attempting to write twins, wait until they are done
-            var pendingTasksLimit = this.concurrencyConfig.MaxPendingTwinWrites;
-
-            var tasks = new List<Task>();
-            while (this.running)
-            {
-                this.propertiesLoopSettings.NewLoop();
-
-                var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                foreach (var device in this.devicePropertiesActors)
-                {
-                    tasks.Add(device.Value.RunAsync());
-                    if (tasks.Count <= pendingTasksLimit) continue;
-
-                    Task.WaitAll(tasks.ToArray());
-                    tasks.Clear();
-                }
-
-                if (tasks.Count > 0)
-                {
-                    Task.WaitAll(tasks.ToArray());
-                    tasks.Clear();
-                }
-
-                var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
-                this.log.Info("Device properties loop completed", () => new { durationMsecs });
-                this.SlowDownIfTooFast(durationMsecs, this.concurrencyConfig.MinDevicePropertiesLoopDuration);
-            }
-        }
-
         private void SendTelemetryThread(int threadPosition, int threadCount)
         {
             if (this.deviceTelemetryActors.Count == 0)
@@ -425,16 +393,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             var firstDevice = chunkSize * (threadPosition - 1);
             var lastDevice = Math.Min(chunkSize * threadPosition, this.deviceTelemetryActors.Count);
 
-            var stats = new Dictionary<string, int>();
+            // Once N devices are attempting to send telemetry, wait until they are done
+            var pendingTasksLimit = this.concurrencyConfig.MaxPendingTelemetry;
+            var tasks = new List<Task>();
+
             while (this.running)
             {
-                // Keep count of what the actors are doing and log it
-                if (this.log.InfoIsEnabled)
-                {
-                    stats.Clear();
-                    stats["nothingToDo"] = 0;
-                }
-
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 var pos = 0;
                 foreach (var telemetry in this.deviceTelemetryActors)
@@ -442,26 +406,59 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     // Work only on a subset of all devices
                     if (!(pos >= firstDevice && pos < lastDevice))
                     {
-                        var stat = telemetry.Value.Run();
-                        if (this.log.InfoIsEnabled)
-                        {
-                            if (stat != null)
-                            {
-                                stats[stat] = stats.ContainsKey(stat) ? stats[stat] + 1 : 1;
-                            }
-                            else
-                            {
-                                stats["nothingToDo"]++;
-                            }
-                        }
+                        tasks.Add(telemetry.Value.RunAsync());
+                        if (tasks.Count <= pendingTasksLimit) continue;
+
+                        Task.WaitAll(tasks.ToArray());
+                        tasks.Clear();
                     }
 
                     pos++;
                 }
 
+                // If there are pending tasks...
+                if (tasks.Count > 0)
+                {
+                    Task.WaitAll(tasks.ToArray());
+                    tasks.Clear();
+                }
+
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                 this.log.Debug("Telemetry loop completed", () => new { durationMsecs });
                 this.SlowDownIfTooFast(durationMsecs, this.concurrencyConfig.MinDeviceTelemetryLoopDuration);
+            }
+        }
+
+        private void UpdatePropertiesThread()
+        {
+            // Once N devices are attempting to write twins, wait until they are done
+            var pendingTasksLimit = this.concurrencyConfig.MaxPendingTwinWrites;
+            var tasks = new List<Task>();
+
+            while (this.running)
+            {
+                this.propertiesLoopSettings.NewLoop();
+
+                var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                foreach (var device in this.devicePropertiesActors)
+                {
+                    tasks.Add(device.Value.RunAsync());
+                    if (tasks.Count <= pendingTasksLimit) continue;
+
+                    Task.WaitAll(tasks.ToArray());
+                    tasks.Clear();
+                }
+
+                // If there are pending tasks...
+                if (tasks.Count > 0)
+                {
+                    Task.WaitAll(tasks.ToArray());
+                    tasks.Clear();
+                }
+
+                var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
+                this.log.Debug("Device properties loop completed", () => new { durationMsecs });
+                this.SlowDownIfTooFast(durationMsecs, this.concurrencyConfig.MinDevicePropertiesLoopDuration);
             }
         }
 
