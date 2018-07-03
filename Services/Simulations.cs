@@ -184,7 +184,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 if (simulation.ETag == "*")
                 {
                     simulation.ETag = simulations[0].ETag;
-                    this.log.Info("The client used ETag='*' choosing to overwrite the current simulation", () => { });
+                    this.log.Warn("The client used ETag='*' choosing to overwrite the current simulation", () => { });
                 }
 
                 if (simulation.ETag != simulations[0].ETag)

@@ -90,7 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             try
             {
-                this.log.Info("Creating task to execute method with json payload.", () => new
+                this.log.Debug("Creating task to execute method with json payload.", () => new
                 {
                     this.deviceId,
                     methodName = methodRequest.Name,
@@ -114,7 +114,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             try
             {
-                this.log.Info("Executing method with json payload.", () => new
+                this.log.Debug("Executing method with json payload.", () => new
                 {
                     this.deviceId,
                     methodName = methodRequest.Name,

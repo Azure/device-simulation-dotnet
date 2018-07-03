@@ -6,6 +6,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
+using Microsoft.Azure.Devices.Client.Exceptions;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -73,7 +74,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     await this.client.OpenAsync();
                     this.connected = true;
                 }
-                catch (Microsoft.Azure.Devices.Client.Exceptions.UnauthorizedException e)
+                catch (UnauthorizedException e)
                 {
                     // Note: this exception might not occur with HTTP
                     // TODO: test for HTTP

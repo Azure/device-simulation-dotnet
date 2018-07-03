@@ -22,49 +22,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface IDevices
     {
-        /// <summary>
-        /// Set the current IoT Hub using either the user provided one or the configuration settings
-        /// </summary>
+        // Set the current IoT Hub using either the user provided one or the configuration settings
         void SetCurrentIotHub();
 
-        /// <summary>
-        /// Get a client for the device
-        /// </summary>
+        // Get a client for the device
         IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter);
 
-        /// <summary>
-        /// Get the device without connecting to the registry, using a known connection string
-        /// </summary>
+        // Get the device without connecting to the registry, using a known connection string
         Device GetWithKnownCredentials(string deviceId);
 
-        /// <summary>
-        /// Get the device from the registry
-        /// </summary>
+        // Get the device from the registry
         Task<Device> GetAsync(string deviceId);
 
-        /// <summary>
-        /// Register the new device
-        /// </summary>
+        // Register a new device
         Task<Device> CreateAsync(string deviceId);
 
-        /// <summary>
-        /// Add a tag to the device, to say it is a simulated device 
-        /// </summary>
+        // Add a tag to the device, to say it is a simulated device
         Task AddTagAsync(string deviceId);
 
-        /// <summary>
-        /// Create a list of devices
-        /// </summary>
+        // Create a list of devices
         Task CreateListAsync(IEnumerable<string> deviceIds);
 
-        /// <summary>
-        /// Delete a list of devices
-        /// </summary>
+        // Delete a list of devices
         Task DeleteListAsync(IEnumerable<string> deviceIds);
 
-        /// <summary>
-        /// Generate a device Id
-        /// </summary>
+        // Generate a device Id
         string GenerateId(string deviceModelId, int position);
     }
 
@@ -108,9 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.setupDone = false;
         }
 
-        /// <summary>
-        /// Get IoTHub connection string from either the user provided value or the configuration
-        /// </summary>
+        // Get IoTHub connection string from either the user provided value or the configuration
         public void SetCurrentIotHub()
         {
             try
@@ -140,9 +120,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        /// <summary>
-        /// Get a client for the device
-        /// </summary>
+        // Get a client for the device
         public IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter)
         {
             this.SetupHub();
@@ -158,9 +136,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.log);
         }
 
-        /// <summary>
-        /// Get the device without connecting to the registry, using a known connection string
-        /// </summary>
+        // Get the device without connecting to the registry, using a known connection string
         public Device GetWithKnownCredentials(string deviceId)
         {
             this.SetupHub();
@@ -211,9 +187,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return result;
         }
 
-        /// <summary>
-        /// Register the new device
-        /// </summary>
+        // Register a new device
         public async Task<Device> CreateAsync(string deviceId)
         {
             this.SetupHub();
@@ -236,9 +210,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        /// <summary>
-        /// Add a tag to the device, to say it is a simulated device 
-        /// </summary>
+        // Add a tag to the device, to say it is a simulated device
         public async Task AddTagAsync(string deviceId)
         {
             this.SetupHub();
@@ -253,9 +225,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             await this.GetRegistry().UpdateTwinAsync(deviceId, twin, "*");
         }
 
-        /// <summary>
-        /// Create a list of devices
-        /// </summary>
+        // Create a list of devices
         public async Task CreateListAsync(IEnumerable<string> deviceIds)
         {
             this.SetupHub();
@@ -269,21 +239,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var batch = batches[batchNumber];
 
-                this.log.Info("Creating devices batch",
+                this.log.Debug("Creating devices batch",
                     () => new { batchNumber, batchSize = batch.Count() });
 
                 BulkRegistryOperationResult result = await this.registry.AddDevices2Async(
-                    //batch.Select(id => new Azure.Devices.Device(id)));
                     batch.Select(id => this.PrepareDeviceObject(id, this.fixedDeviceKey)));
 
-                this.log.Info("Devices batch created",
-                    () => new { batchNumber, result.IsSuccessful, result.Errors });
+                this.log.Debug("Devices batch created",
+                    () => new { batchNumber, result.IsSuccessful, ErrorsCount = result.Errors.Length });
             }
         }
 
-        /// <summary>
-        /// Delete a list of devices
-        /// </summary>
+        // Delete a list of devices
         public async Task DeleteListAsync(IEnumerable<string> deviceIds)
         {
             this.SetupHub();
@@ -299,14 +266,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 {
                     var batch = batches[batchNumber];
 
-                    this.log.Info("Deleting devices batch",
+                    this.log.Debug("Deleting devices batch",
                         () => new { batchNumber, batchSize = batch.Count() });
 
                     BulkRegistryOperationResult result = await this.registry.RemoveDevices2Async(
                         batch.Select(id => new Azure.Devices.Device(id)),
                         forceRemove: true);
 
-                    this.log.Info("Devices batch deleted",
+                    this.log.Debug("Devices batch deleted",
                         () => new { batchNumber, result.IsSuccessful, result.Errors });
                 }
             }
@@ -327,9 +294,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        /// <summary>
-        /// Generate a device Id
-        /// </summary>
+        // Generate a device Id
         public string GenerateId(string deviceModelId, int position)
         {
             return deviceModelId + "." + position;

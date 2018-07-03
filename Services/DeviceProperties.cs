@@ -60,7 +60,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         private Task OnChangeCallback(TwinCollection desiredProperties, object userContext)
         {
-            this.log.Info("Desired property update requested", () => new { this.deviceId, desiredProperties });
+            this.log.Debug("Desired property update requested", () => new { this.deviceId, desiredProperties });
 
             // This is where custom code for handling specific desired property changes could be added.
             // For the purposes of the simulation service, we have chosen to write the desired properties

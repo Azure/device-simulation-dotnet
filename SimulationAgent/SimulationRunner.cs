@@ -328,14 +328,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 }
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
-                this.log.Info("Device state loop completed", () => new { durationMsecs });
+                this.log.Debug("Device state loop completed", () => new { durationMsecs });
                 this.SlowDownIfTooFast(durationMsecs, this.concurrencyConfig.MinDeviceStateLoopDuration);
             }
         }
 
         private void ConnectDevicesThread()
         {
-            // Once x devices are attempting to connect, wait until they are done
+            // Once N devices are attempting to connect, wait until they are done
             var pendingTasksLimit = this.concurrencyConfig.MaxPendingConnections;
             var tasks = new List<Task>();
 
@@ -352,6 +352,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     tasks.Clear();
                 }
 
+                // If there are pending tasks...
                 if (tasks.Count > 0)
                 {
                     Task.WaitAll(tasks.ToArray());
@@ -359,7 +360,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 }
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
-                this.log.Info("Device state loop completed", () => new { durationMsecs });
+                this.log.Debug("Device state loop completed", () => new { durationMsecs });
                 this.SlowDownIfTooFast(durationMsecs, this.concurrencyConfig.MinDeviceConnectionLoopDuration);
             }
         }
@@ -459,7 +460,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 }
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
-                this.log.Info("Telemetry loop completed", () => new { durationMsecs, stats });
+                this.log.Debug("Telemetry loop completed", () => new { durationMsecs });
                 this.SlowDownIfTooFast(durationMsecs, this.concurrencyConfig.MinDeviceTelemetryLoopDuration);
             }
         }
