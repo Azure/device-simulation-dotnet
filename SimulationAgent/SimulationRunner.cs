@@ -352,16 +352,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     tasks.Clear();
                 }
 
-                // If there are pending tasks...
-                if (tasks.Count > 0)
-                {
-                    Task.WaitAll(tasks.ToArray());
-                    tasks.Clear();
-                }
-
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                 this.log.Debug("Device state loop completed", () => new { durationMsecs });
                 this.SlowDownIfTooFast(durationMsecs, this.concurrencyConfig.MinDeviceConnectionLoopDuration);
+            }
+
+            // If there are pending tasks...
+            if (tasks.Count > 0)
+            {
+                Task.WaitAll(tasks.ToArray());
+                tasks.Clear();
             }
         }
 
@@ -416,16 +416,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     pos++;
                 }
 
-                // If there are pending tasks...
-                if (tasks.Count > 0)
-                {
-                    Task.WaitAll(tasks.ToArray());
-                    tasks.Clear();
-                }
-
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                 this.log.Debug("Telemetry loop completed", () => new { durationMsecs });
                 this.SlowDownIfTooFast(durationMsecs, this.concurrencyConfig.MinDeviceTelemetryLoopDuration);
+            }
+
+            // If there are pending tasks...
+            if (tasks.Count > 0)
+            {
+                Task.WaitAll(tasks.ToArray());
+                tasks.Clear();
             }
         }
 
@@ -449,16 +449,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     tasks.Clear();
                 }
 
-                // If there are pending tasks...
-                if (tasks.Count > 0)
-                {
-                    Task.WaitAll(tasks.ToArray());
-                    tasks.Clear();
-                }
-
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                 this.log.Debug("Device properties loop completed", () => new { durationMsecs });
                 this.SlowDownIfTooFast(durationMsecs, this.concurrencyConfig.MinDevicePropertiesLoopDuration);
+            }
+
+            // If there are pending tasks...
+            if (tasks.Count > 0)
+            {
+                Task.WaitAll(tasks.ToArray());
+                tasks.Clear();
             }
         }
 
