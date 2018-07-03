@@ -221,6 +221,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 throw new TelemetrySendException("Message delivery failed with " + e.Message, e);
             }
+            catch (ObjectDisposedException e)
+            {
+                // This error often occurs under CPU stress, apparently a bug in the internal AMQP library
+                this.log.Error("Message delivery failed, internal client failure",
+                    () => new
+                    {
+                        Protocol = this.protocol.ToString(),
+                        ExceptionMessage = e.Message,
+                        Exception = e.GetType().FullName,
+                        e.InnerException
+                    });
+
+                throw new BrokenDeviceClientException("MMessage delivery failed, internal client failure", e);
+            }
             catch (Exception e)
             {
                 this.log.Error("Message delivery failed",

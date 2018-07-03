@@ -56,7 +56,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             DeviceRegistered,
             Connected,
             AuthFailed,
-            ConnectionFailed
+            ConnectionFailed,
+            TelemetryClientBroken
         }
 
         private readonly ILogger log;
@@ -309,6 +310,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 case ActorEvents.Connected:
                     this.actorLogger.DeviceConnected();
                     this.status = ActorStatus.Done;
+                    break;
+
+                case ActorEvents.TelemetryClientBroken:
+                    this.Client?.DisconnectAsync();
+                    this.Client = null;
+                    this.ScheduleConnection();
                     break;
 
                 default:

@@ -51,6 +51,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             Started,
             SendingTelemetry,
             TelemetrySendFailure,
+            TelemetryClientBroken,
             TelemetryDelivered
         }
 
@@ -159,7 +160,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             this.status = ActorStatus.Stopped;
         }
 
-        public void HandleEvent(ActorEvents e)
         // Run the next step and return a description about what happened
         public async Task RunAsync()
         {
@@ -187,6 +187,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             }
         }
 
+        public void HandleEvent(ActorEvents e)
         {
             switch (e)
             {
@@ -204,6 +205,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                     this.ScheduleTelemetry();
                     break;
 
+                case ActorEvents.TelemetryClientBroken:
+                    this.failedMessagesCount++;
+                    this.actorLogger.TelemetryFailed();
+                    this.deviceConnectionActor.HandleEvent(DeviceConnectionActor.ActorEvents.TelemetryClientBroken);
+                    this.Reset();
+                    break;
+
                 case ActorEvents.TelemetrySendFailure:
                     this.failedMessagesCount++;
                     this.actorLogger.TelemetryFailed();
@@ -215,7 +223,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             }
         }
 
+        private void Reset()
         {
+            this.status = ActorStatus.ReadyToStart;
         }
 
         private void ScheduleTelemetry()
