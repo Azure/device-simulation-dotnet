@@ -43,6 +43,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // Keep running, checking if the simulation changes
             while (this.running)
             {
+                var oldSimulation = this.simulation;
                 try
                 {
                     this.log.Debug("------ Checking for simulation changes ------", () => { });
@@ -66,6 +67,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 catch (Exception e)
                 {
                     this.log.Error("Failure reading and starting simulation from storage.", () => new { e });
+                    this.simulation = oldSimulation;
                 }
 
                 if (this.simulation != null && this.simulation.ShouldBeRunning())
