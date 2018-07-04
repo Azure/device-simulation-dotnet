@@ -13,13 +13,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         private DateTimeOffset? endTime;
         private string iotHubConnectionString;
 
+        [JsonIgnore]
         public string ETag { get; set; }
+
+        [JsonIgnore]
         public string Id { get; set; }
+
         public bool Enabled { get; set; }
         public IList<DeviceModelRef> DeviceModels { get; set; }
         public DateTimeOffset Created { get; set; }
         public DateTimeOffset Modified { get; set; }
-        public long Version { get; set; }
 
         public DateTimeOffset? StartTime
         {

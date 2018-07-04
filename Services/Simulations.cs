@@ -129,7 +129,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             simulation.Id = SIMULATION_ID;
             simulation.Created = DateTimeOffset.UtcNow;
             simulation.Modified = simulation.Created;
-            simulation.Version = 1;
 
             // Create default simulation
             if (!string.IsNullOrEmpty(template) && template.ToLowerInvariant() == "default")
@@ -195,7 +194,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 simulation.Created = simulations[0].Created;
                 simulation.Modified = DateTimeOffset.UtcNow;
-                simulation.Version = simulations[0].Version + 1;
             }
             else
             {
@@ -203,7 +201,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 // new simulation
                 simulation.Created = DateTimeOffset.UtcNow;
                 simulation.Modified = simulation.Created;
-                simulation.Version = 1;
             }
 
             // Note: forcing the ID because only one simulation can be created
@@ -259,7 +256,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             simulation.Enabled = patch.Enabled.Value;
             simulation.Modified = DateTimeOffset.UtcNow;
-            simulation.Version += 1;
 
             item = await this.storage.UpdateAsync(
                 STORAGE_COLLECTION,
