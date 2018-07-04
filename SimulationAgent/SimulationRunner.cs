@@ -201,6 +201,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                             this.CreateActorsForDevice(deviceModel, i, total);
                         }
                     }
+                    catch (ResourceNotFoundException)
+                    {
+                        this.IncreamentSimulationErrorsCount();
+                        this.log.Error("The device model doesn't exist", () => new { model.Id });
+                    }
                     catch (Exception e)
                     {
                         this.IncreamentSimulationErrorsCount();
