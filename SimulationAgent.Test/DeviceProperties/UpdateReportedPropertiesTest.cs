@@ -56,7 +56,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.target.Setup(this.devicePropertiesActor.Object, DEVICE_ID);
 
             // Act
-            this.target.RunAsync().Wait();
+            this.target.RunAsync().Wait(Constants.TEST_TIMEOUT);
 
             // Assert
             this.devicePropertiesActor.Verify(x => x.HandleEvent(ActorEvents.PropertiesUpdateFailed));
@@ -74,7 +74,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.target.Setup(this.devicePropertiesActor.Object, DEVICE_ID);
 
             // Act
-            this.target.RunAsync().Wait();
+            this.target.RunAsync().Wait(Constants.TEST_TIMEOUT);
 
             // Assert
             this.devicePropertiesActor.Verify(x => x.Client.UpdatePropertiesAsync(It.IsAny<ISmartDictionary>()));
