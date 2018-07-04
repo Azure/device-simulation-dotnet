@@ -98,6 +98,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
         // The following 5 methods allow to log a message, capturing the context
         // (i.e. the method where the log message is generated)
+
         public void Write(string message, Action context)
         {
             this.Write("---", context.GetMethodInfo(), message);
@@ -129,6 +130,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
         // The following 5 methods allow to log a message and some data,
         // capturing the context (i.e. the method where the log message is generated)
+
         public void Write(string message, Func<object> context)
         {
             if (!string.IsNullOrEmpty(message)) message += ", ";

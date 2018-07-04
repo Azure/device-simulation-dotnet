@@ -81,7 +81,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         {
             // Optional, used to customize the initial state of the device
             [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-            public Dictionary<string,object> InitialState { get; set; }
+            public Dictionary<string, object> InitialState { get; set; }
 
             // Optional, used to customize the device state update interval
             public TimeSpan? Interval { get; set; }
