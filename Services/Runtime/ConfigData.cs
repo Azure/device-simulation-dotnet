@@ -38,14 +38,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 
         public string GetString(string key, string defaultValue = "")
         {
-            var value = this.configuration.GetValue(key, defaultValue);
+            var value = this.GetStringInternal(key, defaultValue);
             this.ReplaceEnvironmentVariables(ref value, defaultValue);
             return value;
         }
 
         public bool GetBool(string key, bool defaultValue = false)
         {
-            var value = this.GetString(key, defaultValue.ToString()).ToLowerInvariant();
+            var value = this.GetStringInternal(key, defaultValue.ToString().ToLowerInvariant()).ToLowerInvariant();
 
             var knownTrue = new HashSet<string> { "true", "t", "yes", "y", "1", "-1" };
             var knownFalse = new HashSet<string> { "false", "f", "no", "n", "0" };
@@ -60,7 +60,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         {
             try
             {
-                return Convert.ToInt32(this.GetString(key, defaultValue.ToString()));
+                var value = this.GetStringInternal(key, defaultValue.ToString());
+                return Convert.ToInt32(value);
             }
             catch (Exception e)
             {
@@ -72,12 +73,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         {
             try
             {
-                return Convert.ToUInt32(this.GetString(key, defaultValue.ToString()));
+                var value = this.GetStringInternal(key, defaultValue.ToString());
+                return Convert.ToUInt32(value);
             }
             catch (Exception e)
             {
                 throw new InvalidConfigurationException($"Unable to load configuration value for '{key}'", e);
             }
+        }
+
+        // Try to get a setting, logging when the value is not found
+        private string GetStringInternal(string key, string defaultValue)
+        {
+            var notFound = "NOT.FOUND." + Guid.NewGuid().ToString("N") + ".NOT.FOUND";
+            var value = this.configuration.GetValue(key, notFound);
+            if (value != notFound) return value;
+            this.log.Info("Configuration setting not found, using default value", () => new { key, defaultValue });
+            return defaultValue;
         }
 
         private void ReplaceEnvironmentVariables(ref string value, string defaultValue = "")
