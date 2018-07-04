@@ -61,18 +61,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // the simulation. When the simulation is running the registry is not used anymore.
         private const uint REGISTRY_LIMIT_REQUESTS = 1000;
 
-        // When working with batches, this is the max size that the batch insert and delete APIs allow
+        // When using bulk operations, this is the max number of devices that the registry APIs allow
         private const int REGISTRY_MAX_BATCH_SIZE = 100;
 
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly ILogger log;
-        private IServicesConfig config;
+        private readonly IServicesConfig config;
 
         private readonly bool twinReadsWritesEnabled;
         private string ioTHubHostName;
         private IRegistryManager registry;
         private int registryCount;
         private bool setupDone;
+        private string connString;
         private string fixedDeviceKey;
 
         public Devices(
@@ -83,6 +84,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             this.config = config;
             this.connectionStringManager = connStringManager;
+            this.connString = null;
             this.registry = registryManager;
             this.log = logger;
             this.twinReadsWritesEnabled = config.TwinReadWriteEnabled;
@@ -96,13 +98,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             try
             {
                 // Retrieve connection string from file/storage
-                string connString = this.connectionStringManager.GetIotHubConnectionString();
+                this.connString = this.connectionStringManager.GetIotHubConnectionString();
 
                 // Parse connection string, this triggers an exception if the string is invalid
-                IotHubConnectionStringBuilder cs = IotHubConnectionStringBuilder.Create(connString);
+                IotHubConnectionStringBuilder cs = IotHubConnectionStringBuilder.Create(this.connString);
 
                 // Prepare registry class used to create/retrieve devices
-                this.registry = this.registry.CreateFromConnectionString(connString);
+                this.registry = this.registry.CreateFromConnectionString(this.connString);
                 this.log.Debug("Device registry object ready", () => new { this.ioTHubHostName });
 
                 // Prepare hostname used to build device connection strings
@@ -112,6 +114,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 // Prepare the auth key used for all the devices
                 this.fixedDeviceKey = cs.SharedAccessKey;
                 this.log.Debug("Device authentication key defined", () => new { this.ioTHubHostName });
+
+                this.setupDone = true;
             }
             catch (Exception e)
             {
@@ -123,7 +127,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Get a client for the device
         public IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter)
         {
-            this.SetupHub();
+            this.CheckSetup();
 
             var sdkClient = this.GetDeviceSdkClient(device, protocol);
             var methods = new DeviceMethods(sdkClient, this.log, scriptInterpreter);
@@ -139,19 +143,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Get the device without connecting to the registry, using a known connection string
         public Device GetWithKnownCredentials(string deviceId)
         {
-            this.SetupHub();
+            this.CheckSetup();
 
             return new Device(
                 this.PrepareDeviceObject(deviceId, this.fixedDeviceKey),
                 this.ioTHubHostName);
         }
 
-        /// <summary>
-        /// Get the device from the registry
-        /// </summary>
+        // Get the device from the registry
         public async Task<Device> GetAsync(string deviceId)
         {
-            this.SetupHub();
+            this.CheckSetup();
 
             this.log.Debug("Fetching device from registry", () => new { deviceId });
 
@@ -160,7 +162,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             try
             {
-                Azure.Devices.Device device = await this.GetRegistry().GetDeviceAsync(deviceId);
+                Azure.Devices.Device device = await this.registry.GetDeviceAsync(deviceId);
                 if (device != null)
                 {
                     result = new Device(device, this.ioTHubHostName);
@@ -190,7 +192,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Register a new device
         public async Task<Device> CreateAsync(string deviceId)
         {
-            this.SetupHub();
+            this.CheckSetup();
             var start = DateTimeOffset.UtcNow;
 
             try
@@ -198,7 +200,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.log.Debug("Creating device", () => new { deviceId });
 
                 var device = new Azure.Devices.Device(deviceId);
-                device = await this.GetRegistry().AddDeviceAsync(device);
+                device = await this.registry.AddDeviceAsync(device);
 
                 return new Device(device, this.ioTHubHostName);
             }
@@ -213,7 +215,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Add a tag to the device, to say it is a simulated device
         public async Task AddTagAsync(string deviceId)
         {
-            this.SetupHub();
+            this.CheckSetup();
 
             this.log.Debug("Writing device twin and adding the `IsSimulated` Tag",
                 () => new { deviceId, SIMULATED_TAG_KEY, SIMULATED_TAG_VALUE });
@@ -222,13 +224,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 Tags = { [SIMULATED_TAG_KEY] = SIMULATED_TAG_VALUE }
             };
-            await this.GetRegistry().UpdateTwinAsync(deviceId, twin, "*");
+
+            await this.registry.UpdateTwinAsync(deviceId, twin, "*");
         }
 
         // Create a list of devices
         public async Task CreateListAsync(IEnumerable<string> deviceIds)
         {
-            this.SetupHub();
+            this.CheckSetup();
 
             var batches = this.SplitArray(deviceIds.ToList(), REGISTRY_MAX_BATCH_SIZE).ToArray();
 
@@ -262,7 +265,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Delete a list of devices
         public async Task DeleteListAsync(IEnumerable<string> deviceIds)
         {
-            this.SetupHub();
+            this.CheckSetup();
 
             var batches = this.SplitArray(deviceIds.ToList(), REGISTRY_MAX_BATCH_SIZE).ToArray();
 
@@ -367,46 +370,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return result;
         }
 
-        // This call can throw an exception, which is fine when the exception happens during a method
-        // call. We cannot allow the exception to occur in the constructor though, because it
-        // would break DI.
-        private void SetupHub()
+        private void CheckSetup()
         {
             if (this.setupDone) return;
-            this.SetCurrentIotHub();
-            this.setupDone = true;
-        }
-
-        // Temporary workaround, see https://github.com/Azure/device-simulation-dotnet/issues/136
-        private IRegistryManager GetRegistry()
-        {
-            if (this.registryCount > REGISTRY_LIMIT_REQUESTS)
-            {
-                this.registry.CloseAsync();
-
-                try
-                {
-                    this.registry.Dispose();
-                }
-                catch (Exception e)
-                {
-                    // Errors might occur here due to pending requests, they can be ignored
-                    this.log.Debug("Ignoring registry manager Dispose() error", () => new { e });
-                }
-
-                this.registryCount = -1;
-            }
-
-            if (this.registryCount == -1)
-            {
-                string connString = this.connectionStringManager.GetIotHubConnectionString();
-                this.registry = this.registry.CreateFromConnectionString(connString);
-                this.registry.OpenAsync();
-            }
-
-            this.registryCount++;
-
-            return this.registry;
+            throw new ApplicationException(this.GetType().FullName + " Setup incomplete. " +
+                                           "Call SetCurrentIotHubAsync() before using the instance.");
         }
 
         private Azure.Devices.Client.DeviceClient GetDeviceSdkClient(Device device, IoTHubProtocol protocol)
