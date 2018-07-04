@@ -54,7 +54,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
 
             // Auto-wire SimulationAgent.DLL
-            assembly = typeof(ISimulation).GetTypeInfo().Assembly;
+            assembly = typeof(ISimulationAgent).GetTypeInfo().Assembly;
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
         }
 

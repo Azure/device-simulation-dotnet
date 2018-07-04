@@ -18,7 +18,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 {
     public class Startup
     {
-        private ISimulation simulationAgent;
+        private ISimulationAgent simulationAgent;
 
         // Initialized in `Startup`
         public IConfigurationRoot Configuration { get; }
@@ -93,7 +93,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
                 CheckAdditionalContent = false
             };
 
-            this.simulationAgent = this.ApplicationContainer.Resolve<ISimulation>();
+            this.simulationAgent = this.ApplicationContainer.Resolve<ISimulationAgent>();
             this.simulationAgent.RunAsync();
         }
 
