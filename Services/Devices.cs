@@ -92,7 +92,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.setupDone = false;
         }
 
-        // Get IoTHub connection string from either the user provided value or the configuration
+        // Set IoTHub connection strings, using either the user provided value or the configuration
         public void SetCurrentIotHub()
         {
             try
@@ -193,7 +193,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public async Task<Device> CreateAsync(string deviceId)
         {
             this.CheckSetup();
-            var start = DateTimeOffset.UtcNow;
+            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             try
             {
@@ -206,7 +206,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start.ToUnixTimeMilliseconds();
+                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Error("Unable to create the device", () => new { timeSpentMsecs, deviceId, e });
                 throw new ExternalDependencyException("Unable to create the device", e);
             }
@@ -374,7 +374,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.setupDone) return;
             throw new ApplicationException(this.GetType().FullName + " Setup incomplete. " +
-                                           "Call SetCurrentIotHubAsync() before using the instance.");
+                                           "Call SetCurrentIotHub() before using the instance.");
         }
 
         private Azure.Devices.Client.DeviceClient GetDeviceSdkClient(Device device, IoTHubProtocol protocol)

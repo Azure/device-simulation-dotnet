@@ -45,7 +45,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 
         public bool GetBool(string key, bool defaultValue = false)
         {
-            var value = this.GetStringInternal(key, defaultValue.ToString().ToLowerInvariant()).ToLowerInvariant();
+            var value = this.GetStringInternal(key, defaultValue.ToString()).ToLowerInvariant();
 
             var knownTrue = new HashSet<string> { "true", "t", "yes", "y", "1", "-1" };
             var knownFalse = new HashSet<string> { "false", "f", "no", "n", "0" };

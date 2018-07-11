@@ -44,6 +44,8 @@ namespace Services.Test
             this.connectionStringManager
                 .Setup(x => x.GetIotHubConnectionString())
                 .Returns("HostName=iothub-AAAA.azure-devices.net;SharedAccessKeyName=AAAA;SharedAccessKey=AAAA");
+
+            this.target.SetCurrentIotHub();
         }
 
         /** 
@@ -56,24 +58,24 @@ namespace Services.Test
         public void ItThrowsWhenCreationTimesOut()
         {
             // Case 1: the code uses async, and the exception surfaces explicitly
-            
+
             // Arrange
             this.registry.Setup(x => x.AddDeviceAsync(It.IsAny<Device>())).Throws<TaskCanceledException>();
 
             // Act+Assert
             Assert.ThrowsAsync<ExternalDependencyException>(
-                async () => await this.target.CreateAsync("a-device-id"))
+                    async () => await this.target.CreateAsync("a-device-id"))
                 .Wait(Constants.TEST_TIMEOUT);
-            
+
             // Case 2: the code uses Wait(), and the exception is wrapped in AggregateException
-            
+
             // Arrange
             var e = new AggregateException(new TaskCanceledException());
             this.registry.Setup(x => x.AddDeviceAsync(It.IsAny<Device>())).Throws(e);
 
             // Act+Assert
             Assert.ThrowsAsync<ExternalDependencyException>(
-                async () => await this.target.CreateAsync("a-device-id"))
+                    async () => await this.target.CreateAsync("a-device-id"))
                 .Wait(Constants.TEST_TIMEOUT);
         }
     }

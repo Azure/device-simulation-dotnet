@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Client.Exceptions;
+using Microsoft.Azure.Devices.Common;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -137,30 +138,38 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task UpdatePropertiesAsync(ISmartDictionary properties)
         {
-            // Temp code to detect where the "The given key was not present in the dictionary" exception is coming from
-            var debugLineNumber = 0;
-
             try
             {
-                debugLineNumber++;
                 var reportedProperties = this.SmartDictionaryToTwinCollection(properties);
-
-                debugLineNumber++;
                 await this.client.UpdateReportedPropertiesAsync(reportedProperties);
-
-                debugLineNumber++;
                 this.log.Debug("Update reported properties for device", () => new
                 {
                     this.deviceId,
                     reportedProperties
                 });
             }
+            catch (KeyNotFoundException e){
+                // This exception sometimes occurs when calling UpdateReportedPropertiesAsync.
+                // Still unknown why, apparently an issue with the internal AMQP library
+                // used by IoT SDK. We need to collect extra information to report the issue.
+                this.log.Error("Unexpected error, failed to update reported properties",
+                    () => new
+                    {
+                        Protocol = this.protocol.ToString(),
+                        Exception = e.GetType().FullName,
+                        e.Message,
+                        e.StackTrace,
+                        e.Data,
+                        e.Source,
+                        e.TargetSite,
+                        e.InnerException // This appears to always be null in this scenario
+                    });
+            }
             catch (Exception e)
             {
                 this.log.Error("Failed to update reported properties",
                     () => new
                     {
-                        debugLineNumber,
                         Protocol = this.protocol.ToString(),
                         ExceptionMessage = e.Message,
                         Exception = e.GetType().FullName,
