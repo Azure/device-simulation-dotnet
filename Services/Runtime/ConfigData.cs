@@ -43,7 +43,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             var value = this.GetStringInternal(key, defaultValue.ToString()).ToLowerInvariant();
 
             var knownTrue = new HashSet<string> { "true", "t", "yes", "y", "1", "-1" };
-            var knownFalse = new HashSet<string> { "false", "f", "no", "n", "0" };
+            var knownFalse = new HashSet<string> { "false", "f", "no", "n", "0", "" };
 
             if (knownTrue.Contains(value)) return true;
             if (knownFalse.Contains(value)) return false;

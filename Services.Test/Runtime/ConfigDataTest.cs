@@ -79,6 +79,7 @@ namespace Services.Test.Runtime
         [InlineData("n", false, true)]
         [InlineData("N", false, true)]
         [InlineData("0", false, true)]
+        [InlineData("", false, true)]
         public void ReturnsABoolean(string value, bool expected, bool @default)
         {
             // Arrange
