@@ -71,7 +71,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             app.UseMiddleware<AuthMiddleware>();
 
             // Enable CORS - Must be before UseMvc
-            // see: https://docs.microsoft.com/en-us/aspnet/core/security/cors
+            // see: https://docs.microsoft.com/aspnet/core/security/cors
             corsSetup.UseMiddleware(app);
 
             app.UseMvc();

@@ -413,7 +413,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             sdkClient.SetRetryPolicy(new NoRetry());
-            sdkClient.OperationTimeoutInMilliseconds = this.config.IoTHubSdkDeviceClientTimeout;
+            if (this.config.IoTHubSdkDeviceClientTimeout.HasValue)
+            {
+                sdkClient.OperationTimeoutInMilliseconds = this.config.IoTHubSdkDeviceClientTimeout.Value;
+            }
 
             return sdkClient;
         }

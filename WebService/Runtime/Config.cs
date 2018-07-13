@@ -192,7 +192,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 DeviceModelsScriptsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_SCRIPTS_FOLDER_KEY)),
                 IoTHubDataFolder = MapRelativePath(configData.GetString(IOTHUB_DATA_FOLDER_KEY)),
                 IoTHubConnString = connstring,
-                IoTHubSdkDeviceClientTimeout = configData.GetUInt(IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY, 240000),
+                IoTHubSdkDeviceClientTimeout = configData.GetOptionalUInt(IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY),
                 StorageAdapterApiUrl = configData.GetString(STORAGE_ADAPTER_API_URL_KEY),
                 StorageAdapterApiTimeout = configData.GetInt(STORAGE_ADAPTER_API_TIMEOUT_KEY),
                 TwinReadWriteEnabled = configData.GetBool(TWIN_READ_WRITE_ENABLED_KEY, true)

@@ -17,6 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         bool GetBool(string key, bool defaultValue = false);
         int GetInt(string key, int defaultValue = 0);
         uint GetUInt(string key, uint defaultValue = 0);
+        uint? GetOptionalUInt(string key);
     }
 
     public class ConfigData : IConfigData
@@ -24,16 +25,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         private readonly IConfigurationRoot configuration;
         private readonly ILogger log;
 
-        public ConfigData(ILogger logger)
+        public ConfigData(IConfigurationRoot configuration, ILogger logger)
         {
             this.log = logger;
-
-            // More info about configuration at
-            // https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration
-
-            var configurationBuilder = new ConfigurationBuilder();
-            configurationBuilder.AddIniFile("appsettings.ini", optional: true, reloadOnChange: true);
-            this.configuration = configurationBuilder.Build();
+            this.configuration = configuration;
         }
 
         public string GetString(string key, string defaultValue = "")
@@ -53,7 +48,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             if (knownTrue.Contains(value)) return true;
             if (knownFalse.Contains(value)) return false;
 
-            return defaultValue;
+            throw new InvalidConfigurationException($"Unable to load configuration value for '{key}'");
         }
 
         public int GetInt(string key, int defaultValue = 0)
@@ -74,6 +69,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             try
             {
                 var value = this.GetStringInternal(key, defaultValue.ToString());
+                return Convert.ToUInt32(value);
+            }
+            catch (Exception e)
+            {
+                throw new InvalidConfigurationException($"Unable to load configuration value for '{key}'", e);
+            }
+        }
+
+        public uint? GetOptionalUInt(string key)
+        {
+            try
+            {
+                var notFound = "NOT.FOUND." + Guid.NewGuid().ToString("N") + ".NOT.FOUND";
+                var value = this.GetStringInternal(key, notFound);
+
+                if (value == notFound)
+                {
+                    return null;
+                }
+
                 return Convert.ToUInt32(value);
             }
             catch (Exception e)
