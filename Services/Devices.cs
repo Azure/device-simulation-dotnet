@@ -67,6 +67,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly ILogger log;
         private readonly IServicesConfig config;
+        private readonly IDeviceClientWrapper deviceClient;
 
         private readonly bool twinReadsWritesEnabled;
         private string ioTHubHostName;
@@ -80,12 +81,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IServicesConfig config,
             IIotHubConnectionStringManager connStringManager,
             IRegistryManager registryManager,
+            IDeviceClientWrapper deviceClient,
             ILogger logger)
         {
             this.config = config;
             this.connectionStringManager = connStringManager;
             this.connString = null;
             this.registry = registryManager;
+            this.deviceClient = deviceClient;
             this.log = logger;
             this.twinReadsWritesEnabled = config.TwinReadWriteEnabled;
             this.registryCount = -1;
@@ -101,18 +104,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.connString = this.connectionStringManager.GetIotHubConnectionString();
 
                 // Parse connection string, this triggers an exception if the string is invalid
-                IotHubConnectionStringBuilder cs = IotHubConnectionStringBuilder.Create(this.connString);
+                IotHubConnectionStringBuilder connStringBuilder = IotHubConnectionStringBuilder.Create(this.connString);
 
                 // Prepare registry class used to create/retrieve devices
                 this.registry = this.registry.CreateFromConnectionString(this.connString);
                 this.log.Debug("Device registry object ready", () => new { this.ioTHubHostName });
 
                 // Prepare hostname used to build device connection strings
-                this.ioTHubHostName = cs.HostName;
+                this.ioTHubHostName = connStringBuilder.HostName;
                 this.log.Info("Selected active IoT Hub for devices", () => new { this.ioTHubHostName });
 
                 // Prepare the auth key used for all the devices
-                this.fixedDeviceKey = cs.SharedAccessKey;
+                this.fixedDeviceKey = connStringBuilder.SharedAccessKey;
                 this.log.Debug("Device authentication key defined", () => new { this.ioTHubHostName });
 
                 this.setupDone = true;
@@ -377,32 +380,32 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                                            "Call SetCurrentIotHub() before using the instance.");
         }
 
-        private Azure.Devices.Client.DeviceClient GetDeviceSdkClient(Device device, IoTHubProtocol protocol)
+        private IDeviceClientWrapper GetDeviceSdkClient(Device device, IoTHubProtocol protocol)
         {
             var connectionString = $"HostName={device.IoTHubHostName};DeviceId={device.Id};SharedAccessKey={device.AuthPrimaryKey}";
 
-            Azure.Devices.Client.DeviceClient sdkClient;
+            IDeviceClientWrapper sdkClient;
             switch (protocol)
             {
                 case IoTHubProtocol.AMQP:
                     this.log.Debug("Creating AMQP device client",
                         () => new { device.Id, device.IoTHubHostName });
 
-                    sdkClient = Azure.Devices.Client.DeviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp_Tcp_Only);
+                    sdkClient = this.deviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp_Tcp_Only);
                     break;
 
                 case IoTHubProtocol.MQTT:
                     this.log.Debug("Creating MQTT device client",
                         () => new { device.Id, device.IoTHubHostName });
 
-                    sdkClient = Azure.Devices.Client.DeviceClient.CreateFromConnectionString(connectionString, TransportType.Mqtt_Tcp_Only);
+                    sdkClient = this.deviceClient.CreateFromConnectionString(connectionString, TransportType.Mqtt_Tcp_Only);
                     break;
 
                 case IoTHubProtocol.HTTP:
                     this.log.Debug("Creating HTTP device client",
                         () => new { device.Id, device.IoTHubHostName });
 
-                    sdkClient = Azure.Devices.Client.DeviceClient.CreateFromConnectionString(connectionString, TransportType.Http1);
+                    sdkClient = this.deviceClient.CreateFromConnectionString(connectionString, TransportType.Http1);
                     break;
 
                 default:
@@ -412,7 +415,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     throw new InvalidConfigurationException($"Unable to create a client for the given protocol ({protocol})");
             }
 
-            sdkClient.SetRetryPolicy(new NoRetry());
+            sdkClient.DisableRetryPolicy();
             if (this.config.IoTHubSdkDeviceClientTimeout.HasValue)
             {
                 sdkClient.OperationTimeoutInMilliseconds = this.config.IoTHubSdkDeviceClientTimeout.Value;

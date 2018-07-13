@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
@@ -18,13 +19,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
     public class DeviceProperties : IDevicePropertiesRequest
     {
-        private readonly Azure.Devices.Client.DeviceClient client;
+        private readonly IDeviceClientWrapper client;
         private readonly ILogger log;
         private string deviceId;
         private ISmartDictionary deviceProperties;
         private bool isRegistered;
 
-        public DeviceProperties(Azure.Devices.Client.DeviceClient client, ILogger logger)
+        public DeviceProperties(IDeviceClientWrapper client, ILogger logger)
         {
             this.client = client;
             this.log = logger;

@@ -20,11 +20,12 @@ namespace Services.Test
         /// <summary>The test logger</summary>
         private readonly ITestOutputHelper log;
 
-        private Mock<IServicesConfig> config;
-        private Mock<IIotHubConnectionStringManager> connectionStringManager;
-        private Mock<ILogger> logger;
-        private readonly Mock<IRegistryManager> registry;
         private readonly Devices target;
+        private readonly Mock<IServicesConfig> config;
+        private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
+        private readonly Mock<IRegistryManager> registry;
+        private readonly Mock<IDeviceClientWrapper> deviceClient;
+        private readonly Mock<ILogger> logger;
 
         public DevicesTest(ITestOutputHelper log)
         {
@@ -33,12 +34,14 @@ namespace Services.Test
             this.config = new Mock<IServicesConfig>();
             this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
             this.registry = new Mock<IRegistryManager>();
+            this.deviceClient = new Mock<IDeviceClientWrapper>();
             this.logger = new Mock<ILogger>();
 
             this.target = new Devices(
                 this.config.Object,
                 this.connectionStringManager.Object,
                 this.registry.Object,
+                this.deviceClient.Object,
                 this.logger.Object);
 
             this.connectionStringManager

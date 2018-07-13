@@ -11,6 +11,7 @@ using Microsoft.Azure.Devices.Common;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json.Linq;
 
@@ -39,7 +40,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         private readonly string deviceId;
         private readonly IoTHubProtocol protocol;
-        private readonly Azure.Devices.Client.DeviceClient client;
+        private readonly IDeviceClientWrapper client;
         private readonly IDeviceMethods deviceMethods;
         private readonly IDevicePropertiesRequest propertiesUpdateRequest;
         private readonly ILogger log;
@@ -51,7 +52,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public DeviceClient(
             string deviceId,
             IoTHubProtocol protocol,
-            Azure.Devices.Client.DeviceClient client,
+            IDeviceClientWrapper client,
             IDeviceMethods deviceMethods,
             ILogger logger)
         {

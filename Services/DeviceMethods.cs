@@ -6,6 +6,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Newtonsoft.Json;
@@ -23,7 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
     public class DeviceMethods : IDeviceMethods
     {
-        private readonly Azure.Devices.Client.DeviceClient client;
+        private readonly IDeviceClientWrapper client;
         private readonly ILogger log;
         private readonly IScriptInterpreter scriptInterpreter;
         private IDictionary<string, Script> cloudToDeviceMethods;
@@ -33,7 +34,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private bool isRegistered;
 
         public DeviceMethods(
-            Azure.Devices.Client.DeviceClient client,
+            IDeviceClientWrapper client,
             ILogger logger,
             IScriptInterpreter scriptInterpreter)
         {

@@ -25,7 +25,7 @@ namespace Services.Test.Runtime
             this.cfgProvider = new Mock<IConfigurationProvider>();
             this.cfgProvider.Setup(x => x.GetReloadToken()).Returns(NullChangeToken.Singleton);
             var cfg = new ConfigurationRoot(new List<IConfigurationProvider> { this.cfgProvider.Object });
-            
+
             this.logger = new Mock<ILogger>();
 
             this.target = new ConfigData(
@@ -91,36 +91,19 @@ namespace Services.Test.Runtime
             Assert.Equal(expected, result);
         }
 
-        [Theory, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        [InlineData("true", true, false)]
-        [InlineData("TRUE", true, false)]
-        [InlineData("t", true, false)]
-        [InlineData("T", true, false)]
-        [InlineData("yes", true, false)]
-        [InlineData("YES", true, false)]
-        [InlineData("y", true, false)]
-        [InlineData("Y", true, false)]
-        [InlineData("1", true, false)]
-        [InlineData("-1", true, false)]
-        [InlineData("false", false, true)]
-        [InlineData("FALSE", false, true)]
-        [InlineData("f", false, true)]
-        [InlineData("F", false, true)]
-        [InlineData("no", false, true)]
-        [InlineData("NO", false, true)]
-        [InlineData("n", false, true)]
-        [InlineData("N", false, true)]
-        [InlineData("0", false, true)]
-        public void ReturnsABooleanDefault(string value, bool expected, bool @default)
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ReturnsABooleanDefault()
         {
             // Arrange
             this.CfgDoesntContain("foo");
-            
+
             // Act
-            var result = this.target.GetBool("foo", @default);
-            
+            var result1 = this.target.GetBool("foo", true);
+            var result2 = this.target.GetBool("foo", false);
+
             // Assert
-            Assert.Equal(@default, result);
+            Assert.True(result1);
+            Assert.False(result2);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -141,7 +124,7 @@ namespace Services.Test.Runtime
         {
             // Arrange
             this.CfgDoesntContain("foo");
-            
+
             // Act
             var result = this.target.GetInt("foo", -10);
 
@@ -159,7 +142,7 @@ namespace Services.Test.Runtime
             var result = this.target.GetUInt("foo", 888);
 
             // Assert
-            Assert.Equal((uint)1234, result);
+            Assert.Equal((uint) 1234, result);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -167,12 +150,12 @@ namespace Services.Test.Runtime
         {
             // Arrange
             this.CfgDoesntContain("foo");
-            
+
             // Act
             var result = this.target.GetUInt("foo", 10);
 
             // Assert
-            Assert.Equal((uint)10, result);
+            Assert.Equal((uint) 10, result);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -180,13 +163,13 @@ namespace Services.Test.Runtime
         {
             // Arrange
             this.CfgContains("foo", "1234");
-            
+
             // Act
             var result = this.target.GetOptionalUInt("foo");
 
             // Assert
             Assert.True(result.HasValue);
-            Assert.Equal((uint)1234, result.Value);
+            Assert.Equal((uint) 1234, result.Value);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -194,10 +177,10 @@ namespace Services.Test.Runtime
         {
             // Arrange
             this.CfgDoesntContain("foo");
-            
+
             // Act
             var result = this.target.GetOptionalUInt("foo");
-            
+
             // Assert
             Assert.False(result.HasValue);
         }
@@ -207,7 +190,7 @@ namespace Services.Test.Runtime
         {
             // Arrange
             this.CfgContains("foo", "x");
-            
+
             // Act + Assert
             Assert.Throws<InvalidConfigurationException>(() => this.target.GetInt("foo"));
         }
@@ -217,7 +200,7 @@ namespace Services.Test.Runtime
         {
             // Arrange
             this.CfgContains("foo", "x");
-            
+
             // Act + Assert
             Assert.Throws<InvalidConfigurationException>(() => this.target.GetBool("foo"));
         }
@@ -227,7 +210,7 @@ namespace Services.Test.Runtime
         {
             // Arrange
             this.CfgContains("foo", "-1");
-            
+
             // Act + Assert
             Assert.Throws<InvalidConfigurationException>(() => this.target.GetUInt("foo"));
         }
@@ -237,7 +220,7 @@ namespace Services.Test.Runtime
         {
             // Arrange
             this.CfgContains("foo", "-1");
-            
+
             // Act + Assert
             Assert.Throws<InvalidConfigurationException>(() => this.target.GetOptionalUInt("foo"));
         }
