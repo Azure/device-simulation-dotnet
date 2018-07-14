@@ -226,6 +226,60 @@ namespace Services.Test.Runtime
             Assert.Throws<InvalidConfigurationException>(() => this.target.GetOptionalUInt("foo"));
         }
 
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ProcessesEnvVarsForStrings()
+        {
+            // Arrange
+            this.CfgContains("foo", "${?SOMETHING}");
+
+            // Act
+            var result = this.target.GetString("foo", "default");
+
+            // Assert
+            Assert.Equal("default", result);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ProcessesEnvVarsForIntegers()
+        {
+            // Arrange
+            this.CfgContains("foo", "${?SOMETHING}");
+
+            // Act
+            var result = this.target.GetInt("foo", -123);
+
+            // Assert
+            Assert.Equal(-123, result);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ProcessesEnvVarsForUnsignedIntegers()
+        {
+            // Arrange
+            this.CfgContains("foo", "${?SOMETHING}");
+
+            // Act
+            var result = this.target.GetUInt("foo", 123);
+
+            // Assert
+            Assert.Equal((uint) 123, result);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ProcessesEnvVarsForBooleans()
+        {
+            // Arrange
+            this.CfgContains("foo", "${?SOMETHING}");
+
+            // Act
+            var result1 = this.target.GetBool("foo", true);
+            var result2 = this.target.GetBool("foo", false);
+
+            // Assert
+            Assert.True(result1);
+            Assert.False(result2);
+        }
+
         private void CfgContains(string key, string value)
         {
             this.cfgProvider.Setup(x => x.TryGet(key, out value)).Returns(true);

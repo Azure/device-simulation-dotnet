@@ -33,56 +33,58 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 
         public string GetString(string key, string defaultValue = "")
         {
-            var value = this.GetStringInternal(key, defaultValue);
-            this.ReplaceEnvironmentVariables(ref value, defaultValue);
-            return value;
+            return this.GetStringInternal(key, defaultValue);
         }
 
         public bool GetBool(string key, bool defaultValue = false)
         {
-            var value = this.GetStringInternal(key, defaultValue.ToString()).ToLowerInvariant();
+            var value = this.GetStringInternal(key, defaultValue.ToString());
+            var lcValue = value.ToLowerInvariant();
 
             var knownTrue = new HashSet<string> { "true", "t", "yes", "y", "1", "-1" };
             var knownFalse = new HashSet<string> { "false", "f", "no", "n", "0", "" };
 
-            if (knownTrue.Contains(value)) return true;
-            if (knownFalse.Contains(value)) return false;
+            if (knownTrue.Contains(lcValue)) return true;
+            if (knownFalse.Contains(lcValue)) return false;
 
-            throw new InvalidConfigurationException($"Unable to load configuration value for '{key}'");
+            throw new InvalidConfigurationException($"Unable to load configuration value for '{key}' (found: '{value}')");
         }
 
         public int GetInt(string key, int defaultValue = 0)
         {
+            string value = string.Empty;
             try
             {
-                var value = this.GetStringInternal(key, defaultValue.ToString());
+                value = this.GetStringInternal(key, defaultValue.ToString());
                 return Convert.ToInt32(value);
             }
             catch (Exception e)
             {
-                throw new InvalidConfigurationException($"Unable to load configuration value for '{key}'", e);
+                throw new InvalidConfigurationException($"Unable to load configuration value for '{key}' (found: '{value}')", e);
             }
         }
 
         public uint GetUInt(string key, uint defaultValue = 0)
         {
+            string value = string.Empty;
             try
             {
-                var value = this.GetStringInternal(key, defaultValue.ToString());
+                value = this.GetStringInternal(key, defaultValue.ToString());
                 return Convert.ToUInt32(value);
             }
             catch (Exception e)
             {
-                throw new InvalidConfigurationException($"Unable to load configuration value for '{key}'", e);
+                throw new InvalidConfigurationException($"Unable to load configuration value for '{key}' (found: '{value}')", e);
             }
         }
 
         public uint? GetOptionalUInt(string key)
         {
+            string value = string.Empty;
             try
             {
                 var notFound = "NOT.FOUND." + Guid.NewGuid().ToString("N") + ".NOT.FOUND";
-                var value = this.GetStringInternal(key, notFound);
+                value = this.GetStringInternal(key, notFound);
 
                 if (value == notFound)
                 {
@@ -93,7 +95,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             }
             catch (Exception e)
             {
-                throw new InvalidConfigurationException($"Unable to load configuration value for '{key}'", e);
+                throw new InvalidConfigurationException($"Unable to load configuration value for '{key}' (found: '{value}')", e);
             }
         }
 
@@ -102,6 +104,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         {
             var notFound = "NOT.FOUND." + Guid.NewGuid().ToString("N") + ".NOT.FOUND";
             var value = this.configuration.GetValue(key, notFound);
+            this.ReplaceEnvironmentVariables(ref value, defaultValue);
+
             if (value != notFound) return value;
             this.log.Info("Configuration setting not found, using default value", () => new { key, defaultValue });
             return defaultValue;
@@ -170,7 +174,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
                 }
             }
 
-            // Non replaced placeholders cause an exception
+            // Non replaced placeholders are removed
             keys = (from Match m in Regex.Matches(value, PATTERN)
                     select m.Groups[1].Value).ToArray();
             if (keys.Length > 0)
