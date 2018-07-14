@@ -1,9 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
-using System.Collections.Generic;
 using System.Reflection;
-using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -25,10 +22,9 @@ namespace Services.Test
         private const string VALUE1 = "Value1";
         private const string VALUE2 = "Value2";
 
+        private readonly IDevicePropertiesRequest target;
         private Mock<IDeviceClientWrapper> sdkClient;
         private Mock<ILogger> logger;
-
-        private IDevicePropertiesRequest target;
 
         public DevicePropertiesRequestTest(ITestOutputHelper log)
         {
