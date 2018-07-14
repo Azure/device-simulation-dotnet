@@ -1,12 +1,12 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel;
 using System.Collections.Generic;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel;
 using WebService.Test.helpers;
 using Xunit;
-using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
 
-namespace WebService.Test.v1.Models
+namespace WebService.Test.v1.Models.DeviceModelApiModel
 {
     public class DeviceModelTelemetrySchemaTest
     {
@@ -33,19 +33,19 @@ namespace WebService.Test.v1.Models
             var result = DeviceModelTelemetryMessageSchema.ToServiceModel(schema);
 
             // Assert
-            Assert.IsType<DeviceModelMessageSchema>(result);
+            Assert.IsType<DeviceModel.DeviceModelMessageSchema>(result);
         }
 
 
-        private DeviceModelMessageSchema GetDeviceModelMessageSchema()
+        private DeviceModel.DeviceModelMessageSchema GetDeviceModelMessageSchema()
         {
-            var schema = new DeviceModelMessageSchema()
+            var schema = new DeviceModel.DeviceModelMessageSchema()
             {
                 Name = "chiller-sensors",
-                Format = DeviceModelMessageSchemaFormat.JSON,
-                Fields = new Dictionary<string, DeviceModelMessageSchemaType>()
+                Format = DeviceModel.DeviceModelMessageSchemaFormat.JSON,
+                Fields = new Dictionary<string, DeviceModel.DeviceModelMessageSchemaType>()
                 {
-                    { "cargotemperature", DeviceModelMessageSchemaType.Double }
+                    { "cargotemperature", DeviceModel.DeviceModelMessageSchemaType.Double }
                 }
             };
 

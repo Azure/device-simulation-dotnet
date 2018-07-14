@@ -101,7 +101,6 @@ namespace SimulationAgent.Test.DeviceConnection
         {
             string DEVICE_ID = "01";
             var deviceModel = new DeviceModel { Id = DEVICE_ID };
-            var message = new DeviceModel.DeviceModelMessage();
 
             this.SetupRateLimitingConfig();
 

@@ -222,7 +222,6 @@ namespace WebService.Test.v1.Controllers
         private void SetupPreprovisionedIoTHub()
         {
             const string IOTHUB_CONNECTION_STRING = "hostname=hub-1;sharedaccesskeyname=hubowner;sharedaccesskey=fakekey";
-            Tuple<bool, string> CONNECTIONSTRING = new Tuple<bool, string>(true, IOTHUB_CONNECTION_STRING);
 
             this.servicesConfig
                .Setup(x => x.IoTHubConnString)

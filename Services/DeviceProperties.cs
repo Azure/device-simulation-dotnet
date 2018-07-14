@@ -35,7 +35,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task RegisterChangeUpdateAsync(string deviceId, ISmartDictionary deviceProperties)
         {
-            if (isRegistered)
+            if (this.isRegistered)
             {
                 this.log.Error("Application error, each device must have a separate instance", () => { });
                 throw new Exception("Application error, each device must have a separate instance of " + this.GetType().FullName);
@@ -47,7 +47,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log.Debug("Setting up callback for desired properties updates.", () => new { this.deviceId });
 
             // Set callback that IoT Hub calls whenever the client receives a desired properties state update.
-            await this.client.SetDesiredPropertyUpdateCallbackAsync(OnChangeCallback, null);
+            await this.client.SetDesiredPropertyUpdateCallbackAsync(this.OnChangeCallback, null);
 
             this.log.Debug("Callback for desired properties updates setup successfully", () => new { this.deviceId });
 

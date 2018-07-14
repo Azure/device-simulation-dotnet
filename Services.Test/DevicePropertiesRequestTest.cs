@@ -44,7 +44,7 @@ namespace Services.Test
             // Arrange
             const string NEW_VALUE = "new value";
 
-            ISmartDictionary reportedProps = GetTestProperties();
+            ISmartDictionary reportedProps = this.GetTestProperties();
             this.target.RegisterChangeUpdateAsync(DEVICE_ID, reportedProps);
 
             TwinCollection desiredProps = new TwinCollection();
@@ -68,7 +68,7 @@ namespace Services.Test
             const string NEW_KEY = "new key";
             const string NEW_VALUE = "new value";
 
-            ISmartDictionary reportedProps = GetTestProperties();
+            ISmartDictionary reportedProps = this.GetTestProperties();
             this.target.RegisterChangeUpdateAsync(DEVICE_ID, reportedProps);
 
             TwinCollection desiredProps = new TwinCollection();
@@ -89,7 +89,7 @@ namespace Services.Test
         public void SmartDictionary_Should_Not_Update_When_DesiredPropertiesValueIsTheSame()
         {
             // Arrange
-            ISmartDictionary reportedProps = GetTestProperties();
+            ISmartDictionary reportedProps = this.GetTestProperties();
             reportedProps.ResetChanged();
             Assert.False(reportedProps.Changed);
 

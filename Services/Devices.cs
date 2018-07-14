@@ -72,7 +72,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly bool twinReadsWritesEnabled;
         private string ioTHubHostName;
         private IRegistryManager registry;
-        private int registryCount;
         private bool setupDone;
         private string connString;
         private string fixedDeviceKey;
@@ -91,7 +90,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.deviceClient = deviceClient;
             this.log = logger;
             this.twinReadsWritesEnabled = config.TwinReadWriteEnabled;
-            this.registryCount = -1;
             this.setupDone = false;
         }
 

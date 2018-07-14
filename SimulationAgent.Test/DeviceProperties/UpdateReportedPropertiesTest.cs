@@ -29,7 +29,7 @@ namespace SimulationAgent.Test.DeviceProperties
         private readonly Mock<IDeviceClient> client;
         private readonly Mock<PropertiesLoopSettings> loopSettings;
 
-        private UpdateReportedProperties target;
+        private readonly UpdateReportedProperties target;
 
         public UpdateReportedPropertiesTest(ITestOutputHelper log)
         {
@@ -43,7 +43,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.loopSettings = new Mock<PropertiesLoopSettings>(
                 this.rateLimitingConfig.Object);
 
-            this.target = new UpdateReportedProperties(logger.Object);
+            this.target = new UpdateReportedProperties(this.logger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
