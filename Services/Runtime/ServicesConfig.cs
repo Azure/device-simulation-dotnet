@@ -4,15 +4,28 @@ using System.IO;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 {
+    public class StorageConfig
+    {
+        public string StorageType { get; set; }
+        public string DocumentDbConnString { get; set; }
+        public string DocumentDbDatabase { get; set; }
+        public string DocumentDbCollection { get; set; }
+        public int DocumentDbRUs { get; set; }
+    }
+
     public interface IServicesConfig
     {
         string DeviceModelsFolder { get; }
         string DeviceModelsScriptsFolder { get; }
-        string IoTHubDataFolder { get; }
         string IoTHubConnString { get; }
-        string StorageAdapterApiUrl { get; }
-        int StorageAdapterApiTimeout { get; }
+        uint? IoTHubSdkDeviceClientTimeout { get; set; }
         bool TwinReadWriteEnabled { get; }
+
+        StorageConfig MainStorage { get; }
+        StorageConfig NodesStorage { get; }
+        StorageConfig SimulationsStorage { get; }
+        StorageConfig DevicesStorage { get; }
+        StorageConfig PartitionsStorage { get; }
     }
 
     // TODO: test Windows/Linux folder separator
@@ -23,13 +36,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 
         private string dtf;
         private string dtbf;
-        private string ihf;
 
         public ServicesConfig()
         {
             this.dtf = string.Empty;
             this.dtbf = string.Empty;
-            this.ihf = string.Empty;
         }
 
         public string DeviceModelsFolder
@@ -44,19 +55,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             set { this.dtbf = this.NormalizePath(value); }
         }
 
-        public string IoTHubDataFolder
-        {
-            get { return this.ihf; }
-            set { this.ihf = this.NormalizePath(value); }
-        }
-
         public string IoTHubConnString { get; set; }
 
-        public string StorageAdapterApiUrl { get; set; }
-
-        public int StorageAdapterApiTimeout { get; set; }
+        public uint? IoTHubSdkDeviceClientTimeout { get; set; }
 
         public bool TwinReadWriteEnabled { get; set; }
+
+        public StorageConfig MainStorage { get; set; }
+        public StorageConfig NodesStorage { get; set; }
+        public StorageConfig SimulationsStorage { get; set; }
+        public StorageConfig DevicesStorage { get; set; }
+        public StorageConfig PartitionsStorage { get; set; }
 
         private string NormalizePath(string path)
         {
