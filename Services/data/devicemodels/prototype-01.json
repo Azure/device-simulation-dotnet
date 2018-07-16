@@ -4,7 +4,7 @@
     "Version": "0.0.1",
     "Name": "Prototyping Device",
     "Description": "Prototyping device with temperature, pressure and GPS.",
-    "Protocol": "MQTT",
+    "Protocol": "AMQP",
     "Simulation": {
         "InitialState": {
             "online": true,

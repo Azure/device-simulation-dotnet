@@ -4,7 +4,7 @@
     "Version": "0.0.1",
     "Name": "Faulty Prototyping Device",
     "Description": "Prototyping device with temperature, pressure and GPS. Device is moving.",
-    "Protocol": "MQTT",
+    "Protocol": "AMQP",
     "Simulation": {
         "InitialState": {
             "online": true,
