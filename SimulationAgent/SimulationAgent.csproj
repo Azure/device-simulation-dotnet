@@ -8,4 +8,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Services\Services.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Moq">
+      <HintPath>..\..\..\..\Users\apatel\.nuget\packages\moq\4.8.2\lib\netstandard1.3\Moq.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 </Project>

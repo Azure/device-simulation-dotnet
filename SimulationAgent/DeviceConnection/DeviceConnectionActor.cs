@@ -29,7 +29,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
     public class DeviceConnectionActor : IDeviceConnectionActor
     {
-        private enum ActorStatus
+        public enum ActorStatus
         {
             None,
             ReadyToStart,

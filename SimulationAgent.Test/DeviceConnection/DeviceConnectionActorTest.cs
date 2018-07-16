@@ -106,6 +106,33 @@ namespace SimulationAgent.Test.DeviceConnection
             Assert.Equal(FAILED_DEVICE_CONNECTIONS_COUNT, failedDeviceConnectionCount);
         }
 
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItSetsDeviceStateToDeleted()
+        {
+            // Arrange
+            this.SetupDeviceConnectionActor();
+            DeviceConnectionActor.ActorEvents deviceDeregistered = DeviceConnectionActor.ActorEvents.DeviceDeregistered;
+
+            // Act
+            this.target.HandleEvent(deviceDeregistered);
+            
+            // Assert
+            Assert.True(this.target.IsDeleted);
+        }
+
+        public void ItSetsDeviceStateToConnected()
+        {
+            // Arrange
+            this.SetupDeviceConnectionActor();
+            DeviceConnectionActor.ActorEvents deviceDeregistered = DeviceConnectionActor.ActorEvents.Connected;
+
+            // Act
+            this.target.HandleEvent(deviceDeregistered);
+
+            // Assert
+            Assert.True(this.target.Connected);
+        }
+
         private void SetupDeviceConnectionActor()
         {
             string DEVICE_ID = "01";
