@@ -250,7 +250,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
-        /// Delete a device
+        /// Delete a device from IoTHub
         /// </summary>
         public async Task DeleteAsync(string deviceId)
         {

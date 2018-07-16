@@ -95,8 +95,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         public async Task DeleteDevices(List<string> ids)
         {
             this.log.Info("Update simulation", () => { });
+
+            // currently only one simulation is supported
             var simulation = (await this.simulations.GetListAsync()).FirstOrDefault();
-            var modelIds = this.parseModelId(ids);
+            var modelIds = this.parseModelIds(ids);
 
             if (simulation != null)
             {
@@ -187,7 +189,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private List<string> parseModelId(List<string> ids)
+        private List<string> parseModelIds(List<string> ids)
         {
             return ids.Select(s => s.Substring(0, s.LastIndexOf(('.')))).ToList<string>();
         }

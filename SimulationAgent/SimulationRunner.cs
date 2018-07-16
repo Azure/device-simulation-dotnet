@@ -213,7 +213,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 // Start threads
                 this.TryToStartStateThread();
 
-               this.TryToStartConnectionThread();
+                this.TryToStartConnectionThread();
 
                 this.TryToStartTelemetryThread();
 
