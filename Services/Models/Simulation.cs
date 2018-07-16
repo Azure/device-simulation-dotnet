@@ -12,14 +12,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         private DateTimeOffset? startTime;
         private DateTimeOffset? endTime;
         private string iotHubConnectionString;
-
+        
+        [JsonIgnore]
         public string ETag { get; set; }
+        
+        [JsonIgnore]
         public string Id { get; set; }
+        
         public bool Enabled { get; set; }
         public IList<DeviceModelRef> DeviceModels { get; set; }
         public DateTimeOffset Created { get; set; }
         public DateTimeOffset Modified { get; set; }
-        public long Version { get; set; }
 
         public DateTimeOffset? StartTime
         {
@@ -39,6 +42,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             set => this.iotHubConnectionString = value ?? ServicesConfig.USE_DEFAULT_IOTHUB;
         }
 
+        public bool PartitioningComplete { get; set; }
+
         public Simulation()
         {
             // When unspecified, a simulation is enabled
@@ -50,6 +55,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             // by default, use environment variable
             this.IotHubConnectionString = ServicesConfig.USE_DEFAULT_IOTHUB;
             this.DeviceModels = new List<DeviceModelRef>();
+
+            this.PartitioningComplete = false;
         }
 
         public class DeviceModelRef

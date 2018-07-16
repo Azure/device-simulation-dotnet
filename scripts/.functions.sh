@@ -46,3 +46,11 @@ check_dependency_git() {
         exit 1
     fi
 }
+
+check_dependency_curl() {
+    if ! which curl >/dev/null 2>&1 ; then
+        echo "ERROR: 'curl' command not found."
+        echo "Install curl and make sure the 'curl' command is in the PATH."
+        exit 1
+    fi
+}

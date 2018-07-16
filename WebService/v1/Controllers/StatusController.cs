@@ -10,7 +10,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
@@ -38,7 +37,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private const string SIMULATION_ERRORS_COUNT_KEY = "SimulationErrorsCount";
 
         private readonly IPreprovisionedIotHub preprovisionedIotHub;
-        private readonly IStorageAdapterClient storage;
+
+        //private readonly IStorageAdapterClient storage;
         private readonly ISimulations simulations;
         private readonly ILogger log;
         private readonly IServicesConfig servicesConfig;
@@ -49,7 +49,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
         public StatusController(
             IPreprovisionedIotHub preprovisionedIotHub,
-            IStorageAdapterClient storage,
+            //IStorageAdapterClient storage,
             ISimulations simulations,
             ILogger logger,
             IServicesConfig servicesConfig,
@@ -59,7 +59,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             IRateLimiting rateLimiting)
         {
             this.preprovisionedIotHub = preprovisionedIotHub;
-            this.storage = storage;
+            //this.storage = storage;
             this.simulations = simulations;
             this.log = logger;
             this.servicesConfig = servicesConfig;
@@ -76,6 +76,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             var result = new StatusApiModel();
             var statusMsg = SERVICE_IS_HEALTHY;
             var errors = new List<string>();
+            var statusIsOk = true;
 
             // Simulation status
             var simulationIsRunning = await this.CheckIsSimulationRunningAsync(errors);
@@ -86,9 +87,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                     : "unknown");
 
             // Storage status
-            var storageStatus = await this.CheckStorageStatusAsync(errors);
-            result.Dependencies.Add("Storage", storageStatus?.Item2);
-            var statusIsOk = storageStatus.Item1;
+            //var storageStatus = await this.CheckStorageStatusAsync(errors);
+            //result.Dependencies.Add("Storage", storageStatus?.Item2);
+            //statusIsOk = statusIsOk && storageStatus.Item1;
 
             // Preprovisioned hub status
             var isHubPreprovisioned = this.IsHubConnectionStringConfigured();
@@ -104,11 +105,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 result.Dependencies.Add(PREPROVISIONED_IOTHUB_KEY, preprovisioneHubStatus?.Item2);
                 if (isRunning)
                 {
-                    result.Properties.Add(PREPROVISIONED_IOTHUB_INUSE_KEY, this.IsPreprovisionedIoTHubInUse(isRunning));
-                    var url = this.GetIoTHubMetricsUrl(isRunning);
+                    result.Properties.Add(PREPROVISIONED_IOTHUB_INUSE_KEY, await this.IsPreprovisionedIoTHubInUseAsync(isRunning));
+                    var url = await this.GetIoTHubMetricsUrlAsync(isRunning);
                     if (!string.IsNullOrEmpty(url))
                     {
-                        result.Properties.Add(PREPROVISIONED_IOTHUB_METRICS_KEY, this.GetIoTHubMetricsUrl(isRunning));
+                        result.Properties.Add(PREPROVISIONED_IOTHUB_METRICS_KEY, await this.GetIoTHubMetricsUrlAsync(isRunning));
                     }
                 }
             }
@@ -183,26 +184,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             return simulationRunning;
         }
 
-        // Check the storage dependency status
-        private async Task<Tuple<bool, string>> CheckStorageStatusAsync(ICollection<string> errors)
-        {
-            Tuple<bool, string> result;
-            try
-            {
-                result = await this.storage.PingAsync();
-                if (!result.Item1)
-                {
-                    errors.Add("Unable to use Storage");
-                }
-            }
-            catch (Exception e)
-            {
-                result = new Tuple<bool, string>(false, "Storage check failed");
-                this.log.Error("Storage ping failed", () => new { e });
-            }
-
-            return result;
-        }
+        // // Check the storage dependency status
+        // private async Task<Tuple<bool, string>> CheckStorageStatusAsync(ICollection<string> errors)
+        // {
+        //     Tuple<bool, string> result;
+        //     try
+        //     {
+        //         result = await this.storage.PingAsync();
+        //         if (!result.Item1)
+        //         {
+        //             errors.Add("Unable to use Storage");
+        //         }
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         result = new Tuple<bool, string>(false, "Storage check failed");
+        //         this.log.Error("Storage ping failed", () => new { e });
+        //     }
+        //
+        //     return result;
+        // }
 
         // Check IoT Hub dependency status
         private async Task<Tuple<bool, string>> CheckAzureIoTHubStatusAsync(ICollection<string> errors)
@@ -243,22 +244,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         }
 
         // Check whether the simulation is running with the conn string in the configuration
-        private string IsPreprovisionedIoTHubInUse(bool isRunning)
+        private async Task<string> IsPreprovisionedIoTHubInUseAsync(bool isRunning)
         {
             if (!isRunning) return JSON_FALSE;
 
-            var csInUse = this.connectionStringManager.GetIotHubConnectionString().ToLowerInvariant().Trim();
+            var cs = await this.connectionStringManager.GetIotHubConnectionStringAsync();
+            var csInUse = cs.ToLowerInvariant().Trim();
             var csInConf = this.servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
 
             return csInUse == csInConf ? JSON_TRUE : JSON_FALSE;
         }
 
         // If the simulation is running with the conn string in the config then return a URL to the metrics
-        private string GetIoTHubMetricsUrl(bool isRunning)
+        private async Task<string> GetIoTHubMetricsUrlAsync(bool isRunning)
         {
             if (!isRunning) return string.Empty;
 
-            var csInUse = this.connectionStringManager.GetIotHubConnectionString().ToLowerInvariant().Trim();
+            var cs = await this.connectionStringManager.GetIotHubConnectionStringAsync();
+            var csInUse = cs.ToLowerInvariant().Trim();
             var csInConf = this.servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
 
             // Return the URL only when the simulation is running with the configured conn string

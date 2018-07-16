@@ -6,6 +6,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Newtonsoft.Json;
@@ -23,7 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
     public class DeviceMethods : IDeviceMethods
     {
-        private readonly Azure.Devices.Client.DeviceClient client;
+        private readonly IDeviceClientWrapper client;
         private readonly ILogger log;
         private readonly IScriptInterpreter scriptInterpreter;
         private IDictionary<string, Script> cloudToDeviceMethods;
@@ -33,7 +34,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private bool isRegistered;
 
         public DeviceMethods(
-            Azure.Devices.Client.DeviceClient client,
+            IDeviceClientWrapper client,
             ILogger logger,
             IScriptInterpreter scriptInterpreter)
         {
@@ -50,6 +51,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             ISmartDictionary deviceState,
             ISmartDictionary deviceProperties)
         {
+            if (methods == null) return;
+
             if (this.isRegistered)
             {
                 this.log.Error("Application error, each device must have a separate instance", () => { });
@@ -88,7 +91,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             try
             {
-                this.log.Info("Creating task to execute method with json payload.", () => new
+                this.log.Debug("Creating task to execute method with json payload.", () => new
                 {
                     this.deviceId,
                     methodName = methodRequest.Name,
@@ -100,12 +103,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var t = Task.Run(() => this.MethodExecution(methodRequest));
 
                 return Task.FromResult(new MethodResponse((int) HttpStatusCode.OK));
-
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 this.log.Error("Failed executing method.", () => new { methodRequest, e });
-                return Task.FromResult(new MethodResponse((int)HttpStatusCode.InternalServerError));
+                return Task.FromResult(new MethodResponse((int) HttpStatusCode.InternalServerError));
             }
         }
 
@@ -113,7 +115,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             try
             {
-                this.log.Info("Executing method with json payload.", () => new
+                this.log.Debug("Executing method with json payload.", () => new
                 {
                     this.deviceId,
                     methodName = methodRequest.Name,

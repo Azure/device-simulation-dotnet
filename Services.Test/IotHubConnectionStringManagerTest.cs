@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
@@ -14,21 +13,25 @@ namespace Services.Test
     public class IotHubConnectionStringManagerTest
     {
         private readonly Mock<ILogger> logger;
+        private readonly Mock<IFactory> factory;
         private readonly IServicesConfig config;
         private readonly IotHubConnectionStringManager target;
 
         public IotHubConnectionStringManagerTest()
         {
             this.logger = new Mock<ILogger>();
+            this.factory = new Mock<IFactory>();
             this.config = new ServicesConfig();
-            this.target = new IotHubConnectionStringManager(this.config, this.logger.Object);
+            this.target = new IotHubConnectionStringManager(this.config, this.factory.Object, this.logger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async Task ItThrowsOnInvalidConnStringFormat()
+        public void ItThrowsOnInvalidConnStringFormat()
         {
             // Assert
-            await Assert.ThrowsAsync<InvalidIotHubConnectionStringFormatException>(() => this.target.RedactAndStoreAsync("foobar"));
+            Assert.ThrowsAsync<InvalidIotHubConnectionStringFormatException>(
+                    async () => await this.target.RedactAndStoreAsync("foobar"))
+                .Wait(Constants.TEST_TIMEOUT);
         }
     }
 }

@@ -9,7 +9,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         Debug = 10,
         Info = 20,
         Warn = 30,
-        Error = 40
+        Error = 40,
+        Always = 1000
     }
     
     public interface ILoggingConfig

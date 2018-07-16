@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Copyright (c) Microsoft. All rights reserved.
+# Note: Windows Bash doesn't support shebang extra params
+set -e
+
+APP_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )/"
+source "$APP_HOME/scripts/.functions.sh"
+
+check_dependency_curl
+
+help() {
+    echo ""
+    echo "1st parameter: simulation enabled or disabled: true|false"
+    echo "2nd parameter: web API host and port: e.g. http://127.0.0.1:9003"
+    echo "3rd parameter: devices count: e.g. 20000"
+    echo ""
+    echo "Try ./create-simulation true http://127.0.0.1:9003 20000"
+    echo ""
+}
+
+if [[ -z "$1" || -z "$2" || -z "$3" ]]; then
+    echo "Error: some parameters are missing"
+    help
+    exit 1
+fi
+
+ENABLED=$1
+URL="$2/v1/simulations/1"
+DEVICE_COUNT=$3
+DEVICE_MODEL="chiller-01"
+
+curl -X PUT "$URL" -H "Content-Type:application/json" -d "{ 'ETag': '*', 'Enabled': $ENABLED, 'DeviceModels': [ { 'Id': '$DEVICE_MODEL', 'Count': $DEVICE_COUNT } ] }"

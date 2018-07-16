@@ -7,6 +7,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
@@ -18,49 +19,47 @@ using Xunit.Abstractions;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 using SimulationModel = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
-using SimulationRunner = Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.SimulationRunner;
 
 namespace SimulationAgent.Test
 {
     public class SimulationRunnerTest
     {
         private readonly Mock<IRateLimitingConfig> ratingConfig;
+        private readonly Mock<IConcurrencyConfig> concurrencyConfig;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IDeviceModels> deviceModels;
         private readonly Mock<IDeviceModelsGeneration> deviceModelsOverriding;
         private readonly Mock<IDevices> devices;
         private readonly Mock<ISimulations> simulations;
         private readonly Mock<IFactory> factory;
-        private readonly Mock<IDictionary<string, IDeviceStateActor>> deviceStateActors;
         private readonly Mock<IDeviceStateActor> deviceStateActor;
         private readonly Mock<IDeviceConnectionActor> deviceConnectionActor;
         private readonly Mock<IDeviceTelemetryActor> deviceTelemetryActor;
         private readonly Mock<IDevicePropertiesActor> devicePropertiesActor;
         private readonly Mock<IRateLimiting> rateLimiting;
-        private readonly Mock<UpdateDeviceState> updateDeviceStateLogic;
         private readonly SimulationRunner target;
 
         public SimulationRunnerTest(ITestOutputHelper log)
         {
             this.ratingConfig = new Mock<IRateLimitingConfig>();
+            this.concurrencyConfig = new Mock<IConcurrencyConfig>();
             this.logger = new Mock<ILogger>();
             this.deviceModels = new Mock<IDeviceModels>();
             this.deviceModelsOverriding = new Mock<IDeviceModelsGeneration>();
             this.devices = new Mock<IDevices>();
             this.simulations = new Mock<ISimulations>();
             this.factory = new Mock<IFactory>();
-            this.deviceStateActors = new Mock<IDictionary<string, IDeviceStateActor>>();
             this.deviceStateActor = new Mock<IDeviceStateActor>();
             this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
             this.deviceTelemetryActor = new Mock<IDeviceTelemetryActor>();
             this.devicePropertiesActor = new Mock<IDevicePropertiesActor>();
-            this.updateDeviceStateLogic = new Mock<UpdateDeviceState>();
             this.rateLimiting = new Mock<IRateLimiting>();
             this.ratingConfig.Setup(x => x.DeviceMessagesPerSecond).Returns(10);
 
             this.target = new SimulationRunner(
                 this.ratingConfig.Object,
                 this.rateLimiting.Object,
+                this.concurrencyConfig.Object,
                 this.logger.Object,
                 this.deviceModels.Object,
                 this.deviceModelsOverriding.Object,
@@ -270,16 +269,35 @@ namespace SimulationAgent.Test
 
             // Assert
             var EXPECT_RESULT = (FAILED_DEVICE_STATE_COUNT +
-                FAILED_DEVICE_CONNECTIONS_COUNT +
-                FAILED_MESSAGES_PER_DEVICE_COUNT) * ACTIVE_DEVICES_COUNT;
+                                 FAILED_DEVICE_CONNECTIONS_COUNT +
+                                 FAILED_MESSAGES_PER_DEVICE_COUNT) * ACTIVE_DEVICES_COUNT;
             Assert.Equal(EXPECT_RESULT, result);
         }
 
-        private SimulationModel GenerateSimulationModel(int ACTIVE_DEVICES_COUNT)
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItHandlesLoadDeviceModelException()
+        {
+            // Arrange
+            const int ACTIVE_DEVICES_COUNT = 7;
+
+            var simulation = this.GenerateSimulationModel(ACTIVE_DEVICES_COUNT);
+
+            this.deviceModels
+                .Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ThrowsAsync(new AggregateException());
+
+            // Act
+            var ex = Record.Exception(() => this.target.Start(simulation));
+
+            // Assert
+            Assert.Null(ex);
+        }
+
+        private SimulationModel GenerateSimulationModel(int activeDevicesCount)
         {
             var models = new List<DeviceModelRef>
             {
-                new DeviceModelRef { Id = "01", Count = ACTIVE_DEVICES_COUNT }
+                new DeviceModelRef { Id = "01", Count = activeDevicesCount }
             };
 
             return new SimulationModel
@@ -289,7 +307,6 @@ namespace SimulationAgent.Test
                 Modified = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 ETag = "ETag0",
                 Enabled = false,
-                Version = 1,
                 DeviceModels = models
             };
         }

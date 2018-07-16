@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
+using System.IO;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
+using Microsoft.AspNetCore.Server.Kestrel.Transport.Abstractions.Internal;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 {
@@ -12,21 +12,41 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         // Application entry point
         public static void Main(string[] args)
         {
-            IConfig config = new Config(new ConfigData(new Logger(Uptime.ProcessId)));
+            //var webServicePort = DependencyResolution.GetConfig().Port;
+            
+            var webServicePort = new Random().Next(9004, 60000);
 
-            /*
-            Kestrel is a cross-platform HTTP server based on libuv,
-            a cross-platform asynchronous I/O library.
-            https://docs.microsoft.com/en-us/aspnet/core/fundamentals/servers
-            */
-            var host = new WebHostBuilder()
-                .UseUrls("http://*:" + config.Port)
-                .UseKestrel(options => { options.AddServerHeader = false; })
-                .UseIISIntegration()
-                .UseStartup<Startup>()
-                .Build();
+            try
+            {
+                /*
+                Kestrel is a cross-platform HTTP server based on libuv,
+                a cross-platform asynchronous I/O library.
+                https://docs.microsoft.com/aspnet/core/fundamentals/servers
+                */
+                var host = new WebHostBuilder()
+                    .UseUrls("http://*:" + webServicePort)
+                    .UseKestrel(options => { options.AddServerHeader = false; })
+                    .UseIISIntegration()
+                    .UseStartup<Startup>()
+                    .Build();
 
-            host.Run();
+                host.Run();
+            }
+            catch (IOException e)
+                when (e.InnerException is AddressInUseException)
+            {
+                PrintTcpErrorMessage(webServicePort);
+                // Required to kill the process
+                throw;
+            }
+        }
+
+        private static void PrintTcpErrorMessage(int port)
+        {
+            Console.BackgroundColor = ConsoleColor.DarkRed;
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("Fatal error, the port " + port + " required by the web service is not available.");
+            Console.ResetColor();
         }
     }
 }

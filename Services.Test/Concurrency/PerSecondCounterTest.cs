@@ -14,8 +14,6 @@ namespace Services.Test.Concurrency
 {
     public class PerSecondCounterTest
     {
-        private const int TEST_TIMEOUT = 5000;
-
         private static ITestOutputHelper log;
         private readonly TargetLogger targetLogger;
 
@@ -102,7 +100,7 @@ namespace Services.Test.Concurrency
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             for (var i = 0; i < EVENTS; i++)
             {
-                target.IncreaseAsync(CancellationToken.None).Wait(TEST_TIMEOUT);
+                target.IncreaseAsync(CancellationToken.None).Wait(Constants.TEST_TIMEOUT);
                 Thread.Sleep(100);
             }
 
@@ -147,7 +145,7 @@ namespace Services.Test.Concurrency
             var last = now;
             for (var i = 0; i < EVENTS; i++)
             {
-                target.IncreaseAsync(CancellationToken.None).Wait(TEST_TIMEOUT);
+                target.IncreaseAsync(CancellationToken.None).Wait(Constants.TEST_TIMEOUT);
                 last = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             }
 
@@ -182,7 +180,7 @@ namespace Services.Test.Concurrency
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             for (var i = 0; i < EVENTS; i++)
             {
-                target.IncreaseAsync(CancellationToken.None).Wait(TEST_TIMEOUT);
+                target.IncreaseAsync(CancellationToken.None).Wait(Constants.TEST_TIMEOUT);
             }
 
             // Assert
@@ -258,6 +256,7 @@ namespace Services.Test.Concurrency
             {
                 // wait until the next second
             }
+
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             thread1.Start();
             thread2.Start();
@@ -325,6 +324,7 @@ namespace Services.Test.Concurrency
             {
                 // wait until the next second
             }
+
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             thread1.Start();
             thread2.Start();
@@ -368,8 +368,9 @@ namespace Services.Test.Concurrency
             var t1 = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             for (var i = 0; i < EVENTS1; i++)
             {
-                target.IncreaseAsync(CancellationToken.None).Wait(TEST_TIMEOUT);
+                target.IncreaseAsync(CancellationToken.None).Wait(Constants.TEST_TIMEOUT);
             }
+
             var t2 = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             Thread.Sleep(5001);
@@ -377,8 +378,9 @@ namespace Services.Test.Concurrency
             var t3 = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             for (var i = 0; i < EVENTS2; i++)
             {
-                target.IncreaseAsync(CancellationToken.None).Wait(TEST_TIMEOUT);
+                target.IncreaseAsync(CancellationToken.None).Wait(Constants.TEST_TIMEOUT);
             }
+
             var t4 = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             // Assert
@@ -410,7 +412,7 @@ namespace Services.Test.Concurrency
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             for (var i = 0; i < EVENTS; i++)
             {
-                target.IncreaseAsync(CancellationToken.None).Wait(TEST_TIMEOUT);
+                target.IncreaseAsync(CancellationToken.None).Wait(Constants.TEST_TIMEOUT);
             }
 
             // Assert - the test should take ~5 seconds

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -25,7 +26,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             IDeviceConnectionActor deviceConnectionActor,
             PropertiesLoopSettings loopSettings);
 
-        string Run();
+        Task<string> RunAsync();
         void HandleEvent(DevicePropertiesActor.ActorEvents e);
         void Stop();
     }
@@ -198,7 +199,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         }
 
         // Run the next step and return a description about what happened
-        public string Run()
+        public async Task<string> RunAsync()
         {
             this.log.Debug(this.status.ToString(), () => new { this.deviceId });
 
@@ -216,18 +217,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                 case ActorStatus.ReadyToTagDevice:
                     this.status = ActorStatus.TaggingDevice;
                     this.actorLogger.TaggingDevice();
-                    this.deviceSetDeviceTagLogic.Run();
+                    await this.deviceSetDeviceTagLogic.RunAsync();
                     return "device tag scheduled";
 
                 case ActorStatus.WaitingForChanges:
-                    if (!this.DeviceProperties.Changed) return "no properties to update";
+                    if (!(this.DeviceProperties?.Changed ?? false)) return "no properties to update";
                     this.SchedulePropertiesUpdate();
                     return "properties update scheduled";
 
                 case ActorStatus.ReadyToUpdate:
                     this.status = ActorStatus.Updating;
                     this.actorLogger.UpdatingDeviceProperties();
-                    this.updatePropertiesLogic.Run();
+                    await this.updatePropertiesLogic.RunAsync();
                     return "updated properties";
             }
 

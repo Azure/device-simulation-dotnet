@@ -6,7 +6,7 @@ if [[ -z "$PCS_IOTHUB_CONNSTRING" ]]; then
     exit 1
 fi
 
-if [[ -z "$PCS_STORAGEADAPTER_WEBSERVICE_URL" ]]; then
-    echo "Error: the PCS_STORAGEADAPTER_WEBSERVICE_URL environment variable is not defined."
+if [[ -z "PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING" ]]; then
+    echo "Error: the PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING environment variable is not defined."
     exit 1
 fi
