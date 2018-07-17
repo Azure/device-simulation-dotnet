@@ -1,0 +1,78 @@
+{
+    "SchemaVersion": "1.0.0",
+    "Id": "cab-01-proto",
+    "Version": "0.0.1",
+    "Name": "Cab 01 Proto",
+    "Description": "Cab prototype telemetry serialized with protocol buffers",
+    "Protocol": "AMQP",
+    "Simulation": {
+        "InitialState": {
+            "online": true,
+            "latitude": 47.445301,
+            "longitude": -122.296307,
+            "speed": 30,
+            "heading": 1,
+            "altitude": 1000,
+            "accuracy": 90,
+            "x": 1,
+            "y": 1,
+            "z": 1
+        },
+        "Interval": "00:00:30",
+        "Scripts": [
+          {
+              "Type": "javascript",
+              "Path": "cab-01-protobuf-state.js",
+              "Params": {
+                "TelemetryType": "GPSPacket;v1"
+              }
+          },
+          {
+              "Type": "javascript",
+              "Path": "cab-01-protobuf-state.js",
+              "Params": {
+                "TelemetryType": "Coordinates;v1"
+              }
+          }
+        ]
+    },
+    "Properties": {
+        "Type": "Cab01Proto",
+        "Location": "Field",
+        "Latitude": 47.445301,
+        "Longitude": -122.296307
+    },
+    "Telemetry": [
+        {
+            "Interval": "00:00:30",
+            "MessageTemplate": "{\"latitude\":${latitude},\"longitude\":${longitude},\"speed\": ${speed},\"heading\": ${heading},\"altitude\":${altitude},\"accuracy\":${accuracy}}",
+            "MessageSchema": {
+                "Name": "GPSPacket;v1",
+                "ClassName": "Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Protobuf.Models.GPSPacket",
+                "Format": "Protobuf",
+                "Fields": {
+                    "latitude": "double",
+                    "longitude": "double",
+                    "speed": "integer",
+                    "heading": "double",
+                    "altitude": "double",
+                    "accuracy": "integer"
+                }
+            }
+        },
+        {
+            "Interval": "00:00:30",
+            "MessageTemplate": "{\"x\":${x},\"y\":${y},\"z\": ${z}}",
+            "MessageSchema": {
+                "Name": "Coordinates;v1",
+                "ClassName": "Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Protobuf.Models.Coordinates",
+                "Format": "Protobuf",
+                "Fields": {
+                    "x": "double",
+                    "y": "double",
+                    "z": "double"
+                }
+            }
+        }
+    ]
+}

@@ -88,6 +88,7 @@ namespace Services.Test.Simulation
 
             var files = new List<string>
             {
+                "cab-01-protobuf-state.js",
                 "chiller-01-state.js",
                 "chiller-02-state.js",
                 "elevator-01-state.js",
