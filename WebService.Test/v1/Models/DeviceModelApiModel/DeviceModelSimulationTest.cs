@@ -1,18 +1,17 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
+using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel;
 using Moq;
-using System;
-using System.Collections.Generic;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using WebService.Test.helpers;
 using Xunit;
-using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
 
-namespace WebService.Test.v1.Models
+namespace WebService.Test.v1.Models.DeviceModelApiModel
 {
     public class DeviceModelSimulationTest
     {
@@ -46,7 +45,7 @@ namespace WebService.Test.v1.Models
             var result = DeviceModelSimulation.ToServiceModel(deviceModelSimulation);
 
             // Assert
-            Assert.IsType<StateSimulation>(result);
+            Assert.IsType<DeviceModel.StateSimulation>(result);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -124,9 +123,9 @@ namespace WebService.Test.v1.Models
             return deviceModelSimulation;
         }
 
-        private StateSimulation GetDeviceModelStateSimulation()
+        private DeviceModel.StateSimulation GetDeviceModelStateSimulation()
         {
-            var deviceModelSimulation = new StateSimulation
+            var deviceModelSimulation = new DeviceModel.StateSimulation
             {
                 Interval= TimeSpan.FromSeconds(10),
                 Scripts = new List<Script>

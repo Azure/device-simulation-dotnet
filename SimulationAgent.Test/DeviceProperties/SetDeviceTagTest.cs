@@ -13,21 +13,20 @@ using Xunit.Abstractions;
 
 namespace SimulationAgent.Test.DeviceProperties
 {
-    public class TagTest
+    public class SetDeviceTagTest
     {
         private const string DEVICE_ID = "01";
 
         private readonly Mock<ILogger> logger;
-        private Mock<IDevices> devices;
+        private readonly Mock<IDevices> devices;
         private readonly Mock<IDevicePropertiesActor> devicePropertiesActor;
         private readonly Mock<IDeviceStateActor> deviceStateActor;
         private readonly Mock<IDeviceConnectionActor> deviceConnectionActor;
         private readonly Mock<IRateLimitingConfig> rateLimitingConfig;
         private readonly Mock<PropertiesLoopSettings> loopSettings;
+        private readonly SetDeviceTag target;
 
-        private SetDeviceTag target;
-
-        public TagTest(ITestOutputHelper log)
+        public SetDeviceTagTest(ITestOutputHelper log)
         {
             this.logger = new Mock<ILogger>();
             this.devices = new Mock<IDevices>();
@@ -48,7 +47,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.target.Setup(this.devicePropertiesActor.Object, DEVICE_ID);
 
             // Act
-            this.target.Run();
+            this.target.RunAsync().Wait();
 
             // Assert
             this.devicePropertiesActor.Verify(x => x.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTagged));

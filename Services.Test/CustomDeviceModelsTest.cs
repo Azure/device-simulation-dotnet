@@ -10,7 +10,6 @@ using Moq;
 using Newtonsoft.Json;
 using Services.Test.helpers;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Services.Test
 {

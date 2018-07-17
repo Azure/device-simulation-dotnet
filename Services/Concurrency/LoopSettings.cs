@@ -4,20 +4,8 @@ using System;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
-    public class StateLoopSettings
-    {
-        public const int MIN_LOOP_DURATION = 999;
-    }
-
-    public class TelemetryLoopSettings
-    {
-        public const int MIN_LOOP_DURATION = 500;
-    }
-
     public class ConnectionLoopSettings
     {
-        public const int MIN_LOOP_DURATION = 600;
-
         private readonly IRateLimitingConfig ratingConfig;
 
         public double SchedulableFetches { get; set; }
@@ -40,8 +28,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
     public class PropertiesLoopSettings
     {
         private const int SHARED_TWIN_WRITES_ALLOCATION = 2;
-
-        public const int MIN_LOOP_DURATION = 500;
 
         private readonly IRateLimitingConfig ratingConfig;
 

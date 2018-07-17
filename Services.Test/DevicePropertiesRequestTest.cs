@@ -1,12 +1,10 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
-using System.Collections.Generic;
 using System.Reflection;
-using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Moq;
 using Services.Test.helpers;
@@ -24,20 +22,16 @@ namespace Services.Test
         private const string VALUE1 = "Value1";
         private const string VALUE2 = "Value2";
 
-        private Mock<IDeviceClient> client;
-        private SdkClient sdkClient;
+        private readonly IDevicePropertiesRequest target;
+        private Mock<IDeviceClientWrapper> sdkClient;
         private Mock<ILogger> logger;
-
-        private IDevicePropertiesRequest target;
 
         public DevicePropertiesRequestTest(ITestOutputHelper log)
         {
-            this.sdkClient = GetSdkClient();
-
-            this.client = new Mock<IDeviceClient>();
+            this.sdkClient = new Mock<IDeviceClientWrapper>();
             this.logger = new Mock<ILogger>();
 
-            this.target = new DeviceProperties(sdkClient, this.logger.Object);
+            this.target = new DeviceProperties(this.sdkClient.Object, this.logger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -46,7 +40,7 @@ namespace Services.Test
             // Arrange
             const string NEW_VALUE = "new value";
 
-            ISmartDictionary reportedProps = GetTestProperties();
+            ISmartDictionary reportedProps = this.GetTestProperties();
             this.target.RegisterChangeUpdateAsync(DEVICE_ID, reportedProps);
 
             TwinCollection desiredProps = new TwinCollection();
@@ -70,7 +64,7 @@ namespace Services.Test
             const string NEW_KEY = "new key";
             const string NEW_VALUE = "new value";
 
-            ISmartDictionary reportedProps = GetTestProperties();
+            ISmartDictionary reportedProps = this.GetTestProperties();
             this.target.RegisterChangeUpdateAsync(DEVICE_ID, reportedProps);
 
             TwinCollection desiredProps = new TwinCollection();
@@ -91,12 +85,12 @@ namespace Services.Test
         public void SmartDictionary_Should_Not_Update_When_DesiredPropertiesValueIsTheSame()
         {
             // Arrange
-            ISmartDictionary reportedProps = GetTestProperties();
+            ISmartDictionary reportedProps = this.GetTestProperties();
             reportedProps.ResetChanged();
             Assert.False(reportedProps.Changed);
 
             this.target.RegisterChangeUpdateAsync(DEVICE_ID, reportedProps);
-            
+
             TwinCollection desiredProps = new TwinCollection
             {
                 [KEY1] = VALUE1 // This should be the same value in props
@@ -109,16 +103,6 @@ namespace Services.Test
 
             // Assert
             Assert.False(reportedProps.Changed);
-        }
-
-        private SdkClient GetSdkClient()
-        {
-            var connectionString = $"HostName=somehost.azure-devices.net;DeviceId=" + DEVICE_ID + ";SharedAccessKeyName=iothubowner;SharedAccessKey=Test123+Test123456789+TestTestTestTestTest1=";
-
-            SdkClient sdkClient = SdkClient.CreateFromConnectionString(connectionString, TransportType.Mqtt_Tcp_Only);
-            sdkClient.SetRetryPolicy(new NoRetry());
-
-            return sdkClient;
         }
 
         private ISmartDictionary GetTestProperties()
