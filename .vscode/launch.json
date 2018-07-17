@@ -17,7 +17,14 @@
                 "PCS_STORAGEADAPTER_WEBSERVICE_URL": "http://localhost:9022/v1",
                 // Optional Settings. For additonal optional settings, refer to appsettings.ini directly.
                 "PCS_LOG_LEVEL": "Debug",
-                "PCS_AUTH_REQUIRED": "false"
+                "PCS_AUTH_REQUIRED": "false",
+                "PCS_AUTH_ISSUER": "",
+                "PCS_AUTH_AUDIENCE": "",
+                "PCS_CORS_WHITELIST": "",
+                "PCS_SUBSCRIPTION_DOMAIN": "",
+                "PCS_SUBSCRIPTION_ID": "",
+                "PCS_RESOURCE_GROUP": "",
+                "PCS_IOHUB_NAME": ""
             },
             "stopAtEntry": false,
             "justMyCode":false,

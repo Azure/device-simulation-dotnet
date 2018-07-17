@@ -12,7 +12,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         // optimistic concurrency on data stored on files
         public static string NewETag()
         {
-            var v1 = Guid.NewGuid().ToString().Replace("-", "");
+            var v1 = Guid.NewGuid().ToString("N");
             var v2 = DateTime.UtcNow.Ticks % 1000000;
             return v1.Substring(0, 8) + v2;
         }

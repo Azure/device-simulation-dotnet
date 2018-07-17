@@ -46,7 +46,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.devices = new Mock<IDevices>();
             this.loopSettings = new Mock<PropertiesLoopSettings>(this.rateLimitingConfig.Object);
             this.updatePropertiesLogic = new Mock<UpdateReportedProperties>(this.logger.Object);
-            this.deviceTagLogic = new Mock<SetDeviceTag>(devices.Object, this.logger.Object);
+            this.deviceTagLogic = new Mock<SetDeviceTag>(this.devices.Object, this.logger.Object);
 
             this.CreateNewDevicePropertiesActor();
         }
@@ -142,28 +142,6 @@ namespace SimulationAgent.Test.DeviceProperties
         private void SetupRateLimitingConfig()
         {
             this.rateLimitingConfig.SetupGet(x => x.TwinWritesPerSecond).Returns(TWIN_WRITES_PER_SECOND);
-        }
-
-        private DeviceConnectionActor GetDeviceConnectionActor()
-        {
-            Mock<IScriptInterpreter> scriptInterpreter = new Mock<IScriptInterpreter>();
-            Mock<Fetch> fetchLogic = new Mock<Fetch>(
-                this.devices.Object,
-                this.logger.Object);
-            Mock<Register> registerLogic = new Mock<Register>(
-                this.devices.Object,
-                this.logger.Object);
-            Mock<Connect> connectLogic = new Mock<Connect>(
-                this.devices.Object,
-                scriptInterpreter.Object,
-                this.logger.Object);
-            return new DeviceConnectionActor(
-                this.logger.Object,
-                this.actorsLogger.Object,
-                this.rateLimiting.Object,
-                fetchLogic.Object,
-                registerLogic.Object,
-                connectLogic.Object);
         }
     }
 }

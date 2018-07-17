@@ -35,7 +35,7 @@ namespace SimulationAgent.Test.DeviceState
         public void ReportInactiveStatusBeforeRun()
         {
             // Arrange
-            SetupDeviceStateActor();
+            this.SetupDeviceStateActor();
 
             // Act
             var result = this.target.IsDeviceActive;
@@ -48,7 +48,7 @@ namespace SimulationAgent.Test.DeviceState
         public void ReportActiveStatusAfterRun()
         {
             // Arrange
-            SetupDeviceStateActor();
+            this.SetupDeviceStateActor();
 
             // Act
             this.target.Run();

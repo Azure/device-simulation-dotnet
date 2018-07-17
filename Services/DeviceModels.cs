@@ -141,7 +141,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.CheckStockDeviceModelExistence(id))
             {
-                this.log.Info("Stock device models cannot be deleted",
+                this.log.Warn("Stock device models cannot be deleted",
                     () => new { Id = id });
                 throw new UnauthorizedAccessException(
                     "Stock device models cannot be deleted");

@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -10,12 +9,12 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers;
 using Moq;
 using WebService.Test.helpers;
 using Xunit;
 using Xunit.Abstractions;
 using SimulationModel = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
-using StatusController = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers.StatusController;
 
 namespace WebService.Test.v1.Controllers
 {
@@ -206,8 +205,7 @@ namespace WebService.Test.v1.Controllers
                 Created = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 Modified = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 ETag = "ETag0",
-                Enabled = true,
-                Version = 1
+                Enabled = true
             };
 
             var simulations = new List<SimulationModel>
@@ -223,7 +221,6 @@ namespace WebService.Test.v1.Controllers
         private void SetupPreprovisionedIoTHub()
         {
             const string IOTHUB_CONNECTION_STRING = "hostname=hub-1;sharedaccesskeyname=hubowner;sharedaccesskey=fakekey";
-            Tuple<bool, string> CONNECTIONSTRING = new Tuple<bool, string>(true, IOTHUB_CONNECTION_STRING);
 
             this.servicesConfig
                .Setup(x => x.IoTHubConnString)
