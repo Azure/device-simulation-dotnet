@@ -135,7 +135,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             // Note: forcing the ID because only one simulation can be created
             simulation.Id = Guid.NewGuid().ToString();
             simulation.Created = DateTimeOffset.UtcNow;
-            simulation.StartTime = simulation.Created;
+            simulation.StartTime = simulation.Enabled ? simulation.Created : DateTimeOffset.MinValue;
             simulation.Modified = simulation.Created;
 
             // Create default simulation
@@ -183,7 +183,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 this.log.Info("Modifying simulation via PUT.", () => { });
 
-                if (simulation.ETag == "*")
+                if (inputSimulation.ETag == "*")
                 {
                     inputSimulation.ETag = simulation.ETag;
                     this.log.Info("The client used ETag='*' choosing to overwrite the current simulation", () => { });
@@ -209,12 +209,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.log.Info("Creating new simulation via PUT.", () => { });
                 // new simulation
                 inputSimulation.Created = DateTimeOffset.UtcNow;
-                inputSimulation.StartTime = simulation.Created;
-                inputSimulation.Modified = simulation.Created;
+                inputSimulation.StartTime = inputSimulation.Enabled ? inputSimulation.Created : DateTimeOffset.MinValue;
+                inputSimulation.Modified = inputSimulation.Created;
             }
-
-            // Note: forcing the ID because only one simulation can be created
-            inputSimulation.Id = simulation.Id;
 
             // TODO if write to storage adapter fails, the iothub connection string 
             //      will still be stored to disk. Storing the encrypted string using
@@ -265,6 +262,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 simulation.EndTime = simulation.Modified;
                 simulation.TotalMessagesSent = patch.TotalMessagesSent;
+            }
+            else if (patch.Enabled == true)
+            {
+                simulation.StartTime = simulation.Modified;
+                simulation.EndTime = DateTimeOffset.MaxValue;
+                simulation.TotalMessagesSent = 0;
             }
 
             item = await this.storage.UpdateAsync(
