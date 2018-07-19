@@ -69,7 +69,7 @@ namespace WebService.Test.v1.Controllers
                 .Returns(ACTIVE_DEVICES_COUNT);
 
             // Act
-            var result = this.target.GetAsync().Result;
+            var result = this.target.GetAsync(SIMULATION_ID).Result;
 
             // Assert
             Assert.Equal(ACTIVE_DEVICES_COUNT.ToString(), result.Properties["ActiveDevicesCount"]);
@@ -86,7 +86,7 @@ namespace WebService.Test.v1.Controllers
                 .Returns(MESSAGE_THROUGHPUT);
 
             // Act
-            var result = this.target.GetAsync().Result;
+            var result = this.target.GetAsync(SIMULATION_ID).Result;
 
             // Assert
             Assert.Equal(MESSAGE_THROUGHPUT.ToString("F"), result.Properties["MessagesPerSecond"]);
@@ -103,7 +103,7 @@ namespace WebService.Test.v1.Controllers
                 .Returns(TOTAL_MESSAGES_COUNT);
 
             // Act
-            var result = this.target.GetAsync().Result;
+            var result = this.target.GetAsync(SIMULATION_ID).Result;
 
             // Assert
             Assert.Equal(TOTAL_MESSAGES_COUNT.ToString(), result.Properties["TotalMessagesCount"]);
@@ -120,7 +120,7 @@ namespace WebService.Test.v1.Controllers
                 .Returns(FAILED_MESSAGES_COUNT);
 
             // Act
-            var result = this.target.GetAsync().Result;
+            var result = this.target.GetAsync(SIMULATION_ID).Result;
 
             // Assert
             Assert.Equal(FAILED_MESSAGES_COUNT.ToString(), result.Properties["FailedMessagesCount"]);
@@ -137,7 +137,7 @@ namespace WebService.Test.v1.Controllers
                 .Returns(SIMULATION_ERRORS_COUNT);
 
             // Act
-            var result = this.target.GetAsync().Result;
+            var result = this.target.GetAsync(SIMULATION_ID).Result;
 
             // Assert
             Assert.Equal(SIMULATION_ERRORS_COUNT.ToString(), result.Properties["SimulationErrorsCount"]);
@@ -150,7 +150,7 @@ namespace WebService.Test.v1.Controllers
             this.SetupSimulationForRunner();
 
             // Act
-            var result = this.target.GetAsync().Result;
+            var result = this.target.GetAsync(SIMULATION_ID).Result;
 
             // Assert
             Assert.Equal("true", result.Properties["SimulationRunning"]);
@@ -164,7 +164,7 @@ namespace WebService.Test.v1.Controllers
             this.SetupPreprovisionedIoTHub();
 
             // Act
-            var result = this.target.GetAsync().Result;
+            var result = this.target.GetAsync(SIMULATION_ID).Result;
 
             // Assert
             Assert.Equal("true", result.Properties["PreprovisionedIoTHub"]);
@@ -178,7 +178,7 @@ namespace WebService.Test.v1.Controllers
             this.SetupPreprovisionedIoTHub();
 
             // Act
-            var result = this.target.GetAsync().Result;
+            var result = this.target.GetAsync(SIMULATION_ID).Result;
 
             // Assert
             Assert.Contains("https://portal.azure.com/", result.Properties["PreprovisionedIoTHubMetricsUrl"]);
@@ -192,7 +192,7 @@ namespace WebService.Test.v1.Controllers
             this.SetupPreprovisionedIoTHub();
 
             // Act
-            var result = this.target.GetAsync().Result;
+            var result = this.target.GetAsync(SIMULATION_ID).Result;
 
             // Assert
             Assert.Equal("true", result.Properties["PreprovisionedIoTHubInUse"]);
@@ -222,7 +222,6 @@ namespace WebService.Test.v1.Controllers
         private void SetupPreprovisionedIoTHub()
         {
             const string IOTHUB_CONNECTION_STRING = "hostname=hub-1;sharedaccesskeyname=hubowner;sharedaccesskey=fakekey";
-            Tuple<bool, string> CONNECTIONSTRING = new Tuple<bool, string>(true, IOTHUB_CONNECTION_STRING);
 
             this.servicesConfig
                .Setup(x => x.IoTHubConnString)

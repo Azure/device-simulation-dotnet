@@ -70,15 +70,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         }
 
         // TODO: reduce method complexity, refactor out some logic
-        [HttpGet]
-        public async Task<StatusApiModel> GetAsync()
+        [HttpGet("{id}")]
+        public async Task<StatusApiModel> GetAsync(string id)
         {
             var result = new StatusApiModel();
             var statusMsg = SERVICE_IS_HEALTHY;
             var errors = new List<string>();
 
             // Simulation status
-            var simulationIsRunning = await this.CheckIsSimulationRunningAsync(errors);
+            var simulationIsRunning = await this.CheckIsSimulationRunningAsync(id, errors);
             var isRunning = simulationIsRunning.HasValue && simulationIsRunning.Value;
             result.Properties.Add(SIMULATION_RUNNING_KEY,
                 simulationIsRunning.HasValue
@@ -166,12 +166,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         }
 
         // Check whether the simulation is running, and populate errors if any
-        private async Task<bool?> CheckIsSimulationRunningAsync(List<string> errors)
+        private async Task<bool?> CheckIsSimulationRunningAsync(string id, List<string> errors)
         {
             bool? simulationRunning = null;
             try
             {
-                var simulation = (await this.simulations.GetListAsync()).FirstOrDefault();
+                var simulation = (await this.simulations.GetAsync(id));
                 simulationRunning = (simulation != null && simulation.ShouldBeRunning());
             }
             catch (Exception e)
