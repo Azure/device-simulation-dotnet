@@ -99,10 +99,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<Models.Simulation> GetAsync(string id)
         {
-            var item = await this.storage.GetAsync(STORAGE_COLLECTION, id);
-            var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
-            simulation.ETag = item.ETag;
-            return simulation;
+            try
+            {
+                var item = await this.storage.GetAsync(STORAGE_COLLECTION, id);
+                var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
+                simulation.ETag = item.ETag;
+                return simulation;
+            }
+            catch (ResourceNotFoundException e)
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -217,7 +224,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             //      will still be stored to disk. Storing the encrypted string using
             //      storage adapter would address this
             //      https://github.com/Azure/device-simulation-dotnet/issues/129
-            inputSimulation.IotHubConnectionString = await this.connectionStringManager.RedactAndStoreAsync(simulation.IotHubConnectionString);
+            inputSimulation.IotHubConnectionString = await this.connectionStringManager.RedactAndStoreAsync(inputSimulation.IotHubConnectionString);
 
             var result = await this.storage.UpdateAsync(
                 STORAGE_COLLECTION,
