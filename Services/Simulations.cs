@@ -91,7 +91,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 result.Add(simulation);
             }
 
-            return result;
+            return result.OrderByDescending(s => s.Modified).ToList();
         }
 
         /// <summary>
