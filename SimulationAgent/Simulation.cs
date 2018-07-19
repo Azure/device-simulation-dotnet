@@ -47,7 +47,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 {
                     this.log.Debug("------ Checking for simulation changes ------", () => { });
 
-                    var newSimulation = (await this.simulations.GetListAsync()).FirstOrDefault();
+                    var simulationList = await this.simulations.GetListAsync();
+
+                    var newSimulation = simulationList.Where(s => s.Enabled).FirstOrDefault();
+
                     this.log.Debug("Simulation loaded", () => new { newSimulation });
 
                     // if the simulation is removed from storage & we're running stop simulation.

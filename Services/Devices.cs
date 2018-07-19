@@ -60,7 +60,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Generate a device Id
         /// </summary>
-        string GenerateId(string deviceModelId, int position);
+        string GenerateId(string simulationId, string deviceModelId, int position);
     }
 
     public class Devices : IDevices
@@ -293,9 +293,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Generate a device Id
         /// </summary>
-        public string GenerateId(string deviceModelId, int position)
+        public string GenerateId(string simulationId, string deviceModelId, int position)
         {
-            return deviceModelId + "." + position;
+            return simulationId + "." + deviceModelId + "." + position;
         }
 
         // This call can throw an exception, which is fine when the exception happens during a method

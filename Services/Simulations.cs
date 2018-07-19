@@ -307,6 +307,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public IEnumerable<string> GetDeviceIds(Models.Simulation simulation)
         {
             var deviceIds = new List<string>();
+            var simulationId = simulation.Id;
 
             // Calculate the device IDs used in the simulation
             var models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
@@ -314,7 +315,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 for (var i = 0; i < model.Count; i++)
                 {
-                    deviceIds.Add(this.devices.GenerateId(model.Id, i));
+                    deviceIds.Add(this.devices.GenerateId(simulationId, model.Id, i));
                 }
             }
 
