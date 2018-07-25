@@ -8,7 +8,7 @@ using Moq;
 using WebService.Test.helpers;
 using Xunit;
 
-namespace WebService.Test.v1.Models
+namespace WebService.Test.v1.Models.DeviceModelApiModel
 {
     public class DeviceModelSimulationScriptTest
     {

@@ -21,7 +21,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters
     /// When including the stack trace, split the text in multiple lines
     /// for an easier parsing.
     ///
-    /// @see https://docs.microsoft.com/en-us/aspnet/core/mvc/controllers/filters
+    /// @see https://docs.microsoft.com/aspnet/core/mvc/controllers/filters
     /// </summary>
     public class ExceptionsFilterAttribute : ExceptionFilterAttribute
     {

@@ -52,7 +52,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
         public void TheNumberOfFailedMessagesIsZeroAtStart()
         {
             // Arrange
-            SetupDeviceTelemetryActor();
+            this.SetupDeviceTelemetryActor();
 
             // Act
             long failedMessagesCount = this.target.FailedMessagesCount;
@@ -66,7 +66,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
         {
             // Arrange
             const int FAILED_MESSAGES_COUNT = 5;
-            SetupDeviceTelemetryActor();
+            this.SetupDeviceTelemetryActor();
             DeviceTelemetryActor.ActorEvents messageFailed = DeviceTelemetryActor.ActorEvents.TelemetrySendFailure;
 
             // Act
@@ -86,7 +86,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
         public void TheNumberOfTotalMessagesIsZeroAtStart()
         {
             // Arrange
-            SetupDeviceTelemetryActor();
+            this.SetupDeviceTelemetryActor();
 
             // Act
             long totalMessagesCount = this.target.TotalMessagesCount;
@@ -100,7 +100,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
         {
             // Arrange
             const int MESSAGES_SENDING_COUNT = 5;
-            SetupDeviceTelemetryActor();
+            this.SetupDeviceTelemetryActor();
             DeviceTelemetryActor.ActorEvents sendingMessage = DeviceTelemetryActor.ActorEvents.SendingTelemetry;
 
             // Act

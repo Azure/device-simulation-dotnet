@@ -3,14 +3,14 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel;
 using Moq;
 using WebService.Test.helpers;
 using Xunit;
-using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
 
-namespace WebService.Test.v1.Models
+namespace WebService.Test.v1.Models.DeviceModelApiModel
 {
     public class DeviceModelTelemetryTest
     {
@@ -44,7 +44,7 @@ namespace WebService.Test.v1.Models
             var result = DeviceModelTelemetry.ToServiceModel(telemetry);
 
             // Assert
-            Assert.IsType<DeviceModelMessage>(result);
+            Assert.IsType<DeviceModel.DeviceModelMessage>(result);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -168,19 +168,19 @@ namespace WebService.Test.v1.Models
             return telemetry;
         }
 
-        private DeviceModelMessage GetDeviceModelMessage()
+        private DeviceModel.DeviceModelMessage GetDeviceModelMessage()
         {
-            var telemetry = new DeviceModelMessage()
+            var telemetry = new DeviceModel.DeviceModelMessage()
             {
                 Interval = TimeSpan.Parse("00:10:00"),
                 MessageTemplate = "{\"cargotemperature\":${cargotemperature},\"cargotemperature_unit\":\"${cargotemperature_unit}\"}",
-                MessageSchema = new DeviceModelMessageSchema()
+                MessageSchema = new DeviceModel.DeviceModelMessageSchema()
                 {
                     Name = "truck",
-                    Format = DeviceModelMessageSchemaFormat.JSON,
-                    Fields = new Dictionary<string, DeviceModelMessageSchemaType>()
+                    Format = DeviceModel.DeviceModelMessageSchemaFormat.JSON,
+                    Fields = new Dictionary<string, DeviceModel.DeviceModelMessageSchemaType>()
                     {
-                        { "cargotemperature", DeviceModelMessageSchemaType.Double }
+                        { "cargotemperature", DeviceModel.DeviceModelMessageSchemaType.Double }
                     }
                 }
             };

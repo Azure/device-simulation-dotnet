@@ -11,7 +11,7 @@ using Newtonsoft.Json.Linq;
 using WebService.Test.helpers;
 using Xunit;
 
-namespace WebService.Test.v1.Models
+namespace WebService.Test.v1.Models.DeviceModelApiModel
 {
     public class DeviceModelApiModelTest
     {
@@ -29,10 +29,10 @@ namespace WebService.Test.v1.Models
             var deviceModel = this.GetDeviceModel();
 
             // Act
-            var result = DeviceModelApiModel.FromServiceModel(deviceModel);
+            var result = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel.FromServiceModel(deviceModel);
 
             // Assert
-            Assert.IsType<DeviceModelApiModel>(result);
+            Assert.IsType<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel>(result);
             Assert.Equal(deviceModel.Id, result.Id);
         }
 
@@ -67,13 +67,13 @@ namespace WebService.Test.v1.Models
         public void ItThrowsBadRequestExceptionForInvalidProtocol()
         {
             // Arrange
-            DeviceModelApiModel EmptyProtocol(DeviceModelApiModel model)
+            Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel EmptyProtocol(Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel model)
             {
                 model.Protocol = "";
                 return model;
             }
 
-            DeviceModelApiModel InvalidProtocol(DeviceModelApiModel model)
+            Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel InvalidProtocol(Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel model)
             {
                 model.Protocol = "AMTT";
                 return model;
@@ -95,7 +95,7 @@ namespace WebService.Test.v1.Models
         public void ItThrowsBadRequestExceptionForInvalidTelemetry()
         {
             // Arrange
-            DeviceModelApiModel InvalidTelemetry(DeviceModelApiModel model)
+            Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel InvalidTelemetry(Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel model)
             {
                 model.Telemetry = new List<DeviceModelTelemetry>();
                 return model;
@@ -114,7 +114,7 @@ namespace WebService.Test.v1.Models
         public void ItThrowsBadRequestExceptionForInvalidSimulation()
         {
             // Arrange
-            DeviceModelApiModel InvaildSimulation(DeviceModelApiModel model)
+            Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel InvaildSimulation(Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel model)
             {
                 model.Simulation = new DeviceModelSimulation();
                 return model;
@@ -133,7 +133,7 @@ namespace WebService.Test.v1.Models
         public void ItReturnsErrorMessagesForInvalidDeviceModel()
         {
             // Arrange
-            DeviceModelApiModel InvalidTelemetry(DeviceModelApiModel model)
+            Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel InvalidTelemetry(Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel model)
             {
                 model.Telemetry = new List<DeviceModelTelemetry>();
                 model.Type = "Invalid type";
@@ -154,9 +154,9 @@ namespace WebService.Test.v1.Models
             }
         }
 
-        private DeviceModelApiModel GetValidDeviceModelApiModel()
+        private Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel GetValidDeviceModelApiModel()
         {
-            var deviceModelApiModel = new DeviceModelApiModel
+            var deviceModelApiModel = new Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel
             {
                 Id = "id",
                 Type = "Custom",
@@ -197,7 +197,7 @@ namespace WebService.Test.v1.Models
             return deviceModelApiModel;
         }
 
-        private DeviceModelApiModel GetInvalidDeviceModelApiModel(Func<DeviceModelApiModel, DeviceModelApiModel> func)
+        private Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel GetInvalidDeviceModelApiModel(Func<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel, Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel> func)
         {
             var model = this.GetValidDeviceModelApiModel();
             return func(model);

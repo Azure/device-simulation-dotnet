@@ -213,7 +213,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (ResourceNotFoundException)
             {
-                this.log.Info("Creating a new device model via PUT.", () => new { deviceModel });
+                this.log.Info("Creating a new device model via PUT", () => new { deviceModel });
 
                 var result = await this.InsertAsync(deviceModel, false);
                 deviceModel.ETag = result.ETag;

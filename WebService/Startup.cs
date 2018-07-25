@@ -18,7 +18,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 {
     public class Startup
     {
-        private ISimulation simulationAgent;
+        private ISimulationAgent simulationAgent;
 
         // Initialized in `Startup`
         public IConfigurationRoot Configuration { get; }
@@ -71,7 +71,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             app.UseMiddleware<AuthMiddleware>();
 
             // Enable CORS - Must be before UseMvc
-            // see: https://docs.microsoft.com/en-us/aspnet/core/security/cors
+            // see: https://docs.microsoft.com/aspnet/core/security/cors
             corsSetup.UseMiddleware(app);
 
             app.UseMvc();
@@ -93,7 +93,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
                 CheckAdditionalContent = false
             };
 
-            this.simulationAgent = this.ApplicationContainer.Resolve<ISimulation>();
+            this.simulationAgent = this.ApplicationContainer.Resolve<ISimulationAgent>();
             this.simulationAgent.RunAsync();
         }
 
@@ -106,19 +106,29 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         {
             var log = container.Resolve<ILogger>();
             var config = container.Resolve<IConfig>();
-            log.Warn("Service started", () => new { Uptime.ProcessId, LogLevel = config.LoggingConfig.LogLevel.ToString() });
+            log.Write("Service started", () => new { Uptime.ProcessId, LogLevel = config.LoggingConfig.LogLevel.ToString() });
+            
+            log.Write("Logging level:             " + config.LoggingConfig.LogLevel, () => { });
+            log.Write("Web service auth required: " + config.ClientAuthConfig.AuthRequired, () => { });
 
-            log.Info("Web service auth required: " + config.ClientAuthConfig.AuthRequired, () => { });
+            log.Write("Device Models folder:      " + config.ServicesConfig.DeviceModelsFolder, () => { });
+            log.Write("Scripts folder:            " + config.ServicesConfig.DeviceModelsScriptsFolder, () => { });
 
-            log.Info("Device Models folder: " + config.ServicesConfig.DeviceModelsFolder, () => { });
-            log.Info("Scripts folder:      " + config.ServicesConfig.DeviceModelsScriptsFolder, () => { });
+            log.Write("Connections per second:    " + config.RateLimitingConfig.ConnectionsPerSecond, () => { });
+            log.Write("Registry ops per minute:   " + config.RateLimitingConfig.RegistryOperationsPerMinute, () => { });
+            log.Write("Twin reads per second:     " + config.RateLimitingConfig.TwinReadsPerSecond, () => { });
+            log.Write("Twin writes per second:    " + config.RateLimitingConfig.TwinWritesPerSecond, () => { });
+            log.Write("Messages per second:       " + config.RateLimitingConfig.DeviceMessagesPerSecond, () => { });
+            log.Write("Messages per day:          " + config.RateLimitingConfig.DeviceMessagesPerDay, () => { });
 
-            log.Info("Connections per sec:  " + config.RateLimitingConfig.ConnectionsPerSecond, () => { });
-            log.Info("Registry ops per sec: " + config.RateLimitingConfig.RegistryOperationsPerMinute, () => { });
-            log.Info("Twin reads per sec:   " + config.RateLimitingConfig.TwinReadsPerSecond, () => { });
-            log.Info("Twin writes per sec:  " + config.RateLimitingConfig.TwinWritesPerSecond, () => { });
-            log.Info("Messages per second:  " + config.RateLimitingConfig.DeviceMessagesPerSecond, () => { });
-            log.Info("Messages per day:     " + config.RateLimitingConfig.DeviceMessagesPerDay, () => { });
+            log.Write("Number of telemetry threads:      " + config.ConcurrencyConfig.TelemetryThreads, () => { });
+            log.Write("Max pending connections:          " + config.ConcurrencyConfig.MaxPendingConnections, () => { });
+            log.Write("Max pending telemetry messages:   " + config.ConcurrencyConfig.MaxPendingTelemetry, () => { });
+            log.Write("Max pending twin writes:          " + config.ConcurrencyConfig.MaxPendingTwinWrites, () => { });
+            log.Write("Min duration of state loop:       " + config.ConcurrencyConfig.MinDeviceStateLoopDuration, () => { });
+            log.Write("Min duration of connection loop:  " + config.ConcurrencyConfig.MinDeviceConnectionLoopDuration, () => { });
+            log.Write("Min duration of telemetry loop:   " + config.ConcurrencyConfig.MinDeviceTelemetryLoopDuration, () => { });
+            log.Write("Min duration of twin write loop:  " + config.ConcurrencyConfig.MinDevicePropertiesLoopDuration, () => { });
         }
     }
 }

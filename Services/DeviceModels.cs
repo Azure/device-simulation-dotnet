@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
@@ -36,6 +37,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// Delete a custom device model.
         /// </summary>
         Task DeleteAsync(string id);
+
+        /// <summary>
+        /// Get property names from all device models.
+        /// </summary>
+        Task<List<string>> GetPropertyNamesAsync();
     }
 
     /// <summary>
@@ -51,6 +57,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly ILogger log;
         private readonly ICustomDeviceModels customDeviceModels;
         private readonly IStockDeviceModels stockDeviceModels;
+        private const string REPORTED_PREFIX = "Properties.Reported.";
 
         public DeviceModels(
             ICustomDeviceModels customDeviceModels,
@@ -134,13 +141,40 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.CheckStockDeviceModelExistence(id))
             {
-                this.log.Info("Stock device models cannot be deleted",
+                this.log.Warn("Stock device models cannot be deleted",
                     () => new { Id = id });
                 throw new UnauthorizedAccessException(
                     "Stock device models cannot be deleted");
             }
 
             await this.customDeviceModels.DeleteAsync(id);
+        }
+
+        /// <summary>
+        /// Get property names from all device models.
+        /// </summary>
+        public async Task<List<string>> GetPropertyNamesAsync()
+        {
+            var list = await this.GetListAsync();
+            var properties = new HashSet<string>();
+
+            foreach (var model in list)
+            {
+                if (model.Properties != null)
+                {
+                    foreach (var property in model.Properties)
+                    {
+                        this.PreparePropertyNames(properties, property.Value, property.Key);
+                    }
+                }
+            }
+            List<string> result = new List<string>();
+
+            foreach (string property in properties)
+            {
+                result.Add(REPORTED_PREFIX + property);
+            }
+            return result;
         }
 
         /// <summary>
@@ -152,6 +186,37 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             return this.stockDeviceModels.GetList()
                 .Any(model => id.Equals(model.Id, StringComparison.InvariantCultureIgnoreCase));
+        }
+
+        /// <summary>
+        /// Transforms property names from Json Object to "xxx.yyy.zzz" format
+        /// </summary>
+        private void PreparePropertyNames(HashSet<string> set, object obj, string prefix)
+        {
+            /* Sample conversion:
+             * from -> Foo : {
+             *                  Bar : Properties
+             *               }
+             *          
+             * to -> Foo.Bar.Properties
+             */
+            if (obj is JValue)
+            {
+                set.Add(prefix);
+                return;
+            }
+
+            if (obj is bool || obj is string || double.TryParse(obj.ToString(), out _))
+            {
+                set.Add(prefix);
+                return;
+            }
+
+            foreach (var item in (obj as JToken).Values())
+            {
+                var path = item.Path;
+                this.PreparePropertyNames(set, item, $"{prefix}.{(path.Contains(".") ? path.Substring(path.LastIndexOf('.') + 1) : path)}");
+            }
         }
     }
 }

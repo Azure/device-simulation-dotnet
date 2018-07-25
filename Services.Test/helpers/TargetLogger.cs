@@ -33,6 +33,11 @@ namespace Services.Test.helpers
             throw new NotImplementedException();
         }
 
+        public void Write(string message, Action context)
+        {
+            this.testLogger.WriteLine(Time() + "Target Write: " + message);
+        }
+
         public void Debug(string message, Action context)
         {
             this.testLogger.WriteLine(Time() + "Target Debug: " + message);
@@ -51,6 +56,12 @@ namespace Services.Test.helpers
         public void Error(string message, Action context)
         {
             this.testLogger.WriteLine(Time() + "Target Error: " + message);
+        }
+
+        public void Write(string message, Func<object> context)
+        {
+            this.testLogger.WriteLine(Time() + "Target Write: " + message + "; "
+                                      + Serialization.Serialize(context.Invoke()));
         }
 
         public void Debug(string message, Func<object> context)
