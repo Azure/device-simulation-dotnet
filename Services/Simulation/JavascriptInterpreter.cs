@@ -13,14 +13,13 @@ using Jint.Runtime.Descriptors;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 {
     public interface IJavascriptInterpreter
     {
         void Invoke(
-            string filename,
+            Script script,
             Dictionary<string, object> context,
             ISmartDictionary state,
             ISmartDictionary properties);
@@ -32,6 +31,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         private readonly string folder;
         private ISmartDictionary deviceState;
         private ISmartDictionary deviceProperties;
+        private readonly ISimulationScripts simulationScripts;
 
         // The following are static to improve overall performance
         // TODO make the class a singleton - https://github.com/Azure/device-simulation-dotnet/issues/45
@@ -40,9 +40,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         private static readonly Dictionary<string, Program> programs = new Dictionary<string, Program>();
 
         public JavascriptInterpreter(
+            ISimulationScripts simulationScripts,
             IServicesConfig config,
             ILogger logger)
         {
+            this.simulationScripts = simulationScripts;
             this.folder = config.DeviceModelsScriptsFolder;
             this.log = logger;
         }
@@ -53,7 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         /// Modifies the internal device state with the latest values.
         /// </summary>
         public void Invoke(
-            string filename,
+            Script script,
             Dictionary<string, object> context,
             ISmartDictionary state,
             ISmartDictionary properties)
@@ -79,17 +81,40 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             try
             {
                 Program program;
-                if (programs.ContainsKey(filename))
+                string filename;
+                if (script.Path == SimulationScript.SimulationScriptPath.Storage.ToString())
                 {
-                    program = programs[filename];
+                    filename = script.Id;
+                    if (programs.ContainsKey(filename))
+                    {
+                        program = programs[filename];
+                    }
+                    else
+                    {
+                        var task = this.LoadScriptAsync(script.Id);
+                        task.Wait(TimeSpan.FromSeconds(30));
+                        var sourceCode = task.Result;
+
+                        this.log.Debug("Compiling script source code", () => new { filename });
+                        program = parser.Parse(sourceCode);
+                        programs.Add(filename, program);
+                    }
                 }
                 else
                 {
-                    var sourceCode = this.LoadScript(filename);
+                    filename = script.Path;
+                    if (programs.ContainsKey(filename))
+                    {
+                        program = programs[filename];
+                    }
+                    else
+                    {
+                        var sourceCode = this.LoadScript(filename);
 
-                    this.log.Debug("Compiling script source code", () => new { filename });
-                    program = parser.Parse(sourceCode);
-                    programs.Add(filename, program);
+                        this.log.Debug("Compiling script source code", () => new { filename });
+                        program = parser.Parse(sourceCode);
+                        programs.Add(filename, program);
+                    }
                 }
 
                 this.log.Debug("Executing JS function", () => new { filename });
@@ -171,6 +196,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             }
 
             return File.ReadAllText(filePath);
+        }
+
+        private async Task<string> LoadScriptAsync(string id)
+        {
+            var script = await this.simulationScripts.GetAsync(id);
+            return script.Content;
         }
 
         private void JsLog(object data)

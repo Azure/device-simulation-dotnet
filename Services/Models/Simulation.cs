@@ -112,6 +112,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             // Optional, used to change the script used
             public string Path { get; set; }
 
+            // Optional, used to change the script used
+            public string Id { get; set; }
+
             // Optional, used to provide input parameters to the script
             public object Params { get; set; }
 
@@ -119,6 +122,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             {
                 this.Type = null;
                 this.Path = null;
+                this.Id = null;
                 this.Params = null;
             }
         }

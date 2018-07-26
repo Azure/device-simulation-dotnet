@@ -20,11 +20,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
         [JsonProperty(PropertyName = "Params", NullValueHandling = NullValueHandling.Ignore)]
         public object Params { get; set; }
 
+        [JsonProperty(PropertyName = "Id", NullValueHandling = NullValueHandling.Ignore)]
+        public string Id { get; set; }
+
         public DeviceModelSimulationScript()
         {
             this.Type = string.Empty;
             this.Path = string.Empty;
             this.Params = null;
+            this.Id = null;
         }
 
         // Map API model to service model
@@ -36,7 +40,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
             {
                 Type = !string.IsNullOrEmpty(this.Type) ? this.Type : null,
                 Path = !string.IsNullOrEmpty(this.Path) ? this.Path : null,
-                Params = this.Params
+                Params = this.Params,
+                Id = this.Id 
             };
         }
 
@@ -49,7 +54,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
             {
                 Type = string.IsNullOrEmpty(value.Type) ? null : value.Type,
                 Path = string.IsNullOrEmpty(value.Path) ? null : value.Path,
-                Params = value.Params
+                Params = value.Params,
+                Id = value.Id
             };
         }
 
