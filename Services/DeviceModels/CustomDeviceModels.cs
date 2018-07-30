@@ -1,14 +1,11 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Newtonsoft.Json;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DeviceModels
 {
     public interface ICustomDeviceModels
     {
@@ -40,7 +37,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
     public class CustomDeviceModels : ICustomDeviceModels
     {
-        private const string STORAGE_COLLECTION = "deviceModels";
+        //private const string STORAGE_COLLECTION = "deviceModels";
 
         //private readonly IStorageAdapterClient storage;
         private readonly ILogger log;
@@ -69,8 +66,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             // }
             // catch (Exception e)
             // {
-            //     this.log.Error("Unable to load device models from storage",
-            //         () => new { e.Message, Exception = e });
+            //     this.log.Error("Unable to load device models from storage", e);
             //     throw new ExternalDependencyException("Unable to load device models from storage", e);
             // }
             //
@@ -89,8 +85,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             // }
             // catch (Exception e)
             // {
-            //     this.log.Error("Unable to parse device models loaded from storage",
-            //         () => new { e.Message, Exception = e });
+            //     this.log.Error("Unable to parse device models loaded from storage", e);
             //     throw new ExternalDependencyException("Unable to parse device models loaded from storage", e);
             // }
         }
@@ -104,7 +99,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             
             // if (string.IsNullOrEmpty(id))
             // {
-            //     this.log.Error("Device model id cannot be empty!", () => { });
+            //     this.log.Error("Device model id cannot be empty!");
             //     throw new InvalidInputException("Device model id cannot be empty! ");
             // }
             //

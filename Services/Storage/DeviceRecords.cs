@@ -86,7 +86,7 @@
 //             }
 //             catch (Exception e)
 //             {
-//                 this.log.Error("Unexpected error while retrieving the list of resources", () => new { e });
+//                 this.log.Error("Unexpected error while retrieving the list of resources", e);
 //                 throw;
 //             }
 //         }

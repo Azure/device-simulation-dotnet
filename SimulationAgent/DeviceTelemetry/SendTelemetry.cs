@@ -2,6 +2,7 @@
 
 using System;
 using System.Threading.Tasks;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -14,35 +15,41 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
     public class SendTelemetry : IDeviceTelemetryLogic
     {
         private readonly ILogger log;
+        private readonly IInstance instance;
 
         private string deviceId;
-
-        private IDeviceTelemetryActor context;
+        private IDeviceTelemetryActor deviceContext;
         private DeviceModel.DeviceModelMessage message;
 
-        public SendTelemetry(
-            ILogger logger)
+        public SendTelemetry(ILogger logger, IInstance instance)
         {
             this.log = logger;
+            this.instance = instance;
         }
 
-        public void Setup(IDeviceTelemetryActor context, string deviceId, DeviceModel deviceModel)
+        public void Init(IDeviceTelemetryActor deviceContext, string deviceId, DeviceModel deviceModel)
         {
-            this.context = context;
+            this.instance.InitOnce();
+
+            this.deviceContext = deviceContext;
             this.deviceId = deviceId;
-            this.message = context.Message;
+            this.message = deviceContext.Message;
+
+            this.instance.InitComplete();
         }
 
         public async Task RunAsync()
         {
-            var state = this.context.DeviceState.GetAll();
+            this.instance.InitRequired();
+
+            var state = this.deviceContext.DeviceState.GetAll();
 
             // device could be rebooting, updating firmware, etc.
             this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
             if ((bool) state["online"] == false)
             {
                 this.log.Debug("No telemetry will be sent as the device is offline...", () => new { this.deviceId });
-                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
+                this.deviceContext.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
                 return;
             }
 
@@ -70,26 +77,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             try
             {
                 // Used to count messages sent, could be moved to Run()
-                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.SendingTelemetry);
+                this.deviceContext.HandleEvent(DeviceTelemetryActor.ActorEvents.SendingTelemetry);
 
-                await this.context.Client.SendMessageAsync(msg, this.message.MessageSchema);
+                await this.deviceContext.Client.SendMessageAsync(msg, this.message.MessageSchema);
 
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Debug("Telemetry delivered",
                     () => new { timeSpentMsecs, this.deviceId, MessageSchema = this.message.MessageSchema.Name });
-                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
+                this.deviceContext.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
             }
             catch (BrokenDeviceClientException e)
             {
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Error("Client broke while sending telemetry", () => new { timeSpentMsecs, this.deviceId, e });
-                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryClientBroken);
+                this.deviceContext.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryClientBroken);
             }
             catch (Exception e)
             {
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Error("Unexpected error while sending telemetry", () => new { timeSpentMsecs, this.deviceId, e });
-                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendFailure);
+                this.deviceContext.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendFailure);
             }
         }
     }

@@ -42,10 +42,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private readonly ISimulations simulations;
         private readonly ILogger log;
         private readonly IServicesConfig servicesConfig;
+
         private readonly IDeploymentConfig deploymentConfig;
-        private readonly IIotHubConnectionStringManager connectionStringManager;
-        private readonly ISimulationRunner simulationRunner;
-        private readonly IRateLimiting rateReporter;
+        //private readonly IIotHubConnectionStringManager connectionStringManager;
+        //private readonly ISimulationRunner simulationRunner;
+        //private readonly IRateLimiting rateReporter;
 
         public StatusController(
             IPreprovisionedIotHub preprovisionedIotHub,
@@ -53,10 +54,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             ISimulations simulations,
             ILogger logger,
             IServicesConfig servicesConfig,
-            IDeploymentConfig deploymentConfig,
-            IIotHubConnectionStringManager connectionStringManager,
-            ISimulationRunner simulationRunner,
-            IRateLimiting rateLimiting)
+            IDeploymentConfig deploymentConfig
+            //IIotHubConnectionStringManager connectionStringManager,
+            //ISimulationRunner simulationRunner,
+            //IRateLimiting rateLimiting
+        )
         {
             this.preprovisionedIotHub = preprovisionedIotHub;
             //this.storage = storage;
@@ -64,9 +66,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             this.log = logger;
             this.servicesConfig = servicesConfig;
             this.deploymentConfig = deploymentConfig;
-            this.connectionStringManager = connectionStringManager;
-            this.simulationRunner = simulationRunner;
-            this.rateReporter = rateLimiting;
+            //this.connectionStringManager = connectionStringManager;
+            //this.simulationRunner = simulationRunner;
+            //this.rateReporter = rateLimiting;
         }
 
         // TODO: reduce method complexity, refactor out some logic
@@ -102,16 +104,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 var preprovisioneHubStatus = await this.CheckAzureIoTHubStatusAsync(errors);
                 statusIsOk = statusIsOk && preprovisioneHubStatus.Item1;
 
-                result.Dependencies.Add(PREPROVISIONED_IOTHUB_KEY, preprovisioneHubStatus?.Item2);
-                if (isRunning)
-                {
-                    result.Properties.Add(PREPROVISIONED_IOTHUB_INUSE_KEY, await this.IsPreprovisionedIoTHubInUseAsync(isRunning));
-                    var url = await this.GetIoTHubMetricsUrlAsync(isRunning);
-                    if (!string.IsNullOrEmpty(url))
-                    {
-                        result.Properties.Add(PREPROVISIONED_IOTHUB_METRICS_KEY, await this.GetIoTHubMetricsUrlAsync(isRunning));
-                    }
-                }
+                // result.Dependencies.Add(PREPROVISIONED_IOTHUB_KEY, preprovisioneHubStatus?.Item2);
+                // if (isRunning)
+                // {
+                //     result.Properties.Add(PREPROVISIONED_IOTHUB_INUSE_KEY, await this.IsPreprovisionedIoTHubInUseAsync(isRunning));
+                //     var url = await this.GetIoTHubMetricsUrlAsync(isRunning);
+                //     if (!string.IsNullOrEmpty(url))
+                //     {
+                //         result.Properties.Add(PREPROVISIONED_IOTHUB_METRICS_KEY, await this.GetIoTHubMetricsUrlAsync(isRunning));
+                //     }
+                // }
             }
 
             /*
@@ -120,33 +122,33 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
              * need to be aggregated (vs than kept in memory).
              */
 
-            // Active devices count
-            string activeDevicesCount = this.GetActiveDevicesCount(isRunning).ToString();
-            result.Properties.Add(ACTIVE_DEVICES_COUNT_KEY, activeDevicesCount);
-
-            // Total telemetry messages count
-            string totalMessagesCount = this.GetTotalMessagesCount(isRunning).ToString();
-            result.Properties.Add(TOTAL_MESSAGES_COUNT_KEY, totalMessagesCount);
-
-            // Failed telemetry messages count
-            string failedMessagesCount = this.GetFailedMessagesCount(isRunning).ToString();
-            result.Properties.Add(FAILED_MESSAGES_COUNT_KEY, failedMessagesCount);
-
-            // Telemetry messages thoughput
-            string messagesPerSecond = this.GetMessagesPerSecond(isRunning).ToString("F");
-            result.Properties.Add(MESSAGES_PER_SECOND_KEY, messagesPerSecond);
-
-            // Failed device connections count
-            string failedDeviceConnectionsCount = this.GetFailedDeviceConnectionsCount(isRunning).ToString();
-            result.Properties.Add(FAILED_DEVICE_CONNECTIONS_COUNT_KEY, failedDeviceConnectionsCount);
-
-            // Failed device connections count
-            string failedDeviceTwinUpdatesCount = this.GetFailedDeviceTwinUpdatesCount(isRunning).ToString();
-            result.Properties.Add(FAILED_DEVICE_TWIN_UPDATES_COUNT_KEY, failedDeviceTwinUpdatesCount);
-
-            // Simulation errors count
-            string simulationErrorsCount = this.GetSimulationErrorsCount(isRunning).ToString();
-            result.Properties.Add(SIMULATION_ERRORS_COUNT_KEY, simulationErrorsCount);
+            // // Active devices count
+            // string activeDevicesCount = this.GetActiveDevicesCount(isRunning).ToString();
+            // result.Properties.Add(ACTIVE_DEVICES_COUNT_KEY, activeDevicesCount);
+            //
+            // // Total telemetry messages count
+            // string totalMessagesCount = this.GetTotalMessagesCount(isRunning).ToString();
+            // result.Properties.Add(TOTAL_MESSAGES_COUNT_KEY, totalMessagesCount);
+            //
+            // // Failed telemetry messages count
+            // string failedMessagesCount = this.GetFailedMessagesCount(isRunning).ToString();
+            // result.Properties.Add(FAILED_MESSAGES_COUNT_KEY, failedMessagesCount);
+            //
+            // // Telemetry messages thoughput
+            // string messagesPerSecond = this.GetMessagesPerSecond(isRunning).ToString("F");
+            // result.Properties.Add(MESSAGES_PER_SECOND_KEY, messagesPerSecond);
+            //
+            // // Failed device connections count
+            // string failedDeviceConnectionsCount = this.GetFailedDeviceConnectionsCount(isRunning).ToString();
+            // result.Properties.Add(FAILED_DEVICE_CONNECTIONS_COUNT_KEY, failedDeviceConnectionsCount);
+            //
+            // // Failed device connections count
+            // string failedDeviceTwinUpdatesCount = this.GetFailedDeviceTwinUpdatesCount(isRunning).ToString();
+            // result.Properties.Add(FAILED_DEVICE_TWIN_UPDATES_COUNT_KEY, failedDeviceTwinUpdatesCount);
+            //
+            // // Simulation errors count
+            // string simulationErrorsCount = this.GetSimulationErrorsCount(isRunning).ToString();
+            // result.Properties.Add(SIMULATION_ERRORS_COUNT_KEY, simulationErrorsCount);
 
             // Prepare status message and response
             if (!statusIsOk)
@@ -178,7 +180,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             catch (Exception e)
             {
                 errors.Add("Unable to fetch simulation status");
-                this.log.Error("Unable to fetch simulation status", () => new { e });
+                this.log.Error("Unable to fetch simulation status", e);
             }
 
             return simulationRunning;
@@ -199,7 +201,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         //     catch (Exception e)
         //     {
         //         result = new Tuple<bool, string>(false, "Storage check failed");
-        //         this.log.Error("Storage ping failed", () => new { e });
+        //         this.log.Error("Storage ping failed", e);
         //     }
         //
         //     return result;
@@ -227,7 +229,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             catch (Exception e)
             {
                 result = new Tuple<bool, string>(false, "IoTHub check failed");
-                this.log.Error("IoT Hub ping failed", () => new { e });
+                this.log.Error("IoT Hub ping failed", e);
             }
 
             return result;
@@ -243,83 +245,83 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                     && cs.Contains("sharedaccesskey="));
         }
 
-        // Check whether the simulation is running with the conn string in the configuration
-        private async Task<string> IsPreprovisionedIoTHubInUseAsync(bool isRunning)
-        {
-            if (!isRunning) return JSON_FALSE;
+        // // Check whether the simulation is running with the conn string in the configuration
+        // private async Task<string> IsPreprovisionedIoTHubInUseAsync(bool isRunning)
+        // {
+        //     if (!isRunning) return JSON_FALSE;
+        //
+        //     var cs = await this.connectionStringManager.GetIotHubConnectionStringAsync();
+        //     var csInUse = cs.ToLowerInvariant().Trim();
+        //     var csInConf = this.servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
+        //
+        //     return csInUse == csInConf ? JSON_TRUE : JSON_FALSE;
+        // }
+        //
+        // // If the simulation is running with the conn string in the config then return a URL to the metrics
+        // private async Task<string> GetIoTHubMetricsUrlAsync(bool isRunning)
+        // {
+        //     if (!isRunning) return string.Empty;
+        //
+        //     var cs = await this.connectionStringManager.GetIotHubConnectionStringAsync();
+        //     var csInUse = cs.ToLowerInvariant().Trim();
+        //     var csInConf = this.servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
+        //
+        //     // Return the URL only when the simulation is running with the configured conn string
+        //     if (csInUse != csInConf) return string.Empty;
+        //
+        //     return $"https://portal.azure.com/{this.deploymentConfig.AzureSubscriptionDomain}" +
+        //            $"#resource/subscriptions/{this.deploymentConfig.AzureSubscriptionId}" +
+        //            $"/resourceGroups/{this.deploymentConfig.AzureResourceGroup}" +
+        //            $"/providers/Microsoft.Devices/IotHubs/{this.deploymentConfig.AzureIothubName}/Metrics";
+        // }
 
-            var cs = await this.connectionStringManager.GetIotHubConnectionStringAsync();
-            var csInUse = cs.ToLowerInvariant().Trim();
-            var csInConf = this.servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
-
-            return csInUse == csInConf ? JSON_TRUE : JSON_FALSE;
-        }
-
-        // If the simulation is running with the conn string in the config then return a URL to the metrics
-        private async Task<string> GetIoTHubMetricsUrlAsync(bool isRunning)
-        {
-            if (!isRunning) return string.Empty;
-
-            var cs = await this.connectionStringManager.GetIotHubConnectionStringAsync();
-            var csInUse = cs.ToLowerInvariant().Trim();
-            var csInConf = this.servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
-
-            // Return the URL only when the simulation is running with the configured conn string
-            if (csInUse != csInConf) return string.Empty;
-
-            return $"https://portal.azure.com/{this.deploymentConfig.AzureSubscriptionDomain}" +
-                   $"#resource/subscriptions/{this.deploymentConfig.AzureSubscriptionId}" +
-                   $"/resourceGroups/{this.deploymentConfig.AzureResourceGroup}" +
-                   $"/providers/Microsoft.Devices/IotHubs/{this.deploymentConfig.AzureIothubName}/Metrics";
-        }
-
-        private long GetActiveDevicesCount(bool isRunning)
-        {
-            if (!isRunning) return 0;
-
-            return this.simulationRunner.ActiveDevicesCount;
-        }
-
-        private long GetTotalMessagesCount(bool isRunning)
-        {
-            if (!isRunning) return 0;
-
-            return this.simulationRunner.TotalMessagesCount;
-        }
-
-        private long GetFailedMessagesCount(bool isRunning)
-        {
-            if (!isRunning) return 0;
-
-            return this.simulationRunner.FailedMessagesCount;
-        }
-
-        private double GetMessagesPerSecond(bool isRunning)
-        {
-            if (!isRunning) return 0;
-
-            return this.rateReporter.GetThroughputForMessages();
-        }
-
-        private long GetFailedDeviceConnectionsCount(bool isRunning)
-        {
-            if (!isRunning) return 0;
-
-            return this.simulationRunner.FailedDeviceConnectionsCount;
-        }
-
-        private long GetFailedDeviceTwinUpdatesCount(bool isRunning)
-        {
-            if (!isRunning) return 0;
-
-            return this.simulationRunner.FailedDeviceTwinUpdatesCount;
-        }
-
-        private long GetSimulationErrorsCount(bool isRunning)
-        {
-            if (!isRunning) return 0;
-
-            return this.simulationRunner.SimulationErrorsCount;
-        }
+        // private long GetActiveDevicesCount(bool isRunning)
+        // {
+        //     if (!isRunning) return 0;
+        //
+        //     return this.simulationRunner.ActiveDevicesCount;
+        // }
+        //
+        // private long GetTotalMessagesCount(bool isRunning)
+        // {
+        //     if (!isRunning) return 0;
+        //
+        //     return this.simulationRunner.TotalMessagesCount;
+        // }
+        //
+        // private long GetFailedMessagesCount(bool isRunning)
+        // {
+        //     if (!isRunning) return 0;
+        //
+        //     return this.simulationRunner.FailedMessagesCount;
+        // }
+        //
+        // private double GetMessagesPerSecond(bool isRunning)
+        // {
+        //     if (!isRunning) return 0;
+        //
+        //     return this.rateReporter.GetThroughputForMessages();
+        // }
+        //
+        // private long GetFailedDeviceConnectionsCount(bool isRunning)
+        // {
+        //     if (!isRunning) return 0;
+        //
+        //     return this.simulationRunner.FailedDeviceConnectionsCount;
+        // }
+        //
+        // private long GetFailedDeviceTwinUpdatesCount(bool isRunning)
+        // {
+        //     if (!isRunning) return 0;
+        //
+        //     return this.simulationRunner.FailedDeviceTwinUpdatesCount;
+        // }
+        //
+        // private long GetSimulationErrorsCount(bool isRunning)
+        // {
+        //     if (!isRunning) return 0;
+        //
+        //     return this.simulationRunner.SimulationErrorsCount;
+        // }
     }
 }

@@ -9,7 +9,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json.Linq;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DeviceModels
 {
     public interface IDeviceModels
     {
@@ -22,6 +22,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// Get a device model.
         /// </summary>
         Task<DeviceModel> GetAsync(string id);
+
+        /// <summary>
+        /// Get a device model and apply the overrides from the given simulation.
+        /// </summary>
+        Task<DeviceModel> GetWithOverrideAsync(string id, Models.Simulation simulation);
 
         /// <summary>
         /// Create a device model.
@@ -48,25 +53,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     /// Proxy to stock and custom device models services.
     /// Note: the exceptions are generated in the stock and custom device
     /// models services and surface as-is without any more catch/wrapping here.
+    ///
+    /// Note: singleton class
     /// </summary>
     public class DeviceModels : IDeviceModels
     {
         // ID used for custom device models, where the list of sensors is provided by the user
         public const string CUSTOM_DEVICE_MODEL_ID = "custom";
 
+        private const string REPORTED_PREFIX = "Properties.Reported.";
+
         private readonly ILogger log;
         private readonly ICustomDeviceModels customDeviceModels;
         private readonly IStockDeviceModels stockDeviceModels;
-        private const string REPORTED_PREFIX = "Properties.Reported.";
+        private readonly IDeviceModelsGeneration deviceModelsOverriding;
 
         public DeviceModels(
             ICustomDeviceModels customDeviceModels,
             IStockDeviceModels stockDeviceModels,
+            IDeviceModelsGeneration deviceModelsOverriding,
             ILogger logger)
         {
-            this.log = logger;
             this.stockDeviceModels = stockDeviceModels;
             this.customDeviceModels = customDeviceModels;
+            this.deviceModelsOverriding = deviceModelsOverriding;
+            this.log = logger;
         }
 
         /// <summary>
@@ -99,6 +110,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
+        /// Get a device model and apply the overrides from the given simulation.
+        /// </summary>
+        public async Task<DeviceModel> GetWithOverrideAsync(string id, Models.Simulation simulation)
+        {
+            var modelDef = new DeviceModel();
+
+            var equals = new Func<string, string, bool>(
+                (x, y) => string.Equals(x, y, StringComparison.InvariantCultureIgnoreCase));
+
+            if (equals(id, CUSTOM_DEVICE_MODEL_ID))
+            {
+                modelDef.Id = CUSTOM_DEVICE_MODEL_ID;
+                modelDef.Name = CUSTOM_DEVICE_MODEL_ID;
+                modelDef.Description = "Simulated device with custom list of sensors";
+            }
+            else
+            {
+                modelDef = await this.GetAsync(id);
+            }
+
+            Models.Simulation.DeviceModelOverride overrides = simulation.DeviceModels
+                .Where(x => equals(x.Id, id))
+                .Select(x => x.Override).FirstOrDefault();
+
+            return this.deviceModelsOverriding.Generate(modelDef, overrides);
+        }
+
+        /// <summary>
         /// Create a device model.
         /// </summary>
         public async Task<DeviceModel> InsertAsync(DeviceModel deviceModel)
@@ -122,10 +161,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.CheckStockDeviceModelExistence(deviceModel.Id))
             {
-                this.log.Error("Stock device models cannot be updated",
-                    () => new { deviceModel });
-                throw new ConflictingResourceException(
-                    "Stock device models cannot be updated");
+                this.log.Error("Stock device models cannot be updated", () => new { deviceModel });
+                throw new ConflictingResourceException("Stock device models cannot be updated");
             }
 
             var result = await this.customDeviceModels.UpsertAsync(deviceModel);
@@ -141,10 +178,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.CheckStockDeviceModelExistence(id))
             {
-                this.log.Warn("Stock device models cannot be deleted",
-                    () => new { Id = id });
-                throw new UnauthorizedAccessException(
-                    "Stock device models cannot be deleted");
+                this.log.Warn("Stock device models cannot be deleted", () => new { Id = id });
+                throw new UnauthorizedAccessException("Stock device models cannot be deleted");
             }
 
             await this.customDeviceModels.DeleteAsync(id);
@@ -168,12 +203,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     }
                 }
             }
-            List<string> result = new List<string>();
 
+            List<string> result = new List<string>();
             foreach (string property in properties)
             {
                 result.Add(REPORTED_PREFIX + property);
             }
+
             return result;
         }
 

@@ -25,6 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         HashSet<string> WhiteList { get; }
     }
     
+    // Note: singleton class
     public class LoggingConfig : ILoggingConfig
     {
         public const LogLevel DEFAULT_LOGLEVEL = LogLevel.Warn;

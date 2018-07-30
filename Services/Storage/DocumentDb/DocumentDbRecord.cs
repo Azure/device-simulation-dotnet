@@ -17,6 +17,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
         public string LockOwnerType { get; set; }
         public long LockExpirationUtcMsecs { get; set; }
 
+        private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
         public DocumentDbRecord()
         {
             this.Data = string.Empty;
@@ -30,36 +32,73 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
 
         public void Touch()
         {
-            this.LastModifiedUtcMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            this.LastModifiedUtcMsecs = Now;
         }
 
         public void Lock(string ownerId, string ownerType, long durationSecs)
         {
+            ownerType = ownerType ?? string.Empty;
+
             this.LockOwnerId = ownerId;
             this.LockOwnerType = ownerType;
-            this.LockExpirationUtcMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + durationSecs * 1000;
+            this.LockExpirationUtcMsecs = Now + durationSecs * 1000;
+        }
+
+        public void Unlock(string ownerId, string ownerType)
+        {
+            // Nothing to do
+            if (this.LockExpirationUtcMsecs < Now) return;
+
+            ownerType = ownerType ?? string.Empty;
+
+            if (this.LockOwnerId != ownerId || this.LockOwnerType != ownerType)
+            {
+                throw new ResourceIsLockedByAnotherOwnerException();
+            }
+
+            this.LockOwnerId = string.Empty;
+            this.LockExpirationUtcMsecs = 0;
+        }
+
+        public bool CanUnlock(string ownerId, string ownerType)
+        {
+            ownerType = ownerType ?? string.Empty;
+
+            return this.LockExpirationUtcMsecs < Now
+                   || (this.LockOwnerId == ownerId && this.LockOwnerType == ownerType);
         }
 
         public bool IsLocked()
         {
-            return this.LockExpirationUtcMsecs > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            return this.LockExpirationUtcMsecs > Now;
         }
 
-        public bool IsLockedBy(string id, object o)
+        public bool IsLockedBy(string ownerId, string ownerType)
         {
-            return this.LockOwnerId == id
-                   && this.LockOwnerType == o.GetType().FullName;
+            ownerType = ownerType ?? string.Empty;
+
+            return this.IsLocked()
+                   && this.LockOwnerId == ownerId
+                   && this.LockOwnerType == ownerType;
+        }
+
+        public bool IsLockedByOthers(string ownerId, string ownerType)
+        {
+            ownerType = ownerType ?? string.Empty;
+
+            return this.IsLocked()
+                   && (this.LockOwnerId != ownerId || this.LockOwnerType != ownerType);
         }
 
         public void ExpiresInMsecs(long durationMsecs)
         {
-            this.ExpirationUtcMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + durationMsecs;
+            this.ExpirationUtcMsecs = Now + durationMsecs;
         }
 
         public bool IsExpired()
         {
             return this.ExpirationUtcMsecs != NEVER
-                   && this.ExpirationUtcMsecs <= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                   && this.ExpirationUtcMsecs <= Now;
         }
     }
 }

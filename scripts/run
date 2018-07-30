@@ -81,12 +81,17 @@ prepare_for_run() {
 
     ./scripts/env-vars-check
 
-    dotnet restore --verbosity=quiet
+    echo "Building application..."
+    #dotnet restore --verbosity=quiet
+    dotnet build --verbosity=quiet --configuration $CONFIGURATION
 }
 
 run() {
+    check_dependency_dotnet
+    cd $APP_HOME
+
     echo "Starting simulation service..."
-    dotnet run --configuration $CONFIGURATION --project WebService/*.csproj
+    dotnet run --no-restore --no-build --configuration $CONFIGURATION --project WebService/*.csproj
 }
 
 run_storageadapter() {

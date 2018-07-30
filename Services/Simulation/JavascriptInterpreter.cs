@@ -13,7 +13,6 @@ using Jint.Runtime.Descriptors;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 {
@@ -104,7 +103,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             }
             catch (Exception e)
             {
-                this.log.Error("JS function failure", () => new { e.Message, e.GetType().FullName });
+                this.log.Error("JS function failure", e);
             }
         }
 
@@ -154,8 +153,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             }
             catch (Exception e)
             {
-                this.log.Error("JsValue parsing failure",
-                    () => new { e.Message, e.GetType().FullName });
+                this.log.Error("JsValue parsing failure", e);
 
                 return new Dictionary<string, object>();
             }

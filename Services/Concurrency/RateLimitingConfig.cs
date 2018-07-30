@@ -2,6 +2,7 @@
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
+    // Settings specific to a simulation and the hub SKU in use
     public interface IRateLimitingConfig
     {
         int RegistryOperationsPerMinute { get; }

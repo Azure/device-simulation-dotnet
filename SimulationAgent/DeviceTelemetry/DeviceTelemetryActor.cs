@@ -3,24 +3,25 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry
 {
     public interface IDeviceTelemetryActor
     {
+        ISimulationContext SimulationContext { get; }
         ISmartDictionary DeviceState { get; }
         IDeviceClient Client { get; }
         DeviceModel.DeviceModelMessage Message { get; }
         long TotalMessagesCount { get; }
         long FailedMessagesCount { get; }
 
-        void Setup(
+        void Init(
+            ISimulationContext simulationContext,
             string deviceId,
             DeviceModel deviceModel,
             DeviceModel.DeviceModelMessage message,
@@ -57,8 +58,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
         private readonly ILogger log;
         private readonly IActorsLogger actorLogger;
-        private readonly IRateLimiting rateLimiting;
         private readonly IDeviceTelemetryLogic sendTelemetryLogic;
+        private readonly IInstance instance;
 
         private ActorStatus status;
         private string deviceId;
@@ -77,6 +78,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         /// Reference to the actor managing the device connection
         /// </summary>
         private IDeviceConnectionActor deviceConnectionActor;
+
+        /// <summary>
+        /// Contains all the simulation specific dependencies, e.g. hub, rating
+        /// limits, device registry, etc.
+        /// </summary>
+        private ISimulationContext simulationContext;
+
+        /// <summary>
+        /// Proxy to all the dependencies initialized for the simulation that the actor
+        /// belongs too. E.g. hub registry, conn strings, rating limits, etc.
+        /// </summary>
+        public ISimulationContext SimulationContext => this.simulationContext;
 
         /// <summary>
         /// The telemetry message managed by this actor
@@ -104,15 +117,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         public long FailedMessagesCount => this.failedMessagesCount;
 
         public DeviceTelemetryActor(
+            SendTelemetry sendTelemetryLogic,
             ILogger logger,
             IActorsLogger actorLogger,
-            IRateLimiting rateLimiting,
-            SendTelemetry sendTelemetryLogic)
+            IInstance instance)
         {
+            this.sendTelemetryLogic = sendTelemetryLogic;
             this.log = logger;
             this.actorLogger = actorLogger;
-            this.rateLimiting = rateLimiting;
-            this.sendTelemetryLogic = sendTelemetryLogic;
+            this.instance = instance;
 
             this.Message = null;
 
@@ -127,32 +140,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         /// <summary>
         /// Invoke this method before calling Execute(), to initialize the actor
         /// with details like the device model and message type to simulate.
-        /// Setup() should be called only once.
         /// </summary>
-        public void Setup(
+        public void Init(
+            ISimulationContext simulationContext,
             string deviceId,
             DeviceModel deviceModel,
             DeviceModel.DeviceModelMessage message,
             IDeviceStateActor deviceStateActor,
             IDeviceConnectionActor deviceConnectionActor)
         {
-            if (this.status != ActorStatus.None)
-            {
-                this.log.Error("The actor is already initialized",
-                    () => new { CurrentDeviceId = this.deviceId, NewDeviceModelName = deviceModel.Name });
-                throw new DeviceActorAlreadyInitializedException();
-            }
+            this.instance.InitOnce();
 
+            this.simulationContext = simulationContext;
             this.deviceModel = deviceModel;
             this.Message = message;
             this.deviceId = deviceId;
             this.deviceStateActor = deviceStateActor;
             this.deviceConnectionActor = deviceConnectionActor;
 
-            this.sendTelemetryLogic.Setup(this, this.deviceId, this.deviceModel);
-            this.actorLogger.Setup(deviceId, "Telemetry");
+            this.sendTelemetryLogic.Init(this, this.deviceId, this.deviceModel);
+            this.actorLogger.Init(deviceId, "Telemetry");
 
             this.status = ActorStatus.ReadyToStart;
+
+            this.instance.InitComplete();
         }
 
         public void Stop()
@@ -163,6 +174,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         // Run the next step and return a description about what happened
         public async Task RunAsync()
         {
+            this.instance.InitRequired();
+
             this.log.Debug(this.status.ToString(), () => new { this.deviceId });
 
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -189,6 +202,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
         public void HandleEvent(ActorEvents e)
         {
+            this.instance.InitRequired();
+
             switch (e)
             {
                 case ActorEvents.Started:
@@ -232,7 +247,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         {
             // considering the throttling settings, when can the message be sent
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var availableSchedule = now + this.rateLimiting.GetPauseForNextMessage();
+            var availableSchedule = now + this.SimulationContext.RateLimiting.GetPauseForNextMessage();
 
             // looking at the simulation settings, when should the message be sent
             // note: this.whenToRun contains the time when the last msg was sent

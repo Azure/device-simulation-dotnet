@@ -2,7 +2,7 @@
 
 using System;
 using System.Threading.Tasks;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties
@@ -12,40 +12,46 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
     /// </summary>
     public class SetDeviceTag : IDevicePropertiesLogic
     {
-        private readonly IDevices devices;
         private readonly ILogger log;
+        private readonly IInstance instance;
+        private IDevicePropertiesActor deviceContext;
+        private ISimulationContext simulationContext;
         private string deviceId;
-        private IDevicePropertiesActor context;
 
-        public SetDeviceTag(IDevices devices, ILogger logger)
+        public SetDeviceTag(ILogger logger, IInstance instance)
         {
             this.log = logger;
-            this.devices = devices;
+            this.instance = instance;
         }
 
-        public void Setup(IDevicePropertiesActor context, string deviceId)
+        public void Init(IDevicePropertiesActor deviceContext, string deviceId)
         {
-            this.context = context;
+            this.instance.InitOnce();
+            this.deviceContext = deviceContext;
+            this.simulationContext = deviceContext.SimulationContext;
             this.deviceId = deviceId;
+            this.instance.InitComplete();
         }
 
         public async Task RunAsync()
         {
+            this.instance.InitRequired();
+
             this.log.Debug("Adding tag to device twin...", () => new { this.deviceId });
             var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             try
             {
-                await this.devices.AddTagAsync(this.deviceId);
+                await this.simulationContext.Devices.AddTagAsync(this.deviceId);
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Debug("Device tag set", () => new { timeSpentMsecs, this.deviceId });
-                this.context.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTagged);
+                this.deviceContext.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTagged);
             }
             catch (Exception e)
             {
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Error("Error while tagging the device twin", () => new { timeSpentMsecs, this.deviceId, e });
-                this.context.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTaggingFailed);
+                this.deviceContext.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTaggingFailed);
             }
         }
     }

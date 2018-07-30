@@ -3,6 +3,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
@@ -14,28 +15,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task<Tuple<bool, string>> PingRegistryAsync();
     }
 
+    // TODO: revisit the use case, considering that simulations can use different hubs
     public class PreprovisionedIotHub : IPreprovisionedIotHub
     {
         private readonly ILogger log;
+        private readonly IInstance instance;
         private readonly string connectionString;
 
         private string ioTHubHostName;
         private RegistryManager registry;
-        private bool setupDone;
 
         public PreprovisionedIotHub(
             IServicesConfig config,
-            ILogger logger)
+            ILogger logger,
+            IInstance instance)
         {
             this.log = logger;
+            this.instance = instance;
             this.connectionString = config.IoTHubConnString;
-            this.setupDone = false;
         }
 
         // Ping the registry to see if the connection is healthy
         public async Task<Tuple<bool, string>> PingRegistryAsync()
         {
-            this.SetupHub();
+            await this.InitAsync();
 
             try
             {
@@ -44,25 +47,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Device registry test failed", () => new { e });
+                this.log.Error("Device registry test failed", e);
                 return new Tuple<bool, string>(false, e.Message);
             }
         }
 
         // This call can throw an exception, which is fine when the exception happens during a method
         // call. We cannot allow the exception to occur in the constructor though, because it
-        // would break DI.
-        private void SetupHub()
+        // would break DI and bring the application to a broken state.
+        private async Task InitAsync()
         {
-            if (this.setupDone) return;
+            if (this.instance.IsInitialized) return;
 
             this.registry = RegistryManager.CreateFromConnectionString(this.connectionString);
-            this.registry.OpenAsync();
+            await this.registry.OpenAsync();
 
             this.ioTHubHostName = IotHubConnectionStringBuilder.Create(this.connectionString).HostName;
             this.log.Info("Selected active IoT Hub for preprovisioned hub status check", () => new { this.ioTHubHostName });
 
-            this.setupDone = true;
+            this.instance.InitComplete();
         }
     }
 }

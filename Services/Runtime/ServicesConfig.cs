@@ -1,25 +1,22 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 using System.IO;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 {
-    public class StorageConfig
-    {
-        public string StorageType { get; set; }
-        public string DocumentDbConnString { get; set; }
-        public string DocumentDbDatabase { get; set; }
-        public string DocumentDbCollection { get; set; }
-        public int DocumentDbRUs { get; set; }
-    }
-
     public interface IServicesConfig
     {
         string DeviceModelsFolder { get; }
         string DeviceModelsScriptsFolder { get; }
+
+        // TODO: make it a simulation parameter
         string IoTHubConnString { get; }
+
         uint? IoTHubSdkDeviceClientTimeout { get; set; }
-        bool TwinReadWriteEnabled { get; }
+
+        // TODO: manage per simulation
+        //bool TwinReadWriteEnabled { get; }
 
         StorageConfig MainStorage { get; }
         StorageConfig NodesStorage { get; }
@@ -28,6 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         StorageConfig PartitionsStorage { get; }
     }
 
+    // Note: singleton class
     // TODO: test Windows/Linux folder separator
     //       https://github.com/Azure/device-simulation-dotnet/issues/84
     public class ServicesConfig : IServicesConfig
@@ -55,11 +53,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             set { this.dtbf = this.NormalizePath(value); }
         }
 
+        // TODO: make it a simulation parameter
         public string IoTHubConnString { get; set; }
 
         public uint? IoTHubSdkDeviceClientTimeout { get; set; }
 
-        public bool TwinReadWriteEnabled { get; set; }
+        // TODO: manage per simulation
+        //public bool TwinReadWriteEnabled { get; set; }
 
         public StorageConfig MainStorage { get; set; }
         public StorageConfig NodesStorage { get; set; }

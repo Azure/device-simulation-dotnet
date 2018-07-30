@@ -1,63 +1,76 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent.Partitioning
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
 {
     public interface ICluster
     {
-        Task UpsertNodeAsync(string nodeId);
+        string GetCurrentNodeId();
+        Task KeepAliveNodeAsync();
         Task RemoveStaleNodesAsync();
-
-        Task<bool> SelfElectToMasterNodeAsync(string nodeId);
-        //Task<SortedSet<string>> GetSortedListAsync();
+        Task<bool> SelfElectToMasterNodeAsync();
+        Task<SortedSet<string>> GetSortedListAsync();
     }
 
     public class Cluster : ICluster
     {
-        // When a node record is older than 60 seconds it's removed from the list, so the count is eventually consistent
-        private const int NODE_RECORD_MAX_AGE_SECS = 60;
-
-        // if a lock is older than 2 minutes, then it's expired
-        private const int LOCK_MAX_AGE_SECS = 120;
-
         // Master node record id
         private const string MASTER_NODE_KEY = "MasterNode";
 
         private readonly IStorageRecords clusterNodes;
         private readonly IStorageRecords mainStorage;
         private readonly ILogger log;
+        private readonly int nodeRecordMaxAgeSecs;
+        private readonly int masterLockMaxAgeSecs;
+
+        // Generate a node id when the class is loaded. The value is shared across threads in the process.
+        private static readonly string currentProcessNodeId = GenerateSharedNodeId();
 
         public Cluster(
             IServicesConfig config,
+            IClusteringConfig clusteringConfig,
             IFactory factory,
             ILogger logger)
         {
-            this.clusterNodes = factory.Resolve<IStorageRecords>().Setup(config.NodesStorage);
-            this.mainStorage = factory.Resolve<IStorageRecords>().Setup(config.MainStorage);
+            this.clusterNodes = factory.Resolve<IStorageRecords>().Init(config.NodesStorage);
+            this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
             this.log = logger;
+            this.masterLockMaxAgeSecs = clusteringConfig.MasterLockDurationSecs;
+            this.nodeRecordMaxAgeSecs = clusteringConfig.NodeRecordMaxAgeSecs;
+        }
+
+        // Get the node Id generated at startup
+        public string GetCurrentNodeId()
+        {
+            return currentProcessNodeId;
         }
 
         // Create or Update the cluster node record
-        public async Task UpsertNodeAsync(string nodeId)
+        public async Task KeepAliveNodeAsync()
         {
+            this.log.Debug("Keeping node alive...", () => new { currentProcessNodeId });
+
             try
             {
-                this.log.Debug("Getting cluster node record", () => { });
-                StorageRecord node = await this.clusterNodes.GetAsync(nodeId);
-                node.ExpiresInSecs(NODE_RECORD_MAX_AGE_SECS);
+                this.log.Debug("Getting cluster node record");
+                StorageRecord node = await this.clusterNodes.GetAsync(currentProcessNodeId);
+                node.ExpiresInSecs(this.nodeRecordMaxAgeSecs);
                 await this.clusterNodes.UpsertAsync(node);
             }
             catch (ResourceNotFoundException)
             {
-                this.log.Info("Cluster node record not found, will create it", () => new { nodeId });
-                await this.InsertNodeAsync(nodeId);
+                this.log.Info("Cluster node record not found, will create it", () => new { currentProcessNodeId });
+                await this.InsertNodeAsync(currentProcessNodeId);
             }
+
+            this.log.Debug("Node keepalive complete", () => new { currentProcessNodeId });
         }
 
         // Delete old node records, so that the count of nodes is eventually consistent.
@@ -65,6 +78,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent.Partit
         // accordingly to IoT Hub quota, trying to avoid throttling.
         public async Task RemoveStaleNodesAsync()
         {
+            this.log.Debug("Removing unresponsive nodes...");
+
             try
             {
                 // GetAllAsync internally deletes expired records
@@ -72,34 +87,36 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent.Partit
             }
             catch (Exception e)
             {
-                this.log.Error("Unexpected error while purging expired nodes", () => new { e });
+                this.log.Error("Unexpected error while purging expired nodes", e);
             }
         }
 
         // Try to elect the current node to master node. Master node is responsible for
         // assigning devices to individual nodes, in order to distribute the load across
         // multiple VMs.
-        public async Task<bool> SelfElectToMasterNodeAsync(string nodeId)
+        public async Task<bool> SelfElectToMasterNodeAsync()
         {
+            this.log.Debug("Trying to acquire master role", () => new { currentProcessNodeId });
+
             try
             {
                 if (!await this.mainStorage.ExistsAsync(MASTER_NODE_KEY))
                 {
                     this.log.Debug(
                         "The key to lock the master role doesn't exist yet, will create",
-                        () => new { nodeId, MASTER_NODE_KEY });
+                        () => new { currentProcessNodeId, MASTER_NODE_KEY });
 
-                    var record = new StorageRecord { Id = MASTER_NODE_KEY, Data = nodeId };
+                    var record = new StorageRecord { Id = MASTER_NODE_KEY, Data = currentProcessNodeId };
                     await this.mainStorage.CreateAsync(record);
                 }
 
-                var acquired = await this.mainStorage.TryToLockAsync(MASTER_NODE_KEY, nodeId, this, LOCK_MAX_AGE_SECS);
-                this.log.Debug(acquired ? "Master role acquired" : "Master role not acquired", () => new { nodeId, LOCK_MAX_AGE_SECS });
+                var acquired = await this.mainStorage.TryToLockAsync(MASTER_NODE_KEY, currentProcessNodeId, this.GetType().FullName, this.masterLockMaxAgeSecs);
+                this.log.Debug(acquired ? "Master role acquired" : "Master role not acquired", () => new { currentProcessNodeId, lockMaxAgeSecs = this.masterLockMaxAgeSecs });
                 return acquired;
             }
             catch (ConflictingResourceException)
             {
-                this.log.Info("Some other node became master, nothing to do", () => new { nodeId });
+                this.log.Info("Some other node became master, nothing to do", () => new { currentProcessNodeId });
                 return false;
             }
             catch (Exception e)
@@ -109,23 +126,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent.Partit
             }
         }
 
-        // public async Task<SortedSet<string>> GetSortedListAsync()
-        // {
-        //     var nodeRecords = await this.clusterNodes.GetAllAsync();
-        //     var result = new SortedSet<string>();
-        //     foreach (var nodeRecord in nodeRecords)
-        //     {
-        //         result.Add(nodeRecord.Id);
-        //     }
-        //
-        //     return result;
-        // }
+        public async Task<SortedSet<string>> GetSortedListAsync()
+        {
+            var nodeRecords = await this.clusterNodes.GetAllAsync();
+            var result = new SortedSet<string>();
+            foreach (var nodeRecord in nodeRecords)
+            {
+                result.Add(nodeRecord.Id);
+            }
+
+            return result;
+        }
+
+        // Generate a unique value used to identify the current instance
+        private static string GenerateSharedNodeId()
+        {
+            // Example: 12a34b5678901c23de4c5f6ab78c9012.2018-01-12T01:15:00
+            return Guid.NewGuid().ToString("N") + "." + DateTimeOffset.UtcNow.ToString("s");
+        }
 
         // Insert a node in the list of nodes
         private async Task InsertNodeAsync(string nodeId)
         {
             var node = new StorageRecord { Id = nodeId };
-            node.ExpiresInSecs(NODE_RECORD_MAX_AGE_SECS);
+            node.ExpiresInSecs(this.nodeRecordMaxAgeSecs);
 
             try
             {

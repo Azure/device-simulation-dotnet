@@ -72,7 +72,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             var match = Regex.Match(connstring, FORMAT);
             if (!match.Success)
             {
-                this.log.Error("Missing or invalid DocumentDb connection string ()", () => new { FORMAT,connstring });
+                this.log.Error("Missing or invalid DocumentDb connection string ()", () => new { FORMAT, connstring });
                 throw new InvalidConfigurationException($"Missing or invalid DocumentDb connection string ({FORMAT})");
             }
 
@@ -107,7 +107,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             StorageConfig cfg,
             Resource resource)
         {
-            return await this.UpsertAsync(client,cfg,resource,resource.ETag);
+            return await this.UpsertAsync(client, cfg, resource, resource.ETag);
         }
 
         public async Task<ResourceResponse<Document>> UpsertAsync(
@@ -145,7 +145,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             return client.CreateDocumentQuery<T>(collectionLink);
         }
 
-
         public IQueryable<T> CreateQuery<T>(
             IDocumentClient client,
             StorageConfig cfg,
@@ -154,7 +153,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
         {
             var collectionLink = $"/dbs/{cfg.DocumentDbDatabase}/colls/{cfg.DocumentDbCollection}";
             var query = new SqlQuerySpec(
-                "SELECT * FROM ROOT WHERE " + sqlCondition, 
+                "SELECT * FROM ROOT WHERE " + sqlCondition,
                 new SqlParameterCollection(parameters));
             return client.CreateDocumentQuery<T>(collectionLink, query);
         }
@@ -175,7 +174,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             }
             catch (Exception e)
             {
-                this.log.Error("Error while getting DocumentDb database", () => new { e });
+                this.log.Error("Error while getting DocumentDb database", e);
                 throw;
             }
         }
@@ -217,7 +216,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             }
             catch (Exception e)
             {
-                this.log.Error("Error while getting DocumentDb collection", () => new { e });
+                this.log.Error("Error while getting DocumentDb collection", e);
                 throw;
             }
         }

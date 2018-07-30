@@ -39,7 +39,7 @@
     <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="2.1.5" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PartitioningAgent\PartitioningAgent.csproj" />
+    <ProjectReference Include="..\ClusteringAgent\ClusteringAgent.csproj" />
     <ProjectReference Include="..\Services\Services.csproj" />
     <ProjectReference Include="..\SimulationAgent\SimulationAgent.csproj" />
   </ItemGroup>

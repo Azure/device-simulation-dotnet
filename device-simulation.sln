@@ -88,7 +88,7 @@ ProjectSection(SolutionItems) = preProject
 	docs\ENVIRONMENT_VARIABLES.md = docs\ENVIRONMENT_VARIABLES.md
 EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PartitioningAgent", "PartitioningAgent\PartitioningAgent.csproj", "{53E739D4-E1B9-415A-A6E1-EAC003887DB5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClusteringAgent", "ClusteringAgent\ClusteringAgent.csproj", "{53E739D4-E1B9-415A-A6E1-EAC003887DB5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".vscode", ".vscode", "{63A26FF0-CBDC-4CBE-8135-23A04C6FCE7E}"
 ProjectSection(SolutionItems) = preProject

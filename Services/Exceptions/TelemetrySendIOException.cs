@@ -4,6 +4,7 @@ using System;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
 {
+    // ReSharper disable once InconsistentNaming
     public class TelemetrySendIOException : Exception
     {
         /// <summary>

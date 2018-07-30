@@ -23,6 +23,81 @@ namespace Services.Test.helpers
         public bool DebugIsEnabled { get; }
         public bool InfoIsEnabled { get; }
 
+        public void Write(string message, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Debug(string message, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Info(string message, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Warn(string message, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Error(string message, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Write(string message, Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Debug(string message, Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Info(string message, Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Warn(string message, Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Error(string message, Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Write(string message, Exception e, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Debug(string message, Exception e, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Info(string message, Exception e, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Warn(string message, Exception e, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Error(string message, Exception e, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            throw new NotImplementedException();
+        }
+
         public string FormatDate(long time)
         {
             return DateTimeOffset.FromUnixTimeMilliseconds(time).ToString("yyyy-MM-dd HH:mm:ss.fff");

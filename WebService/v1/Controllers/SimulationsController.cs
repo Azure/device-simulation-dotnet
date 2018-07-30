@@ -1,13 +1,11 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
@@ -76,7 +74,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
             if (simulation == null)
             {
-                this.log.Warn("No data or invalid data provided", () => new { simulation });
+                this.log.Warn("No data or invalid data provided");
                 throw new BadRequestException("No data or invalid data provided.");
             }
 
@@ -110,10 +108,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 await this.simulationsService.MergeAsync(patch.ToServiceModel(id)));
         }
 
-        [HttpDelete("{id}")]
-        public async Task DeleteAsync(string id)
-        {
-            await this.simulationsService.DeleteAsync(id);
-        }
+        // [HttpDelete("{id}")]
+        // public async Task DeleteAsync(string id)
+        // {
+        //     await this.simulationsService.DeleteAsync(id);
+        // }
     }
 }

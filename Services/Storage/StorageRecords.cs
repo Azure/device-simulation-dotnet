@@ -1,12 +1,12 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
@@ -16,7 +16,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
 {
     public interface IStorageRecords
     {
-        IStorageRecords Setup(StorageConfig config);
+        IStorageRecords Init(StorageConfig config);
         Task<StorageRecord> GetAsync(string id);
         Task<bool> ExistsAsync(string id);
         Task<IEnumerable<StorageRecord>> GetAllAsync();
@@ -25,37 +25,44 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
         Task<StorageRecord> UpsertAsync(StorageRecord input, string eTag);
         Task DeleteAsync(string id);
         Task DeleteMultiAsync(List<string> ids);
-        Task<bool> TryToLockAsync(string id, string ownerId, object owner, int durationSecs);
+        Task<bool> TryToLockAsync(string id, string ownerId, string ownerType, int durationSecs);
+        Task<bool> TryToUnlockAsync(string id, string ownerId, string ownerType);
     }
 
     public class StorageRecords : IStorageRecords, IDisposable
     {
         private readonly ILogger log;
-        private StorageConfig config;
+        private readonly IInstance instance;
         private readonly IDocumentDbWrapper docDb;
+        private StorageConfig config;
 
         private IDocumentClient client;
         private bool disposedValue;
         private string storageName;
 
         public StorageRecords(
-            IServicesConfig config,
             IDocumentDbWrapper docDb,
-            ILogger logger)
+            ILogger logger,
+            IInstance instance)
         {
             this.log = logger;
+            this.instance = instance;
             this.docDb = docDb;
             this.disposedValue = false;
             this.config = null;
             this.client = null;
         }
 
-        public IStorageRecords Setup(StorageConfig cfg)
+        public IStorageRecords Init(StorageConfig cfg)
         {
+            this.instance.InitOnce();
+
             this.config = cfg;
 
             // Used only for logging
             this.storageName = cfg.DocumentDbDatabase + "/" + cfg.DocumentDbCollection;
+
+            this.instance.InitComplete();
 
             return this;
         }
@@ -66,10 +73,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
 
             try
             {
-                this.log.Debug("Fetching record...", () => new { id });
+                this.log.Debug("Fetching record...", () => new { this.storageName, id });
                 var response = await this.docDb.ReadAsync(this.client, this.config, id);
-                this.log.Debug("Record fetched", () => new { id });
-                
+                this.log.Debug("Record fetched", () => new { this.storageName, id });
+
                 var record = StorageRecord.FromDocumentDb(response?.Resource);
 
                 if (record.IsExpired())
@@ -77,7 +84,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
                     this.log.Debug("The resource requested has expired, deleting...", () => new { this.storageName, id });
                     await this.TryToDeleteExpiredRecord(id);
                     this.log.Debug("Expired resource deleted", () => new { this.storageName, id });
-                    
+
                     throw new ResourceNotFoundException($"The resource {id} doesn't exist.");
                 }
 
@@ -134,17 +141,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
             await this.SetupStorageAsync();
 
             const int MAX_PENDING_TASKS = 25;
-            
+
             var tasks = new List<Task>();
             foreach (var id in ids)
             {
                 tasks.Add(this.DeleteAsync(id));
                 if (tasks.Count < MAX_PENDING_TASKS) continue;
-                
+
                 await Task.WhenAll(tasks);
                 tasks.Clear();
             }
-            
+
             if (tasks.Count > 0)
             {
                 await Task.WhenAll(tasks);
@@ -246,54 +253,97 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
         public async Task<bool> TryToLockAsync(
             string id,
             string ownerId,
-            object owner,
+            string ownerType,
             int durationSecs)
         {
             await this.SetupStorageAsync();
 
             try
             {
+                // Note: this can throw ResourceNotFoundException
                 var record = (await this.GetAsync(id)).GetDocumentDbRecord();
 
-                if (record.IsLocked() && !record.IsLockedBy(ownerId, owner))
+                if (record.IsLockedByOthers(ownerId, ownerType))
                 {
-                    throw new ResourceIsLockedException();
+                    this.log.Debug("The resource is locked by another client",
+                        () => new { this.storageName, id, ownerId, ownerType });
+                    return false;
                 }
 
                 record.Touch();
-                record.Lock(ownerId, owner.GetType().FullName, durationSecs);
+                record.Lock(ownerId, ownerType, durationSecs);
                 await this.docDb.UpsertAsync(this.client, this.config, record);
 
                 return true;
             }
+            catch (ResourceNotFoundException)
+            {
+                throw;
+            }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.PreconditionFailed)
             {
-                this.log.Debug(
-                    "E-Tag mismatch: the resource has been updated by another client and cannot be locked.",
-                    () => new { this.storageName, id, ownerId, owner });
-                return false;
+                this.log.Debug("E-Tag mismatch: the resource has been updated by another client and cannot be locked.",
+                    () => new { this.storageName, id, ownerId, ownerType });
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
             {
-                this.log.Warn(
-                    "The resource doesn't exist and cannot be locked",
-                    () => new { this.storageName, id, ownerId, owner });
-                return false;
-            }
-            catch (ResourceIsLockedException)
-            {
-                this.log.Debug(
-                    "The resource is locked by another client",
-                    () => new { this.storageName, id, ownerId, owner });
-                return false;
+                this.log.Warn("The resource doesn't exist and cannot be locked",
+                    () => new { this.storageName, id, ownerId, ownerType });
             }
             catch (Exception e)
             {
-                this.log.Error(
-                    "An unexpected error occurred while writing to the storage",
-                    () => new { this.storageName, id, ownerId, owner, lockDurationSecs = durationSecs, e });
-                return false;
+                this.log.Error("Unexpected error while writing to the storage",
+                    () => new { this.storageName, id, ownerId, ownerType, lockDurationSecs = durationSecs, e });
             }
+
+            return false;
+        }
+
+        public async Task<bool> TryToUnlockAsync(string id, string ownerId, string ownerType)
+        {
+            await this.SetupStorageAsync();
+
+            try
+            {
+                // Note: this can throw ResourceNotFoundException
+                var record = (await this.GetAsync(id)).GetDocumentDbRecord();
+
+                // Nothing to do
+                if (!record.IsLocked()) return true;
+
+                if (!record.CanUnlock(ownerId, ownerType))
+                {
+                    this.log.Debug("The resource is locked by another client and cannot be unlocked by this client",
+                        () => new { this.storageName, id, ownerId, ownerType });
+                    return false;
+                }
+
+                record.Touch();
+                record.Unlock(ownerId, ownerType);
+                await this.docDb.UpsertAsync(this.client, this.config, record);
+                return true;
+            }
+            catch (ResourceNotFoundException)
+            {
+                throw;
+            }
+            catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.PreconditionFailed)
+            {
+                this.log.Debug("E-Tag mismatch: the resource has been updated by another client and cannot be unlocked.",
+                    () => new { this.storageName, id, ownerId, ownerType });
+            }
+            catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
+            {
+                this.log.Warn("The resource doesn't exist and cannot be unlocked",
+                    () => new { this.storageName, id, ownerId, ownerType });
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unexpected error while writing to the storage",
+                    () => new { this.storageName, id, ownerId, ownerType, e });
+            }
+
+            return false;
         }
 
         public void Dispose()
@@ -319,16 +369,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
 
         private async Task SetupStorageAsync()
         {
-            if (this.config == null)
-            {
-                throw new ApplicationException("Class not initialized. Setup() must be called before calling any other method.");
-            }
+            this.instance.InitRequired();
 
             if (this.client == null)
             {
-                this.log.Debug("Getting DocDb Client...", () => { });
+                this.log.Debug("Getting DocDb Client...", () => new { this.config.DocumentDbDatabase, this.config.DocumentDbCollection });
                 this.client = await this.docDb.GetClientAsync(this.config);
-                this.log.Debug("DocDb Client ready", () => { });
+                this.log.Debug("DocDb Client ready", () => new { this.config.DocumentDbDatabase, this.config.DocumentDbCollection });
             }
         }
 

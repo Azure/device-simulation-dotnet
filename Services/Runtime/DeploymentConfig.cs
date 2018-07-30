@@ -10,6 +10,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         string AzureIothubName { get; }
     }
 
+    // Note: singleton class
     public class DeploymentConfig : IDeploymentConfig
     {
         public string AzureSubscriptionDomain { get; set; }

@@ -1,10 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Collections.Generic;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -12,11 +11,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
 {
     public interface IDeviceStateActor
     {
+        ISimulationContext SimulationContext { get; }
         ISmartDictionary DeviceState { get; }
         ISmartDictionary DeviceProperties { get; }
         bool IsDeviceActive { get; }
         long SimulationErrorsCount { get; }
-        void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices);
+
+        void Init(
+            ISimulationContext simulationContext,
+            string deviceId,
+            DeviceModel deviceModel,
+            int deviceCounter);
+
         void Run();
     }
 
@@ -35,14 +41,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         public const string SUPPORTED_METHODS_KEY = "SupportedMethods";
         public const string TELEMETRY_KEY = "Telemetry";
 
-        private readonly ILogger log;
         private readonly UpdateDeviceState updateDeviceStateLogic;
+        private readonly ILogger log;
+        private readonly IInstance instance;
+
         private string deviceId;
         private DeviceModel deviceModel;
         private long whenCanIUpdate;
         private int startDelayMsecs;
         private ActorStatus status;
         private long simulationErrorsCount;
+
+        /// <summary>
+        /// Contains all the simulation specific dependencies, e.g. hub, rating
+        /// limits, device registry, etc.
+        /// </summary>
+        private ISimulationContext simulationContext;
+
+        /// <summary>
+        /// Proxy to all the dependencies initialized for the simulation that the actor
+        /// belongs too. E.g. hub registry, conn strings, rating limits, etc.
+        /// </summary>
+        public ISimulationContext SimulationContext => this.simulationContext;
 
         /// <summary>
         /// The device is considered active when the state is being updated.
@@ -52,17 +72,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         /// the number of active devices, we can include devices which are not
         /// connected yet but being simulated.
         /// </summary>
-        public bool IsDeviceActive
-        {
-            get { return this.status == ActorStatus.Updating; }
-        }
+        // TODO: not used, remove?
+        public bool IsDeviceActive => this.status == ActorStatus.Updating;
 
         public DeviceStateActor(
+            UpdateDeviceState updateDeviceStateLogic,
             ILogger logger,
-            UpdateDeviceState updateDeviceStateLogic)
+            IInstance instance)
         {
-            this.log = logger;
             this.updateDeviceStateLogic = updateDeviceStateLogic;
+            this.log = logger;
+            this.instance = instance;
+
             this.status = ActorStatus.None;
             this.simulationErrorsCount = 0;
         }
@@ -77,34 +98,36 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         /// with details like the device model and message type to simulate.
         /// If this method is not called before Start(), the application will
         /// throw an exception.
-        /// Setup() should be called only once, typically after the constructor.
         /// </summary>
-        public void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices)
+        public void Init(
+            ISimulationContext simulationContext,
+            string deviceId,
+            DeviceModel deviceModel,
+            int deviceCounter)
         {
-            if (this.status != ActorStatus.None)
-            {
-                this.log.Error("The actor is already initialized",
-                    () => new { CurrentDeviceId = this.deviceId, NewDeviceModelId = deviceModel.Id });
-                throw new DeviceActorAlreadyInitializedException();
-            }
+            this.instance.InitOnce();
 
+            this.simulationContext = simulationContext;
             this.deviceModel = deviceModel;
             this.deviceId = deviceId;
 
-            // Distributed start times over 1 or 10 secs
-            var msecs = totalDevices < 50 ? 1000 : 10000;
-            this.startDelayMsecs = (int) (msecs * ((double) position / totalDevices));
+            // Distribute actors start over 10 secs
+            this.startDelayMsecs = deviceCounter % 10000;
+
+            this.instance.InitComplete();
         }
 
         public void Run()
         {
+            this.instance.InitRequired();
+
             try
             {
                 switch (this.status)
                 {
                     // Prepare the dependencies
                     case ActorStatus.None:
-                        this.updateDeviceStateLogic.Setup(this, this.deviceId, this.deviceModel);
+                        this.updateDeviceStateLogic.Init(this, this.deviceId, this.deviceModel);
                         this.DeviceState = this.GetInitialState(this.deviceModel);
                         this.DeviceProperties = this.GetInitialProperties(this.deviceModel);
                         this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState, this.DeviceProperties });
@@ -129,7 +152,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
             catch (Exception e)
             {
                 this.simulationErrorsCount++;
-                this.log.Error("Device state process failed", () => new { e });
+                this.log.Error("Device state process failed", e);
             }
         }
 
@@ -160,7 +183,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         private ISmartDictionary GetInitialProperties(DeviceModel model)
         {
             var properties = new SmartDictionary();
-            
+
             if (model.Properties == null || this.deviceModel.CloudToDeviceMethods == null) return properties;
 
             // Add telemetry property

@@ -91,14 +91,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
             return this.state.IsExpired();
         }
 
-        // public bool IsLocked()
-        // {
-        //     return this.state.IsLocked();
-        // }
-        //
-        // public bool IsLockedBy(string id, object o)
-        // {
-        //     return this.state.IsLockedBy(id, o);
-        // }
+        public bool IsLocked()
+        {
+            return this.state.IsLocked();
+        }
+
+        public bool IsLockedBy(string id, string ownerType)
+        {
+            return this.state.IsLockedBy(id, ownerType);
+        }
     }
 }

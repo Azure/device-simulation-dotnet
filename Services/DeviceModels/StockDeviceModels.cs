@@ -10,7 +10,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Newtonsoft.Json;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DeviceModels
 {
     public interface IStockDeviceModels
     {
@@ -52,8 +52,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to load Device Model files",
-                    () => new { e.Message, Exception = e });
+                this.log.Error("Unable to load Device Model files", e);
 
                 throw;
             }
@@ -69,8 +68,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to parse Device Model files",
-                    () => new { e.Message, Exception = e });
+                this.log.Error("Unable to parse Device Model files", e);
 
                 throw new InvalidConfigurationException("Unable to parse Device Model files: " + e.Message, e);
             }

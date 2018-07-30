@@ -2,12 +2,13 @@
 
 using System;
 using System.IO;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 {
     public interface IActorsLogger
     {
-        void Setup(string deviceId, string actorName);
+        void Init(string deviceId, string actorName);
         void ActorStarted();
         void ActorStopped();
 
@@ -52,6 +53,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         private const string DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.fff";
 
         private readonly ILogger log;
+        private readonly IInstance instance;
         private readonly string path;
         private readonly bool enabledInConfig;
         private bool enabled;
@@ -64,16 +66,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         private string connectionsLogFile;
         private string telemetryLogFile;
 
-        public ActorsLogger(ILoggingConfig config, ILogger logger)
+        public ActorsLogger(ILoggingConfig config, ILogger logger, IInstance instance)
         {
             this.enabled = false;
             this.enabledInConfig = config.ExtraDiagnostics;
             this.path = config.ExtraDiagnosticsPath.Trim();
             this.log = logger;
+            this.instance = instance;
         }
 
-        public void Setup(string deviceId, string actorName)
+        public void Init(string deviceId, string actorName)
         {
+            this.instance.InitOnce();
+            
             this.deviceId = deviceId;
             this.actorName = actorName;
 
@@ -85,6 +90,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.telemetryLogFile = this.path + Path.DirectorySeparatorChar + "telemetry.log";
 
             this.enabled = this.enabledInConfig && !string.IsNullOrEmpty(this.path);
+            
+            this.instance.InitComplete();
 
             if (!this.enabled) return;
 
@@ -95,7 +102,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to write to " + this.path, () => new { e });
+                this.log.Error("Unable to write to " + this.path, e);
                 this.enabled = false;
             }
         }

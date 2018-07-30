@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DeviceModels;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
@@ -41,6 +42,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         Task<Models.Simulation> MergeAsync(SimulationPatch patch);
 
+        /*
         /// <summary>
         /// Delete a simulation and its devices.
         /// </summary>
@@ -49,9 +51,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Get the ID of the devices in a simulation.
         /// </summary>
-        IEnumerable<string> GetDeviceIds(Models.Simulation simulation);
+        IList<string> GetDeviceIds(Models.Simulation simulation);
+        */
+
+        /// <summary>
+        /// Get the ID of the devices in a simulation, organized by device model ID.
+        /// </summary>
+        Dictionary<string, List<string>> GetDeviceIdsByModel(Models.Simulation simulation);
     }
 
+    // Note: singleton class
     public class Simulations : ISimulations
     {
         private const string SIMULATION_ID = "1";
@@ -59,7 +68,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         private readonly IDeviceModels deviceModels;
         private readonly IIotHubConnectionStringManager connectionStringManager;
-        private readonly IDevices devices;
         private readonly IStorageRecords simulationsStorage;
         private readonly ILogger log;
 
@@ -68,13 +76,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IDeviceModels deviceModels,
             IFactory factory,
             IIotHubConnectionStringManager connectionStringManager,
-            IDevices devices,
             ILogger logger)
         {
             this.deviceModels = deviceModels;
-            this.simulationsStorage = factory.Resolve<IStorageRecords>().Setup(config.SimulationsStorage);
+            this.simulationsStorage = factory.Resolve<IStorageRecords>().Init(config.SimulationsStorage);
             this.connectionStringManager = connectionStringManager;
-            this.devices = devices;
             this.log = logger;
         }
 
@@ -123,7 +129,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var existingSimulations = await this.GetListAsync();
             if (existingSimulations.Count > 0)
             {
-                this.log.Warn("There is already a simulation", () => { });
+                this.log.Warn("There is already a simulation");
                 throw new ConflictingResourceException(
                     "There is already a simulation. Only one simulation can be created.");
             }
@@ -173,19 +179,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (simulation.Id != SIMULATION_ID)
             {
-                this.log.Warn("Invalid simulation ID. Only one simulation is allowed", () => { });
+                this.log.Warn("Invalid simulation ID. Only one simulation is allowed");
                 throw new InvalidInputException("Invalid simulation ID. Use ID '" + SIMULATION_ID + "'.");
             }
 
             var simulations = await this.GetListAsync();
             if (simulations.Count > 0)
             {
-                this.log.Info("Modifying simulation", () => { });
+                this.log.Info("Modifying simulation");
 
                 if (simulation.ETag == "*")
                 {
                     simulation.ETag = simulations[0].ETag;
-                    this.log.Info("The client used ETag='*' choosing to overwrite the current simulation", () => { });
+                    this.log.Info("The client used ETag='*' choosing to overwrite the current simulation");
                 }
 
                 if (simulation.ETag != simulations[0].ETag)
@@ -205,7 +211,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             else
             {
-                this.log.Info("Creating new simulation", () => { });
+                this.log.Info("Creating new simulation");
 
                 // new simulation
                 simulation.Created = DateTimeOffset.UtcNow;
@@ -278,6 +284,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return simulation;
         }
 
+        /*
         /// <summary>
         /// Delete a simulation and its devices.
         /// </summary>
@@ -286,29 +293,67 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             // Delete devices first
             var deviceIds = this.GetDeviceIds(await this.GetAsync(id));
             await this.devices.DeleteListAsync(deviceIds);
-
+            
             // Then delete the simulation from the storage
             await this.simulationsStorage.DeleteAsync(id);
         }
-
+        
         /// <summary>
-        /// Get the ID of the devices in a simulation.
+        /// Generate the list of device IDs. This list will eventually be retrieved from the database.
         /// </summary>
-        public IEnumerable<string> GetDeviceIds(Models.Simulation simulation)
+        public IList<string> GetDeviceIds(Models.Simulation simulation)
         {
-            var deviceIds = new List<string>();
-
+            var result = new List<string>();
+            
             // Calculate the device IDs used in the simulation
             var models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
             foreach (var model in models)
             {
-                for (var i = 0; i < model.Count; i++)
+                for (var i = 1; i <= model.Count; i++)
                 {
-                    deviceIds.Add(this.devices.GenerateId(model.Id, i));
+                    result.Add(this.GenerateId(simulation.Id, model.Id, i));
                 }
             }
+            
+            this.log.Debug("Device IDs loaded", () => new { Simulation = simulation.Id, result.Count });
+            
+            return result;
+        }
+        */
 
-            return deviceIds;
+        /// <summary>
+        /// Generate the list of device IDs. This list will eventually be retrieved from the database.
+        /// </summary>
+        public Dictionary<string, List<string>> GetDeviceIdsByModel(Models.Simulation simulation)
+        {
+            var result = new Dictionary<string, List<string>>();
+            var deviceCount = 0;
+
+            // Load the simulation models with at least 1 device to simulate
+            var models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
+
+            // Generate ID, e.g. "1.chiller-01.1", "1.chiller-01.2", etc 
+            foreach (var model in models)
+            {
+                var deviceIds = new List<string>();
+                for (var i = 1; i <= model.Count; i++)
+                {
+                    deviceIds.Add(this.GenerateId(simulation.Id, model.Id, i));
+                    deviceCount++;
+                }
+
+                result.Add(model.Id, deviceIds);
+            }
+
+            this.log.Debug("Device IDs loaded", () => new { Simulation = simulation.Id, deviceCount });
+
+            return result;
+        }
+
+        // Generate a device Id
+        private string GenerateId(string simulationId, string deviceModelId, int position)
+        {
+            return simulationId + "." + deviceModelId + "." + position;
         }
     }
 }

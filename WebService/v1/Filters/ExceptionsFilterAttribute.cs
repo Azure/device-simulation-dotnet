@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Newtonsoft.Json;
+using InvalidIotHubConnectionStringFormatException = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions.InvalidIotHubConnectionStringFormatException;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters
 {
@@ -38,8 +39,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters
             }
             else if (context.Exception is BadRequestException
                      || context.Exception is InvalidInputException
-                     || context.Exception is Services.Exceptions.InvalidIotHubConnectionStringFormatException
-                     || context.Exception is WebService.v1.Exceptions.InvalidIotHubConnectionStringFormatException
+                     || context.Exception is InvalidIotHubConnectionStringFormatException
+                     || context.Exception is Exceptions.InvalidIotHubConnectionStringFormatException
                      || context.Exception is IotHubConnectionException)
             {
                 context.Result = this.GetResponse(HttpStatusCode.BadRequest, context.Exception);

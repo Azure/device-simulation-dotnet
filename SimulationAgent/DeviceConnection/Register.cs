@@ -2,7 +2,6 @@
 
 using System;
 using System.Threading.Tasks;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 
@@ -13,20 +12,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
     /// </summary>
     public class Register : IDeviceConnectionLogic
     {
-        private readonly IDevices devices;
         private readonly ILogger log;
+        private IDeviceConnectionActor deviceContext;
+        private ISimulationContext simulationContext;
         private string deviceId;
-        private IDeviceConnectionActor context;
 
-        public Register(IDevices devices, ILogger logger)
+        public Register(ILogger logger)
         {
             this.log = logger;
-            this.devices = devices;
         }
 
-        public void Setup(IDeviceConnectionActor context, string deviceId, DeviceModel deviceModel)
+        public void Init(IDeviceConnectionActor deviceContext, string deviceId, DeviceModel deviceModel)
         {
-            this.context = context;
+            this.deviceContext = deviceContext;
+            this.simulationContext = deviceContext.SimulationContext;
             this.deviceId = deviceId;
         }
 
@@ -37,19 +36,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
             try
             {
-                var device = await this.devices.CreateAsync(this.deviceId);
+                var device = await this.simulationContext.Devices.CreateAsync(this.deviceId);
 
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Debug("Device registered", () => new { timeSpentMsecs, this.deviceId });
 
-                this.context.Device = device;
-                this.context.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceRegistered);
+                this.deviceContext.Device = device;
+                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceRegistered);
             }
             catch (Exception e)
             {
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Error("Error while registering the device", () => new { timeSpentMsecs, this.deviceId, e });
-                this.context.HandleEvent(DeviceConnectionActor.ActorEvents.RegistrationFailed);
+                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.RegistrationFailed);
             }
         }
     }
