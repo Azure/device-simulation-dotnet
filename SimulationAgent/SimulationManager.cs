@@ -241,6 +241,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 if (this.deviceCount >= this.maxDeviceCount)
                 {
                     this.log.Debug("Maximum number of devices per node reached", () => new { this.deviceCount, this.maxDeviceCount });
+                    return;
                 }
 
                 // Try to lock partition
