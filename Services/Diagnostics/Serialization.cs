@@ -61,7 +61,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
                     ExceptionMessage = exception.Message,
                     exception.StackTrace,
                     exception.Source,
-                    exception.Data,
+                    //exception.Data,
                     InnerExceptions = innerExceptions
                 };
             }
@@ -72,7 +72,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
                 ExceptionMessage = e.Message,
                 e.StackTrace,
                 e.Source,
-                e.Data,
+                //e.Data,
                 InnerException = SerializeException(e.InnerException, depth - 1)
             };
         }

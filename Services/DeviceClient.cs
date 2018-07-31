@@ -156,10 +156,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     () => new
                     {
                         Protocol = this.protocol.ToString(),
-                        Exception = e.GetType().FullName,
+                        ExceptionType = e.GetType().FullName,
                         e.Message,
                         e.StackTrace,
-                        e.Data,
+                        //e.Data,
                         e.Source,
                         e.TargetSite,
                         e.InnerException // This appears to always be null in this scenario
@@ -172,7 +172,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     {
                         Protocol = this.protocol.ToString(),
                         ExceptionMessage = e.Message,
-                        Exception = e.GetType().FullName,
+                        ExceptionType = e.GetType().FullName,
                         e.InnerException
                     });
             }
@@ -196,7 +196,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     {
                         Protocol = this.protocol.ToString(),
                         ExceptionMessage = e.Message,
-                        Exception = e.GetType().FullName,
+                        ExceptionType = e.GetType().FullName,
                         e.InnerException
                     });
 
@@ -209,7 +209,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     {
                         Protocol = this.protocol.ToString(),
                         ExceptionMessage = e.Message,
-                        Exception = e.GetType().FullName,
+                        ExceptionType = e.GetType().FullName,
                         e.InnerException
                     });
 
@@ -224,7 +224,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     {
                         Protocol = this.protocol.ToString(),
                         ExceptionMessage = e.Message,
-                        Exception = e.GetType().FullName,
+                        ExceptionType = e.GetType().FullName,
                         e.InnerException
                     });
 
@@ -238,7 +238,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     {
                         Protocol = this.protocol.ToString(),
                         ExceptionMessage = e.Message,
-                        Exception = e.GetType().FullName,
+                        ExceptionType = e.GetType().FullName,
                         e.InnerException
                     });
 
@@ -251,7 +251,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     {
                         Protocol = this.protocol.ToString(),
                         ExceptionMessage = e.Message,
-                        Exception = e.GetType().FullName,
+                        ExceptionType = e.GetType().FullName,
                         e.InnerException
                     });
 

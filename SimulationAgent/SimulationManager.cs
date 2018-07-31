@@ -169,14 +169,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         public void PrintStats()
         {
             this.instance.InitRequired();
+
+            var connectedCount = this.deviceConnectionActors.Count(x => x.Value.Connected);
+
             this.log.Info($"Simulation {this.simulation.Id} stats",
                 () => new
                 {
                     SimulationId = this.simulation.Id,
                     PartitionsInThisNode = this.assignedPartitions.Count,
                     DevicesInThisNode = this.deviceCount,
+                    ConnectedDevicesInThisNode = connectedCount,
                     NodesInTheCluster = this.nodeCount,
-                    MessagesThroughput = this.simulationContext.RateLimiting.GetThroughputForMessages()
+                    RateLimitMessagesThroughput = this.simulationContext.RateLimiting.GetThroughputForMessages(),
+                    RateLimitClusterSize = this.simulationContext.RateLimiting.ClusterSize
                 });
         }
 

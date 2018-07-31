@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 
@@ -8,6 +7,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
     public interface IRateLimiting
     {
+        int ClusterSize { get; }
+
         long GetPauseForNextConnection();
         long GetPauseForNextRegistryOperation();
         long GetPauseForNextTwinRead();
@@ -38,6 +39,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         // TODO: https://github.com/Azure/device-simulation-dotnet/issues/80
         //private readonly PerDayCounter messagingDaily;
+
+        public int ClusterSize => this.clusterSize;
 
         public RateLimiting(ILogger log, IInstance instance)
         {
@@ -86,7 +89,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         {
             this.instance.InitRequired();
 
-            this.log.Info("Updating rating limits to the new cluster size", () => new { previousSize = this.clusterSize, newSize = count });
+            this.log.Info("Updating rating limits to the new cluster size",
+                () => new { previousSize = this.clusterSize, newSize = count });
 
             this.clusterSize = count;
             this.connections.ChangeConcurrencyFactor(count);
