@@ -27,7 +27,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             ConcurrentDictionary<string, IDeviceConnectionActor> deviceConnectionActors,
             ConcurrentDictionary<string, IDeviceTelemetryActor> deviceTelemetryActors,
             ConcurrentDictionary<string, IDevicePropertiesActor> devicePropertiesActors);
-        
+
         // Check if the cluster size has changed and act accordingly
         Task SyncClusterSizeAsync();
 
@@ -39,6 +39,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         void NewConnectionLoop();
         void NewPropertiesLoop();
+        void PrintStats();
     }
 
     public class SimulationManager : ISimulationManager
@@ -163,6 +164,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             this.instance.InitRequired();
             this.simulationContext.NewPropertiesLoop();
+        }
+
+        public void PrintStats()
+        {
+            this.instance.InitRequired();
+            this.log.Info($"Simulation {this.simulation.Id} stats",
+                () => new
+                {
+                    SimulationId = this.simulation.Id,
+                    PartitionsInThisNode = this.assignedPartitions.Count,
+                    DevicesInThisNode = this.deviceCount,
+                    NodesInTheCluster = this.nodeCount,
+                    MessagesThroughput = this.simulationContext.RateLimiting.GetThroughputForMessages()
+                });
         }
 
         // Count the nodes running this simulation

@@ -93,6 +93,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".vscode", ".vscode", "{63A26FF0-CBDC-4CBE-8135-23A04C6FCE7E}"
 ProjectSection(SolutionItems) = preProject
 	.vscode\launch.json = .vscode\launch.json
+EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

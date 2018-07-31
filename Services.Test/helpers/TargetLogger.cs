@@ -25,77 +25,77 @@ namespace Services.Test.helpers
 
         public void Write(string message, string callerName = "", string filePath = "", int lineNumber = 0)
         {
-            throw new NotImplementedException();
+            this.testLogger.WriteLine(Time() + "Target Write: " + message);
         }
 
         public void Debug(string message, string callerName = "", string filePath = "", int lineNumber = 0)
         {
-            throw new NotImplementedException();
+            this.testLogger.WriteLine(Time() + "Target Debug: " + message);
         }
 
         public void Info(string message, string callerName = "", string filePath = "", int lineNumber = 0)
         {
-            throw new NotImplementedException();
+            this.testLogger.WriteLine(Time() + "Target Info: " + message);
         }
 
         public void Warn(string message, string callerName = "", string filePath = "", int lineNumber = 0)
         {
-            throw new NotImplementedException();
+            this.testLogger.WriteLine(Time() + "Target Warn: " + message);
         }
 
         public void Error(string message, string callerName = "", string filePath = "", int lineNumber = 0)
         {
-            throw new NotImplementedException();
+            this.testLogger.WriteLine(Time() + "Target Error: " + message);
         }
 
         public void Write(string message, Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
         {
-            throw new NotImplementedException();
+            this.testLogger.WriteLine(Time() + "Target Write: " + message);
         }
 
         public void Debug(string message, Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
         {
-            throw new NotImplementedException();
+            this.testLogger.WriteLine(Time() + "Target Debug: " + message);
         }
 
         public void Info(string message, Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
         {
-            throw new NotImplementedException();
+            this.testLogger.WriteLine(Time() + "Target Info: " + message);
         }
 
         public void Warn(string message, Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
         {
-            throw new NotImplementedException();
+            this.testLogger.WriteLine(Time() + "Target Warn: " + message);
         }
 
         public void Error(string message, Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
         {
-            throw new NotImplementedException();
+            this.testLogger.WriteLine(Time() + "Target Error: " + message);
         }
 
         public void Write(string message, Exception e, string callerName = "", string filePath = "", int lineNumber = 0)
         {
-            throw new NotImplementedException();
+            this.testLogger.WriteLine(Time() + "Target Write: " + message);
         }
 
         public void Debug(string message, Exception e, string callerName = "", string filePath = "", int lineNumber = 0)
         {
-            throw new NotImplementedException();
+            this.testLogger.WriteLine(Time() + "Target Debug: " + message);
         }
 
         public void Info(string message, Exception e, string callerName = "", string filePath = "", int lineNumber = 0)
         {
-            throw new NotImplementedException();
+            this.testLogger.WriteLine(Time() + "Target Info: " + message);
         }
 
         public void Warn(string message, Exception e, string callerName = "", string filePath = "", int lineNumber = 0)
         {
-            throw new NotImplementedException();
+            this.testLogger.WriteLine(Time() + "Target Warn: " + message);
         }
 
         public void Error(string message, Exception e, string callerName = "", string filePath = "", int lineNumber = 0)
         {
-            throw new NotImplementedException();
+            this.testLogger.WriteLine(Time() + "Target Error: " + message);
         }
 
         public string FormatDate(long time)
@@ -105,7 +105,7 @@ namespace Services.Test.helpers
 
         public void LogToFile(string filename, string text)
         {
-            throw new NotImplementedException();
+            this.testLogger.WriteLine(Time() + "Target LogToFile: " + text);
         }
 
         public void Write(string message, Action context)

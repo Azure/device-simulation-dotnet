@@ -31,6 +31,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // or new devices, to avoid overloading the database with queries
         private const int PAUSE_AFTER_CHECK_MSECS = 20000;
 
+        // How often (minimum) to log simulation statistics
+        private const int STATS_INTERVAL_MSECS = 15000;
+
         // Global thread settings, not specific to any simulation
         private readonly IAppConcurrencyConfig appConcurrencyConfig;
 
@@ -76,6 +79,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         // Used to stop the threads
         private CancellationTokenSource runningToken;
+        private long lastStatsTime;
 
         public Agent(
             IAppConcurrencyConfig appConcurrencyConfig,
@@ -91,6 +95,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.startingOrStopping = false;
             this.running = false;
             this.runningToken = new CancellationTokenSource();
+            this.lastStatsTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             this.simulationManagers = new ConcurrentDictionary<string, ISimulationManager>();
             this.deviceStateActors = new ConcurrentDictionary<string, IDeviceStateActor>();
@@ -165,6 +170,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 await this.MonitorClusterSizeAsync();
                 await this.MonitorDevicePartitionsAsync();
                 this.StopInactiveSimulations(activeSimulations);
+                this.PrintStats();
 
                 Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
             }
@@ -182,7 +188,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             foreach (var simulation in activeSimulations)
             {
                 if (this.simulationManagers.ContainsKey(simulation.Id)) continue;
-                
+
                 try
                 {
                     var manager = this.factory.Resolve<ISimulationManager>();
@@ -192,7 +198,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                         this.deviceConnectionActors,
                         this.deviceTelemetryActors,
                         this.devicePropertiesActors);
-                    
+
                     this.simulationManagers[simulation.Id] = manager;
                 }
                 catch (Exception e)
@@ -235,6 +241,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.log.Error("Unable to remove simulation manager from the list of managers",
                         () => new { SimulationId = manager.Key });
                 }
+            }
+        }
+
+        private void PrintStats()
+        {
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+            if (now - this.lastStatsTime < STATS_INTERVAL_MSECS) return;
+            this.lastStatsTime = now;
+
+            foreach (var manager in this.simulationManagers)
+            {
+                manager.Value.PrintStats();
             }
         }
 
