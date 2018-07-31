@@ -2,6 +2,7 @@
 
 using System;
 using System.IO;
+using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Abstractions.Internal;
 
@@ -13,7 +14,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         public static void Main(string[] args)
         {
             //var webServicePort = DependencyResolution.GetConfig().Port;
-            
+
             var webServicePort = new Random().Next(9004, 60000);
 
             try

@@ -9,6 +9,7 @@ using Services.Test.helpers;
 using System;
 using System.IO;
 using System.Linq;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DeviceModels;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Xunit;
 

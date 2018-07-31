@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Services.Test.helpers;
@@ -97,7 +96,7 @@ namespace Services.Test
             const string VALUE1 = "value1";
             const string NEW_VALUE = "newvalue";
 
-            var dictionary = new Dictionary<string,object>
+            var dictionary = new Dictionary<string, object>
             {
                 { KEY1, VALUE1 }
             };

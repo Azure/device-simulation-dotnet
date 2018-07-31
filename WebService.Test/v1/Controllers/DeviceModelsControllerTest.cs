@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DeviceModels;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers;
@@ -141,7 +142,7 @@ namespace WebService.Test.v1.Controllers
 
             // Act & Assert
             Assert.ThrowsAsync<BadRequestException>(
-                async () => await this.target.PutAsync(DeviceModelApiModel.FromServiceModel(deviceModel)))
+                    async () => await this.target.PutAsync(DeviceModelApiModel.FromServiceModel(deviceModel)))
                 .Wait(Constants.TEST_TIMEOUT);
         }
 
