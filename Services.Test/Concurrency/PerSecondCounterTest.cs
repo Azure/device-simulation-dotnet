@@ -256,6 +256,7 @@ namespace Services.Test.Concurrency
             {
                 // wait until the next second
             }
+
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             thread1.Start();
             thread2.Start();
@@ -323,6 +324,7 @@ namespace Services.Test.Concurrency
             {
                 // wait until the next second
             }
+
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             thread1.Start();
             thread2.Start();
@@ -368,6 +370,7 @@ namespace Services.Test.Concurrency
             {
                 target.IncreaseAsync(CancellationToken.None).Wait(Constants.TEST_TIMEOUT);
             }
+
             var t2 = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             Thread.Sleep(5001);
@@ -377,6 +380,7 @@ namespace Services.Test.Concurrency
             {
                 target.IncreaseAsync(CancellationToken.None).Wait(Constants.TEST_TIMEOUT);
             }
+
             var t4 = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             // Assert

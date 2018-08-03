@@ -4,6 +4,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 
@@ -41,23 +42,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         public async Task RunAsync()
         {
             this.log.Debug("Connecting...", () => new { this.deviceId });
+            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             try
             {
                 this.context.Client = this.devices.GetClient(this.context.Device, this.deviceModel.Protocol, this.scriptInterpreter);
 
-                var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 await this.context.Client.ConnectAsync();
                 await this.context.Client.RegisterMethodsForDeviceAsync(this.deviceModel.CloudToDeviceMethods, this.context.DeviceState, this.context.DeviceProperties);
                 await this.context.Client.RegisterDesiredPropertiesUpdateAsync(this.context.DeviceProperties);
 
-                var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
-                this.log.Debug("Device connected", () => new { this.deviceId, timeSpent });
+                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                this.log.Debug("Device connected", () => new { timeSpentMsecs, this.deviceId });
                 this.context.HandleEvent(DeviceConnectionActor.ActorEvents.Connected);
+            }
+            catch (DeviceAuthFailedException e)
+            {
+                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                this.log.Error("Invalid connection credentials", () => new { timeSpentMsecs, this.deviceId, e });
+                this.context.HandleEvent(DeviceConnectionActor.ActorEvents.AuthFailed);
             }
             catch (Exception e)
             {
-                this.log.Error("Connection error", () => new { this.deviceId, e });
+                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                this.log.Error("Connection error", () => new { timeSpentMsecs, this.deviceId, e });
                 this.context.HandleEvent(DeviceConnectionActor.ActorEvents.ConnectionFailed);
             }
         }

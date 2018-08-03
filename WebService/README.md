@@ -7,9 +7,9 @@ The web service is built on ASP.NET Web API and hosted via Kestrel, i.e. IIS is
 not strictly required to run the service, although it would be possible if required.
 More information can be found here:
 
-* [Building Web APIs](https://docs.microsoft.com/en-us/aspnet/core/mvc/web-api)
-* [Routing in ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/routing)
-* [Introduction to Kestrel web server implementation in ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/servers/kestrel)
+* [Building Web APIs](https://docs.microsoft.com/aspnet/core/mvc/web-api)
+* [Routing in ASP.NET Core](https://docs.microsoft.com/aspnet/core/fundamentals/routing)
+* [Introduction to Kestrel web server implementation in ASP.NET Core](https://docs.microsoft.com/aspnet/core/fundamentals/servers/kestrel)
 
 ## Guidelines
 

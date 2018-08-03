@@ -17,7 +17,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
     {
         private const string DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:sszzz";
 
-        private long version;
         private DateTimeOffset created;
         private DateTimeOffset modified;
 
@@ -47,7 +46,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         {
             { "$type", "Simulation;" + Version.NUMBER },
             { "$uri", "/" + Version.PATH + "/simulations/" + this.Id },
-            { "$version", this.version.ToString() },
             { "$created", this.created.ToString(DATE_FORMAT) },
             { "$modified", this.modified.ToString(DATE_FORMAT) }
         };
@@ -113,7 +111,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             }
 
             result.DeviceModels = SimulationDeviceModelRef.FromServiceModel(value.DeviceModels);
-            result.version = value.Version;
             result.created = value.Created;
             result.modified = value.Modified;
 

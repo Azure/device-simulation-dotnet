@@ -1,9 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers;
 using Moq;
 using Services.Test.helpers;

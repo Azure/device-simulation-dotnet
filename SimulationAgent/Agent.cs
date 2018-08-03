@@ -10,14 +10,14 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
-    public interface ISimulation
+    public interface ISimulationAgent
     {
         Task RunAsync();
         Task DeleteDevices(List<string> ids);
         void Stop();
     }
 
-    public class Simulation : ISimulation
+    public class Agent : ISimulationAgent
     {
         private const int CHECK_INTERVAL_MSECS = 10000;
 
@@ -27,7 +27,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private Services.Models.Simulation simulation;
         private bool running;
 
-        public Simulation(
+        public Agent(
             ILogger logger,
             ISimulations simulations,
             ISimulationRunner runner)
@@ -45,6 +45,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // Keep running, checking if the simulation changes
             while (this.running)
             {
+                var oldSimulation = this.simulation;
                 try
                 {
                     this.log.Debug("------ Checking for simulation changes ------", () => { });
@@ -68,6 +69,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 catch (Exception e)
                 {
                     this.log.Error("Failure reading and starting simulation from storage.", () => new { e });
+                    this.simulation = oldSimulation;
                 }
 
                 if (this.simulation != null && this.simulation.ShouldBeRunning())

@@ -83,8 +83,8 @@ function varylocation(latitude, longitude, distance) {
     // Convert to meters, use Earth radius, convert to radians
     var radians = (distance * 1609.344 / 6378137) * (180 / Math.PI);
 
-    latitude += radians,
-    longitude += radians / Math.cos(latitude * Math.PI / 180)
+    latitude += radians;
+    longitude += radians / Math.cos(latitude * Math.PI / 180);
 
     // Ensure valid latitude and longitude
     latitude = ensureRange(latitude, -90, 90);

@@ -88,7 +88,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
             this.timestamps = new Queue<long>();
 
-            this.log.Info("New counter", () => new { name, rate, timeUnitLength });
+            this.log.Debug("New counter", () => new { name, rate, timeUnitLength });
         }
 
         public long GetPause()
@@ -146,17 +146,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             // slower, rather than relying purely on the counter
             if (pauseMsecs > 60000)
             {
-                this.log.Info("Pausing for more than a minute",
+                this.log.Debug("Pausing for more than a minute",
                     () => new { this.name, seconds = pauseMsecs / 1000 });
             }
             else if (pauseMsecs > 15000)
             {
-                this.log.Info("Pausing for several seconds",
+                this.log.Debug("Pausing for several seconds",
                     () => new { this.name, seconds = pauseMsecs / 1000 });
             }
             else
             {
-                this.log.Info("Pausing", () => new { this.name, millisecs = pauseMsecs });
+                this.log.Debug("Pausing", () => new { this.name, millisecs = pauseMsecs });
             }
 
             return pauseMsecs;

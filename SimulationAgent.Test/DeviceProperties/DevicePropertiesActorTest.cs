@@ -46,7 +46,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.devices = new Mock<IDevices>();
             this.loopSettings = new Mock<PropertiesLoopSettings>(this.rateLimitingConfig.Object);
             this.updatePropertiesLogic = new Mock<UpdateReportedProperties>(this.logger.Object);
-            this.deviceTagLogic = new Mock<SetDeviceTag>(devices.Object, this.logger.Object);
+            this.deviceTagLogic = new Mock<SetDeviceTag>(this.devices.Object, this.logger.Object);
 
             this.CreateNewDevicePropertiesActor();
         }

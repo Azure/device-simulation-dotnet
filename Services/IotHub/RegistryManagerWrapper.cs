@@ -41,23 +41,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
      * static methods in the unit tests. No logic here, only forwarding
      * methods to the actual class in the SDK.
      */
-    public class RegistryManagerShim : IRegistryManager, IDisposable
+    public class RegistryManagerWrapper : IRegistryManager, IDisposable
     {
         private readonly RegistryManager registry;
 
-        public RegistryManagerShim()
+        public RegistryManagerWrapper()
         {
             this.registry = null;
         }
 
-        public RegistryManagerShim(string connString)
+        public RegistryManagerWrapper(string connString)
         {
             this.registry = RegistryManager.CreateFromConnectionString(connString);
         }
 
         public IRegistryManager CreateFromConnectionString(string connString)
         {
-            return new RegistryManagerShim(connString);
+            return new RegistryManagerWrapper(connString);
         }
 
         public async Task<BulkRegistryOperationResult> AddDevices2Async(

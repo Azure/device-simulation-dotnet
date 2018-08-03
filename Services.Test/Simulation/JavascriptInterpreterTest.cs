@@ -67,7 +67,7 @@ namespace Services.Test.Simulation
             deviceState.SetAll(state);
 
             // Act
-            this.target.Invoke(filename, context, deviceState, properties.Object);
+            this.target.Invoke(filename, context, deviceState, this.properties.Object);
 
             // Assert
             Assert.Equal(state.Count, deviceState.GetAll().Count);

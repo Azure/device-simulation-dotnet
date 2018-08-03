@@ -11,8 +11,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         void ActorStarted();
         void ActorStopped();
 
+        void CredentialsSetupScheduled(long time);
         void FetchScheduled(long time);
+        void PreparingDeviceCredentials();
         void FetchingDevice();
+        void DeviceCredentialsReady();
         void DeviceFetched();
         void DeviceNotFound();
         void DeviceFetchFailed();
@@ -40,6 +43,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         void DeviceDisconnectionScheduled(long time);
         void DisconnectingDevice();
         void DeviceDisconnected();
+
+        void DeviceConnectionAuthFailed();
         void DeviceConnectionFailed();
 
         void TelemetryScheduled(long time);
@@ -135,6 +140,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
             this.Log("Fetching device");
             this.LogRegistry("Fetching device");
+        }
+
+        public void CredentialsSetupScheduled(long time)
+        {
+            if (!this.enabled) return;
+
+            var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
+            this.Log("Credentials setup scheduled at: " + msg);
+            this.LogRegistry("Credentials setup scheduled at: " + msg);
+        }
+
+        public void PreparingDeviceCredentials()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Preparing device credentials");
+            this.LogRegistry("Preparing device credentials");
+        }
+
+        public void DeviceCredentialsReady()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Device credentials ready");
+            this.LogRegistry("Device credentials ready");
         }
 
         public void DeviceFetched()
@@ -284,6 +314,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
             this.Log("Device connected");
             this.LogConnection("Connected");
+        }
+
+        public void DeviceConnectionAuthFailed()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Device auth failed");
+            this.LogConnection("Device auth failed");
         }
 
         public void DeviceConnectionFailed()
