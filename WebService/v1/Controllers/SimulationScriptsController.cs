@@ -22,6 +22,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
     [ExceptionsFilter]
     public class SimulationScriptsController : Controller
     {
+        private readonly string ApplicationJavascript = "application/javascript";
         private readonly ILogger log;
         private readonly ISimulationScripts simulationScriptService;
 
@@ -46,7 +47,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         }
 
         [HttpPost(Version.PATH + "/[controller]!validate")]
-        public ActionResult Validate(IFormFile file)
+        public async Task<ActionResult> Validate(IFormFile file)
         {
             if (file == null)
             {
@@ -54,30 +55,38 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data provided.");
             }
 
+            if (file.ContentType != this.ApplicationJavascript)
+            {
+                this.log.Warn("Wrong content type provided", () => new { file.ContentType });
+                throw new BadRequestException("Wrong content type provided.");
+            }
+
             try
             {
-                JavaScriptParser parser = new JavaScriptParser();
+                var parser = new JavaScriptParser();
                 var reader = new StreamReader(file.OpenReadStream());
-                string rawScript = reader.ReadToEnd();
+                var rawScript = reader.ReadToEnd();
                 parser.Parse(rawScript);
             }
             catch (Exception e)
             {
-                return new JsonResult(new ValidationApiModel()
-                {
-                    Success = false,
-                    Messages = new List<string>
+                var result = new JsonResult(new ValidationApiModel
                     {
-                        e.Message
-                    }
-                }) { StatusCode = (int)HttpStatusCode.BadRequest };
+                        Success = false,
+                        Messages = new List<string>
+                        {
+                            e.Message
+                        }
+                    })
+                    { StatusCode = (int) HttpStatusCode.BadRequest };
+                return await Task.FromResult(result);
             }
 
-            return new JsonResult(new ValidationApiModel()) { StatusCode = (int)HttpStatusCode.OK };
+            return await Task.FromResult(new JsonResult(new ValidationApiModel()) { StatusCode = (int) HttpStatusCode.OK });
         }
 
         [HttpPost(Version.PATH + "/[controller]")]
-        public async Task<SimulationScript> PostAsync(IFormFile file)
+        public async Task<SimulationScriptApiModel> PostAsync(IFormFile file)
         {
             if (file == null)
             {
@@ -98,11 +107,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException(e.Message);
             }
 
-            return await this.simulationScriptService.InsertAsync(simulationScript);
+            return SimulationScriptApiModel.FromServiceModel(await this.simulationScriptService.InsertAsync(simulationScript));
         }
 
         [HttpPut(Version.PATH + "/[controller]/{id}")]
-        public async Task<SimulationScript> PutAsync(
+        public async Task<SimulationScriptApiModel> PutAsync(
             IFormFile file,
             string etag,
             string id)
@@ -142,7 +151,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException(e.Message);
             }
 
-            return await this.simulationScriptService.UpsertAsync(simulationScript);
+            return SimulationScriptApiModel.FromServiceModel(await this.simulationScriptService.UpsertAsync(simulationScript));
         }
 
         [HttpDelete(Version.PATH + "/[controller]/{id}")]

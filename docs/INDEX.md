@@ -40,6 +40,7 @@ calls.
 * Web Service API specifications
   * [Device models](API_SPECS_DEVICE_MODELS.md)
   * [Simulations](API_SPECS_SIMULATIONS.md)
+  * [Simulation scripts](API_SPECS_SIMULATION_SCRIPTS.md)
   * [Service](API_SPECS_SERVICE.md)
-* [Device models](DEVICE_MODELS.md)
-* [Contributing to the project](CONTRIBUTING.md)
+  * [Device models](DEVICE_MODELS.md)
+  * [Contributing to the project](CONTRIBUTING.md)
