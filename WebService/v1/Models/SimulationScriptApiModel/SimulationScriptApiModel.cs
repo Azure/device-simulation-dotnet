@@ -40,7 +40,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
         {
             { "$type", "SimulationScript;" + v1.Version.NUMBER },
-            { "$uri", "/" + v1.Version.PATH + "/devicemodels/" + this.Id },
+            { "$uri", "/" + v1.Version.PATH + "/simulationscripts/" + this.Id },
             { "$created", this.created.ToString(DATE_FORMAT) },
             { "$modified", this.modified.ToString(DATE_FORMAT) }
         };

@@ -82,7 +82,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             {
                 Program program;
                 string filename;
-                if (script.Path == SimulationScript.SimulationScriptPath.Storage.ToString())
+                bool isInStorage = string.Equals(script.Path.Trim(),
+                    SimulationScript.SimulationScriptPath.Storage.ToString(),
+                    StringComparison.OrdinalIgnoreCase);
+
+                if (isInStorage)
                 {
                     filename = script.Id;
                     if (programs.ContainsKey(filename))
