@@ -20,14 +20,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private const int MAX_DELETE_ITEMS = 100;
         private readonly ISimulations simulationsService;
         private readonly IIotHubConnectionStringManager connectionStringManager;
-        private readonly ISimulation simulationAgent;
+        private readonly ISimulationAgent simulationAgent;
 
         private readonly ILogger log;
 
         public SimulationsController(
             ISimulations simulationsService,
             IIotHubConnectionStringManager connectionStringManager,
-            ISimulation simulationAgent,
+            ISimulationAgent simulationAgent,
             ILogger logger)
         {
             this.simulationsService = simulationsService;

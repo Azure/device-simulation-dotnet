@@ -356,6 +356,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 case ActorEvents.DeviceDeregistered:
                     this.actorLogger.DeviceDeregistered();
                     this.status = ActorStatus.Deleted;
+                    break;
 
                 case ActorEvents.TelemetryClientBroken:
                     this.Client?.DisconnectAsync();
@@ -386,7 +387,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 case ActorStatus.ReadyToFetch:
                     this.status = ActorStatus.Fetching;
                     this.actorLogger.FetchingDevice();
-                    this.fetchLogic.RunAsync();
+                    this.fetchFromRegistryLogic.RunAsync();
                     return;
 
                 case ActorStatus.ReadyToRegister:

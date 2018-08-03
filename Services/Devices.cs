@@ -276,12 +276,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task DeleteAsync(string deviceId)
         {
-            this.SetupHub();
+            this.CheckSetup();
             this.log.Debug("Deleting device", () => new { deviceId });
 
             try
             {
-                await this.GetRegistry().RemoveDeviceAsync(deviceId);
+                await this.registry.RemoveDeviceAsync(deviceId);
             }
             catch (IotHubCommunicationException error)
             {

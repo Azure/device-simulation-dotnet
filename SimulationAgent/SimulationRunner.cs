@@ -696,7 +696,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.deviceStateActors.Remove(key);
         }
 
-        private void IncreamentSimulationErrorsCount()
+        private void IncrementSimulationErrorsCount()
         {
             Interlocked.Increment(ref this.simulationErrors);
         }

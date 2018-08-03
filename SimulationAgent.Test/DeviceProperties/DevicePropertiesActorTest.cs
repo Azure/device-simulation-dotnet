@@ -21,6 +21,7 @@ namespace SimulationAgent.Test.DeviceProperties
     {
         private readonly Mock<ILogger> logger;
         private readonly Mock<IActorsLogger> actorsLogger;
+        private readonly Mock<CredentialsSetup> credentialSetup;
         private readonly Mock<IRateLimiting> rateLimiting;
         private readonly Mock<IRateLimitingConfig> rateLimitingConfig;
         private readonly Mock<IDevices> devices;
@@ -40,6 +41,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.logger = new Mock<ILogger>();
             this.actorsLogger = new Mock<IActorsLogger>();
             this.rateLimiting = new Mock<IRateLimiting>();
+            this.credentialSetup = new Mock<CredentialsSetup>();
             this.rateLimitingConfig = new Mock<IRateLimitingConfig>();
             this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
             this.deviceStateActor = new Mock<IDeviceStateActor>();
@@ -147,7 +149,7 @@ namespace SimulationAgent.Test.DeviceProperties
         private DeviceConnectionActor GetDeviceConnectionActor()
         {
             Mock<IScriptInterpreter> scriptInterpreter = new Mock<IScriptInterpreter>();
-            Mock<Fetch> fetchLogic = new Mock<Fetch>(
+            Mock<FetchFromRegistry> fetchLogic = new Mock<FetchFromRegistry>(
                 this.devices.Object,
                 this.logger.Object);
             Mock<Register> registerLogic = new Mock<Register>(
@@ -168,6 +170,7 @@ namespace SimulationAgent.Test.DeviceProperties
                 this.logger.Object,
                 this.actorsLogger.Object,
                 this.rateLimiting.Object,
+                this.credentialSetup.Object,
                 fetchLogic.Object,
                 registerLogic.Object,
                 connectLogic.Object,
