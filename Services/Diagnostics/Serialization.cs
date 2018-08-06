@@ -55,24 +55,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
                 var innerExceptions = exception.InnerExceptions
                     .Select(ie => SerializeException(ie, depth - 1)).ToList();
 
+                // Note: don't log TargetSite, it's too big
                 return new
                 {
                     ExceptionFullName = exception.GetType().FullName,
                     ExceptionMessage = exception.Message,
                     exception.StackTrace,
                     exception.Source,
-                    //exception.Data,
+                    exception.Data,
                     InnerExceptions = innerExceptions
                 };
             }
 
+            // Note: don't log TargetSite, it's too big
             return new
             {
                 ExceptionFullName = e.GetType().FullName,
                 ExceptionMessage = e.Message,
                 e.StackTrace,
                 e.Source,
-                //e.Data,
+                e.Data,
                 InnerException = SerializeException(e.InnerException, depth - 1)
             };
         }

@@ -13,9 +13,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         // Application entry point
         public static void Main(string[] args)
         {
-            //var webServicePort = DependencyResolution.GetConfig().Port;
-
-            var webServicePort = new Random().Next(9004, 60000);
+            var webServicePort = DependencyResolution.GetConfig().Port;
 
             try
             {

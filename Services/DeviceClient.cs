@@ -159,9 +159,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         ExceptionType = e.GetType().FullName,
                         e.Message,
                         e.StackTrace,
-                        //e.Data,
+                        e.Data,
                         e.Source,
-                        e.TargetSite,
                         e.InnerException // This appears to always be null in this scenario
                     });
             }
