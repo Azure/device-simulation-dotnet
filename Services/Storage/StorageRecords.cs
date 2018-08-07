@@ -185,26 +185,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
                 this.log.Error("Unexpected error while retrieving the list of resources", () => new { this.storageName, e });
                 throw;
             }
-
-            /*
-            var sqlCondition = "Expiration > @expiration";
-            var sqlParams = new[]
-            {
-                new SqlParameter
-                {
-                    Name = "@expiration",
-                    Value = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
-                }
-            };
-
-            var query = this.docDb.CreateQuery<DocumentDbRecord>(
-                this.client,
-                this.config,
-                sqlCondition,
-                sqlParams).ToList();
-
-            return await Task.FromResult(query.Select(doc => new StorageRecord(doc)));
-            */
         }
 
         public async Task<StorageRecord> CreateAsync(StorageRecord input)
