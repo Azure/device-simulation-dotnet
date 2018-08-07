@@ -619,6 +619,20 @@ Simulations can be deleted using the DELETE method.
 DELETE /v1/simulations/1
 ```
 
+## Add devices in a simulation
+
+Add a device to a simulatiom using AddDevice method.
+
+Request:
+```
+PUT /v1/simulations/1/AddDevice
+Content-Type: application/json; charset=utf-8
+```
+```json
+{
+  "Item": "truck-01.0",
+}
+
 ## Deleting devices in a simulation
 
 Devices in a simulation can be deleted using DeleteDevices method. 
