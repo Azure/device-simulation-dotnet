@@ -7,12 +7,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
     public interface ISimulationAgent
     {
         Task RunAsync();
+        Task AddDevice(string id);
         Task DeleteDevices(List<string> ids);
         void Stop();
     }
@@ -56,10 +58,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     // if the simulation is removed from storage & we're running stop simulation.
                     this.CheckForDeletedSimulation(newSimulation);
 
-                    // if there's a new simulation and it's different from the current one
-                    // stop the current one from running & start the new one if it's enabled
-                    this.CheckForChangedSimulation(newSimulation);
-
                     // if there's no simulation running but there's one from storage start it
                     this.CheckForNewSimulation(newSimulation);
 
@@ -91,6 +89,51 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.runner.Stop();
         }
 
+        public async Task AddDevice(string id)
+        {
+            // currently only one simulation is supported
+            var simulation = (await this.simulations.GetListAsync()).FirstOrDefault();
+            var modelIds = this.parseModelIds(new List<string>() { id });
+            DeviceModelRef modelToUpdate = null;
+
+            if (simulation != null)
+            {
+                foreach (var model in simulation.DeviceModels)
+                {
+                    if (modelIds.Contains(model.Id))
+                    {
+                        modelToUpdate = model;
+                        model.Count++;
+                    }
+                }
+            }
+
+            if (modelToUpdate != null) 
+            {
+                try
+                {
+                    if (this.running)
+                    {
+                        this.log.Info("Add device to running simulation", () => { });
+                        await this.runner.AddDevice(modelToUpdate, this.parsePosition(id));
+                    }
+                    else
+                    {
+                        this.log.Info("Add device to hub", () => { });
+                        await this.simulations.AddDeviceAsync(id);
+                    }
+                }
+                catch (Exception e)
+                {
+                    this.log.Debug("Error while creating new device", () => new { e });
+                    throw new Exception("Error while creating a new device");
+                }
+
+                await this.simulations.UpsertAsync(simulation);
+            }
+        }
+
+
         /// <summary>
         /// Delete a list of devices
         /// </summary>
@@ -101,10 +144,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // currently only one simulation is supported
             var simulation = (await this.simulations.GetListAsync()).FirstOrDefault();
             var modelIds = this.parseModelIds(ids);
+            bool shouldUpdateSimulation = false;
 
             if (simulation != null)
             {
-                bool shouldUpdateSimulation = false;
                 foreach (var model in simulation.DeviceModels)
                 {
                     if (modelIds.Contains(model.Id))
@@ -113,22 +156,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                         shouldUpdateSimulation = true;
                     }
                 }
+            }
 
-                if (shouldUpdateSimulation)
+            if (shouldUpdateSimulation)
+            {
+                if (this.running)
                 {
-                    await this.simulations.UpsertAsync(simulation);
+                    this.log.Info("Deleting devices from running simulation", () => { });
+                    await this.runner.DeleteDevices(ids);
                 }
-            }
+                else
+                {
+                    this.log.Info("Deleting devices from hub", () => { });
+                    await this.simulations.DeleteDevicesAsync(ids);
+                }
 
-            if (this.running)
-            {
-                this.log.Info("Deleting devices from running simulation", () => { });
-                await this.runner.DeleteDevices(ids);
-            }
-            else
-            {
-                this.log.Info("Deleting devices from hub", () => { });
-                await this.simulations.DeleteDevicesAsync(ids);
+                await this.simulations.UpsertAsync(simulation);
             }
         }
 
@@ -194,6 +237,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private List<string> parseModelIds(List<string> ids)
         {
             return ids.Select(s => s.Substring(0, s.LastIndexOf(('.')))).ToList<string>();
+        }
+
+        private string parsePosition(string id)
+        {
+            int index = id.LastIndexOf(('.')) + 1;
+            return id.Substring(index, id.Length - index);
         }
     }
 }

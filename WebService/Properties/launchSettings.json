@@ -6,7 +6,7 @@
       "launchUrl": "http://localhost:9003/v1/status",
         "environmentVariables": {
             "ASPNETCORE_ENVIRONMENT": "Development",
-            "PCS_IOTHUB_CONNSTRING": "Endpoint=sb://iothub-ns-ds-withhub-448786-085f4c605c.servicebus.windows.net/;SharedAccessKeyName=iothubowner;SharedAccessKey=zcXaIhV163bNrSjswNE+7ROJy7Dh3jLUJO9AZVuV+sk=",
+            "PCS_IOTHUB_CONNSTRING": "HostName=testrel100aa90c.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=pQE6L7bY+yn2K5MMlYF7UR0dYFA6FHKrkKmVgG75o/o=",
             "PCS_STORAGEADAPTER_WEBSERVICE_URL": "http://localhost:9022/v1",
             "PCS_LOG_LEVEL": "Debug",
             "PCS_AUTH_REQUIRED": "false",
@@ -16,7 +16,7 @@
             "PCS_SUBSCRIPTION_DOMAIN": "",
             "PCS_SUBSCRIPTION_ID": "",
             "PCS_RESOURCE_GROUP": "",
-            "PCS_IOHUB_NAME": "Endpoint=sb://iothub-ns-ds-withhub-448786-085f4c605c.servicebus.windows.net/;SharedAccessKeyName=iothubowner;SharedAccessKey=zcXaIhV163bNrSjswNE+7ROJy7Dh3jLUJO9AZVuV+sk="
+            "PCS_IOHUB_NAME": "testrel100aa90c.azure-devices.net"
         },
       "applicationUrl": "http://localhost:9003/v1/status"
     }

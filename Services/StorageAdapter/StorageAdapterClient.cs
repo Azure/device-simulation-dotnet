@@ -19,6 +19,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
         Task<ValueListApiModel> GetAllAsync(string collectionId);
         Task<ValueApiModel> GetAsync(string collectionId, string key);
         Task<ValueApiModel> CreateAsync(string collectionId, string value);
+        Task<ValueApiModel> CreateAsync(string collectionId, string key, string value);
         Task<ValueApiModel> UpdateAsync(string collectionId, string key, string value, string eTag);
         Task DeleteAsync(string collectionId, string key);
     }
@@ -99,6 +100,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
             var response = await this.httpClient.PostAsync(
                 this.PrepareRequest($"collections/{collectionId}/values",
                     new ValueApiModel { Data = value }));
+
+            this.log.Debug("Storage response", () => new { response });
+
+            this.ThrowIfError(response, collectionId, "");
+
+            return JsonConvert.DeserializeObject<ValueApiModel>(response.Content);
+        }
+
+        public async Task<ValueApiModel> CreateAsync(string collectionId, string key, string value)
+        {
+            var response = await this.httpClient.PostAsync(
+                this.PrepareRequest($"collections/{collectionId}/values",
+                    new ValueApiModel
+                    {
+                        Key = key,
+                        Data = value
+                    }));
 
             this.log.Debug("Storage response", () => new { response });
 

@@ -17,7 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
     [Route(Version.PATH + "/[controller]"), ExceptionsFilter]
     public class SimulationsController : Controller
     {
-        private const int MAX_DELETE_ITEMS = 100;
+        private const int MAX_DELETE_DEVICES = 100;
         private readonly ISimulations simulationsService;
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly ISimulationAgent simulationAgent;
@@ -88,6 +88,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 await this.simulationsService.UpsertAsync(simulation.ToServiceModel(id)));
         }
 
+        [HttpPut("{id}/AddDevice")]
+        public async Task PutAsync(
+        [FromBody] DeviceApiModel device)
+        {
+            if (device == null)
+            {
+                this.log.Warn("Invalid input data provided", () => new { device });
+                throw new BadRequestException("Invalid input data provided.");
+            }
+
+            await this.simulationAgent.AddDevice(device.Item);
+        }
+
         [HttpPut("{id}/DeleteDevices")]
         public async Task PutAsync(
             [FromBody] DeviceListApiModel devices)
@@ -98,9 +111,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("Invalid input data provided.");
             }
 
-            if (devices.Items.Count > MAX_DELETE_ITEMS)
+            if (devices.Items.Count > MAX_DELETE_DEVICES)
             {
-                this.log.Warn("Device count exceeded max allowed limit", () => new { MAX_DELETE_ITEMS });
+                this.log.Warn("Device count exceeded max allowed limit", () => new { MAX_DELETE_DEVICES });
                 throw new BadRequestException("Device count exceeded max allowed limit");
             }
 

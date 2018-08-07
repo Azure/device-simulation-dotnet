@@ -16,6 +16,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnec
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
+using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
@@ -23,6 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     {
         void Start(Services.Models.Simulation simulation);
         void Stop();
+        Task AddDevice(DeviceModelRef deviceModel, string position);
         Task DeleteDevices(List<string> ids);
         long ActiveDevicesCount { get; }
         long TotalMessagesCount { get; }
@@ -273,6 +275,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 // Reset rateLimiting counters
                 this.rateLimiting.ResetCounters();
             }
+        }
+
+        public async Task AddDevice(DeviceModelRef deviceModel, string position)
+        {
+            int devicePosition;
+            int.TryParse(position, out devicePosition);
+            DeviceModel model = this.GetDeviceModel(deviceModel.Id, deviceModel.Override);
+
+            this.CreateActorsForDevice(model, devicePosition, 1);
         }
 
         /// <summary>

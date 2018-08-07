@@ -152,6 +152,9 @@ namespace SimulationAgent.Test.DeviceProperties
             Mock<FetchFromRegistry> fetchLogic = new Mock<FetchFromRegistry>(
                 this.devices.Object,
                 this.logger.Object);
+            Mock<AddToStore> addToStoreLogic = new Mock<AddToStore>(
+             this.devices.Object,
+             this.logger.Object);
             Mock<Register> registerLogic = new Mock<Register>(
                 this.devices.Object,
                 this.logger.Object);
@@ -166,16 +169,21 @@ namespace SimulationAgent.Test.DeviceProperties
                 this.devices.Object,
                 scriptInterpreter.Object,
                 this.logger.Object);
+            Mock<DeleteFromStore> deleteFromStoreLogic = new Mock<DeleteFromStore>(
+              this.devices.Object,
+              this.logger.Object);
             return new DeviceConnectionActor(
                 this.logger.Object,
                 this.actorsLogger.Object,
                 this.rateLimiting.Object,
                 this.credentialSetup.Object,
+                addToStoreLogic.Object,
                 fetchLogic.Object,
                 registerLogic.Object,
                 connectLogic.Object,
                 deregisterLogic.Object,
-                disconnectLogic.Object);
+                disconnectLogic.Object,
+                deleteFromStoreLogic.Object);
         }
     }
 }
