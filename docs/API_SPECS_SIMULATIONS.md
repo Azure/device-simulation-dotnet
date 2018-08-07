@@ -632,6 +632,7 @@ Content-Type: application/json; charset=utf-8
 {
   "Item": "truck-01.0",
 }
+```
 
 ## Deleting devices in a simulation
 
