@@ -272,8 +272,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             else if (patch.Enabled == true)
             {
+                simulation.Id = Guid.NewGuid().ToString();
+                var timeSpan = simulation.EndTime - simulation.StartTime;
                 simulation.StartTime = simulation.Modified;
-                simulation.EndTime = DateTimeOffset.MaxValue;
+                simulation.EndTime = simulation.Modified + timeSpan;
                 simulation.TotalMessagesSent = 0;
             }
 
