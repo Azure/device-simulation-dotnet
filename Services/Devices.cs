@@ -295,7 +295,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public string GenerateId(string simulationId, string deviceModelId, int position)
         {
-            return deviceModelId + "." + position + "." + simulationId;
+            return simulationId + "." + deviceModelId + "." + position;
         }
 
         // This call can throw an exception, which is fine when the exception happens during a method

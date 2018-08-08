@@ -183,59 +183,59 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// Create or Replace a simulation.
         /// The logic works under the assumption that there is only one simulation with id "1".
         /// </summary>
-        public async Task<Models.Simulation> UpsertAsync(Models.Simulation inputSimulation)
+        public async Task<Models.Simulation> UpsertAsync(Models.Simulation simulation)
         {
-            var simulation = await this.GetAsync(inputSimulation.Id);
-            if (simulation != null)
+            var existingSimulation = await this.GetAsync(simulation.Id);
+            if (existingSimulation != null)
             {
                 this.log.Info("Modifying simulation via PUT.", () => { });
 
-                if (inputSimulation.ETag == "*")
+                if (simulation.ETag == "*")
                 {
-                    inputSimulation.ETag = simulation.ETag;
+                    simulation.ETag = existingSimulation.ETag;
                     this.log.Info("The client used ETag='*' choosing to overwrite the current simulation", () => { });
                 }
 
-                if (inputSimulation.ETag != simulation.ETag)
+                if (simulation.ETag != existingSimulation.ETag)
                 {
                     this.log.Error("Invalid ETag. Running simulation ETag is:'", () => new { simulation });
                     throw new ResourceOutOfDateException("Invalid ETag. Running simulation ETag is:'" + simulation.ETag + "'.");
                 }
 
-                inputSimulation.Created = simulation.Created;
-                inputSimulation.Modified = DateTimeOffset.UtcNow;
-                inputSimulation.ConnectionsPerSecond = simulation.ConnectionsPerSecond;
-                inputSimulation.TwinReadsPerSecond = simulation.TwinReadsPerSecond;
-                inputSimulation.TwinWritesPerSecond = simulation.TwinWritesPerSecond;
-                inputSimulation.RegistryOperationsPerMinute = simulation.RegistryOperationsPerMinute;
-                inputSimulation.DeviceMessagesPerSecond = simulation.DeviceMessagesPerSecond;
-                inputSimulation.TotalMessagesSent = simulation.TotalMessagesSent;
+                simulation.Created = existingSimulation.Created;
+                simulation.Modified = DateTimeOffset.UtcNow;
+                simulation.ConnectionsPerSecond = existingSimulation.ConnectionsPerSecond;
+                simulation.TwinReadsPerSecond = existingSimulation.TwinReadsPerSecond;
+                simulation.TwinWritesPerSecond = existingSimulation.TwinWritesPerSecond;
+                simulation.RegistryOperationsPerMinute = existingSimulation.RegistryOperationsPerMinute;
+                simulation.DeviceMessagesPerSecond = existingSimulation.DeviceMessagesPerSecond;
+                simulation.TotalMessagesSent = existingSimulation.TotalMessagesSent;
             }
             else
             {
                 this.log.Info("Creating new simulation via PUT.", () => { });
                 // new simulation
-                inputSimulation.Created = DateTimeOffset.UtcNow;
-                inputSimulation.StartTime = inputSimulation.Enabled ? inputSimulation.Created : DateTimeOffset.MinValue;
-                inputSimulation.Modified = inputSimulation.Created;
+                simulation.Created = DateTimeOffset.UtcNow;
+                simulation.StartTime = simulation.Enabled ? simulation.Created : DateTimeOffset.MinValue;
+                simulation.Modified = simulation.Created;
             }
 
             // TODO if write to storage adapter fails, the iothub connection string 
             //      will still be stored to disk. Storing the encrypted string using
             //      storage adapter would address this
             //      https://github.com/Azure/device-simulation-dotnet/issues/129
-            inputSimulation.IotHubConnectionString = await this.connectionStringManager.RedactAndStoreAsync(inputSimulation.IotHubConnectionString);
+            simulation.IotHubConnectionString = await this.connectionStringManager.RedactAndStoreAsync(simulation.IotHubConnectionString);
 
             var result = await this.storage.UpdateAsync(
                 STORAGE_COLLECTION,
-                inputSimulation.Id,
-                JsonConvert.SerializeObject(inputSimulation),
-                inputSimulation.ETag);
+                simulation.Id,
+                JsonConvert.SerializeObject(simulation),
+                simulation.ETag);
 
             // Return the new ETag provided by the storage
-            inputSimulation.ETag = result.ETag;
+            simulation.ETag = result.ETag;
 
-            return inputSimulation;
+            return simulation;
         }
 
         /// <summary>
@@ -274,7 +274,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 simulation.Id = Guid.NewGuid().ToString();
                 var timeSpan = simulation.EndTime - simulation.StartTime;
-                simulation.StartTime = simulation.Modified;
+                simulation.StartTime = simulation.Created = simulation.Modified;
                 simulation.EndTime = simulation.Modified + timeSpan;
                 simulation.TotalMessagesSent = 0;
             }
