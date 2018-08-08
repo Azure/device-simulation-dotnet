@@ -8,5 +8,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public string Id { get; set; }
         public bool? Enabled { get; set; }
         public int TotalMessagesSent { get; set; }
+        public double AverageMessagesSent { get; set; }
     }
 }

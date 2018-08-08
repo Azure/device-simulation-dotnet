@@ -204,12 +204,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 simulation.Created = existingSimulation.Created;
                 simulation.Modified = DateTimeOffset.UtcNow;
-                simulation.ConnectionsPerSecond = existingSimulation.ConnectionsPerSecond;
-                simulation.TwinReadsPerSecond = existingSimulation.TwinReadsPerSecond;
-                simulation.TwinWritesPerSecond = existingSimulation.TwinWritesPerSecond;
-                simulation.RegistryOperationsPerMinute = existingSimulation.RegistryOperationsPerMinute;
-                simulation.DeviceMessagesPerSecond = existingSimulation.DeviceMessagesPerSecond;
+                simulation.ConnectionsPerSecondLimit = existingSimulation.ConnectionsPerSecondLimit;
+                simulation.TwinReadsPerSecondLimit = existingSimulation.TwinReadsPerSecondLimit;
+                simulation.TwinWritesPerSecondLimit = existingSimulation.TwinWritesPerSecondLimit;
+                simulation.RegistryOperationsPerMinuteLimit = existingSimulation.RegistryOperationsPerMinuteLimit;
+                simulation.DeviceMessagesPerSecondLimit = existingSimulation.DeviceMessagesPerSecondLimit;
                 simulation.TotalMessagesSent = existingSimulation.TotalMessagesSent;
+                simulation.AverageMessagesSent = existingSimulation.AverageMessagesSent;
             }
             else
             {
@@ -269,6 +270,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 simulation.EndTime = simulation.Modified;
                 simulation.TotalMessagesSent = patch.TotalMessagesSent;
+                simulation.AverageMessagesSent = patch.AverageMessagesSent;
             }
             else if (patch.Enabled == true)
             {
@@ -277,6 +279,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 simulation.StartTime = simulation.Created = simulation.Modified;
                 simulation.EndTime = simulation.Modified + timeSpan;
                 simulation.TotalMessagesSent = 0;
+                simulation.AverageMessagesSent = 0;
             }
 
             item = await this.storage.UpdateAsync(

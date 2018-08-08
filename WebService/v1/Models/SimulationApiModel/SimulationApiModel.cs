@@ -48,22 +48,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         public IList<SimulationDeviceModelRef> DeviceModels { get; set; }
 
         [JsonProperty(PropertyName = "CPS", NullValueHandling = NullValueHandling.Ignore)]
-        public int ConnectionsPerSecond { get; set; }
+        public int ConnectionsPerSecondLimit { get; set; }
 
         [JsonProperty(PropertyName = "ROPM", NullValueHandling = NullValueHandling.Ignore)]
-        public int RegistryOperationsPerMinute { get; set; }
+        public int RegistryOperationsPerMinuteLimit { get; set; }
 
         [JsonProperty(PropertyName = "TRPS", NullValueHandling = NullValueHandling.Ignore)]
-        public int TwinReadsPerSecond { get; set; }
+        public int TwinReadsPerSecondLimit { get; set; }
 
         [JsonProperty(PropertyName = "TWPS", NullValueHandling = NullValueHandling.Ignore)]
-        public int TwinWritesPerSecond { get; set; }
+        public int TwinWritesPerSecondLimit { get; set; }
 
         [JsonProperty(PropertyName = "DMPS", NullValueHandling = NullValueHandling.Ignore)]
-        public int DeviceMessagesPerSecond { get; set; }
+        public int DeviceMessagesPerSecondLimit { get; set; }
 
         [JsonProperty(PropertyName = "TotalMsgs", NullValueHandling = NullValueHandling.Ignore)]
         public int TotalMessagesSent { get; set; }
+
+        [JsonProperty(PropertyName = "AvgMsgs", NullValueHandling = NullValueHandling.Ignore)]
+        public double AverageMessagesSent { get; set; }
 
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
@@ -87,6 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             this.EndTime = null;
             this.DeviceModels = new List<SimulationDeviceModelRef>();
             this.TotalMessagesSent = 0;
+            this.AverageMessagesSent = 0;
         }
 
         // Map API model to service model
@@ -108,12 +112,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 EndTime = DateHelper.ParseDateExpression(this.EndTime, now),
                 IotHubConnectionString = SimulationIotHub.ToServiceModel(this.IotHub),
                 DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList(),
-                ConnectionsPerSecond = this.ConnectionsPerSecond,
-                RegistryOperationsPerMinute = this.RegistryOperationsPerMinute,
-                TwinReadsPerSecond = this.TwinReadsPerSecond,
-                TwinWritesPerSecond = this.TwinWritesPerSecond,
-                DeviceMessagesPerSecond = this.DeviceMessagesPerSecond,
-                TotalMessagesSent = this.TotalMessagesSent
+                ConnectionsPerSecondLimit = this.ConnectionsPerSecondLimit,
+                RegistryOperationsPerMinuteLimit = this.RegistryOperationsPerMinuteLimit,
+                TwinReadsPerSecondLimit = this.TwinReadsPerSecondLimit,
+                TwinWritesPerSecondLimit = this.TwinWritesPerSecondLimit,
+                DeviceMessagesPerSecondLimit = this.DeviceMessagesPerSecondLimit,
+                TotalMessagesSent = this.TotalMessagesSent,
+                AverageMessagesSent = this.AverageMessagesSent
             };
 
             return result;
@@ -134,12 +139,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 StartTime = value.StartTime.ToString(),
                 EndTime = value.EndTime.ToString(),
                 IotHub = new SimulationIotHub(value.IotHubConnectionString),
-                ConnectionsPerSecond = value.ConnectionsPerSecond,
-                RegistryOperationsPerMinute = value.RegistryOperationsPerMinute,
-                TwinReadsPerSecond = value.TwinReadsPerSecond,
-                TwinWritesPerSecond = value.TwinWritesPerSecond,
-                DeviceMessagesPerSecond = value.DeviceMessagesPerSecond,
-                TotalMessagesSent = value.TotalMessagesSent
+                ConnectionsPerSecondLimit = value.ConnectionsPerSecondLimit,
+                RegistryOperationsPerMinuteLimit = value.RegistryOperationsPerMinuteLimit,
+                TwinReadsPerSecondLimit = value.TwinReadsPerSecondLimit,
+                TwinWritesPerSecondLimit = value.TwinWritesPerSecondLimit,
+                DeviceMessagesPerSecondLimit = value.DeviceMessagesPerSecondLimit,
+                TotalMessagesSent = value.TotalMessagesSent,
+                AverageMessagesSent = value.AverageMessagesSent
             };
 
             // Ignore the date if the simulation doesn't have a start time
