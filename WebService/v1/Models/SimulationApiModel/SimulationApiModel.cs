@@ -47,21 +47,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "DeviceModels")]
         public IList<SimulationDeviceModelRef> DeviceModels { get; set; }
 
-        [JsonProperty(PropertyName = "CPS", NullValueHandling = NullValueHandling.Ignore)]
-        public int ConnectionsPerSecondLimit { get; set; }
-
-        [JsonProperty(PropertyName = "ROPM", NullValueHandling = NullValueHandling.Ignore)]
-        public int RegistryOperationsPerMinuteLimit { get; set; }
-
-        [JsonProperty(PropertyName = "TRPS", NullValueHandling = NullValueHandling.Ignore)]
-        public int TwinReadsPerSecondLimit { get; set; }
-
-        [JsonProperty(PropertyName = "TWPS", NullValueHandling = NullValueHandling.Ignore)]
-        public int TwinWritesPerSecondLimit { get; set; }
-
-        [JsonProperty(PropertyName = "DMPS", NullValueHandling = NullValueHandling.Ignore)]
-        public int DeviceMessagesPerSecondLimit { get; set; }
-
         [JsonProperty(PropertyName = "TotalMsgs", NullValueHandling = NullValueHandling.Ignore)]
         public int TotalMessagesSent { get; set; }
 
@@ -112,11 +97,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 EndTime = DateHelper.ParseDateExpression(this.EndTime, now),
                 IotHubConnectionString = SimulationIotHub.ToServiceModel(this.IotHub),
                 DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList(),
-                ConnectionsPerSecondLimit = this.ConnectionsPerSecondLimit,
-                RegistryOperationsPerMinuteLimit = this.RegistryOperationsPerMinuteLimit,
-                TwinReadsPerSecondLimit = this.TwinReadsPerSecondLimit,
-                TwinWritesPerSecondLimit = this.TwinWritesPerSecondLimit,
-                DeviceMessagesPerSecondLimit = this.DeviceMessagesPerSecondLimit,
                 TotalMessagesSent = this.TotalMessagesSent,
                 AverageMessagesSent = this.AverageMessagesSent
             };
@@ -139,11 +119,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 StartTime = value.StartTime.ToString(),
                 EndTime = value.EndTime.ToString(),
                 IotHub = new SimulationIotHub(value.IotHubConnectionString),
-                ConnectionsPerSecondLimit = value.ConnectionsPerSecondLimit,
-                RegistryOperationsPerMinuteLimit = value.RegistryOperationsPerMinuteLimit,
-                TwinReadsPerSecondLimit = value.TwinReadsPerSecondLimit,
-                TwinWritesPerSecondLimit = value.TwinWritesPerSecondLimit,
-                DeviceMessagesPerSecondLimit = value.DeviceMessagesPerSecondLimit,
                 TotalMessagesSent = value.TotalMessagesSent,
                 AverageMessagesSent = value.AverageMessagesSent
             };

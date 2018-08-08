@@ -21,11 +21,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public IList<DeviceModelRef> DeviceModels { get; set; }
         public DateTimeOffset Created { get; set; }
         public DateTimeOffset Modified { get; set; }
-        public int ConnectionsPerSecondLimit { get; set; }
-        public int RegistryOperationsPerMinuteLimit { get; set; }
-        public int TwinReadsPerSecondLimit { get; set; }
-        public int TwinWritesPerSecondLimit { get; set; }
-        public int DeviceMessagesPerSecondLimit { get; set; }
         public int TotalMessagesSent { get; set; }
         public double AverageMessagesSent { get; set; }
 

@@ -204,11 +204,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 simulation.Created = existingSimulation.Created;
                 simulation.Modified = DateTimeOffset.UtcNow;
-                simulation.ConnectionsPerSecondLimit = existingSimulation.ConnectionsPerSecondLimit;
-                simulation.TwinReadsPerSecondLimit = existingSimulation.TwinReadsPerSecondLimit;
-                simulation.TwinWritesPerSecondLimit = existingSimulation.TwinWritesPerSecondLimit;
-                simulation.RegistryOperationsPerMinuteLimit = existingSimulation.RegistryOperationsPerMinuteLimit;
-                simulation.DeviceMessagesPerSecondLimit = existingSimulation.DeviceMessagesPerSecondLimit;
                 simulation.TotalMessagesSent = existingSimulation.TotalMessagesSent;
                 simulation.AverageMessagesSent = existingSimulation.AverageMessagesSent;
             }
