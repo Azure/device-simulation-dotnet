@@ -3,15 +3,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Microsoft.AspNetCore.Http.Internal;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationScriptApiModel;
 using Moq;
-using Newtonsoft.Json.Linq;
 using WebService.Test.helpers;
 using Xunit;
 
@@ -88,8 +87,7 @@ namespace WebService.Test.v1.Controllers
             // Arrange
             const string ID = "simulationScriptId";
             var simulationScript = this.GetSimulationScriptById(ID);
-            var stream = new MemoryStream(Encoding.UTF8.GetBytes("some scripts"));
-            var file = new FormFile(stream, 10, 10, "test", "test file");
+            IFormFile file = this.SetupFileMock();
 
             this.simulationScriptsService
                 .Setup(x => x.InsertAsync(It.IsAny<SimulationScript>()))
@@ -113,6 +111,35 @@ namespace WebService.Test.v1.Controllers
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void PutUpdatesTheSimulationScript()
+        {
+            // Arrange
+            const string ID = "simulationScriptId";
+            var simulationScript = this.GetSimulationScriptById(ID);
+            IFormFile file = this.SetupFileMock();
+
+            this.simulationScriptsService
+                .Setup(x => x.UpsertAsync(It.IsAny<SimulationScript>()))
+                .ReturnsAsync(simulationScript);
+
+            // Act
+            var result = this.target.PutAsync(file, simulationScript.ETag, ID).Result;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(ID, result.Id);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void PutThrowsErrorWithInvalidSimulationScript()
+        {
+            // Act & Assert
+            Assert.ThrowsAsync<BadRequestException>(
+                    async () => await this.target.PutAsync(null, null, null))
+                .Wait(Constants.TEST_TIMEOUT);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void DeleteInvokesSimulationScriptServiceWithId()
         {
             // Arrange
@@ -124,6 +151,48 @@ namespace WebService.Test.v1.Controllers
 
             // Assert
             this.simulationScriptsService.Verify(x => x.DeleteAsync(ID), Times.Once);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItValidatesTheSimulationScript()
+        {
+            // Arrange
+            IFormFile file = this.SetupFileMock();
+
+            // Act
+            var result = this.target.Validate(file).Result;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<JsonResult>(result);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItThrowsErrorWhenValidationFails()
+        {
+            // Arrange
+            var fileMock = new Mock<IFormFile>();
+
+
+            // Act & Assert
+            Assert.ThrowsAsync<BadRequestException>(
+                    async () => await this.target.Validate(fileMock.Object))
+                .Wait(Constants.TEST_TIMEOUT);
+        }
+
+        private IFormFile SetupFileMock()
+        {
+            var fileMock = new Mock<IFormFile>();
+            const string CONTENT_TYPE = "application/javascript";
+            const string CONTENT = "awesome javascript";
+            const string FILENAME = "test.js";
+            var ms = new MemoryStream(Encoding.UTF8.GetBytes(CONTENT));
+
+            fileMock.Setup(x => x.ContentType).Returns(CONTENT_TYPE);
+            fileMock.Setup(x => x.FileName).Returns(FILENAME);
+            fileMock.Setup(x => x.OpenReadStream()).Returns(ms);
+
+            return fileMock.Object;
         }
 
         private SimulationScript GetSimulationScriptById(string id)

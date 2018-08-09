@@ -94,6 +94,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data provided.");
             }
 
+            if (file.ContentType != this.ApplicationJavascript)
+            {
+                this.log.Warn("Wrong content type provided", () => new { file.ContentType });
+                throw new BadRequestException("Wrong content type provided.");
+            }
+
             var simulationScript = new SimulationScript();
 
             try
