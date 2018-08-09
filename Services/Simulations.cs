@@ -142,7 +142,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             // Note: forcing the ID because only one simulation can be created
             simulation.Id = Guid.NewGuid().ToString();
             simulation.Created = DateTimeOffset.UtcNow;
-            simulation.StartTime = simulation.Enabled ? simulation.Created : DateTimeOffset.MinValue;
+            //simulation.StartTime = simulation.Enabled ? simulation.Created : DateTimeOffset.MinValue;
             simulation.Modified = simulation.Created;
 
             // Create default simulation
@@ -212,7 +212,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.log.Info("Creating new simulation via PUT.", () => { });
                 // new simulation
                 simulation.Created = DateTimeOffset.UtcNow;
-                simulation.StartTime = simulation.Enabled ? simulation.Created : DateTimeOffset.MinValue;
+                //simulation.StartTime = simulation.Enabled ? simulation.Created : DateTimeOffset.MinValue;
                 simulation.Modified = simulation.Created;
             }
 
@@ -263,7 +263,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             if (patch.Enabled == false)
             {
-                simulation.EndTime = simulation.Modified;
+                //simulation.EndTime = simulation.Modified;
                 simulation.TotalMessagesSent = patch.TotalMessagesSent;
                 simulation.AverageMessagesSent = patch.AverageMessagesSent;
             }
