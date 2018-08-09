@@ -30,7 +30,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private const string CONNSTRING_FILE_NAME = "custom_iothub_key.txt";
 
         private readonly string connStringFilePath;
-            
+
         private readonly IServicesConfig config;
         private readonly ILogger log;
 

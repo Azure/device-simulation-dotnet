@@ -6,6 +6,5 @@ namespace Services.Test.helpers
 {
     public class SomeException : Exception
     {
-        
     }
 }
