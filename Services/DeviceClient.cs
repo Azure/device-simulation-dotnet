@@ -7,9 +7,11 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
+using Microsoft.Azure.Devices.Client.Exceptions;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -40,7 +42,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         private readonly string deviceId;
         private readonly IoTHubProtocol protocol;
-        private readonly Azure.Devices.Client.DeviceClient client;
+        private readonly IDeviceClientWrapper client;
         private readonly IDeviceMethods deviceMethods;
         private readonly IDevicePropertiesRequest propertiesUpdateRequest;
         private readonly ILogger log;
@@ -52,7 +54,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public DeviceClient(
             string deviceId,
             IoTHubProtocol protocol,
-            Azure.Devices.Client.DeviceClient client,
+            IDeviceClientWrapper client,
             IDeviceMethods deviceMethods,
             ILogger logger)
         {
@@ -69,10 +71,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.client != null && !this.connected)
             {
-                // TODO: HTTP clients don't "connect", find out how HTTP connections are measured and throttled
-                //       https://github.com/Azure/device-simulation-dotnet/issues/85
-                await this.client.OpenAsync();
-                this.connected = true;
+                try
+                {
+                    // TODO: HTTP clients don't "connect", find out how HTTP connections are measured and throttled
+                    //       https://github.com/Azure/device-simulation-dotnet/issues/85
+                    await this.client.OpenAsync();
+                    this.connected = true;
+                }
+                catch (UnauthorizedException e)
+                {
+                    // Note: this exception might not occur with HTTP
+                    // TODO: test for HTTP
+                    
+                    this.log.Error("Device connection auth failed", () => new { this.deviceId, this.protocol, e });
+                    throw new DeviceAuthFailedException(e);
+                }
             }
         }
 
@@ -127,19 +140,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             try
             {
-                var reportedProperties = SmartDictionaryToTwinCollection(properties);
-
+                var reportedProperties = this.SmartDictionaryToTwinCollection(properties);
                 await this.client.UpdateReportedPropertiesAsync(reportedProperties);
-
                 this.log.Debug("Update reported properties for device", () => new
                 {
                     this.deviceId,
-                    ReportedProperties = reportedProperties
+                    reportedProperties
                 });
+            }
+            catch (KeyNotFoundException e){
+                // This exception sometimes occurs when calling UpdateReportedPropertiesAsync.
+                // Still unknown why, apparently an issue with the internal AMQP library
+                // used by IoT SDK. We need to collect extra information to report the issue.
+                this.log.Error("Unexpected error, failed to update reported properties",
+                    () => new
+                    {
+                        Protocol = this.protocol.ToString(),
+                        Exception = e.GetType().FullName,
+                        e.Message,
+                        e.StackTrace,
+                        e.Data,
+                        e.Source,
+                        e.TargetSite,
+                        e.InnerException // This appears to always be null in this scenario
+                    });
             }
             catch (Exception e)
             {
-                this.log.Error("Update reported properties failed",
+                this.log.Error("Failed to update reported properties",
                     () => new
                     {
                         Protocol = this.protocol.ToString(),
@@ -201,6 +229,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     });
 
                 throw new TelemetrySendException("Message delivery failed with " + e.Message, e);
+            }
+            catch (ObjectDisposedException e)
+            {
+                // This error often occurs under CPU stress, apparently a bug in the internal AMQP library
+                this.log.Error("Message delivery failed, internal client failure",
+                    () => new
+                    {
+                        Protocol = this.protocol.ToString(),
+                        ExceptionMessage = e.Message,
+                        Exception = e.GetType().FullName,
+                        e.InnerException
+                    });
+
+                throw new BrokenDeviceClientException("MMessage delivery failed, internal client failure", e);
             }
             catch (Exception e)
             {
@@ -301,7 +343,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine(e);
+                        this.log.Error("Error while converting the dictionary to a twin collection", () => new { item.Key, item.Value, e });
                         throw;
                     }
                 }

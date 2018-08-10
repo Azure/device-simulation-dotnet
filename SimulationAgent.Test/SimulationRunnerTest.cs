@@ -1,37 +1,37 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
+using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
 using Moq;
 using SimulationAgent.Test.helpers;
-using System;
-using System.Collections.Generic;
 using Xunit;
 using Xunit.Abstractions;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 using SimulationModel = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
-using SimulationRunner = Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.SimulationRunner;
 
 namespace SimulationAgent.Test
 {
     public class SimulationRunnerTest
     {
         private readonly Mock<IRateLimitingConfig> ratingConfig;
+        private readonly Mock<IConcurrencyConfig> concurrencyConfig;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IDeviceModels> deviceModels;
         private readonly Mock<IDeviceModelsGeneration> deviceModelsOverriding;
         private readonly Mock<IDevices> devices;
         private readonly Mock<ISimulations> simulations;
         private readonly Mock<IFactory> factory;
-        private readonly Mock<IDictionary<string, IDeviceStateActor>> deviceStateActors;
         private readonly Mock<IDeviceStateActor> deviceStateActor;
         private readonly Mock<IDeviceConnectionActor> deviceConnectionActor;
         private readonly Mock<IDeviceTelemetryActor> deviceTelemetryActor;
@@ -42,13 +42,13 @@ namespace SimulationAgent.Test
         public SimulationRunnerTest(ITestOutputHelper log)
         {
             this.ratingConfig = new Mock<IRateLimitingConfig>();
+            this.concurrencyConfig = new Mock<IConcurrencyConfig>();
             this.logger = new Mock<ILogger>();
             this.deviceModels = new Mock<IDeviceModels>();
             this.deviceModelsOverriding = new Mock<IDeviceModelsGeneration>();
             this.devices = new Mock<IDevices>();
             this.simulations = new Mock<ISimulations>();
             this.factory = new Mock<IFactory>();
-            this.deviceStateActors = new Mock<IDictionary<string, IDeviceStateActor>>();
             this.deviceStateActor = new Mock<IDeviceStateActor>();
             this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
             this.deviceTelemetryActor = new Mock<IDeviceTelemetryActor>();
@@ -59,6 +59,7 @@ namespace SimulationAgent.Test
             this.target = new SimulationRunner(
                 this.ratingConfig.Object,
                 this.rateLimiting.Object,
+                this.concurrencyConfig.Object,
                 this.logger.Object,
                 this.deviceModels.Object,
                 this.deviceModelsOverriding.Object,
@@ -268,8 +269,8 @@ namespace SimulationAgent.Test
 
             // Assert
             var EXPECT_RESULT = (FAILED_DEVICE_STATE_COUNT +
-                FAILED_DEVICE_CONNECTIONS_COUNT +
-                FAILED_MESSAGES_PER_DEVICE_COUNT) * ACTIVE_DEVICES_COUNT;
+                                 FAILED_DEVICE_CONNECTIONS_COUNT +
+                                 FAILED_MESSAGES_PER_DEVICE_COUNT) * ACTIVE_DEVICES_COUNT;
             Assert.Equal(EXPECT_RESULT, result);
         }
 
@@ -306,7 +307,6 @@ namespace SimulationAgent.Test
                 Modified = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 ETag = "ETag0",
                 Enabled = false,
-                Version = 1,
                 DeviceModels = models
             };
         }

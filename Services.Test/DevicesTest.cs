@@ -20,11 +20,12 @@ namespace Services.Test
         /// <summary>The test logger</summary>
         private readonly ITestOutputHelper log;
 
-        private Mock<IServicesConfig> config;
-        private Mock<IIotHubConnectionStringManager> connectionStringManager;
-        private Mock<ILogger> logger;
-        private readonly Mock<IRegistryManager> registry;
         private readonly Devices target;
+        private readonly Mock<IServicesConfig> config;
+        private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
+        private readonly Mock<IRegistryManager> registry;
+        private readonly Mock<IDeviceClientWrapper> deviceClient;
+        private readonly Mock<ILogger> logger;
 
         public DevicesTest(ITestOutputHelper log)
         {
@@ -33,17 +34,21 @@ namespace Services.Test
             this.config = new Mock<IServicesConfig>();
             this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
             this.registry = new Mock<IRegistryManager>();
+            this.deviceClient = new Mock<IDeviceClientWrapper>();
             this.logger = new Mock<ILogger>();
 
             this.target = new Devices(
                 this.config.Object,
                 this.connectionStringManager.Object,
                 this.registry.Object,
+                this.deviceClient.Object,
                 this.logger.Object);
 
             this.connectionStringManager
                 .Setup(x => x.GetIotHubConnectionString())
                 .Returns("HostName=iothub-AAAA.azure-devices.net;SharedAccessKeyName=AAAA;SharedAccessKey=AAAA");
+
+            this.target.SetCurrentIotHub();
         }
 
         /** 
@@ -56,24 +61,24 @@ namespace Services.Test
         public void ItThrowsWhenCreationTimesOut()
         {
             // Case 1: the code uses async, and the exception surfaces explicitly
-            
+
             // Arrange
             this.registry.Setup(x => x.AddDeviceAsync(It.IsAny<Device>())).Throws<TaskCanceledException>();
 
             // Act+Assert
             Assert.ThrowsAsync<ExternalDependencyException>(
-                async () => await this.target.CreateAsync("a-device-id"))
+                    async () => await this.target.CreateAsync("a-device-id"))
                 .Wait(Constants.TEST_TIMEOUT);
-            
+
             // Case 2: the code uses Wait(), and the exception is wrapped in AggregateException
-            
+
             // Arrange
             var e = new AggregateException(new TaskCanceledException());
             this.registry.Setup(x => x.AddDeviceAsync(It.IsAny<Device>())).Throws(e);
 
             // Act+Assert
             Assert.ThrowsAsync<ExternalDependencyException>(
-                async () => await this.target.CreateAsync("a-device-id"))
+                    async () => await this.target.CreateAsync("a-device-id"))
                 .Wait(Constants.TEST_TIMEOUT);
         }
     }

@@ -77,7 +77,6 @@ namespace Services.Test
             SimulationModel result = this.target.InsertAsync(new SimulationModel(), "default").Result;
 
             // Assert
-            Assert.Equal(1, result.Version);
             Assert.Equal(result.Created, result.Modified);
         }
 
@@ -274,8 +273,7 @@ namespace Services.Test
             {
                 Id = SIMULATION_ID,
                 ETag = "ETag0",
-                Enabled = true,
-                Version = 1
+                Enabled = true
             };
             var updatedValue = new ValueApiModel
             {
@@ -334,8 +332,7 @@ namespace Services.Test
                 Created = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 Modified = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 ETag = "ETag0",
-                Enabled = true,
-                Version = 1
+                Enabled = true
             };
 
             var list = new ValueListApiModel();

@@ -109,7 +109,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 {
                     var sourceCode = this.LoadScript(filename);
 
-                    this.log.Info("Compiling script source code", () => new { filename });
+                    this.log.Debug("Compiling script source code", () => new { filename });
                     program = parser.Parse(sourceCode);
                     programs.Add(filename, program);
                 }

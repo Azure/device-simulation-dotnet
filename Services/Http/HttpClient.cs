@@ -85,7 +85,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http
                 SetHeaders(request, httpRequest);
 
                 this.log.Debug("Sending request", () => new { httpMethod, request.Uri, request.Options });
-                var now = DateTimeOffset.UtcNow;
+                var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
                 try
                 {
@@ -103,14 +103,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http
                 }
                 catch (HttpRequestException e)
                 {
-                    var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now.ToUnixTimeMilliseconds();
+                    var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                     var errorMessage = e.Message;
                     if (e.InnerException != null)
                     {
                         errorMessage += " - " + e.InnerException.Message;
                     }
 
-                    this.log.Error("Request failed", () => new { timeSpent, httpMethod.Method, request.Uri, errorMessage, e });
+                    this.log.Error("Request failed", () => new { timeSpentMsecs, httpMethod.Method, request.Uri, errorMessage, e });
 
                     return new HttpResponse
                     {
@@ -120,8 +120,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http
                 }
                 catch (TaskCanceledException e)
                 {
-                    var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now.ToUnixTimeMilliseconds();
-                    this.log.Error("Request failed", () => new { timeSpent, httpMethod.Method, request.Uri, Message = e.Message + " The request timed out, the endpoint might be unreachable.", e });
+                    var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                    this.log.Error("Request failed",
+                        () => new { timeSpentMsecs, httpMethod.Method, request.Uri, Message = e.Message + " The request timed out, the endpoint might be unreachable.", e });
 
                     return new HttpResponse
                     {
@@ -131,8 +132,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http
                 }
                 catch (Exception e)
                 {
-                    var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now.ToUnixTimeMilliseconds();
-                    this.log.Error("Request failed", () => new { timeSpent, httpMethod.Method, request.Uri, e.Message, e });
+                    var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                    this.log.Error("Request failed", () => new { timeSpentMsecs, httpMethod.Method, request.Uri, e.Message, e });
 
                     return new HttpResponse
                     {
