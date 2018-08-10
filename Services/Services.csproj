@@ -39,7 +39,7 @@
     <None Update="data\devicemodels\prototype-02.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="data\devicemodels\scripts\cab-01-protobuf-state.js">
+	<None Update="data\devicemodels\scripts\cab-01-protobuf-state.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="data\devicemodels\scripts\EmptyTank-method.js">
@@ -107,6 +107,9 @@
     </None>
     <None Update="data\devicemodels\scripts\truck-02-state.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="data\devicemodels\truck-01-protobuf.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="data\devicemodels\truck-02.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
