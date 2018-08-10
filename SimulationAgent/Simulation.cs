@@ -50,19 +50,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     var simulationList = await this.simulations.GetListAsync();
 
                     // currently we support only 1 running simulation so the result should return only 1 item
-                    var newSimulation = simulationList.Where(s => s.ShouldBeRunning()).FirstOrDefault();
+                    var runningSimulation = simulationList.FirstOrDefault(s => s.ShouldBeRunning());
 
-                    this.log.Debug("Simulation loaded", () => new { newSimulation });
+                    this.log.Debug("Simulation loaded", () => new { runningSimulation });
 
                     // if the simulation is removed from storage & we're running stop simulation.
-                    this.CheckForDeletedSimulation(newSimulation);
+                    this.CheckForDeletedSimulation(runningSimulation);
 
                     // if there's a new simulation and it's different from the current one
                     // stop the current one from running & start the new one if it's enabled
-                    this.CheckForChangedSimulation(newSimulation);
+                    this.CheckForChangedSimulation(runningSimulation);
 
                     // if there's no simulation running but there's one from storage start it
-                    this.CheckForNewSimulation(newSimulation);
+                    this.CheckForNewSimulation(runningSimulation);
 
                     // if the current simulation was asked to stop, stop it.
                     this.CheckForStopOrStartToSimulation();
