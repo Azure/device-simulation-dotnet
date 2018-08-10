@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry
@@ -7,6 +8,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
     public interface IDeviceTelemetryLogic
     {
         void Setup(IDeviceTelemetryActor deviceTelemetryActor, string deviceId, DeviceModel deviceModel);
-        void Run();
+        Task RunAsync();
     }
 }

@@ -133,7 +133,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             var simulations = await this.GetListAsync();
             var activeSimulation = simulations.Where(a => a.ShouldBeRunning());
-            if (activeSimulation != null && activeSimulation.Count() > 0)
+            if (activeSimulation.Any())
             {
                 this.log.Warn("There is already a running simulation", () => { });
                 throw new ConflictingResourceException(

@@ -17,16 +17,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         bool DebugIsEnabled { get; }
         bool InfoIsEnabled { get; }
 
-        // The following 4 methods allow to log a message, capturing the context
+        // The following 5 methods allow to log a message, capturing the context
         // (i.e. the method where the log message is generated)
+
+        // Use "Write()" to write the message regardless of the log level, e.g. at startup
+        void Write(string message, Action context);
 
         void Debug(string message, Action context);
         void Info(string message, Action context);
         void Warn(string message, Action context);
         void Error(string message, Action context);
 
-        // The following 4 methods allow to log a message and some data,
+        // The following 5 methods allow to log a message and some data,
         // capturing the context (i.e. the method where the log message is generated)
+
+        // Use "Write()" to write the message regardless of the log level, e.g. at startup
+        void Write(string message, Func<object> context);
 
         void Debug(string message, Func<object> context);
         void Info(string message, Func<object> context);
@@ -90,8 +96,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             return DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(this.dateFormat);
         }
 
-        // The following 4 methods allow to log a message, capturing the context
+        // The following 5 methods allow to log a message, capturing the context
         // (i.e. the method where the log message is generated)
+
+        public void Write(string message, Action context)
+        {
+            this.Write("---", context.GetMethodInfo(), message);
+        }
+
         public void Debug(string message, Action context)
         {
             if (this.logLevel > LogLevel.Debug) return;
@@ -116,8 +128,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.Write("ERROR", context.GetMethodInfo(), message);
         }
 
-        // The following 4 methods allow to log a message and some data,
+        // The following 5 methods allow to log a message and some data,
         // capturing the context (i.e. the method where the log message is generated)
+
+        public void Write(string message, Func<object> context)
+        {
+            if (!string.IsNullOrEmpty(message)) message += ", ";
+            message += Serialization.Serialize(context.Invoke());
+
+            this.Write("---", context.GetMethodInfo(), message);
+        }
+
         public void Debug(string message, Func<object> context)
         {
             if (this.logLevel > LogLevel.Debug) return;
@@ -180,6 +201,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             {
                 classname = context.DeclaringType.FullName;
             }
+
             classname = classname.Split(new[] { '+' }, 2).First();
             classname = classname.Split('.').LastOrDefault();
 

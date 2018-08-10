@@ -12,14 +12,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
     /// <summary>
     /// Fetch the device from the registry if available
     /// </summary>
-    public class Fetch : IDeviceConnectionLogic
+    public class FetchFromRegistry : IDeviceConnectionLogic
     {
         private readonly IDevices devices;
         private readonly ILogger log;
         private string deviceId;
         private IDeviceConnectionActor context;
 
-        public Fetch(IDevices devices, ILogger logger)
+        public FetchFromRegistry(IDevices devices, ILogger logger)
         {
             this.log = logger;
             this.devices = devices;
@@ -34,33 +34,35 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         public async Task RunAsync()
         {
             this.log.Debug("Fetching device...", () => new { this.deviceId });
+            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             try
             {
-                var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 var device = await this.devices.GetAsync(this.deviceId);
 
-                var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
+                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 if (device != null)
                 {
                     this.context.Device = device;
-                    this.log.Debug("Device found", () => new { device.Id, timeSpent, device.Enabled });
+                    this.log.Debug("Device found", () => new { timeSpentMsecs, device.Id, device.Enabled });
                     this.context.HandleEvent(DeviceConnectionActor.ActorEvents.FetchCompleted);
                 }
                 else
                 {
-                    this.log.Debug("Device not found", () => new { this.deviceId, timeSpent });
+                    this.log.Debug("Device not found", () => new { timeSpentMsecs, this.deviceId });
                     this.context.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceNotFound);
                 }
             }
-            catch(ExternalDependencyException e)
+            catch (ExternalDependencyException e)
             {
-                this.log.Error("External dependency error while fetching the device", () => new { this.deviceId, e });
+                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                this.log.Error("External dependency error while fetching the device", () => new { timeSpentMsecs, this.deviceId, e });
                 this.context.HandleEvent(DeviceConnectionActor.ActorEvents.FetchFailed);
             }
             catch (Exception e)
             {
-                this.log.Error("Error while fetching the device", () => new { this.deviceId, e });
+                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                this.log.Error("Error while fetching the device", () => new { timeSpentMsecs, this.deviceId, e });
                 this.context.HandleEvent(DeviceConnectionActor.ActorEvents.FetchFailed);
             }
         }
