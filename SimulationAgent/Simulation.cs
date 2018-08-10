@@ -49,7 +49,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                     var simulationList = await this.simulations.GetListAsync();
 
-                    var newSimulation = simulationList.Where(s => s.Enabled).FirstOrDefault();
+                    // currently we support only 1 running simulation so the result should return only 1 item
+                    var newSimulation = simulationList.Where(s => s.ShouldBeRunning()).FirstOrDefault();
 
                     this.log.Debug("Simulation loaded", () => new { newSimulation });
 

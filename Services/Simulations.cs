@@ -54,7 +54,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public class Simulations : ISimulations
     {
         private const string STORAGE_COLLECTION = "simulations";
-        private const string SIMULATION_ID = "1";
+        private const string DEFAULT_SIMULATION_ID = "1";
         private const int DEVICES_PER_MODEL_IN_DEFAULT_TEMPLATE = 1;
 
         private readonly IDeviceModels deviceModels;
@@ -99,17 +99,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<Models.Simulation> GetAsync(string id)
         {
-            try
+            var item = await this.storage.GetAsync(STORAGE_COLLECTION, id);
+
+            if (item != null)
             {
-                var item = await this.storage.GetAsync(STORAGE_COLLECTION, id);
                 var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
                 simulation.ETag = item.ETag;
                 return simulation;
             }
-            catch (ResourceNotFoundException e)
-            {
-                return null;
-            }
+
+            return null;
         }
 
         /// <summary>
@@ -117,6 +116,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<Models.Simulation> InsertAsync(Models.Simulation simulation, string template = "")
         {
+            var usingDefaultTemplate = !string.IsNullOrEmpty(template) && template.ToLowerInvariant() == "default";
+
             // TODO: complete validation
             if (!string.IsNullOrEmpty(template) && template.ToLowerInvariant() != "default")
             {
@@ -131,7 +132,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             var simulations = await this.GetListAsync();
-            var activeSimulation = simulations.Where(a => a.Enabled);
+            var activeSimulation = simulations.Where(a => a.ShouldBeRunning());
             if (activeSimulation != null && activeSimulation.Count() > 0)
             {
                 this.log.Warn("There is already a running simulation", () => { });
@@ -140,13 +141,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             // Note: forcing the ID because only one simulation can be created
-            simulation.Id = Guid.NewGuid().ToString();
+            simulation.Id = usingDefaultTemplate ? DEFAULT_SIMULATION_ID : Guid.NewGuid().ToString();
             simulation.Created = DateTimeOffset.UtcNow;
-            //simulation.StartTime = simulation.Enabled ? simulation.Created : DateTimeOffset.MinValue;
             simulation.Modified = simulation.Created;
 
             // Create default simulation
-            if (!string.IsNullOrEmpty(template) && template.ToLowerInvariant() == "default")
+            if (usingDefaultTemplate)
             {
                 var types = await this.deviceModels.GetListAsync();
                 simulation.DeviceModels = new List<Models.Simulation.DeviceModelRef>();
@@ -212,7 +212,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.log.Info("Creating new simulation via PUT.", () => { });
                 // new simulation
                 simulation.Created = DateTimeOffset.UtcNow;
-                //simulation.StartTime = simulation.Enabled ? simulation.Created : DateTimeOffset.MinValue;
                 simulation.Modified = simulation.Created;
             }
 
@@ -263,7 +262,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             if (patch.Enabled == false)
             {
-                //simulation.EndTime = simulation.Modified;
                 simulation.TotalMessagesSent = patch.TotalMessagesSent;
                 simulation.AverageMessagesSent = patch.AverageMessagesSent;
             }
