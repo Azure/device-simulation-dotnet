@@ -15,9 +15,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="data\devicemodels\cab-01-protobuf.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="data\devicemodels\chiller-01.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -39,10 +36,7 @@
     <None Update="data\devicemodels\prototype-02.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-	<None Update="data\devicemodels\scripts\cab-01-protobuf-state.js">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="data\devicemodels\scripts\EmptyTank-method.js">
+	<None Update="data\devicemodels\scripts\EmptyTank-method.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="data\devicemodels\scripts\engine-01-state.js">
