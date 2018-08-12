@@ -37,7 +37,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.isRegistered)
             {
-                this.log.Error("Application error, each device must have a separate instance", () => { });
+                this.log.Error("Application error, each device must have a separate instance");
                 throw new Exception("Application error, each device must have a separate instance of " + this.GetType().FullName);
             }
 

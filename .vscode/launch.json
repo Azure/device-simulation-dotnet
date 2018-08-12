@@ -7,15 +7,17 @@
         {
             "env": {
                 // Note: Any setting made in this file will override the operating system environment variable of that name.
-                
+
                 // See https://docs.microsoft.com/aspnet/core/fundamentals/environments
                 "ASPNETCORE_ENVIRONMENT": "Development",
 
-                // Environment variables used in appsettings.ini.  
-                // Required Settings. 
+                // Required environment variables used in appsettings.ini
+                // For additonal optional settings, refer to comments in appsettings.ini
                 "PCS_IOTHUB_CONNSTRING": "your Azure IoT Hub connection string",
                 "PCS_STORAGEADAPTER_WEBSERVICE_URL": "http://localhost:9022/v1",
-                // Optional Settings. For additonal optional settings, refer to appsettings.ini directly.
+
+                // Optional environment variables used in appsettings.ini
+                // For additonal optional settings, refer to comments in appsettings.ini
                 "PCS_LOG_LEVEL": "Debug",
                 "PCS_AUTH_REQUIRED": "false",
                 "PCS_AUTH_ISSUER": "",

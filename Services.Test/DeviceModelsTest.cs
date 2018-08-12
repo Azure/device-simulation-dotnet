@@ -293,13 +293,15 @@ namespace Services.Test
         {
             var deviceModels = new List<DeviceModel>
             {
-                new DeviceModel {
+                new DeviceModel
+                {
                     Id = "Id_1",
-                    Properties =  properties
+                    Properties = properties
                 },
-                new DeviceModel {
+                new DeviceModel
+                {
                     Id = "Id_2",
-                    Properties =  properties
+                    Properties = properties
                 }
             };
 

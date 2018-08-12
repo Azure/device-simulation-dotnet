@@ -30,7 +30,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private const string CONNSTRING_FILE_NAME = "custom_iothub_key.txt";
 
         private readonly string connStringFilePath;
-            
+
         private readonly IServicesConfig config;
         private readonly ILogger log;
 
@@ -58,11 +58,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             // check if default hub should be used
             if (this.IsDefaultHub(customIotHub))
             {
-                this.log.Info("Using IotHub connection string stored in config.", () => { });
+                this.log.Info("Using IotHub connection string stored in config.");
                 return this.config.IoTHubConnString;
             }
 
-            this.log.Debug("Using IoTHub provided by the client.", () => new { });
+            this.log.Debug("Using IoTHub provided by the client.");
             return customIotHub;
         }
 
@@ -103,7 +103,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                     string message = "Could not connect to IotHub with the connection " +
                                      "string provided. Check that the key is valid and " +
                                      "that the hub exists.";
-                    this.log.Debug(message, () => { });
+                    this.log.Debug(message);
                     throw new IotHubConnectionException(message);
                 }
             }
@@ -136,9 +136,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             if (!match.Success)
             {
                 var message = "Invalid connection string format for IoTHub. " +
-                    "The correct format is: HostName=[hubname];SharedAccessKeyName=" +
-                    "[iothubowner or service];SharedAccessKey=[null or valid key]";
-                this.log.Error(message, () => { });
+                              "The correct format is: HostName=[hubname];SharedAccessKeyName=" +
+                              "[iothubowner or service];SharedAccessKey=[null or valid key]";
+                this.log.Error(message);
                 throw new InvalidIotHubConnectionStringFormatException(message);
             }
 
@@ -150,7 +150,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 await this.ValidateWritePermissionsAsync(connectionString);
             }
 
-            this.log.Debug("IotHub connection string provided is valid.", () => { });
+            this.log.Debug("IotHub connection string provided is valid.");
         }
 
         /// <summary>
@@ -180,7 +180,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 string message = "Could not connect to IotHub with the connection " +
                                  "string provided. Check that the key is valid and " +
                                  "that the hub exists.";
-                this.log.Error(message, () => new { e });
+                this.log.Error(message, e);
                 throw new IotHubConnectionException(message, e);
             }
         }
@@ -198,10 +198,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 string message = "Could not read devices with the Iot Hub connection " +
                                  "string provided. Check that the policy for the key allows " +
                                  "`Registry Read/Write` and `Service Connect` permissions.";
-                this.log.Error(message, () => new { e });
+                this.log.Error(message, e);
                 throw new IotHubConnectionException(message, e);
             }
-
         }
 
         private async Task ValidateWritePermissionsAsync(string connectionString)
@@ -221,7 +220,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 string message = "Could not create devices with the Iot Hub connection " +
                                  "string provided. Check that the policy for the key allows " +
                                  "`Registry Read/Write` and `Service Connect` permissions.";
-                this.log.Error(message, () => new { e });
+                this.log.Error(message, e);
                 throw new IotHubConnectionException(message, e);
             }
 
@@ -239,7 +238,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 catch (Exception e)
                 {
                     string message = "Could not delete test device from IotHub. Attempt " +
-                                      deleteRetryCount + 1 + " of " + MAX_DELETE_RETRY;
+                                     deleteRetryCount + 1 + " of " + MAX_DELETE_RETRY;
                     this.log.Error(message, () => new { testDeviceId, e });
                     throw new IotHubConnectionException(message, e);
                 }
@@ -247,7 +246,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 response = await registryManager.GetDeviceAsync(testDeviceId);
 
                 deleteRetryCount++;
-
             } while (response != null && deleteRetryCount < MAX_DELETE_RETRY);
 
             if (response != null)
@@ -274,8 +272,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             catch (Exception e)
             {
                 string msg = "Unable to use default IoT Hub. Check that the " +
-                    "pre-provisioned hub exists and has the correct permissions.";
-                this.log.Error(msg, () => new { e });
+                             "pre-provisioned hub exists and has the correct permissions.";
+                this.log.Error(msg, e);
                 throw new IotHubConnectionException(msg, e);
             }
 

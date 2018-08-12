@@ -43,7 +43,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         {
             if (deviceModel == null)
             {
-                this.log.Warn("No data provided", () => {});
+                this.log.Warn("No data provided");
                 throw new BadRequestException("No data provided.");
             }
 
@@ -59,7 +59,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         {
             if (deviceModel == null)
             {
-                this.log.Warn("No data provided", () => new { });
+                this.log.Warn("No data provided");
                 throw new BadRequestException("No data provided.");
             }
 
