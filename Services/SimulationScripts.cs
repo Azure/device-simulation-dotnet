@@ -77,7 +77,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (string.IsNullOrEmpty(id))
             {
-                this.log.Error("Simulation script id cannot be empty!");
+                this.log.Error("Simulation script id cannot be empty!", () => { });
                 throw new InvalidInputException("Simulation script id cannot be empty! ");
             }
 
