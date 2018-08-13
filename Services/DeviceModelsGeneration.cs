@@ -83,7 +83,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             if (originalCount < newCount)
             {
                 this.log.Debug("The list of scripts is longer than the original model, " +
-                              "the extra scripts will be added to the model",
+                               "the extra scripts will be added to the model",
                     () => new { originalCount, newCount });
 
                 for (int i = 0; i < newCount - originalCount; i++)

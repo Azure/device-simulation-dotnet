@@ -67,8 +67,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to load device models from storage",
-                    () => new { e.Message, Exception = e });
+                this.log.Error("Unable to load device models from storage", e);
                 throw new ExternalDependencyException("Unable to load device models from storage", e);
             }
 
@@ -87,8 +86,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to parse device models loaded from storage",
-                    () => new { e.Message, Exception = e });
+                this.log.Error("Unable to parse device models loaded from storage", e);
                 throw new ExternalDependencyException("Unable to parse device models loaded from storage", e);
             }
         }
@@ -100,7 +98,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (string.IsNullOrEmpty(id))
             {
-                this.log.Error("Device model id cannot be empty!", () => { });
+                this.log.Error("Device model id cannot be empty!");
                 throw new InvalidInputException("Device model id cannot be empty! ");
             }
 

@@ -129,7 +129,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
             catch (Exception e)
             {
                 this.simulationErrorsCount++;
-                this.log.Error("Device state process failed", () => new { e });
+                this.log.Error("Device state process failed", e);
             }
         }
 

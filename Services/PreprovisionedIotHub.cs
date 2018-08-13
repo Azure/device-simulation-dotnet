@@ -44,7 +44,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Device registry test failed", () => new { e });
+                this.log.Error("Device registry test failed", e);
                 return new Tuple<bool, string>(false, e.Message);
             }
         }
