@@ -103,7 +103,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="data\devicemodels\truck-01-protobuf.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="data\devicemodels\truck-02.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
