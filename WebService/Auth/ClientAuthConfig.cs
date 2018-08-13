@@ -42,7 +42,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
     {
         public string CorsWhitelist { get; set; }
         public bool CorsEnabled => !string.IsNullOrEmpty(this.CorsWhitelist.Trim());
-
         public bool AuthRequired { get; set; }
         public string AuthType { get; set; }
         public IEnumerable<string> JwtAllowedAlgos { get; set; }

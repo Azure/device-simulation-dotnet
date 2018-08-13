@@ -23,6 +23,81 @@ namespace Services.Test.helpers
         public bool DebugIsEnabled { get; }
         public bool InfoIsEnabled { get; }
 
+        public void Write(string message, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            this.testLogger.WriteLine(Time() + "Target Write: " + message);
+        }
+
+        public void Debug(string message, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            this.testLogger.WriteLine(Time() + "Target Debug: " + message);
+        }
+
+        public void Info(string message, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            this.testLogger.WriteLine(Time() + "Target Info: " + message);
+        }
+
+        public void Warn(string message, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            this.testLogger.WriteLine(Time() + "Target Warn: " + message);
+        }
+
+        public void Error(string message, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            this.testLogger.WriteLine(Time() + "Target Error: " + message);
+        }
+
+        public void Write(string message, Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            this.testLogger.WriteLine(Time() + "Target Write: " + message);
+        }
+
+        public void Debug(string message, Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            this.testLogger.WriteLine(Time() + "Target Debug: " + message);
+        }
+
+        public void Info(string message, Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            this.testLogger.WriteLine(Time() + "Target Info: " + message);
+        }
+
+        public void Warn(string message, Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            this.testLogger.WriteLine(Time() + "Target Warn: " + message);
+        }
+
+        public void Error(string message, Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            this.testLogger.WriteLine(Time() + "Target Error: " + message);
+        }
+
+        public void Write(string message, Exception e, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            this.testLogger.WriteLine(Time() + "Target Write: " + message);
+        }
+
+        public void Debug(string message, Exception e, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            this.testLogger.WriteLine(Time() + "Target Debug: " + message);
+        }
+
+        public void Info(string message, Exception e, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            this.testLogger.WriteLine(Time() + "Target Info: " + message);
+        }
+
+        public void Warn(string message, Exception e, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            this.testLogger.WriteLine(Time() + "Target Warn: " + message);
+        }
+
+        public void Error(string message, Exception e, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            this.testLogger.WriteLine(Time() + "Target Error: " + message);
+        }
+
         public string FormatDate(long time)
         {
             return DateTimeOffset.FromUnixTimeMilliseconds(time).ToString("yyyy-MM-dd HH:mm:ss.fff");
@@ -30,7 +105,7 @@ namespace Services.Test.helpers
 
         public void LogToFile(string filename, string text)
         {
-            throw new NotImplementedException();
+            this.testLogger.WriteLine(Time() + "Target LogToFile: " + text);
         }
 
         public void Write(string message, Action context)
