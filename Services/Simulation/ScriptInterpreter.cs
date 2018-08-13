@@ -56,13 +56,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 case JAVASCRIPT_SCRIPT:
                     this.log.Debug("Invoking JS", () => new { script.Path, context, state });
                     this.jsInterpreter.Invoke(script.Path, script.Params, context, state, properties);
-                    this.log.Debug("JS invocation complete", () => { });
+                    this.log.Debug("JS invocation complete");
                     break;
 
                 case INTERNAL_SCRIPT:
                     this.log.Debug("Invoking internal script", () => new { script.Path, context, state });
                     this.intInterpreter.Invoke(script.Path, script.Params, context, state, properties);
-                    this.log.Debug("Internal script complete", () => { });
+                    this.log.Debug("Internal script complete");
                     break;
             }
         }
