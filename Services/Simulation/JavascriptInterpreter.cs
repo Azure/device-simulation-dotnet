@@ -23,13 +23,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             Dictionary<string, object> context,
             ISmartDictionary state,
             ISmartDictionary properties);
-
-        void Invoke(
-            string filename,
-            object scriptParams,
-            Dictionary<string, object> context,
-            ISmartDictionary state,
-            ISmartDictionary properties);
     }
 
     public class JavascriptInterpreter : IJavascriptInterpreter
@@ -63,21 +56,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         /// </summary>
         public void Invoke(
             Script script,
-            Dictionary<string, object> context,
-            ISmartDictionary state,
-            ISmartDictionary properties)
-        {
-            this.Invoke(filename, null, context, state, properties);
-        }
-
-        /// <summary>
-        /// Load a JS file and execute the main() function, passing in
-        /// context information and the output from the previous execution.
-        /// Modifies the internal device state with the latest values.
-        /// </summary>
-        public void Invoke(
-            string filename, 
-            object scriptParams,
             Dictionary<string, object> context,
             ISmartDictionary state,
             ISmartDictionary properties)
@@ -150,7 +128,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                     context,
                     this.deviceState.GetAll(),
                     this.deviceProperties.GetAll(),
-                    scriptParams);
+                    script.Params);
 
                 this.log.Debug("JS function success", () => new { filename, this.deviceState });
             }
