@@ -326,7 +326,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             await this.SendRawMessageAsync(eventMessage);
         }
 
-        private static TwinCollection SmartDictionaryToTwinCollection(ISmartDictionary dictionary)
+        private TwinCollection SmartDictionaryToTwinCollection(ISmartDictionary dictionary)
         {
             var result = new TwinCollection();
 
