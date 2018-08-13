@@ -42,7 +42,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         public async Task RunAsync()
         {
-            this.log.Info("Simulation Agent running", () => { });
+            this.log.Info("Simulation Agent running");
 
             // Keep running, checking if the simulation changes
             while (this.running)
@@ -50,7 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var oldSimulation = this.simulation;
                 try
                 {
-                    this.log.Debug("------ Checking for simulation changes ------", () => { });
+                    this.log.Debug("------ Checking for simulation changes ------");
 
                     var newSimulation = (await this.simulations.GetListAsync()).FirstOrDefault();
                     this.log.Debug("Simulation loaded", () => new { newSimulation });
@@ -66,13 +66,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 }
                 catch (Exception e)
                 {
-                    this.log.Error("Failure reading and starting simulation from storage.", () => new { e });
+                    this.log.Error("Failure reading and starting simulation from storage.", e);
                     this.simulation = oldSimulation;
                 }
 
                 if (this.simulation != null && this.simulation.ShouldBeRunning())
                 {
-                    this.log.Debug("------ Current simulation being run ------", () => { });
+                    this.log.Debug("------ Current simulation being run ------");
                     foreach (var model in this.simulation.DeviceModels)
                     {
                         this.log.Debug("Device model", () => new { model });
@@ -181,7 +181,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             {
                 this.runner.Stop();
                 this.simulation = null;
-                this.log.Info("No simulation found in storage...", () => { });
+                this.log.Debug("No simulation found in storage...");
             }
         }
 
@@ -191,7 +191,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 newSimulation.Modified != this.simulation.Modified)
             {
                 this.log.Debug("The simulation has been modified, stopping the current " +
-                               "simulation and starting the new one if enabled", () => { });
+                               "simulation and starting the new one if enabled");
                 this.runner.Stop();
 
                 this.simulation = newSimulation;

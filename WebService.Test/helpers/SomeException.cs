@@ -2,7 +2,7 @@
 
 using System;
 
-namespace Services.Test.helpers
+namespace WebService.Test.helpers
 {
     ///<summary>
     /// This class is used to inject exceptions in the code under test

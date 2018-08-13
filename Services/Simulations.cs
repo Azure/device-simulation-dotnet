@@ -132,7 +132,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var simulations = await this.GetListAsync();
             if (simulations.Count > 0)
             {
-                this.log.Warn("There is already a simulation", () => { });
+                this.log.Warn("There is already a simulation");
                 throw new ConflictingResourceException(
                     "There is already a simulation. Only one simulation can be created.");
             }
@@ -183,19 +183,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (simulation.Id != SIMULATION_ID)
             {
-                this.log.Warn("Invalid simulation ID. Only one simulation is allowed", () => { });
+                this.log.Warn("Invalid simulation ID. Only one simulation is allowed");
                 throw new InvalidInputException("Invalid simulation ID. Use ID '" + SIMULATION_ID + "'.");
             }
 
             var simulations = await this.GetListAsync();
             if (simulations.Count > 0)
             {
-                this.log.Info("Modifying simulation via PUT.", () => { });
+                this.log.Info("Modifying simulation");
 
                 if (simulation.ETag == "*")
                 {
                     simulation.ETag = simulations[0].ETag;
-                    this.log.Warn("The client used ETag='*' choosing to overwrite the current simulation", () => { });
+                    this.log.Warn("The client used ETag='*' choosing to overwrite the current simulation");
                 }
 
                 if (simulation.ETag != simulations[0].ETag)
@@ -209,7 +209,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             else
             {
-                this.log.Info("Creating new simulation via PUT.", () => { });
+                this.log.Info("Creating new simulation");
                 // new simulation
                 simulation.Created = DateTimeOffset.UtcNow;
                 simulation.Modified = simulation.Created;
