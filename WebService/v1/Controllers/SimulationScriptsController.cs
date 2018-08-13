@@ -51,7 +51,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         {
             if (file == null)
             {
-                this.log.Warn("No data provided");
+                this.log.Warn("No data provided", () => { });
                 throw new BadRequestException("No data provided.");
             }
 
@@ -90,7 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         {
             if (file == null)
             {
-                this.log.Warn("No data provided");
+                this.log.Warn("No data provided", () => { });
                 throw new BadRequestException("No data provided.");
             }
 
@@ -124,19 +124,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         {
             if (file == null)
             {
-                this.log.Warn("No data provided");
+                this.log.Warn("No data provided", () => { });
                 throw new BadRequestException("No data provided.");
             }
 
             if (string.IsNullOrEmpty(id))
             {
-                this.log.Warn("No id provided");
+                this.log.Warn("No id provided", () => { });
                 throw new BadRequestException("No id provided.");
             }
 
             if (string.IsNullOrEmpty(etag))
             {
-                this.log.Warn("No ETag provided");
+                this.log.Warn("No ETag provided", () => { });
                 throw new BadRequestException("No ETag provided.");
             }
 
