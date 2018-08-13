@@ -95,7 +95,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to write to " + this.path, () => new { e });
+                this.log.Error("Unable to write to " + this.path, e);
                 this.enabled = false;
             }
         }

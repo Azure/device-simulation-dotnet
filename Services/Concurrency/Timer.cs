@@ -48,12 +48,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
             if (this.cancelled)
             {
-                this.log.Debug("Timer has been cancelled, ignoring call to RunOnce", () => { });
+                this.log.Debug("Timer has been cancelled, ignoring call to RunOnce");
             }
 
             if (this.timer == null)
             {
-                this.log.Error("The timer is not initialized", () => { });
+                this.log.Error("The timer is not initialized");
                 throw new TimerNotInitializedException();
             }
 
@@ -79,7 +79,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             }
             catch (ObjectDisposedException)
             {
-                this.log.Debug("The timer object was already disposed", () => { });
+                this.log.Debug("The timer object was already disposed");
             }
         }
     }
