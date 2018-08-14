@@ -265,15 +265,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 simulation.TotalMessagesSent = patch.TotalMessagesSent;
                 simulation.AverageMessagesSent = patch.AverageMessagesSent;
             }
-            else if (patch.Enabled == true)
-            {
-                simulation.Id = Guid.NewGuid().ToString();
-                var timeSpan = simulation.EndTime - simulation.StartTime;
-                simulation.StartTime = simulation.Created = simulation.Modified;
-                simulation.EndTime = simulation.Modified + timeSpan;
-                simulation.TotalMessagesSent = 0;
-                simulation.AverageMessagesSent = 0;
-            }
 
             item = await this.storage.UpdateAsync(
                 STORAGE_COLLECTION,
