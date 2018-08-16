@@ -14,12 +14,10 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
-using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
@@ -82,9 +80,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Configure concurrency, threads, etc.
         private readonly IConcurrencyConfig concurrencyConfig;
 
-        // Client used to make HTTTP requests
-        private readonly IHttpClient httpClient;
-        
         // The thread responsible for updating devices/sensors state
         private Thread devicesStateThread;
 
@@ -129,7 +124,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.propertiesLoopSettings = new PropertiesLoopSettings(ratingConfig);
 
             this.concurrencyConfig = concurrencyConfig;
-            this.httpClient = new HttpClient(logger);
             this.log = logger;
             this.deviceModels = deviceModels;
             this.deviceModelsOverriding = deviceModelsOverriding;
@@ -173,12 +167,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 if (duration.Days >= 1)
                 {
                     this.lastPolledTime = DateTime.Now;
-                    sendTelemetryToDiagnostics.SendSimulationDetails("Heartbeat");
+                    sendTelemetryToDiagnostics.SendDiagnosticsData("Service Heartbeat","");
                 }
                 return;
             }
 
-            sendTelemetryToDiagnostics.SendSimulationDetails("Service_Start");
+            sendTelemetryToDiagnostics.SendDiagnosticsData("Service Start","");
             
             lock (this.startLock)
             {

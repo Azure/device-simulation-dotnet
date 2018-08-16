@@ -33,6 +33,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         private readonly IServicesConfig config;
         private readonly ILogger log;
+        
+        private SendDataToDiagnostics sendErrorToDiagnostics;
 
         public IotHubConnectionStringManager(
             IServicesConfig config,
@@ -41,6 +43,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             this.config = config;
             this.connStringFilePath = config.IoTHubDataFolder + CONNSTRING_FILE_NAME;
             this.log = logger;
+            this.sendErrorToDiagnostics = new SendDataToDiagnostics(logger);
         }
 
         /// <summary>
@@ -139,6 +142,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                               "The correct format is: HostName=[hubname];SharedAccessKeyName=" +
                               "[iothubowner or service];SharedAccessKey=[null or valid key]";
                 this.log.Error(message);
+                this.sendErrorToDiagnostics.SendDiagnosticsData("Server Error",message);
                 throw new InvalidIotHubConnectionStringFormatException(message);
             }
 

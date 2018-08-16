@@ -17,36 +17,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.httpClient = new HttpClient(logger);
         }
 
-        public async void SendToDiagnostics(object jobj)
-        {
-            var response1 = await httpClient.PostAsync(this.PrepareRequest("http://localhost:9006/v1/diagnosticsevents", jobj));
-        }
-
-        public void CreateErrorObject(string message)
+        public async void SendDiagnosticsData(string eventType, string message = "")
         {
             dynamic jobj = new JObject();
-            jobj.DeploymentId = "undefined";
-            jobj.EventType = "Error";
             jobj.Timestamp = DateTime.Now;
-            this.SendToDiagnostics(jobj);
+            jobj.EventType = eventType;
+            if (!string.IsNullOrEmpty(message))
+            {
+                message = "{ ErrorMessage: " + message + "}";
+                jobj.EventProperties(message);
+            }
+            var response = await httpClient.PostAsync(this.PrepareRequest("http://localhost:9006/v1/diagnosticsevents", jobj));
         }
 
-        public void SendSimulationDetails(string eventType)
-        {
-            dynamic jobj = new JObject();
-            jobj.DeploymentId = "undefined";
-            if (eventType.Equals("Heartbeat"))
-            {
-                jobj.EventType = "Simulation Service Heartbeat";
-            }
-            else if (eventType.Equals("Service_start"))
-            {
-                jobj.EventType = "Simulation Service Starting";
-            }
-            jobj.Timestamp = DateTime.Now;
-            this.SendToDiagnostics(jobj);
-        }
-        
         private HttpRequest PrepareRequest(string path, object obj=null)
         {
             var request = new HttpRequest();
