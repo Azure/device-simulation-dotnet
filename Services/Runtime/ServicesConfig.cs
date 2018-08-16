@@ -21,6 +21,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
     public class ServicesConfig : IServicesConfig
     {
         public const string USE_DEFAULT_IOTHUB = "default";
+        public const string DIAGNOSTICS_ENDPOINT = "https://iotpcsdiagnostics-staging.azurewebsites.net/api/diagnosticsevents";
 
         private string dtf;
         private string dtbf;

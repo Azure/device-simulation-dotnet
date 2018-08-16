@@ -11,7 +11,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
     public class SendDataToDiagnostics
     {
         private readonly IHttpClient httpClient;
-        
+              
         public SendDataToDiagnostics(ILogger logger)
         {
             this.httpClient = new HttpClient(logger);
@@ -27,7 +27,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
                 message = "{ ErrorMessage: " + message + "}";
                 jobj.EventProperties(message);
             }
-            var response = await httpClient.PostAsync(this.PrepareRequest("http://localhost:9006/v1/diagnosticsevents", jobj));
+            var response = await httpClient.PostAsync(this.PrepareRequest(ServicesConfig.DIAGNOSTICS_ENDPOINT, jobj));
         }
 
         private HttpRequest PrepareRequest(string path, object obj=null)
