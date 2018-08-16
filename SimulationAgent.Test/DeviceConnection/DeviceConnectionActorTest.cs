@@ -5,6 +5,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Moq;
@@ -30,6 +31,7 @@ namespace SimulationAgent.Test.DeviceConnection
         private readonly Mock<Connect> connectLogic;
         private readonly Mock<Disconnect> disconnectLogic;
         private readonly Mock<IDeviceStateActor> deviceStateActor;
+        private readonly Mock<IStorageAdapterClient> storageAdapterClient;
         private readonly Mock<ConnectionLoopSettings> loopSettings;
         private readonly DeviceConnectionActor target;
 
@@ -40,6 +42,7 @@ namespace SimulationAgent.Test.DeviceConnection
             this.rateLimitingConfig = new Mock<IRateLimitingConfig>();
             this.scriptInterpreter = new Mock<IScriptInterpreter>();
             this.devices = new Mock<IDevices>();
+            this.storageAdapterClient = new Mock<IStorageAdapterClient>();
             this.rateLimiting = new Mock<IRateLimiting>();
             this.credentialsSetupLogic = new Mock<CredentialsSetup>(
                 this.devices.Object,
@@ -48,6 +51,7 @@ namespace SimulationAgent.Test.DeviceConnection
                 this.devices.Object,
                 this.logger.Object);
             this.addToStoreLogic = new Mock<AddToStore>(
+                this.storageAdapterClient.Object,
                 this.devices.Object,
                 this.logger.Object);
             this.registerLogic = new Mock<Register>(
@@ -65,6 +69,7 @@ namespace SimulationAgent.Test.DeviceConnection
                 this.scriptInterpreter.Object,
                 this.logger.Object);
             this.deleteFromStoreLogic = new Mock<DeleteFromStore>(
+                this.storageAdapterClient.Object,
                 this.devices.Object,
                 this.logger.Object);
             this.deviceStateActor = new Mock<IDeviceStateActor>();
