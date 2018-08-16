@@ -11,6 +11,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
     {
         private DateTimeOffset? startTime;
         private DateTimeOffset? endTime;
+        private DateTimeOffset? stopTime;
         private string iotHubConnectionString;
 
         [JsonIgnore]
@@ -37,6 +38,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             get => this.endTime;
             set => this.endTime = value ?? DateTimeOffset.MaxValue;
         }
+
+        public DateTimeOffset? StopTime
+        {
+            get => this.stopTime;
+            set => this.stopTime = value ?? DateTimeOffset.MaxValue;
+        }
+
 
         public string IotHubConnectionString
         {

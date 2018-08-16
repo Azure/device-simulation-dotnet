@@ -44,6 +44,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "EndTime", NullValueHandling = NullValueHandling.Ignore)]
         public string EndTime { get; set; }
 
+        [JsonProperty(PropertyName = "StopTime", NullValueHandling = NullValueHandling.Ignore)]
+        public string StopTime { get; set; }
+
         [JsonProperty(PropertyName = "DeviceModels")]
         public IList<SimulationDeviceModelRef> DeviceModels { get; set; }
 
@@ -73,6 +76,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             this.IotHub = null;
             this.StartTime = null;
             this.EndTime = null;
+            this.StopTime = null;
             this.DeviceModels = new List<SimulationDeviceModelRef>();
             this.TotalMessagesSent = 0;
             this.AverageMessagesSent = 0;
@@ -95,6 +99,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Enabled = this.Enabled ?? true,
                 StartTime = DateHelper.ParseDateExpression(this.StartTime, now),
                 EndTime = DateHelper.ParseDateExpression(this.EndTime, now),
+                StopTime = DateHelper.ParseDateExpression(this.StopTime, now),
                 IotHubConnectionString = SimulationIotHub.ToServiceModel(this.IotHub),
                 DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList(),
                 TotalMessagesSent = this.TotalMessagesSent,
@@ -118,6 +123,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Enabled = value.Enabled,
                 StartTime = value.StartTime.ToString(),
                 EndTime = value.EndTime.ToString(),
+                StopTime = value.StopTime.ToString(),
                 IotHub = new SimulationIotHub(value.IotHubConnectionString),
                 TotalMessagesSent = value.TotalMessagesSent,
                 AverageMessagesSent = value.AverageMessagesSent
@@ -133,6 +139,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             if (value.EndTime.HasValue && !value.EndTime.Value.Equals(DateTimeOffset.MaxValue))
             {
                 result.EndTime = value.EndTime?.ToString(DATE_FORMAT);
+            }
+
+            // Ignore the date if the simulation doesn't have an end time
+            if (value.StopTime.HasValue && !value.StopTime.Value.Equals(DateTimeOffset.MaxValue))
+            {
+                result.StopTime = value.StopTime?.ToString(DATE_FORMAT);
             }
 
             result.DeviceModels = SimulationDeviceModelRef.FromServiceModel(value.DeviceModels);
@@ -169,7 +181,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 var now = DateTimeOffset.UtcNow;
                 var startTime = DateHelper.ParseDateExpression(this.StartTime, now);
                 var endTime = DateHelper.ParseDateExpression(this.EndTime, now);
-
                 // The start time must be before the end time
                 if (startTime.HasValue && endTime.HasValue && startTime.Value.Ticks >= endTime.Value.Ticks)
                 {

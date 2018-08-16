@@ -262,6 +262,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             if (patch.Enabled == false)
             {
+                simulation.StopTime = simulation.Modified;
                 simulation.TotalMessagesSent = patch.TotalMessagesSent;
                 simulation.AverageMessagesSent = patch.AverageMessagesSent;
             }
