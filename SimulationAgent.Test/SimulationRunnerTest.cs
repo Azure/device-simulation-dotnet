@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
@@ -37,11 +38,13 @@ namespace SimulationAgent.Test
         private readonly Mock<IDeviceTelemetryActor> deviceTelemetryActor;
         private readonly Mock<IDevicePropertiesActor> devicePropertiesActor;
         private readonly Mock<IRateLimiting> rateLimiting;
+        private readonly Mock<IHttpClient> httpClient;
         private readonly SimulationRunner target;
 
         public SimulationRunnerTest(ITestOutputHelper log)
         {
             this.ratingConfig = new Mock<IRateLimitingConfig>();
+            this.httpClient = new Mock<IHttpClient>();
             this.concurrencyConfig = new Mock<IConcurrencyConfig>();
             this.logger = new Mock<ILogger>();
             this.deviceModels = new Mock<IDeviceModels>();

@@ -4,18 +4,22 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
@@ -78,6 +82,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Configure concurrency, threads, etc.
         private readonly IConcurrencyConfig concurrencyConfig;
 
+        // Client used to make HTTTP requests
+        private readonly IHttpClient httpClient;
+        
         // The thread responsible for updating devices/sensors state
         private Thread devicesStateThread;
 
@@ -99,8 +106,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Flag signaling whether the simulation has started and is running (to avoid contentions)
         private bool running;
 
+        // Storing the latest heartbeat sent to diagnostics data
+        private DateTime lastPolledTime;
+        
         // Counter for simulation error
         private long simulationErrors;
+
+        private SendDataToDiagnostics sendTelemetryToDiagnostics;
 
         public SimulationRunner(
             IRateLimitingConfig ratingConfig,
@@ -117,6 +129,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.propertiesLoopSettings = new PropertiesLoopSettings(ratingConfig);
 
             this.concurrencyConfig = concurrencyConfig;
+            this.httpClient = new HttpClient(logger);
             this.log = logger;
             this.deviceModels = deviceModels;
             this.deviceModelsOverriding = deviceModelsOverriding;
@@ -127,12 +140,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.startLock = new { };
             this.running = false;
             this.starting = false;
+            this.lastPolledTime = DateTime.Now;
             this.rateLimiting = rateLimiting;
 
             this.deviceStateActors = new ConcurrentDictionary<string, IDeviceStateActor>();
             this.deviceConnectionActors = new ConcurrentDictionary<string, IDeviceConnectionActor>();
             this.deviceTelemetryActors = new ConcurrentDictionary<string, IDeviceTelemetryActor>();
             this.devicePropertiesActors = new ConcurrentDictionary<string, IDevicePropertiesActor>();
+
+            this.sendTelemetryToDiagnostics = new SendDataToDiagnostics(this.log);
         }
 
         /// <summary>
@@ -143,12 +159,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         /// create an actor responsible for
         /// sending the telemetry.
         /// </summary>
-        public void Start(Services.Models.Simulation simulation)
+        public async void Start(Services.Models.Simulation simulation)
         {
             // Use `starting` to exit as soon as possible, to minimize the number 
             // of threads pending on the lock statement
-            if (this.starting || this.running) return;
+            if (this.starting || this.running)
+            {
+                DateTime now = DateTime.Now;
+                TimeSpan duration = now - this.lastPolledTime;
+                
 
+                // Send heartbeat every 24 hours
+                if (duration.Days >= 1)
+                {
+                    this.lastPolledTime = DateTime.Now;
+                    sendTelemetryToDiagnostics.SendSimulationDetails("Heartbeat");
+                }
+                return;
+            }
+
+            sendTelemetryToDiagnostics.SendSimulationDetails("Service_Start");
+            
             lock (this.startLock)
             {
                 if (this.running) return;
@@ -158,7 +189,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.starting = true;
 
                 this.log.Info("Starting simulation...", () => new { simulation.Id });
-
+                
                 // Note: this is a singleton class, so we can call this once. This sets
                 // the active hub, e.g. in case the user provided a custom connection string.
                 this.devices.SetCurrentIotHub();
@@ -272,6 +303,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 // Reset rateLimiting counters
                 this.rateLimiting.ResetCounters();
             }
+        }
+
+        private HttpRequest PrepareRequest(string path, string content = null)
+        {
+            var request = new HttpRequest();
+            request.AddHeader(HttpRequestHeader.Accept.ToString(), "application/json");
+            request.SetUriFromString(path);
+            content = "{'Deployment_id': 'undefined'}";
+            request.SetContent(content);
+            return request;
         }
 
         // Method to return the count of active devices
