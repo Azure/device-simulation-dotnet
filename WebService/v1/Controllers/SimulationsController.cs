@@ -88,7 +88,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 await this.simulationsService.UpsertAsync(simulation.ToServiceModel(id)));
         }
 
-        [HttpPut("{id}/Devices!AddDevice")]
+        [HttpPut("{id}/Devices!create")]
         public async Task PutAsync(
         [FromBody] AddDeviceApiModel device)
         {
@@ -103,7 +103,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             await this.simulationAgent.AddDevice(device.DeviceId, device.ModelId);
         }
 
-        [HttpPut("{id}/Devices!DeleteDevices")]
+        [HttpPut("{id}/Devices!batchDelete")]
         public async Task PutAsync(
             [FromBody] DeleteDeviceListApiModel devices)
         {
