@@ -24,7 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     {
         void Start(Services.Models.Simulation simulation);
         void Stop();
-        Task AddDevice(DeviceModelRef deviceModel, string position);
+        Task AddDevice(string deviceId, string modelId);
         Task DeleteDevices(List<string> ids);
         long ActiveDevicesCount { get; }
         long TotalMessagesCount { get; }
@@ -277,13 +277,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        public async Task AddDevice(DeviceModelRef deviceModel, string position)
+        public async Task AddDevice(string deviceId, string modelId)
         {
-            int devicePosition;
-            int.TryParse(position, out devicePosition);
-            DeviceModel model = this.GetDeviceModel(deviceModel.Id, deviceModel.Override);
+           /* DeviceModelRef deviceModel = new DeviceModelRef();
+            deviceModel.Id = modelId;
+            CustomDeviceRef customDevice = new CustomDeviceRef();
+            customDevice.DeviceModel = deviceModel;
+            customDevice.DeviceId = deviceId;
+            */
 
-            this.CreateActorsForDevice(model, devicePosition, 1);
+            DeviceModel model = this.GetDeviceModel(modelId, null);
+
+            this.CreateActorsForDevice(model, 0, 1, deviceId);
         }
 
         /// <summary>
@@ -518,27 +523,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
          * one actor to manage the connection to the hub, and one actor for each
          * telemetry message to send.
          */
-        private void CreateActorsForDevice(DeviceModel deviceModel, int position, int total)
+        private void CreateActorsForDevice(DeviceModel deviceModel, int position, int total, string deviceId = null)
         {
-            var deviceId = this.devices.GenerateId(deviceModel.Id, position);
-            var key = deviceModel.Id + "#" + position;
+            var id = deviceId ?? this.devices.GenerateId(deviceModel.Id, position);
+            var key = deviceId ?? deviceModel.Id + "#" + position;
 
             this.log.Debug("Creating device actors...",
                 () => new { ModelName = deviceModel.Name, ModelId = deviceModel.Id, position });
 
             // Create one state actor for each device
             var deviceStateActor = this.factory.Resolve<IDeviceStateActor>();
-            deviceStateActor.Setup(deviceId, deviceModel, position, total);
+            deviceStateActor.Setup(id, deviceModel, position, total);
             this.deviceStateActors.Add(key, deviceStateActor);
 
             // Create one connection actor for each device
             var deviceConnectionActor = this.factory.Resolve<IDeviceConnectionActor>();
-            deviceConnectionActor.Setup(deviceId, deviceModel, deviceStateActor, this.connectionLoopSettings);
+            deviceConnectionActor.Setup(id, deviceModel, deviceStateActor, this.connectionLoopSettings);
             this.deviceConnectionActors.Add(key, deviceConnectionActor);
 
             // Create one device properties actor for each device
             var devicePropertiesActor = this.factory.Resolve<IDevicePropertiesActor>();
-            devicePropertiesActor.Setup(deviceId, deviceStateActor, deviceConnectionActor, this.propertiesLoopSettings);
+            devicePropertiesActor.Setup(id, deviceStateActor, deviceConnectionActor, this.propertiesLoopSettings);
             this.devicePropertiesActors.Add(key, devicePropertiesActor);
 
             // Create one telemetry actor for each telemetry message to be sent
@@ -554,7 +559,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 }
 
                 var deviceTelemetryActor = this.factory.Resolve<IDeviceTelemetryActor>();
-                deviceTelemetryActor.Setup(deviceId, deviceModel, message, deviceStateActor, deviceConnectionActor);
+                deviceTelemetryActor.Setup(id, deviceModel, message, deviceStateActor, deviceConnectionActor);
 
                 var actorKey = key + "#" + (i++).ToString();
                 this.deviceTelemetryActors.Add(actorKey, deviceTelemetryActor);

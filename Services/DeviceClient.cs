@@ -85,6 +85,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     this.log.Error("Device connection auth failed", () => new { this.deviceId, this.protocol, e });
                     throw new DeviceAuthFailedException(e);
                 }
+                catch (DeviceNotFoundException e)
+                {
+                    this.log.Error("Device not found", () => new { this.deviceId, this.protocol, e });
+                    throw new DeviceNotFoundException(this.deviceId);
+                }
             }
         }
 

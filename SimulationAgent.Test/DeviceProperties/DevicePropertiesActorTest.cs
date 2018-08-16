@@ -172,6 +172,7 @@ namespace SimulationAgent.Test.DeviceProperties
             Mock<DeleteFromStore> deleteFromStoreLogic = new Mock<DeleteFromStore>(
               this.devices.Object,
               this.logger.Object);
+
             return new DeviceConnectionActor(
                 this.logger.Object,
                 this.actorsLogger.Object,

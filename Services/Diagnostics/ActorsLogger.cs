@@ -429,7 +429,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (!this.enabled) return;
 
             this.Log("Device disconnected");
-            this.LogConnection("C=Disconnected");
+            this.LogConnection("Disconnected");
         }
 
         public void DeviceDisconnectionFailed()

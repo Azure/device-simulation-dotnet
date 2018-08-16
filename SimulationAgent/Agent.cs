@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
@@ -14,8 +15,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     public interface ISimulationAgent
     {
         Task RunAsync();
-        Task AddDevice(string id);
-        Task DeleteDevices(List<string> ids);
+        Task AddDevice(string name, string modelId);
+        Task DeleteDevices(List<string> ids, bool isCustom);
         void Stop();
     }
 
@@ -26,17 +27,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private readonly ILogger log;
         private readonly ISimulations simulations;
         private readonly ISimulationRunner runner;
+        private readonly IDeviceModels deviceModels;
         private Services.Models.Simulation simulation;
         private bool running;
 
         public Agent(
             ILogger logger,
             ISimulations simulations,
-            ISimulationRunner runner)
+            ISimulationRunner runner,
+            IDeviceModels deviceModels)
         {
             this.log = logger;
             this.simulations = simulations;
             this.runner = runner;
+            this.deviceModels = deviceModels;
             this.running = true;
         }
 
@@ -89,89 +93,68 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.runner.Stop();
         }
 
-        public async Task AddDevice(string id)
+        public async Task AddDevice(string deviceId, string modelId)
         {
             // currently only one simulation is supported
             var simulation = (await this.simulations.GetListAsync()).FirstOrDefault();
-            var modelIds = this.parseModelIds(new List<string>() { id });
-            DeviceModelRef modelToUpdate = null;
 
-            if (simulation != null)
-            {
-                foreach (var model in simulation.DeviceModels)
-                {
-                    if (modelIds.Contains(model.Id))
-                    {
-                        modelToUpdate = model;
-                        model.Count++;
-                    }
-                }
-            }
-
-            if (modelToUpdate != null) 
+            if (simulation != null && this.IsDeviceModelIdValidAsync(modelId))
             {
                 try
                 {
+                    await this.AddDeviceToSimulationRecordAsync(simulation, deviceId, modelId);
+
                     if (this.running)
                     {
-                        this.log.Info("Add device to running simulation", () => { });
-                        await this.runner.AddDevice(modelToUpdate, this.parsePosition(id));
+                        this.log.Info("Add device to running simulation");
+                        await this.runner.AddDevice(deviceId, modelId);
                     }
                     else
                     {
-                        this.log.Info("Add device to hub", () => { });
-                        await this.simulations.AddDeviceAsync(id);
+                        this.log.Info("Add device to IoT Hub");
+                        await this.simulations.AddDeviceAsync(deviceId);
                     }
                 }
                 catch (Exception e)
                 {
-                    this.log.Debug("Error while creating new device", () => new { e });
-                    throw new Exception("Error while creating a new device");
+                    this.log.Debug("Error while adding new device", () => new { e });
+                    throw new Exception("Error while adding a new device");
                 }
-
-                await this.simulations.UpsertAsync(simulation);
             }
         }
-
 
         /// <summary>
         /// Delete a list of devices
         /// </summary>
-        public async Task DeleteDevices(List<string> ids)
+        public async Task DeleteDevices(List<string> ids, bool isCustom)
         {
-            this.log.Info("Update simulation", () => { });
+            this.log.Info("Update simulation");
 
             // currently only one simulation is supported
             var simulation = (await this.simulations.GetListAsync()).FirstOrDefault();
-            var modelIds = this.parseModelIds(ids);
-            bool shouldUpdateSimulation = false;
 
-            if (simulation != null)
+            try
             {
-                foreach (var model in simulation.DeviceModels)
+                if (simulation != null)
                 {
-                    if (modelIds.Contains(model.Id))
+                    await this.DeleteDevicesFromSimulationRecordAsync(simulation, ids, isCustom);
+
+                    if (this.running)
                     {
-                        model.Count--;
-                        shouldUpdateSimulation = true;
+                        this.log.Info("Deleting devices from running simulation");
+                        await this.runner.DeleteDevices(ids);
+                    }
+                    else
+                    {
+                        this.log.Info("Deleting devices from hub");
+                        await this.simulations.DeleteDevicesAsync(ids);
                     }
                 }
             }
-
-            if (shouldUpdateSimulation)
+            catch (Exception e)
             {
-                if (this.running)
-                {
-                    this.log.Info("Deleting devices from running simulation", () => { });
-                    await this.runner.DeleteDevices(ids);
-                }
-                else
-                {
-                    this.log.Info("Deleting devices from hub", () => { });
-                    await this.simulations.DeleteDevicesAsync(ids);
-                }
-
-                await this.simulations.UpsertAsync(simulation);
+                this.log.Debug("Error while adding new device", () => new { e });
+                throw new Exception("Error while adding a new device");
             }
         }
 
@@ -234,15 +217,89 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private List<string> parseModelIds(List<string> ids)
+        private bool IsDeviceModelIdValidAsync(string modelId)
         {
-            return ids.Select(s => s.Substring(0, s.LastIndexOf(('.')))).ToList<string>();
+            var models = this.deviceModels.GetListAsync().Result;
+
+            foreach (var model in models)
+            {
+                if (modelId.Equals(model.Id, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
-        private string parsePosition(string id)
+        private async Task AddDeviceToSimulationRecordAsync(Simulation simulation, string deviceId, string modelId)
         {
-            int index = id.LastIndexOf(('.')) + 1;
-            return id.Substring(index, id.Length - index);
+            DeviceModelRef deviceModel = new DeviceModelRef();
+            deviceModel.Id = modelId;
+            CustomDeviceRef customDevice = new CustomDeviceRef();
+            customDevice.DeviceModel = deviceModel;
+            customDevice.DeviceId = deviceId;
+
+            try
+            {
+                if (!simulation.CustomDevices.ToList().Contains(customDevice))
+                {
+                    this.log.Info("Update simulation record");
+                    simulation.CustomDevices.Add(customDevice);
+                    await this.simulations.UpsertAsync(simulation);
+                }
+                else
+                {
+                    this.log.Debug("Device already exists in simulation record");
+                }
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Error while adding new device to simulation record", () => new { e });
+                throw new Exception("Error while adding a new device to simulation record");
+            }
+        }
+
+        private async Task DeleteDevicesFromSimulationRecordAsync(Simulation simulation, List<string> ids, bool customDevices)
+        {
+            bool shouldUpdateSimulation = false;
+
+            if (customDevices)
+            {
+                // Update custom device list
+                foreach (var model in simulation.CustomDevices.ToList())
+                {
+                    if (ids.Contains(model.DeviceId))
+                    {
+                        simulation.CustomDevices.Remove(model);
+                        shouldUpdateSimulation = true;
+                    }
+                }
+            }
+            else
+            {
+                // Update device model count
+                foreach (var model in simulation.DeviceModels.ToList())
+                {
+                    List<string> parsedModelIds = ids.Select(s => s.Substring(0, s.LastIndexOf(('.')))).ToList<string>();
+                    if (parsedModelIds.Contains(model.Id))
+                    {
+                        model.Count--;
+                        if (model.Count <= 0)
+                        {
+                            simulation.DeviceModels.Remove(model);
+                        }
+
+                        shouldUpdateSimulation = true;
+                    }
+                }
+            }
+
+            if (shouldUpdateSimulation)
+            {
+                this.log.Info("Update simulation record");
+                await this.simulations.UpsertAsync(simulation);
+            }
         }
     }
 }

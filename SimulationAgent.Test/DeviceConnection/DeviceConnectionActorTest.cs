@@ -44,7 +44,6 @@ namespace SimulationAgent.Test.DeviceConnection
             this.credentialsSetupLogic = new Mock<CredentialsSetup>(
                 this.devices.Object,
                 this.logger.Object);
-
             this.fetchLogic = new Mock<FetchFromRegistry>(
                 this.devices.Object,
                 this.logger.Object);

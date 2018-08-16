@@ -625,12 +625,13 @@ Add a device to a simulatiom using AddDevice method.
 
 Request:
 ```
-PUT /v1/simulations/1/AddDevice
+PUT /v1/simulations/1/Devices!AddDevice
 Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-  "Item": "truck-01.0",
+  "DeviceId": "CustomElevator",
+  "ModelId": "elevator-01"
 }
 ```
 
@@ -641,15 +642,16 @@ The method accepts a list of upto 100 device ids to deleted.
 
 Request:
 ```
-PUT /v1/simulations/1/DeleteDevices
+PUT /v1/simulations/1/Devices!DeleteDevices
 Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-  "Items": [
+  "DeviceIds": [
     "truck-01.0",
     "truck-01.1",
     ...
-  ]
+  ],
+  IsCustom: false
 }
 ```
