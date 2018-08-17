@@ -107,13 +107,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Counter for simulation error
         private long simulationErrors;
 
-        private SendDataToDiagnostics sendTelemetryToDiagnostics;
-
+        private readonly ISendDataToDiagnostics sendDataToDiagnostics;
+        
         public SimulationRunner(
             IRateLimitingConfig ratingConfig,
             IRateLimiting rateLimiting,
             IConcurrencyConfig concurrencyConfig,
             ILogger logger,
+            ISendDataToDiagnostics sendDataToDiagnostics,
             IDeviceModels deviceModels,
             IDeviceModelsGeneration deviceModelsOverriding,
             IDevices devices,
@@ -142,7 +143,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.deviceTelemetryActors = new ConcurrentDictionary<string, IDeviceTelemetryActor>();
             this.devicePropertiesActors = new ConcurrentDictionary<string, IDevicePropertiesActor>();
 
-            this.sendTelemetryToDiagnostics = new SendDataToDiagnostics(this.log);
+            this.sendDataToDiagnostics = sendDataToDiagnostics;
         }
 
         /// <summary>
@@ -167,12 +168,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 if (duration.Days >= 1)
                 {
                     this.lastPolledTime = DateTime.Now;
-                    sendTelemetryToDiagnostics.SendDiagnosticsData("Service Heartbeat","");
+                    await this.sendDataToDiagnostics.SendDiagnosticsData("Service Heartbeat","");
                 }
                 return;
             }
-
-            sendTelemetryToDiagnostics.SendDiagnosticsData("Service Start","");
+            await this.sendDataToDiagnostics.SendDiagnosticsData("Service Strt", "");
             
             lock (this.startLock)
             {

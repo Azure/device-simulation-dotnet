@@ -9,7 +9,11 @@ using System.Text;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 {
-    public class SendDataToDiagnostics
+    public interface ISendDataToDiagnostics
+    {
+        Task<IHttpResponse> SendDiagnosticsData(string eventType, string message);
+    }
+    public class SendDataToDiagnostics: ISendDataToDiagnostics
     {
         private readonly IHttpClient httpClient;
               

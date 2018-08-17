@@ -15,12 +15,14 @@ namespace Services.Test
         private readonly Mock<ILogger> logger;
         private readonly IServicesConfig config;
         private readonly IotHubConnectionStringManager target;
+        private readonly Mock<ISendDataToDiagnostics> sendDataToDiagnostics;
 
         public IotHubConnectionStringManagerTest()
         {
             this.logger = new Mock<ILogger>();
+            this.sendDataToDiagnostics = new Mock<ISendDataToDiagnostics>();
             this.config = new ServicesConfig();
-            this.target = new IotHubConnectionStringManager(this.config, this.logger.Object);
+            this.target = new IotHubConnectionStringManager(this.config, this.sendDataToDiagnostics.Object, this.logger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
