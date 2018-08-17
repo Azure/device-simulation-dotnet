@@ -11,20 +11,20 @@ using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 {
-    public interface ISendDataToDiagnostics
+    public interface IDiagnosticsLogger
     {
-        Task<IHttpResponse> SendDiagnosticsData(string eventType, string message);
+        Task<IHttpResponse> LogDiagnosticsData(string eventType, string message);
     }
-    public class SendDataToDiagnostics: ISendDataToDiagnostics
+    public class DiagnosticsLogger : IDiagnosticsLogger
     {
         private readonly IHttpClient httpClient;
               
-        public SendDataToDiagnostics(ILogger logger)
+        public DiagnosticsLogger(ILogger logger)
         {
             this.httpClient = new HttpClient(logger);
         }
 
-        public async Task<IHttpResponse> SendDiagnosticsData(string eventType, string message = "")
+        public async Task<IHttpResponse> LogDiagnosticsData(string eventType, string message = "")
         {
             dynamic jobj = new JObject();
             jobj.Timestamp = DateTime.Now;

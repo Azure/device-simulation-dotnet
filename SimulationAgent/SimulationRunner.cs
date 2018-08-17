@@ -41,6 +41,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Application logger
         private readonly ILogger log;
 
+        // Logger for logging diagnostics events
+        private readonly IDiagnosticsLogger logDiagnostics;
+
         // Settings to optimize scheduling
         private readonly ConnectionLoopSettings connectionLoopSettings;
 
@@ -107,14 +110,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Counter for simulation error
         private long simulationErrors;
 
-        private readonly ISendDataToDiagnostics sendDataToDiagnostics;
-        
         public SimulationRunner(
             IRateLimitingConfig ratingConfig,
             IRateLimiting rateLimiting,
             IConcurrencyConfig concurrencyConfig,
             ILogger logger,
-            ISendDataToDiagnostics sendDataToDiagnostics,
+            IDiagnosticsLogger diagnosticsLogger,
             IDeviceModels deviceModels,
             IDeviceModelsGeneration deviceModelsOverriding,
             IDevices devices,
@@ -126,6 +127,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             this.concurrencyConfig = concurrencyConfig;
             this.log = logger;
+            this.logDiagnostics = diagnosticsLogger;
             this.deviceModels = deviceModels;
             this.deviceModelsOverriding = deviceModelsOverriding;
             this.devices = devices;
@@ -142,8 +144,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.deviceConnectionActors = new ConcurrentDictionary<string, IDeviceConnectionActor>();
             this.deviceTelemetryActors = new ConcurrentDictionary<string, IDeviceTelemetryActor>();
             this.devicePropertiesActors = new ConcurrentDictionary<string, IDevicePropertiesActor>();
-
-            this.sendDataToDiagnostics = sendDataToDiagnostics;
         }
 
         /// <summary>
@@ -154,7 +154,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         /// create an actor responsible for
         /// sending the telemetry.
         /// </summary>
-        public async void Start(Services.Models.Simulation simulation)
+        public void Start(Services.Models.Simulation simulation)
         {
             // Use `starting` to exit as soon as possible, to minimize the number 
             // of threads pending on the lock statement
@@ -168,11 +168,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 if (duration.Days >= 1)
                 {
                     this.lastPolledTime = DateTime.Now;
-                    await this.sendDataToDiagnostics.SendDiagnosticsData("ServiceHeartbeat","");
+                    this.logDiagnostics.LogDiagnosticsData("ServiceHeartbeat","");
                 }
                 return;
             }
-            await this.sendDataToDiagnostics.SendDiagnosticsData("ServiceStart", "");
+            this.logDiagnostics.LogDiagnosticsData("ServiceStart", "");
             
             lock (this.startLock)
             {

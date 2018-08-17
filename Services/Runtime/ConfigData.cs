@@ -24,13 +24,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
     {
         private readonly IConfigurationRoot configuration;
         private readonly ILogger log;
-        private readonly ISendDataToDiagnostics sendDataToDiagnostics;
+        private readonly IDiagnosticsLogger diagnosticsLogger;
 
         public ConfigData(IConfigurationRoot configuration, ILogger logger)
         {
             this.log = logger;
             this.configuration = configuration;
-            this.sendDataToDiagnostics = new SendDataToDiagnostics(this.log);
+            this.diagnosticsLogger = new DiagnosticsLogger(this.log);
         }
 
         public string GetString(string key, string defaultValue = "")
