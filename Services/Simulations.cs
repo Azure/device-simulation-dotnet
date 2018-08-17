@@ -125,7 +125,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 throw new InvalidInputException("Unknown template name. Try 'default'.");
             }
 
-            if (string.IsNullOrEmpty(simulation.Name))
+            if (!usingDefaultTemplate && string.IsNullOrEmpty(simulation.Name))
             {
                 this.log.Warn("Missing simulation name", () => new { });
                 throw new InvalidInputException("Simulation name is required.");
@@ -185,6 +185,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<Models.Simulation> UpsertAsync(Models.Simulation simulation)
         {
+            if (string.IsNullOrEmpty(simulation.Id))
+            {
+                throw new InvalidInputException("Simulation ID is not specified.");
+            }
+
             var existingSimulation = await this.GetAsync(simulation.Id);
             if (existingSimulation != null)
             {
