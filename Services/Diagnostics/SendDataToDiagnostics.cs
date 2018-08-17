@@ -24,8 +24,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             jobj.EventType = eventType;
             if (!string.IsNullOrEmpty(message))
             {
-                message = "{ ErrorMessage: " + message + "}";
-                jobj.EventProperties(message);
+                jobj.EventProperties = new JObject(
+                    new JProperty("ErrorMessage", message));
             }
             var response = await httpClient.PostAsync(this.PrepareRequest(ServicesConfig.DIAGNOSTICS_ENDPOINT, jobj));
         }
