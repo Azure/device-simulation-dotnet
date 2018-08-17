@@ -1,5 +1,6 @@
 ﻿using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -17,7 +18,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.httpClient = new HttpClient(logger);
         }
 
-        public async void SendDiagnosticsData(string eventType, string message = "")
+        public async Task<IHttpResponse> SendDiagnosticsData(string eventType, string message = "")
         {
             dynamic jobj = new JObject();
             jobj.Timestamp = DateTime.Now;
@@ -27,7 +28,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
                 jobj.EventProperties = new JObject(
                     new JProperty("ErrorMessage", message));
             }
-            var response = await httpClient.PostAsync(this.PrepareRequest(ServicesConfig.DIAGNOSTICS_ENDPOINT, jobj));
+            return await httpClient.PostAsync(this.PrepareRequest(ServicesConfig.DIAGNOSTICS_ENDPOINT, jobj));
         }
 
         private HttpRequest PrepareRequest(string path, object obj=null)
