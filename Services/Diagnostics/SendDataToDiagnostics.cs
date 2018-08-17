@@ -1,11 +1,13 @@
-﻿using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
+﻿// Copyright (c) Microsoft. All rights reserved.
+
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 using System.Text;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 {

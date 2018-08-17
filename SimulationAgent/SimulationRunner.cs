@@ -168,11 +168,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 if (duration.Days >= 1)
                 {
                     this.lastPolledTime = DateTime.Now;
-                    await this.sendDataToDiagnostics.SendDiagnosticsData("Service Heartbeat","");
+                    await this.sendDataToDiagnostics.SendDiagnosticsData("ServiceHeartbeat","");
                 }
                 return;
             }
-            await this.sendDataToDiagnostics.SendDiagnosticsData("Service Strt", "");
+            await this.sendDataToDiagnostics.SendDiagnosticsData("ServiceStart", "");
             
             lock (this.startLock)
             {
@@ -297,16 +297,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 // Reset rateLimiting counters
                 this.rateLimiting.ResetCounters();
             }
-        }
-
-        private HttpRequest PrepareRequest(string path, string content = null)
-        {
-            var request = new HttpRequest();
-            request.AddHeader(HttpRequestHeader.Accept.ToString(), "application/json");
-            request.SetUriFromString(path);
-            content = "{'Deployment_id': 'undefined'}";
-            request.SetContent(content);
-            return request;
         }
 
         // Method to return the count of active devices

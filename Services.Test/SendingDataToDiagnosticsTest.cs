@@ -1,4 +1,5 @@
-﻿
+﻿// Copyright (c) Microsoft. All rights reserved.
+
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -16,11 +17,11 @@ using Xunit.Abstractions;
 
 namespace Services.Test
 {
-    public class SendingDataToDiagnostics
+    public class SendingDataToDiagnosticsTest
     {
         private readonly Mock<ILogger> logger;
         
-        public SendingDataToDiagnostics()
+        public SendingDataToDiagnosticsTest()
         {
             this.logger = new Mock<ILogger>();
         }
@@ -32,7 +33,7 @@ namespace Services.Test
             var sendDataToDiagnostics = new SendDataToDiagnostics(this.logger.Object);
             
             //Act
-            var response = await sendDataToDiagnostics.SendDiagnosticsData("Error", "helo");
+            var response = await sendDataToDiagnostics.SendDiagnosticsData("Error", "");
 
             //Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
