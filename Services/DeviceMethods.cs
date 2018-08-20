@@ -26,20 +26,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     {
         private readonly IDeviceClientWrapper client;
         private readonly ILogger log;
+        private readonly IDiagnosticsLogger diagnosticsLogger;
+        
         private readonly IScriptInterpreter scriptInterpreter;
         private IDictionary<string, Script> cloudToDeviceMethods;
         private ISmartDictionary deviceState;
         private ISmartDictionary deviceProperties;
         private string deviceId;
         private bool isRegistered;
+        private const string SERVICE_ERROR = "ServiceError";
 
         public DeviceMethods(
             IDeviceClientWrapper client,
             ILogger logger,
+            IDiagnosticsLogger diagnosticsLogger,
             IScriptInterpreter scriptInterpreter)
         {
             this.client = client;
             this.log = logger;
+            this.diagnosticsLogger = diagnosticsLogger;
             this.scriptInterpreter = scriptInterpreter;
             this.deviceId = string.Empty;
             this.isRegistered = false;
@@ -106,7 +111,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
+                string msg = $"Failed executing method: {e}";
                 this.log.Error("Failed executing method.", () => new { methodRequest, e });
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, msg);
                 return Task.FromResult(new MethodResponse((int) HttpStatusCode.InternalServerError));
             }
         }
@@ -151,6 +158,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
+                string msg = $"Error while executing method: {methodRequest.Name} on device: {this.deviceId}";
                 this.log.Error("Error while executing method for device",
                     () => new
                     {
@@ -159,6 +167,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         methodRequest.DataAsJson,
                         e
                     });
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, msg);
             }
         }
 

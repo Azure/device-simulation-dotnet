@@ -42,16 +42,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public class CustomDeviceModels : ICustomDeviceModels
     {
         private const string STORAGE_COLLECTION = "deviceModels";
+        private const string SERVICE_ERROR = "ServiceError";
 
         private readonly IStorageAdapterClient storage;
         private readonly ILogger log;
+        private readonly IDiagnosticsLogger diagnosticsLogger;
 
         public CustomDeviceModels(
             IStorageAdapterClient storage,
-            ILogger logger)
+            ILogger logger,
+            IDiagnosticsLogger diagnosticsLogger)
         {
             this.storage = storage;
             this.log = logger;
+            this.diagnosticsLogger = diagnosticsLogger;
         }
 
         /// <summary>
@@ -67,7 +71,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to load device models from storage", e);
+                string msg = "Unable to load device models from storage";
+                this.log.Error(msg, e);
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, msg);
                 throw new ExternalDependencyException("Unable to load device models from storage", e);
             }
 
@@ -86,7 +92,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to parse device models loaded from storage", e);
+                string msg = "Unable to parse device models loaded from storage";
+                this.log.Error(msg, e);
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, msg);
                 throw new ExternalDependencyException("Unable to parse device models loaded from storage", e);
             }
         }
@@ -113,8 +121,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
+                string msg = $"Unable to load device model {id} from storage";
                 this.log.Error("Unable to load device model from storage",
                     () => new { id, e.Message, Exception = e });
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, msg);
                 throw new ExternalDependencyException("Unable to load device model from storage", e);
             }
 
@@ -161,8 +171,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
+                string msg = $"Failed to insert new device model '{deviceModel},{generateId}' into storage";
                 this.log.Error("Failed to insert new device model into storage",
                     () => new { deviceModel, generateId, e });
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, msg);
                 throw new ExternalDependencyException(
                     "Failed to insert new device model into storage", e);
             }
@@ -201,7 +213,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
                 else
                 {
+                    string msg = $"Invalid ETag: {eTag} provided";
                     this.log.Error("Invalid ETag.", () => new { CurrentETag = item.ETag, ETagProvided = eTag });
+                    this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, msg);
                     throw new ConflictingResourceException("Invalid ETag. Device Model ETag is:'" + item.ETag + "'.");
                 }
             }
@@ -218,7 +232,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception exception)
             {
+                string msg = $"Something went wrong while upserting the device model: {deviceModel}";
                 this.log.Error("Something went wrong while upserting the device model.", () => new { deviceModel });
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, msg);
                 throw new ExternalDependencyException("Failed to upsert: " + exception.Message, exception);
             }
 
@@ -236,7 +252,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
+                string msg = $"Something went wrong while deleting the device model: {id}. Exception message: {e}";
                 this.log.Error("Something went wrong while deleting the device model.", () => new { id, e });
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, msg);
                 throw new ExternalDependencyException("Failed to delete the device model", e);
             }
         }
