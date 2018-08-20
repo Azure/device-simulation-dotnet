@@ -21,19 +21,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public class StockDeviceModels : IStockDeviceModels
     {
         private const string EXT = ".json";
-
+        
         private readonly IServicesConfig config;
         private readonly ILogger log;
+        private readonly IDiagnosticsLogger diagnosticsLogger;
 
         private List<string> deviceModelFiles;
         private List<DeviceModel> deviceModels;
 
         public StockDeviceModels(
             IServicesConfig config,
-            ILogger logger)
+            ILogger logger,
+            IDiagnosticsLogger diagnosticsLogger)
         {
             this.config = config;
             this.log = logger;
+            this.diagnosticsLogger = diagnosticsLogger;
             this.deviceModelFiles = null;
             this.deviceModels = null;
         }
@@ -52,8 +55,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to load Device Model files", e);
-
+                string msg = "Unable to load Device Model files";
+                this.log.Error(msg, e);
+                this.diagnosticsLogger.LogDiagnosticsData("ServiceError", $"{msg}: {e.Message}");
                 throw;
             }
 
@@ -68,7 +72,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to parse Device Model files", e);
+                string msg = "Unable to parse Device Model files";
+                this.log.Error(msg, e);
+                this.diagnosticsLogger.LogDiagnosticsData("ServiceError", $"{msg}: {e.Message}");
                 throw new InvalidConfigurationException("Unable to parse Device Model files: " + e.Message, e);
             }
 
