@@ -26,18 +26,10 @@ namespace Services.Test
             IHttpResponse response = null;
             
             //Act
-            try
-            {
-                response = await this.diagnosticsLogger.Object.LogDiagnosticsData("Error", "");
-                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            }
-            catch(NullReferenceException e)
-            {
-                
-            }
+            response = await this.diagnosticsLogger.Object.LogDiagnosticsData("Error", "");
 
             //Assert
-            
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
     }
 }
