@@ -1,17 +1,17 @@
-API specifications - SimulationScripts
+API specifications - DeviceModelScripts
 ================================
 
-## Uploading simulation script files
+## Uploading device model script files
 
 ### Uploading file with POST
 
 When invoking the API using the POST HTTP method, the service will always
-attempt to create a new simulation script model with the content of the
+attempt to create a new device model script model with the content of the
 uploadedscirpt file.
 
 Request:
 ```
-POST /v1/simulationscripts
+POST /v1/devicemodelscripts
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 
 ------WebKitFormBoundary7MA4YWxkTrZu0gW
@@ -36,8 +36,8 @@ Content-Type: application/json; charset=utf-8
   "Content": "// Copyright (c) Microsoft. All rights reserved.\n\n/*global log*/\n/*global updateState*/\n/*global sleep*/\n/*jslint node: true*/\n\n\"use strict\";\n\n// Default state\nvar state = {\n    // reboot just changes whether the device is on or offline\n    online: true\n};\n\n/**\n * Entry point function called by the method.\n *\n * @param context        The context contains current time, device model and id\n * @param previousState  The device state since the last iteration\n * @param previousProperties  The device properties since the last iteration\n */\n/*jslint unparam: true*/\nfunction main(context, previousState, previousProperties) {\n\n    // Reboot - devices goes offline and comes online after 20 seconds\n    log(\"Executing 'Reboot' JavaScript method simulation.\");\n\n    state.DeviceMethodStatus = \"Rebooting device...\";\n    state.CalculateRandomizedTelemetry = false;\n    state.online = false;\n    // update the state to offline\n    updateState(state);\n\n    // Sleep for 15 seconds\n    sleep(15000);\n\n    state.DeviceMethodStatus = \"Successfully rebooted device.\";\n    updateState(state);\n\n    // Sleep for 5 seconds\n    sleep(5000);\n    state.CalculateRandomizedTelemetry = true;\n    // update the state back to online\n    state.online = true;\n    state.DeviceMethodStatus = \"\";\n    updateState(state);\n\n    log(\"'Reboot' JavaScript method simulation completed.\");\n}\n",
   "Path": "Storage",
   "$metadata": {
-    "$type": "SimulationScript;1",
-    "$uri": "/v1/simulationscripts/b62d3316-effe-41d4-8767-e0ca6d07f013",
+    "$type": "DeviceModelScript;1",
+    "$uri": "/v1/devicemodelscripts/b62d3316-effe-41d4-8767-e0ca6d07f013",
     "$created": "2018-07-31T21:24:24+00:00",
     "$modified": "2018-07-31T21:24:24+00:00"
   }
@@ -47,13 +47,13 @@ Content-Type: application/json; charset=utf-8
 ### Editing with PUT
 
 When invoking the API using the PUT HTTP method, the service will attempt
-to modify an existing simulation script. When using PUT, the simulation 
+to modify an existing device model script. When using PUT, the device model 
 script Id is passed through the URL. PUT requests are idempotent and don't
 generate errors when retried (unless the payload differs during a retry, 
 in which case the ETag mismatch will generate an error).
 
 ```
-PUT /v1/simulationscripts/53009673-6c49-4514-9dbd-5f811723c195 HTTP/1.1
+PUT /v1/devicemodelscripts/53009673-6c49-4514-9dbd-5f811723c195 HTTP/1.1
 Host: localhost:9003
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 Cache-Control: no-cache
@@ -87,13 +87,13 @@ Content-Disposition: form-data; name="Etag"
 }
 ```
 
-## Get simulation scripts
+## Get device model scripts
 
-### Get a list of simulation scripts
+### Get a list of device model scripts
 
 Request:
 ```
-GET /v1/simulationscripts
+GET /v1/devicemodelscripts
 ```
 
 Response:
@@ -126,25 +126,25 @@ Content-Type: application/JSON
       "Content": "// Copyright (c) Microsoft. All rights reserved.\n\n/*global log*/\n/*global updateState*/\n/*global sleep*/\n/*jslint node: true*/\n\n\"use strict\";\n\n/**\n * Entry point function called by the simulation engine.\n *\n * @param context        The context contains current time, device model and id, not used\n * @param previousState  The device state since the last iteration, not used\n * @param previousProperties  The device properties since the last iteration\n */\n/*jslint unparam: true*/\nfunction main(context, previousState, previousProperties) {\n\n    log(\"Executing 'IncreasePressure' JavaScript method simulation (5 seconds).\");\n\n    // Pause the simulation and change the simulation mode so that the\n    // pressure will fluctuate at ~250 when it resumes\n    var state = {\n        simulation_state: \"high_pressure\",\n        CalculateRandomizedTelemetry: false\n    };\n    updateState(state);\n\n    // Increase\n    state.pressure = 170;\n    updateState(state);\n    log(\"Pressure increased to \" + state.pressure);\n    sleep(1000);\n\n    // Increase\n    state.pressure = 190;\n    updateState(state);\n    log(\"Pressure increased to \" + state.pressure);\n    sleep(1000);\n\n    // Increase\n    state.pressure = 210;\n    updateState(state);\n    log(\"Pressure increased to \" + state.pressure);\n    sleep(1000);\n\n    // Increase\n    state.pressure = 230;\n    updateState(state);\n    log(\"Pressure increased to \" + state.pressure);\n    sleep(1000);\n\n    // Increase\n    state.pressure = 250;\n    updateState(state);\n    log(\"Pressure increased to \" + state.pressure);\n    sleep(1000);\n\n    // Resume the simulation\n    state.CalculateRandomizedTelemetry = true;\n    updateState(state);\n\n    log(\"'IncreasePressure' JavaScript method simulation completed.\");\n}\n",
       "Path": "Storage",
       "$metadata": {
-        "$type": "SimulationScript;1",
-        "$uri": "/v1/simulationscripts/f1943029-a1af-4952-bdf6-55a8311e0fab",
+        "$type": "DeviceModelScript;1",
+        "$uri": "/v1/devicemodelscripts/f1943029-a1af-4952-bdf6-55a8311e0fab",
         "$created": "2018-07-31T22:40:49+00:00",
         "$modified": "2018-07-31T22:40:49+00:00"
       }
     }
   ],
   "$metadata": {
-    "$type": "SimulationScriptList;1",
-    "$uri": "/v1/simulationscripts"
+    "$type": "DeviceModelScriptList;1",
+    "$uri": "/v1/devicemodelscripts"
   }
 }
 ```
 
-### Get a simulation script by id
+### Get a device model script by id
 
 Request:
 ```
-GET /v1/simulationscripts/${id}
+GET /v1/devicemodelscripts/${id}
 ```
 
 Response example:
@@ -161,21 +161,21 @@ Content-Type: application/json; charset=utf-8
   "Content": "// Copyright (c) Microsoft. All rights reserved.\n\n/*global log*/\n/*global updateState*/\n/*global sleep*/\n/*jslint node: true*/\n\n\"use strict\";\n\n// Default state\nvar state = {\n    // reboot just changes whether the device is on or offline\n    online: true\n};\n\n/**\n * Entry point function called by the method.\n *\n * @param context        The context contains current time, device model and id\n * @param previousState  The device state since the last iteration\n * @param previousProperties  The device properties since the last iteration\n */\n/*jslint unparam: true*/\nfunction main(context, previousState, previousProperties) {\n\n    // Reboot - devices goes offline and comes online after 20 seconds\n    log(\"Executing 'Reboot' JavaScript method simulation.\");\n\n    state.DeviceMethodStatus = \"Rebooting device...\";\n    state.CalculateRandomizedTelemetry = false;\n    state.online = false;\n    // update the state to offline\n    updateState(state);\n\n    // Sleep for 15 seconds\n    sleep(15000);\n\n    state.DeviceMethodStatus = \"Successfully rebooted device.\";\n    updateState(state);\n\n    // Sleep for 5 seconds\n    sleep(5000);\n    state.CalculateRandomizedTelemetry = true;\n    // update the state back to online\n    state.online = true;\n    state.DeviceMethodStatus = \"\";\n    updateState(state);\n\n    log(\"'Reboot' JavaScript method simulation completed.\");\n}\n",
   "Path": "Storage",
   "$metadata": {
-    "$type": "SimulationScript;1",
-    "$uri": "/v1/simulationscripts/b62d3316-effe-41d4-8767-e0ca6d07f013",
+    "$type": "DeviceModelScript;1",
+    "$uri": "/v1/devicemodelscripts/b62d3316-effe-41d4-8767-e0ca6d07f013",
     "$created": "2018-07-31T21:24:24+00:00",
     "$modified": "2018-07-31T21:24:24+00:00"
   }
 }
 ```
 
-## Deleting a simulation script
+## Deleting a device model script
 
-Simulation scripts can be deleted using the DELETE method.
+Device model scripts can be deleted using the DELETE method.
 
 Request:
 ```
-DELETE /v1/simulationscripts/{id}
+DELETE /v1/devicemodelscripts/{id}
 ```
 Response:
 ```
