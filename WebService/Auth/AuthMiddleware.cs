@@ -45,11 +45,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
 
         private const string ERROR401 = @"{""Error"":""Authentication required""}";
         private const string ERROR503_AUTH = @"{""Error"":""Authentication service not available""}";
+        private const string SERVICE_ERROR = "ServiceError";
 
         private readonly RequestDelegate requestDelegate;
         private readonly IConfigurationManager<OpenIdConnectConfiguration> openIdCfgMan;
         private readonly IClientAuthConfig config;
         private readonly ILogger log;
+        private readonly IDiagnosticsLogger diagnosticsLogger;
         private TokenValidationParameters tokenValidationParams;
         private readonly bool authRequired;
         private bool tokenValidationInitialized;
@@ -59,12 +61,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
             RequestDelegate requestDelegate, // Required by ASP.NET
             IConfigurationManager<OpenIdConnectConfiguration> openIdCfgMan,
             IClientAuthConfig config,
-            ILogger log)
+            ILogger log,
+            IDiagnosticsLogger diagnosticsLogger)
         {
             this.requestDelegate = requestDelegate;
             this.openIdCfgMan = openIdCfgMan;
             this.config = config;
             this.log = log;
+            this.diagnosticsLogger = diagnosticsLogger;
             this.authRequired = config.AuthRequired;
             this.tokenValidationInitialized = false;
 
@@ -137,7 +141,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
             }
             else
             {
-                this.log.Error("Authorization header not found");
+                string msg = "Authorization header not found";
+                this.log.Error(msg);
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, msg);
             }
 
             if (header != null && header.StartsWith(AUTH_HEADER_PREFIX))
@@ -146,7 +152,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
             }
             else
             {
-                this.log.Error("Authorization header prefix not found");
+                string msg = "Authorization header prefix not found";
+                this.log.Error(msg);
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, msg);
             }
 
             if (this.ValidateToken(token, context) || !this.authRequired)
@@ -183,11 +191,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
                     return true;
                 }
 
-                this.log.Error("JWT token signature algorithm is not allowed.", () => new { jwtToken.SignatureAlgorithm });
+                string msg = "JWT token signature algorithm is not allowed.";
+                this.log.Error(msg, () => new { jwtToken.SignatureAlgorithm });
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}: {jwtToken.SignatureAlgorithm}");
             }
             catch (Exception e)
             {
-                this.log.Error("Failed to validate JWT token", e);
+                string msg = "Failed to validate JWT token";
+                this.log.Error(msg, e);
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}: {e.Message}");
             }
 
             return false;
@@ -226,7 +238,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
             }
             catch (Exception e)
             {
-                this.log.Error("Failed to setup OpenId Connect", e);
+                string msg = "Failed to setup OpenId Connect";
+                this.log.Error(msg, e);
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}: {e.Message}");
             }
 
             return this.tokenValidationInitialized;

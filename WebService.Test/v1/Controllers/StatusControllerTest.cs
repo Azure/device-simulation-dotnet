@@ -26,6 +26,7 @@ namespace WebService.Test.v1.Controllers
         private readonly Mock<IStorageAdapterClient> storage;
         private readonly Mock<ISimulations> simulations;
         private readonly Mock<ILogger> logger;
+        private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
         private readonly Mock<IServicesConfig> servicesConfig;
         private readonly Mock<IDeploymentConfig> deploymentConfig;
         private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
@@ -39,6 +40,7 @@ namespace WebService.Test.v1.Controllers
             this.storage = new Mock<IStorageAdapterClient>();
             this.simulations = new Mock<ISimulations>();
             this.logger = new Mock<ILogger>();
+            this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
             this.servicesConfig = new Mock<IServicesConfig>();
             this.deploymentConfig = new Mock<IDeploymentConfig>();
             this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
@@ -50,6 +52,7 @@ namespace WebService.Test.v1.Controllers
                 this.storage.Object,
                 this.simulations.Object,
                 this.logger.Object,
+                this.diagnosticsLogger.Object,
                 this.servicesConfig.Object,
                 this.deploymentConfig.Object,
                 this.connectionStringManager.Object,

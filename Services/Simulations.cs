@@ -62,19 +62,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly IDevices devices;
         private readonly ILogger log;
+        private readonly IDiagnosticsLogger diagnosticsLogger;
 
         public Simulations(
             IDeviceModels deviceModels,
             IStorageAdapterClient storage,
             IIotHubConnectionStringManager connectionStringManager,
             IDevices devices,
-            ILogger logger)
+            ILogger logger,
+            IDiagnosticsLogger diagnosticsLogger)
         {
             this.deviceModels = deviceModels;
             this.storage = storage;
             this.connectionStringManager = connectionStringManager;
             this.devices = devices;
             this.log = logger;
+            this.diagnosticsLogger = diagnosticsLogger;
         }
 
         /// <summary>
@@ -188,7 +191,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 if (simulation.ETag != simulations[0].ETag)
                 {
+                    string msg = "Invalid ETag";
                     this.log.Error("Invalid ETag. Running simulation ETag is:'", () => new { simulations });
+                    this.diagnosticsLogger.LogDiagnosticsData("ServiceError", msg);
                     throw new ResourceOutOfDateException("Invalid ETag. Running simulation ETag is:'" + simulations[0].ETag + "'.");
                 }
 

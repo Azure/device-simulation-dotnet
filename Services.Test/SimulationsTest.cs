@@ -29,6 +29,7 @@ namespace Services.Test
         private readonly Mock<IStorageAdapterClient> storage;
         private readonly Mock<IDevices> devices;
         private readonly Mock<ILogger> logger;
+        private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
         private readonly Mock<IIotHubConnectionStringManager> connStringManager;
         private readonly Simulations target;
         private readonly List<DeviceModel> models;
@@ -40,6 +41,7 @@ namespace Services.Test
             this.deviceModels = new Mock<IDeviceModels>();
             this.storage = new Mock<IStorageAdapterClient>();
             this.logger = new Mock<ILogger>();
+            this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
             this.devices = new Mock<IDevices>();
             this.connStringManager = new Mock<IIotHubConnectionStringManager>();
             this.models = new List<DeviceModel>
@@ -50,7 +52,7 @@ namespace Services.Test
                 new DeviceModel { Id = "AA" }
             };
 
-            this.target = new Simulations(this.deviceModels.Object, this.storage.Object, this.connStringManager.Object, this.devices.Object, this.logger.Object);
+            this.target = new Simulations(this.deviceModels.Object, this.storage.Object, this.connStringManager.Object, this.devices.Object, this.logger.Object, this.diagnosticsLogger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
