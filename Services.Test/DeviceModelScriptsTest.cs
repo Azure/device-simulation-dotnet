@@ -13,19 +13,19 @@ using Xunit;
 
 namespace Services.Test
 {
-    public class SimulationScriptsTest
+    public class DeviceModelScriptsTest
     {
-        private const string STORAGE_COLLECTION = "simulationScripts";
+        private const string STORAGE_COLLECTION = "deviceModelScripts";
         private readonly Mock<IStorageAdapterClient> storage;
         private readonly Mock<ILogger> logger;
-        private readonly SimulationScripts target;
+        private readonly DeviceModelScripts target;
 
-        public SimulationScriptsTest()
+        public DeviceModelScriptsTest()
         {
             this.storage = new Mock<IStorageAdapterClient>();
             this.logger = new Mock<ILogger>();
 
-            this.target = new SimulationScripts(
+            this.target = new DeviceModelScripts(
                 this.storage.Object,
                 this.logger.Object);
         }
@@ -34,7 +34,7 @@ namespace Services.Test
         public void InitialListIsEmpty()
         {
             // Arrange
-            this.ThereAreNoSimulationScriptsInStorage();
+            this.ThereAreNoDeviceModelScriptsInStorage();
 
             // Act
             var result = this.target.GetListAsync().Result;
@@ -44,39 +44,39 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItCreatesSimulationScriptInStorage()
+        public void ItCreatesDeviceModelScriptInStorage()
         {
             // Arrange
             var id = Guid.NewGuid().ToString();
             var eTag = Guid.NewGuid().ToString();
-            var simulationScript = new SimulationScript { Id = id, ETag = eTag };
+            var deviceModelScript = new DeviceModelScript { Id = id, ETag = eTag };
 
             this.storage
                 .Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(this.BuildValueApiModel(simulationScript));
+                .ReturnsAsync(this.BuildValueApiModel(deviceModelScript));
 
             // Act
-            SimulationScript result = this.target.InsertAsync(simulationScript).Result;
+            DeviceModelScript result = this.target.InsertAsync(deviceModelScript).Result;
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(simulationScript.Id, result.Id);
-            Assert.Equal(simulationScript.ETag, result.ETag);
+            Assert.Equal(deviceModelScript.Id, result.Id);
+            Assert.Equal(deviceModelScript.ETag, result.ETag);
 
             this.storage.Verify(
-                x => x.UpdateAsync(STORAGE_COLLECTION, simulationScript.Id, It.IsAny<string>(), null), Times.Once());
+                x => x.UpdateAsync(STORAGE_COLLECTION, deviceModelScript.Id, It.IsAny<string>(), null), Times.Once());
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void SimulationScriptsCanBeUpserted()
+        public void DeviceModelScriptsCanBeUpserted()
         {
             // Arrange
             var id = Guid.NewGuid().ToString();
 
-            var simulationScript = new SimulationScript { Id = id, ETag = "oldEtag" };
-            this.TheScriptExists(id, simulationScript);
+            var deviceModelScript = new DeviceModelScript { Id = id, ETag = "oldEtag" };
+            this.TheScriptExists(id, deviceModelScript);
 
-            var updatedSimulationScript = new SimulationScript { Id = id, ETag = "newETag" };
+            var updatedSimulationScript = new DeviceModelScript { Id = id, ETag = "newETag" };
             this.storage
                 .Setup(x => x.UpdateAsync(
                     STORAGE_COLLECTION,
@@ -86,7 +86,7 @@ namespace Services.Test
                 .ReturnsAsync(this.BuildValueApiModel(updatedSimulationScript));
 
             // Act
-            this.target.UpsertAsync(simulationScript)
+            this.target.UpsertAsync(deviceModelScript)
                 .Wait(Constants.TEST_TIMEOUT);
 
             // Assert
@@ -94,20 +94,20 @@ namespace Services.Test
             this.storage.Verify(x => x.UpdateAsync(
                 STORAGE_COLLECTION,
                 id,
-                It.Is<string>(json => JsonConvert.DeserializeObject<SimulationScript>(json).Id == id && !json.Contains("ETag")),
+                It.Is<string>(json => JsonConvert.DeserializeObject<DeviceModelScript>(json).Id == id && !json.Contains("ETag")),
                 "oldEtag"), Times.Once());
 
-            Assert.Equal(updatedSimulationScript.Id, simulationScript.Id);
+            Assert.Equal(updatedSimulationScript.Id, deviceModelScript.Id);
             // The call to UpsertAsync() modifies the object, so the ETags will match
-            Assert.Equal(updatedSimulationScript.ETag, simulationScript.ETag);
+            Assert.Equal(updatedSimulationScript.ETag, deviceModelScript.ETag);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItCreatesSimulationScriptWhenSimulationScriptNotFoundInUpserting()
+        public void ItCreatesDeviceModelScriptWhenSimulationScriptNotFoundInUpserting()
         {
             // Arrange
             var id = Guid.NewGuid().ToString();
-            var simulationScript = new SimulationScript { Id = id, ETag = "Etag" };
+            var deviceModelScript = new DeviceModelScript { Id = id, ETag = "Etag" };
             this.TheScriptDoesntExist(id);
             this.storage
                 .Setup(x => x.UpdateAsync(
@@ -115,10 +115,10 @@ namespace Services.Test
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<string>()))
-                .ReturnsAsync(this.BuildValueApiModel(simulationScript));
+                .ReturnsAsync(this.BuildValueApiModel(deviceModelScript));
 
             // Act
-            this.target.UpsertAsync(simulationScript).Wait(TimeSpan.FromSeconds(30));
+            this.target.UpsertAsync(deviceModelScript).Wait(TimeSpan.FromSeconds(30));
 
             // Assert - the app uses PUT with given ID
             this.storage.Verify(x => x.UpdateAsync(
@@ -133,21 +133,21 @@ namespace Services.Test
         {
             // Arrange
             var id = Guid.NewGuid().ToString();
-            var simulationScriptInStorage = new SimulationScript { Id = id, ETag = "ETag" };
-            this.TheScriptExists(id, simulationScriptInStorage);
+            var deviceModelScriptInStorage = new DeviceModelScript { Id = id, ETag = "ETag" };
+            this.TheScriptExists(id, deviceModelScriptInStorage);
 
             // Act & Assert
-            var simulationScript = new SimulationScript { Id = id, ETag = "not-matching-Etag" };
+            var deviceModelScript = new DeviceModelScript { Id = id, ETag = "not-matching-Etag" };
             Assert.ThrowsAsync<ConflictingResourceException>(
-                    async () => await this.target.UpsertAsync(simulationScript))
+                    async () => await this.target.UpsertAsync(deviceModelScript))
                 .Wait(Constants.TEST_TIMEOUT);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItThrowsExceptionWhenInsertSimulationScriptFailed()
+        public void ItThrowsExceptionWhenInsertDeviceModelScriptFailed()
         {
             // Arrange
-            var simulationScript = new SimulationScript { Id = "id", ETag = "Etag" };
+            var deviceModelScript = new DeviceModelScript { Id = "id", ETag = "Etag" };
             this.storage
                 .Setup(x => x.UpdateAsync(
                     It.IsAny<string>(),
@@ -158,7 +158,7 @@ namespace Services.Test
 
             // Act & Assert
             Assert.ThrowsAsync<ExternalDependencyException>(
-                    async () => await this.target.InsertAsync(simulationScript))
+                    async () => await this.target.InsertAsync(deviceModelScript))
                 .Wait(Constants.TEST_TIMEOUT);
         }
 
@@ -166,14 +166,14 @@ namespace Services.Test
         public void ItFailsToUpsertWhenUnableToFetchScriptFromStorage()
         {
             // Arrange
-            var simulationScript = new SimulationScript { Id = "id", ETag = "Etag" };
+            var deviceModelScript = new DeviceModelScript { Id = "id", ETag = "Etag" };
             this.storage
                 .Setup(x => x.GetAsync(It.IsAny<string>(), It.IsAny<string>()))
                 .ThrowsAsync(new SomeException());
 
             // Act & Assert
             Assert.ThrowsAsync<ExternalDependencyException>(
-                    async () => await this.target.UpsertAsync(simulationScript))
+                    async () => await this.target.UpsertAsync(deviceModelScript))
                 .Wait(Constants.TEST_TIMEOUT);
         }
 
@@ -182,8 +182,8 @@ namespace Services.Test
         {
             // Arrange
             var id = Guid.NewGuid().ToString();
-            var simulationScript = new SimulationScript { Id = id, ETag = "Etag" };
-            this.TheScriptExists(id, simulationScript);
+            var deviceModelScript = new DeviceModelScript { Id = id, ETag = "Etag" };
+            this.TheScriptExists(id, deviceModelScript);
 
             this.storage
                 .Setup(x => x.UpdateAsync(
@@ -195,25 +195,25 @@ namespace Services.Test
 
             // Act & Assert
             Assert.ThrowsAsync<ExternalDependencyException>(
-                    async () => await this.target.UpsertAsync(simulationScript))
+                    async () => await this.target.UpsertAsync(deviceModelScript))
                 .Wait(Constants.TEST_TIMEOUT);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItThrowsExternalDependencyExceptionWhenFailedFetchingSimulationScriptInStorage()
+        public void ItThrowsExternalDependencyExceptionWhenFailedFetchingDeviceModelScriptInStorage()
         {
             // Arrange
-            var simulationScript = new SimulationScript { Id = "id", ETag = "Etag" };
+            var deviceModelScript = new DeviceModelScript { Id = "id", ETag = "Etag" };
 
             // Act
-            var ex = Record.Exception(() => this.target.UpsertAsync(simulationScript).Result);
+            var ex = Record.Exception(() => this.target.UpsertAsync(deviceModelScript).Result);
 
             // Assert
             Assert.IsType<ExternalDependencyException>(ex.InnerException);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItThrowsExceptionWhenDeleteSimulationScriptFailed()
+        public void ItThrowsExceptionWhenDeleteDeviceModelScriptFailed()
         {
             // Arrange
             this.storage
@@ -229,7 +229,7 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItFailsToGetSimulationScriptsWhenStorageFails()
+        public void ItFailsToGetDeviceModelScriptsWhenStorageFails()
         {
             // Arrange
             this.storage
@@ -243,10 +243,10 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItThrowsExceptionWhenGetListOfSimulationScriptsDeserializeFailed()
+        public void ItThrowsExceptionWhenGetListOfDeviceModelScriptsDeserializeFailed()
         {
             // Arrange
-            this.SetupAListOfInvalidSimulationScriptsInStorage();
+            this.SetupAListOfInvalidDeviceModelScriptsInStorage();
 
             // Act & Assert
             Assert.ThrowsAsync<ExternalDependencyException>(
@@ -255,7 +255,7 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItThrowsExceptionWhenGetSimulationScriptByInvalidId()
+        public void ItThrowsExceptionWhenGetDeviceModelScriptByInvalidId()
         {
             // Act & Assert
             Assert.ThrowsAsync<InvalidInputException>(
@@ -263,7 +263,7 @@ namespace Services.Test
                 .Wait(Constants.TEST_TIMEOUT);
         }
 
-        private void SetupAListOfInvalidSimulationScriptsInStorage()
+        private void SetupAListOfInvalidDeviceModelScriptsInStorage()
         {
             var list = new ValueListApiModel();
             var value = new ValueApiModel
@@ -286,24 +286,24 @@ namespace Services.Test
                 .Throws<ResourceNotFoundException>();
         }
 
-        private void TheScriptExists(string id, SimulationScript simulationScript)
+        private void TheScriptExists(string id, DeviceModelScript deviceModelScript)
         {
             this.storage
                 .Setup(x => x.GetAsync(STORAGE_COLLECTION, id))
-                .ReturnsAsync(this.BuildValueApiModel(simulationScript));
+                .ReturnsAsync(this.BuildValueApiModel(deviceModelScript));
         }
 
-        private ValueApiModel BuildValueApiModel(SimulationScript simulationScript)
+        private ValueApiModel BuildValueApiModel(DeviceModelScript deviceModelScript)
         {
             return new ValueApiModel
             {
-                Key = simulationScript.Id,
-                Data = JsonConvert.SerializeObject(simulationScript),
-                ETag = simulationScript.ETag
+                Key = deviceModelScript.Id,
+                Data = JsonConvert.SerializeObject(deviceModelScript),
+                ETag = deviceModelScript.ETag
             };
         }
 
-        private void ThereAreNoSimulationScriptsInStorage()
+        private void ThereAreNoDeviceModelScriptsInStorage()
         {
             this.storage
                 .Setup(x => x.GetAllAsync(STORAGE_COLLECTION))

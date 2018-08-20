@@ -16,56 +16,56 @@ using Xunit;
 
 namespace WebService.Test.v1.Controllers
 {
-    public class SimulationScriptsControllerTest
+    public class DeviceModelScriptsControllerTest
     {
-        private readonly Mock<ISimulationScripts> simulationScriptsService;
+        private readonly Mock<IDeviceModelScripts> deviceModelScriptsService;
         private readonly Mock<ILogger> logger;
-        private readonly SimulationScriptsController target;
+        private readonly DeviceModelScriptsController target;
 
-        public SimulationScriptsControllerTest()
+        public DeviceModelScriptsControllerTest()
         {
-            this.simulationScriptsService = new Mock<ISimulationScripts>();
+            this.deviceModelScriptsService = new Mock<IDeviceModelScripts>();
             this.logger = new Mock<ILogger>();
 
-            this.target = new SimulationScriptsController(
-                this.simulationScriptsService.Object,
+            this.target = new DeviceModelScriptsController(
+                this.deviceModelScriptsService.Object,
                 this.logger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void GetReturnsTheListOfSimulationScripts()
+        public void GetReturnsTheListOfDeviceModelScripts()
         {
             // Arrange
-            var simulationScripts = this.GetSimulationScripts();
+            var deviceModelScripts = this.GetDeviceModelScripts();
 
-            this.simulationScriptsService
+            this.deviceModelScriptsService
                 .Setup(x => x.GetListAsync())
-                .ReturnsAsync(simulationScripts);
+                .ReturnsAsync(deviceModelScripts);
 
             // Act
             var result = this.target.GetAsync().Result;
 
             // Assert
-            Assert.Equal(simulationScripts.Count, result.Items.Count);
+            Assert.Equal(deviceModelScripts.Count, result.Items.Count);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void GetReturnsTheSimulationScriptById()
+        public void GetReturnsTheDeviceModelScriptById()
         {
             // Arrange
-            const string ID = "simulationScriptId";
-            var simulationScript = this.GetSimulationScriptById(ID);
+            const string ID = "deviceModelScriptId";
+            var deviceModelScript = this.GetDeviceModelScriptById(ID);
 
-            this.simulationScriptsService
+            this.deviceModelScriptsService
                 .Setup(x => x.GetAsync(ID))
-                .ReturnsAsync(simulationScript);
+                .ReturnsAsync(deviceModelScript);
 
             // Act
             var result = this.target.GetAsync(ID).Result;
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(simulationScript.Id, result.Id);
+            Assert.Equal(deviceModelScript.Id, result.Id);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -82,27 +82,27 @@ namespace WebService.Test.v1.Controllers
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void PostCreatesTheSimulationScript()
+        public void PostCreatesTheDeviceModelScript()
         {
             // Arrange
-            const string ID = "simulationScriptId";
-            var simulationScript = this.GetSimulationScriptById(ID);
+            const string ID = "deviceModelScriptId";
+            var deviceModelScript = this.GetDeviceModelScriptById(ID);
             IFormFile file = this.SetupFileMock();
 
-            this.simulationScriptsService
-                .Setup(x => x.InsertAsync(It.IsAny<SimulationScript>()))
-                .ReturnsAsync(simulationScript);
+            this.deviceModelScriptsService
+                .Setup(x => x.InsertAsync(It.IsAny<DeviceModelScript>()))
+                .ReturnsAsync(deviceModelScript);
 
             // Act
             var result = this.target.PostAsync(file).Result;
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(simulationScript.Id, result.Id);
+            Assert.Equal(deviceModelScript.Id, result.Id);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void PostThrowsErrorWithInvalidSimulationScript()
+        public void PostThrowsErrorWithInvalidDeviceModelScript()
         {
             // Act & Assert
             Assert.ThrowsAsync<BadRequestException>(
@@ -111,19 +111,19 @@ namespace WebService.Test.v1.Controllers
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void PutUpdatesTheSimulationScript()
+        public void PutUpdatesTheDeviceModelScript()
         {
             // Arrange
-            const string ID = "simulationScriptId";
-            var simulationScript = this.GetSimulationScriptById(ID);
+            const string ID = "deviceModelScriptId";
+            var deviceModelScript = this.GetDeviceModelScriptById(ID);
             IFormFile file = this.SetupFileMock();
 
-            this.simulationScriptsService
-                .Setup(x => x.UpsertAsync(It.IsAny<SimulationScript>()))
-                .ReturnsAsync(simulationScript);
+            this.deviceModelScriptsService
+                .Setup(x => x.UpsertAsync(It.IsAny<DeviceModelScript>()))
+                .ReturnsAsync(deviceModelScript);
 
             // Act
-            var result = this.target.PutAsync(file, simulationScript.ETag, ID).Result;
+            var result = this.target.PutAsync(file, deviceModelScript.ETag, ID).Result;
 
             // Assert
             Assert.NotNull(result);
@@ -131,7 +131,7 @@ namespace WebService.Test.v1.Controllers
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void PutThrowsErrorWithInvalidSimulationScript()
+        public void PutThrowsErrorWithInvalidDeviceModelScript()
         {
             // Act & Assert
             Assert.ThrowsAsync<BadRequestException>(
@@ -140,21 +140,21 @@ namespace WebService.Test.v1.Controllers
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void DeleteInvokesSimulationScriptServiceWithId()
+        public void DeleteInvokesDeviceModelScriptServiceWithId()
         {
             // Arrange
-            const string ID = "simulationScriptId";
+            const string ID = "deviceModelScriptId";
 
             // Act
             this.target.DeleteAsync(ID)
                 .Wait(Constants.TEST_TIMEOUT);
 
             // Assert
-            this.simulationScriptsService.Verify(x => x.DeleteAsync(ID), Times.Once);
+            this.deviceModelScriptsService.Verify(x => x.DeleteAsync(ID), Times.Once);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItValidatesTheSimulationScript()
+        public void ItValidatesTheDeviceModelScript()
         {
             // Arrange
             IFormFile file = this.SetupFileMock();
@@ -195,23 +195,23 @@ namespace WebService.Test.v1.Controllers
             return fileMock.Object;
         }
 
-        private SimulationScript GetSimulationScriptById(string id)
+        private DeviceModelScript GetDeviceModelScriptById(string id)
         {
-            return new SimulationScript
+            return new DeviceModelScript
             {
                 Id = id,
                 ETag = "etag",
-                Path = SimulationScript.SimulationScriptPath.Storage
+                Path = DeviceModelScript.DeviceModelScriptPath.Storage
             };
         }
 
-        private List<SimulationScript> GetSimulationScripts()
+        private List<DeviceModelScript> GetDeviceModelScripts()
         {
-            return new List<SimulationScript>
+            return new List<DeviceModelScript>
             {
-                new SimulationScript { Id = "Id_1", ETag = "Etag_1" },
-                new SimulationScript { Id = "Id_2", ETag = "Etag_2" },
-                new SimulationScript { Id = "Id_3", ETag = "Etag_3" }
+                new DeviceModelScript { Id = "Id_1", ETag = "Etag_1" },
+                new DeviceModelScript { Id = "Id_2", ETag = "Etag_2" },
+                new DeviceModelScript { Id = "Id_3", ETag = "Etag_3" }
             };
         }
     }

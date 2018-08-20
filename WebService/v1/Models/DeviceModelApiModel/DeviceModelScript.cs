@@ -9,7 +9,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel
 {
-    public class DeviceModelSimulationScript
+    public class DeviceModelScript
     {
         [JsonProperty(PropertyName = "Type")]
         public string Type { get; set; }
@@ -23,7 +23,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
         [JsonProperty(PropertyName = "Id", NullValueHandling = NullValueHandling.Ignore)]
         public string Id { get; set; }
 
-        public DeviceModelSimulationScript()
+        public DeviceModelScript()
         {
             this.Type = string.Empty;
             this.Path = string.Empty;
@@ -46,11 +46,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
         }
 
         // Map service model to API model
-        public static DeviceModelSimulationScript FromServiceModel(Script value)
+        public static DeviceModelScript FromServiceModel(Script value)
         {
             if (value == null) return null;
 
-            return new DeviceModelSimulationScript
+            return new DeviceModelScript
             {
                 Type = string.IsNullOrEmpty(value.Type) ? null : value.Type,
                 Path = string.IsNullOrEmpty(value.Path) ? null : value.Path,

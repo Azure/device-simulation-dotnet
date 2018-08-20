@@ -31,7 +31,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         private readonly string folder;
         private ISmartDictionary deviceState;
         private ISmartDictionary deviceProperties;
-        private readonly ISimulationScripts simulationScripts;
+        private readonly IDeviceModelScripts simulationScripts;
 
         // The following are static to improve overall performance
         // TODO make the class a singleton - https://github.com/Azure/device-simulation-dotnet/issues/45
@@ -40,7 +40,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         private static readonly Dictionary<string, Program> programs = new Dictionary<string, Program>();
 
         public JavascriptInterpreter(
-            ISimulationScripts simulationScripts,
+            IDeviceModelScripts simulationScripts,
             IServicesConfig config,
             ILogger logger)
         {
@@ -83,7 +83,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 Program program;
                 string filename;
                 bool isInStorage = string.Equals(script.Path.Trim(),
-                    SimulationScript.SimulationScriptPath.Storage.ToString(),
+                    DeviceModelScript.DeviceModelScriptPath.Storage.ToString(),
                     StringComparison.OrdinalIgnoreCase);
 
                 if (isInStorage)

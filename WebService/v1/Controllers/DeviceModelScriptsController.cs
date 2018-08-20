@@ -15,19 +15,19 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationScriptApiModel;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelScriptApiModel;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers
 {
     [ExceptionsFilter]
-    public class SimulationScriptsController : Controller
+    public class DeviceModelScriptsController : Controller
     {
         private readonly string ApplicationJavascript = "application/javascript";
         private readonly ILogger log;
-        private readonly ISimulationScripts simulationScriptService;
+        private readonly IDeviceModelScripts simulationScriptService;
 
-        public SimulationScriptsController(
-            ISimulationScripts simulationScriptService,
+        public DeviceModelScriptsController(
+            IDeviceModelScripts simulationScriptService,
             ILogger logger)
         {
             this.simulationScriptService = simulationScriptService;
@@ -35,15 +35,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         }
 
         [HttpGet(Version.PATH + "/[controller]")]
-        public async Task<SimulationScriptListModel> GetAsync()
+        public async Task<DeviceModelScriptListModel> GetAsync()
         {
-            return SimulationScriptListModel.FromServiceModel(await this.simulationScriptService.GetListAsync());
+            return DeviceModelScriptListModel.FromServiceModel(await this.simulationScriptService.GetListAsync());
         }
 
         [HttpGet(Version.PATH + "/[controller]/{id}")]
-        public async Task<SimulationScriptApiModel> GetAsync(string id)
+        public async Task<DeviceModelScriptApiModel> GetAsync(string id)
         {
-            return SimulationScriptApiModel.FromServiceModel(await this.simulationScriptService.GetAsync(id));
+            return DeviceModelScriptApiModel.FromServiceModel(await this.simulationScriptService.GetAsync(id));
         }
 
         [HttpPost(Version.PATH + "/[controller]!validate")]
@@ -72,7 +72,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             {
                 var result = new JsonResult(new ValidationApiModel
                     {
-                        Success = false,
+                        IsValid = false,
                         Messages = new List<string>
                         {
                             e.Message
@@ -86,7 +86,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         }
 
         [HttpPost(Version.PATH + "/[controller]")]
-        public async Task<SimulationScriptApiModel> PostAsync(IFormFile file)
+        public async Task<DeviceModelScriptApiModel> PostAsync(IFormFile file)
         {
             if (file == null)
             {
@@ -100,26 +100,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("Wrong content type provided.");
             }
 
-            var simulationScript = new SimulationScript();
+            var deviceModelScript = new DeviceModelScript();
 
             try
             {
                 var reader = new StreamReader(file.OpenReadStream());
-                simulationScript.Content = reader.ReadToEnd();
-                simulationScript.Name = file.FileName;
+                deviceModelScript.Content = reader.ReadToEnd();
+                deviceModelScript.Name = file.FileName;
             }
             catch (Exception e)
             {
                 throw new BadRequestException(e.Message);
             }
 
-            return SimulationScriptApiModel.FromServiceModel(await this.simulationScriptService.InsertAsync(simulationScript));
+            return DeviceModelScriptApiModel.FromServiceModel(await this.simulationScriptService.InsertAsync(deviceModelScript));
         }
 
         [HttpPut(Version.PATH + "/[controller]/{id}")]
-        public async Task<SimulationScriptApiModel> PutAsync(
+        public async Task<DeviceModelScriptApiModel> PutAsync(
             IFormFile file,
-            string etag,
+            string eTag,
             string id)
         {
             if (file == null)
@@ -134,15 +134,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No id provided.");
             }
 
-            if (string.IsNullOrEmpty(etag))
+            if (string.IsNullOrEmpty(eTag))
             {
                 this.log.Warn("No ETag provided");
                 throw new BadRequestException("No ETag provided.");
             }
 
-            var simulationScript = new SimulationScript
+            var simulationScript = new DeviceModelScript
             {
-                ETag = etag,
+                ETag = eTag,
                 Id = id
             };
 
@@ -157,7 +157,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException(e.Message);
             }
 
-            return SimulationScriptApiModel.FromServiceModel(await this.simulationScriptService.UpsertAsync(simulationScript));
+            return DeviceModelScriptApiModel.FromServiceModel(await this.simulationScriptService.UpsertAsync(simulationScript));
         }
 
         [HttpDelete(Version.PATH + "/[controller]/{id}")]

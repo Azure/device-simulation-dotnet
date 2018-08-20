@@ -22,7 +22,7 @@ namespace Services.Test.Simulation
         private readonly Mock<IServicesConfig> config;
         private readonly Mock<ILogger> logger;
         private readonly Mock<ISmartDictionary> properties;
-        private readonly Mock<ISimulationScripts> simulationScripts;
+        private readonly Mock<IDeviceModelScripts> simulationScripts;
         private readonly JavascriptInterpreter target;
 
         public JavascriptInterpreterTest(ITestOutputHelper log)
@@ -33,7 +33,7 @@ namespace Services.Test.Simulation
             this.config.SetupGet(x => x.DeviceModelsFolder).Returns("./data/devicemodels/");
             this.config.SetupGet(x => x.DeviceModelsScriptsFolder).Returns("./data/devicemodels/scripts/");
             this.properties = new Mock<ISmartDictionary>();
-            this.simulationScripts = new Mock<ISimulationScripts>();
+            this.simulationScripts = new Mock<IDeviceModelScripts>();
             this.logger = new Mock<ILogger>();
 
             this.target = new JavascriptInterpreter(

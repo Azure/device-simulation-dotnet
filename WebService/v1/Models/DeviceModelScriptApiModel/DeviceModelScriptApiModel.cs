@@ -2,16 +2,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel;
 using Newtonsoft.Json;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationScriptApiModel
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelScriptApiModel
 {
-    public class SimulationScriptApiModel
+    public class DeviceModelScriptApiModel
     {
         private const string DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:sszzz";
 
@@ -39,13 +34,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
         {
-            { "$type", "SimulationScript;" + v1.Version.NUMBER },
+            { "$type", "DeviceModelScript;" + v1.Version.NUMBER },
             { "$uri", "/" + v1.Version.PATH + "/simulationscripts/" + this.Id },
             { "$created", this.created.ToString(DATE_FORMAT) },
             { "$modified", this.modified.ToString(DATE_FORMAT) }
         };
 
-        public SimulationScriptApiModel()
+        public DeviceModelScriptApiModel()
         {
             this.ETag = string.Empty;
             this.Id = string.Empty;
@@ -56,25 +51,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         }
 
         // Map API model to service model
-        public SimulationScript ToServiceModel()
+        public Services.Models.DeviceModelScript ToServiceModel()
         {
-            return new SimulationScript
+            return new Services.Models.DeviceModelScript
             {
                 ETag = this.ETag,
                 Id = this.Id,
                 Type = this.Type,
-                Path = (SimulationScript.SimulationScriptPath)Enum.Parse(typeof(SimulationScript.SimulationScriptPath), this.Path, true),
+                Path = (Services.Models.DeviceModelScript.DeviceModelScriptPath)Enum.Parse(typeof(Services.Models.DeviceModelScript.DeviceModelScriptPath), this.Path, true),
                 Content = this.Content,
                 Name = this.Name
             };
         }
 
         // Map service model to API model
-        public static SimulationScriptApiModel FromServiceModel(SimulationScript value)
+        public static DeviceModelScriptApiModel FromServiceModel(Services.Models.DeviceModelScript value)
         {
             if (value == null) return null;
 
-            var result = new SimulationScriptApiModel
+            var result = new DeviceModelScriptApiModel
             {
                 ETag = value.ETag,
                 Id = value.Id,
