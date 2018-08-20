@@ -14,6 +14,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         string StorageAdapterApiUrl { get; }
         int StorageAdapterApiTimeout { get; }
         bool TwinReadWriteEnabled { get; }
+        string DiagnosticsEndpointUrl { get;  }
+        string SolutionType { get; }
+        string DeploymentId { get; }
     }
 
     // TODO: test Windows/Linux folder separator
@@ -21,8 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
     public class ServicesConfig : IServicesConfig
     {
         public const string USE_DEFAULT_IOTHUB = "default";
-        public const string DIAGNOSTICS_ENDPOINT = "https://iotpcsdiagnostics-staging.azurewebsites.net/api/diagnosticsevents";
-
+        
         private string dtf;
         private string dtbf;
         private string ihf;
@@ -59,6 +61,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         public string StorageAdapterApiUrl { get; set; }
 
         public int StorageAdapterApiTimeout { get; set; }
+
+        public string DiagnosticsEndpointUrl { get; set; }
+
+        public string DeploymentId { get; set; }
+
+        public string SolutionType { get; set; }
 
         public bool TwinReadWriteEnabled { get; set; }
 

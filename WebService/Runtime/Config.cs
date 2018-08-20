@@ -47,6 +47,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string IOTHUB_CONNSTRING_KEY = APPLICATION_KEY + "iothub_connstring";
         private const string IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY = APPLICATION_KEY + "iothub_sdk_device_client_timeout";
         private const string TWIN_READ_WRITE_ENABLED_KEY = APPLICATION_KEY + "twin_read_write_enabled";
+        private const string SOLUTION_TYPE = APPLICATION_KEY + "solution_type";
 
         private const string IOTHUB_LIMITS_KEY = APPLICATION_KEY + "RateLimits:";
         private const string CONNECTIONS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "device_connections_per_second";
@@ -78,6 +79,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string LOGGING_WHITELIST_SOURCES_KEY = LOGGING_KEY + "WhiteListSources";
         private const string LOGGING_EXTRADIAGNOSTICS_KEY = LOGGING_KEY + "ExtraDiagnostics";
         private const string LOGGING_EXTRADIAGNOSTICSPATH_KEY = LOGGING_KEY + "ExtraDiagnosticsPath";
+        private const string LOGGING_DIAGNOSTICS_EVENTS_PATH = LOGGING_KEY + "diagnostic_endpoint_url";
 
         private const string CLIENT_AUTH_KEY = APPLICATION_KEY + "ClientAuth:";
         private const string CORS_WHITELIST_KEY = CLIENT_AUTH_KEY + "cors_whitelist";
@@ -91,7 +93,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string JWT_CLOCK_SKEW_KEY = JWT_KEY + "clock_skew_seconds";
 
         private const string DEPLOYMENT_KEY = APPLICATION_KEY + "Deployment:";
-        private const string AZURE_SUBSCRIPTION_DOMAIN = DEPLOYMENT_KEY + "azure_subscription_domain";
+        private const string DEPLOYMENT_ID = DEPLOYMENT_KEY + "deployment_id";
+        const string AZURE_SUBSCRIPTION_DOMAIN = DEPLOYMENT_KEY + "azure_subscription_domain";
         private const string AZURE_SUBSCRIPTION_ID = DEPLOYMENT_KEY + "azure_subscription_id";
         private const string AZURE_RESOURCE_GROUP = DEPLOYMENT_KEY + "azure_resource_group";
         private const string AZURE_IOTHUB_NAME = DEPLOYMENT_KEY + "azure_iothub_name";
@@ -103,6 +106,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         public IRateLimitingConfig RateLimitingConfig { get; set; }
         public IDeploymentConfig DeploymentConfig { get; set; }
         public IConcurrencyConfig ConcurrencyConfig { get; set; }
+        public IDiagnosticsLogger DiagnosticsLogger { get; set; }
 
         public Config(IConfigData configData)
         {
@@ -112,7 +116,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             this.ClientAuthConfig = GetClientAuthConfig(configData);
             this.RateLimitingConfig = GetRateLimitingConfig(configData);
             this.DeploymentConfig = GetDeploymentConfig(configData);
-            this.ConcurrencyConfig = GetConcurrencyConfig(configData);
+            this.ConcurrencyConfig = GetConcurrencyConfig(configData); 
+            this.DiagnosticsLogger = new DiagnosticsLogger(configData.GetLogger(), this.ServicesConfig);
         }
 
         private static ILoggingConfig GetLogConfig(IConfigData configData)
@@ -193,7 +198,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 IoTHubSdkDeviceClientTimeout = configData.GetOptionalUInt(IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY),
                 StorageAdapterApiUrl = configData.GetString(STORAGE_ADAPTER_API_URL_KEY),
                 StorageAdapterApiTimeout = configData.GetInt(STORAGE_ADAPTER_API_TIMEOUT_KEY),
-                TwinReadWriteEnabled = configData.GetBool(TWIN_READ_WRITE_ENABLED_KEY, true)
+                TwinReadWriteEnabled = configData.GetBool(TWIN_READ_WRITE_ENABLED_KEY, true),
+                DiagnosticsEndpointUrl = configData.GetString(LOGGING_DIAGNOSTICS_EVENTS_PATH),
+                DeploymentId = configData.GetString(DEPLOYMENT_ID),
+                SolutionType = configData.GetString(SOLUTION_TYPE)
             };
         }
 
