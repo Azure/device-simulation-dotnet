@@ -44,9 +44,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Application logger
         private readonly ILogger log;
 
-        // Logger for logging diagnostics events
-        private readonly IDiagnosticsLogger logDiagnostics;
-
         // Settings to optimize scheduling
         private readonly ConnectionLoopSettings connectionLoopSettings;
 
@@ -107,9 +104,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Flag signaling whether the simulation has started and is running (to avoid contentions)
         private bool running;
 
-        // Storing the latest heartbeat sent to diagnostics data
-        private DateTime lastPolledTime;
-        
         // Counter for simulation error
         private long simulationErrors;
 
@@ -118,7 +112,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             IRateLimiting rateLimiting,
             IConcurrencyConfig concurrencyConfig,
             ILogger logger,
-            IDiagnosticsLogger diagnosticsLogger,
             IDeviceModels deviceModels,
             IDeviceModelsGeneration deviceModelsOverriding,
             IDevices devices,
@@ -130,7 +123,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             this.concurrencyConfig = concurrencyConfig;
             this.log = logger;
-            this.logDiagnostics = diagnosticsLogger;
             this.deviceModels = deviceModels;
             this.deviceModelsOverriding = deviceModelsOverriding;
             this.devices = devices;
@@ -140,7 +132,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.startLock = new { };
             this.running = false;
             this.starting = false;
-            this.lastPolledTime = DateTime.Now;
             this.rateLimiting = rateLimiting;
 
             this.deviceStateActors = new ConcurrentDictionary<string, IDeviceStateActor>();
@@ -161,21 +152,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             // Use `starting` to exit as soon as possible, to minimize the number 
             // of threads pending on the lock statement
-            if (this.starting || this.running)
-            {
-                DateTime now = DateTime.Now;
-                TimeSpan duration = now - this.lastPolledTime;
-                
-
-                // Send heartbeat every 24 hours
-                if (duration.Days >= DIAGNOSTICS_POLLING_FREQUENCY)
-                {
-                    this.lastPolledTime = DateTime.Now;
-                    this.logDiagnostics.LogDiagnosticsData("ServiceHeartbeat","");
-                }
-                return;
-            }
-            this.logDiagnostics.LogDiagnosticsData("ServiceStart", "");
+            if (this.starting || this.running) return;
             
             lock (this.startLock)
             {

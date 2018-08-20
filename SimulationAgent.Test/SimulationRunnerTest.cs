@@ -37,7 +37,6 @@ namespace SimulationAgent.Test
         private readonly Mock<IDeviceTelemetryActor> deviceTelemetryActor;
         private readonly Mock<IDevicePropertiesActor> devicePropertiesActor;
         private readonly Mock<IRateLimiting> rateLimiting;
-        private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
         private readonly SimulationRunner target;
 
         public SimulationRunnerTest(ITestOutputHelper log)
@@ -56,14 +55,12 @@ namespace SimulationAgent.Test
             this.devicePropertiesActor = new Mock<IDevicePropertiesActor>();
             this.rateLimiting = new Mock<IRateLimiting>();
             this.ratingConfig.Setup(x => x.DeviceMessagesPerSecond).Returns(10);
-            this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
-
+            
             this.target = new SimulationRunner(
                 this.ratingConfig.Object,
                 this.rateLimiting.Object,
                 this.concurrencyConfig.Object,
                 this.logger.Object,
-                this.diagnosticsLogger.Object,
                 this.deviceModels.Object,
                 this.deviceModelsOverriding.Object,
                 this.devices.Object,

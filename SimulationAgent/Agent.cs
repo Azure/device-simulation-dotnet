@@ -18,22 +18,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     public class Agent : ISimulationAgent
     {
         private const int CHECK_INTERVAL_MSECS = 10000;
+        private const int DIAGNOSTICS_POLLING_FREQUENCY = 1;
 
         private readonly ILogger log;
+        private readonly IDiagnosticsLogger logDiagnostics;
         private readonly ISimulations simulations;
         private readonly ISimulationRunner runner;
+        private DateTime lastPolledTime;
         private Services.Models.Simulation simulation;
         private bool running;
 
         public Agent(
             ILogger logger,
+            IDiagnosticsLogger diagnosticsLogger,
             ISimulations simulations,
             ISimulationRunner runner)
         {
             this.log = logger;
+            this.logDiagnostics = diagnosticsLogger;
             this.simulations = simulations;
             this.runner = runner;
             this.running = true;
+            this.lastPolledTime = DateTime.Now;
         }
 
         public async Task RunAsync()
@@ -44,6 +50,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             while (this.running)
             {
                 var oldSimulation = this.simulation;
+                DateTime now = DateTime.Now;
+                TimeSpan duration = now - this.lastPolledTime;
+
+
+                // Send heartbeat every 24 hours
+                if (duration.Days >= DIAGNOSTICS_POLLING_FREQUENCY)
+                {
+                    this.lastPolledTime = DateTime.Now;
+                    this.logDiagnostics.LogDiagnosticsData("ServiceHeartbeat", "");
+                }
                 try
                 {
                     this.log.Debug("------ Checking for simulation changes ------");
@@ -144,6 +160,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // started
             if (this.simulation != null && this.simulation.ShouldBeRunning())
             {
+                this.logDiagnostics.LogDiagnosticsData("ServiceStart", "");
                 this.runner.Start(this.simulation);
             }
         }
