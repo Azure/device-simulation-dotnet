@@ -177,7 +177,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             catch (Exception e)
             {
                 errors.Add("Unable to fetch simulation status");
-                this.log.Error("Unable to fetch simulation status", () => new { e });
+                this.log.Error("Unable to fetch simulation status", e);
             }
 
             return simulationRunning;
@@ -198,7 +198,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             catch (Exception e)
             {
                 result = new Tuple<bool, string>(false, "Storage check failed");
-                this.log.Error("Storage ping failed", () => new { e });
+                this.log.Error("Storage ping failed", e);
             }
 
             return result;
@@ -226,7 +226,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             catch (Exception e)
             {
                 result = new Tuple<bool, string>(false, "IoTHub check failed");
-                this.log.Error("IoT Hub ping failed", () => new { e });
+                this.log.Error("IoT Hub ping failed", e);
             }
 
             return result;

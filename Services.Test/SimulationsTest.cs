@@ -227,7 +227,7 @@ namespace Services.Test
             };
             var storageList1 = new ValueListApiModel();
             storageList1.Items.Add(storageRecord1);
-            
+
             // Simulation after update
             var simulation2 = new SimulationModel { Id = SIMULATION_ID, Name = "Test Simulation 2", ETag = ETAG2 };
             var storageRecord2 = new ValueApiModel
@@ -238,7 +238,7 @@ namespace Services.Test
             };
             var storageList2 = new ValueListApiModel();
             storageList2.Items.Add(storageRecord2);
-            
+
             // Initial setup - the ETag matches
             this.storage.Setup(x => x.GetAllAsync(STORAGE_COLLECTION)).ReturnsAsync(storageList1);
             this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))

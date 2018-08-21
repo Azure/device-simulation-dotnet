@@ -224,8 +224,8 @@ namespace WebService.Test.v1.Controllers
             const string IOTHUB_CONNECTION_STRING = "hostname=hub-1;sharedaccesskeyname=hubowner;sharedaccesskey=fakekey";
 
             this.servicesConfig
-               .Setup(x => x.IoTHubConnString)
-               .Returns(IOTHUB_CONNECTION_STRING);
+                .Setup(x => x.IoTHubConnString)
+                .Returns(IOTHUB_CONNECTION_STRING);
 
             this.connectionStringManager
                 .Setup(x => x.GetIotHubConnectionString())

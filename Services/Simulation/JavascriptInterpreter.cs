@@ -13,7 +13,6 @@ using Jint.Runtime.Descriptors;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 {
@@ -21,6 +20,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
     {
         void Invoke(
             string filename,
+            Dictionary<string, object> context,
+            ISmartDictionary state,
+            ISmartDictionary properties);
+
+        void Invoke(
+            string filename,
+            object scriptParams,
             Dictionary<string, object> context,
             ISmartDictionary state,
             ISmartDictionary properties);
@@ -54,6 +60,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         /// </summary>
         public void Invoke(
             string filename,
+            Dictionary<string, object> context,
+            ISmartDictionary state,
+            ISmartDictionary properties)
+        {
+            this.Invoke(filename, null, context, state, properties);
+        }
+
+        /// <summary>
+        /// Load a JS file and execute the main() function, passing in
+        /// context information and the output from the previous execution.
+        /// Modifies the internal device state with the latest values.
+        /// </summary>
+        public void Invoke(
+            string filename, 
+            object scriptParams,
             Dictionary<string, object> context,
             ISmartDictionary state,
             ISmartDictionary properties)
@@ -98,13 +119,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                     "main",
                     context,
                     this.deviceState.GetAll(),
-                    this.deviceProperties.GetAll());
+                    this.deviceProperties.GetAll(),
+                    scriptParams);
 
                 this.log.Debug("JS function success", () => new { filename, this.deviceState });
             }
             catch (Exception e)
             {
-                this.log.Error("JS function failure", () => new { e.Message, e.GetType().FullName });
+                this.log.Error("JS function failure", e);
             }
         }
 
@@ -154,8 +176,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             }
             catch (Exception e)
             {
-                this.log.Error("JsValue parsing failure",
-                    () => new { e.Message, e.GetType().FullName });
+                this.log.Error("JsValue parsing failure", e);
 
                 return new Dictionary<string, object>();
             }

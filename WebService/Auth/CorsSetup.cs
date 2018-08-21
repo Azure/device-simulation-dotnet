@@ -31,12 +31,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
         {
             if (this.config.CorsEnabled)
             {
-                this.log.Warn("CORS is enabled", () => { });
+                this.log.Warn("CORS is enabled");
                 app.UseCors(this.BuildCorsPolicy);
             }
             else
             {
-                this.log.Info("CORS is disabled", () => { });
+                this.log.Info("CORS is disabled");
             }
         }
 
@@ -60,11 +60,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
 
             if (model.Origins == null)
             {
-                this.log.Info("No setting for CORS origin policy was found, ignore", () => { });
+                this.log.Info("No setting for CORS origin policy was found, ignore");
             }
             else if (model.Origins.Contains("*"))
             {
-                this.log.Info("CORS policy allowed any origin", () => { });
+                this.log.Info("CORS policy allowed any origin");
                 builder.AllowAnyOrigin();
             }
             else
@@ -75,11 +75,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
 
             if (model.Origins == null)
             {
-                this.log.Info("No setting for CORS method policy was found, ignore", () => { });
+                this.log.Info("No setting for CORS method policy was found, ignore");
             }
             else if (model.Methods.Contains("*"))
             {
-                this.log.Info("CORS policy allowed any method", () => { });
+                this.log.Info("CORS policy allowed any method");
                 builder.AllowAnyMethod();
             }
             else
@@ -90,11 +90,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
 
             if (model.Origins == null)
             {
-                this.log.Info("No setting for CORS header policy was found, ignore", () => { });
+                this.log.Info("No setting for CORS header policy was found, ignore");
             }
             else if (model.Headers.Contains("*"))
             {
-                this.log.Info("CORS policy allowed any header", () => { });
+                this.log.Info("CORS policy allowed any header");
                 builder.AllowAnyHeader();
             }
             else

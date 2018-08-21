@@ -83,7 +83,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             if (originalCount < newCount)
             {
                 this.log.Debug("The list of scripts is longer than the original model, " +
-                              "the extra scripts will be added to the model",
+                               "the extra scripts will be added to the model",
                     () => new { originalCount, newCount });
 
                 for (int i = 0; i < newCount - originalCount; i++)
@@ -210,6 +210,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                             });
 
                         result.Telemetry[i].MessageSchema.Name = t.MessageSchema.Name;
+                    }
+
+                    if (!string.IsNullOrEmpty(t.MessageSchema.ClassName)
+                        && t.MessageSchema.ClassName != result.Telemetry[i].MessageSchema.ClassName)
+                    {
+                        this.log.Info("Changing telemetry message schema class name",
+                            () => new
+                            {
+                                originalClassName = result.Telemetry[i].MessageSchema.ClassName,
+                                newClassName = t.MessageSchema.ClassName
+                            });
+
+                        result.Telemetry[i].MessageSchema.ClassName = t.MessageSchema.ClassName;
                     }
 
                     if (t.MessageSchema.Format != null

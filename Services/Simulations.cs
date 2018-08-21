@@ -135,7 +135,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var activeSimulation = simulations.Where(a => a.ShouldBeRunning());
             if (activeSimulation.Any())
             {
-                this.log.Warn("There is already a running simulation", () => { });
+                this.log.Warn("There is already a running simulation");
                 throw new ConflictingResourceException(
                     "There is already a simulation. Simulation cannot be created while another simulation is running.");
             }
@@ -193,12 +193,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var existingSimulation = await this.GetAsync(simulation.Id);
             if (existingSimulation != null)
             {
-                this.log.Info("Modifying simulation via PUT.", () => { });
+                this.log.Info("Modifying simulation");
 
                 if (simulation.ETag == "*")
                 {
                     simulation.ETag = existingSimulation.ETag;
-                    this.log.Info("The client used ETag='*' choosing to overwrite the current simulation", () => { });
+                    this.log.Info("The client used ETag='*' choosing to overwrite the current simulation");
                 }
 
                 if (simulation.ETag != existingSimulation.ETag)
@@ -214,7 +214,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             else
             {
-                this.log.Info("Creating new simulation via PUT.", () => { });
+                this.log.Info("Creating new simulation");
                 // new simulation
                 simulation.Created = DateTimeOffset.UtcNow;
                 simulation.Modified = simulation.Created;
