@@ -23,7 +23,7 @@ namespace Services.Test
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ShouldSendDiagnosticsEventsToBackEnd()
         {
-            //Arrange
+            // Arrange
             var response = new HttpResponse();
 
             DiagnosticsLogger diagnosticsLogger = new DiagnosticsLogger(
@@ -37,11 +37,12 @@ namespace Services.Test
                 .Setup(x => x.PostAsync(It.IsAny<IHttpRequest>()))
                 .ReturnsAsync(response);
 
-            //Act
-            var result = diagnosticsLogger.LogDiagnosticsData("ServiceError", "").Result;
+            // Act
+            IHttpResponse result = diagnosticsLogger.LogDiagnosticsData("ServiceError", "").Result;
 
-            //Assert
-            Assert.False(result);
+            // Assert - Testing to see if the logic in the function is working fine. 
+            // So, asserting if the expected response and actual responses are similar.
+            Assert.Equal(response,result);
         }
     }
 }
