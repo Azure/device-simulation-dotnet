@@ -38,13 +38,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
                 jobj.EventProperties = new JObject(
                     new JProperty("ErrorMessage", message));
             }
+
             return await httpClient.PostAsync(this.PrepareRequest(this.servicesConfig.DiagnosticsEndpointUrl, jobj));
         }
 
         private HttpRequest PrepareRequest(string path, object obj=null)
         {
             var request = new HttpRequest();
-            request.AddHeader(HttpRequestHeader.Accept.ToString(), "application/json");
             request.SetUriFromString(path);
             request.SetContent(obj);
             return request;

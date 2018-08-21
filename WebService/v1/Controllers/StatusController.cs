@@ -36,7 +36,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private const string FAILED_DEVICE_CONNECTIONS_COUNT_KEY = "FailedDeviceConnectionsCount";
         private const string FAILED_DEVICE_TWIN_UPDATES_COUNT_KEY = "FailedDeviceTwinUpdatesCount";
         private const string SIMULATION_ERRORS_COUNT_KEY = "SimulationErrorsCount";
-        private const string SERVICE_ERROR = "ServiceError";
+        private const string SERVICE_ERROR_EVENT = "ServiceError";
 
         private readonly IPreprovisionedIotHub preprovisionedIotHub;
         private readonly IStorageAdapterClient storage;
@@ -183,7 +183,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 var msg = "Unable to fetch simulation status";
                 errors.Add(msg);
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}: {e.Message}");
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {e.Message}");
             }
 
             return simulationRunning;
@@ -206,7 +206,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 var msg = "Storage ping failed";
                 result = new Tuple<bool, string>(false, "Storage check failed");
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}: {e.Message}");
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {e.Message}");
             }
 
             return result;
@@ -236,7 +236,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 var msg = "IoT Hub ping failed";
                 result = new Tuple<bool, string>(false, "IoTHub check failed");
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}: {e.Message}");
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {e.Message}");
             }
 
             return result;

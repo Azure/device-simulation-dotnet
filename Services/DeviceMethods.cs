@@ -33,7 +33,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private ISmartDictionary deviceProperties;
         private string deviceId;
         private bool isRegistered;
-        private const string SERVICE_ERROR = "ServiceError";
+        private const string SERVICE_ERROR_EVENT = "ServiceError";
 
         public DeviceMethods(
             IDeviceClientWrapper client,
@@ -112,7 +112,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var msg = "Failed executing method.";
                 this.log.Error(msg, () => new { methodRequest, e });
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}: {e.Message}");
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {e.Message}");
                 return Task.FromResult(new MethodResponse((int) HttpStatusCode.InternalServerError));
             }
         }
@@ -166,7 +166,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         methodRequest.DataAsJson,
                         e
                     });
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}. DeviceId: {this.deviceId}, MethodName: {methodRequest.Name}");
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}. DeviceId: {this.deviceId}, MethodName: {methodRequest.Name}");
             }
         }
 

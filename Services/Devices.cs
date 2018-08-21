@@ -55,7 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Simulated devices are marked with a tag "IsSimulated = Y"
         public const string SIMULATED_TAG_KEY = "IsSimulated";
         public const string SIMULATED_TAG_VALUE = "Y";
-        private const string SERVICE_ERROR = "ServiceError";
+        private const string SERVICE_ERROR_EVENT = "ServiceError";
 
         // The registry might be in an inconsistent state after several requests, this limit
         // is used to recreate the registry manager instance every once in a while, while starting
@@ -191,7 +191,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 var msg = "Unable to fetch the IoT device";
                 this.log.Error(msg, () => new { timeSpentMsecs, deviceId, e });
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}. DeviceId = {deviceId}, Exception = {e.Message}");
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}. DeviceId = {deviceId}, Exception = {e.Message}");
                 throw new ExternalDependencyException("Unable to fetch the IoT device");
             }
 
@@ -218,7 +218,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 var msg = "Unable to create the device";
                 this.log.Error(msg, () => new { timeSpentMsecs, deviceId, e });
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}. DeviceID = {deviceId}, Exception = {e.Message}");
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}. DeviceID = {deviceId}, Exception = {e.Message}");
                 throw new ExternalDependencyException("Unable to create the device", e);
             }
         }
@@ -310,21 +310,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var msg = "Failed to delete devices, the batch is too big";
                 this.log.Error(msg, error);
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}: {error.Message}");
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {error.Message}");
                 throw;
             }
             catch (IotHubCommunicationException error)
             {
                 var msg = "Failed to delete devices (IotHubCommunicationException)";
                 this.log.Error(msg, () => new { error.InnerException, error });
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}: {error.Message}");
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {error.Message}");
                 throw;
             }
             catch (Exception error)
             {
                 var msg = "Failed to delete devices";
                 this.log.Error(msg, error);
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}: {error.Message}"); ;
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {error.Message}"); ;
                 throw;
             }
         }

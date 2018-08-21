@@ -45,7 +45,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
 
         private const string ERROR401 = @"{""Error"":""Authentication required""}";
         private const string ERROR503_AUTH = @"{""Error"":""Authentication service not available""}";
-        private const string SERVICE_ERROR = "ServiceError";
+        private const string SERVICE_ERROR_EVENT = "ServiceError";
 
         private readonly RequestDelegate requestDelegate;
         private readonly IConfigurationManager<OpenIdConnectConfiguration> openIdCfgMan;
@@ -143,7 +143,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
             {
                 var msg = "Authorization header not found";
                 this.log.Error(msg);
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, msg);
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, msg);
             }
 
             if (header != null && header.StartsWith(AUTH_HEADER_PREFIX))
@@ -154,7 +154,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
             {
                 var msg = "Authorization header prefix not found";
                 this.log.Error(msg);
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, msg);
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, msg);
             }
 
             if (this.ValidateToken(token, context) || !this.authRequired)
@@ -193,13 +193,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
 
                 var msg = "JWT token signature algorithm is not allowed.";
                 this.log.Error(msg, () => new { jwtToken.SignatureAlgorithm });
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}: {jwtToken.SignatureAlgorithm}");
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {jwtToken.SignatureAlgorithm}");
             }
             catch (Exception e)
             {
                 var msg = "Failed to validate JWT token";
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}: {e.Message}");
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {e.Message}");
             }
 
             return false;
@@ -240,7 +240,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
             {
                 var msg = "Failed to setup OpenId Connect";
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}: {e.Message}");
+                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {e.Message}");
             }
 
             return this.tokenValidationInitialized;
