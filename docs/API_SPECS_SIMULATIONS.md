@@ -625,7 +625,7 @@ Add a device to a simulatiom using AddDevice method.
 
 Request:
 ```
-PUT /v1/simulations/1/Devices!AddDevice
+PUT /v1/simulations/1/Devices!create
 Content-Type: application/json; charset=utf-8
 ```
 ```json
