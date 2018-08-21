@@ -23,10 +23,8 @@ namespace SimulationAgent.Test.DeviceConnection
         private readonly Mock<IRateLimiting> rateLimiting;
         private readonly Mock<CredentialsSetup> credentialsSetupLogic;
         private readonly Mock<FetchFromRegistry> fetchLogic;
-        private readonly Mock<AddToStore> addToStoreLogic;
         private readonly Mock<Register> registerLogic;
         private readonly Mock<Deregister> deregisterLogic;
-        private readonly Mock<DeleteFromStore> deleteFromStoreLogic;
         private readonly Mock<IDevices> devices;
         private readonly Mock<Connect> connectLogic;
         private readonly Mock<Disconnect> disconnectLogic;
@@ -50,10 +48,6 @@ namespace SimulationAgent.Test.DeviceConnection
             this.fetchLogic = new Mock<FetchFromRegistry>(
                 this.devices.Object,
                 this.logger.Object);
-            this.addToStoreLogic = new Mock<AddToStore>(
-                this.storageAdapterClient.Object,
-                this.devices.Object,
-                this.logger.Object);
             this.registerLogic = new Mock<Register>(
                 this.devices.Object,
                 this.logger.Object);
@@ -68,10 +62,6 @@ namespace SimulationAgent.Test.DeviceConnection
                 this.devices.Object,
                 this.scriptInterpreter.Object,
                 this.logger.Object);
-            this.deleteFromStoreLogic = new Mock<DeleteFromStore>(
-                this.storageAdapterClient.Object,
-                this.devices.Object,
-                this.logger.Object);
             this.deviceStateActor = new Mock<IDeviceStateActor>();
             this.loopSettings = new Mock<ConnectionLoopSettings>(
                 this.rateLimitingConfig.Object);
@@ -83,13 +73,11 @@ namespace SimulationAgent.Test.DeviceConnection
                 this.actorLogger.Object,
                 this.rateLimiting.Object,
                 this.credentialsSetupLogic.Object,
-                this.addToStoreLogic.Object,
                 this.fetchLogic.Object,
                 this.registerLogic.Object,
                 this.connectLogic.Object,
                 this.deregisterLogic.Object,
-                this.disconnectLogic.Object,
-                this.deleteFromStoreLogic.Object);
+                this.disconnectLogic.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

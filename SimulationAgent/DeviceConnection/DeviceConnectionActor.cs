@@ -87,8 +87,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private readonly IDeviceConnectionLogic connectLogic;
         private readonly IDeviceConnectionLogic deregisterLogic;
         private readonly IDeviceConnectionLogic disconnectLogic;
-        private readonly IDeviceConnectionLogic deleteFromStoreLogic;
-        private readonly IDeviceConnectionLogic addToStoreLogic;
 
         private ActorStatus status;
         private string deviceId;
@@ -157,26 +155,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             IActorsLogger actorLogger,
             IRateLimiting rateLimiting,
             CredentialsSetup credentialsSetupLogic,
-            AddToStore addToStoreLogic,
             FetchFromRegistry fetchFromRegistryLogic,
             Register registerLogic,
             Connect connectLogic,
             Deregister deregisterLogic,
-            Disconnect disconnectLogic,
-            DeleteFromStore deleteFromStoreLogic)
+            Disconnect disconnectLogic)
         {
             this.log = logger;
             this.actorLogger = actorLogger;
             this.rateLimiting = rateLimiting;
 
             this.credentialsSetupLogic = credentialsSetupLogic;
-            this.addToStoreLogic = addToStoreLogic;
             this.fetchFromRegistryLogic = fetchFromRegistryLogic;
             this.registerLogic = registerLogic;
             this.connectLogic = connectLogic;
             this.deregisterLogic = deregisterLogic;
             this.disconnectLogic = disconnectLogic;
-            this.deleteFromStoreLogic = deleteFromStoreLogic;
 
             this.Message = null;
             this.Client = null;
@@ -216,13 +210,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.loopSettings = loopSettings;
 
             this.credentialsSetupLogic.Setup(this, this.deviceId, this.deviceModel);
-            this.addToStoreLogic.Setup(this, this.deviceId, this.deviceModel);
             this.fetchFromRegistryLogic.Setup(this, this.deviceId, this.deviceModel);
             this.registerLogic.Setup(this, this.deviceId, this.deviceModel);
             this.connectLogic.Setup(this, this.deviceId, this.deviceModel);
             this.deregisterLogic.Setup(this, this.deviceId, this.deviceModel);
             this.disconnectLogic.Setup(this, this.deviceId, this.deviceModel);
-            this.deleteFromStoreLogic.Setup(this, this.deviceId, this.deviceModel);
             this.actorLogger.Setup(deviceId, "Connection");
 
             this.status = ActorStatus.ReadyToStart;
@@ -305,18 +297,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     this.actorLogger.DisconnectingDevice();
                     await this.disconnectLogic.RunAsync();
                     return;
-
-                case ActorStatus.ReadyToAddToStore:
-                    this.status = ActorStatus.AddingToStore;
-                    this.actorLogger.AddingDeviceToStore();
-                    await this.addToStoreLogic.RunAsync();
-                    return;
-
-                case ActorStatus.ReadyToDeleteFromStore:
-                    this.status = ActorStatus.DeletingFromStore;
-                    this.actorLogger.DeletingDeviceFromStore();
-                    await this.deleteFromStoreLogic.RunAsync();
-                    return;
             }
         }
 
@@ -386,22 +366,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
                 case ActorEvents.Connected:
                     this.actorLogger.DeviceConnected();
-                    this.ScheduleAddToStore();
-                    break;
-
-                case ActorEvents.AddToStoreCompleted:
-                    this.actorLogger.AddedDeviceToStore();
                     this.status = ActorStatus.Done;
-                    break;
-
-                case ActorEvents.DeleteFromStoreCompleted:
-                    this.actorLogger.DeletedDeviceFromStore();
-                    this.ScheduleDeregistration();
                     break;
 
                 case ActorEvents.Disconnected:
                     this.actorLogger.DeviceDisconnected();
-                    this.ScheduleDeleteFromStore();
+                    this.ScheduleDeregistration();
                     break;
 
                 case ActorEvents.DeviceDeregistered:
@@ -486,39 +456,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 });
         }
 
-        private void ScheduleAddToStore()
-        {
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var pauseMsec = this.rateLimiting.GetPauseForNextRegistryOperation();
-            this.whenToRun = now + pauseMsec;
-            this.status = ActorStatus.ReadyToAddToStore;
-
-            this.actorLogger.AddDeviceToStoreScheduled(this.whenToRun);
-            this.log.Debug("Add to store scheduled",
-                () => new
-                {
-                    this.deviceId,
-                    Status = this.status.ToString(),
-                    When = this.log.FormatDate(this.whenToRun)
-                });
-        }
-
-        private void ScheduleDeleteFromStore()
-        {
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var pauseMsec = this.rateLimiting.GetPauseForNextConnection();
-            this.whenToRun = now + pauseMsec;
-            this.status = ActorStatus.ReadyToDeleteFromStore;
-
-            this.actorLogger.DeleteDeviceFromStoreScheduled(this.whenToRun);
-            this.log.Debug("Delete from store scheduled",
-                () => new
-                {
-                    this.deviceId,
-                    Status = this.status.ToString(),
-                    When = this.log.FormatDate(this.whenToRun)
-                });
-        }
 
         private void ScheduleDeregistration()
         {

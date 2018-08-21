@@ -123,7 +123,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             // Registrations required by Autofac, these classes implement the same interface
             builder.RegisterType<Connect>().As<Connect>();
             builder.RegisterType<SetDeviceTag>().As<SetDeviceTag>();
-            builder.RegisterType<AddToStore>().As<AddToStore>();
             builder.RegisterType<CredentialsSetup>().As<CredentialsSetup>();
             builder.RegisterType<FetchFromRegistry>().As<FetchFromRegistry>();
             builder.RegisterType<Register>().As<Register>();
@@ -132,7 +131,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterType<UpdateReportedProperties>().As<UpdateReportedProperties>();
             builder.RegisterType<Deregister>().As<Deregister>();
             builder.RegisterType<Disconnect>().As<Disconnect>();
-            builder.RegisterType<DeleteFromStore>().As<DeleteFromStore>();
         }
 
         private static void RegisterFactory(IContainer container)
