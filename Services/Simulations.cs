@@ -55,6 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     {
         private const string STORAGE_COLLECTION = "simulations";
         private const string DEFAULT_SIMULATION_ID = "1";
+        private const string DEFAULT_TEMPLATE_NAME = "default";
         private const int DEVICES_PER_MODEL_IN_DEFAULT_TEMPLATE = 1;
 
         private readonly IDeviceModels deviceModels;
@@ -116,10 +117,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<Models.Simulation> InsertAsync(Models.Simulation simulation, string template = "")
         {
-            var usingDefaultTemplate = !string.IsNullOrEmpty(template) && template.ToLowerInvariant() == "default";
+            var usingDefaultTemplate = !string.IsNullOrEmpty(template) && template.ToLowerInvariant() == DEFAULT_TEMPLATE_NAME;
 
             // TODO: complete validation
-            if (!string.IsNullOrEmpty(template) && template.ToLowerInvariant() != "default")
+            if (!string.IsNullOrEmpty(template) && template.ToLowerInvariant() != DEFAULT_TEMPLATE_NAME)
             {
                 this.log.Warn("Unknown template name", () => new { template });
                 throw new InvalidInputException("Unknown template name. Try 'default'.");

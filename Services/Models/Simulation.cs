@@ -45,7 +45,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             set => this.stopTime = value ?? DateTimeOffset.MaxValue;
         }
 
-
         public string IotHubConnectionString
         {
             get => this.iotHubConnectionString;
