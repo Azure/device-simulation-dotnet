@@ -70,6 +70,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         {
             this.Id = string.Empty;
             this.Name = string.Empty;
+            this.Description = string.Empty;
 
             // When unspecified, a simulation is enabled
             this.Enabled = true;

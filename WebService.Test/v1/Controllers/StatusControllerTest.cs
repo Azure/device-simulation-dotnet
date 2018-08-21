@@ -202,6 +202,7 @@ namespace WebService.Test.v1.Controllers
             var simulation = new SimulationModel
             {
                 Id = SIMULATION_ID,
+                Name = "Test Simulation",
                 Created = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 Modified = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 ETag = "ETag0",

@@ -290,7 +290,7 @@ namespace Services.Test
             this.storage.Verify(x => x.UpdateAsync(
                 STORAGE_COLLECTION,
                 id,
-                It.Is<string>(s => !s.Contains("null")),
+                It.IsAny<string>(),
                 "ETag0"));
         }
 
