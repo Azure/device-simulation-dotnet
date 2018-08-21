@@ -13,20 +13,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 {
     public interface IDiagnosticsLogger
     {
-        Task<IHttpResponse> LogDiagnosticsData(string eventType, string message);
+        Task<bool> LogDiagnosticsData(string eventType, string message);
     }
     public class DiagnosticsLogger : IDiagnosticsLogger
     {
         private readonly IHttpClient httpClient;
         private readonly IServicesConfig servicesConfig;
               
-        public DiagnosticsLogger(ILogger logger, IServicesConfig servicesConfig)
+        public DiagnosticsLogger(IHttpClient httpClient, IServicesConfig servicesConfig)
         {
-            this.httpClient = new HttpClient(logger);
+            this.httpClient = httpClient;
             this.servicesConfig = servicesConfig;
         }
 
-        public async Task<IHttpResponse> LogDiagnosticsData(string eventType, string message = "")
+        public async Task<bool> LogDiagnosticsData(string eventType, string message = "")
         {
             dynamic jobj = new JObject();
             jobj.EventId = Guid.NewGuid().ToString();
@@ -38,7 +38,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
                 jobj.EventProperties = new JObject(
                     new JProperty("ErrorMessage", message));
             }
-            return await httpClient.PostAsync(this.PrepareRequest(this.servicesConfig.DiagnosticsEndpointUrl, jobj));
+            var response = await httpClient.PostAsync(this.PrepareRequest(this.servicesConfig.DiagnosticsEndpointUrl, jobj));
+            return response.IsSuccess;
         }
 
         private HttpRequest PrepareRequest(string path, object obj=null)

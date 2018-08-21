@@ -143,6 +143,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 if (this.simulation.ShouldBeRunning())
                 {
                     this.log.Debug("------ Starting new simulation ------", () => new { this.simulation });
+                    this.logDiagnostics.LogDiagnosticsData("ServiceStart", "");
                     this.runner.Start(this.simulation);
                     this.log.Debug("------ New simulation started ------", () => new { this.simulation });
                 }
@@ -160,7 +161,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // started
             if (this.simulation != null && this.simulation.ShouldBeRunning())
             {
-                this.logDiagnostics.LogDiagnosticsData("ServiceStart", "");
                 this.runner.Start(this.simulation);
             }
         }

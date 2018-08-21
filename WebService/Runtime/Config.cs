@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth;
 
@@ -99,6 +100,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string AZURE_RESOURCE_GROUP = DEPLOYMENT_KEY + "azure_resource_group";
         private const string AZURE_IOTHUB_NAME = DEPLOYMENT_KEY + "azure_iothub_name";
 
+        private IHttpClient httpClient;
+
         public int Port { get; }
         public ILoggingConfig LoggingConfig { get; set; }
         public IClientAuthConfig ClientAuthConfig { get; }
@@ -107,7 +110,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         public IDeploymentConfig DeploymentConfig { get; set; }
         public IConcurrencyConfig ConcurrencyConfig { get; set; }
         public IDiagnosticsLogger DiagnosticsLogger { get; set; }
-
+        
         public Config(IConfigData configData)
         {
             this.Port = configData.GetInt(PORT_KEY);
@@ -116,8 +119,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             this.ClientAuthConfig = GetClientAuthConfig(configData);
             this.RateLimitingConfig = GetRateLimitingConfig(configData);
             this.DeploymentConfig = GetDeploymentConfig(configData);
-            this.ConcurrencyConfig = GetConcurrencyConfig(configData); 
-            this.DiagnosticsLogger = new DiagnosticsLogger(configData.GetLogger(), this.ServicesConfig);
+            this.ConcurrencyConfig = GetConcurrencyConfig(configData);
+            this.httpClient = new HttpClient(configData.GetLogger());
+            this.DiagnosticsLogger = new DiagnosticsLogger(this.httpClient, this.ServicesConfig);
         }
 
         private static ILoggingConfig GetLogConfig(IConfigData configData)

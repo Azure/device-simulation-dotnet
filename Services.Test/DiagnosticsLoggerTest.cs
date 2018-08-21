@@ -1,7 +1,5 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
-using System.Net;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
@@ -13,23 +11,37 @@ namespace Services.Test
 {
     public class DiagnosticsLoggerTest
     {
-        private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
+        private const string DIAGNOSTICS_SERVICE_URL = @"http://diagnostics";
+
+        private readonly Mock<IHttpClient> mockHttpClient;
+        
         public DiagnosticsLoggerTest()
         {
-            this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
+            this.mockHttpClient = new Mock<IHttpClient>();
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public async void ShouldSendDiagnosticsEventsToBackEnd()
+        public void ShouldSendDiagnosticsEventsToBackEnd()
         {
             //Arrange
-            IHttpResponse response = null;
-            
+            var response = new HttpResponse();
+
+            DiagnosticsLogger diagnosticsLogger = new DiagnosticsLogger(
+                this.mockHttpClient.Object,
+                new ServicesConfig
+                {
+                    DiagnosticsEndpointUrl = DIAGNOSTICS_SERVICE_URL
+                });
+
+            this.mockHttpClient
+                .Setup(x => x.PostAsync(It.IsAny<IHttpRequest>()))
+                .ReturnsAsync(response);
+
             //Act
-            response = await this.diagnosticsLogger.Object.LogDiagnosticsData("Error", "");
+            var result = diagnosticsLogger.LogDiagnosticsData("ServiceError", "").Result;
 
             //Assert
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.False(result);
         }
     }
 }
