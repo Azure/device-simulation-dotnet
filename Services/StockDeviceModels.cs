@@ -55,7 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                string msg = "Unable to load Device Model files";
+                var msg = "Unable to load Device Model files";
                 this.log.Error(msg, e);
                 this.diagnosticsLogger.LogDiagnosticsData("ServiceError", $"{msg}: {e.Message}");
                 throw;
@@ -72,7 +72,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                string msg = "Unable to parse Device Model files";
+                var msg = "Unable to parse Device Model files";
                 this.log.Error(msg, e);
                 this.diagnosticsLogger.LogDiagnosticsData("ServiceError", $"{msg}: {e.Message}");
                 throw new InvalidConfigurationException("Unable to parse Device Model files: " + e.Message, e);

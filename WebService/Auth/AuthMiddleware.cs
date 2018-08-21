@@ -141,7 +141,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
             }
             else
             {
-                string msg = "Authorization header not found";
+                var msg = "Authorization header not found";
                 this.log.Error(msg);
                 this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, msg);
             }
@@ -152,7 +152,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
             }
             else
             {
-                string msg = "Authorization header prefix not found";
+                var msg = "Authorization header prefix not found";
                 this.log.Error(msg);
                 this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, msg);
             }
@@ -191,13 +191,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
                     return true;
                 }
 
-                string msg = "JWT token signature algorithm is not allowed.";
+                var msg = "JWT token signature algorithm is not allowed.";
                 this.log.Error(msg, () => new { jwtToken.SignatureAlgorithm });
                 this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}: {jwtToken.SignatureAlgorithm}");
             }
             catch (Exception e)
             {
-                string msg = "Failed to validate JWT token";
+                var msg = "Failed to validate JWT token";
                 this.log.Error(msg, e);
                 this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}: {e.Message}");
             }
@@ -238,7 +238,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
             }
             catch (Exception e)
             {
-                string msg = "Failed to setup OpenId Connect";
+                var msg = "Failed to setup OpenId Connect";
                 this.log.Error(msg, e);
                 this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}: {e.Message}");
             }

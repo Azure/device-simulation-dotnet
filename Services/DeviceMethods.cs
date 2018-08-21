@@ -111,7 +111,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                string msg = "Failed executing method.";
+                var msg = "Failed executing method.";
                 this.log.Error(msg, () => new { methodRequest, e });
                 this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}: {e.Message}");
                 return Task.FromResult(new MethodResponse((int) HttpStatusCode.InternalServerError));
@@ -158,7 +158,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                string msg = "Error while executing method for device";
+                var msg = "Error while executing method for device";
                 this.log.Error(msg,
                     () => new
                     {

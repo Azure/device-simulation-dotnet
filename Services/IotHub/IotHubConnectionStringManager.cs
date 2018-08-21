@@ -182,7 +182,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
             catch (Exception e)
             {
-                string message = "Could not connect to IotHub with the connection " +
+                var message = "Could not connect to IotHub with the connection " +
                                  "string provided. Check that the key is valid and " +
                                  "that the hub exists.";
                 this.log.Error(message, e);
@@ -201,7 +201,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
             catch (Exception e)
             {
-                string message = "Could not read devices with the Iot Hub connection " +
+                var message = "Could not read devices with the Iot Hub connection " +
                                  "string provided. Check that the policy for the key allows " +
                                  "`Registry Read/Write` and `Service Connect` permissions.";
                 this.log.Error(message, e);
@@ -224,7 +224,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
             catch (Exception e)
             {
-                string message = "Could not create devices with the Iot Hub connection " +
+                var message = "Could not create devices with the Iot Hub connection " +
                                  "string provided. Check that the policy for the key allows " +
                                  "`Registry Read/Write` and `Service Connect` permissions.";
                 this.log.Error(message, e);
@@ -245,7 +245,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 }
                 catch (Exception e)
                 {
-                    string message = "Could not delete test device from IotHub. Attempt " +
+                    var message = "Could not delete test device from IotHub. Attempt " +
                                      deleteRetryCount + 1 + " of " + MAX_DELETE_RETRY;
                     this.log.Error(message, () => new { testDeviceId, e });
                     this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{message}. DeviceId = {testDeviceId}, Exception = {e.Message}");
@@ -259,7 +259,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
             if (response != null)
             {
-                string message = "Could not delete test device from IotHub.";
+                var message = "Could not delete test device from IotHub.";
                 this.log.Error(message, () => new { testDeviceId });
                 this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{message}: {testDeviceId}");
                 throw new IotHubConnectionException(message);
@@ -281,7 +281,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
             catch (Exception e)
             {
-                string msg = "Unable to use default IoT Hub. Check that the " +
+                var msg = "Unable to use default IoT Hub. Check that the " +
                              "pre-provisioned hub exists and has the correct permissions.";
                 this.log.Error(msg, e);
                 this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}: {e.Message}");
@@ -295,7 +295,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
             catch (Exception e)
             {
-                string msg = "Unable to delete connection string file";
+                var msg = "Unable to delete connection string file";
                 this.log.Error(msg,
                     () => new { this.connStringFilePath, e });
                 this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR, $"{msg}. FilePath = {this.connStringFilePath}, Exception = {e.Message}");
@@ -351,7 +351,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
             catch (Exception e)
             {
-                string msg = "Unable to write connection string to file";
+                var msg = "Unable to write connection string to file";
                 this.log.Error(msg,
                     () => new { this.connStringFilePath, e });
                 this.diagnosticsLogger.LogDiagnosticsData("Server Error", msg);
@@ -376,7 +376,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 }
                 catch (Exception e)
                 {
-                    string message = "Unable to read connection string from file";
+                    var message = "Unable to read connection string from file";
                     this.log.Error(message,
                         () => new { this.connStringFilePath, e });
                     this.diagnosticsLogger.LogDiagnosticsData("Server Error", message);
