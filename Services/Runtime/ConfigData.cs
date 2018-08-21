@@ -41,6 +41,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         {
             return this.log;
         }
+
         public bool GetBool(string key, bool defaultValue = false)
         {
             var value = this.GetStringInternal(key, defaultValue.ToString());

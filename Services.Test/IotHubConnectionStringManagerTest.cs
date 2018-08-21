@@ -16,7 +16,7 @@ namespace Services.Test
         private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
         private readonly IServicesConfig config;
         private readonly IotHubConnectionStringManager target;
-        
+
         public IotHubConnectionStringManagerTest()
         {
             this.logger = new Mock<ILogger>();

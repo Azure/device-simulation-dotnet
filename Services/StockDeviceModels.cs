@@ -21,7 +21,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public class StockDeviceModels : IStockDeviceModels
     {
         private const string EXT = ".json";
-        
+
         private readonly IServicesConfig config;
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;

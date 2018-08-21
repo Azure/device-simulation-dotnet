@@ -27,7 +27,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IDeviceClientWrapper client;
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
-        
         private readonly IScriptInterpreter scriptInterpreter;
         private IDictionary<string, Script> cloudToDeviceMethods;
         private ISmartDictionary deviceState;

@@ -161,7 +161,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // Use `starting` to exit as soon as possible, to minimize the number 
             // of threads pending on the lock statement
             if (this.starting || this.running) return;
-            
+
             lock (this.startLock)
             {
                 if (this.running) return;
@@ -171,7 +171,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.starting = true;
 
                 this.log.Info("Starting simulation...", () => new { simulation.Id });
-                
+
                 // Note: this is a singleton class, so we can call this once. This sets
                 // the active hub, e.g. in case the user provided a custom connection string.
                 this.devices.SetCurrentIotHub();
