@@ -30,16 +30,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         void DeviceDeregistered();
         void DeviceDeregistrationFailed();
 
-        void AddDeviceToStoreScheduled(long time);
-        void AddingDeviceToStore();
-        void AddedDeviceToStore();
-        void AddDeviceToStoreFailed();
-
-        void DeleteDeviceFromStoreScheduled(long time);
-        void DeletingDeviceFromStore();
-        void DeletedDeviceFromStore();
-        void DeleteDeviceFromStoreFailed();
-
         void DeviceTaggingScheduled(long time);
         void TaggingDevice();
         void DeviceTagged();

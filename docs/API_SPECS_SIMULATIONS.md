@@ -642,7 +642,7 @@ The method accepts a list of upto 100 device ids to deleted.
 
 Request:
 ```
-PUT /v1/simulations/1/Devices!DeleteDevices
+PUT /v1/simulations/1/Devices!batchDelete
 Content-Type: application/json; charset=utf-8
 ```
 ```json
