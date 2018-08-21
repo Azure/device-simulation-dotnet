@@ -24,7 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
     public class ServicesConfig : IServicesConfig
     {
         public const string USE_DEFAULT_IOTHUB = "default";
-        
+
         private string dtf;
         private string dtbf;
         private string ihf;

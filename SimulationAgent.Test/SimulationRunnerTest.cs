@@ -57,7 +57,7 @@ namespace SimulationAgent.Test
             this.devicePropertiesActor = new Mock<IDevicePropertiesActor>();
             this.rateLimiting = new Mock<IRateLimiting>();
             this.ratingConfig.Setup(x => x.DeviceMessagesPerSecond).Returns(10);
-            
+
             this.target = new SimulationRunner(
                 this.ratingConfig.Object,
                 this.rateLimiting.Object,

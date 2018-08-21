@@ -25,7 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
     {
         private readonly IConfigurationRoot configuration;
         private readonly ILogger log;
-        
+
         public ConfigData(IConfigurationRoot configuration, ILogger logger)
         {
             this.log = logger;
