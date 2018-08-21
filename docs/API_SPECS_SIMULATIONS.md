@@ -651,7 +651,6 @@ Content-Type: application/json; charset=utf-8
     "truck-01.0",
     "truck-01.1",
     ...
-  ],
-  IsCustom: false
+  ]
 }
 ```

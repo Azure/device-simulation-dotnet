@@ -16,7 +16,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     {
         Task RunAsync();
         Task AddDevice(string name, string modelId);
-        Task DeleteDevices(List<string> ids, bool isCustom);
+        Task DeleteDevices(List<string> ids);
         void Stop();
     }
 
@@ -126,7 +126,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         /// <summary>
         /// Delete a list of devices
         /// </summary>
-        public async Task DeleteDevices(List<string> ids, bool isCustom)
+        public async Task DeleteDevices(List<string> ids)
         {
             this.log.Info("Update simulation");
 
@@ -137,7 +137,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             {
                 if (simulation != null)
                 {
-                    await this.DeleteDevicesFromSimulationRecordAsync(simulation, ids, isCustom);
+                    await this.DeleteDevicesFromSimulationRecordAsync(simulation, ids);
 
                     if (this.running)
                     {
@@ -260,37 +260,45 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private async Task DeleteDevicesFromSimulationRecordAsync(Simulation simulation, List<string> ids, bool customDevices)
+        private async Task DeleteDevicesFromSimulationRecordAsync(Simulation simulation, List<string> ids)
         {
             bool shouldUpdateSimulation = false;
 
-            if (customDevices)
+            foreach (var id in ids.ToList())
             {
-                // Update custom device list
+                var deviceRemoved = false;
+
+                // Try to remove device from custom devices list
                 foreach (var model in simulation.CustomDevices.ToList())
                 {
-                    if (ids.Contains(model.DeviceId))
+                    if (id.Equals(model.DeviceId))
                     {
+                        this.log.Info("Remove device from custom device list", () => new { id });
                         simulation.CustomDevices.Remove(model);
                         shouldUpdateSimulation = true;
+                        deviceRemoved = true;
+                        break;
                     }
                 }
-            }
-            else
-            {
-                // Update device model count
-                foreach (var model in simulation.DeviceModels.ToList())
-                {
-                    List<string> parsedModelIds = ids.Select(s => s.Substring(0, s.LastIndexOf(('.')))).ToList<string>();
-                    if (parsedModelIds.Contains(model.Id))
-                    {
-                        model.Count--;
-                        if (model.Count <= 0)
-                        {
-                            simulation.DeviceModels.Remove(model);
-                        }
 
-                        shouldUpdateSimulation = true;
+                if (!deviceRemoved)
+                {
+                    // Try to remove device from device models list. Update device model count.
+                    foreach (var model in simulation.DeviceModels.ToList())
+                    {
+                        string parsedModelId = id.Substring(0, id.LastIndexOf(('.')));
+                        if (parsedModelId.Equals(model.Id))
+                        {
+                            this.log.Info("Decrement device model count", () => new { id, parsedModelId  });
+                            model.Count--;
+                            if (model.Count <= 0)
+                            {
+                                this.log.Info("Remove device from device model list", () => new { id });
+                                simulation.DeviceModels.Remove(model);
+                            }
+
+                            shouldUpdateSimulation = true;
+                        }
                     }
                 }
             }

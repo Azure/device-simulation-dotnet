@@ -119,7 +119,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("Device count exceeded max allowed limit");
             }
 
-            await this.simulationAgent.DeleteDevices(devices.DeviceIds, devices.IsCustom);
+            await this.simulationAgent.DeleteDevices(devices.DeviceIds);
         }
 
         [HttpPatch("{id}")]
