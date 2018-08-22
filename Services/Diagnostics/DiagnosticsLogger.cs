@@ -135,7 +135,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             [CallerLineNumber] int lineNumber = 0)
         {
             Dictionary<string, object> eventProps = new Dictionary<string, object>();
-            eventProps.Add("message", message + $"CallerMemberName = '{callerName}', CallerFilePath = '{filePath}', lineNumber = '{lineNumber}'");
+            eventProps.Add("message", message + $"(CallerMemberName = '{callerName}', CallerFilePath = '{filePath}', lineNumber = '{lineNumber}')");
             if (e != null)
             {
                 eventProps.Add("Exception", e);
@@ -148,13 +148,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             return new JsonStruct(Guid.NewGuid().ToString(), "ServiceError", DEPLOYMENT_ID, SOLUTION_TYPE, eventProps);
         }
 
-        private HttpRequest PrepareRequest(string path, object obj=null)
+        private HttpRequest PrepareRequest(string path, object obj = null)
         {
             var request = new HttpRequest();
             request.SetUriFromString(path);
             request.SetContent(obj);
             return request;
         }
-
     }
 }

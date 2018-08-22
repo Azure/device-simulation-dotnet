@@ -55,8 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Simulated devices are marked with a tag "IsSimulated = Y"
         public const string SIMULATED_TAG_KEY = "IsSimulated";
         public const string SIMULATED_TAG_VALUE = "Y";
-        private const string SERVICE_ERROR_EVENT = "ServiceError";
-
+        
         // The registry might be in an inconsistent state after several requests, this limit
         // is used to recreate the registry manager instance every once in a while, while starting
         // the simulation. When the simulation is running the registry is not used anymore.

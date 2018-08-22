@@ -42,8 +42,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public class CustomDeviceModels : ICustomDeviceModels
     {
         private const string STORAGE_COLLECTION = "deviceModels";
-        private const string SERVICE_ERROR_EVENT = "ServiceError";
-
+        
         private readonly IStorageAdapterClient storage;
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;

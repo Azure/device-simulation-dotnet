@@ -41,9 +41,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Sending service heartbeat to diagnostics backend every 24 hours/ 1 day
         private const int DIAGNOSTICS_POLLING_FREQUENCY = 1;
 
-        // Diagnostics Message Type
-        private const string SERVICE_ERROR_EVENT = "ServiceError";
-
         // Application logger
         private readonly ILogger log;
 

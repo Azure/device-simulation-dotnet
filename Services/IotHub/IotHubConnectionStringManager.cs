@@ -28,8 +28,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private const string CONNSTRING_REGEX_KEYNAME = "keyName";
         private const string CONNSTRING_REGEX_KEY = "key";
         private const string CONNSTRING_FILE_NAME = "custom_iothub_key.txt";
-        private const string SERVICE_ERROR_EVENT = "ServiceError";
-
+        
         private readonly string connStringFilePath;
 
         private readonly IServicesConfig config;

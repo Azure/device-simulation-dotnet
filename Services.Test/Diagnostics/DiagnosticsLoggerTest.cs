@@ -7,14 +7,14 @@ using Moq;
 using Services.Test.helpers;
 using Xunit;
 
-namespace Services.Test
+namespace Services.Test.Diagnostics
 {
     public class DiagnosticsLoggerTest
     {
         private const string DIAGNOSTICS_SERVICE_URL = @"http://diagnostics";
 
         private readonly Mock<IHttpClient> mockHttpClient;
-        
+
         public DiagnosticsLoggerTest()
         {
             this.mockHttpClient = new Mock<IHttpClient>();
@@ -90,7 +90,7 @@ namespace Services.Test
             // Act
             IHttpResponse result1 = diagnosticsLogger.LogServiceErrorAsync("testmessage").Result;
             IHttpResponse result2 = diagnosticsLogger.LogServiceErrorAsync("testmessage", new System.Exception()).Result;
-            IHttpResponse result3 = diagnosticsLogger.LogServiceErrorAsync("testmessage", new { Test = "test"}).Result;
+            IHttpResponse result3 = diagnosticsLogger.LogServiceErrorAsync("testmessage", new { Test = "test" }).Result;
 
             // Assert - Testing to see if the logic in the function is working fine. 
             // So, asserting if the expected response and actual responses are similar.
