@@ -36,7 +36,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private const string FAILED_DEVICE_CONNECTIONS_COUNT_KEY = "FailedDeviceConnectionsCount";
         private const string FAILED_DEVICE_TWIN_UPDATES_COUNT_KEY = "FailedDeviceTwinUpdatesCount";
         private const string SIMULATION_ERRORS_COUNT_KEY = "SimulationErrorsCount";
-        
+
         private readonly IPreprovisionedIotHub preprovisionedIotHub;
         private readonly IStorageAdapterClient storage;
         private readonly ISimulations simulations;

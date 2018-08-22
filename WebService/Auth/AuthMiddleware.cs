@@ -45,7 +45,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
 
         private const string ERROR401 = @"{""Error"":""Authentication required""}";
         private const string ERROR503_AUTH = @"{""Error"":""Authentication service not available""}";
-        
+
         private readonly RequestDelegate requestDelegate;
         private readonly IConfigurationManager<OpenIdConnectConfiguration> openIdCfgMan;
         private readonly IClientAuthConfig config;

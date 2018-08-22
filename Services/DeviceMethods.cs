@@ -33,7 +33,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private ISmartDictionary deviceProperties;
         private string deviceId;
         private bool isRegistered;
-        
+
         public DeviceMethods(
             IDeviceClientWrapper client,
             ILogger logger,

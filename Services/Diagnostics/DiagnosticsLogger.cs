@@ -2,13 +2,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Net;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using System.Text;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Newtonsoft.Json.Linq;
-using System.Runtime.CompilerServices;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 {
