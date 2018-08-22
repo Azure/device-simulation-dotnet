@@ -47,12 +47,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             public string SolutionType;
             public Dictionary<string, object> EventProperties;
 
-            public JsonStruct(string st1, string st2, string st3, string st4, Dictionary<string, object> eventProps)
+            public JsonStruct(string eventId, string eventType, string deploymentId, string solutionType, Dictionary<string, object> eventProps)
             {
-                EventId = st1;
-                EventType = st2;
-                DeploymentId = st3;
-                SolutionType = st4;
+                EventId = eventId;
+                EventType = eventType;
+                DeploymentId = deploymentId;
+                SolutionType = solutionType;
                 EventProperties = eventProps;
             }
         }
