@@ -72,7 +72,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var msg = "Unable to load device models from storage";
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, e);
+                this.diagnosticsLogger.LogServiceExceptionAsync(msg, e.Message);
                 throw new ExternalDependencyException("Unable to load device models from storage", e);
             }
 
@@ -93,7 +93,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var msg = "Unable to parse device models loaded from storage";
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, e);
+                this.diagnosticsLogger.LogServiceExceptionAsync(msg, e.Message);
                 throw new ExternalDependencyException("Unable to parse device models loaded from storage", e);
             }
         }
@@ -124,7 +124,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.log.Error(msg,
                     () => new { id, e.Message, Exception = e });
                 this.diagnosticsLogger.LogServiceErrorAsync(msg,
-                    new { id, e.Message, Exception = e });
+                    new { id, e.Message, Exception = e.Message });
                 throw new ExternalDependencyException("Unable to load device model from storage", e);
             }
 
@@ -175,7 +175,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.log.Error(msg,
                     () => new { deviceModel, generateId, e });
                 this.diagnosticsLogger.LogServiceErrorAsync(msg,
-                    new { deviceModel, generateId, e });
+                    new { deviceModel, generateId, e.Message });
                 throw new ExternalDependencyException(
                     "Failed to insert new device model into storage", e);
             }
@@ -255,7 +255,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var msg = "Something went wrong while deleting the device model.";
                 this.log.Error(msg, () => new { id, e });
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, new { id, e });
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, new { id, e.Message });
                 throw new ExternalDependencyException("Failed to delete the device model", e);
             }
         }

@@ -182,7 +182,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 var msg = "Unable to fetch simulation status";
                 errors.Add(msg);
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, e);
+                this.diagnosticsLogger.LogServiceExceptionAsync(msg, e.Message);
             }
 
             return simulationRunning;
@@ -205,7 +205,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 var msg = "Storage ping failed";
                 result = new Tuple<bool, string>(false, "Storage check failed");
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, e);
+                this.diagnosticsLogger.LogServiceExceptionAsync(msg, e.Message);
             }
 
             return result;
@@ -235,7 +235,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 var msg = "IoT Hub ping failed";
                 result = new Tuple<bool, string>(false, "IoTHub check failed");
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, e);
+                this.diagnosticsLogger.LogServiceExceptionAsync(msg, e.Message);
             }
 
             return result;

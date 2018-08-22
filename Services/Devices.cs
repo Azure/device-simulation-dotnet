@@ -125,7 +125,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var msg = "IoT Hub connection setup failed";
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, e);
+                this.diagnosticsLogger.LogServiceExceptionAsync(msg, e.Message);
                 throw;
             }
         }
@@ -190,7 +190,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 var msg = "Unable to fetch the IoT device";
                 this.log.Error(msg, () => new { timeSpentMsecs, deviceId, e });
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, new { timeSpentMsecs, deviceId, e });
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, new { timeSpentMsecs, deviceId, e.Message });
                 throw new ExternalDependencyException("Unable to fetch the IoT device");
             }
 
@@ -217,7 +217,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 var msg = "Unable to create the device";
                 this.log.Error(msg, () => new { timeSpentMsecs, deviceId, e });
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, new { timeSpentMsecs, deviceId, e });
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, new { timeSpentMsecs, deviceId, e.Message });
                 throw new ExternalDependencyException("Unable to create the device", e);
             }
         }
@@ -309,21 +309,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var msg = "Failed to delete devices, the batch is too big";
                 this.log.Error(msg, error);
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, error);
+                this.diagnosticsLogger.LogServiceExceptionAsync(msg, error.Message);
                 throw;
             }
             catch (IotHubCommunicationException error)
             {
                 var msg = "Failed to delete devices (IotHubCommunicationException)";
                 this.log.Error(msg, () => new { error.InnerException, error });
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, new { error.InnerException, error });
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, new { error.Message });
                 throw;
             }
             catch (Exception error)
             {
                 var msg = "Failed to delete devices";
                 this.log.Error(msg, error);
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, error); ;
+                this.diagnosticsLogger.LogServiceExceptionAsync(msg, error.Message); ;
                 throw;
             }
         }

@@ -185,7 +185,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                                  "string provided. Check that the key is valid and " +
                                  "that the hub exists.";
                 this.log.Error(message, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(message, e);
+                this.diagnosticsLogger.LogServiceExceptionAsync(message, e.Message);
                 throw new IotHubConnectionException(message, e);
             }
         }
@@ -204,7 +204,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                                  "string provided. Check that the policy for the key allows " +
                                  "`Registry Read/Write` and `Service Connect` permissions.";
                 this.log.Error(message, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(message, e);
+                this.diagnosticsLogger.LogServiceExceptionAsync(message, e.Message);
                 throw new IotHubConnectionException(message, e);
             }
         }
@@ -227,7 +227,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                                  "string provided. Check that the policy for the key allows " +
                                  "`Registry Read/Write` and `Service Connect` permissions.";
                 this.log.Error(message, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(message, e);
+                this.diagnosticsLogger.LogServiceExceptionAsync(message, e.Message);
                 throw new IotHubConnectionException(message, e);
             }
 
@@ -247,7 +247,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                     var message = "Could not delete test device from IotHub. Attempt " +
                                      deleteRetryCount + 1 + " of " + MAX_DELETE_RETRY;
                     this.log.Error(message, () => new { testDeviceId, e });
-                    this.diagnosticsLogger.LogServiceErrorAsync(message, new { testDeviceId, e });
+                    this.diagnosticsLogger.LogServiceErrorAsync(message, new { testDeviceId, e.Message });
                     throw new IotHubConnectionException(message, e);
                 }
 
@@ -283,7 +283,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 var msg = "Unable to use default IoT Hub. Check that the " +
                              "pre-provisioned hub exists and has the correct permissions.";
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, e);
+                this.diagnosticsLogger.LogServiceExceptionAsync(msg, e.Message);
                 throw new IotHubConnectionException(msg, e);
             }
 
@@ -298,7 +298,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 this.log.Error(msg,
                     () => new { this.connStringFilePath, e });
                 this.diagnosticsLogger.LogServiceErrorAsync(msg,
-                    new { this.connStringFilePath, e });
+                    new { this.connStringFilePath, e.Message });
                 throw;
             }
         }
@@ -355,7 +355,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 this.log.Error(msg,
                     () => new { this.connStringFilePath, e });
                 this.diagnosticsLogger.LogServiceErrorAsync(msg,
-                    new { this.connStringFilePath, e });
+                    new { this.connStringFilePath, e.Message });
                 throw;
             }
         }
@@ -381,7 +381,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                     this.log.Error(message,
                         () => new { this.connStringFilePath, e });
                     this.diagnosticsLogger.LogServiceErrorAsync(message,
-                        new { this.connStringFilePath, e });
+                        new { this.connStringFilePath, e.Message });
                     return null;
                 }
             }

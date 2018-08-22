@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -24,14 +23,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
         Task<IHttpResponse> LogServiceErrorAsync(
             string message,
-            Exception e,
+            object data,
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0);
 
-        Task<IHttpResponse> LogServiceErrorAsync(
+        Task<IHttpResponse> LogServiceExceptionAsync(
             string message,
-            object data,
+            string exceptionMessage,
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0);
@@ -41,18 +40,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
     {
         public struct JsonStruct
         {
-            public string EventId;
             public string EventType;
-            public string DeploymentId;
-            public string SolutionType;
             public Dictionary<string, object> EventProperties;
 
-            public JsonStruct(string eventId, string eventType, string deploymentId, string solutionType, Dictionary<string, object> eventProps)
+            public JsonStruct(string eventType, Dictionary<string, object> eventProps)
             {
-                EventId = eventId;
                 EventType = eventType;
-                DeploymentId = deploymentId;
-                SolutionType = solutionType;
                 EventProperties = eventProps;
             }
         }
@@ -63,35 +56,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         private const string SERVICE_ERROR_EVENT = "ServiceError";
         private const string SERVICE_START_EVENT = "ServiceStart";
         private const string SERVICE_HEARTBEAT_EVENT = "ServiceHeartbeat";
-        private string DEPLOYMENT_ID = "";
-        private string SOLUTION_TYPE = "";
               
         public DiagnosticsLogger(IHttpClient httpClient, IServicesConfig servicesConfig)
         {
             this.httpClient = httpClient;
             this.servicesConfig = servicesConfig;
-            DEPLOYMENT_ID = this.servicesConfig.DeploymentId;
-            SOLUTION_TYPE = this.servicesConfig.SolutionType;
         }
 
         public async Task<IHttpResponse> LogServiceStartAsync()
         {
-            JsonStruct jsonStruct = new JsonStruct(Guid.NewGuid().ToString(),
-                                                SERVICE_START_EVENT,
-                                                DEPLOYMENT_ID,
-                                                SOLUTION_TYPE,
-                                                null);
+            JsonStruct jsonStruct = new JsonStruct(SERVICE_START_EVENT, null);
 
             return await httpClient.PostAsync(this.PrepareRequest(this.servicesConfig.DiagnosticsEndpointUrl, jsonStruct));
         }
 
         public async Task<IHttpResponse> LogServiceHeartbeatAsync()
         {
-            JsonStruct jsonStruct = new JsonStruct(Guid.NewGuid().ToString(),
-                                                SERVICE_HEARTBEAT_EVENT,
-                                                DEPLOYMENT_ID,
-                                                SOLUTION_TYPE,
-                                                null);
+            JsonStruct jsonStruct = new JsonStruct(SERVICE_HEARTBEAT_EVENT,null);
 
             return await httpClient.PostAsync(this.PrepareRequest(this.servicesConfig.DiagnosticsEndpointUrl, jsonStruct));
         }
@@ -102,18 +83,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0)
         {
-            JsonStruct jsonStruct = this.ConvertToJson(message, null, null, callerName, filePath, lineNumber);
+            JsonStruct jsonStruct = this.ConvertToJson(message, "", null, callerName, filePath, lineNumber);
             return await httpClient.PostAsync(this.PrepareRequest(this.servicesConfig.DiagnosticsEndpointUrl, jsonStruct));
         }
 
-        public async Task<IHttpResponse> LogServiceErrorAsync(
+        public async Task<IHttpResponse> LogServiceExceptionAsync(
             string message,
-            Exception e,
+            string exceptionMessage,
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0)
         {
-            JsonStruct jsonStruct = this.ConvertToJson(message, e, null, callerName, filePath, lineNumber);
+            JsonStruct jsonStruct = this.ConvertToJson(message, exceptionMessage, null, callerName, filePath, lineNumber);
             return await httpClient.PostAsync(this.PrepareRequest(this.servicesConfig.DiagnosticsEndpointUrl, jsonStruct));
         }
 
@@ -124,12 +105,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0)
         {
-            JsonStruct jsonStruct = this.ConvertToJson(message, null, data, callerName, filePath, lineNumber);
+            JsonStruct jsonStruct = this.ConvertToJson(message, "", data, callerName, filePath, lineNumber);
             return await httpClient.PostAsync(this.PrepareRequest(this.servicesConfig.DiagnosticsEndpointUrl, jsonStruct));
         }
 
         private JsonStruct ConvertToJson(string message,
-            Exception e,
+            string exceptionMessage,
             object data,
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
@@ -137,16 +118,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         {
             Dictionary<string, object> eventProps = new Dictionary<string, object>();
             eventProps.Add("message", message + $"(CallerMemberName = '{callerName}', CallerFilePath = '{filePath}', lineNumber = '{lineNumber}')");
-            if (e != null)
+            if (!string.IsNullOrEmpty(exceptionMessage))
             {
-                eventProps.Add("Exception", e);
+                eventProps.Add("ExceptionMessage", exceptionMessage);
             }
             if (data != null)
             {
                 eventProps.Add("data", data);
             }
-            var EventId = Guid.NewGuid().ToString();
-            return new JsonStruct(Guid.NewGuid().ToString(), "ServiceError", DEPLOYMENT_ID, SOLUTION_TYPE, eventProps);
+            return new JsonStruct(SERVICE_ERROR_EVENT, eventProps);
         }
 
         private HttpRequest PrepareRequest(string path, object obj = null)

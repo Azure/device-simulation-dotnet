@@ -91,7 +91,7 @@ namespace Services.Test.Diagnostics
             // Logging service error sending just a message string
             IHttpResponse logging_service_error_message = diagnosticsLogger.LogServiceErrorAsync("testmessage").Result;
             // Logging service error along with an exception
-            IHttpResponse logging_service_error_message_and_exception = diagnosticsLogger.LogServiceErrorAsync("testmessage", new System.Exception()).Result;
+            IHttpResponse logging_service_error_message_and_exception = diagnosticsLogger.LogServiceExceptionAsync("testmessage", new System.Exception().Message).Result;
             // Logging service error along with an object
             IHttpResponse logging_service_error_message_and_object = diagnosticsLogger.LogServiceErrorAsync("testmessage", new { Test = "test" }).Result;
 
@@ -100,7 +100,6 @@ namespace Services.Test.Diagnostics
             Assert.Equal(response, logging_service_error_message);
             Assert.Equal(response, logging_service_error_message_and_exception);
             Assert.Equal(response, logging_service_error_message_and_object);
-            //Assert.Equal(response, result3);
         }
     }
 }
