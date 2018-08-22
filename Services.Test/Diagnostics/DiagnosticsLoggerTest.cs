@@ -88,15 +88,18 @@ namespace Services.Test.Diagnostics
                 .ReturnsAsync(response);
 
             // Act
-            IHttpResponse result1 = diagnosticsLogger.LogServiceErrorAsync("testmessage").Result;
-            IHttpResponse result2 = diagnosticsLogger.LogServiceErrorAsync("testmessage", new System.Exception()).Result;
-            IHttpResponse result3 = diagnosticsLogger.LogServiceErrorAsync("testmessage", new { Test = "test" }).Result;
+            // Logging service error sending just a message string
+            IHttpResponse logging_service_error_message = diagnosticsLogger.LogServiceErrorAsync("testmessage").Result;
+            // Logging service error along with an exception
+            IHttpResponse logging_service_error_message_and_exception = diagnosticsLogger.LogServiceErrorAsync("testmessage", new System.Exception()).Result;
+            // Logging service error along with an object
+            IHttpResponse logging_service_error_message_and_object = diagnosticsLogger.LogServiceErrorAsync("testmessage", new { Test = "test" }).Result;
 
             // Assert - Testing to see if the logic in the function is working fine. 
             // So, asserting if the expected response and actual responses are similar.
-            Assert.Equal(response, result1);
-            Assert.Equal(response, result2);
-            Assert.Equal(response, result3);
+            Assert.Equal(response, logging_service_error_message);
+            Assert.Equal(response, logging_service_error_message_and_exception);
+            Assert.Equal(response, logging_service_error_message_and_object);
             //Assert.Equal(response, result3);
         }
     }
