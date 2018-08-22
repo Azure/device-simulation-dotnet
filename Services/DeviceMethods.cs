@@ -112,7 +112,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var msg = "Failed executing method.";
                 this.log.Error(msg, () => new { methodRequest, e });
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {e.Message}");
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, new { methodRequest, e });
                 return Task.FromResult(new MethodResponse((int) HttpStatusCode.InternalServerError));
             }
         }
@@ -166,7 +166,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         methodRequest.DataAsJson,
                         e
                     });
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}. DeviceId: {this.deviceId}, MethodName: {methodRequest.Name}");
+                this.diagnosticsLogger.LogServiceErrorAsync(msg,
+                    new
+                    {
+                        this.deviceId,
+                        methodName = methodRequest.Name,
+                        methodRequest.DataAsJson,
+                        e
+                    });
             }
         }
 

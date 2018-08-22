@@ -191,7 +191,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.running = false;
                     this.starting = false;
                     this.log.Error(msg, e);
-                    this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {e.Message}");
+                    this.diagnosticsLogger.LogServiceErrorAsync(msg, e);
                     this.IncrementSimulationErrorsCount();
 
                     // Return and retry
@@ -221,14 +221,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                         var msg = "The device model doesn't exist";
                         this.IncrementSimulationErrorsCount();
                         this.log.Error(msg, () => new { model.Id });
-                        this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}. Model Id = {model.Id}");
+                        this.diagnosticsLogger.LogServiceErrorAsync(msg, new { model.Id });
                     }
                     catch (Exception e)
                     {
                         var msg = "Unexpected error preparing the device model";
                         this.IncrementSimulationErrorsCount();
                         this.log.Error(msg, () => new { model.Id, e });
-                        this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {e.Message}");
+                        this.diagnosticsLogger.LogServiceErrorAsync(msg, new { model.Id, e });
                     }
                 }
 
@@ -613,7 +613,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var msg = "Unable to start the telemetry threads";
                 this.IncrementSimulationErrorsCount();
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {e.Message}");
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e);
                 throw new Exception("Unable to start the telemetry threads", e);
             }
         }
@@ -630,7 +630,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var msg = "Unable to start the device connection thread";
                 this.IncrementSimulationErrorsCount();
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {e.Message}");
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e);
                 throw new Exception("Unable to start the device connection thread", e);
             }
         }
@@ -647,7 +647,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var msg = "Unable to start the device state thread";
                 this.IncrementSimulationErrorsCount();
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {e.Message}");
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e);
                 throw new Exception("Unable to start the device state thread", e);
             }
         }
@@ -664,7 +664,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var msg = "Unable to start the device properties thread";
                 this.IncrementSimulationErrorsCount();
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {e.Message}");
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e);
                 throw new Exception("Unable to start the device properties thread", e);
             }
         }

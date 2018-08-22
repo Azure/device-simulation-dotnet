@@ -143,7 +143,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
             {
                 var msg = "Authorization header not found";
                 this.log.Error(msg);
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, msg);
+                this.diagnosticsLogger.LogServiceErrorAsync(msg);
             }
 
             if (header != null && header.StartsWith(AUTH_HEADER_PREFIX))
@@ -154,7 +154,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
             {
                 var msg = "Authorization header prefix not found";
                 this.log.Error(msg);
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, msg);
+                this.diagnosticsLogger.LogServiceErrorAsync(msg);
             }
 
             if (this.ValidateToken(token, context) || !this.authRequired)
@@ -193,13 +193,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
 
                 var msg = "JWT token signature algorithm is not allowed.";
                 this.log.Error(msg, () => new { jwtToken.SignatureAlgorithm });
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {jwtToken.SignatureAlgorithm}");
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, new { jwtToken.SignatureAlgorithm });
             }
             catch (Exception e)
             {
                 var msg = "Failed to validate JWT token";
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {e.Message}");
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e);
             }
 
             return false;
@@ -240,7 +240,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
             {
                 var msg = "Failed to setup OpenId Connect";
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogDiagnosticsData(SERVICE_ERROR_EVENT, $"{msg}: {e.Message}");
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e);
             }
 
             return this.tokenValidationInitialized;
