@@ -279,13 +279,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         public async Task AddDevice(string deviceId, string modelId)
         {
-           /* DeviceModelRef deviceModel = new DeviceModelRef();
-            deviceModel.Id = modelId;
-            CustomDeviceRef customDevice = new CustomDeviceRef();
-            customDevice.DeviceModel = deviceModel;
-            customDevice.DeviceId = deviceId;
-            */
-
             DeviceModel model = this.GetDeviceModel(modelId, null);
 
             this.CreateActorsForDevice(model, 0, 1, deviceId);

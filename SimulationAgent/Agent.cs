@@ -123,9 +123,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        /// <summary>
-        /// Delete a list of devices
-        /// </summary>
         public async Task DeleteDevices(List<string> ids)
         {
             this.log.Info("Update simulation");
@@ -289,7 +286,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                         string parsedModelId = id.Substring(0, id.LastIndexOf(('.')));
                         if (parsedModelId.Equals(model.Id))
                         {
-                            this.log.Info("Decrement device model count", () => new { id, parsedModelId  });
+                            this.log.Info("Decrement device model count", () => new { id, parsedModelId });
                             model.Count--;
                             if (model.Count <= 0)
                             {
@@ -305,7 +302,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             if (shouldUpdateSimulation)
             {
-                this.log.Info("Update simulation record");
+                this.log.Info("Update simulation record in storage");
                 await this.simulations.UpsertAsync(simulation);
             }
         }
