@@ -59,6 +59,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.lastPolledTime = DateTime.Now;
                     this.logDiagnostics.LogServiceHeartbeatAsync();
                 }
+
                 try
                 {
                     this.log.Debug("------ Checking for simulation changes ------");
