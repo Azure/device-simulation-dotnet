@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Protobuf.Models {
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Protobuf {
 
   /// <summary>Holder for reflection information generated from Truck.proto</summary>
   public static partial class TruckReflection {
@@ -32,7 +32,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Protobuf.Models
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Protobuf.Models.Truck), global::Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Protobuf.Models.Truck.Parser, new[]{ "Latitude", "Longitude", "Speed", "SpeedUnit", "Heading", "TemperatureUnit" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Protobuf.Truck), global::Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Protobuf.Truck.Parser, new[]{ "Latitude", "Longitude", "Speed", "SpeedUnit", "Temperature", "TemperatureUnit" }, null, null, null)
           }));
     }
     #endregion
@@ -47,7 +47,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Protobuf.Models
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Protobuf.Models.TruckReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Protobuf.TruckReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -68,7 +68,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Protobuf.Models
       longitude_ = other.longitude_;
       speed_ = other.speed_;
       speedUnit_ = other.speedUnit_;
-      heading_ = other.heading_;
+      temperature_ = other.temperature_;
       temperatureUnit_ = other.temperatureUnit_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
@@ -122,14 +122,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Protobuf.Models
       }
     }
 
-    /// <summary>Field number for the "heading" field.</summary>
-    public const int HeadingFieldNumber = 5;
-    private double heading_;
+    /// <summary>Field number for the "temperature" field.</summary>
+    public const int TemperatureFieldNumber = 5;
+    private double temperature_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public double Heading {
-      get { return heading_; }
+    public double Temperature {
+      get { return temperature_; }
       set {
-        heading_ = value;
+        temperature_ = value;
       }
     }
 
@@ -161,7 +161,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Protobuf.Models
       if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(Longitude, other.Longitude)) return false;
       if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(Speed, other.Speed)) return false;
       if (SpeedUnit != other.SpeedUnit) return false;
-      if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(Heading, other.Heading)) return false;
+      if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(Temperature, other.Temperature)) return false;
       if (TemperatureUnit != other.TemperatureUnit) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -173,7 +173,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Protobuf.Models
       if (Longitude != 0D) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(Longitude);
       if (Speed != 0D) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(Speed);
       if (SpeedUnit.Length != 0) hash ^= SpeedUnit.GetHashCode();
-      if (Heading != 0D) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(Heading);
+      if (Temperature != 0D) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(Temperature);
       if (TemperatureUnit.Length != 0) hash ^= TemperatureUnit.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -204,9 +204,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Protobuf.Models
         output.WriteRawTag(34);
         output.WriteString(SpeedUnit);
       }
-      if (Heading != 0D) {
+      if (Temperature != 0D) {
         output.WriteRawTag(41);
-        output.WriteDouble(Heading);
+        output.WriteDouble(Temperature);
       }
       if (TemperatureUnit.Length != 0) {
         output.WriteRawTag(50);
@@ -232,7 +232,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Protobuf.Models
       if (SpeedUnit.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(SpeedUnit);
       }
-      if (Heading != 0D) {
+      if (Temperature != 0D) {
         size += 1 + 8;
       }
       if (TemperatureUnit.Length != 0) {
@@ -261,8 +261,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Protobuf.Models
       if (other.SpeedUnit.Length != 0) {
         SpeedUnit = other.SpeedUnit;
       }
-      if (other.Heading != 0D) {
-        Heading = other.Heading;
+      if (other.Temperature != 0D) {
+        Temperature = other.Temperature;
       }
       if (other.TemperatureUnit.Length != 0) {
         TemperatureUnit = other.TemperatureUnit;
@@ -295,7 +295,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Protobuf.Models
             break;
           }
           case 41: {
-            Heading = input.ReadDouble();
+            Temperature = input.ReadDouble();
             break;
           }
           case 50: {
