@@ -38,7 +38,7 @@ namespace Services.Test.Diagnostics
                 .ReturnsAsync(response);
 
             // Act
-            IHttpResponse result = diagnosticsLogger.LogServiceStartAsync().Result;
+            IHttpResponse result = diagnosticsLogger.LogServiceStartAsync("test").Result;
 
             // Assert - Testing to see if the logic in the function is working fine. 
             // So, asserting if the expected response and actual responses are similar.

@@ -75,7 +75,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var msg = "Unable to parse Device Model files";
                 this.log.Error(msg, e);
                 this.diagnosticsLogger.LogServiceExceptionAsync(msg, e.Message);
-                throw new InvalidConfigurationException("Unable to parse Device Model files: " + e.Message, e);
+                throw new InvalidConfigurationException(msg + e.Message, e);
             }
 
             return this.deviceModels;

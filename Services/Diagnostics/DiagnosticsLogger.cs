@@ -11,7 +11,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
     public interface IDiagnosticsLogger
     {
-        Task<IHttpResponse> LogServiceStartAsync();
+        Task<IHttpResponse> LogServiceStartAsync(string message);
 
         Task<IHttpResponse> LogServiceHeartbeatAsync();
 
@@ -63,9 +63,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.servicesConfig = servicesConfig;
         }
 
-        public async Task<IHttpResponse> LogServiceStartAsync()
+        public async Task<IHttpResponse> LogServiceStartAsync(string message)
         {
-            JsonStruct jsonStruct = new JsonStruct(SERVICE_START_EVENT, null);
+            JsonStruct jsonStruct = new JsonStruct(SERVICE_START_EVENT + message, null);
 
             return await httpClient.PostAsync(this.PrepareRequest(this.servicesConfig.DiagnosticsEndpointUrl, jsonStruct));
         }

@@ -191,7 +191,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var msg = "Unable to fetch the IoT device";
                 this.log.Error(msg, () => new { timeSpentMsecs, deviceId, e });
                 this.diagnosticsLogger.LogServiceErrorAsync(msg, new { timeSpentMsecs, deviceId, e.Message });
-                throw new ExternalDependencyException("Unable to fetch the IoT device");
+                throw new ExternalDependencyException(msg);
             }
 
             return result;
@@ -218,7 +218,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var msg = "Unable to create the device";
                 this.log.Error(msg, () => new { timeSpentMsecs, deviceId, e });
                 this.diagnosticsLogger.LogServiceErrorAsync(msg, new { timeSpentMsecs, deviceId, e.Message });
-                throw new ExternalDependencyException("Unable to create the device", e);
+                throw new ExternalDependencyException(msg, e);
             }
         }
 

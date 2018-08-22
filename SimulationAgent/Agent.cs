@@ -142,10 +142,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.simulation = newSimulation;
                 if (this.simulation.ShouldBeRunning())
                 {
-                    this.log.Debug("------ Starting new simulation ------", () => new { this.simulation });
-                    this.logDiagnostics.LogServiceStartAsync();
+                    var simulationStatus = "------ Starting new simulation ------";
+                    this.log.Debug(simulationStatus, () => new { this.simulation });
+                    this.logDiagnostics.LogServiceStartAsync(simulationStatus);
                     this.runner.Start(this.simulation);
-                    this.log.Debug("------ New simulation started ------", () => new { this.simulation });
+                    simulationStatus = "------ New simulation started ------";
+                    this.log.Debug(simulationStatus, () => new { this.simulation });
+                    this.logDiagnostics.LogServiceStartAsync(simulationStatus);
                 }
             }
         }
