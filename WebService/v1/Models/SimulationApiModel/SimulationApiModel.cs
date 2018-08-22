@@ -29,7 +29,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "Name")]
         public string Name { get; set; }
 
-        [JsonProperty(PropertyName = "Desc", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(PropertyName = "Desc")]
         public string Description { get; set; }
 
         [JsonProperty(PropertyName = "Enabled")]
@@ -50,16 +50,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "DeviceModels")]
         public IList<SimulationDeviceModelRef> DeviceModels { get; set; }
 
-        [JsonProperty(PropertyName = "TotalMsgs", NullValueHandling = NullValueHandling.Ignore)]
-        public int TotalMessagesSent { get; set; }
-
-        [JsonProperty(PropertyName = "AvgMsgs", NullValueHandling = NullValueHandling.Ignore)]
-        public double AverageMessagesSent { get; set; }
+        [JsonProperty(PropertyName = "Statistics")]
+        public SimulationStatisticsRef Statistics{ get; set; }
 
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
         {
-            { "$type", "Simulation" },
+            { "$type", "Simulation" + Version.NUMBER },
             { "$uri", "/" + Version.PATH + "/simulations/" + this.Id },
             { "$created", this.created.ToString(DATE_FORMAT) },
             { "$modified", this.modified.ToString(DATE_FORMAT) }
@@ -79,8 +76,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             this.EndTime = null;
             this.StopTime = null;
             this.DeviceModels = new List<SimulationDeviceModelRef>();
-            this.TotalMessagesSent = 0;
-            this.AverageMessagesSent = 0;
+            this.Statistics = new SimulationStatisticsRef();
         }
 
         // Map API model to service model
@@ -103,8 +99,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 StopTime = DateHelper.ParseDateExpression(this.StopTime, now),
                 IotHubConnectionString = SimulationIotHub.ToServiceModel(this.IotHub),
                 DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList(),
-                TotalMessagesSent = this.TotalMessagesSent,
-                AverageMessagesSent = this.AverageMessagesSent
+                Statistics = SimulationStatisticsRef.ToServiceModel(this.Statistics)
             };
 
             return result;
@@ -125,9 +120,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 StartTime = value.StartTime.ToString(),
                 EndTime = value.EndTime.ToString(),
                 StopTime = value.StopTime.ToString(),
-                IotHub = new SimulationIotHub(value.IotHubConnectionString),
-                TotalMessagesSent = value.TotalMessagesSent,
-                AverageMessagesSent = value.AverageMessagesSent
+                IotHub = new SimulationIotHub(value.IotHubConnectionString)
             };
 
             // Ignore the date if the simulation doesn't have a start time
@@ -149,6 +142,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             }
 
             result.DeviceModels = SimulationDeviceModelRef.FromServiceModel(value.DeviceModels);
+            result.Statistics = SimulationStatisticsRef.FromServiceModel(value.Statistics);
             result.created = value.Created;
             result.modified = value.Modified;
 

@@ -12,11 +12,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         [JsonProperty(PropertyName = "Enabled")]
         public bool? Enabled { get; set; }
 
-        [JsonProperty(PropertyName = "TotalMsgs", NullValueHandling = NullValueHandling.Ignore)]
-        public int TotalMessagesSent { get; set; }
-
-        [JsonProperty(PropertyName = "AvgMsgs", NullValueHandling = NullValueHandling.Ignore)]
-        public double AverageMessagesSent { get; set; }
+        [JsonProperty(PropertyName = "Statistics", NullValueHandling = NullValueHandling.Ignore)]
+        public SimulationStatisticsRef Statistics { get; set; }
 
         public SimulationPatchApiModel()
         {
@@ -31,9 +28,32 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
                 ETag = this.ETag,
                 Id = id,
                 Enabled = this.Enabled,
-                TotalMessagesSent = this.TotalMessagesSent,
-                AverageMessagesSent = this.AverageMessagesSent
+                Statistics = SimulationStatisticsRef.ToServiceModel(this.Statistics)
             };
         }
     }
+
+    public class SimulationStatisticsRef
+    {
+        [JsonProperty(PropertyName = "AverageMessagesPerSecond", NullValueHandling = NullValueHandling.Ignore)]
+        public double AverageMessagesPerSecond { get; set; }
+
+        [JsonProperty(PropertyName = "TotalMessagesSent", NullValueHandling = NullValueHandling.Ignore)]
+        public int TotalMessagesSent { get; set; }
+
+        public static Services.Models.SimulationStatistics ToServiceModel(SimulationStatisticsRef statistics)
+        {
+            if (statistics != null)
+            {
+                return new Services.Models.SimulationStatistics
+                {
+                    AverageMessagesPerSecond = statistics.AverageMessagesPerSecond,
+                    TotalMessagesSent = statistics.TotalMessagesSent
+                };
+            }
+
+            return null;
+        }
+    }
+
 }

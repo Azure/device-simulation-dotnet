@@ -119,7 +119,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             var usingDefaultTemplate = !string.IsNullOrEmpty(template) && template.ToLowerInvariant() == DEFAULT_TEMPLATE_NAME;
 
-            // TODO: complete validation
             if (!string.IsNullOrEmpty(template) && template.ToLowerInvariant() != DEFAULT_TEMPLATE_NAME)
             {
                 this.log.Warn("Unknown template name", () => new { template });
@@ -210,8 +209,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 simulation.Created = existingSimulation.Created;
                 simulation.Modified = DateTimeOffset.UtcNow;
-                simulation.TotalMessagesSent = existingSimulation.TotalMessagesSent;
-                simulation.AverageMessagesSent = existingSimulation.AverageMessagesSent;
+                simulation.Statistics = new Models.Simulation.StatisticsRef {
+                    AverageMessagesPerSecond = existingSimulation.Statistics.AverageMessagesPerSecond,
+                    TotalMessagesSent = existingSimulation.Statistics.TotalMessagesSent
+                };
             }
             else
             {
@@ -269,8 +270,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             if (patch.Enabled == false)
             {
                 simulation.StopTime = simulation.Modified;
-                simulation.TotalMessagesSent = patch.TotalMessagesSent;
-                simulation.AverageMessagesSent = patch.AverageMessagesSent;
+                simulation.Statistics = new Models.Simulation.StatisticsRef
+                {
+                    AverageMessagesPerSecond = patch.Statistics.AverageMessagesPerSecond,
+                    TotalMessagesSent = patch.Statistics.TotalMessagesSent
+                };
             }
 
             item = await this.storage.UpdateAsync(
