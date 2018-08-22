@@ -13,18 +13,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
     public interface IDiagnosticsLogger
     {
         Task<IHttpResponse> LogServiceStartAsync();
+
         Task<IHttpResponse> LogServiceHeartbeatAsync();
+
         Task<IHttpResponse> LogServiceErrorAsync(
             string message,
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0);
+
         Task<IHttpResponse> LogServiceErrorAsync(
             string message,
             Exception e,
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0);
+
         Task<IHttpResponse> LogServiceErrorAsync(
             string message,
             object data,
