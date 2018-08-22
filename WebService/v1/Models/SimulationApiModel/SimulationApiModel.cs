@@ -29,7 +29,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "Name")]
         public string Name { get; set; }
 
-        [JsonProperty(PropertyName = "Desc")]
+        [JsonProperty(PropertyName = "Description")]
         public string Description { get; set; }
 
         [JsonProperty(PropertyName = "Enabled")]
