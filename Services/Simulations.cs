@@ -89,10 +89,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
                 simulation.ETag = item.ETag;
+                simulation.Id = item.Key;
                 result.Add(simulation);
             }
 
-            return result.OrderByDescending(s => s.Modified).ToList();
+            // TODO: This will need changes to support pagination. Also order should be by simulation Id.
+            return result.OrderByDescending(s => s.Created).ToList();
         }
 
         /// <summary>
@@ -106,6 +108,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
                 simulation.ETag = item.ETag;
+                simulation.Id = item.Key;
                 return simulation;
             }
 
@@ -175,6 +178,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 "*");
 
             simulation.ETag = result.ETag;
+            simulation.Id = result.Key;
 
             return simulation;
         }
@@ -198,7 +202,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 if (simulation.ETag == "*")
                 {
                     simulation.ETag = existingSimulation.ETag;
-                    this.log.Info("The client used ETag='*' choosing to overwrite the current simulation");
+                    this.log.Warn("The client used ETag='*' choosing to overwrite the current simulation");
                 }
 
                 if (simulation.ETag != existingSimulation.ETag)
@@ -209,10 +213,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 simulation.Created = existingSimulation.Created;
                 simulation.Modified = DateTimeOffset.UtcNow;
-                simulation.Statistics = new Models.Simulation.StatisticsRef {
-                    AverageMessagesPerSecond = existingSimulation.Statistics.AverageMessagesPerSecond,
-                    TotalMessagesSent = existingSimulation.Statistics.TotalMessagesSent
-                };
             }
             else
             {
@@ -236,6 +236,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             // Return the new ETag provided by the storage
             simulation.ETag = result.ETag;
+            simulation.Id = result.Key;
 
             return simulation;
         }
@@ -269,7 +270,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             if (patch.Enabled == false)
             {
-                simulation.StopTime = simulation.Modified;
+                simulation.StoppedTime = simulation.Modified;
                 simulation.Statistics = new Models.Simulation.StatisticsRef
                 {
                     AverageMessagesPerSecond = patch.Statistics.AverageMessagesPerSecond,
@@ -284,6 +285,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 patch.ETag);
 
             simulation.ETag = item.ETag;
+            simulation.Id = item.Key;
 
             return simulation;
         }
@@ -307,7 +309,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public IEnumerable<string> GetDeviceIds(Models.Simulation simulation)
         {
             var deviceIds = new List<string>();
-            var simulationId = simulation.Id;
 
             // Calculate the device IDs used in the simulation
             var models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
@@ -315,7 +316,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 for (var i = 0; i < model.Count; i++)
                 {
-                    deviceIds.Add(this.devices.GenerateId(simulationId, model.Id, i));
+                    deviceIds.Add(this.devices.GenerateId(model.Id, i));
                 }
             }
 

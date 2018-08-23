@@ -198,7 +198,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                         for (var i = 0; i < model.Count; i++)
                         {
-                            this.CreateActorsForDevice(simulation.Id, deviceModel, i, total);
+                            this.CreateActorsForDevice(deviceModel, i, total);
                         }
                     }
                     catch (ResourceNotFoundException)
@@ -482,9 +482,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
          * one actor to manage the connection to the hub, and one actor for each
          * telemetry message to send.
          */
-        private void CreateActorsForDevice(string simulationId, DeviceModel deviceModel, int position, int total)
+        private void CreateActorsForDevice(DeviceModel deviceModel, int position, int total)
         {
-            var deviceId = this.devices.GenerateId(simulationId, deviceModel.Id, position);
+            var deviceId = this.devices.GenerateId(deviceModel.Id, position);
             var key = deviceModel.Id + "#" + position;
 
             this.log.Debug("Creating device actors...",

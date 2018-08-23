@@ -12,7 +12,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
     public class SimulationStatistics
     {
-        public int TotalMessagesSent { get; set; }
+        public long TotalMessagesSent { get; set; }
         public double AverageMessagesPerSecond { get; set; }
     }
 }

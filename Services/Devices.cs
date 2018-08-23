@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
-using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Common.Exceptions;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -49,7 +48,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Generate a device Id
         /// </summary>
-        string GenerateId(string simulationId, string deviceModelId, int position);
+        string GenerateId(string deviceModelId, int position);
     }
 
     public class Devices : IDevices
@@ -318,9 +317,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Generate a device Id
         /// </summary>
-        public string GenerateId(string simulationId, string deviceModelId, int position)
+        public string GenerateId(string deviceModelId, int position)
         {
-            return simulationId + "." + deviceModelId + "." + position;
+            return deviceModelId + "." + position;
         }
 
         // Log the errors occurred during a batch operation

@@ -11,12 +11,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
     {
         private DateTimeOffset? startTime;
         private DateTimeOffset? endTime;
-        private DateTimeOffset? stopTime;
+        private DateTimeOffset? stoppedTime;
         private string iotHubConnectionString;
 
+        // When Simulation is written to storage, Id and Etag are not serialized as part of body
+        // These are instead written in dedicated columns (key and eTag)
         [JsonIgnore]
         public string ETag { get; set; }
-
+        [JsonIgnore]
         public string Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
@@ -38,10 +40,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             set => this.endTime = value ?? DateTimeOffset.MaxValue;
         }
 
-        public DateTimeOffset? StopTime
+        public DateTimeOffset? StoppedTime
         {
-            get => this.stopTime;
-            set => this.stopTime = value ?? DateTimeOffset.MaxValue;
+            get => this.stoppedTime;
+            set => this.stoppedTime = value ?? DateTimeOffset.MaxValue;
         }
 
         public string IotHubConnectionString
@@ -73,7 +75,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         public class StatisticsRef
         {
-            public int TotalMessagesSent { get; set; }
+            public long TotalMessagesSent { get; set; }
             public double AverageMessagesPerSecond { get; set; }
         }
 

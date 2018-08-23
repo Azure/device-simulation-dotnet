@@ -370,7 +370,6 @@ namespace SimulationAgent.Test
             this.devices
                 .Setup(x => x.GenerateId(
                     It.IsAny<string>(),
-                    It.IsAny<string>(),
                     It.IsAny<int>()))
                 .Returns("Simulate-01");
         }

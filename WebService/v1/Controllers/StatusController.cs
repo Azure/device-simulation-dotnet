@@ -70,15 +70,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         }
 
         // TODO: reduce method complexity, refactor out some logic
-        [HttpGet("{id}")]
-        public async Task<StatusApiModel> GetAsync(string id)
+        [HttpGet()]
+        public async Task<StatusApiModel> GetAsync()
         {
             var result = new StatusApiModel();
             var statusMsg = SERVICE_IS_HEALTHY;
             var errors = new List<string>();
 
             // Simulation status
-            var simulationIsRunning = await this.CheckIsSimulationRunningAsync(id, errors);
+            var simulationIsRunning = await this.CheckIsSimulationRunningAsync(errors);
             var isRunning = simulationIsRunning.HasValue && simulationIsRunning.Value;
             result.Properties.Add(SIMULATION_RUNNING_KEY,
                 simulationIsRunning.HasValue
@@ -102,6 +102,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 statusIsOk = statusIsOk && preprovisioneHubStatus.Item1;
 
                 result.Dependencies.Add(PREPROVISIONED_IOTHUB_KEY, preprovisioneHubStatus?.Item2);
+
                 if (isRunning)
                 {
                     result.Properties.Add(PREPROVISIONED_IOTHUB_INUSE_KEY, this.IsPreprovisionedIoTHubInUse(isRunning));
@@ -112,40 +113,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                     }
                 }
             }
-
-            /*
-             * TODO: move counters to the solution endpoint, so that when we run multiple simulations, each simulation
-             * will have its own counters. Also, when simulations will be distributed over multiple VMs, counters will
-             * need to be aggregated (vs than kept in memory).
-             */
-
-            // Active devices count
-            string activeDevicesCount = this.GetActiveDevicesCount(isRunning).ToString();
-            result.Properties.Add(ACTIVE_DEVICES_COUNT_KEY, activeDevicesCount);
-
-            // Total telemetry messages count
-            string totalMessagesCount = this.GetTotalMessagesCount(isRunning).ToString();
-            result.Properties.Add(TOTAL_MESSAGES_COUNT_KEY, totalMessagesCount);
-
-            // Failed telemetry messages count
-            string failedMessagesCount = this.GetFailedMessagesCount(isRunning).ToString();
-            result.Properties.Add(FAILED_MESSAGES_COUNT_KEY, failedMessagesCount);
-
-            // Telemetry messages thoughput
-            string messagesPerSecond = this.GetMessagesPerSecond(isRunning).ToString("F");
-            result.Properties.Add(MESSAGES_PER_SECOND_KEY, messagesPerSecond);
-
-            // Failed device connections count
-            string failedDeviceConnectionsCount = this.GetFailedDeviceConnectionsCount(isRunning).ToString();
-            result.Properties.Add(FAILED_DEVICE_CONNECTIONS_COUNT_KEY, failedDeviceConnectionsCount);
-
-            // Failed device connections count
-            string failedDeviceTwinUpdatesCount = this.GetFailedDeviceTwinUpdatesCount(isRunning).ToString();
-            result.Properties.Add(FAILED_DEVICE_TWIN_UPDATES_COUNT_KEY, failedDeviceTwinUpdatesCount);
-
-            // Simulation errors count
-            string simulationErrorsCount = this.GetSimulationErrorsCount(isRunning).ToString();
-            result.Properties.Add(SIMULATION_ERRORS_COUNT_KEY, simulationErrorsCount);
 
             // Prepare status message and response
             if (!statusIsOk)
@@ -158,21 +125,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             this.log.Info("Service status request", () => new
             {
                 Healthy = statusIsOk,
-                statusMsg,
-                running = simulationIsRunning
+                statusMsg
             });
 
             return result;
         }
 
         // Check whether the simulation is running, and populate errors if any
-        private async Task<bool?> CheckIsSimulationRunningAsync(string id, List<string> errors)
+        private async Task<bool?> CheckIsSimulationRunningAsync(List<string> errors)
         {
             bool? simulationRunning = null;
             try
             {
-                var simulation = (await this.simulations.GetAsync(id));
-                simulationRunning = (simulation != null && simulation.ShouldBeRunning());
+                var runningSimulations = (await this.simulations.GetListAsync()).Where(sim => sim.ShouldBeRunning());
+                simulationRunning = (runningSimulations != null && runningSimulations.Count() > 0);
             }
             catch (Exception e)
             {
@@ -268,55 +234,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                    $"#resource/subscriptions/{this.deploymentConfig.AzureSubscriptionId}" +
                    $"/resourceGroups/{this.deploymentConfig.AzureResourceGroup}" +
                    $"/providers/Microsoft.Devices/IotHubs/{this.deploymentConfig.AzureIothubName}/Metrics";
-        }
-
-        private long GetActiveDevicesCount(bool isRunning)
-        {
-            if (!isRunning) return 0;
-
-            return this.simulationRunner.ActiveDevicesCount;
-        }
-
-        private long GetTotalMessagesCount(bool isRunning)
-        {
-            if (!isRunning) return 0;
-
-            return this.simulationRunner.TotalMessagesCount;
-        }
-
-        private long GetFailedMessagesCount(bool isRunning)
-        {
-            if (!isRunning) return 0;
-
-            return this.simulationRunner.FailedMessagesCount;
-        }
-
-        private double GetMessagesPerSecond(bool isRunning)
-        {
-            if (!isRunning) return 0;
-
-            return this.rateReporter.GetThroughputForMessages();
-        }
-
-        private long GetFailedDeviceConnectionsCount(bool isRunning)
-        {
-            if (!isRunning) return 0;
-
-            return this.simulationRunner.FailedDeviceConnectionsCount;
-        }
-
-        private long GetFailedDeviceTwinUpdatesCount(bool isRunning)
-        {
-            if (!isRunning) return 0;
-
-            return this.simulationRunner.FailedDeviceTwinUpdatesCount;
-        }
-
-        private long GetSimulationErrorsCount(bool isRunning)
-        {
-            if (!isRunning) return 0;
-
-            return this.simulationRunner.SimulationErrorsCount;
         }
     }
 }

@@ -35,23 +35,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "Enabled")]
         public bool? Enabled { get; set; }
 
+        [JsonProperty(PropertyName = "IsRunning")]
+        public bool? IsRunning { get; set; }
+
         [JsonProperty(PropertyName = "IoTHub")]
         public SimulationIotHub IotHub { get; set; }
 
-        [JsonProperty(PropertyName = "StartTime", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(PropertyName = "StartTime")]
         public string StartTime { get; set; }
 
-        [JsonProperty(PropertyName = "EndTime", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(PropertyName = "EndTime")]
         public string EndTime { get; set; }
 
-        [JsonProperty(PropertyName = "StopTime", NullValueHandling = NullValueHandling.Ignore)]
-        public string StopTime { get; set; }
+        [JsonProperty(PropertyName = "StoppedTime")]
+        public string StoppedTime { get; set; }
 
         [JsonProperty(PropertyName = "DeviceModels")]
         public IList<SimulationDeviceModelRef> DeviceModels { get; set; }
 
         [JsonProperty(PropertyName = "Statistics")]
-        public SimulationStatisticsRef Statistics{ get; set; }
+        public SimulationStatistics Statistics{ get; set; }
 
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
@@ -74,9 +77,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             this.IotHub = null;
             this.StartTime = null;
             this.EndTime = null;
-            this.StopTime = null;
+            this.StoppedTime = null;
             this.DeviceModels = new List<SimulationDeviceModelRef>();
-            this.Statistics = new SimulationStatisticsRef();
+            this.Statistics = new SimulationStatistics();
         }
 
         // Map API model to service model
@@ -96,10 +99,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Enabled = this.Enabled ?? true,
                 StartTime = DateHelper.ParseDateExpression(this.StartTime, now),
                 EndTime = DateHelper.ParseDateExpression(this.EndTime, now),
-                StopTime = DateHelper.ParseDateExpression(this.StopTime, now),
                 IotHubConnectionString = SimulationIotHub.ToServiceModel(this.IotHub),
-                DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList(),
-                Statistics = SimulationStatisticsRef.ToServiceModel(this.Statistics)
+                DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList()
             };
 
             return result;
@@ -119,7 +120,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Enabled = value.Enabled,
                 StartTime = value.StartTime.ToString(),
                 EndTime = value.EndTime.ToString(),
-                StopTime = value.StopTime.ToString(),
+                StoppedTime = value.StoppedTime.ToString(),
                 IotHub = new SimulationIotHub(value.IotHubConnectionString)
             };
 
@@ -136,13 +137,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             }
 
             // Ignore the date if the simulation doesn't have an end time
-            if (value.StopTime.HasValue && !value.StopTime.Value.Equals(DateTimeOffset.MaxValue))
+            if (value.StoppedTime.HasValue && !value.StoppedTime.Value.Equals(DateTimeOffset.MaxValue))
             {
-                result.StopTime = value.StopTime?.ToString(DATE_FORMAT);
+                result.StoppedTime = value.StoppedTime?.ToString(DATE_FORMAT);
             }
 
             result.DeviceModels = SimulationDeviceModelRef.FromServiceModel(value.DeviceModels);
-            result.Statistics = SimulationStatisticsRef.FromServiceModel(value.Statistics);
+            result.Statistics = SimulationStatistics.FromServiceModel(value.Statistics);
             result.created = value.Created;
             result.modified = value.Modified;
 
