@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using Jint.Parser;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
@@ -16,21 +15,25 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelScriptApiModel;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers
 {
     [ExceptionsFilter]
     public class DeviceModelScriptsController : Controller
     {
-        private readonly string ApplicationJavascript = "application/javascript";
+        private const string ApplicationJavascript = "application/javascript";
         private readonly ILogger log;
         private readonly IDeviceModelScripts simulationScriptService;
+        private readonly IJavascriptInterpreter javascriptInterpreter;
 
         public DeviceModelScriptsController(
             IDeviceModelScripts simulationScriptService,
+            IJavascriptInterpreter javascriptInterpreter,
             ILogger logger)
         {
             this.simulationScriptService = simulationScriptService;
+            this.javascriptInterpreter = javascriptInterpreter;
             this.log = logger;
         }
 
@@ -47,7 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         }
 
         [HttpPost(Version.PATH + "/[controller]!validate")]
-        public async Task<ActionResult> Validate(IFormFile file)
+        public ActionResult Validate(IFormFile file)
         {
             if (file == null)
             {
@@ -55,7 +58,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data provided.");
             }
 
-            if (file.ContentType != this.ApplicationJavascript)
+            if (file.ContentType != ApplicationJavascript)
             {
                 this.log.Warn("Wrong content type provided", () => new { file.ContentType });
                 throw new BadRequestException("Wrong content type provided.");
@@ -63,26 +66,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
             try
             {
-                var parser = new JavaScriptParser();
-                var reader = new StreamReader(file.OpenReadStream());
-                var rawScript = reader.ReadToEnd();
-                parser.Parse(rawScript);
+                var content = this.javascriptInterpreter.Validate(file.OpenReadStream());
             }
             catch (Exception e)
             {
-                var result = new JsonResult(new ValidationApiModel
+                return new JsonResult(new ValidationApiModel
+                {
+                    IsValid = false,
+                    Messages = new List<string>
                     {
-                        IsValid = false,
-                        Messages = new List<string>
-                        {
-                            e.Message
-                        }
-                    })
-                    { StatusCode = (int) HttpStatusCode.BadRequest };
-                return await Task.FromResult(result);
+                        e.Message
+                    }
+                })
+                { StatusCode = (int)HttpStatusCode.BadRequest };
             }
 
-            return await Task.FromResult(new JsonResult(new ValidationApiModel()) { StatusCode = (int) HttpStatusCode.OK });
+            return new JsonResult(new ValidationApiModel()) { StatusCode = (int)HttpStatusCode.OK };
         }
 
         [HttpPost(Version.PATH + "/[controller]")]
@@ -94,7 +93,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data provided.");
             }
 
-            if (file.ContentType != this.ApplicationJavascript)
+            if (file.ContentType != ApplicationJavascript)
             {
                 this.log.Warn("Wrong content type provided", () => new { file.ContentType });
                 throw new BadRequestException("Wrong content type provided.");
@@ -104,8 +103,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
             try
             {
-                var reader = new StreamReader(file.OpenReadStream());
-                deviceModelScript.Content = reader.ReadToEnd();
+                var content = this.javascriptInterpreter.Validate(file.OpenReadStream());
+                deviceModelScript.Content = content;
                 deviceModelScript.Name = file.FileName;
             }
             catch (Exception e)

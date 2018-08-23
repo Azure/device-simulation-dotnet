@@ -39,6 +39,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         Task DeleteAsync(string id);
     }
+
     public class DeviceModelScripts : IDeviceModelScripts
     {
         private const string STORAGE_COLLECTION = "deviceModelScripts";
@@ -206,7 +207,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     deviceModelScript.Created = item.Created;
                     deviceModelScript.Modified = DateTimeOffset.UtcNow;
 
-                    this.log.Debug("Modifying a custom  deviceModel script via PUT.", () => new { deviceModelScript });
+                    this.log.Debug("Modifying a custom device model script.", () => new { deviceModelScript });
 
                     var result = await this.storage.UpdateAsync(
                         STORAGE_COLLECTION,
@@ -220,7 +221,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 else
                 {
                     this.log.Error("Invalid ETag.", () => new { CurrentETag = item.ETag, ETagProvided = eTag });
-                    throw new ConflictingResourceException("Invalid ETag. Simulation script ETag is:'" + item.ETag + "'.");
+                    throw new ConflictingResourceException("Invalid ETag. Device model script ETag is:'" + item.ETag + "'.");
                 }
             }
             catch (ConflictingResourceException)
@@ -236,7 +237,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception exception)
             {
-                this.log.Error("Something went wrong while upserting the  device model script.", () => new { deviceModelScript });
+                this.log.Error("Something went wrong while upserting the device model script.", () => new { deviceModelScript });
                 throw new ExternalDependencyException("Failed to upsert: " + exception.Message, exception);
             }
 

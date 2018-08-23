@@ -14,9 +14,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 {
     public class Script
     {
+        public string Id { get; set; }
         public string Type { get; set; }
         public string Path { get; set; }
-        public string Id { get; set; }
 
         // Dynamic object passed in input to the script, the schema is
         // defined by receiving script

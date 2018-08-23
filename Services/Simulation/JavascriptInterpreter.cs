@@ -23,6 +23,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             Dictionary<string, object> context,
             ISmartDictionary state,
             ISmartDictionary properties);
+        string Validate(Stream stream);
     }
 
     public class JavascriptInterpreter : IJavascriptInterpreter
@@ -81,46 +82,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             try
             {
                 Program program;
-                string filename;
                 bool isInStorage = string.Equals(script.Path.Trim(),
                     DeviceModelScript.DeviceModelScriptPath.Storage.ToString(),
                     StringComparison.OrdinalIgnoreCase);
+                string filename = isInStorage ? script.Id : script.Path;
 
-                if (isInStorage)
+                if (programs.ContainsKey(filename))
                 {
-                    filename = script.Id;
-                    if (programs.ContainsKey(filename))
-                    {
-                        program = programs[filename];
-                    }
-                    else
-                    {
-                        var task = this.LoadScriptAsync(script.Id);
-                        task.Wait(TimeSpan.FromSeconds(30));
-                        var sourceCode = task.Result;
-
-                        this.log.Debug("Compiling script source code", () => new { filename });
-                        program = parser.Parse(sourceCode);
-                        programs.Add(filename, program);
-                    }
+                    program = programs[filename];
                 }
                 else
                 {
-                    filename = script.Path;
-                    if (programs.ContainsKey(filename))
-                    {
-                        program = programs[filename];
-                    }
-                    else
-                    {
-                        var sourceCode = this.LoadScript(filename);
+                    var task = this.LoadScriptAsync(filename, isInStorage);
+                    task.Wait(TimeSpan.FromSeconds(30));
+                    var sourceCode = task.Result;
 
-                        this.log.Debug("Compiling script source code", () => new { filename });
-                        program = parser.Parse(sourceCode);
-                        programs.Add(filename, program);
-                    }
+                    this.log.Debug("Compiling script source code", () => new { filename });
+                    program = parser.Parse(sourceCode);
+                    programs.Add(filename, program);
                 }
-
                 this.log.Debug("Executing JS function", () => new { filename });
 
                 engine.Execute(program).Invoke(
@@ -136,6 +116,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             {
                 this.log.Error("JS function failure", e);
             }
+        }
+
+        /// <summary>
+        /// Reading a stream and try to parse it as javasript.
+        /// </summary>
+        public string Validate(Stream stream)
+        {
+            var parser = new JavaScriptParser();
+            var reader = new StreamReader(stream);
+            var rawScript = reader.ReadToEnd();
+            try
+            {
+                parser.Parse(rawScript);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return rawScript;
         }
 
         /// <summary>
@@ -190,22 +190,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             }
         }
 
-        private string LoadScript(string filename)
+        private async Task<string> LoadScriptAsync(string filename, bool isInStorage)
         {
-            var filePath = this.folder + filename;
-            if (!File.Exists(filePath))
+            if (isInStorage)
             {
-                this.log.Error("Javascript file not found", () => new { filePath });
-                throw new FileNotFoundException($"File {filePath} not found.");
+                var script = await this.simulationScripts.GetAsync(filename);
+                return script.Content;
             }
+            else
+            {
+                var filePath = this.folder + filename;
+                if (!File.Exists(filePath))
+                {
+                    this.log.Error("Javascript file not found", () => new { filePath });
+                    throw new FileNotFoundException($"File {filePath} not found.");
+                }
 
-            return File.ReadAllText(filePath);
-        }
-
-        private async Task<string> LoadScriptAsync(string id)
-        {
-            var script = await this.simulationScripts.GetAsync(id);
-            return script.Content;
+                return File.ReadAllText(filePath);
+            }
         }
 
         private void JsLog(object data)

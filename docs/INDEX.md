@@ -42,5 +42,5 @@ calls.
   * [Simulations](API_SPECS_SIMULATIONS.md)
   * [Device model scripts](API_SPECS_DEVICE_MODEL_SCRIPTS.md)
   * [Service](API_SPECS_SERVICE.md)
-  * [Device models](DEVICE_MODELS.md)
-  * [Contributing to the project](CONTRIBUTING.md)
+ * [Device models](DEVICE_MODELS.md)
+ * [Contributing to the project](CONTRIBUTING.md)

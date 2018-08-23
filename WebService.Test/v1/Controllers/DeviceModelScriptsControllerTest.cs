@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Moq;
@@ -19,16 +20,19 @@ namespace WebService.Test.v1.Controllers
     public class DeviceModelScriptsControllerTest
     {
         private readonly Mock<IDeviceModelScripts> deviceModelScriptsService;
+        private readonly Mock<IJavascriptInterpreter> javascriptInterpreter;
         private readonly Mock<ILogger> logger;
         private readonly DeviceModelScriptsController target;
 
         public DeviceModelScriptsControllerTest()
         {
             this.deviceModelScriptsService = new Mock<IDeviceModelScripts>();
+            this.javascriptInterpreter = new Mock<IJavascriptInterpreter>();
             this.logger = new Mock<ILogger>();
 
             this.target = new DeviceModelScriptsController(
                 this.deviceModelScriptsService.Object,
+                this.javascriptInterpreter.Object,
                 this.logger.Object);
         }
 
@@ -160,7 +164,7 @@ namespace WebService.Test.v1.Controllers
             IFormFile file = this.SetupFileMock();
 
             // Act
-            var result = this.target.Validate(file).Result;
+            var result = this.target.Validate(file);
 
             // Assert
             Assert.NotNull(result);
@@ -173,11 +177,8 @@ namespace WebService.Test.v1.Controllers
             // Arrange
             var fileMock = new Mock<IFormFile>();
 
-
             // Act & Assert
-            Assert.ThrowsAsync<BadRequestException>(
-                    async () => await this.target.Validate(fileMock.Object))
-                .Wait(Constants.TEST_TIMEOUT);
+            Assert.Throws<BadRequestException>(() =>  this.target.Validate(fileMock.Object));
         }
 
         private IFormFile SetupFileMock()
