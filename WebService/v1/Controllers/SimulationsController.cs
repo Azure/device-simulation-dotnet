@@ -6,7 +6,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
@@ -19,8 +18,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
     public class SimulationsController : Controller
     {
         private readonly ISimulations simulationsService;
-        private readonly IServicesConfig servicesConfig;
-        private readonly IDeploymentConfig deploymentConfig;
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly ISimulationRunner simulationRunner;
         private readonly IRateLimiting rateReporter;
@@ -28,15 +25,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
         public SimulationsController(
             ISimulations simulationsService,
-            IServicesConfig servicesConfig,
-            IDeploymentConfig deploymentConfig,
             IIotHubConnectionStringManager connectionStringManager,
             ISimulationRunner simulationRunner,
             IRateLimiting rateReporter,
             ILogger logger)
         {
-            this.servicesConfig = servicesConfig;
-            this.deploymentConfig = deploymentConfig;
             this.simulationsService = simulationsService;
             this.connectionStringManager = connectionStringManager;
             this.simulationRunner = simulationRunner;
@@ -58,7 +51,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
             // Simulation status
             var isRunning = (simulation != null && simulation.ShouldBeRunning());
-            simulationApiModel.IsRunning = isRunning;
+            simulationApiModel.Running = isRunning;
 
             if (isRunning)
             {
@@ -82,9 +75,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
                 // Simulation errors count
                 simulationApiModel.Statistics.SimulationErrorsCount = this.simulationRunner.SimulationErrorsCount;
-
-                // IoT Hub Metrics Url
-                simulationApiModel.Statistics.IoTHubMetricsUrl = this.GetIoTHubMetricsUrl();
             }
 
             return simulationApiModel;
@@ -154,21 +144,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         public async Task DeleteAsync(string id)
         {
             await this.simulationsService.DeleteAsync(id);
-        }
-
-        // If the simulation is running with the conn string in the config then return a URL to the metrics
-        private string GetIoTHubMetricsUrl()
-        {
-            var csInUse = this.connectionStringManager.GetIotHubConnectionString().ToLowerInvariant().Trim();
-            var csInConf = this.servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
-
-            // Return the URL only when the simulation is running with the configured conn string
-            if (csInUse != csInConf) return string.Empty;
-
-            return $"https://portal.azure.com/{this.deploymentConfig.AzureSubscriptionDomain}" +
-                   $"#resource/subscriptions/{this.deploymentConfig.AzureSubscriptionId}" +
-                   $"/resourceGroups/{this.deploymentConfig.AzureResourceGroup}" +
-                   $"/providers/Microsoft.Devices/IotHubs/{this.deploymentConfig.AzureIothubName}/Metrics";
         }
     }
 }

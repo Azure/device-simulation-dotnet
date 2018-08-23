@@ -137,8 +137,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             bool? simulationRunning = null;
             try
             {
-                var runningSimulations = (await this.simulations.GetListAsync()).Where(sim => sim.ShouldBeRunning());
-                simulationRunning = (runningSimulations != null && runningSimulations.Count() > 0);
+                var simulationList = await this.simulations.GetListAsync();
+                var runningSimulation = simulationList.FirstOrDefault(s => s.ShouldBeRunning());
+                simulationRunning = (runningSimulation != null);
             }
             catch (Exception e)
             {

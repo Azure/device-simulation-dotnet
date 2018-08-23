@@ -27,9 +27,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "SimulationErrorsCount")]
         public long SimulationErrorsCount { get; set; }
 
-        [JsonProperty(PropertyName = "IoTHubMetricsUrl")]
-        public string IoTHubMetricsUrl { get; set; }
-
         // Default constructor used by web service requests
         public SimulationStatistics()
         {
@@ -39,7 +36,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             this.FailedDeviceConnectionsCount = 0;
             this.FailedDeviceTwinUpdatesCount = 0;
             this.SimulationErrorsCount = 0;
-            this.IoTHubMetricsUrl = string.Empty;
         }
 
         // Map API model to service model

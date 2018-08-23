@@ -35,8 +35,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "Enabled")]
         public bool? Enabled { get; set; }
 
-        [JsonProperty(PropertyName = "IsRunning")]
-        public bool? IsRunning { get; set; }
+        [JsonProperty(PropertyName = "Running")]
+        public bool? Running { get; set; }
 
         [JsonProperty(PropertyName = "IoTHub")]
         public SimulationIotHub IotHub { get; set; }
@@ -59,7 +59,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
         {
-            { "$type", "Simulation" + Version.NUMBER },
+            { "$type", "Simulation;" + Version.NUMBER },
             { "$uri", "/" + Version.PATH + "/simulations/" + this.Id },
             { "$created", this.created.ToString(DATE_FORMAT) },
             { "$modified", this.modified.ToString(DATE_FORMAT) }
