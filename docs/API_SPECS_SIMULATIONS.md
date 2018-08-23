@@ -621,7 +621,7 @@ DELETE /v1/simulations/1
 
 ## Add device in a simulation
 
-Add a device to a simulatiom using AddDevice method.
+Add a device with custom deviceId to a simulatiom using create method.
 
 Request:
 ```
@@ -637,7 +637,7 @@ Content-Type: application/json; charset=utf-8
 
 ## Delete devices in a simulation
 
-Devices in a simulation can be deleted using DeleteDevices method. 
+Devices in a simulation can be deleted using batcyDelete method. 
 The method accepts a list of upto 100 device ids to deleted.
 
 Request:
