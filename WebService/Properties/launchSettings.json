@@ -2,21 +2,19 @@
   "profiles": {
     "WebService": {
       "commandName": "Project",
-      "launchBrowser": false,
       "launchUrl": "http://localhost:9003/v1/status",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "PCS_IOTHUB_CONNSTRING": "your Azure IoT Hub connection string",
-        "PCS_STORAGEADAPTER_WEBSERVICE_URL": "http://localhost:9022/v1",
-        "PCS_LOG_LEVEL": "Debug",
-        "PCS_AUTH_REQUIRED": "false",
-        "PCS_AUTH_ISSUER": "",
-        "PCS_AUTH_AUDIENCE": "",
-        "PCS_CORS_WHITELIST": "",
-        "PCS_SUBSCRIPTION_DOMAIN": "",
         "PCS_SUBSCRIPTION_ID": "",
         "PCS_RESOURCE_GROUP": "",
-        "PCS_IOHUB_NAME": ""
+        "PCS_IOHUB_NAME": "",
+        "PCS_STORAGEADAPTER_WEBSERVICE_URL": "http://localhost:9022/v1",
+        "PCS_AUTH_REQUIRED": "false",
+        "PCS_SUBSCRIPTION_DOMAIN": "",
+        "PCS_LOG_LEVEL": "Debug",
+        "PCS_CORS_WHITELIST": "",
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "PCS_AUTH_ISSUER": "",
+        "PCS_AUTH_AUDIENCE": ""
       },
       "applicationUrl": "http://localhost:9003/v1/status"
     }
