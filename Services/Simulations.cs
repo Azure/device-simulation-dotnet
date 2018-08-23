@@ -249,6 +249,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var item = await this.storage.GetAsync(STORAGE_COLLECTION, patch.Id);
             var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
             simulation.ETag = item.ETag;
+            simulation.Id = item.Key;
 
             // Even when there's nothing to do, verify the ETag mismatch
             if (patch.ETag != simulation.ETag)
