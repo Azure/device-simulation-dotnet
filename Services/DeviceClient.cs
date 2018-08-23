@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
@@ -12,6 +13,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
@@ -34,6 +36,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         // See also https://github.com/Azure/toketi-iothubreact/blob/master/src/main/scala/com/microsoft/azure/iot/iothubreact/MessageFromDevice.scala
         private const string CREATION_TIME_PROPERTY = "$$CreationTimeUtc";
+        private const string CLASSNAME_PROPERTY = "$$ClassName";
 
         private const string MESSAGE_SCHEMA_PROPERTY = "$$MessageSchema";
         private const string CONTENT_PROPERTY = "$$ContentType";
@@ -124,20 +127,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
         {
-            var eventMessage = new Message(Encoding.UTF8.GetBytes(message));
-            eventMessage.Properties.Add(CREATION_TIME_PROPERTY, DateTimeOffset.UtcNow.ToString(DATE_FORMAT));
-            eventMessage.Properties.Add(MESSAGE_SCHEMA_PROPERTY, schema.Name);
-            eventMessage.Properties.Add(CONTENT_PROPERTY, "JSON");
-
-            eventMessage.ContentType = "application/json";
-            eventMessage.ContentEncoding = "utf-8";
-            eventMessage.MessageSchema = schema.Name;
-            eventMessage.CreationTimeUtc = DateTime.UtcNow;
-
-            this.log.Debug("Sending message from device",
-                () => new { this.deviceId, Schema = schema.Name });
-
-            await this.SendRawMessageAsync(eventMessage);
+            switch (schema.Format)
+            {
+                case DeviceModel.DeviceModelMessageSchemaFormat.JSON:
+                    await SendJsonMessageAsync(message, schema);
+                    break;
+                case DeviceModel.DeviceModelMessageSchemaFormat.Protobuf:
+                    await SendProtobufMessageAsync(message, schema);
+                    break;
+                default:
+                    throw new UnknownMessageFormatException($"Message format {schema.Format.ToString()} is invalid. Check the Telemetry format against the permitted values Binary, Text, Json, Protobuf");
+            }
         }
 
         /// <summary>
@@ -264,6 +264,73 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 throw new TelemetrySendException("Message delivery failed with " + e.Message, e);
             }
+        }
+
+        private async Task SendProtobufMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
+        {
+            var eventMessage = default(Message);
+            string className = schema.ClassName;
+            Type type = System.Reflection.Assembly.GetExecutingAssembly().GetType(schema.ClassName, false);
+
+            if (type != null)
+            {
+                object jsonObj = JsonConvert.DeserializeObject(message, type);
+
+                MethodInfo methodInfo = Utilities.GetExtensionMethod("imessage", "Google.Protobuf", "ToByteArray");
+                if (methodInfo != null)
+                {
+                    object result = methodInfo.Invoke(jsonObj, new object[] { jsonObj });
+                    if (result != null)
+                    {
+                        byte[] byteArray = result as byte[];
+                        eventMessage = new Message(byteArray);
+                        eventMessage.Properties.Add(CLASSNAME_PROPERTY, schema.ClassName);
+                    }
+                    else
+                    {
+                        throw new InvalidDataException("Json message transformation to byte array yielded null");
+                    }
+                }
+                else
+                {
+                    throw new ResourceNotFoundException($"Method: ToByteArray not found in {schema.ClassName}");
+                }
+            }
+            else
+            {
+                throw new ResourceNotFoundException($"Type: {schema.ClassName} not found");
+            }
+
+            eventMessage.Properties.Add(CREATION_TIME_PROPERTY, DateTimeOffset.UtcNow.ToString(DATE_FORMAT));
+            eventMessage.Properties.Add(MESSAGE_SCHEMA_PROPERTY, schema.Name);
+            eventMessage.Properties.Add(CONTENT_PROPERTY, schema.Format.ToString());
+
+            eventMessage.MessageSchema = schema.Name;
+            eventMessage.CreationTimeUtc = DateTime.UtcNow;
+
+            this.log.Debug("Sending message from device",
+                () => new { this.deviceId, Schema = schema.Name });
+
+            await this.SendRawMessageAsync(eventMessage);
+        }
+
+        private async Task SendJsonMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
+        {
+            var eventMessage = default(Message);
+
+            eventMessage = new Message(Encoding.UTF8.GetBytes(message));
+            eventMessage.ContentType = "application/json";
+            eventMessage.ContentEncoding = "utf-8";
+            eventMessage.Properties.Add(CREATION_TIME_PROPERTY, DateTimeOffset.UtcNow.ToString(DATE_FORMAT));
+            eventMessage.Properties.Add(MESSAGE_SCHEMA_PROPERTY, schema.Name);
+            eventMessage.Properties.Add(CONTENT_PROPERTY, schema.Format.ToString());
+            eventMessage.MessageSchema = schema.Name;
+            eventMessage.CreationTimeUtc = DateTime.UtcNow;
+
+            this.log.Debug("Sending message from device",
+                () => new { this.deviceId, Schema = schema.Name });
+
+            await this.SendRawMessageAsync(eventMessage);
         }
 
         private TwinCollection SmartDictionaryToTwinCollection(ISmartDictionary dictionary)
