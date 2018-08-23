@@ -216,6 +216,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     }
                 }
 
+                foreach (var customDevice in simulation.CustomDevices)
+                {
+                    this.AddCustomDevice(customDevice.DeviceId, customDevice.DeviceModel.Id);
+                }
+
                 // Use `running` to avoid starting the simulation more than once
                 this.running = true;
 
@@ -279,9 +284,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         public async Task AddDevice(string deviceId, string modelId)
         {
-            DeviceModel model = this.GetDeviceModel(modelId, null);
-
-            this.CreateActorsForDevice(model, 0, 1, deviceId);
+            this.AddCustomDevice(deviceId, modelId);
         }
 
         /// <summary>
@@ -708,6 +711,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private void IncrementSimulationErrorsCount()
         {
             Interlocked.Increment(ref this.simulationErrors);
+        }
+
+        private void AddCustomDevice(string deviceId, string modelId)
+        {
+            DeviceModel model = this.GetDeviceModel(modelId, null);
+            this.CreateActorsForDevice(model, 0, 1, deviceId);
         }
     }
 }
