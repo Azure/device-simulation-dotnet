@@ -36,19 +36,19 @@
         {
             "Interval": "00:00:10",
             "MessageTemplate": "{\"latitude\":${latitude},\"longitude\":${longitude},\"speed\": ${speed},\"speed_unit\":\"${speed_unit}\",\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\"}",
-          "MessageSchema": {
-            "Name": "Truck;v1",
-            "ClassName": "Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Protobuf.Models.Truck",
-            "Format": "Protobuf",
-            "Fields": {
-              "latitude": "double",
-              "longitude": "double",
-              "speed": "double",
-              "speed_unit": "text",
-              "temperature": "double",
-              "temperature_unit": "text"
+            "MessageSchema": {
+              "Name": "Truck;v1",
+              "ClassName": "Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Protobuf.Truck",
+              "Format": "Protobuf",
+              "Fields": {
+                "latitude": "double",
+                "longitude": "double",
+                "speed": "double",
+                "speed_unit": "text",
+                "temperature": "double",
+                "temperature_unit": "text"
+              }
             }
-          }
         }
     ],
     "CloudToDeviceMethods": {
