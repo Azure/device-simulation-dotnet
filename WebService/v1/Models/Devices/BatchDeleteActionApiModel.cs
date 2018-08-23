@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System.Collections.Generic; 
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Devices
 {
     public class BatchDeleteActionApiModel
     {
@@ -17,7 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
         public BatchDeleteActionApiModel(List<string> items)
         {
-            this.DeviceIds = items;
+            this.DeviceIds = items ?? new List<string>();
         }
     }
 }

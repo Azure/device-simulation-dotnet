@@ -16,13 +16,12 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnec
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
-using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
     public interface ISimulationRunner
     {
-        void Start(Services.Models.Simulation simulation);
+        void Start(Simulation simulation);
         void Stop();
         Task AddDeviceAsync(string deviceId, string modelId);
         Task DeleteDevicesAsync(List<string> ids);
@@ -146,7 +145,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         /// create an actor responsible for
         /// sending the telemetry.
         /// </summary>
-        public void Start(Services.Models.Simulation simulation)
+        public void Start(Simulation simulation)
         {
             // Use `starting` to exit as soon as possible, to minimize the number 
             // of threads pending on the lock statement
@@ -298,7 +297,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                 if (ids.Contains(deviceId))
                 {
-                    this.log.Info("Deleting device id ", () => new { deviceId });
+                    this.log.Info("Deleting device", () => new { deviceId });
                     device.Value.Delete();
                 }
             }
@@ -326,7 +325,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                                              this.deviceTelemetryActors.Sum(a => a.Value.FailedMessagesCount) +
                                              this.devicePropertiesActors.Sum(a => a.Value.SimulationErrorsCount);
 
-        private DeviceModel GetDeviceModel(string id, Services.Models.Simulation.DeviceModelOverride overrides)
+        private DeviceModel GetDeviceModel(string id, Simulation.DeviceModelOverride overrides)
         {
             var modelDef = new DeviceModel();
             if (id.ToLowerInvariant() != DeviceModels.CUSTOM_DEVICE_MODEL_ID.ToLowerInvariant())

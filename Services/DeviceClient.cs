@@ -130,10 +130,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             switch (schema.Format)
             {
                 case DeviceModel.DeviceModelMessageSchemaFormat.JSON:
-                    await SendJsonMessageAsync(message, schema);
+                    await this.SendJsonMessageAsync(message, schema);
                     break;
                 case DeviceModel.DeviceModelMessageSchemaFormat.Protobuf:
-                    await SendProtobufMessageAsync(message, schema);
+                    await this.SendProtobufMessageAsync(message, schema);
                     break;
                 default:
                     throw new UnknownMessageFormatException($"Message format {schema.Format.ToString()} is invalid. Check the Telemetry format against the permitted values Binary, Text, Json, Protobuf");

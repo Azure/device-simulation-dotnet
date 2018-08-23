@@ -21,7 +21,7 @@ namespace SimulationAgent.Test.DeviceConnection
         private const string DEVICE_ID = "01";
 
         private readonly Mock<ILogger> logger;
-        private Mock<IDevices> devices;
+        private readonly Mock<IDevices> devices;
         private readonly Mock<IScriptInterpreter> scriptInterpreter;
         private readonly Mock<IDeviceClient> deviceClient;
         private readonly Mock<IDeviceStateActor> deviceStateActor;
@@ -29,8 +29,8 @@ namespace SimulationAgent.Test.DeviceConnection
         private readonly Mock<IRateLimitingConfig> rateLimitingConfig;
         private readonly Mock<ConnectionLoopSettings> loopSettings;
 
-        private DeviceModel deviceModel;
-        private Disconnect target;
+        private readonly DeviceModel deviceModel;
+        private readonly Disconnect target;
 
         public DisconnectTest(ITestOutputHelper log)
         {
@@ -53,7 +53,7 @@ namespace SimulationAgent.Test.DeviceConnection
             // Arrange
             this.SetupDeviceConnectionActor();
             this.target.Setup(this.deviceConnectionActor.Object, DEVICE_ID, this.deviceModel);
-            this.deviceConnectionActor.Setup(x => x.Client).Returns(deviceClient.Object);
+            this.deviceConnectionActor.Setup(x => x.Client).Returns(this.deviceClient.Object);
             
             // Act
             await this.target.RunAsync();

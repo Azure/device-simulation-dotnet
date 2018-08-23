@@ -362,6 +362,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
                 case ActorEvents.Disconnected:
                     this.actorLogger.DeviceDisconnected();
+                    // TODO: this works for the time being, but disconnection should not always lead to a deregistration
+                    //       e.g. there are simulation scenarios where the device might just need to disconnect
                     this.ScheduleDeregistration();
                     break;
 
@@ -446,7 +448,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     When = this.log.FormatDate(this.whenToRun)
                 });
         }
-
 
         private void ScheduleDeregistration()
         {

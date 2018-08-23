@@ -5,9 +5,9 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Newtonsoft.Json;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Devices
 {
-    public class AddDeviceApiModel
+    public class CreateActionApiModel
     {
         [JsonProperty(PropertyName = "DeviceId")]
         public string DeviceId { get; set; }
@@ -15,7 +15,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "ModelId")]
         public string ModelId { get; set; }
 
-        public AddDeviceApiModel()
+        public CreateActionApiModel()
         {
             this.DeviceId = null;
             this.ModelId = null;
@@ -24,7 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         public async Task ValidateInputRequest(ILogger log)
         {
             const string INVALID_DEVICE_NAME = "Device name is invalid";
-            const string INVALID_DEVICE_MODELID = "Device model id is invalid";
+            const string INVALID_DEVICE_MODEL_ID = "Device model id is invalid";
             
             if (string.IsNullOrEmpty(this.DeviceId))
             {
@@ -34,8 +34,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
             if (string.IsNullOrEmpty(this.ModelId))
             {
-                log.Error(INVALID_DEVICE_MODELID, () => new { device = this });
-                throw new BadRequestException(INVALID_DEVICE_MODELID);
+                log.Error(INVALID_DEVICE_MODEL_ID, () => new { device = this });
+                throw new BadRequestException(INVALID_DEVICE_MODEL_ID);
             }
         }
     }

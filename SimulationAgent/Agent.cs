@@ -15,8 +15,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     public interface ISimulationAgent
     {
         Task RunAsync();
-        Task AddDevice(string name, string modelId);
-        Task DeleteDevices(List<string> ids);
+        Task AddDeviceAsync(string name, string modelId);
+        Task DeleteDevicesAsync(List<string> ids);
         void Stop();
     }
 
@@ -94,7 +94,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.runner.Stop();
         }
 
-        public async Task AddDevice(string deviceId, string modelId)
+        public async Task AddDeviceAsync(string deviceId, string modelId)
         {
             if (this.simulation != null && this.IsDeviceModelIdValidAsync(modelId))
             {
@@ -121,7 +121,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        public async Task DeleteDevices(List<string> ids)
+        public async Task DeleteDevicesAsync(List<string> ids)
         {
             this.log.Info("Update simulation");
 
