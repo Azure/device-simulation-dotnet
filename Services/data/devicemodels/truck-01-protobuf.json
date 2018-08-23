@@ -2,7 +2,7 @@
     "SchemaVersion": "1.0.0",
     "Id": "truck-01-proto",
     "Version": "0.0.1",
-    "Name": "Truck 01 Proto",
+    "Name": "Protobuf Truck",
     "Description": "Truck with GPS, speed and cargo temperature sensors",
     "Protocol": "AMQP",
     "Simulation": {
