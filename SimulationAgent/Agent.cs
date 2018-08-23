@@ -89,25 +89,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         public void Stop()
         {
+            this.simulation = null;
             this.running = false;
             this.runner.Stop();
         }
 
         public async Task AddDevice(string deviceId, string modelId)
         {
-            // currently only one simulation is supported
-            var simulation = (await this.simulations.GetListAsync()).FirstOrDefault();
-
-            if (simulation != null && this.IsDeviceModelIdValidAsync(modelId))
+            if (this.simulation != null && this.IsDeviceModelIdValidAsync(modelId))
             {
                 try
                 {
-                    await this.AddDeviceToSimulationRecordAsync(simulation, deviceId, modelId);
+                    await this.AddDeviceToSimulationRecordAsync(this.simulation, deviceId, modelId);
 
                     if (this.running)
                     {
                         this.log.Info("Add device to running simulation");
-                        await this.runner.AddDevice(deviceId, modelId);
+                        await this.runner.AddDeviceAsync(deviceId, modelId);
                     }
                     else
                     {
@@ -127,19 +125,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             this.log.Info("Update simulation");
 
-            // currently only one simulation is supported
-            var simulation = (await this.simulations.GetListAsync()).FirstOrDefault();
-
             try
             {
-                if (simulation != null)
+                if (this.simulation != null)
                 {
-                    await this.DeleteDevicesFromSimulationRecordAsync(simulation, ids);
+                    await this.DeleteDevicesFromSimulationRecordAsync(this.simulation, ids);
 
                     if (this.running)
                     {
                         this.log.Info("Deleting devices from running simulation");
-                        await this.runner.DeleteDevices(ids);
+                        await this.runner.DeleteDevicesAsync(ids);
                     }
                     else
                     {
@@ -150,8 +145,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
             catch (Exception e)
             {
-                this.log.Debug("Error while adding new device", () => new { e });
-                throw new Exception("Error while adding a new device");
+                this.log.Debug("Error while deleting new device", () => new { e });
+                throw new Exception("Error while deleting a new device");
             }
         }
 

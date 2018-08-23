@@ -5,17 +5,17 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel
 {
-    public class DeleteDeviceListApiModel
+    public class BatchDeleteActionApiModel
     {
         [JsonProperty(PropertyName = "DeviceIds")]
         public List<string> DeviceIds { get; set; }
 
-        public DeleteDeviceListApiModel()
+        public BatchDeleteActionApiModel()
         {
-            this.DeviceIds = null;
+            this.DeviceIds = new List<string>();
         }
 
-        public DeleteDeviceListApiModel(List<string> items, bool isCustom)
+        public BatchDeleteActionApiModel(List<string> items)
         {
             this.DeviceIds = items;
         }

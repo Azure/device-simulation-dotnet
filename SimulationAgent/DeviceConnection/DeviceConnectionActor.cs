@@ -230,7 +230,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         {
             try
             {
-                // this.status = ActorStatus.ReadyToDisconnect;
                 this.ScheduleDisconnection();
                 this.actorLogger.DisconnectingDevice();
             }

@@ -105,7 +105,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
         [HttpPut("{id}/Devices!batchDelete")]
         public async Task PutAsync(
-            [FromBody] DeleteDeviceListApiModel devices)
+            [FromBody] BatchDeleteActionApiModel devices)
         {
             if (devices == null)
             {

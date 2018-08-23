@@ -24,8 +24,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     {
         void Start(Services.Models.Simulation simulation);
         void Stop();
-        Task AddDevice(string deviceId, string modelId);
-        Task DeleteDevices(List<string> ids);
+        Task AddDeviceAsync(string deviceId, string modelId);
+        Task DeleteDevicesAsync(List<string> ids);
         long ActiveDevicesCount { get; }
         long TotalMessagesCount { get; }
         long FailedMessagesCount { get; }
@@ -282,7 +282,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        public async Task AddDevice(string deviceId, string modelId)
+        public async Task AddDeviceAsync(string deviceId, string modelId)
         {
             this.AddCustomDevice(deviceId, modelId);
         }
@@ -290,11 +290,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         /// <summary>
         /// Delete a list of devices
         /// </summary>
-        public async Task DeleteDevices(List<string> ids)
+        public async Task DeleteDevicesAsync(List<string> ids)
         {
             foreach (var device in this.deviceConnectionActors)
             {
-                var deviceId = device.Value.Client.DeviceId;
+                var deviceId = device.Value.Device.Id;
 
                 if (ids.Contains(deviceId))
                 {
@@ -681,7 +681,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         private void DeleteActorsForDevice(string key)
         {
-            var deviceId = this.deviceConnectionActors[key].Client.DeviceId;
+            var deviceId = this.deviceConnectionActors[key].Device.Id;
 
             this.log.Info("Remove connection actor for device id ", () => new { key });
             this.deviceConnectionActors.Remove(key);
