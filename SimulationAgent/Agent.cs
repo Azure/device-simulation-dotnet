@@ -227,6 +227,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             return false;
         }
 
+        // TODO: Move the method to Simulations.cs  e.g. this.simulations.AddDevicesAsync
         private async Task AddDeviceToSimulationRecordAsync(Simulation simulation, string deviceId, string modelId)
         {
             DeviceModelRef deviceModel = new DeviceModelRef();
@@ -255,6 +256,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
+        // TODO: Move the method to Simulations.cs e.g. this.simulations.RemoveDevicesAsync
         private async Task DeleteDevicesFromSimulationRecordAsync(Simulation simulation, List<string> ids)
         {
             bool shouldUpdateSimulation = false;
