@@ -29,18 +29,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private readonly ISimulationRunner runner;
         private readonly IDeviceModels deviceModels;
         private Services.Models.Simulation simulation;
+        private readonly IDevices devices;
         private bool running;
 
         public Agent(
             ILogger logger,
             ISimulations simulations,
             ISimulationRunner runner,
-            IDeviceModels deviceModels)
+            IDeviceModels deviceModels,
+            IDevices devices)
         {
             this.log = logger;
             this.simulations = simulations;
             this.runner = runner;
             this.deviceModels = deviceModels;
+            this.devices = devices;
             this.running = true;
         }
 
@@ -139,7 +142,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     else
                     {
                         this.log.Info("Deleting devices from hub");
-                        await this.simulations.DeleteDevicesAsync(ids);
+                        await this.devices.DeleteListAsync(ids);
                     }
                 }
             }
