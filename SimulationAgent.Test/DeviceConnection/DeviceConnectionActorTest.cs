@@ -127,6 +127,7 @@ namespace SimulationAgent.Test.DeviceConnection
             Assert.True(this.target.IsDeleted);
         }
 
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItSetsDeviceStateToConnected()
         {
             // Arrange

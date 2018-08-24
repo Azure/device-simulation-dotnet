@@ -367,9 +367,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     this.ScheduleDeregistration();
                     break;
 
+                case ActorEvents.DisconnectionFailed:
+                    this.actorLogger.DeviceDisconnectionFailed();
+                    this.ScheduleDisconnection();
+                    break;
+
                 case ActorEvents.DeviceDeregistered:
                     this.actorLogger.DeviceDeregistered();
                     this.status = ActorStatus.Deleted;
+                    break;
+
+                case ActorEvents.DeregisterationFailed:
+                    this.actorLogger.DeviceDeregistrationFailed();
+                    this.ScheduleDeregistration();
                     break;
 
                 case ActorEvents.TelemetryClientBroken:
