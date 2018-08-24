@@ -176,7 +176,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 {
                     this.running = false;
                     this.starting = false;
-                    this.log.Error("Failed to create devices", () => new { e });
+                    this.log.Error("Failed to create devices", e);
                     this.IncrementSimulationErrorsCount();
 
                     // Return and retry
@@ -236,7 +236,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             {
                 if (!this.running) return;
 
-                this.log.Info("Stopping simulation...", () => { });
+                this.log.Info("Stopping simulation...");
 
                 this.running = false;
 
@@ -374,7 +374,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             if (this.deviceTelemetryActors.Count == 0)
             {
-                this.log.Warn("There is no telemetry to send, stopping this telemetry thread", () => { });
+                this.log.Warn("There is no telemetry to send, stopping this telemetry thread");
                 return;
             }
 
@@ -548,7 +548,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
             catch (Exception e)
             {
-                this.log.Warn("Unable to stop the connections thread in a clean way", () => new { e });
+                this.log.Warn("Unable to stop the connections thread in a clean way", e);
             }
         }
 
@@ -560,7 +560,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
             catch (Exception e)
             {
-                this.log.Warn("Unable to stop the devices state thread in a clean way", () => new { e });
+                this.log.Warn("Unable to stop the devices state thread in a clean way", e);
             }
         }
 
@@ -572,7 +572,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
             catch (Exception e)
             {
-                this.log.Warn("Unable to stop the devices state thread in a clean way", () => new { e });
+                this.log.Warn("Unable to stop the devices state thread in a clean way", e);
             }
         }
 
@@ -592,7 +592,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             catch (Exception e)
             {
                 this.IncrementSimulationErrorsCount();
-                this.log.Error("Unable to start the telemetry threads", () => new { e });
+                this.log.Error("Unable to start the telemetry threads", e);
                 throw new Exception("Unable to start the telemetry threads", e);
             }
         }
@@ -607,7 +607,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             catch (Exception e)
             {
                 this.IncrementSimulationErrorsCount();
-                this.log.Error("Unable to start the device connection thread", () => new { e });
+                this.log.Error("Unable to start the device connection thread", e);
                 throw new Exception("Unable to start the device connection thread", e);
             }
         }
@@ -622,7 +622,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             catch (Exception e)
             {
                 this.IncrementSimulationErrorsCount();
-                this.log.Error("Unable to start the device state thread", () => new { e });
+                this.log.Error("Unable to start the device state thread", e);
                 throw new Exception("Unable to start the device state thread", e);
             }
         }
@@ -637,7 +637,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             catch (Exception e)
             {
                 this.IncrementSimulationErrorsCount();
-                this.log.Error("Unable to start the device properties thread", () => new { e });
+                this.log.Error("Unable to start the device properties thread", e);
                 throw new Exception("Unable to start the device properties thread", e);
             }
         }

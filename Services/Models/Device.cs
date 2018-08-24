@@ -2,8 +2,6 @@
 
 using System;
 using Microsoft.Azure.Devices;
-using Microsoft.Azure.Devices.Shared;
-using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 {

@@ -55,7 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             // TODO: enforce the single instance, compatibly with the use of
             //       Parallel.For in the simulation runner.
             //       https://github.com/Azure/device-simulation-dotnet/issues/79
-            log.Info("Rate limiting started. This message should appear only once in the logs.", () => { });
+            log.Info("Rate limiting started. This message should appear only once in the logs.");
         }
 
         public void ResetCounters()

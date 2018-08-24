@@ -1,0 +1,68 @@
+{
+    "SchemaVersion": "1.0.0",
+    "Id": "truck-01-proto",
+    "Version": "0.0.1",
+    "Name": "Protobuf Truck",
+    "Description": "Truck with GPS, speed and cargo temperature sensors",
+    "Protocol": "AMQP",
+    "Simulation": {
+        "InitialState": {
+            "online": true,
+            "latitude": 47.445301,
+            "longitude": -122.296307,
+            "speed": 30.0,
+            "speed_unit": "mph",
+            "temperature": 38.0,
+            "temperature_unit": "F"
+        },
+        "Interval": "00:00:10",
+        "Scripts": [
+            {
+                "Type": "javascript",
+                "Path": "truck-01-state.js",
+                "Params": {
+                  "TelemetryType":  "Truck;v1"
+                }
+            }
+        ]
+    },
+    "Properties": {
+        "Type": "Truck01Proto",
+        "Location": "Field",
+        "Latitude": 47.445301,
+        "Longitude": -122.296307
+    },
+    "Telemetry": [
+        {
+            "Interval": "00:00:10",
+            "MessageTemplate": "{\"latitude\":${latitude},\"longitude\":${longitude},\"speed\": ${speed},\"speed_unit\":\"${speed_unit}\",\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\"}",
+            "MessageSchema": {
+              "Name": "Truck;v1",
+              "ClassName": "Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Protobuf.Truck",
+              "Format": "Protobuf",
+              "Fields": {
+                "latitude": "double",
+                "longitude": "double",
+                "speed": "double",
+                "speed_unit": "text",
+                "temperature": "double",
+                "temperature_unit": "text"
+              }
+            }
+        }
+    ],
+    "CloudToDeviceMethods": {
+        "FirmwareUpdate": {
+            "Type": "javascript",
+            "Path": "FirmwareUpdate-method.js"
+        },
+        "DecreaseCargoTemperature": {
+            "Type": "javascript",
+            "Path": "TempDecrease-method.js"
+        },
+        "IncreaseCargoTemperature": {
+            "Type": "javascript",
+            "Path": "TempIncrease-method.js"
+        }
+    }
+}

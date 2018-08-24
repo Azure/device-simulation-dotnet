@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option csharp_namespace = "Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Protobuf";
+
+message Truck {
+    double latitude=1;
+    double longitude=2;
+    double speed=3;
+    string speed_unit=4;
+    double temperature=5;
+    string temperature_unit=6;
+}

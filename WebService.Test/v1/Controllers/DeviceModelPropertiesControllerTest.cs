@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers;
 using Moq;
-using Services.Test.helpers;
 using WebService.Test.helpers;
 using Xunit;
 
@@ -27,7 +26,12 @@ namespace WebService.Test.v1.Controllers
             // Arrange
             var properties = new List<string>
             {
-                "Type", "Firmware" , "Location" ,"Model", "Latitude" ,"Longitude"
+                "Type",
+                "Firmware",
+                "Location",
+                "Model",
+                "Latitude",
+                "Longitude"
             };
 
             this.deviceModelsService

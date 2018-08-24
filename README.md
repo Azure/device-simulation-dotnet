@@ -4,6 +4,7 @@
 
 Device Simulation Overview
 ==========================
+[![Deploy to Azure](http://azuredeploy.net/deploybutton.png)](https://www.azureiotsolutions.com/Accelerators#solutions/types/DS)
 
 This service allows management of a pool of simulated devices. The service
 helps test the end-to-end flow of IoT applications. The service simulates

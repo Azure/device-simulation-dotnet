@@ -199,7 +199,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             }
             catch (Exception e)
             {
-                this.log.Warn("Error while stopping", () => new { e });
+                this.log.Warn("Error while stopping", e);
             }
         }
 
