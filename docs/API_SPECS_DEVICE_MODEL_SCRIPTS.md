@@ -19,7 +19,7 @@ storage with the associated device model.
 
 When invoking the API using the POST HTTP method, the service will always
 attempt to create a new device model script model with the content of the
-uploaded scirpt file.
+uploaded script file.
 
 Request:
 ```
