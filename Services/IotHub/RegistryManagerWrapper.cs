@@ -27,6 +27,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         Task<Device> AddDeviceAsync(Device device);
 
+        Task RemoveDeviceAsync(string deviceId);
+
         Task<Device> GetDeviceAsync(string deviceId);
 
         Task UpdateTwinAsync(string deviceId, Twin twinPatch, string eTag);
@@ -62,6 +64,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             IEnumerable<Device> devices)
         {
             return await this.registry.AddDevices2Async(devices, CancellationToken.None);
+        }
+
+        public async Task RemoveDeviceAsync(string deviceId)
+        {
+            await this.registry.RemoveDeviceAsync(deviceId);
         }
 
         public async Task<BulkRegistryOperationResult> RemoveDevices2Async(

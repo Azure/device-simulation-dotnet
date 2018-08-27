@@ -41,6 +41,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task<Models.Simulation> MergeAsync(SimulationPatch patch);
 
         /// <summary>
+        /// Add a device to simulation
+        /// </summary>
+        Task AddDeviceAsync(string id);
+
+        /// <summary>
         /// Delete a simulation and its devices.
         /// </summary>
         Task DeleteAsync(string id);
@@ -54,6 +59,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public class Simulations : ISimulations
     {
         private const string STORAGE_COLLECTION = "simulations";
+        private const string DEVICES_COLLECTION = "SimulatedDevices";
         private const string SIMULATION_ID = "1";
         private const int DEVICES_PER_MODEL_IN_DEFAULT_TEMPLATE = 1;
 
@@ -88,6 +94,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
                 simulation.ETag = item.ETag;
+                simulation.Id = item.Key;
                 result.Add(simulation);
             }
 
@@ -279,6 +286,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             // Then delete the simulation from the storage
             await this.storage.DeleteAsync(STORAGE_COLLECTION, id);
+        }
+
+        public async Task AddDeviceAsync(string id)
+        {
+            await this.storage.CreateAsync(DEVICES_COLLECTION, id, id);
         }
 
         /// <summary>
