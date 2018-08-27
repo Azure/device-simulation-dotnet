@@ -7,9 +7,9 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel
 {
-    // SEE: <DeviceModelApiModel.DeviceModelSimulationScript> for the original fields being overridden
-    // Avoid subclassing <DeviceModelSimulationScript> to exclude unused fields and different default values
-    public class DeviceModelSimulationScriptOverride
+    // SEE: <DeviceModelApiModel.DeviceModelScript> for the original fields being overridden
+    // Avoid subclassing <DeviceModelScript> to exclude unused fields and different default values
+    public class DeviceModeScriptOverride
     {
         // Optional, used to change the script used
         [JsonProperty(PropertyName = "Type", NullValueHandling = NullValueHandling.Ignore)]
@@ -26,7 +26,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         public object Params { get; set; }
 
         // Default constructor used by web service requests
-        public DeviceModelSimulationScriptOverride()
+        public DeviceModeScriptOverride()
         {
             this.Type = null;
             this.Path = null;
@@ -34,11 +34,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         }
 
         // Map API model to service model
-        public Simulation.DeviceModelSimulationScriptOverride ToServiceModel()
+        public Simulation.DeviceModelScriptOverride ToServiceModel()
         {
             if (this.IsEmpty()) return null;
 
-            return new Simulation.DeviceModelSimulationScriptOverride
+            return new Simulation.DeviceModelScriptOverride
             {
                 Type = !string.IsNullOrEmpty(this.Type) ? this.Type : null,
                 Path = !string.IsNullOrEmpty(this.Path) ? this.Path : null,
@@ -47,17 +47,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         }
 
         // Map service model to API model
-        public static IList<DeviceModelSimulationScriptOverride> FromServiceModel(IList<Simulation.DeviceModelSimulationScriptOverride> value)
+        public static IList<DeviceModeScriptOverride> FromServiceModel(IList<Simulation.DeviceModelScriptOverride> value)
         {
             return value?.Select(FromServiceModel).Where(x => x != null && !x.IsEmpty()).ToList();
         }
 
         // Map service model to API model
-        public static DeviceModelSimulationScriptOverride FromServiceModel(Simulation.DeviceModelSimulationScriptOverride value)
+        public static DeviceModeScriptOverride FromServiceModel(Simulation.DeviceModelScriptOverride value)
         {
             if (value == null) return null;
 
-            return new DeviceModelSimulationScriptOverride
+            return new DeviceModeScriptOverride
             {
                 Type = !string.IsNullOrEmpty(value.Type) ? value.Type : null,
                 Path = !string.IsNullOrEmpty(value.Path) ? value.Path : null,

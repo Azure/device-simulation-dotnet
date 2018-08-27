@@ -61,9 +61,9 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             var deviceModelSimulationOverrideApiModel = new DeviceModelSimulationOverride()
             {
                 Interval = "00:10:00",
-                Scripts = new List<DeviceModelSimulationScriptOverride>()
+                Scripts = new List<DeviceModeScriptOverride>()
                 {
-                    new DeviceModelSimulationScriptOverride()
+                    new DeviceModeScriptOverride()
                 }
             };
 

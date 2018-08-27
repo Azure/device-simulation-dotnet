@@ -3,18 +3,17 @@
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel;
 using Moq;
 using WebService.Test.helpers;
 using Xunit;
 
 namespace WebService.Test.v1.Models.DeviceModelApiModel
 {
-    public class DeviceModelSimulationScriptTest
+    public class DeviceModelScriptTest
     {
         private readonly Mock<ILogger> logger;
 
-        public DeviceModelSimulationScriptTest()
+        public DeviceModelScriptTest()
         {
             this.logger = new Mock<ILogger>();
         }
@@ -26,17 +25,17 @@ namespace WebService.Test.v1.Models.DeviceModelApiModel
             var script = this.GetScript();
 
             // Act
-            var result = DeviceModelSimulationScript.FromServiceModel(script);
+            var result = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelScript.FromServiceModel(script);
 
             // Assert
-            Assert.IsType<DeviceModelSimulationScript>(result);
+            Assert.IsType<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelScript>(result);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsScriptFromDeviceModelSimulationScript()
+        public void ItReturnsScriptFromDeviceModelScript()
         {
             // Arrange
-            var script = this.GetDeviceModelSimulationScript();
+            var script = this.GetDeviceModelScript();
 
             // Act
             var result = script.ToServiceModel();
@@ -45,9 +44,9 @@ namespace WebService.Test.v1.Models.DeviceModelApiModel
             Assert.IsType<Script>(result);
         }
 
-        private DeviceModelSimulationScript GetDeviceModelSimulationScript()
+        private Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelScript GetDeviceModelScript()
         {
-            var script = new DeviceModelSimulationScript
+            var script = new Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelScript
             {
                 Type = ScriptInterpreter.JAVASCRIPT_SCRIPT,
                 Path = "scripts"
