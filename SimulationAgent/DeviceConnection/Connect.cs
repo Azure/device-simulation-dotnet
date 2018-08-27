@@ -2,6 +2,7 @@
 
 using System;
 using System.Threading.Tasks;
+using Microsoft.Azure.Devices.Client.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -61,6 +62,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Error("Invalid connection credentials", () => new { timeSpentMsecs, this.deviceId, e });
                 this.context.HandleEvent(DeviceConnectionActor.ActorEvents.AuthFailed);
+            }
+            catch (DeviceNotFoundException e)
+            {
+                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                this.log.Error("Device not found", () => new { timeSpentMsecs, this.deviceId, e });
+                this.context.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceNotFound);
             }
             catch (Exception e)
             {

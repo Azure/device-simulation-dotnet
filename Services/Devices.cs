@@ -43,7 +43,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Create a list of devices
         Task CreateListAsync(IEnumerable<string> deviceIds);
 
-        // Delete a list of devices
+        /// <summary>
+        /// Delete a device
+        /// </summary>
+        Task DeleteAsync(string deviceId);
+
+        /// <summary>
+        /// Delete a list of devices
+        /// </summary>
+
         Task DeleteListAsync(IEnumerable<string> deviceIds);
 
         // Generate a device Id
@@ -263,7 +271,33 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 () => new { Count = deviceIds.Count(), Batches = batches.Length, REGISTRY_MAX_BATCH_SIZE });
         }
 
-        // Delete a list of devices
+        /// <summary>
+        /// Delete a device from IoTHub
+        /// </summary>
+        public async Task DeleteAsync(string deviceId)
+        {
+            this.CheckSetup();
+            this.log.Debug("Deleting device", () => new { deviceId });
+
+            try
+            {
+                await this.registry.RemoveDeviceAsync(deviceId);
+            }
+            catch (IotHubCommunicationException error)
+            {
+                this.log.Error("Failed to delete device (IotHubCommunicationException)", () => new { error.InnerException, error });
+                throw;
+            }
+            catch (Exception error)
+            {
+                this.log.Error("Failed to delete device", () => new { error });
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Delete a list of devices
+        /// </summary>
         public async Task DeleteListAsync(IEnumerable<string> deviceIds)
         {
             this.CheckSetup();

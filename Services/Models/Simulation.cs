@@ -23,6 +23,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public IList<DeviceModelRef> DeviceModels { get; set; }
         public DateTimeOffset Created { get; set; }
         public DateTimeOffset Modified { get; set; }
+        public IList<CustomDeviceRef> CustomDevices { get; set; }
 
         public DateTimeOffset? StartTime
         {
@@ -53,6 +54,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             // by default, use environment variable
             this.IotHubConnectionString = ServicesConfig.USE_DEFAULT_IOTHUB;
             this.DeviceModels = new List<DeviceModelRef>();
+            this.CustomDevices = new List<CustomDeviceRef>();
         }
 
         public class DeviceModelRef
@@ -60,6 +62,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             public string Id { get; set; }
             public int Count { get; set; }
             public DeviceModelOverride Override { get; set; }
+        }
+
+        public class CustomDeviceRef
+        {
+            public string DeviceId { get; set; }
+            public DeviceModelRef DeviceModel { get; set; }
         }
 
         public class DeviceModelOverride
