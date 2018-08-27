@@ -132,10 +132,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             var patchServiceModel = patch.ToServiceModel(id);
-            patchServiceModel.Statistics = new Services.Models.SimulationStatistics {
-                                                AverageMessagesPerSecond = this.rateReporter.GetThroughputForMessages(),
-                                                TotalMessagesSent = this.simulationRunner.TotalMessagesCount
-                                                };
+
+            if (patchServiceModel.Enabled == false)
+            {
+                patchServiceModel.Statistics = new Services.Models.SimulationStatistics
+                {
+                    AverageMessagesPerSecond = this.rateReporter.GetThroughputForMessages(),
+                    TotalMessagesSent = this.simulationRunner.TotalMessagesCount
+                };
+            }
+
             return SimulationApiModel.FromServiceModel(
                 await this.simulationsService.MergeAsync(patchServiceModel));
         }
