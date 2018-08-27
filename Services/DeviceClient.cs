@@ -21,6 +21,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface IDeviceClient
     {
         IoTHubProtocol Protocol { get; }
+        string DeviceId { get; }
         Task ConnectAsync();
         Task DisconnectAsync();
         Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema);
@@ -49,6 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         private bool connected;
 
+        public string DeviceId => this.deviceId;
         public IoTHubProtocol Protocol => this.protocol;
 
         public DeviceClient(
@@ -85,6 +87,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     
                     this.log.Error("Device connection auth failed", () => new { this.deviceId, this.protocol, e });
                     throw new DeviceAuthFailedException(e);
+                }
+                catch (DeviceNotFoundException e)
+                {
+                    this.log.Error("Device not found", () => new { this.deviceId, this.protocol, e });
+                    throw new DeviceNotFoundException(this.deviceId);
                 }
             }
         }
@@ -123,10 +130,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             switch (schema.Format)
             {
                 case DeviceModel.DeviceModelMessageSchemaFormat.JSON:
-                    await SendJsonMessageAsync(message, schema);
+                    await this.SendJsonMessageAsync(message, schema);
                     break;
                 case DeviceModel.DeviceModelMessageSchemaFormat.Protobuf:
-                    await SendProtobufMessageAsync(message, schema);
+                    await this.SendProtobufMessageAsync(message, schema);
                     break;
                 default:
                     throw new UnknownMessageFormatException($"Message format {schema.Format.ToString()} is invalid. Check the Telemetry format against the permitted values Binary, Text, Json, Protobuf");
