@@ -86,7 +86,7 @@ namespace WebService.Test.v1.Models.DeviceModelApiModel
             // Arrange
             DeviceModelSimulation InvalidScript(DeviceModelSimulation model)
             {
-                model.Scripts = new List<DeviceModelSimulationScript>();
+                model.Scripts = new List<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelScript>();
                 return model;
             }
 
@@ -110,9 +110,9 @@ namespace WebService.Test.v1.Models.DeviceModelApiModel
             var deviceModelSimulation = new DeviceModelSimulation
             {
                 Interval = "00:00:10",
-                Scripts = new List<DeviceModelSimulationScript>
+                Scripts = new List<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelScript>
                 {
-                    new DeviceModelSimulationScript
+                    new Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelScript
                     {
                         Type = ScriptInterpreter.JAVASCRIPT_SCRIPT,
                         Path = "script"

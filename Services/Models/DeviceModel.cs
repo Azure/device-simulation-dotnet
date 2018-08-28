@@ -14,6 +14,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 {
     public class Script
     {
+        public string Id { get; set; }
         public string Type { get; set; }
         public string Path { get; set; }
 
@@ -26,6 +27,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.Type = ScriptInterpreter.JAVASCRIPT_SCRIPT;
             this.Path = "scripts" + System.IO.Path.DirectorySeparatorChar;
             this.Params = null;
+            this.Id = null;
         }
     }
 

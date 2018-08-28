@@ -73,7 +73,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         // Reduce or Increase the number of scripts, if required by the override information
         private void UpdateDeviceModelSimulationScriptsCount(
-            IList<Models.Simulation.DeviceModelSimulationScriptOverride> scripts, DeviceModel result)
+            IList<Models.Simulation.DeviceModelScriptOverride> scripts, DeviceModel result)
         {
             if (scripts == null || scripts.Count == 0) return;
 
@@ -133,7 +133,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         // Redefine the scripts used to generate the device state
         private void SetSimulationScripts(
-            IList<Models.Simulation.DeviceModelSimulationScriptOverride> scripts, DeviceModel result)
+            IList<Models.Simulation.DeviceModelScriptOverride> scripts, DeviceModel result)
         {
             if (scripts == null || scripts.Count == 0) return;
 
