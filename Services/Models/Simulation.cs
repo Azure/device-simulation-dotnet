@@ -102,7 +102,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             // If this list is shorter than the original definition, elements in excess are removed
             // i.e. to keep all the original scripts, there must be an entry for each of them
             [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-            public IList<DeviceModelSimulationScriptOverride> Scripts { get; set; }
+            public IList<DeviceModelScriptOverride> Scripts { get; set; }
 
             public DeviceModelSimulationOverride()
             {
@@ -112,7 +112,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             }
         }
 
-        public class DeviceModelSimulationScriptOverride
+        public class DeviceModelScriptOverride
         {
             // Optional, used to change the script used
             public string Type { get; set; }
@@ -120,13 +120,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             // Optional, used to change the script used
             public string Path { get; set; }
 
+            // Optional, used to change the script used
+            public string Id { get; set; }
+
             // Optional, used to provide input parameters to the script
             public object Params { get; set; }
 
-            public DeviceModelSimulationScriptOverride()
+            public DeviceModelScriptOverride()
             {
                 this.Type = null;
                 this.Path = null;
+                this.Id = null;
                 this.Params = null;
             }
         }
