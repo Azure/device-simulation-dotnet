@@ -10,7 +10,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public static class Utilities
     {
-        static Dictionary<Tuple<string, string, string>, MethodInfo> methodDictionary = new Dictionary<Tuple<string, string, string>, MethodInfo>();
+        static readonly Dictionary<Tuple<string, string, string>, MethodInfo> methodDictionary = new Dictionary<Tuple<string, string, string>, MethodInfo>();
 
         /// <summary>
         /// Extends the System.Type-type to search for a given extended Method Name.
@@ -47,8 +47,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         select method;
 
             var methodInfo = from method in query.ToArray<MethodInfo>()
-                     where method.Name == methodName
-                     select method;
+                             where method.Name == methodName
+                             select method;
 
             if (methodInfo.Count<MethodInfo>() <= 0)
             {
@@ -56,7 +56,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             else
             {
-                //Cache it in Dictionary, for repeating future calls
+                // Cache it in Dictionary, for repeating future calls
                 methodDictionary[key] = methodInfo.First<MethodInfo>();
                 return methodInfo.First<MethodInfo>();
             }

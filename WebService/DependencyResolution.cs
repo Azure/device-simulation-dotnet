@@ -110,6 +110,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             // dependencies. To improve performance we reuse some instances,
             // for example to reuse IoT Hub connections, as opposed to creating
             // a new connection every time.
+            builder.RegisterType<Agent>().As<ISimulationAgent>().SingleInstance();
             builder.RegisterType<Simulations>().As<ISimulations>().SingleInstance();
             builder.RegisterType<DeviceModels>().As<IDeviceModels>().SingleInstance();
             builder.RegisterType<Services.Devices>().As<IDevices>().SingleInstance();
@@ -129,6 +130,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterType<UpdateDeviceState>().As<UpdateDeviceState>();
             builder.RegisterType<SendTelemetry>().As<SendTelemetry>();
             builder.RegisterType<UpdateReportedProperties>().As<UpdateReportedProperties>();
+            builder.RegisterType<Deregister>().As<Deregister>();
+            builder.RegisterType<Disconnect>().As<Disconnect>();
         }
 
         private static void RegisterFactory(IContainer container)

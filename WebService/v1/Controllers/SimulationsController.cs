@@ -5,9 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Devices;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers
@@ -15,17 +17,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
     [Route(Version.PATH + "/[controller]"), ExceptionsFilter]
     public class SimulationsController : Controller
     {
+        private const int MAX_DELETE_DEVICES = 100;
         private readonly ISimulations simulationsService;
         private readonly IIotHubConnectionStringManager connectionStringManager;
+        private readonly ISimulationAgent simulationAgent;
+
         private readonly ILogger log;
 
         public SimulationsController(
             ISimulations simulationsService,
             IIotHubConnectionStringManager connectionStringManager,
+            ISimulationAgent simulationAgent,
             ILogger logger)
         {
             this.simulationsService = simulationsService;
             this.connectionStringManager = connectionStringManager;
+            this.simulationAgent = simulationAgent;
             this.log = logger;
         }
 
@@ -73,12 +80,46 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
             if (simulation == null)
             {
-                this.log.Warn("No data or invalid data provided", () => new { simulation });
-                throw new BadRequestException("No data or invalid data provided.");
+                this.log.Warn("No data provided, request object is null");
+                throw new BadRequestException("No data provided, request object is empty.");
             }
 
             return SimulationApiModel.FromServiceModel(
                 await this.simulationsService.UpsertAsync(simulation.ToServiceModel(id)));
+        }
+
+        [HttpPut("{id}/Devices!create")]
+        public async Task PutAsync(
+            [FromBody] CreateActionApiModel device)
+        {
+            if (device == null)
+            {
+                this.log.Warn("No data provided, request object is null");
+                throw new BadRequestException("No data provided, request object is empty.");
+            }
+
+            device?.ValidateInputRequest(this.log);
+
+            await this.simulationAgent.AddDeviceAsync(device.DeviceId, device.ModelId);
+        }
+
+        [HttpPut("{id}/Devices!batchDelete")]
+        public async Task PutAsync(
+            [FromBody] BatchDeleteActionApiModel devices)
+        {
+            if (devices == null)
+            {
+                this.log.Warn("No data provided, request object is null");
+                throw new BadRequestException("No data provided, request object is empty.");
+            }
+
+            if (devices.DeviceIds.Count > MAX_DELETE_DEVICES)
+            {
+                this.log.Warn("Device count exceeded max allowed limit", () => new { MAX_DELETE_DEVICES });
+                throw new BadRequestException("Device count exceeded max allowed limit (" + MAX_DELETE_DEVICES + ")");
+            }
+
+            await this.simulationAgent.DeleteDevicesAsync(devices.DeviceIds);
         }
 
         [HttpPatch("{id}")]
