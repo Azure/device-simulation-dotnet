@@ -201,7 +201,7 @@ namespace Services.Test
             var s1 = new SimulationModel() { Name = "Test Simulation 1"};
             var s2 = new SimulationModel() { Name = "Test Simulation 2" };
             this.ThereAreNoSimulationsInTheStorage();
-
+            
             // Act - No exception occurs
             this.target.InsertAsync(s1).Wait(Constants.TEST_TIMEOUT);
 
@@ -250,9 +250,11 @@ namespace Services.Test
 
             // Arrange - the ETag won't match
             this.storage.Setup(x => x.GetAllAsync(STORAGE_COLLECTION)).ReturnsAsync(storageList2);
+            this.storage.Setup(x => x.GetAsync(STORAGE_COLLECTION, SIMULATION_ID)).ReturnsAsync(storageRecord2);
 
             // Act + Assert
             var simulationOutOfDate = new SimulationModel { Id = SIMULATION_ID, ETag = ETAG1 };
+
             Assert.ThrowsAsync<ResourceOutOfDateException>(
                     async () => await this.target.UpsertAsync(simulationOutOfDate))
                 .Wait(Constants.TEST_TIMEOUT);
@@ -304,7 +306,7 @@ namespace Services.Test
         {
             this.storage.Setup(x => x.GetAllAsync(STORAGE_COLLECTION)).ReturnsAsync(new ValueListApiModel());
             // In case the test inserts a record, return a valid storage object
-            this.storage.Setup(x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.IsAny<string>(), "*"))
+            this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new ValueApiModel { Key = SIMULATION_ID, Data = "{}", ETag = "someETag" });
         }
 
