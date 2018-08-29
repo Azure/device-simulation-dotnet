@@ -1,8 +1,11 @@
-﻿using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+﻿// Copyright (c) Microsoft. All rights reserved.
+
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Moq;
@@ -21,9 +24,12 @@ namespace SimulationAgent.Test.DeviceConnection
         private readonly Mock<CredentialsSetup> credentialsSetupLogic;
         private readonly Mock<FetchFromRegistry> fetchLogic;
         private readonly Mock<Register> registerLogic;
+        private readonly Mock<Deregister> deregisterLogic;
         private readonly Mock<IDevices> devices;
         private readonly Mock<Connect> connectLogic;
+        private readonly Mock<Disconnect> disconnectLogic;
         private readonly Mock<IDeviceStateActor> deviceStateActor;
+        private readonly Mock<IStorageAdapterClient> storageAdapterClient;
         private readonly Mock<ConnectionLoopSettings> loopSettings;
         private readonly DeviceConnectionActor target;
 
@@ -34,6 +40,7 @@ namespace SimulationAgent.Test.DeviceConnection
             this.rateLimitingConfig = new Mock<IRateLimitingConfig>();
             this.scriptInterpreter = new Mock<IScriptInterpreter>();
             this.devices = new Mock<IDevices>();
+            this.storageAdapterClient = new Mock<IStorageAdapterClient>();
             this.rateLimiting = new Mock<IRateLimiting>();
             this.credentialsSetupLogic = new Mock<CredentialsSetup>(
                 this.devices.Object,
@@ -45,6 +52,13 @@ namespace SimulationAgent.Test.DeviceConnection
                 this.devices.Object,
                 this.logger.Object);
             this.connectLogic = new Mock<Connect>(
+                this.devices.Object,
+                this.scriptInterpreter.Object,
+                this.logger.Object);
+            this.deregisterLogic = new Mock<Deregister>(
+                this.devices.Object,
+                this.logger.Object);
+            this.disconnectLogic = new Mock<Disconnect>(
                 this.devices.Object,
                 this.scriptInterpreter.Object,
                 this.logger.Object);
@@ -61,7 +75,9 @@ namespace SimulationAgent.Test.DeviceConnection
                 this.credentialsSetupLogic.Object,
                 this.fetchLogic.Object,
                 this.registerLogic.Object,
-                this.connectLogic.Object);
+                this.connectLogic.Object,
+                this.deregisterLogic.Object,
+                this.disconnectLogic.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -95,6 +111,34 @@ namespace SimulationAgent.Test.DeviceConnection
 
             // Assert
             Assert.Equal(FAILED_DEVICE_CONNECTIONS_COUNT, failedDeviceConnectionCount);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItSetsDeviceStateToDeleted()
+        {
+            // Arrange
+            this.SetupDeviceConnectionActor();
+            DeviceConnectionActor.ActorEvents deviceDeregistered = DeviceConnectionActor.ActorEvents.DeviceDeregistered;
+
+            // Act
+            this.target.HandleEvent(deviceDeregistered);
+            
+            // Assert
+            Assert.True(this.target.IsDeleted);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItSetsDeviceStateToConnected()
+        {
+            // Arrange
+            this.SetupDeviceConnectionActor();
+            DeviceConnectionActor.ActorEvents deviceDeregistered = DeviceConnectionActor.ActorEvents.Connected;
+
+            // Act
+            this.target.HandleEvent(deviceDeregistered);
+
+            // Assert
+            Assert.True(this.target.Connected);
         }
 
         private void SetupDeviceConnectionActor()

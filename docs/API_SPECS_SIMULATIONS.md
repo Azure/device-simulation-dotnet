@@ -611,10 +611,46 @@ to ignore any change happened and overwrite the existing simulation.  Note
 that this is meant to be used only when data loss is acceptable, e.g.
 during development sessions and in test environments.
 
-## Deleting a simulation
+## Delete a simulation
 
 Simulations can be deleted using the DELETE method.
 
 ```
 DELETE /v1/simulations/1
+```
+
+## Add device in a simulation
+
+Add a device with custom deviceId to a simulatiom using create method.
+
+Request:
+```
+PUT /v1/simulations/1/Devices!create
+Content-Type: application/json; charset=utf-8
+```
+```json
+{
+  "DeviceId": "CustomElevator",
+  "ModelId": "elevator-01"
+}
+```
+
+## Delete devices in a simulation
+
+Devices in a simulation can be deleted using batcyDelete method. 
+The method accepts a list of upto 100 device ids to deleted.
+
+Request:
+```
+PUT /v1/simulations/1/Devices!batchDelete
+Content-Type: application/json; charset=utf-8
+```
+```json
+{
+  "DeviceIds": [
+    "truck-01.0",
+    "truck-01.1",
+    ...
+  ]
+}
 ```

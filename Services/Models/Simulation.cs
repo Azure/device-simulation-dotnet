@@ -23,6 +23,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public IList<DeviceModelRef> DeviceModels { get; set; }
         public DateTimeOffset Created { get; set; }
         public DateTimeOffset Modified { get; set; }
+        public IList<CustomDeviceRef> CustomDevices { get; set; }
 
         public DateTimeOffset? StartTime
         {
@@ -53,6 +54,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             // by default, use environment variable
             this.IotHubConnectionString = ServicesConfig.USE_DEFAULT_IOTHUB;
             this.DeviceModels = new List<DeviceModelRef>();
+            this.CustomDevices = new List<CustomDeviceRef>();
         }
 
         public class DeviceModelRef
@@ -60,6 +62,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             public string Id { get; set; }
             public int Count { get; set; }
             public DeviceModelOverride Override { get; set; }
+        }
+
+        public class CustomDeviceRef
+        {
+            public string DeviceId { get; set; }
+            public DeviceModelRef DeviceModel { get; set; }
         }
 
         public class DeviceModelOverride
@@ -94,7 +102,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             // If this list is shorter than the original definition, elements in excess are removed
             // i.e. to keep all the original scripts, there must be an entry for each of them
             [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-            public IList<DeviceModelSimulationScriptOverride> Scripts { get; set; }
+            public IList<DeviceModelScriptOverride> Scripts { get; set; }
 
             public DeviceModelSimulationOverride()
             {
@@ -104,7 +112,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             }
         }
 
-        public class DeviceModelSimulationScriptOverride
+        public class DeviceModelScriptOverride
         {
             // Optional, used to change the script used
             public string Type { get; set; }
@@ -112,13 +120,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             // Optional, used to change the script used
             public string Path { get; set; }
 
+            // Optional, used to change the script used
+            public string Id { get; set; }
+
             // Optional, used to provide input parameters to the script
             public object Params { get; set; }
 
-            public DeviceModelSimulationScriptOverride()
+            public DeviceModelScriptOverride()
             {
                 this.Type = null;
                 this.Path = null;
+                this.Id = null;
                 this.Params = null;
             }
         }
