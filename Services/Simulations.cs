@@ -51,6 +51,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task DeleteAsync(string id);
 
         /// <summary>
+        ///Update simulation in storage.
+        /// </summary>
+        Task UpdateStorage(Models.Simulation simulation);
+
+        /// <summary>
         /// Get the ID of the devices in a simulation.
         /// </summary>
         IEnumerable<string> GetDeviceIds(Models.Simulation simulation);
@@ -292,7 +297,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 patch.ETag);
 
             simulation.ETag = item.ETag;
-            simulation.Id = item.Key;
 
             return simulation;
         }
@@ -308,6 +312,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             // Then delete the simulation from the storage
             await this.storage.DeleteAsync(STORAGE_COLLECTION, id);
+        }
+
+        /// <summary>
+        /// Update simulation definition in storage.
+        /// </summary>
+        public async Task UpdateStorage(Models.Simulation simulation)
+        {
+            await this.storage.UpdateAsync(
+                STORAGE_COLLECTION,
+                simulation.Id,
+                JsonConvert.SerializeObject(simulation),
+                simulation.ETag);
         }
 
         public async Task AddDeviceAsync(string id)
