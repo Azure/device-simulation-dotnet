@@ -26,6 +26,7 @@ namespace Services.Test
         private readonly Mock<IRegistryManager> registry;
         private readonly Mock<IDeviceClientWrapper> deviceClient;
         private readonly Mock<ILogger> logger;
+        private readonly int testTimeout = 1000;
 
         public DevicesTest(ITestOutputHelper log)
         {
@@ -45,10 +46,11 @@ namespace Services.Test
                 this.logger.Object);
 
             this.connectionStringManager
-                .Setup(x => x.GetIotHubConnectionString())
-                .Returns("HostName=iothub-AAAA.azure-devices.net;SharedAccessKeyName=AAAA;SharedAccessKey=AAAA");
+                .Setup(x => x.GetIotHubConnectionStringAsync())
+                .ReturnsAsync("HostName=iothub-AAAA.azure-devices.net;SharedAccessKeyName=AAAA;SharedAccessKey=AAAA");
 
-            this.target.SetCurrentIotHub();
+            var initResult = this.target.InitAsync();
+            initResult.Wait(this.testTimeout);
         }
 
         /** 

@@ -4,6 +4,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 using Moq;
 using Services.Test.helpers;
 using Xunit;
@@ -13,14 +14,17 @@ namespace Services.Test
     public class IotHubConnectionStringManagerTest
     {
         private readonly Mock<ILogger> logger;
-        private readonly IServicesConfig config;
+        private readonly Mock<IServicesConfig> mockConfig;
+        private readonly Mock<IFactory> mockFactory;
         private readonly IotHubConnectionStringManager target;
 
         public IotHubConnectionStringManagerTest()
         {
             this.logger = new Mock<ILogger>();
-            this.config = new ServicesConfig();
-            this.target = new IotHubConnectionStringManager(this.config, this.logger.Object);
+            this.mockConfig = new Mock<IServicesConfig>();
+            this.mockFactory = new Mock<IFactory>();
+            this.mockFactory.Setup(x => x.Resolve<IStorageRecords>()).Returns(new Mock<IStorageRecords>().Object);
+            this.target = new IotHubConnectionStringManager(this.mockConfig.Object, this.mockFactory.Object, this.logger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

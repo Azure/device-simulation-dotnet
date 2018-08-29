@@ -227,8 +227,8 @@ namespace WebService.Test.v1.Controllers
                 .Returns(IOTHUB_CONNECTION_STRING);
 
             this.connectionStringManager
-                .Setup(x => x.GetIotHubConnectionString())
-                .Returns(IOTHUB_CONNECTION_STRING);
+                .Setup(x => x.GetIotHubConnectionStringAsync())
+                .ReturnsAsync(IOTHUB_CONNECTION_STRING);
         }
     }
 }

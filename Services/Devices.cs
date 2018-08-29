@@ -23,7 +23,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface IDevices
     {
         // Set the current IoT Hub using either the user provided one or the configuration settings
-        void SetCurrentIotHub();
+        Task InitAsync();
 
         // Get a client for the device
         IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter);
@@ -94,12 +94,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         // Set IoTHub connection strings, using either the user provided value or the configuration
-        public void SetCurrentIotHub()
+        // TODO: use the simulation object to decide which conn string to use
+        public async Task InitAsync()
         {
             try
             {
                 // Retrieve connection string from file/storage
-                this.connString = this.connectionStringManager.GetIotHubConnectionString();
+                this.connString = await this.connectionStringManager.GetIotHubConnectionStringAsync();
 
                 // Parse connection string, this triggers an exception if the string is invalid
                 IotHubConnectionStringBuilder connStringBuilder = IotHubConnectionStringBuilder.Create(this.connString);
