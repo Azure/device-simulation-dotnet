@@ -11,7 +11,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
     {
         private DateTimeOffset? startTime;
         private DateTimeOffset? endTime;
-        private string iotHubConnectionString;
+        private IList<string> iotHubConnectionStrings;
 
         // When Simulation is written to storage, Id and Etag are not serialized as part of body
         // These are instead written in dedicated columns (key and eTag)
@@ -47,10 +47,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         // StoppedTime is the time when Simulation was explicitly stopped by user
         public DateTimeOffset? StoppedTime { get; set; }
 
-        public string IotHubConnectionString
+        public IList<string> IotHubConnectionStrings
         {
-            get => this.iotHubConnectionString;
-            set => this.iotHubConnectionString = value ?? ServicesConfig.USE_DEFAULT_IOTHUB;
+            get => this.iotHubConnectionStrings;
+            set => this.iotHubConnectionStrings = value ?? new List<string> { };
         }
 
         public Simulation()
@@ -62,7 +62,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.EndTime = DateTimeOffset.MaxValue;
 
             // by default, use environment variable
-            this.IotHubConnectionString = ServicesConfig.USE_DEFAULT_IOTHUB;
+            this.IotHubConnectionStrings = new List<string> { };
             this.DeviceModels = new List<DeviceModelRef>();
             this.CustomDevices = new List<CustomDeviceRef>();
             this.Statistics = new StatisticsRef();

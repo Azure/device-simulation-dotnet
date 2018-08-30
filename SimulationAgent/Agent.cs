@@ -83,7 +83,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.CheckForNewSimulation(runningSimulation);
 
                     // if the current simulation was asked to stop, stop it.
-                    this.CheckForStopOrStartToSimulation();
+                    await this.CheckForStopOrStartToSimulationAsync();
                 }
                 catch (Exception e)
                 {
@@ -212,7 +212,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private void CheckForStopOrStartToSimulation()
+        private async Task CheckForStopOrStartToSimulationAsync()
         {
             // stopped
             if (this.simulation != null && this.simulation.Enabled && !this.simulation.ShouldBeRunning())
@@ -224,7 +224,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.runner.Stop();
 
                 // Update simulation statistics in storage
-                this.simulations.UpdateStorage(this.simulation);
+                await this.simulations.UpdateStorage(this.simulation);
             }
 
             // started

@@ -154,7 +154,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
                         Count = 1
                     }
                 },
-                IotHub = new SimulationIotHub("HostName=[hubname];SharedAccessKeyName=[iothubowner];SharedAccessKey=[valid key]")
+                IotHubs = new List<SimulationIotHub> { new SimulationIotHub("HostName=[hubname];SharedAccessKeyName=[iothubowner];SharedAccessKey=[valid key]") }
             };
 
             return simulationApiModel;

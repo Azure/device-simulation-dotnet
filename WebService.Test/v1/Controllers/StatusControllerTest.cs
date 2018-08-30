@@ -50,11 +50,7 @@ namespace WebService.Test.v1.Controllers
                 this.storage.Object,
                 this.simulations.Object,
                 this.logger.Object,
-                this.servicesConfig.Object,
-                this.deploymentConfig.Object,
-                this.connectionStringManager.Object,
-                this.simulationRunner.Object,
-                this.rateReporter.Object);
+                this.servicesConfig.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -82,34 +78,6 @@ namespace WebService.Test.v1.Controllers
 
             // Assert
             Assert.Equal("true", result.Properties["PreprovisionedIoTHub"]);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsTheUrlOfPreprovisionedIoTHub()
-        {
-            // Arrange
-            this.SetupSimulationForRunner();
-            this.SetupPreprovisionedIoTHub();
-
-            // Act
-            var result = this.target.GetAsync().Result;
-
-            // Assert
-            Assert.Contains("https://portal.azure.com/", result.Properties["PreprovisionedIoTHubMetricsUrl"]);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsPreprovisionedIoTHubInUse()
-        {
-            // Arrange
-            this.SetupSimulationForRunner();
-            this.SetupPreprovisionedIoTHub();
-
-            // Act
-            var result = this.target.GetAsync().Result;
-
-            // Assert
-            Assert.Equal("true", result.Properties["PreprovisionedIoTHubInUse"]);
         }
 
         private void SetupSimulationForRunner()

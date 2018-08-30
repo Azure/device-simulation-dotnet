@@ -6,12 +6,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
 
@@ -27,46 +24,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
         private const string SIMULATION_RUNNING_KEY = "SimulationRunning";
         private const string PREPROVISIONED_IOTHUB_KEY = "PreprovisionedIoTHub";
-        private const string PREPROVISIONED_IOTHUB_INUSE_KEY = "PreprovisionedIoTHubInUse";
-        private const string PREPROVISIONED_IOTHUB_METRICS_KEY = "PreprovisionedIoTHubMetricsUrl";
-        private const string ACTIVE_DEVICES_COUNT_KEY = "ActiveDevicesCount";
-        private const string TOTAL_MESSAGES_COUNT_KEY = "TotalMessagesCount";
-        private const string FAILED_MESSAGES_COUNT_KEY = "FailedMessagesCount";
-        private const string MESSAGES_PER_SECOND_KEY = "MessagesPerSecond";
-        private const string FAILED_DEVICE_CONNECTIONS_COUNT_KEY = "FailedDeviceConnectionsCount";
-        private const string FAILED_DEVICE_TWIN_UPDATES_COUNT_KEY = "FailedDeviceTwinUpdatesCount";
-        private const string SIMULATION_ERRORS_COUNT_KEY = "SimulationErrorsCount";
 
         private readonly IPreprovisionedIotHub preprovisionedIotHub;
         private readonly IStorageAdapterClient storage;
         private readonly ISimulations simulations;
         private readonly ILogger log;
         private readonly IServicesConfig servicesConfig;
-        private readonly IDeploymentConfig deploymentConfig;
-        private readonly IIotHubConnectionStringManager connectionStringManager;
-        private readonly ISimulationRunner simulationRunner;
-        private readonly IRateLimiting rateReporter;
 
         public StatusController(
             IPreprovisionedIotHub preprovisionedIotHub,
             IStorageAdapterClient storage,
             ISimulations simulations,
             ILogger logger,
-            IServicesConfig servicesConfig,
-            IDeploymentConfig deploymentConfig,
-            IIotHubConnectionStringManager connectionStringManager,
-            ISimulationRunner simulationRunner,
-            IRateLimiting rateLimiting)
+            IServicesConfig servicesConfig)
         {
             this.preprovisionedIotHub = preprovisionedIotHub;
             this.storage = storage;
             this.simulations = simulations;
             this.log = logger;
             this.servicesConfig = servicesConfig;
-            this.deploymentConfig = deploymentConfig;
-            this.connectionStringManager = connectionStringManager;
-            this.simulationRunner = simulationRunner;
-            this.rateReporter = rateLimiting;
         }
 
         // TODO: reduce method complexity, refactor out some logic
@@ -102,16 +78,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 statusIsOk = statusIsOk && preprovisioneHubStatus.Item1;
 
                 result.Dependencies.Add(PREPROVISIONED_IOTHUB_KEY, preprovisioneHubStatus?.Item2);
-
-                if (isRunning)
-                {
-                    result.Properties.Add(PREPROVISIONED_IOTHUB_INUSE_KEY, this.IsPreprovisionedIoTHubInUse(isRunning));
-                    var url = this.GetIoTHubMetricsUrl(isRunning);
-                    if (!string.IsNullOrEmpty(url))
-                    {
-                        result.Properties.Add(PREPROVISIONED_IOTHUB_METRICS_KEY, this.GetIoTHubMetricsUrl(isRunning));
-                    }
-                }
             }
 
             // Prepare status message and response
@@ -207,34 +173,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                     && cs.Contains("hostname=")
                     && cs.Contains("sharedaccesskeyname=")
                     && cs.Contains("sharedaccesskey="));
-        }
-
-        // Check whether the simulation is running with the conn string in the configuration
-        private string IsPreprovisionedIoTHubInUse(bool isRunning)
-        {
-            if (!isRunning) return JSON_FALSE;
-
-            var csInUse = this.connectionStringManager.GetIotHubConnectionString().ToLowerInvariant().Trim();
-            var csInConf = this.servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
-
-            return csInUse == csInConf ? JSON_TRUE : JSON_FALSE;
-        }
-
-        // If the simulation is running with the conn string in the config then return a URL to the metrics
-        private string GetIoTHubMetricsUrl(bool isRunning)
-        {
-            if (!isRunning) return string.Empty;
-
-            var csInUse = this.connectionStringManager.GetIotHubConnectionString().ToLowerInvariant().Trim();
-            var csInConf = this.servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
-
-            // Return the URL only when the simulation is running with the configured conn string
-            if (csInUse != csInConf) return string.Empty;
-
-            return $"https://portal.azure.com/{this.deploymentConfig.AzureSubscriptionDomain}" +
-                   $"#resource/subscriptions/{this.deploymentConfig.AzureSubscriptionId}" +
-                   $"/resourceGroups/{this.deploymentConfig.AzureResourceGroup}" +
-                   $"/providers/Microsoft.Devices/IotHubs/{this.deploymentConfig.AzureIothubName}/Metrics";
         }
     }
 }
