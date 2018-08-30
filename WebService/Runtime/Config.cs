@@ -6,6 +6,7 @@ using System.IO;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth;
 
 // TODO: tests
@@ -69,6 +70,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string STORAGE_ADAPTER_KEY = "StorageAdapterService:";
         private const string STORAGE_ADAPTER_API_URL_KEY = STORAGE_ADAPTER_KEY + "webservice_url";
         private const string STORAGE_ADAPTER_API_TIMEOUT_KEY = STORAGE_ADAPTER_KEY + "webservice_timeout";
+
+        private const string MAIN_STORAGE_KEY = APPLICATION_KEY + "Storage:Main:";
+        private const string NODES_STORAGE_KEY = APPLICATION_KEY + "Storage:Nodes:";
+        private const string SIMULATIONS_STORAGE_KEY = APPLICATION_KEY + "Storage:Simulations:";
+        private const string DEVICES_STORAGE_KEY = APPLICATION_KEY + "Storage:Devices:";
+        private const string PARTITIONS_STORAGE_KEY = APPLICATION_KEY + "Storage:Partitions:";
+
+        private const string STORAGE_TYPE_KEY = "type";
+        private const string DOCUMENTDB_CONNECTION_STRING_KEY = "documentdb_connstring";
+        private const string DOCUMENTDB_DATABASE_KEY = "documentdb_database";
+        private const string DOCUMENTDB_COLLECTION_KEY = "documentdb_collection";
+        private const string DOCUMENTDB_RUS_KEY = "documentdb_collection_RUs";
 
         private const string LOGGING_KEY = APPLICATION_KEY + "Logging:";
         private const string LOGGING_LOGLEVEL_KEY = LOGGING_KEY + "LogLevel";
@@ -193,7 +206,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 IoTHubSdkDeviceClientTimeout = configData.GetOptionalUInt(IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY),
                 StorageAdapterApiUrl = configData.GetString(STORAGE_ADAPTER_API_URL_KEY),
                 StorageAdapterApiTimeout = configData.GetInt(STORAGE_ADAPTER_API_TIMEOUT_KEY),
-                TwinReadWriteEnabled = configData.GetBool(TWIN_READ_WRITE_ENABLED_KEY, true)
+                TwinReadWriteEnabled = configData.GetBool(TWIN_READ_WRITE_ENABLED_KEY, true),
+                MainStorage = GetStorageConfig(configData, MAIN_STORAGE_KEY),
+                NodesStorage = GetStorageConfig(configData, NODES_STORAGE_KEY),
+                SimulationsStorage = GetStorageConfig(configData, SIMULATIONS_STORAGE_KEY),
+                DevicesStorage = GetStorageConfig(configData, DEVICES_STORAGE_KEY),
+                PartitionsStorage = GetStorageConfig(configData, PARTITIONS_STORAGE_KEY)
+            };
+        }
+
+        private static StorageConfig GetStorageConfig(IConfigData configData, string prefix)
+        {
+            return new StorageConfig
+            {
+                StorageType = configData.GetString(prefix + STORAGE_TYPE_KEY),
+                DocumentDbConnString = configData.GetString(prefix + DOCUMENTDB_CONNECTION_STRING_KEY),
+                DocumentDbDatabase = configData.GetString(prefix + DOCUMENTDB_DATABASE_KEY),
+                DocumentDbCollection = configData.GetString(prefix + DOCUMENTDB_COLLECTION_KEY),
+                DocumentDbRUs = configData.GetInt(prefix + DOCUMENTDB_RUS_KEY)
             };
         }
 
