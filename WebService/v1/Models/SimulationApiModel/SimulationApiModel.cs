@@ -75,7 +75,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             // When unspecified, a simulation is enabled
             this.Enabled = true;
             this.Running = false;
-            this.IotHubs = null;
+            this.IotHubs = new List<SimulationIotHub>();
             this.StartTime = null;
             this.EndTime = null;
             this.StoppedTime = null;
