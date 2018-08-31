@@ -14,9 +14,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "ConnectionString")]
         public string ConnectionString { get; set; }
 
-        [JsonProperty(PropertyName = "PreprovisionedIoTHub")]
-        public bool PreprovisionedIoTHub { get; set; }
-
         [JsonProperty(PropertyName = "PreprovisionedIoTHubInUse")]
         public bool PreprovisionedIoTHubInUse { get; set; }
 
@@ -27,19 +24,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         public SimulationIotHub()
         {
             this.ConnectionString = USE_DEFAULT_IOTHUB;
-            this.PreprovisionedIoTHub = false;
             this.PreprovisionedIoTHubInUse = false;
             this.PreprovisionedIoTHubMetricsUrl = null;
         }
 
         public SimulationIotHub(
             string connectionString,
-            bool preprovisionedIoTHub = false,
             bool preprovisionedIoTHubInUse = false, 
             string preprovisionedIoTHubMetricsUrl = null) : this()
         {
             this.ConnectionString = connectionString;
-            this.PreprovisionedIoTHub = preprovisionedIoTHub;
             this.PreprovisionedIoTHubInUse = preprovisionedIoTHubInUse;
             this.PreprovisionedIoTHubMetricsUrl = preprovisionedIoTHubMetricsUrl;
         }

@@ -133,6 +133,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Description = value.Description,
                 Enabled = value.Enabled,
                 Running = value.ShouldBeRunning(),
+                StartTime = value.StartTime.ToString(),
+                EndTime = value.EndTime.ToString(),
+                StoppedTime = value.StoppedTime.ToString(),
                 IotHubs = new List<SimulationIotHub>()
             };
 
@@ -237,7 +240,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             {
                 // Preprovisioned hub status
                 var isHubPreprovisioned = this.IsHubConnectionStringConfigured(servicesConfig);
-                iotHub.PreprovisionedIoTHub = isHubPreprovisioned;
 
                 if (isHubPreprovisioned && isRunning)
                 {
@@ -305,7 +307,5 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                    $"/resourceGroups/{deploymentConfig.AzureResourceGroup}" +
                    $"/providers/Microsoft.Devices/IotHubs/{deploymentConfig.AzureIothubName}/Metrics";
         }
-
-
     }
 }

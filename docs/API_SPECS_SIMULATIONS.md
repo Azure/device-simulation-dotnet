@@ -9,8 +9,7 @@ The service supports only one simulation, with ID "1".
 
 When invoking the API using the POST HTTP method, the service will always
 attempt to create a new simulation. The service allows
-to create multiple simulation but there can only be one running simulation. Retrying the request to create a new running simulation will result in errors
-after the first request has been successfully completed.
+to create multiple simulation but there can only be one running simulation.
 
 ```
 POST /v1/simulations
@@ -209,6 +208,7 @@ Content-Type: application/json; charset=utf-8
 ```json
 {
   "Name": "Sample Simulation",
+  "Description": "This is a sample simulation",
   "Enabled": true,
   "StartTime": "NOW",
   "EndTime": "NOW+P7D",
@@ -481,9 +481,8 @@ Content-Type: application/json; charset=utf-8
   "IoTHubs": [
       {
           "ConnectionString": "default",
-          "PreprovisionedIoTHub": true,
           "PreprovisionedIoTHubInUse": false,
-          "PreprovisionedIoTHubMetricsUrl": null
+          "PreprovisionedIoTHubMetricsUrl": "https://portal.azure.com/..."
       }
   ],
   "StartTime": "2018-08-31T00:30:00+00:00",
@@ -512,14 +511,24 @@ Content-Type: application/json; charset=utf-8
       "$type": "Simulation;1",
       "$uri": "/v1/simulations/1",
       "$created": "2018-08-31T00:30:00+00:00",
-      "$modified": "2018-08-31T00:30:00+00:00"
+      "$modified": "2018-08-31T00:35:00+00:00"
   }
 }
 ```
 
-There are some read-only properties in the api response. `Running` is a calculated property implying whether the simulation is currently running. The `StoppedTime` is the time when the simulation was manually stopped before it's scheduled `EndTime`. `PreprovisionedIoTHubMetricsUrl` implies whether the simulation is currently running using the `PreprovisionedIoTHub`. 'PreprovisionedIoTHubMetricsUrl' is the url to navigate to the IoT Hub metrics page. 
-
-`Statistics` is another set of read only properties which provides different set of counters at a given time. When the simulation is stopped, the current values for `TotalMessagesSent` and `AverageMessagesPerSecond` are updated in storage. Rest of the properties under `Statistics` are read only. 
+There are some read-only properties in the api response. 
+* `Running` is a calculated property, reporting whether the simulation is
+  currently running.
+* `StoppedTime` is the time when the simulation was manually
+  stopped before it's scheduled `EndTime`. 
+* `PreprovisionedIoTHubInUse`: whether the simulation ran or is running
+  using the Azure IoT Hub created during the solution deployment.
+* 'PreprovisionedIoTHubMetricsUrl': the url to navigate to the IoT Hub
+  metrics page. 
+* `Statistics` is a set of read only properties providing counters
+  at a given time. When the simulation is stopped, the current values
+  for `TotalMessagesSent` and `AverageMessagesPerSecond` are retrieved from
+  storage. 
 
 ## Start simulation
 

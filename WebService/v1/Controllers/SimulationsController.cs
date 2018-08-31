@@ -26,7 +26,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private readonly IServicesConfig servicesConfig;
         private readonly IDeploymentConfig deploymentConfig;
         private readonly IIotHubConnectionStringManager connectionStringManager;
-        private readonly IPreprovisionedIotHub preprovisionedIotHub;
         private readonly ISimulationAgent simulationAgent;
         private readonly ISimulationRunner simulationRunner;
         private readonly IRateLimiting rateReporter;
@@ -47,7 +46,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             this.servicesConfig = servicesConfig;
             this.deploymentConfig = deploymentConfig;
             this.connectionStringManager = connectionStringManager;
-            this.preprovisionedIotHub = preprovisionedIotHub;
             this.simulationAgent = simulationAgent;
             this.simulationRunner = simulationRunner;
             this.rateReporter = rateReporter;
@@ -62,7 +60,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             foreach (var simulation in simulationList)
             {
                 var simulationApiModel = SimulationApiModel.FromServiceModel(
-                    simulation, servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
+                    simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
                 simulationListApiModel.Items.Add(simulationApiModel);
             }
 
@@ -74,7 +72,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         {
             var simulation = await this.simulationsService.GetAsync(id);
             var simulationApiModel = SimulationApiModel.FromServiceModel(
-                simulation, servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
+                simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
             return simulationApiModel;
         }
 
@@ -99,7 +97,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
             var simulation = await this.simulationsService.InsertAsync(simulationApiModel.ToServiceModel(), template);
             return SimulationApiModel.FromServiceModel(
-                simulation, servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
+                simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
 
         [HttpPut("{id}")]
@@ -117,7 +115,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
             var simulation = await this.simulationsService.UpsertAsync(simulationApiModel.ToServiceModel(id));
             return SimulationApiModel.FromServiceModel(
-                simulation, servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
+                simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
 
         [HttpPut("{id}/Devices!create")]
@@ -178,7 +176,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
             var simulation = await this.simulationsService.MergeAsync(patchServiceModel);
             return SimulationApiModel.FromServiceModel(
-                simulation, servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
+                simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
 
         [HttpDelete("{id}")]

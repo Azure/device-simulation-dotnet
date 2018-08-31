@@ -115,15 +115,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             var item = await this.storage.GetAsync(STORAGE_COLLECTION, id);
 
-            if (item != null)
-            {
-                var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
-                simulation.ETag = item.ETag;
-                simulation.Id = item.Key;
-                return simulation;
-            }
+            if (item == null) return null;
 
-            return null;
+            var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
+            simulation.ETag = item.ETag;
+            simulation.Id = item.Key;
+            return simulation;
         }
 
         /// <summary>
@@ -145,15 +142,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 throw new InvalidInputException("Simulation name is required.");
             }
 
-            var simulations = await this.GetListAsync();
-            var activeSimulation = simulations.Where(a => a.ShouldBeRunning());
-            if (activeSimulation.Any())
-            {
-                this.log.Warn("There is already a running simulation");
-                throw new ConflictingResourceException(
-                    "There is already a simulation. Simulation cannot be created while another simulation is running.");
-            }
-
             // Note: forcing the ID because only one simulation can be created
             simulation.Id = usingDefaultTemplate ? DEFAULT_SIMULATION_ID : Guid.NewGuid().ToString();
             simulation.Created = DateTimeOffset.UtcNow;
@@ -162,6 +150,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             // Create default simulation
             if (usingDefaultTemplate)
             {
+                simulation.Name = "Default Simulation";
                 var types = await this.deviceModels.GetListAsync();
                 simulation.DeviceModels = new List<Models.Simulation.DeviceModelRef>();
                 foreach (var type in types)
@@ -244,12 +233,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             //      will still be stored to disk. Storing the encrypted string using
             //      storage adapter would address this
             //      https://github.com/Azure/device-simulation-dotnet/issues/129
-            var iotHubConnectionStrings = new List<string>(simulation.IotHubConnectionStrings);
-            simulation.IotHubConnectionStrings.Clear();
-            foreach (var iotHubConnectionString in iotHubConnectionStrings)
+            for (var index = 0; index < simulation.IotHubConnectionStrings.Count; index++)
             {
-                var connString = await this.connectionStringManager.RedactAndStoreAsync(iotHubConnectionString);
-                simulation.IotHubConnectionStrings.Add(connString);
+                var connString = await this.connectionStringManager.RedactAndStoreAsync(simulation.IotHubConnectionStrings[index]);
+                simulation.IotHubConnectionStrings[index] = connString;
             }
 
             var result = await this.storage.UpdateAsync(

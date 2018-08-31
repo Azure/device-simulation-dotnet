@@ -47,34 +47,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         }
 
         // Map API model to service model
-        public static Services.Models.Simulation.StatisticsRef ToServiceModel(SimulationStatistics statistics)
-        {
-            if (statistics == null)
-            {
-                return null;
-            }
-
-            return new Services.Models.Simulation.StatisticsRef
-            {
-                TotalMessagesSent = statistics.TotalMessagesSent,
-                AverageMessagesPerSecond = statistics.AverageMessagesPerSecond
-            };
-        }
-
-        // Map API model to service model
         public static SimulationStatistics FromServiceModel(Services.Models.Simulation.StatisticsRef statistics)
         {
-            if (statistics == null)
-            {
-                return null;
-            }
+            if (statistics == null) return null;
 
             return new SimulationStatistics
             {
                 TotalMessagesSent = statistics.TotalMessagesSent,
-                AverageMessagesPerSecond = Math.Round(statistics.AverageMessagesPerSecond, 2)
+                AverageMessagesPerSecond = Math.Ceiling(statistics.AverageMessagesPerSecond * 100)/100
             };
-
         }
     }
 }
