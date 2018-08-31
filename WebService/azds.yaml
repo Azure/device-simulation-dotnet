@@ -1,0 +1,37 @@
+kind: helm-release
+apiVersion: 1.0
+build:
+  context: ..\
+  dockerfile: Dockerfile
+install:
+  chart: charts/simulation
+  values:
+  - values.dev.yaml?
+  - secrets.dev.yaml?
+  set:
+    image:
+      tag: $(tag)
+      pullPolicy: Never
+    ingress:
+      hosts:
+      # This expands to [space.s.]simulation.<guid>.<region>.aksapp.io
+      - $(spacePrefix)simulation$(hostSuffix)
+
+configurations:
+  develop:
+    build:
+      dockerfile: Dockerfile.develop
+      useGitIgnore: true
+      disableProbes: true
+    container:
+      syncTarget: /src
+      sync:
+      - "**/Pages/**"
+      - "**/Views/**"
+      - "**/wwwroot/**"
+      - "!**/*.{sln,csproj,sh}"
+      command:  ["sh", "/src/WebService/azds_entrypoint.sh"]
+      iterate:
+        processesToKill: [dotnet, vsdbg]
+        buildCommands:
+        - [dotnet, build, --no-restore, -c, "${Configuration:-Debug}"]

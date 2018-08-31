@@ -1,0 +1,19 @@
+FROM microsoft/aspnetcore-build:2.0
+ENV ASPNETCORE_ENVIRONMENT=Development
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+EXPOSE 9002
+
+WORKDIR /src
+COPY ["device-simulation.sln", ""]
+COPY ["Services/Services.csproj", "Services/"]
+COPY ["SimulationAgent/SimulationAgent.csproj", "SimulationAgent/"]
+COPY ["WebService/WebService.csproj", "WebService/"]
+COPY ["WebService/azds_entrypoint.sh", "WebService/azds_entrypoint.sh"]
+
+RUN chmod 777 /src/WebService/azds_entrypoint.sh
+RUN dotnet restore -nowarn:msb3202,nu1503
+COPY . .
+WORKDIR "/src/WebService"
+RUN dotnet build "WebService.csproj"
+
+ENTRYPOINT  ["sh", "/src/WebService/azds_entrypoint.sh"]
