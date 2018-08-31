@@ -344,11 +344,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 simulation.ETag);
         }
 
-        public async Task AddDeviceAsync(string id)
-        {
-            await this.storage.CreateAsync(DEVICES_COLLECTION, id, id);
-        }
-
         /// <summary>
         /// Get the ID of the devices in a simulation.
         /// </summary>
