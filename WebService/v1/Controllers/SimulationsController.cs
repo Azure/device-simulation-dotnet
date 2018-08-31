@@ -59,10 +59,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         {
             var simulationList = await this.simulationsService.GetListAsync();
             var simulationListApiModel = new SimulationListApiModel();
-            foreach (var x in simulationList)
+            foreach (var simulation in simulationList)
             {
-                var simulationApiModel = SimulationApiModel.FromServiceModel(x);
-                this.AppendHubPropertiesAndStatisticsAsync(simulationApiModel);
+                var simulationApiModel = SimulationApiModel.FromServiceModel(
+                    simulation, servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
                 simulationListApiModel.Items.Add(simulationApiModel);
             }
 
@@ -73,57 +73,51 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         public async Task<SimulationApiModel> GetAsync(string id)
         {
             var simulation = await this.simulationsService.GetAsync(id);
-
-            if (simulation == null)
-            {
-                this.log.Warn("Simulation not found", () => new { id });
-                throw new BadRequestException("No data or invalid id provided.");
-            }
-
-            var simulationApiModel = SimulationApiModel.FromServiceModel(simulation);
-            this.AppendHubPropertiesAndStatisticsAsync(simulationApiModel);
-
+            var simulationApiModel = SimulationApiModel.FromServiceModel(
+                simulation, servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
             return simulationApiModel;
         }
 
         [HttpPost]
         public async Task<SimulationApiModel> PostAsync(
-            [FromBody] SimulationApiModel simulation,
+            [FromBody] SimulationApiModel simulationApiModel,
             [FromQuery(Name = "template")] string template = "")
         {
-            simulation?.ValidateInputRequest(this.log, this.connectionStringManager);
+            simulationApiModel?.ValidateInputRequestAsync(this.log, this.connectionStringManager);
 
-            if (simulation == null)
+            if (simulationApiModel == null)
             {
                 if (string.IsNullOrEmpty(template))
                 {
-                    this.log.Warn("No data or invalid data provided", () => new { simulation, template });
+                    this.log.Warn("No data or invalid data provided", () => new { simulationApiModel, template });
                     throw new BadRequestException("No data or invalid data provided.");
                 }
 
                 // Simulation can be created with `template=default` other than created with input data
-                simulation = new SimulationApiModel();
+                simulationApiModel = new SimulationApiModel();
             }
 
+            var simulation = await this.simulationsService.InsertAsync(simulationApiModel.ToServiceModel(), template);
             return SimulationApiModel.FromServiceModel(
-                await this.simulationsService.InsertAsync(simulation.ToServiceModel(), template));
+                simulation, servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
         }
 
         [HttpPut("{id}")]
         public async Task<SimulationApiModel> PutAsync(
-            [FromBody] SimulationApiModel simulation,
+            [FromBody] SimulationApiModel simulationApiModel,
             string id = "")
         {
-            simulation?.ValidateInputRequest(this.log, this.connectionStringManager);
+            simulationApiModel?.ValidateInputRequestAsync(this.log, this.connectionStringManager);
 
-            if (simulation == null)
+            if (simulationApiModel == null)
             {
                 this.log.Warn("No data provided, request object is null");
                 throw new BadRequestException("No data provided, request object is empty.");
             }
 
+            var simulation = await this.simulationsService.UpsertAsync(simulationApiModel.ToServiceModel(id));
             return SimulationApiModel.FromServiceModel(
-                await this.simulationsService.UpsertAsync(simulation.ToServiceModel(id)));
+                simulation, servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
         }
 
         [HttpPut("{id}/Devices!create")]
@@ -182,92 +176,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 };
             }
 
+            var simulation = await this.simulationsService.MergeAsync(patchServiceModel);
             return SimulationApiModel.FromServiceModel(
-                await this.simulationsService.MergeAsync(patchServiceModel));
+                simulation, servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
         }
 
         [HttpDelete("{id}")]
         public async Task DeleteAsync(string id)
         {
             await this.simulationsService.DeleteAsync(id);
-        }
-
-        // Append additional Hub properties and Statistics 
-        private void AppendHubPropertiesAndStatisticsAsync(SimulationApiModel simulationApiModel)
-        {
-            var isRunning = simulationApiModel.Running == true;
-
-            foreach (var iotHub in simulationApiModel.IotHubs)
-            {
-                // Preprovisioned hub status
-                var isHubPreprovisioned = this.IsHubConnectionStringConfigured();
-                iotHub.PreprovisionedIoTHub = isHubPreprovisioned;
-
-                if (isHubPreprovisioned && isRunning)
-                {
-                    iotHub.PreprovisionedIoTHubInUse = this.IsPreprovisionedIoTHubInUse();
-                    var preprovisionedIoTHubMetricsUrl = this.GetIoTHubMetricsUrl();
-                    iotHub.PreprovisionedIoTHubMetricsUrl = preprovisionedIoTHubMetricsUrl;
-                }
-            }
-
-            if (isRunning)
-            {
-                // Average messages per second count
-                simulationApiModel.Statistics.AverageMessagesPerSecond = this.rateReporter.GetThroughputForMessages();
-
-                // Total messages count
-                simulationApiModel.Statistics.TotalMessagesSent = this.simulationRunner.TotalMessagesCount;
-
-                // Active devices count
-                simulationApiModel.Statistics.ActiveDevicesCount = this.simulationRunner.ActiveDevicesCount;
-
-                // Failed telemetry messages count
-                simulationApiModel.Statistics.FailedMessagesCount = this.simulationRunner.FailedMessagesCount;
-
-                // Failed device connections count
-                simulationApiModel.Statistics.FailedDeviceConnectionsCount = this.simulationRunner.FailedDeviceConnectionsCount;
-
-                // Failed device connections count
-                simulationApiModel.Statistics.FailedDeviceTwinUpdatesCount = this.simulationRunner.FailedDeviceTwinUpdatesCount;
-
-                // Simulation errors count
-                simulationApiModel.Statistics.SimulationErrorsCount = this.simulationRunner.SimulationErrorsCount;
-            }
-        }
-
-        // Check whether the configuration contains a connection string
-        private bool IsHubConnectionStringConfigured()
-        {
-            var cs = this.servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
-            return (!string.IsNullOrEmpty(cs)
-                    && cs.Contains("hostname=")
-                    && cs.Contains("sharedaccesskeyname=")
-                    && cs.Contains("sharedaccesskey="));
-        }
-
-        // Check whether the simulation is running with the conn string in the configuration
-        private bool IsPreprovisionedIoTHubInUse()
-        {
-            var csInUse = this.connectionStringManager.GetIotHubConnectionString().ToLowerInvariant().Trim();
-            var csInConf = this.servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
-
-            return csInUse == csInConf;
-        }
-
-        // If the simulation is running with the conn string in the config then return a URL to the metrics
-        private string GetIoTHubMetricsUrl()
-        {
-            var csInUse = this.connectionStringManager.GetIotHubConnectionString().ToLowerInvariant().Trim();
-            var csInConf = this.servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
-
-            // Return the URL only when the simulation is running with the configured conn string
-            if (csInUse != csInConf) return string.Empty;
-
-            return $"https://portal.azure.com/{this.deploymentConfig.AzureSubscriptionDomain}" +
-                   $"#resource/subscriptions/{this.deploymentConfig.AzureSubscriptionId}" +
-                   $"/resourceGroups/{this.deploymentConfig.AzureResourceGroup}" +
-                   $"/providers/Microsoft.Devices/IotHubs/{this.deploymentConfig.AzureIothubName}/Metrics";
         }
     }
 }

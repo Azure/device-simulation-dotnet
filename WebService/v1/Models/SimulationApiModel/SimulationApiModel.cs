@@ -4,9 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;
 using Newtonsoft.Json;
@@ -112,7 +115,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         }
 
         // Map service model to API model
-        public static SimulationApiModel FromServiceModel(Simulation value)
+        public static SimulationApiModel FromServiceModel(
+            Simulation value,
+            IServicesConfig servicesConfig,
+            IDeploymentConfig deploymentConfig,
+            IIotHubConnectionStringManager connectionStringManager,
+            ISimulationRunner simulationRunner,
+            IRateLimiting rateReporter)
         {
             if (value == null) return null;
 
@@ -124,9 +133,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Description = value.Description,
                 Enabled = value.Enabled,
                 Running = value.ShouldBeRunning(),
-                StartTime = value.StartTime.ToString(),
-                EndTime = value.EndTime.ToString(),
-                StoppedTime = value.StoppedTime.ToString(),
                 IotHubs = new List<SimulationIotHub>()
             };
 
@@ -159,10 +165,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             result.created = value.Created;
             result.modified = value.Modified;
 
+            result.AppendHubPropertiesAndStatisticsAsync(servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
+
             return result;
         }
 
-        public async Task ValidateInputRequest(ILogger log, IIotHubConnectionStringManager connectionStringManager)
+        public async Task ValidateInputRequestAsync(ILogger log, IIotHubConnectionStringManager connectionStringManager)
         {
             const string NO_DEVICE_MODEL = "The simulation doesn't contain any device model";
             const string ZERO_DEVICES = "The simulation has zero devices";
@@ -214,5 +222,90 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 await connectionStringManager.ValidateConnectionStringAsync(iotHub.ConnectionString);
             }
         }
+
+        // Append additional Hub properties and Statistics 
+        private void AppendHubPropertiesAndStatisticsAsync(
+            IServicesConfig servicesConfig, 
+            IDeploymentConfig deploymentConfig, 
+            IIotHubConnectionStringManager connectionStringManager,
+            ISimulationRunner simulationRunner,
+            IRateLimiting rateReporter)
+        {
+            var isRunning = this.Running == true;
+
+            foreach (var iotHub in this.IotHubs)
+            {
+                // Preprovisioned hub status
+                var isHubPreprovisioned = this.IsHubConnectionStringConfigured(servicesConfig);
+                iotHub.PreprovisionedIoTHub = isHubPreprovisioned;
+
+                if (isHubPreprovisioned && isRunning)
+                {
+                    iotHub.PreprovisionedIoTHubInUse = this.IsPreprovisionedIoTHubInUse(servicesConfig, connectionStringManager);
+                    var preprovisionedIoTHubMetricsUrl = this.GetIoTHubMetricsUrl(servicesConfig, deploymentConfig, connectionStringManager);
+                    iotHub.PreprovisionedIoTHubMetricsUrl = preprovisionedIoTHubMetricsUrl;
+                }
+            }
+
+            if (isRunning)
+            {
+                // Average messages per second count
+                this.Statistics.AverageMessagesPerSecond = rateReporter.GetThroughputForMessages();
+
+                // Total messages count
+                this.Statistics.TotalMessagesSent = simulationRunner.TotalMessagesCount;
+
+                // Active devices count
+                this.Statistics.ActiveDevicesCount = simulationRunner.ActiveDevicesCount;
+
+                // Failed telemetry messages count
+                this.Statistics.FailedMessagesCount = simulationRunner.FailedMessagesCount;
+
+                // Failed device connections count
+                this.Statistics.FailedDeviceConnectionsCount = simulationRunner.FailedDeviceConnectionsCount;
+
+                // Failed device connections count
+                this.Statistics.FailedDeviceTwinUpdatesCount = simulationRunner.FailedDeviceTwinUpdatesCount;
+
+                // Simulation errors count
+                this.Statistics.SimulationErrorsCount = simulationRunner.SimulationErrorsCount;
+            }
+        }
+
+        // Check whether the configuration contains a connection string
+        private bool IsHubConnectionStringConfigured(IServicesConfig servicesConfig)
+        {
+            var cs = servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
+            return (!string.IsNullOrEmpty(cs)
+                    && cs.Contains("hostname=")
+                    && cs.Contains("sharedaccesskeyname=")
+                    && cs.Contains("sharedaccesskey="));
+        }
+
+        // Check whether the simulation is running with the conn string in the configuration
+        private bool IsPreprovisionedIoTHubInUse(IServicesConfig servicesConfig, IIotHubConnectionStringManager connectionStringManager)
+        {
+            var csInUse = connectionStringManager.GetIotHubConnectionString().ToLowerInvariant().Trim();
+            var csInConf = servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
+
+            return csInUse == csInConf;
+        }
+
+        // If the simulation is running with the conn string in the config then return a URL to the metrics
+        private string GetIoTHubMetricsUrl(IServicesConfig servicesConfig, IDeploymentConfig deploymentConfig, IIotHubConnectionStringManager connectionStringManager)
+        {
+            var csInUse = connectionStringManager.GetIotHubConnectionString().ToLowerInvariant().Trim();
+            var csInConf = servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
+
+            // Return the URL only when the simulation is running with the configured conn string
+            if (csInUse != csInConf) return string.Empty;
+
+            return $"https://portal.azure.com/{deploymentConfig.AzureSubscriptionDomain}" +
+                   $"#resource/subscriptions/{deploymentConfig.AzureSubscriptionId}" +
+                   $"/resourceGroups/{deploymentConfig.AzureResourceGroup}" +
+                   $"/providers/Microsoft.Devices/IotHubs/{deploymentConfig.AzureIothubName}/Metrics";
+        }
+
+
     }
 }

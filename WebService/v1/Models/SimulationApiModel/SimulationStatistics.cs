@@ -7,24 +7,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 {
     public class SimulationStatistics
     {
+        // Total number of messgaes sent by simulation
         [JsonProperty(PropertyName = "TotalMessagesSent")]
         public long TotalMessagesSent { get; set; }
 
+        // Current message throughput (average messages sent per second) of simulation
         [JsonProperty(PropertyName = "AverageMessagesPerSecond")]
         public double AverageMessagesPerSecond { get; set; }
 
+        // Total number of messages that failed to send
         [JsonProperty(PropertyName = "FailedMessagesCount")]
         public long FailedMessagesCount { get; set; }
 
+        // Total number of devices that are currently connected (i.e. are active) to Hub
         [JsonProperty(PropertyName = "ActiveDevicesCount")]
         public long ActiveDevicesCount { get; set; }
 
+        // Total number of devices that failed to connect to Hub
         [JsonProperty(PropertyName = "FailedDeviceConnectionsCount")]
         public long FailedDeviceConnectionsCount { get; set; }
 
+        // Total number of times device twin failed to update
         [JsonProperty(PropertyName = "FailedDeviceTwinUpdatesCount")]
         public long FailedDeviceTwinUpdatesCount { get; set; }
 
+        // Total number of simulation errors
         [JsonProperty(PropertyName = "SimulationErrorsCount")]
         public long SimulationErrorsCount { get; set; }
 
@@ -42,30 +49,32 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         // Map API model to service model
         public static Services.Models.Simulation.StatisticsRef ToServiceModel(SimulationStatistics statistics)
         {
-            if(statistics != null)
+            if (statistics == null)
             {
-                return new Services.Models.Simulation.StatisticsRef {
-                    TotalMessagesSent = statistics.TotalMessagesSent,
-                    AverageMessagesPerSecond = statistics.AverageMessagesPerSecond
-                };
+                return null;
             }
 
-            return null;
+            return new Services.Models.Simulation.StatisticsRef
+            {
+                TotalMessagesSent = statistics.TotalMessagesSent,
+                AverageMessagesPerSecond = statistics.AverageMessagesPerSecond
+            };
         }
 
         // Map API model to service model
         public static SimulationStatistics FromServiceModel(Services.Models.Simulation.StatisticsRef statistics)
         {
-            if (statistics != null)
+            if (statistics == null)
             {
-                return new SimulationStatistics
-                {
-                    TotalMessagesSent = statistics.TotalMessagesSent,
-                    AverageMessagesPerSecond = Math.Round(statistics.AverageMessagesPerSecond, 2)
-                };
+                return null;
             }
 
-            return null;
+            return new SimulationStatistics
+            {
+                TotalMessagesSent = statistics.TotalMessagesSent,
+                AverageMessagesPerSecond = Math.Round(statistics.AverageMessagesPerSecond, 2)
+            };
+
         }
     }
 }
