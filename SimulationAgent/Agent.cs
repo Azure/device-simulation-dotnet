@@ -32,6 +32,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private readonly IDeviceModels deviceModels;
         private Simulation simulation;
         private readonly IDevices devices;
+        private readonly IDevices devices;
         private bool running;
 
         public Agent(

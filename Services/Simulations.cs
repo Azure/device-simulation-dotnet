@@ -327,6 +327,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             await this.storage.DeleteAsync(STORAGE_COLLECTION, id);
         }
 
+        public async Task AddDeviceAsync(string id)
+        {
+            await this.storage.CreateAsync(DEVICES_COLLECTION, id, id);
+        }
+
         /// <summary>
         /// Update simulation definition in storage.
         /// </summary>
