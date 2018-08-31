@@ -107,7 +107,7 @@ namespace Services.Test.Storage
         }
 
         [Fact]
-        public void ItReturnsTrueForRecordsThatExist()
+        public void ItVerifiesThatARecordExists()
         {
             // Arrange
             var id = "123";
@@ -127,7 +127,7 @@ namespace Services.Test.Storage
         }
 
         [Fact]
-        public void ItReturnsFalseForExpiredRecords()
+        public void ItReturnsFalseForRecordsThatDoNotExist()
         {
             // Arrange
             var id = "123";
@@ -226,7 +226,7 @@ namespace Services.Test.Storage
                 x => x.DeleteAsync(
                     It.IsAny<IDocumentClient>(),
                     It.IsAny<StorageConfig>(),
-                    It.IsAny<string>()), Times.Exactly(1));
+                    It.IsAny<string>()), Times.Once());
         }
 
         [Fact]

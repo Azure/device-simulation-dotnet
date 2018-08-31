@@ -51,7 +51,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Delete a list of devices
         /// </summary>
-
         Task DeleteListAsync(IEnumerable<string> deviceIds);
 
         // Generate a device Id

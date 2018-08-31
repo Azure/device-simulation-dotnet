@@ -197,20 +197,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
                 throw;
             }
         }
+
         private async Task CreateCollectionIfNotExistsAsync(
             IDocumentClient client,
             RequestOptions options,
             string dbName,
-            string collName)
+            string collectionName)
         {
             try
             {
-                var uri = $"/dbs/{dbName}/colls/{collName}";
+                var uri = $"/dbs/{dbName}/colls/{collectionName}";
                 await client.ReadDocumentCollectionAsync(uri, options);
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
             {
-                await this.CreateCollectionAsync(client, dbName, collName, options);
+                await this.CreateCollectionAsync(client, dbName, collectionName, options);
             }
             catch (Exception e)
             {
@@ -222,14 +223,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
         private async Task CreateCollectionAsync(
             IDocumentClient client,
             string dbName,
-            string collName,
+            string collectionName,
             RequestOptions options)
         {
             try
             {
                 this.log.Info("Creating DocumentDb collection",
-                    () => new { dbName, collName });
-                var coll = new DocumentCollection { Id = collName };
+                    () => new { dbName, collName = collectionName });
+                var coll = new DocumentCollection { Id = collectionName };
 
                 var index = Index.Range(DataType.String, -1);
                 var indexing = new IndexingPolicy(index) { IndexingMode = IndexingMode.Consistent };
@@ -242,19 +243,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
                 if (e.StatusCode == HttpStatusCode.Conflict)
                 {
                     this.log.Warn("Another process already created the collection",
-                        () => new { dbName, collName });
+                        () => new { dbName, collName = collectionName });
                 }
 
                 this.log.Error("Error while creating DocumentDb collection",
-                    () => new { dbName, collName, e });
+                    () => new { dbName, collName = collectionName, e });
+
+                throw new ExternalDependencyException("Error while creating DocumentDb collection");
             }
             catch (Exception e)
             {
                 this.log.Error("Error while creating DocumentDb collection",
-                    () => new { dbName, collName, e });
+                    () => new { dbName, collName = collectionName, e });
                 throw;
             }
         }
+
         private static RequestOptions IfMatch(string etag)
         {
             if (etag == "*")
