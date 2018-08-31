@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
@@ -56,15 +55,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         public async Task<SimulationListApiModel> GetAsync()
         {
             var simulationList = await this.simulationsService.GetListAsync();
-            var simulationListApiModel = new SimulationListApiModel();
-            foreach (var simulation in simulationList)
-            {
-                var simulationApiModel = SimulationApiModel.FromServiceModel(
-                    simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
-                simulationListApiModel.Items.Add(simulationApiModel);
-            }
-
-            return simulationListApiModel;
+            return new SimulationListApiModel(
+                simulationList, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
 
         [HttpGet("{id}")]

@@ -54,7 +54,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             return new SimulationStatistics
             {
                 TotalMessagesSent = statistics.TotalMessagesSent,
-                AverageMessagesPerSecond = Math.Ceiling(statistics.AverageMessagesPerSecond * 100)/100
+                AverageMessagesPerSecond = Math.Ceiling(statistics.AverageMessagesPerSecond * 100) / 100
             };
         }
     }

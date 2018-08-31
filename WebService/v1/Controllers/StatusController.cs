@@ -46,7 +46,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         }
 
         // TODO: reduce method complexity, refactor out some logic
-        [HttpGet()]
+        [HttpGet]
         public async Task<StatusApiModel> GetAsync()
         {
             var result = new StatusApiModel();
@@ -66,7 +66,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             result.Dependencies.Add("Storage", storageStatus?.Item2);
             var statusIsOk = storageStatus.Item1;
 
-            // Preprovisioned hub status
+            // Preprovisioned IoT hub status
             var isHubPreprovisioned = this.IsHubConnectionStringConfigured();
             result.Properties.Add(PREPROVISIONED_IOTHUB_KEY,
                 isHubPreprovisioned

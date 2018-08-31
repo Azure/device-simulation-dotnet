@@ -217,15 +217,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // stopped
             if (this.simulation != null && this.simulation.Enabled && !this.simulation.ShouldBeRunning())
             {
-                this.simulation.Enabled = false;
-                this.simulation.Modified = DateTimeOffset.Now;
                 this.simulation.Statistics.AverageMessagesPerSecond = this.rateReporter.GetThroughputForMessages();
                 this.simulation.Statistics.TotalMessagesSent = this.runner.TotalMessagesCount;
 
                 this.runner.Stop();
 
                 // Update simulation statistics in storage
-                await this.simulations.UpdateStorage(this.simulation);
+                await this.simulations.UpsertAsync(this.simulation);
             }
 
             // started

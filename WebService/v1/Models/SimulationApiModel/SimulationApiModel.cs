@@ -238,7 +238,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
             foreach (var iotHub in this.IotHubs)
             {
-                // Preprovisioned hub status
+                // Preprovisioned IoT hub status
                 var isHubPreprovisioned = this.IsHubConnectionStringConfigured(servicesConfig);
 
                 if (isHubPreprovisioned && isRunning)
@@ -251,7 +251,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
             if (isRunning)
             {
-                // Average messages per second count
+                // Average messages per second frequency in the last minutes
                 this.Statistics.AverageMessagesPerSecond = rateReporter.GetThroughputForMessages();
 
                 // Total messages count
