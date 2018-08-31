@@ -165,7 +165,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             result.created = value.Created;
             result.modified = value.Modified;
 
-            result.AppendHubPropertiesAndStatisticsAsync(servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
+            result.AppendHubPropertiesAndStatistics(servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
 
             return result;
         }
@@ -224,7 +224,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         }
 
         // Append additional Hub properties and Statistics 
-        private void AppendHubPropertiesAndStatisticsAsync(
+        private void AppendHubPropertiesAndStatistics(
             IServicesConfig servicesConfig, 
             IDeploymentConfig deploymentConfig, 
             IIotHubConnectionStringManager connectionStringManager,
