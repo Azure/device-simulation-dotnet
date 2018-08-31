@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel
@@ -60,7 +61,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 return new SimulationStatistics
                 {
                     TotalMessagesSent = statistics.TotalMessagesSent,
-                    AverageMessagesPerSecond = statistics.AverageMessagesPerSecond
+                    AverageMessagesPerSecond = Math.Round(statistics.AverageMessagesPerSecond, 2)
                 };
             }
 
