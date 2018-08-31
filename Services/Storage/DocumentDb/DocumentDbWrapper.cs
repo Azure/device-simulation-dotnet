@@ -240,10 +240,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             }
             catch (DocumentClientException e)
             {
+                // Multiple instances of this microservice may be trying to set
+                // up the collection simultaneously. Here, if the container has
+                // already been setup, we'll just long this and return without
+                // throwing an exception.
                 if (e.StatusCode == HttpStatusCode.Conflict)
                 {
                     this.log.Warn("Another process already created the collection",
                         () => new { dbName, collName = collectionName });
+                    return;
                 }
 
                 this.log.Error("Error while creating DocumentDb collection",

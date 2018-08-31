@@ -3,10 +3,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
-using Microsoft.Azure.Documents.Linq;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -23,6 +25,7 @@ namespace Services.Test.Storage
         private static readonly TimeSpan testTimeout = TimeSpan.FromSeconds(5);
         private static readonly long testOffsetMs = 5000;
         private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        private static string EXPECTED_DEBUG_LOG_RESOURCE_DOES_NOT_EXIST = "The resource requested doesn't exist, nothing to do.";
 
         private Mock<IDocumentDbWrapper> mockDocumentDbWrapper;
         private Mock<ILogger> mockLogger;
@@ -78,7 +81,7 @@ namespace Services.Test.Storage
             this.mockStorageDocument.SetupGet(x => x.Resource).Returns(document);
 
             // Act
-            Task<StorageRecord> storageRecordTask = this.target.GetAsync(id);
+            var storageRecordTask = this.target.GetAsync(id);
             storageRecordTask.Wait(testTimeout);
             
             // Assert
@@ -119,7 +122,7 @@ namespace Services.Test.Storage
             this.mockStorageDocument.SetupGet(x => x.Resource).Returns(document);
 
             // Act
-            Task<bool> existsAsyncTask = this.target.ExistsAsync(id);
+            var existsAsyncTask = this.target.ExistsAsync(id);
             existsAsyncTask.Wait(testTimeout);
 
             // Assert
@@ -139,7 +142,7 @@ namespace Services.Test.Storage
             this.mockStorageDocument.SetupGet(x => x.Resource).Returns(document);
 
             // Act
-            Task<bool> existsAsyncTask = this.target.ExistsAsync(id);
+            var existsAsyncTask = this.target.ExistsAsync(id);
             existsAsyncTask.Wait(testTimeout);
 
             // Assert
@@ -151,7 +154,7 @@ namespace Services.Test.Storage
         {
             // Arrange
             // Create a collection of test StorageRecords
-            List<DocumentDbRecord> documentDbRecords = new List<DocumentDbRecord>();
+            var documentDbRecords = new List<DocumentDbRecord>();
             documentDbRecords.Add(
                 new DocumentDbRecord
                 {
@@ -183,6 +186,30 @@ namespace Services.Test.Storage
         }
 
         [Fact]
+        public void ItLogsAnErrorWhenADbOperationFails()
+        {
+            // Arrange
+            this.mockDocumentDbWrapper.Setup(
+                x => x.CreateAsync(It.IsAny<IDocumentClient>(), It.IsAny<StorageConfig>(), It.IsAny<DocumentDbRecord>())
+            ).Throws(
+                new Exception()
+            );
+
+            // Act, Assert
+            Assert.ThrowsAnyAsync<Exception>(
+                    () => this.target.GetAllAsync()
+                )
+                .Wait(testTimeout);
+            this.mockLogger.Verify(
+                x => x.Error(
+                    It.IsAny<string>(),
+                    It.IsAny<Func<object>>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>()), Times.Once());
+        }
+
+        [Fact]
         public void ItCreatesRecords()
         {
             // Arrange
@@ -200,7 +227,7 @@ namespace Services.Test.Storage
                 this.mockStorageDocument.Object
             );
 
-            StorageRecord record = new StorageRecord();
+            var record = new StorageRecord();
     
             // Act
             var createTask = this.target.CreateAsync(record);
@@ -209,6 +236,54 @@ namespace Services.Test.Storage
             // Assert
             Assert.Equal("foo", (createTask.Result as StorageRecord).GetDocumentDbRecord().LockOwnerId);
             Assert.Equal("bar", (createTask.Result as StorageRecord).GetDocumentDbRecord().LockOwnerType);
+        }
+
+        [Fact]
+        public void ItThrowsConflictingResourceExceptionWhenCreatingAResourceWithAnIdThatIsInUse()
+        {
+            // Arrange
+            var exception = this.BuildDocumentClinetException(HttpStatusCode.Conflict);
+
+            this.mockDocumentDbWrapper.Setup(
+                x => x.CreateAsync(It.IsAny<IDocumentClient>(), It.IsAny<StorageConfig>(), It.IsAny<DocumentDbRecord>())
+            ).ThrowsAsync(
+                (DocumentClientException)exception
+            );
+
+            // Mock storage record
+            var mockStorageRecord = new Mock<StorageRecord>();
+
+            // Act, Assert
+            Assert.ThrowsAnyAsync<ConflictingResourceException>(
+                    () => this.target.CreateAsync(mockStorageRecord.Object)
+                )
+                .Wait(testTimeout);
+        }
+
+        [Fact]
+        public void ItLogsErrorWhenTryingToDeleteARecordThatDoesNotExist()
+        {
+            // Arrange
+            var exception = this.BuildDocumentClinetException(HttpStatusCode.NotFound);
+
+            this.mockDocumentDbWrapper.Setup(
+                x => x.DeleteAsync(It.IsAny<IDocumentClient>(), It.IsAny<StorageConfig>(), It.IsAny<string>())
+            ).ThrowsAsync(
+                (DocumentClientException)exception
+            );
+
+            // Act
+            var deleteTask = this.target.DeleteAsync("123");
+            deleteTask.Wait(testTimeout);
+
+            // Act, Assert
+            this.mockLogger.Verify(
+                x => x.Debug(
+                    It.Is<string>(_ => _.Contains(EXPECTED_DEBUG_LOG_RESOURCE_DOES_NOT_EXIST)),
+                    It.IsAny<Func<object>>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>()), Times.Once());
         }
 
         [Fact]
@@ -233,12 +308,9 @@ namespace Services.Test.Storage
         public void ItDeletesMulti()
         {
             // Arrange
-            int numToDelete = 5;
-            List<string> idsToDelete = new List<string>();
-            for (int i = 0; i < numToDelete; i++)
-            {
-                idsToDelete.Add(i.ToString());
-            }
+            var numToDelete = 5;
+            var idsToDelete = new List<string>();
+            for (var i = 0; i < numToDelete; i++) idsToDelete.Add(i.ToString());
 
             // Act, Assert
             var deleteMultiTask = this.target.DeleteMultiAsync(idsToDelete);
@@ -305,6 +377,26 @@ namespace Services.Test.Storage
         }
 
         [Fact]
+        public void ItUpserts()
+        {
+            // Arranges
+            // Mock storage record
+            var mockStorageRecord = new Mock<StorageRecord>();
+
+            // Act
+            var upsertTask = this.target.UpsertAsync(mockStorageRecord.Object, "foo");
+
+            // Assert
+            this.mockDocumentDbWrapper.Verify(
+                x => x.UpsertAsync(
+                    It.IsAny<IDocumentClient>(), 
+                    It.IsAny<StorageConfig>(), 
+                    It.IsAny<DocumentDbRecord>(),
+                    It.IsAny<string>()
+                ), Times.Once());
+        }
+
+        [Fact]
         public void ItReturnsFalseWhenUnlockingRecordThatIsLockedByOther()
         {
             // Arrange
@@ -328,6 +420,35 @@ namespace Services.Test.Storage
 
             // Assert
             Assert.False(unlockTask.Result);
+        }
+
+        private DocumentClientException BuildDocumentClinetException(HttpStatusCode statusCode)
+        {
+            // Create an error message object
+            var err = new Error
+            {
+                Id = Guid.NewGuid().ToString(),
+                Code = "foo",
+                Message = "bar"
+            };
+
+            // Create a DocumentClientException object
+            var type = typeof(DocumentClientException);
+            var documentClientExceptionObj = type.Assembly.CreateInstance(
+                type.FullName,
+                false,
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                null,
+                new object[]
+                {
+                    err,
+                    (HttpResponseHeaders) null,
+                    statusCode
+                },
+                null,
+                null);
+
+            return (DocumentClientException) documentClientExceptionObj;
         }
     }
 }

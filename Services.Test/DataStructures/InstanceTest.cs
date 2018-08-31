@@ -36,6 +36,7 @@ namespace Services.Test.DataStructures
         {
             // Arrange
             this.target = new Instance(this.mockLogger.Object);
+            this.target.InitOnce();
             this.target.InitComplete();
 
             // Act, Assert
