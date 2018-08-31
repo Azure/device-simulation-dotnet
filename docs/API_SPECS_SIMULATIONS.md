@@ -8,8 +8,8 @@ The service supports only one simulation, with ID "1".
 ### Creation with POST
 
 When invoking the API using the POST HTTP method, the service will always
-attempt to create a new simulation. Since the service allows
-to create only one simulation, retrying the request will result in errors
+attempt to create a new simulation. The service allows
+to create multiple simulation but there can only be one running simulation. Retrying the request to create a new running simulation will result in errors
 after the first request has been successfully completed.
 
 ```
@@ -156,13 +156,16 @@ To switch back to the default Azure IoT Hub stored in the configuration file,
 use the value "default" as the connection string.
 
 ```
-PUT /v1/simulations/1
+PUT /v1/simulations/<id>
 
 {
+  "Name": <name>,
   "Enabled": <true|false>,
-  "IotHub": {
+  "IotHub": [
+    {
       "ConnectionString": "<valid iothub connection string | default>"
-  }
+    }
+  ]
   "DeviceModels": [
     {
       "Id": "<model ID>",
@@ -205,6 +208,7 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
+  "Name": "Sample Simulation",
   "Enabled": true,
   "StartTime": "NOW",
   "EndTime": "NOW+P7D",
@@ -229,6 +233,7 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
+  "Name": "Sample Simulation",
   "Enabled": true,
   "DeviceModels": [
     {
@@ -256,6 +261,7 @@ Content-Type: application/json; charset=utf-8
 {
   "ETag": "cec0722b205740",
   "Id": "1",
+  "Name": "Sample Simulation",
   "Enabled": true,
   "DeviceModels": [
     {
@@ -452,7 +458,7 @@ Content-Type: application/json; charset=utf-8
 }
 ```
 
-## Get details of the running simulation, including device models
+## Get details of the simulation, including device models and statistics
 
 Request:
 ```
@@ -466,34 +472,54 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-  "ETag": "cec0722b205740",
+  "ETag": "969ee1fb277640",
   "Id": "1",
-  "Enabled": true,
-  "StartTime": "2019-02-03T14:00:00",
-  "EndTime": "2019-02-04T00:00:00",
-  "DeviceModels": [
-    {
-      "Id": "truck-01",
-      "Count": 3
-    },
-    {
-      "Id": "truck-02",
-      "Count": 1
-    },
-    {
-      "Id": "elevator-01",
-      "Count": 10
-    }
+  "Name": "Sample Simulation",
+  "Description": "This is a sample simulation",
+  "Enabled": false,
+  "Running": false,
+  "IoTHubs": [
+      {
+          "ConnectionString": "default",
+          "PreprovisionedIoTHub": true,
+          "PreprovisionedIoTHubInUse": false,
+          "PreprovisionedIoTHubMetricsUrl": null
+      }
   ],
+  "StartTime": "2018-08-31T00:30:00+00:00",
+  "EndTime": "2018-09-01T00:40:00+00:00",
+  "StoppedTime": "2018-08-31T00:35:00+00:00",
+  "DeviceModels": [
+      {
+          "Id": "truck-02",
+          "Count": 2
+      },
+      {
+          "Id": "elevator-02",
+          "Count": 4
+      }
+  ],
+  "Statistics": {
+      "TotalMessagesSent": 60,
+      "AverageMessagesPerSecond": 6.43,
+      "FailedMessagesCount": 0,
+      "ActiveDevicesCount": 0,
+      "FailedDeviceConnectionsCount": 0,
+      "FailedDeviceTwinUpdatesCount": 0,
+      "SimulationErrorsCount": 0
+  },
   "$metadata": {
-    "$type": "Simulation;1",
-    "$uri": "/v1/simulations/1",
-    "$version": "1",
-    "$created": "2017-05-31T00:47:18+00:00",
-    "$modified": "2017-05-31T00:47:18+00:00"
+      "$type": "Simulation;1",
+      "$uri": "/v1/simulations/1",
+      "$created": "2018-08-31T00:30:00+00:00",
+      "$modified": "2018-08-31T00:30:00+00:00"
   }
 }
 ```
+
+There are some read-only properties in the api response. `Running` is a calculated property implying whether the simulation is currently running. The `StoppedTime` is the time when the simulation was manually stopped before it's scheduled `EndTime`. `PreprovisionedIoTHubMetricsUrl` implies whether the simulation is currently running using the `PreprovisionedIoTHub`. 'PreprovisionedIoTHubMetricsUrl' is the url to navigate to the IoT Hub metrics page. 
+
+`Statistics` is another set of read only properties which provides different set of counters at a given time. When the simulation is stopped, the current values for `TotalMessagesSent` and `AverageMessagesPerSecond` are updated in storage. Rest of the properties under `Statistics` are read only. 
 
 ## Start simulation
 
