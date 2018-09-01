@@ -74,10 +74,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                     : JSON_FALSE);
             if (isHubPreprovisioned)
             {
-                var preprovisioneHubStatus = await this.CheckAzureIoTHubStatusAsync(errors);
-                statusIsOk = statusIsOk && preprovisioneHubStatus.Item1;
+                var preprovisionedHubStatus = await this.CheckAzureIoTHubStatusAsync(errors);
+                statusIsOk = statusIsOk && preprovisionedHubStatus.Item1;
 
-                result.Dependencies.Add(PREPROVISIONED_IOTHUB_KEY, preprovisioneHubStatus?.Item2);
+                result.Dependencies.Add(PREPROVISIONED_IOTHUB_KEY, preprovisionedHubStatus?.Item2);
             }
 
             // Prepare status message and response
