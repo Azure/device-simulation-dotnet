@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
-using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Common.Exceptions;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -54,7 +53,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         Task DeleteListAsync(IEnumerable<string> deviceIds);
 
-        // Generate a device Id
+        /// <summary>
+        /// Generate a device Id
+        /// </summary>
         string GenerateId(string deviceModelId, int position);
     }
 
@@ -347,7 +348,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        // Generate a device Id
+        /// <summary>
+        /// Generate a device Id
+        /// </summary>
         public string GenerateId(string deviceModelId, int position)
         {
             return deviceModelId + "." + position;

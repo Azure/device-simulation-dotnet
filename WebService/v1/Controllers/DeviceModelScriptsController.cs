@@ -22,7 +22,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
     [ExceptionsFilter]
     public class DeviceModelScriptsController : Controller
     {
-        private const string ApplicationJavascript = "application/javascript";
+        private const string APPLICATION_JAVASCRIPT = "application/javascript";
         private readonly ILogger log;
         private readonly IDeviceModelScripts simulationScriptService;
         private readonly IJavascriptInterpreter javascriptInterpreter;
@@ -58,7 +58,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data provided.");
             }
 
-            if (file.ContentType != ApplicationJavascript)
+            if (file.ContentType != APPLICATION_JAVASCRIPT)
             {
                 this.log.Warn("Wrong content type provided", () => new { file.ContentType });
                 throw new BadRequestException("Wrong content type provided.");
@@ -71,17 +71,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             catch (Exception e)
             {
                 return new JsonResult(new ValidationApiModel
-                {
-                    IsValid = false,
-                    Messages = new List<string>
                     {
-                        e.Message
-                    }
-                })
-                { StatusCode = (int)HttpStatusCode.BadRequest };
+                        IsValid = false,
+                        Messages = new List<string>
+                        {
+                            e.Message
+                        }
+                    })
+                    { StatusCode = (int) HttpStatusCode.BadRequest };
             }
 
-            return new JsonResult(new ValidationApiModel()) { StatusCode = (int)HttpStatusCode.OK };
+            return new JsonResult(new ValidationApiModel()) { StatusCode = (int) HttpStatusCode.OK };
         }
 
         [HttpPost(Version.PATH + "/[controller]")]
@@ -93,7 +93,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data provided.");
             }
 
-            if (file.ContentType != ApplicationJavascript)
+            if (file.ContentType != APPLICATION_JAVASCRIPT)
             {
                 this.log.Warn("Wrong content type provided", () => new { file.ContentType });
                 throw new BadRequestException("Wrong content type provided.");
