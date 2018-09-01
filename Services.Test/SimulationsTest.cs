@@ -139,20 +139,6 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void CreatingMultipleSimulationsIsNotAllowed()
-        {
-            // Arrange
-            this.ThereAreSomeDeviceModels();
-            this.ThereIsAnEnabledSimulationInTheStorage();
-            var s = new SimulationModel { Id = Guid.NewGuid().ToString(), Name = "Test Simulation", Enabled = false };
-
-            // Act + Assert
-            // This fails because only 1 solution can be created
-            Assert.ThrowsAsync<ConflictingResourceException>(async () => await this.target.InsertAsync(s))
-                .Wait(Constants.TEST_TIMEOUT);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void CreatedSimulationsAreStored()
         {
             // Arrange
