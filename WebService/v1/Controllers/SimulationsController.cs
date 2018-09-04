@@ -73,7 +73,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromBody] SimulationApiModel simulationApiModel,
             [FromQuery(Name = "template")] string template = "")
         {
-            simulationApiModel?.ValidateInputRequestAsync(this.log, this.connectionStringManager);
+            await simulationApiModel?.ValidateInputRequestAsync(this.log, this.connectionStringManager);
 
             if (simulationApiModel == null)
             {
@@ -97,7 +97,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromBody] SimulationApiModel simulationApiModel,
             string id = "")
         {
-            simulationApiModel?.ValidateInputRequestAsync(this.log, this.connectionStringManager);
+            await simulationApiModel?.ValidateInputRequestAsync(this.log, this.connectionStringManager);
 
             if (simulationApiModel == null)
             {
