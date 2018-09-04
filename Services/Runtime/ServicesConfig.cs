@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 using System.IO;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 {
@@ -14,6 +15,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         string StorageAdapterApiUrl { get; }
         int StorageAdapterApiTimeout { get; }
         bool TwinReadWriteEnabled { get; }
+        StorageConfig MainStorage { get; }
+        StorageConfig NodesStorage { get; set; }
+        StorageConfig SimulationsStorage { get; set; }
+        StorageConfig DevicesStorage { get; set; }
+        StorageConfig PartitionsStorage { get; set; }
         string DiagnosticsEndpointUrl { get;  }
     }
 
@@ -63,6 +69,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         public string DiagnosticsEndpointUrl { get; set; }
                 
         public bool TwinReadWriteEnabled { get; set; }
+
+        public StorageConfig MainStorage { get; set; }
+
+        public StorageConfig NodesStorage { get; set; }
+
+        public StorageConfig SimulationsStorage { get; set; }
+
+        public StorageConfig DevicesStorage { get; set; }
+
+        public StorageConfig PartitionsStorage { get; set; }
 
         private string NormalizePath(string path)
         {

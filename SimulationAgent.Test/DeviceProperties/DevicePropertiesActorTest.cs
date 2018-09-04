@@ -5,6 +5,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
@@ -21,9 +22,11 @@ namespace SimulationAgent.Test.DeviceProperties
     {
         private readonly Mock<ILogger> logger;
         private readonly Mock<IActorsLogger> actorsLogger;
+        private readonly Mock<CredentialsSetup> credentialSetup;
         private readonly Mock<IRateLimiting> rateLimiting;
         private readonly Mock<IRateLimitingConfig> rateLimitingConfig;
         private readonly Mock<IDevices> devices;
+        private readonly Mock<IStorageAdapterClient> storageAdapterClient;
         private readonly Mock<UpdateReportedProperties> updatePropertiesLogic;
         private readonly Mock<SetDeviceTag> deviceTagLogic;
         private readonly Mock<IDeviceConnectionActor> deviceConnectionActor;
@@ -40,6 +43,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.logger = new Mock<ILogger>();
             this.actorsLogger = new Mock<IActorsLogger>();
             this.rateLimiting = new Mock<IRateLimiting>();
+            this.credentialSetup = new Mock<CredentialsSetup>();
             this.rateLimitingConfig = new Mock<IRateLimitingConfig>();
             this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
             this.deviceStateActor = new Mock<IDeviceStateActor>();
@@ -47,6 +51,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.loopSettings = new Mock<PropertiesLoopSettings>(this.rateLimitingConfig.Object);
             this.updatePropertiesLogic = new Mock<UpdateReportedProperties>(this.logger.Object);
             this.deviceTagLogic = new Mock<SetDeviceTag>(this.devices.Object, this.logger.Object);
+            this.storageAdapterClient = new Mock<IStorageAdapterClient>();
 
             this.CreateNewDevicePropertiesActor();
         }
@@ -142,6 +147,39 @@ namespace SimulationAgent.Test.DeviceProperties
         private void SetupRateLimitingConfig()
         {
             this.rateLimitingConfig.SetupGet(x => x.TwinWritesPerSecond).Returns(TWIN_WRITES_PER_SECOND);
+        }
+
+        private DeviceConnectionActor GetDeviceConnectionActor()
+        {
+            Mock<IScriptInterpreter> scriptInterpreter = new Mock<IScriptInterpreter>();
+            Mock<FetchFromRegistry> fetchLogic = new Mock<FetchFromRegistry>(
+                this.devices.Object,
+                this.logger.Object);
+            Mock<Register> registerLogic = new Mock<Register>(
+                this.devices.Object,
+                this.logger.Object);
+            Mock<Connect> connectLogic = new Mock<Connect>(
+                this.devices.Object,
+                scriptInterpreter.Object,
+                this.logger.Object);
+            Mock<Deregister> deregisterLogic = new Mock<Deregister>(
+                this.devices.Object,
+                this.logger.Object);
+            Mock<Disconnect> disconnectLogic = new Mock<Disconnect>(
+                this.devices.Object,
+                scriptInterpreter.Object,
+                this.logger.Object);
+
+            return new DeviceConnectionActor(
+                this.logger.Object,
+                this.actorsLogger.Object,
+                this.rateLimiting.Object,
+                this.credentialSetup.Object,
+                fetchLogic.Object,
+                registerLogic.Object,
+                connectLogic.Object,
+                deregisterLogic.Object,
+                disconnectLogic.Object);
         }
     }
 }

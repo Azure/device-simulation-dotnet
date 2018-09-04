@@ -54,95 +54,7 @@ namespace WebService.Test.v1.Controllers
                 this.logger.Object,
                 this.diagnosticsLogger.Object,
                 this.servicesConfig.Object,
-                this.deploymentConfig.Object,
-                this.connectionStringManager.Object,
-                this.simulationRunner.Object,
-                this.rateReporter.Object);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsTheNumberOfActiveDevices()
-        {
-            // Arrange
-            this.SetupSimulationForRunner();
-            const int ACTIVE_DEVICES_COUNT = 5;
-            this.simulationRunner
-                .Setup(x => x.ActiveDevicesCount)
-                .Returns(ACTIVE_DEVICES_COUNT);
-
-            // Act
-            var result = this.target.GetAsync().Result;
-
-            // Assert
-            Assert.Equal(ACTIVE_DEVICES_COUNT.ToString(), result.Properties["ActiveDevicesCount"]);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsTheThroughputOfMessagesPerSecond()
-        {
-            // Arrange
-            const double MESSAGE_THROUGHPUT = 15.5556;
-            this.SetupSimulationForRunner();
-            this.rateReporter
-                .Setup(x => x.GetThroughputForMessages())
-                .Returns(MESSAGE_THROUGHPUT);
-
-            // Act
-            var result = this.target.GetAsync().Result;
-
-            // Assert
-            Assert.Equal(MESSAGE_THROUGHPUT.ToString("F"), result.Properties["MessagesPerSecond"]);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsTheNumberOfTotalMessages()
-        {
-            // Arrange
-            const int TOTAL_MESSAGES_COUNT = 10;
-            this.SetupSimulationForRunner();
-            this.simulationRunner
-                .Setup(x => x.TotalMessagesCount)
-                .Returns(TOTAL_MESSAGES_COUNT);
-
-            // Act
-            var result = this.target.GetAsync().Result;
-
-            // Assert
-            Assert.Equal(TOTAL_MESSAGES_COUNT.ToString(), result.Properties["TotalMessagesCount"]);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsTheNumberOfFailedMessages()
-        {
-            // Arrange
-            const int FAILED_MESSAGES_COUNT = 5;
-            this.SetupSimulationForRunner();
-            this.simulationRunner
-                .Setup(x => x.FailedMessagesCount)
-                .Returns(FAILED_MESSAGES_COUNT);
-
-            // Act
-            var result = this.target.GetAsync().Result;
-
-            // Assert
-            Assert.Equal(FAILED_MESSAGES_COUNT.ToString(), result.Properties["FailedMessagesCount"]);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsTheNumberOfSimulationErrors()
-        {
-            // Arrange
-            const int SIMULATION_ERRORS_COUNT = 5;
-            this.SetupSimulationForRunner();
-            this.simulationRunner
-                .Setup(x => x.SimulationErrorsCount)
-                .Returns(SIMULATION_ERRORS_COUNT);
-
-            // Act
-            var result = this.target.GetAsync().Result;
-
-            // Assert
-            Assert.Equal(SIMULATION_ERRORS_COUNT.ToString(), result.Properties["SimulationErrorsCount"]);
+                this.deploymentConfig.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -172,39 +84,12 @@ namespace WebService.Test.v1.Controllers
             Assert.Equal("true", result.Properties["PreprovisionedIoTHub"]);
         }
 
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsTheUrlOfPreprovisionedIoTHub()
-        {
-            // Arrange
-            this.SetupSimulationForRunner();
-            this.SetupPreprovisionedIoTHub();
-
-            // Act
-            var result = this.target.GetAsync().Result;
-
-            // Assert
-            Assert.Contains("https://portal.azure.com/", result.Properties["PreprovisionedIoTHubMetricsUrl"]);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsPreprovisionedIoTHubInUse()
-        {
-            // Arrange
-            this.SetupSimulationForRunner();
-            this.SetupPreprovisionedIoTHub();
-
-            // Act
-            var result = this.target.GetAsync().Result;
-
-            // Assert
-            Assert.Equal("true", result.Properties["PreprovisionedIoTHubInUse"]);
-        }
-
         private void SetupSimulationForRunner()
         {
             var simulation = new SimulationModel
             {
                 Id = SIMULATION_ID,
+                Name = "Test Simulation",
                 Created = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 Modified = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 ETag = "ETag0",

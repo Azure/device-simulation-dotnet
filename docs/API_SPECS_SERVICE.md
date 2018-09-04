@@ -23,9 +23,7 @@ Content-Type: application/JSON
     "UID": "779e748b-fc97-4eb4-adcd-2fbe51df619c",
     "Properties": {
         "SimulationRunning": "true|false|unknown",
-        "PreprovisionedIoTHub": "true|false",
-        "PreprovisionedIoTHubInUse": "true|false",
-        "PreprovisionedIoTHubMetricsUrl": "https://portal.azure.com/..."
+        "PreprovisionedIoTHub": "true|false"
     },
     "Dependencies": {
         "PreprovisionedIoTHub": "OK|ERROR:...msg...",

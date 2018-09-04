@@ -8,7 +8,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 {
-
     public interface IDiagnosticsLogger
     {
         Task<IHttpResponse> LogServiceStartAsync(string message);
@@ -45,14 +44,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
             public JsonStruct(string eventType, Dictionary<string, object> eventProps)
             {
-                EventType = eventType;
-                EventProperties = eventProps;
+                this.EventType = eventType;
+                this.EventProperties = eventProps;
             }
         }
 
         private readonly IHttpClient httpClient;
         private readonly IServicesConfig servicesConfig;
-        private readonly string diagnosticsEndpoint = "";
+        private readonly string diagnosticsEndpoint = string.Empty;
 
         private const string SERVICE_ERROR_EVENT = "ServiceError";
         private const string SERVICE_START_EVENT = "ServiceStart";
@@ -69,14 +68,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         {
             JsonStruct jsonStruct = new JsonStruct(SERVICE_START_EVENT + message, null);
 
-            return await httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
+            return await this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
         }
 
         public async Task<IHttpResponse> LogServiceHeartbeatAsync()
         {
             JsonStruct jsonStruct = new JsonStruct(SERVICE_HEARTBEAT_EVENT,null);
 
-            return await httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
+            return await this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
         }
 
         public async Task<IHttpResponse> LogServiceErrorAsync(
@@ -86,7 +85,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             [CallerLineNumber] int lineNumber = 0)
         {
             JsonStruct jsonStruct = this.ConvertToJson(message, "", null, callerName, filePath, lineNumber);
-            return await httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
+            return await this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
         }
 
         public async Task<IHttpResponse> LogServiceExceptionAsync(
@@ -97,7 +96,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             [CallerLineNumber] int lineNumber = 0)
         {
             JsonStruct jsonStruct = this.ConvertToJson(message, exceptionMessage, null, callerName, filePath, lineNumber);
-            return await httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
+            return await this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
         }
 
         public async Task<IHttpResponse> LogServiceErrorAsync(
@@ -108,7 +107,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             [CallerLineNumber] int lineNumber = 0)
         {
             JsonStruct jsonStruct = this.ConvertToJson(message, "", data, callerName, filePath, lineNumber);
-            return await httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
+            return await this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
         }
 
         private JsonStruct ConvertToJson(string message,
@@ -118,16 +117,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0)
         {
-            Dictionary<string, object> eventProps = new Dictionary<string, object>();
-            eventProps.Add("message", message + $"(CallerMemberName = '{callerName}', CallerFilePath = '{filePath}', lineNumber = '{lineNumber}')");
+            var eventProps = new Dictionary<string, object>
+            {
+                { "message", message + $"(CallerMemberName = '{callerName}', CallerFilePath = '{filePath}', lineNumber = '{lineNumber}')" }
+            };
+
             if (!string.IsNullOrEmpty(exceptionMessage))
             {
                 eventProps.Add("ExceptionMessage", exceptionMessage);
             }
+
             if (data != null)
             {
                 eventProps.Add("data", data);
             }
+
             return new JsonStruct(SERVICE_ERROR_EVENT, eventProps);
         }
 

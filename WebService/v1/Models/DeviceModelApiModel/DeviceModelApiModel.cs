@@ -50,7 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
         public IList<DeviceModelTelemetry> Telemetry { get; set; }
 
         [JsonProperty(PropertyName = "CloudToDeviceMethods")]
-        public IDictionary<string, DeviceModelSimulationScript> CloudToDeviceMethods { get; set; }
+        public IDictionary<string, DeviceModelScript> CloudToDeviceMethods { get; set; }
 
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
@@ -73,7 +73,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
             this.Simulation = new DeviceModelSimulation();
             this.Properties = new Dictionary<string, object>();
             this.Telemetry = new List<DeviceModelTelemetry>();
-            this.CloudToDeviceMethods = new Dictionary<string, DeviceModelSimulationScript>();
+            this.CloudToDeviceMethods = new Dictionary<string, DeviceModelScript>();
         }
 
         // Map API model to service model
@@ -101,7 +101,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
             if (this.CloudToDeviceMethods != null && this.CloudToDeviceMethods.Count > 0)
             {
                 result.CloudToDeviceMethods = new Dictionary<string, Script>();
-                foreach (KeyValuePair<string, DeviceModelSimulationScript> method in this.CloudToDeviceMethods)
+                foreach (KeyValuePair<string, DeviceModelScript> method in this.CloudToDeviceMethods)
                 {
                     var fieldValue = method.Value.ToServiceModel();
                     result.CloudToDeviceMethods.Add(method.Key, fieldValue);
@@ -144,7 +144,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
             {
                 foreach (var method in value.CloudToDeviceMethods)
                 {
-                    result.CloudToDeviceMethods.Add(method.Key, DeviceModelSimulationScript.FromServiceModel(method.Value));
+                    result.CloudToDeviceMethods.Add(method.Key, DeviceModelScript.FromServiceModel(method.Value));
                 }
             }
 

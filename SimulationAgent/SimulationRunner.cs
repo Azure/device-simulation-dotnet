@@ -23,8 +23,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
     public interface ISimulationRunner
     {
-        void Start(Services.Models.Simulation simulation);
+        void Start(Simulation simulation);
         void Stop();
+        Task AddDeviceAsync(string deviceId, string modelId);
+        Task DeleteDevicesAsync(List<string> ids);
         long ActiveDevicesCount { get; }
         long TotalMessagesCount { get; }
         long FailedMessagesCount { get; }
@@ -153,7 +155,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         /// create an actor responsible for
         /// sending the telemetry.
         /// </summary>
-        public void Start(Services.Models.Simulation simulation)
+        public void Start(Simulation simulation)
         {
             // Use `starting` to exit as soon as possible, to minimize the number 
             // of threads pending on the lock statement
@@ -229,6 +231,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     }
                 }
 
+                foreach (var customDevice in simulation.CustomDevices)
+                {
+                    this.AddCustomDevice(customDevice.DeviceId, customDevice.DeviceModel.Id);
+                }
+
                 // Use `running` to avoid starting the simulation more than once
                 this.running = true;
 
@@ -290,6 +297,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
+        public async Task AddDeviceAsync(string deviceId, string modelId)
+        {
+            this.AddCustomDevice(deviceId, modelId);
+        }
+
+        /// <summary>
+        /// Delete a list of devices
+        /// </summary>
+        public async Task DeleteDevicesAsync(List<string> ids)
+        {
+            foreach (var device in this.deviceConnectionActors)
+            {
+                var deviceId = device.Value.Device.Id;
+
+                if (ids.Contains(deviceId))
+                {
+                    this.log.Info("Deleting device", () => new { deviceId });
+                    device.Value.Delete();
+                }
+            }
+        }
+
         // Method to return the count of active devices
         public long ActiveDevicesCount => this.deviceStateActors.Count(a => a.Value.IsDeviceActive);
 
@@ -312,7 +341,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                                              this.deviceTelemetryActors.Sum(a => a.Value.FailedMessagesCount) +
                                              this.devicePropertiesActors.Sum(a => a.Value.SimulationErrorsCount);
 
-        private DeviceModel GetDeviceModel(string id, Services.Models.Simulation.DeviceModelOverride overrides)
+        private DeviceModel GetDeviceModel(string id, Simulation.DeviceModelOverride overrides)
         {
             var modelDef = new DeviceModel();
             if (id.ToLowerInvariant() != DeviceModels.CUSTOM_DEVICE_MODEL_ID.ToLowerInvariant())
@@ -366,11 +395,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 foreach (var device in this.deviceConnectionActors)
                 {
-                    tasks.Add(device.Value.RunAsync());
-                    if (tasks.Count <= pendingTasksLimit) continue;
+                    if (device.Value.IsDeleted)
+                    {
+                        this.DeleteActorsForDevice(device.Key);
+                    }
+                    else
+                    {
+                        tasks.Add(device.Value.RunAsync());
+                        if (tasks.Count <= pendingTasksLimit) continue;
 
-                    Task.WaitAll(tasks.ToArray());
-                    tasks.Clear();
+                        Task.WaitAll(tasks.ToArray());
+                        tasks.Clear();
+                    }
                 }
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
@@ -498,27 +534,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
          * one actor to manage the connection to the hub, and one actor for each
          * telemetry message to send.
          */
-        private void CreateActorsForDevice(DeviceModel deviceModel, int position, int total)
+        private void CreateActorsForDevice(DeviceModel deviceModel, int position, int total, string deviceId = null)
         {
-            var deviceId = this.devices.GenerateId(deviceModel.Id, position);
-            var key = deviceModel.Id + "#" + position;
+            var id = deviceId ?? this.devices.GenerateId(deviceModel.Id, position);
+            var key = deviceId ?? deviceModel.Id + "#" + position;
 
             this.log.Debug("Creating device actors...",
                 () => new { ModelName = deviceModel.Name, ModelId = deviceModel.Id, position });
 
             // Create one state actor for each device
             var deviceStateActor = this.factory.Resolve<IDeviceStateActor>();
-            deviceStateActor.Setup(deviceId, deviceModel, position, total);
+            deviceStateActor.Setup(id, deviceModel, position, total);
             this.deviceStateActors.Add(key, deviceStateActor);
 
             // Create one connection actor for each device
             var deviceConnectionActor = this.factory.Resolve<IDeviceConnectionActor>();
-            deviceConnectionActor.Setup(deviceId, deviceModel, deviceStateActor, this.connectionLoopSettings);
+            deviceConnectionActor.Setup(id, deviceModel, deviceStateActor, this.connectionLoopSettings);
             this.deviceConnectionActors.Add(key, deviceConnectionActor);
 
             // Create one device properties actor for each device
             var devicePropertiesActor = this.factory.Resolve<IDevicePropertiesActor>();
-            devicePropertiesActor.Setup(deviceId, deviceStateActor, deviceConnectionActor, this.propertiesLoopSettings);
+            devicePropertiesActor.Setup(id, deviceStateActor, deviceConnectionActor, this.propertiesLoopSettings);
             this.devicePropertiesActors.Add(key, devicePropertiesActor);
 
             // Create one telemetry actor for each telemetry message to be sent
@@ -534,7 +570,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 }
 
                 var deviceTelemetryActor = this.factory.Resolve<IDeviceTelemetryActor>();
-                deviceTelemetryActor.Setup(deviceId, deviceModel, message, deviceStateActor, deviceConnectionActor);
+                deviceTelemetryActor.Setup(id, deviceModel, message, deviceStateActor, deviceConnectionActor);
 
                 var actorKey = key + "#" + (i++).ToString();
                 this.deviceTelemetryActors.Add(actorKey, deviceTelemetryActor);
@@ -666,9 +702,44 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
+        private void DeleteActorsForDevice(string key)
+        {
+            var deviceId = this.deviceConnectionActors[key].Device.Id;
+
+            this.log.Info("Remove connection actor for device id ", () => new { key });
+            this.deviceConnectionActors.Remove(key);
+
+            foreach (var actor in this.deviceTelemetryActors)
+            {
+                if (actor.Value.Client.DeviceId.Equals(deviceId))
+                {
+                    this.log.Info("Stop telemetry actor for deviceId ", () => new { key });
+                    actor.Value.Stop();
+
+                    this.log.Info("Remove telemetry actor for deviceId", () => new { key });
+                    this.deviceTelemetryActors.Remove(actor.Key);
+                }
+            }
+
+            this.log.Info("Stop property actor for deviceId ", () => new { key });
+            this.devicePropertiesActors[key].Stop();
+
+            this.log.Info("Remove property actor for deviceId", () => new { key });
+            this.devicePropertiesActors.Remove(key);
+
+            this.log.Info("Remove state actor for deviceId", () => new { key });
+            this.deviceStateActors.Remove(key);
+        }
+
         private void IncrementSimulationErrorsCount()
         {
             Interlocked.Increment(ref this.simulationErrors);
+        }
+
+        private void AddCustomDevice(string deviceId, string modelId)
+        {
+            DeviceModel model = this.GetDeviceModel(modelId, null);
+            this.CreateActorsForDevice(model, 0, 1, deviceId);
         }
     }
 }

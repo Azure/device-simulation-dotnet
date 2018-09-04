@@ -141,23 +141,6 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void CreatingMultipleSimulationsIsNotAllowed()
-        {
-            // Arrange
-            this.ThereAreSomeDeviceModels();
-            this.ThereIsAnEnabledSimulationInTheStorage();
-            var s = new SimulationModel { Id = Guid.NewGuid().ToString(), Enabled = false };
-
-            // Act + Assert
-            // This fails because only 1 solution can be created
-            Assert.ThrowsAsync<ConflictingResourceException>(async () => await this.target.InsertAsync(s))
-                .Wait(Constants.TEST_TIMEOUT);
-            // This fails because only "1" can be used as a simulation ID
-            Assert.ThrowsAsync<InvalidInputException>(async () => await this.target.UpsertAsync(s))
-                .Wait(Constants.TEST_TIMEOUT);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void CreatedSimulationsAreStored()
         {
             // Arrange
@@ -203,10 +186,10 @@ namespace Services.Test
         public void UpsertRequiresIdWhileInsertDoesNot()
         {
             // Arrange
-            var s1 = new SimulationModel();
-            var s2 = new SimulationModel();
+            var s1 = new SimulationModel() { Name = "Test Simulation 1"};
+            var s2 = new SimulationModel() { Name = "Test Simulation 2" };
             this.ThereAreNoSimulationsInTheStorage();
-
+            
             // Act - No exception occurs
             this.target.InsertAsync(s1).Wait(Constants.TEST_TIMEOUT);
 
@@ -223,7 +206,7 @@ namespace Services.Test
             const string ETAG2 = "002";
 
             // Initial simulation 
-            var simulation1 = new SimulationModel { Id = SIMULATION_ID, ETag = ETAG1 };
+            var simulation1 = new SimulationModel { Id = SIMULATION_ID, Name = "Test Simulation 1", ETag = ETAG1 };
             var storageRecord1 = new ValueApiModel
             {
                 Key = SIMULATION_ID,
@@ -234,7 +217,7 @@ namespace Services.Test
             storageList1.Items.Add(storageRecord1);
 
             // Simulation after update
-            var simulation2 = new SimulationModel { Id = SIMULATION_ID, ETag = ETAG2 };
+            var simulation2 = new SimulationModel { Id = SIMULATION_ID, Name = "Test Simulation 2", ETag = ETAG2 };
             var storageRecord2 = new ValueApiModel
             {
                 Key = SIMULATION_ID,
@@ -255,9 +238,11 @@ namespace Services.Test
 
             // Arrange - the ETag won't match
             this.storage.Setup(x => x.GetAllAsync(STORAGE_COLLECTION)).ReturnsAsync(storageList2);
+            this.storage.Setup(x => x.GetAsync(STORAGE_COLLECTION, SIMULATION_ID)).ReturnsAsync(storageRecord2);
 
             // Act + Assert
             var simulationOutOfDate = new SimulationModel { Id = SIMULATION_ID, ETag = ETAG1 };
+
             Assert.ThrowsAsync<ResourceOutOfDateException>(
                     async () => await this.target.UpsertAsync(simulationOutOfDate))
                 .Wait(Constants.TEST_TIMEOUT);
@@ -271,15 +256,17 @@ namespace Services.Test
             this.ThereAreNoSimulationsInTheStorage();
 
             // Arrange the simulation data returned by the storage adapter
+            var id = SIMULATION_ID;
             var simulation = new SimulationModel
             {
-                Id = SIMULATION_ID,
+                Id = id,
+                Name = "Test Simulation",
                 ETag = "ETag0",
                 Enabled = true
             };
             var updatedValue = new ValueApiModel
             {
-                Key = SIMULATION_ID,
+                Key = id,
                 Data = JsonConvert.SerializeObject(simulation),
                 ETag = simulation.ETag
             };
@@ -292,24 +279,9 @@ namespace Services.Test
             // Assert
             this.storage.Verify(x => x.UpdateAsync(
                 STORAGE_COLLECTION,
-                SIMULATION_ID,
-                It.Is<string>(s => !s.Contains("null")),
+                id,
+                It.IsAny<string>(),
                 "ETag0"));
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void CreatingMultipleSimulationsViaUpsertIsNotAllowed()
-        {
-            // Arrange
-            this.ThereAreSomeDeviceModels();
-            this.ThereIsAnEnabledSimulationInTheStorage();
-            var s = new SimulationModel { Id = Guid.NewGuid().ToString(), Enabled = false };
-
-            // Act + Assert
-            // Note: the exception is 'InvalidInputException' because only id='1' is allowed. This will
-            // change in future when multiple simulation will be allowed.
-            Assert.ThrowsAsync<InvalidInputException>(async () => await this.target.UpsertAsync(s))
-                .Wait(Constants.TEST_TIMEOUT);
         }
 
         private void ThereAreSomeDeviceModels()
@@ -322,7 +294,7 @@ namespace Services.Test
         {
             this.storage.Setup(x => x.GetAllAsync(STORAGE_COLLECTION)).ReturnsAsync(new ValueListApiModel());
             // In case the test inserts a record, return a valid storage object
-            this.storage.Setup(x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.IsAny<string>(), "*"))
+            this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new ValueApiModel { Key = SIMULATION_ID, Data = "{}", ETag = "someETag" });
         }
 

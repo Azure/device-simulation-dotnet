@@ -9,37 +9,37 @@ using Xunit;
 
 namespace WebService.Test.v1.Models.SimulationApiModel
 {
-    public class DeviceModelSimulationScriptOverrideTest
+    public class DeviceModelScriptOverrideTest
     {
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsDeviceModelSimulationScriptApiModelOverrideFromServiceModel()
+        public void ItReturnsDeviceModelScriptApiModelOverrideFromServiceModel()
         {
             // Arrange
             var scriptOverride = this.GetScriptOverride();
 
             // Act
-            var result = DeviceModelSimulationScriptOverride.FromServiceModel(scriptOverride);
+            var result = DeviceModeScriptOverride.FromServiceModel(scriptOverride);
 
             // Assert
-            Assert.IsType<DeviceModelSimulationScriptOverride>(result.FirstOrDefault());
+            Assert.IsType<DeviceModeScriptOverride>(result.FirstOrDefault());
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItReturnsDeviceModelSimulationScriptOverrideFromDeviceModelSimulationScriptApiModel()
         {
             // Arrange
-            var scriptApiModelOverride = this.GetDeviceModelSimulationScriptApiModelOverride();
+            var scriptApiModelOverride = this.GetDeviceModelScriptApiModelOverride();
 
             // Act
             var result = scriptApiModelOverride.ToServiceModel();
 
             // Assert
-            Assert.IsType<Simulation.DeviceModelSimulationScriptOverride>(result);
+            Assert.IsType<Simulation.DeviceModelScriptOverride>(result);
         }
 
-        private DeviceModelSimulationScriptOverride GetDeviceModelSimulationScriptApiModelOverride()
+        private DeviceModeScriptOverride GetDeviceModelScriptApiModelOverride()
         {
-            var scriptOverride = new DeviceModelSimulationScriptOverride()
+            var scriptOverride = new DeviceModeScriptOverride()
             {
                 Type = "",
                 Path = "",
@@ -49,11 +49,11 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             return scriptOverride;
         }
 
-        private IList<Simulation.DeviceModelSimulationScriptOverride> GetScriptOverride()
+        private IList<Simulation.DeviceModelScriptOverride> GetScriptOverride()
         {
-            var scriptOverride =  new List<Simulation.DeviceModelSimulationScriptOverride>()
+            var scriptOverride =  new List<Simulation.DeviceModelScriptOverride>()
             {
-                new Simulation.DeviceModelSimulationScriptOverride()
+                new Simulation.DeviceModelScriptOverride()
                 {
                     Type = "",
                     Path = "",
