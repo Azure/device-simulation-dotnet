@@ -42,6 +42,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             set => this.iotHubConnectionString = value ?? ServicesConfig.USE_DEFAULT_IOTHUB;
         }
 
+        public bool PartitioningComplete { get; set; }
+
         public Simulation()
         {
             // When unspecified, a simulation is enabled
@@ -53,6 +55,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             // by default, use environment variable
             this.IotHubConnectionString = ServicesConfig.USE_DEFAULT_IOTHUB;
             this.DeviceModels = new List<DeviceModelRef>();
+
+            this.PartitioningComplete = false;
         }
 
         public class DeviceModelRef
