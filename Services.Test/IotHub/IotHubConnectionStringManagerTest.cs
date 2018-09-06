@@ -9,7 +9,7 @@ using Moq;
 using Services.Test.helpers;
 using Xunit;
 
-namespace Services.Test
+namespace Services.Test.IotHub
 {
     public class IotHubConnectionStringManagerTest
     {

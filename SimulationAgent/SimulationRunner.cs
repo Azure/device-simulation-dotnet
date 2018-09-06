@@ -168,7 +168,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 {
                     // Note: this is a singleton class, so we can call this once. This sets
                     // the active hub, e.g. in case the user provided a custom connection string.
-                    this.devices.InitAsync().Wait(TimeSpan.FromSeconds(DEVICES_INIT_TIMEOUT_SECS));
+                    this.devices.Init();
 
                     // Create the devices
                     var devices = this.simulations.GetDeviceIds(simulation);
@@ -312,13 +312,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Method to return the count of total messages
         public long TotalMessagesCount => this.deviceTelemetryActors.Sum(a => a.Value.TotalMessagesCount);
 
-        // Method to return the count of deliver failed messages
+        // Method to return the count of delivery-failed messages
         public long FailedMessagesCount => this.deviceTelemetryActors.Sum(a => a.Value.FailedMessagesCount);
 
-        // Method to return the count of connection failed devices
+        // Method to return the count of connection-failed devices
         public long FailedDeviceConnectionsCount => this.deviceConnectionActors.Sum(a => a.Value.FailedDeviceConnectionsCount);
 
-        // Method to return the count of twin update failed devices
+        // Method to return the count of twin update-failed devices
         public long FailedDeviceTwinUpdatesCount => this.devicePropertiesActors.Sum(a => a.Value.FailedTwinUpdatesCount);
 
         // Method to return the count of simulation errors

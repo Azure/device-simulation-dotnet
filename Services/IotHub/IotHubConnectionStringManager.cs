@@ -17,7 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
     // retrieves Iot Hub connection secret from storage
     public interface IIotHubConnectionStringManager
     {
-        Task<string> GetIotHubConnectionStringAsync();
+        string GetIotHubConnectionString();
         Task<string> RedactAndStoreAsync(string connectionString);
         Task ValidateConnectionStringAsync(string connectionString);
     }
@@ -29,6 +29,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private const string CONNSTRING_REGEX_KEYNAME = "keyName";
         private const string CONNSTRING_REGEX_KEY = "key";
         private const string RECORD_ID = "custom_iothub_key";
+        private const int IOT_HUB_CONNECTION_STRING_TIMEOUT_SECS = 2;
 
         private readonly IServicesConfig config;
         private readonly ILogger log;
@@ -51,10 +52,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// returns value in local storage.
         /// </summary>
         /// <returns>Full connection string including secret</returns>
-        public async Task<string> GetIotHubConnectionStringAsync()
+        public string GetIotHubConnectionString()
         {
             // read connection string from webservice
-            string customIotHub = await this.ReadFromStorageAsync();
+            var customIotHubTask = this.ReadFromStorageAsync();
+            customIotHubTask.Wait(IOT_HUB_CONNECTION_STRING_TIMEOUT_SECS);
+            string customIotHub = customIotHubTask.Result;
 
             // check if default hub should be used
             if (this.IsDefaultHub(customIotHub))

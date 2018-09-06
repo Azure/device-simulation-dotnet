@@ -10,6 +10,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;
 using Newtonsoft.Json;
@@ -244,8 +245,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 if (isHubPreprovisioned && isRunning)
                 {
                     iotHub.PreprovisionedIoTHubInUse = this.IsPreprovisionedIoTHubInUse(servicesConfig, connectionStringManager);
-                    var preprovisionedIoTHubMetricsUrl = this.GetIoTHubMetricsUrl(servicesConfig, deploymentConfig, connectionStringManager);
-                    iotHub.PreprovisionedIoTHubMetricsUrl = preprovisionedIoTHubMetricsUrl;
+                    iotHub.PreprovisionedIoTHubMetricsUrl = this.GetIoTHubMetricsUrl(servicesConfig, deploymentConfig, connectionStringManager);
                 }
             }
 

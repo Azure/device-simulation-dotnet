@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
-using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Common.Exceptions;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -23,7 +22,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface IDevices
     {
         // Set the current IoT Hub using either the user provided one or the configuration settings
-        Task InitAsync();
+        void Init();
 
         // Get a client for the device
         IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter);
@@ -43,10 +42,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Create a list of devices
         Task CreateListAsync(IEnumerable<string> deviceIds);
 
-        // Delete a list of devices
+        /// <summary>
+        /// Delete a device
+        /// </summary>
+        Task DeleteAsync(string deviceId);
+
+        /// <summary>
+        /// Delete a list of devices
+        /// </summary>
+
         Task DeleteListAsync(IEnumerable<string> deviceIds);
 
-        // Generate a device Id
+        /// <summary>
+        /// Generate a device Id
+        /// </summary>
         string GenerateId(string deviceModelId, int position);
     }
 
@@ -95,12 +104,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         // Set IoTHub connection strings, using either the user provided value or the configuration
         // TODO: use the simulation object to decide which conn string to use
-        public async Task InitAsync()
+        public void Init()
         {
             try
             {
                 // Retrieve connection string from file/storage
-                this.connString = await this.connectionStringManager.GetIotHubConnectionStringAsync();
+                this.connString = this.connectionStringManager.GetIotHubConnectionString();
 
                 // Parse connection string, this triggers an exception if the string is invalid
                 IotHubConnectionStringBuilder connStringBuilder = IotHubConnectionStringBuilder.Create(this.connString);
@@ -264,7 +273,33 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 () => new { Count = deviceIds.Count(), Batches = batches.Length, REGISTRY_MAX_BATCH_SIZE });
         }
 
-        // Delete a list of devices
+        /// <summary>
+        /// Delete a device from IoTHub
+        /// </summary>
+        public async Task DeleteAsync(string deviceId)
+        {
+            this.CheckSetup();
+            this.log.Debug("Deleting device", () => new { deviceId });
+
+            try
+            {
+                await this.registry.RemoveDeviceAsync(deviceId);
+            }
+            catch (IotHubCommunicationException error)
+            {
+                this.log.Error("Failed to delete device (IotHubCommunicationException)", () => new { error.InnerException, error });
+                throw;
+            }
+            catch (Exception error)
+            {
+                this.log.Error("Failed to delete device", () => new { error });
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Delete a list of devices
+        /// </summary>
         public async Task DeleteListAsync(IEnumerable<string> deviceIds)
         {
             this.CheckSetup();
@@ -314,7 +349,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        // Generate a device Id
+        /// <summary>
+        /// Generate a device Id
+        /// </summary>
         public string GenerateId(string deviceModelId, int position)
         {
             return deviceModelId + "." + position;
