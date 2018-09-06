@@ -97,6 +97,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         /// <summary>
         /// Get message throughput (messages per second)
         /// </summary>
-        public double GetThroughputForMessages() => this.messaging.GetThroughputForMessages();
+        public double GetThroughputForMessages() => System.Math.Ceiling(this.messaging.GetThroughputForMessages() * 100) / 100;
     }
 }

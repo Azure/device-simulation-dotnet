@@ -55,7 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 
                 case JAVASCRIPT_SCRIPT:
                     this.log.Debug("Invoking JS", () => new { script.Path, context, state });
-                    this.jsInterpreter.Invoke(script.Path, script.Params, context, state, properties);
+                    this.jsInterpreter.Invoke(script, context, state, properties);
                     this.log.Debug("JS invocation complete");
                     break;
 
