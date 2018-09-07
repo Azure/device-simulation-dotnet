@@ -120,7 +120,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         public IRateLimitingConfig RateLimitingConfig { get; set; }
         public IDeploymentConfig DeploymentConfig { get; set; }
         public IConcurrencyConfig ConcurrencyConfig { get; set; }
-        
+
         public Config(IConfigData configData)
         {
             this.Port = configData.GetInt(PORT_KEY);
