@@ -3,6 +3,7 @@
 using System;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
@@ -152,7 +153,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             var client = new DocumentClient(docDbEndpoint, docDbKey);
 
             await this.CreateDatabaseIfNotExistsAsync(client, docDbOptions, cfg.DocumentDbDatabase);
-            await this.CreateCollectionIfNotExistsAsync(client, docDbOptions, cfg.DocumentDbDatabase, cfg.DocumentDbCollection);
+            await this.EnsureCollectionExistsAsync(client, docDbOptions, cfg.DocumentDbDatabase, cfg.DocumentDbCollection);
 
             return client;
         }
@@ -198,20 +199,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             }
         }
 
-        private async Task CreateCollectionIfNotExistsAsync(
+        private async Task EnsureCollectionExistsAsync(
             IDocumentClient client,
             RequestOptions options,
             string dbName,
-            string collectionName)
+            string collName)
         {
             try
             {
-                var uri = $"/dbs/{dbName}/colls/{collectionName}";
+                var uri = $"/dbs/{dbName}/colls/{collName}";
                 await client.ReadDocumentCollectionAsync(uri, options);
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
             {
-                await this.CreateCollectionAsync(client, dbName, collectionName, options);
+                await this.CreateCollectionIfNotExistsAsync(client, dbName, collName, options);
             }
             catch (Exception e)
             {
@@ -220,57 +221,51 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             }
         }
 
-        private async Task CreateCollectionAsync(
+        private async Task CreateCollectionIfNotExistsAsync(
             IDocumentClient client,
             string dbName,
-            string collectionName,
+            string collName,
             RequestOptions options)
         {
             try
             {
                 this.log.Info("Creating DocumentDb collection",
-                    () => new { dbName, collName = collectionName });
-                var coll = new DocumentCollection { Id = collectionName };
+                    () => new { dbName, collName });
+                var coll = new DocumentCollection { Id = collName };
 
                 var index = Index.Range(DataType.String, -1);
                 var indexing = new IndexingPolicy(index) { IndexingMode = IndexingMode.Consistent };
                 coll.IndexingPolicy = indexing;
+
                 var dbUri = "/dbs/" + dbName;
                 await client.CreateDocumentCollectionAsync(dbUri, coll, options);
             }
             catch (DocumentClientException e)
             {
-                // Multiple instances of this microservice may be trying to set
-                // up the collection simultaneously. Here, if the container has
-                // already been setup, we'll just long this and return without
-                // throwing an exception.
                 if (e.StatusCode == HttpStatusCode.Conflict)
                 {
                     this.log.Warn("Another process already created the collection",
-                        () => new { dbName, collName = collectionName });
+                        () => new { dbName, collName });
+                    // Don't throw exception because it's fine if the collection was created somewhere else
                     return;
                 }
 
                 this.log.Error("Error while creating DocumentDb collection",
-                    () => new { dbName, collName = collectionName, e });
+                    () => new { dbName, collName, e });
 
-                throw new ExternalDependencyException("Error while creating DocumentDb collection");
+                throw new ExternalException("Error while creating DocumentDb collection", e);
             }
             catch (Exception e)
             {
                 this.log.Error("Error while creating DocumentDb collection",
-                    () => new { dbName, collName = collectionName, e });
+                    () => new { dbName, collName, e });
                 throw;
             }
         }
 
         private static RequestOptions IfMatch(string etag)
         {
-            if (etag == "*")
-            {
-                // Match all
-                return null;
-            }
+            if (etag == "*") return null;
 
             return new RequestOptions
             {

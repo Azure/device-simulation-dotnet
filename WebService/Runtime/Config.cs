@@ -66,7 +66,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string CONCURRENCY_MIN_DEVICE_STATE_LOOP_DURATION_KEY = CONCURRENCY_KEY + "min_device_state_loop_duration";
         private const string CONCURRENCY_MIN_DEVICE_CONNECTION_LOOP_DURATION_KEY = CONCURRENCY_KEY + "min_device_connection_loop_duration";
         private const string CONCURRENCY_MIN_DEVICE_PROPERTIES_LOOP_DURATION_KEY = CONCURRENCY_KEY + "min_device_properties_loop_duration";
-        private const string CONCURRENCY_MAX_PENDING_TASKS = CONCURRENCY_KEY + "max_pending_tasks";
+        private const string CONCURRENCY_MAX_PENDING_STORAGE_TASKS = CONCURRENCY_KEY + "max_pending_storage_tasks";
 
         private const string STORAGE_ADAPTER_KEY = "StorageAdapterService:";
         private const string STORAGE_ADAPTER_API_URL_KEY = STORAGE_ADAPTER_KEY + "webservice_url";
@@ -293,7 +293,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 MinDeviceConnectionLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_CONNECTION_LOOP_DURATION_KEY, defaults.MinDeviceConnectionLoopDuration),
                 MinDeviceTelemetryLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_TELEMETRY_LOOP_DURATION_KEY, defaults.MinDeviceTelemetryLoopDuration),
                 MinDevicePropertiesLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_PROPERTIES_LOOP_DURATION_KEY, defaults.MinDevicePropertiesLoopDuration),
-                MaxPendingTasks = configData.GetInt(CONCURRENCY_MAX_PENDING_TASKS, defaults.MaxPendingTasks)
+                MaxPendingStorageTasks = configData.GetInt(CONCURRENCY_MAX_PENDING_STORAGE_TASKS, defaults.MaxPendingStorageTasks)
             };
         }
 

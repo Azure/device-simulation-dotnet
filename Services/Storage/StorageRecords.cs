@@ -217,7 +217,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
             foreach (var id in ids)
             {
                 tasks.Add(this.DeleteAsync(id));
-                if (tasks.Count < this.concurrencyConfig.MaxPendingTasks) continue;
+                if (tasks.Count < this.concurrencyConfig.MaxPendingStorageTasks) continue;
 
                 await Task.WhenAll(tasks);
                 tasks.Clear();
