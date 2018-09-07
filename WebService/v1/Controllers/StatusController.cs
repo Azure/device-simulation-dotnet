@@ -116,7 +116,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 var msg = "Unable to fetch simulation status";
                 errors.Add(msg);
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceExceptionAsync(msg, e.Message);
             }
 
             return simulationRunning;
