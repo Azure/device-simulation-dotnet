@@ -92,7 +92,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string LOGGING_WHITELIST_SOURCES_KEY = LOGGING_KEY + "WhiteListSources";
         private const string LOGGING_EXTRADIAGNOSTICS_KEY = LOGGING_KEY + "ExtraDiagnostics";
         private const string LOGGING_EXTRADIAGNOSTICSPATH_KEY = LOGGING_KEY + "ExtraDiagnosticsPath";
-        private const string LOGGING_DIAGNOSTICS_EVENTS_PATH = LOGGING_KEY + "diagnostic_endpoint_url";
+        private const string LOGGING_DIAGNOSTICS_EVENTS_PATH = LOGGING_KEY + "diagnostics_endpoint_url";
 
         private const string CLIENT_AUTH_KEY = APPLICATION_KEY + "ClientAuth:";
         private const string CORS_WHITELIST_KEY = CLIENT_AUTH_KEY + "cors_whitelist";
