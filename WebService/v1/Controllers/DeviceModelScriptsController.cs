@@ -71,17 +71,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             catch (Exception e)
             {
                 return new JsonResult(new ValidationApiModel
-                {
-                    IsValid = false,
-                    Messages = new List<string>
                     {
-                        e.Message
-                    }
-                })
-                { StatusCode = (int)HttpStatusCode.BadRequest };
+                        IsValid = false,
+                        Messages = new List<string>
+                        {
+                            e.Message
+                        }
+                    })
+                    { StatusCode = (int) HttpStatusCode.BadRequest };
             }
 
-            return new JsonResult(new ValidationApiModel()) { StatusCode = (int)HttpStatusCode.OK };
+            return new JsonResult(new ValidationApiModel()) { StatusCode = (int) HttpStatusCode.OK };
         }
 
         [HttpPost(Version.PATH + "/[controller]")]
