@@ -29,7 +29,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private readonly IStorageAdapterClient storage;
         private readonly ISimulations simulations;
         private readonly ILogger log;
-        private readonly IDiagnosticsLogger diagnosticsLogger;
         private readonly IServicesConfig servicesConfig;
 
         public StatusController(
@@ -37,7 +36,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             IStorageAdapterClient storage,
             ISimulations simulations,
             ILogger logger,
-            IDiagnosticsLogger diagnosticsLogger,
             IServicesConfig servicesConfig,
             IDeploymentConfig deploymentConfig)
         {
@@ -45,7 +43,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             this.storage = storage;
             this.simulations = simulations;
             this.log = logger;
-            this.diagnosticsLogger = diagnosticsLogger;
             this.servicesConfig = servicesConfig;
         }
 
@@ -138,7 +135,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 var msg = "Storage ping failed";
                 result = new Tuple<bool, string>(false, "Storage check failed");
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
             }
 
             return result;
@@ -168,7 +164,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 var msg = "IoT Hub ping failed";
                 result = new Tuple<bool, string>(false, "IoTHub check failed");
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
             }
 
             return result;
