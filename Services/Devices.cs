@@ -134,7 +134,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var msg = "IoT Hub connection setup failed";
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceExceptionAsync(msg, e.Message);
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
                 throw;
             }
         }
@@ -344,7 +344,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var msg = "Failed to delete devices, the batch is too big";
                 this.log.Error(msg, error);
-                this.diagnosticsLogger.LogServiceExceptionAsync(msg, error.Message);
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, error.Message);
                 throw;
             }
             catch (IotHubCommunicationException error)
@@ -358,7 +358,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var msg = "Failed to delete devices";
                 this.log.Error(msg, error);
-                this.diagnosticsLogger.LogServiceExceptionAsync(msg, error.Message); ;
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, error.Message); ;
                 throw;
             }
         }

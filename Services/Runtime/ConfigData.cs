@@ -18,7 +18,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         int GetInt(string key, int defaultValue = 0);
         uint GetUInt(string key, uint defaultValue = 0);
         uint? GetOptionalUInt(string key);
-        ILogger GetLogger();
     }
 
     public class ConfigData : IConfigData
@@ -35,11 +34,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         public string GetString(string key, string defaultValue = "")
         {
             return this.GetStringInternal(key, defaultValue);
-        }
-
-        public ILogger GetLogger()
-        {
-            return this.log;
         }
 
         public bool GetBool(string key, bool defaultValue = false)

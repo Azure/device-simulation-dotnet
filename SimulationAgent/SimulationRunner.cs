@@ -190,7 +190,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.running = false;
                     this.starting = false;
                     this.log.Error(msg, e);
-                    this.diagnosticsLogger.LogServiceExceptionAsync(msg, e.Message);
+                    this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
                     this.IncrementSimulationErrorsCount();
 
                     // Return and retry
@@ -646,7 +646,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var msg = "Unable to start the telemetry threads";
                 this.IncrementSimulationErrorsCount();
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceExceptionAsync(msg, e.Message);
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
                 throw new Exception(msg, e);
             }
         }
@@ -663,7 +663,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var msg = "Unable to start the device connection thread";
                 this.IncrementSimulationErrorsCount();
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceExceptionAsync(msg, e.Message);
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
                 throw new Exception(msg, e);
             }
         }
@@ -680,7 +680,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var msg = "Unable to start the device state thread";
                 this.IncrementSimulationErrorsCount();
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceExceptionAsync(msg, e.Message);
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
                 throw new Exception(msg, e);
             }
         }
@@ -697,7 +697,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var msg = "Unable to start the device properties thread";
                 this.IncrementSimulationErrorsCount();
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceExceptionAsync(msg, e.Message);
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
                 throw new Exception(msg, e);
             }
         }

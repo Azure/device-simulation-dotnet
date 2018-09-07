@@ -16,6 +16,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
         Task<IHttpResponse> LogServiceErrorAsync(
             string message,
+            string exceptionMessage = "",
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0);
@@ -25,14 +26,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             object data,
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
-            [CallerLineNumber] int lineNumber = 0);
-
-        Task<IHttpResponse> LogServiceExceptionAsync(
-            string message,
-            string exceptionMessage,
-            [CallerMemberName] string callerName = "",
-            [CallerFilePath] string filePath = "",
-            [CallerLineNumber] int lineNumber = 0);
+            [CallerLineNumber] int lineNumber = 0);        
     }
 
     public class DiagnosticsLogger : IDiagnosticsLogger
@@ -67,30 +61,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         public async Task<IHttpResponse> LogServiceStartAsync(string message)
         {
             JsonStruct jsonStruct = new JsonStruct(SERVICE_START_EVENT + message, null);
-
             return await this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
         }
 
         public async Task<IHttpResponse> LogServiceHeartbeatAsync()
         {
             JsonStruct jsonStruct = new JsonStruct(SERVICE_HEARTBEAT_EVENT,null);
-
             return await this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
         }
 
         public async Task<IHttpResponse> LogServiceErrorAsync(
             string message,
-            [CallerMemberName] string callerName = "",
-            [CallerFilePath] string filePath = "",
-            [CallerLineNumber] int lineNumber = 0)
-        {
-            JsonStruct jsonStruct = this.ConvertToJson(message, "", null, callerName, filePath, lineNumber);
-            return await this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
-        }
-
-        public async Task<IHttpResponse> LogServiceExceptionAsync(
-            string message,
-            string exceptionMessage,
+            string exceptionMessage = "",
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0)

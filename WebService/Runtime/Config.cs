@@ -120,7 +120,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         public IRateLimitingConfig RateLimitingConfig { get; set; }
         public IDeploymentConfig DeploymentConfig { get; set; }
         public IConcurrencyConfig ConcurrencyConfig { get; set; }
-        public IDiagnosticsLogger DiagnosticsLogger { get; set; }
         
         public Config(IConfigData configData)
         {
@@ -131,8 +130,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             this.RateLimitingConfig = GetRateLimitingConfig(configData);
             this.DeploymentConfig = GetDeploymentConfig(configData);
             this.ConcurrencyConfig = GetConcurrencyConfig(configData);
-            this.httpClient = new HttpClient(configData.GetLogger());
-            this.DiagnosticsLogger = new DiagnosticsLogger(this.httpClient, this.ServicesConfig);
         }
 
         private static ILoggingConfig GetLogConfig(IConfigData configData)

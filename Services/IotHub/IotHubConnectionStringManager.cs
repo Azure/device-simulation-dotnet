@@ -185,7 +185,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                                  "string provided. Check that the key is valid and " +
                                  "that the hub exists.";
                 this.log.Error(message, e);
-                this.diagnosticsLogger.LogServiceExceptionAsync(message, e.Message);
+                this.diagnosticsLogger.LogServiceErrorAsync(message, e.Message);
                 throw new IotHubConnectionException(message, e);
             }
         }
@@ -204,7 +204,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                                  "string provided. Check that the policy for the key allows " +
                                  "`Registry Read/Write` and `Service Connect` permissions.";
                 this.log.Error(message, e);
-                this.diagnosticsLogger.LogServiceExceptionAsync(message, e.Message);
+                this.diagnosticsLogger.LogServiceErrorAsync(message, e.Message);
                 throw new IotHubConnectionException(message, e);
             }
         }
@@ -227,7 +227,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                                  "string provided. Check that the policy for the key allows " +
                                  "`Registry Read/Write` and `Service Connect` permissions.";
                 this.log.Error(message, e);
-                this.diagnosticsLogger.LogServiceExceptionAsync(message, e.Message);
+                this.diagnosticsLogger.LogServiceErrorAsync(message, e.Message);
                 throw new IotHubConnectionException(message, e);
             }
 
@@ -283,7 +283,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 var msg = "Unable to use default IoT Hub. Check that the " +
                              "pre-provisioned hub exists and has the correct permissions.";
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceExceptionAsync(msg, e.Message);
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
                 throw new IotHubConnectionException(msg, e);
             }
 

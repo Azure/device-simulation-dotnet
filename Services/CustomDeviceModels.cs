@@ -72,7 +72,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var msg = "Unable to load device models from storage";
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceExceptionAsync(msg, e.Message);
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
                 throw new ExternalDependencyException(msg, e);
             }
 
@@ -93,7 +93,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var msg = "Unable to parse device models loaded from storage";
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceExceptionAsync(msg, e.Message);
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
                 throw new ExternalDependencyException(msg, e);
             }
         }
