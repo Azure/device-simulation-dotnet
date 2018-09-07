@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
@@ -27,8 +28,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private readonly ILogger log;
         private readonly ISimulations simulations;
         private readonly ISimulationRunner runner;
+        private readonly IRateLimiting rateReporter;
         private readonly IDeviceModels deviceModels;
-        private Services.Models.Simulation simulation;
+        private Simulation simulation;
         private readonly IDevices devices;
         private bool running;
 
@@ -36,12 +38,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             ILogger logger,
             ISimulations simulations,
             ISimulationRunner runner,
+            IRateLimiting rateReporter,
             IDeviceModels deviceModels,
             IDevices devices)
         {
             this.log = logger;
             this.simulations = simulations;
             this.runner = runner;
+            this.rateReporter = rateReporter;
             this.deviceModels = deviceModels;
             this.devices = devices;
             this.running = true;
@@ -59,17 +63,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 {
                     this.log.Debug("------ Checking for simulation changes ------");
 
-                    var newSimulation = (await this.simulations.GetListAsync()).FirstOrDefault();
-                    this.log.Debug("Simulation loaded", () => new { newSimulation });
+                    var simulationList = await this.simulations.GetListAsync();
+
+                    // currently we support only 1 running simulation so the result should return only 1 item
+                    var runningSimulation = simulationList.FirstOrDefault(s => s.ShouldBeRunning());
+
+                    this.log.Debug("Simulation loaded", () => new { runningSimulation });
 
                     // if the simulation is removed from storage & we're running stop simulation.
-                    this.CheckForDeletedSimulation(newSimulation);
+                    var id = this.simulation?.Id;
+                    var prevSimulation = simulationList.FirstOrDefault(s => s.Id == id);
+                    this.CheckForDeletedSimulation(prevSimulation);
+
+                    // if there's a new simulation and it's different from the current one
+                    // stop the current one from running & start the new one if it's enabled
+                    this.CheckForChangedSimulation(runningSimulation);
 
                     // if there's no simulation running but there's one from storage start it
-                    this.CheckForNewSimulation(newSimulation);
+                    this.CheckForNewSimulation(runningSimulation);
 
                     // if the current simulation was asked to stop, stop it.
-                    this.CheckForStopOrStartToSimulation();
+                    await this.CheckForStopOrStartToSimulationAsync();
                 }
                 catch (Exception e)
                 {
@@ -158,6 +172,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             if (newSimulation == null && this.simulation != null)
             {
                 this.runner.Stop();
+
                 this.simulation = null;
                 this.log.Debug("No simulation found in storage...");
             }
@@ -183,7 +198,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private void CheckForNewSimulation(Services.Models.Simulation newSimulation)
+        private void CheckForNewSimulation(Simulation newSimulation)
         {
             if (newSimulation != null && this.simulation == null)
             {
@@ -197,12 +212,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private void CheckForStopOrStartToSimulation()
+        private async Task CheckForStopOrStartToSimulationAsync()
         {
             // stopped
-            if (this.simulation != null && !this.simulation.ShouldBeRunning())
+            if (this.simulation != null && this.simulation.Enabled && !this.simulation.ShouldBeRunning())
             {
+                this.simulation.Statistics.AverageMessagesPerSecond = this.rateReporter.GetThroughputForMessages();
+                this.simulation.Statistics.TotalMessagesSent = this.runner.TotalMessagesCount;
+
                 this.runner.Stop();
+
+                // Update simulation statistics in storage
+                await this.simulations.UpsertAsync(this.simulation);
             }
 
             // started

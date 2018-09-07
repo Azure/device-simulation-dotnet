@@ -3,8 +3,10 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
@@ -18,74 +20,94 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
     public class SimulationsController : Controller
     {
         private const int MAX_DELETE_DEVICES = 100;
+
         private readonly ISimulations simulationsService;
+        private readonly IServicesConfig servicesConfig;
+        private readonly IDeploymentConfig deploymentConfig;
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly ISimulationAgent simulationAgent;
-
+        private readonly ISimulationRunner simulationRunner;
+        private readonly IRateLimiting rateReporter;
         private readonly ILogger log;
 
         public SimulationsController(
             ISimulations simulationsService,
+            IServicesConfig servicesConfig,
+            IDeploymentConfig deploymentConfig,
             IIotHubConnectionStringManager connectionStringManager,
+            IPreprovisionedIotHub preprovisionedIotHub,
             ISimulationAgent simulationAgent,
+            ISimulationRunner simulationRunner,
+            IRateLimiting rateReporter,
             ILogger logger)
         {
             this.simulationsService = simulationsService;
+            this.servicesConfig = servicesConfig;
+            this.deploymentConfig = deploymentConfig;
             this.connectionStringManager = connectionStringManager;
             this.simulationAgent = simulationAgent;
+            this.simulationRunner = simulationRunner;
+            this.rateReporter = rateReporter;
             this.log = logger;
         }
 
         [HttpGet]
         public async Task<SimulationListApiModel> GetAsync()
         {
-            return new SimulationListApiModel(await this.simulationsService.GetListAsync());
+            var simulationList = await this.simulationsService.GetListAsync();
+            return new SimulationListApiModel(
+                simulationList, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
 
         [HttpGet("{id}")]
         public async Task<SimulationApiModel> GetAsync(string id)
         {
-            return SimulationApiModel.FromServiceModel(await this.simulationsService.GetAsync(id));
+            var simulation = await this.simulationsService.GetAsync(id);
+            var simulationApiModel = SimulationApiModel.FromServiceModel(
+                simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
+            return simulationApiModel;
         }
 
         [HttpPost]
         public async Task<SimulationApiModel> PostAsync(
-            [FromBody] SimulationApiModel simulation,
+            [FromBody] SimulationApiModel simulationApiModel,
             [FromQuery(Name = "template")] string template = "")
         {
-            simulation?.ValidateInputRequest(this.log, this.connectionStringManager);
+            await simulationApiModel?.ValidateInputRequestAsync(this.log, this.connectionStringManager);
 
-            if (simulation == null)
+            if (simulationApiModel == null)
             {
                 if (string.IsNullOrEmpty(template))
                 {
-                    this.log.Warn("No data or invalid data provided", () => new { simulation, template });
+                    this.log.Warn("No data or invalid data provided", () => new { simulationApiModel, template });
                     throw new BadRequestException("No data or invalid data provided.");
                 }
 
                 // Simulation can be created with `template=default` other than created with input data
-                simulation = new SimulationApiModel();
+                simulationApiModel = new SimulationApiModel();
             }
 
+            var simulation = await this.simulationsService.InsertAsync(simulationApiModel.ToServiceModel(), template);
             return SimulationApiModel.FromServiceModel(
-                await this.simulationsService.InsertAsync(simulation.ToServiceModel(), template));
+                simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
 
         [HttpPut("{id}")]
         public async Task<SimulationApiModel> PutAsync(
-            [FromBody] SimulationApiModel simulation,
+            [FromBody] SimulationApiModel simulationApiModel,
             string id = "")
         {
-            simulation?.ValidateInputRequest(this.log, this.connectionStringManager);
+            await simulationApiModel?.ValidateInputRequestAsync(this.log, this.connectionStringManager);
 
-            if (simulation == null)
+            if (simulationApiModel == null)
             {
                 this.log.Warn("No data provided, request object is null");
                 throw new BadRequestException("No data provided, request object is empty.");
             }
 
+            var simulation = await this.simulationsService.UpsertAsync(simulationApiModel.ToServiceModel(id));
             return SimulationApiModel.FromServiceModel(
-                await this.simulationsService.UpsertAsync(simulation.ToServiceModel(id)));
+                simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
 
         [HttpPut("{id}/Devices!create")]
@@ -133,8 +155,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data or invalid data provided");
             }
 
+            var patchServiceModel = patch.ToServiceModel(id);
+
+            if (patchServiceModel.Enabled == false)
+            {
+                patchServiceModel.Statistics = new Services.Models.SimulationStatistics
+                {
+                    AverageMessagesPerSecond = this.rateReporter.GetThroughputForMessages(),
+                    TotalMessagesSent = this.simulationRunner.TotalMessagesCount
+                };
+            }
+
+            var simulation = await this.simulationsService.MergeAsync(patchServiceModel);
             return SimulationApiModel.FromServiceModel(
-                await this.simulationsService.MergeAsync(patch.ToServiceModel(id)));
+                simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
 
         [HttpDelete("{id}")]
