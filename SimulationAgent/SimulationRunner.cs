@@ -433,7 +433,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
              *    threadPosition 2: 4,  8
              *    threadPosition 3: 8, 11
              */
-            int chunkSize = (int) Math.Ceiling(this.deviceTelemetryActors.Count / (double) threadCount);
+            int chunkSize = (int)Math.Ceiling(this.deviceTelemetryActors.Count / (double)threadCount);
             var firstDevice = chunkSize * (threadPosition - 1);
             var lastDevice = Math.Min(chunkSize * threadPosition, this.deviceTelemetryActors.Count);
 
@@ -511,7 +511,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // Avoid 1msec sleeps
             if (duration >= min || min - duration <= 1) return;
 
-            var pauseMsecs = min - (int) duration;
+            var pauseMsecs = min - (int)duration;
             this.log.Debug("Pausing", () => new { pauseMsecs });
             Thread.Sleep(pauseMsecs);
         }

@@ -50,14 +50,14 @@ namespace Services.Test.Storage
 
             this.mockDocumentDbWrapper.Setup(
                 x => x.ReadAsync(
-                    It.IsAny<IDocumentClient>(), 
-                    It.IsAny<StorageConfig>(), 
+                    It.IsAny<IDocumentClient>(),
+                    It.IsAny<StorageConfig>(),
                     It.IsAny<string>())
             ).ReturnsAsync(this.mockStorageDocument.Object);
 
             this.target = new StorageRecords(
-                this.mockDocumentDbWrapper.Object, 
-                this.mockLogger.Object, 
+                this.mockDocumentDbWrapper.Object,
+                this.mockLogger.Object,
                 this.mockInstance.Object,
                 this.mockConcurrencyConfig.Object);
 
@@ -80,7 +80,7 @@ namespace Services.Test.Storage
             // Act
             Task<StorageRecord> storageRecordTask = this.target.GetAsync(id);
             storageRecordTask.Wait(testTimeout);
-            
+
             // Assert
             Assert.Equal(id, storageRecordTask.Result.Id);
         }
@@ -201,7 +201,7 @@ namespace Services.Test.Storage
             );
 
             StorageRecord record = new StorageRecord();
-    
+
             // Act
             var createTask = this.target.CreateAsync(record);
             createTask.Wait(testTimeout);

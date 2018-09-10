@@ -103,7 +103,7 @@ namespace Services.Test.Storage.DocumentDb
             // Act
             this.target.Lock(ownerId, ownerType, durationMs);
             this.target.Unlock(ownerId, ownerType);
-            
+
             // Assert
             Assert.False(this.target.IsLocked());
         }
@@ -120,7 +120,7 @@ namespace Services.Test.Storage.DocumentDb
             this.target.Lock(ownerId, ownerType, durationMs);
 
             // Assert
-            Assert.True(this.target.IsLockedByOthers("blarg","bazz"));
+            Assert.True(this.target.IsLockedByOthers("blarg", "bazz"));
         }
 
         [Fact]
