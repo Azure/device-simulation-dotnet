@@ -160,9 +160,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
             catch (Exception e)
             {
-                var msg = "IoT Hub ping failed";
                 result = new Tuple<bool, string>(false, "IoTHub check failed");
-                this.log.Error(msg, e);
+                this.log.Error("IoT Hub ping failed", e);
             }
 
             return result;
