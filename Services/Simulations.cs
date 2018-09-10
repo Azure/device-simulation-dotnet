@@ -196,7 +196,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 throw new InvalidInputException("Simulation ID is not specified.");
             }
 
-            var existingSimulation = await this.GetAsync(simulation.Id);
+            Models.Simulation existingSimulation = null;
+
+            try
+            {
+                existingSimulation = await this.GetAsync(simulation.Id);
+            }
+            catch (ResourceNotFoundException)
+            {
+                // Do nothing - this mean simulation does not exist in storage
+                // Therefore allow to create a new simulation
+            }
+
             if (existingSimulation != null)
             {
                 this.log.Info("Modifying simulation");
