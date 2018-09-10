@@ -132,9 +132,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
             catch (Exception e)
             {
-                var msg = "Storage ping failed";
                 result = new Tuple<bool, string>(false, "Storage check failed");
-                this.log.Error(msg, e);
+                this.log.Error("Storage ping failed", e);
             }
 
             return result;
