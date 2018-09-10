@@ -3,6 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.Devices.Common.Exceptions;
@@ -14,6 +16,9 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Blob;
+using Newtonsoft.Json;
 using Device = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Device;
 using TransportType = Microsoft.Azure.Devices.Client.TransportType;
 
@@ -22,10 +27,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface IDevices
     {
         // Set the current IoT Hub using either the user provided one or the configuration settings
+        // TODO: use the simulation object to decide which conn string to use
         Task InitAsync(Models.Simulation simulation);
 
         // Get a client for the device
-        IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter);
+        IDeviceClient GetDeviceClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter);
 
         // Get the device without connecting to the registry, using a known connection string
         Device GetWithKnownCredentials(string deviceId);
@@ -36,14 +42,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Register a new device
         Task<Device> CreateAsync(string deviceId);
 
-        // Add a tag to the device, to say it is a simulated device
-        Task AddTagAsync(string deviceId);
+        // Create a list of devices using bulk import via storage account
+        Task<string> CreateListUsingJobsAsync(IEnumerable<string> deviceIds);
 
-        // Create a list of devices
-        Task CreateListAsync(IEnumerable<string> deviceIds);
+        // Delete a list of devices using bulk import via storage account
+        Task DeleteListUsingJobsAsync(IList<string> deviceIds);
 
-        // Delete a list of devices
-        Task DeleteListAsync(IEnumerable<string> deviceIds);
+        Task<bool> IsJobCompleteAsync(string jobId, Action recreateJobSignal);
+
+        //  Add a tag to the device, to say it is a simulated device
+        // Task AddTagAsync(string deviceId);
+        //
+        //  Create a list of devices
+        // Task CreateListAsync(IEnumerable<string> deviceIds);
+        //
+        //  Delete a list of devices
+        // Task DeleteListAsync(IEnumerable<string> deviceIds);
+
+        // Get all the devices present in the hub
+        Task DeleteAllDevicesAsync();
     }
 
     public class Devices : IDevices
@@ -53,7 +70,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public const string SIMULATED_TAG_VALUE = "Y";
 
         // When using bulk operations, this is the max number of devices that the registry APIs allow
-        private const int REGISTRY_MAX_BATCH_SIZE = 100;
+        //private const int REGISTRY_MAX_BATCH_SIZE = 100;
 
         private readonly IServicesConfig config;
         private readonly IIotHubConnectionStringManager connectionStringManager;
@@ -123,7 +140,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         // Get a client for the device
-        public IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter)
+        public IDeviceClient GetDeviceClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter)
         {
             this.instance.InitRequired();
 
@@ -211,137 +228,284 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        // Add a tag to the device, to say it is a simulated device
-        public async Task AddTagAsync(string deviceId)
+        public async Task<string> CreateListUsingJobsAsync(IEnumerable<string> deviceIds)
         {
             this.instance.InitRequired();
 
-            this.log.Debug("Writing device twin and adding the `IsSimulated` Tag",
-                () => new { deviceId, SIMULATED_TAG_KEY, SIMULATED_TAG_VALUE });
+            this.log.Info("Starting bulk device creation");
 
-            var twin = new Twin
+            // List of devices
+            var serializedDevices = new List<string>();
+            foreach (var deviceId in deviceIds)
             {
-                Tags = { [SIMULATED_TAG_KEY] = SIMULATED_TAG_VALUE }
-            };
-
-            await this.registry.UpdateTwinAsync(deviceId, twin, "*");
-        }
-
-        // Create a list of devices
-        public async Task CreateListAsync(IEnumerable<string> deviceIds)
-        {
-            this.instance.InitRequired();
-
-            var batches = this.SplitArray(deviceIds.ToList(), REGISTRY_MAX_BATCH_SIZE).ToArray();
-
-            this.log.Info("Creating devices",
-                () => new { Count = deviceIds.Count(), Batches = batches.Length, REGISTRY_MAX_BATCH_SIZE });
-
-            for (var batchNumber = 0; batchNumber < batches.Length; batchNumber++)
-            {
-                var batch = batches[batchNumber];
-
-                this.log.Debug("Creating devices batch",
-                    () => new { batchNumber, batchSize = batch.Count() });
-
-                BulkRegistryOperationResult result = await this.registry.AddDevices2Async(
-                    batch.Select(id => this.PrepareDeviceObject(id, this.fixedDeviceKey)));
-
-                this.log.Debug("Devices batch created",
-                    () => new { batchNumber, result.IsSuccessful, ErrorsCount = result.Errors.Length });
-
-                var errors = this.AnalyzeBatchErrors(result);
-                if (errors > 0)
+                var device = new ExportImportDevice
                 {
-                    throw new ExternalDependencyException($"Batch operation failed with {errors} errors");
-                }
+                    Id = deviceId,
+                    ImportMode = ImportMode.CreateOrUpdate,
+                    Authentication = new AuthenticationMechanism
+                    {
+                        Type = AuthenticationType.Sas,
+                        SymmetricKey = new SymmetricKey
+                        {
+                            PrimaryKey = this.fixedDeviceKey,
+                            SecondaryKey = this.fixedDeviceKey
+                        }
+                    },
+                    Status = DeviceStatus.Enabled,
+                    Tags = new TwinCollection { [SIMULATED_TAG_KEY] = SIMULATED_TAG_VALUE }
+                };
+
+                serializedDevices.Add(JsonConvert.SerializeObject(device));
             }
 
-            this.log.Info("Device creation completed",
-                () => new { Count = deviceIds.Count(), Batches = batches.Length, REGISTRY_MAX_BATCH_SIZE });
+            CloudBlockBlob blob;
+            try
+            {
+                blob = await this.WriteDevicesToBlobAsync(serializedDevices);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Failed to create blob file required for the device import job", e);
+                throw new ExternalDependencyException("Failed to create blob file", e);
+            }
+
+            // Create import job
+            JobProperties job;
+            try
+            {
+                var sasToken = this.GetSasTokenForImportExport();
+                this.log.Info("Creating job to import devices");
+                job = await this.registry.ImportDevicesAsync(blob.Container.StorageUri.PrimaryUri.AbsoluteUri + sasToken, blob.Name);
+                this.log.Info("Job to import devices created");
+            }
+            catch (JobQuotaExceededException e)
+            {
+                this.log.Error("Job quota exceeded, retry later", e);
+                throw new ExternalDependencyException("Job quota exceeded, retry later", e);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Failed to create device import job", e);
+                throw new ExternalDependencyException("Failed to create device import job", e);
+            }
+
+            return job.JobId;
         }
 
-        // Delete a list of devices
-        public async Task DeleteListAsync(IEnumerable<string> deviceIds)
+        public async Task DeleteListUsingJobsAsync(IList<string> deviceIds)
         {
             this.instance.InitRequired();
 
-            var batches = this.SplitArray(deviceIds.ToList(), REGISTRY_MAX_BATCH_SIZE).ToArray();
+            this.log.Info("Starting bulk device deletion");
 
-            this.log.Info("Deleting devices",
-                () => new { Count = deviceIds.Count(), Batches = batches.Length, REGISTRY_MAX_BATCH_SIZE });
+            // List of devices
+            var serializedDevices = new List<string>();
+            foreach (var deviceId in deviceIds)
+            {
+                var device = new ExportImportDevice { Id = deviceId, ImportMode = ImportMode.Delete };
+                serializedDevices.Add(JsonConvert.SerializeObject(device));
+            }
+
+            var blob = await this.WriteDevicesToBlobAsync(serializedDevices);
+
+            // Create import job
+            var sasToken = this.GetSasTokenForImportExport();
+            this.log.Info("Creating job to delete devices");
+            JobProperties importJob = await this.registry.ImportDevicesAsync(
+                blob.Container.StorageUri.PrimaryUri.AbsoluteUri + sasToken, blob.Name);
+
+            // Wait until job is finished
+            // TODO: don't block
+            while (true)
+            {
+                this.log.Info("Checking bulk deletion job status...");
+                importJob = await this.registry.GetJobAsync(importJob.JobId);
+                if (importJob.Status == JobStatus.Completed ||
+                    importJob.Status == JobStatus.Failed ||
+                    importJob.Status == JobStatus.Cancelled)
+                {
+                    // Job has finished executing
+                    break;
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(10));
+            }
+        }
+
+        public async Task<bool> IsJobCompleteAsync(string jobId, Action recreateJobSignal)
+        {
+            this.instance.InitRequired();
+
+            JobProperties job;
 
             try
             {
-                for (var batchNumber = 0; batchNumber < batches.Length; batchNumber++)
+                job = await this.registry.GetJobAsync(jobId);
+
+                switch (job.Status)
                 {
-                    var batch = batches[batchNumber];
+                    case JobStatus.Unknown:
+                    case JobStatus.Scheduled:
+                    case JobStatus.Queued:
+                    case JobStatus.Enqueued:
+                    case JobStatus.Running:
+                        this.log.Debug("The Job is not complete yet", () => new { jobId, importJob = job });
+                        return false;
 
-                    this.log.Debug("Deleting devices batch",
-                        () => new { batchNumber, batchSize = batch.Count() });
+                    case JobStatus.Completed:
+                        this.log.Debug("The Job is complete", () => new { jobId, importJob = job });
+                        return true;
 
-                    BulkRegistryOperationResult result = await this.registry.RemoveDevices2Async(
-                        batch.Select(id => new Azure.Devices.Device(id)),
-                        forceRemove: true);
-
-                    this.log.Debug("Devices batch deleted",
-                        () => new { batchNumber, result.IsSuccessful, result.Errors });
-
-                    var errors = this.AnalyzeBatchErrors(result);
-                    if (errors > 0)
-                    {
-                        throw new ExternalDependencyException($"Batch operation failed with {errors} errors");
-                    }
+                    case JobStatus.Failed:
+                    case JobStatus.Cancelled:
+                        this.log.Error("The Job failed or has been cancelled", () => new { jobId, importJob = job });
+                        recreateJobSignal.Invoke();
+                        return false;
                 }
             }
-            catch (TooManyDevicesException error)
+            catch (Exception e)
             {
-                this.log.Error("Failed to delete devices, the batch is too big", error);
-                throw;
+                this.log.Error("Error while checking job status", () => new { jobId, e });
+                throw new ExternalDependencyException("Error while checking job status", e);
             }
-            catch (IotHubCommunicationException error)
+
+            this.log.Error("Unknown registry job status", () => new { jobId, importJob = job });
+            throw new ExternalDependencyException("Unknown job status: " + job.Status);
+        }
+
+        public async Task DeleteAllDevicesAsync()
+        {
+            this.instance.InitRequired();
+
+            var query = "SELECT * FROM devices WHERE tags.IsSimulated = 'Y'";
+            var count = 0;
+
+            var blob = await this.CreateImportExportBlobAsync();
+            using (var stream = await blob.OpenWriteAsync())
             {
-                this.log.Error("Failed to delete devices (IotHubCommunicationException)", () => new { error.InnerException, error });
-                throw;
+                var list = await this.registry.RunQueryAsync(query);
+                while (list.Any() || list.ContinuationToken != null)
+                {
+                    // Extract all device IDs and create a delete action
+                    var actions = new List<string>();
+                    foreach (var device in list)
+                    {
+                        count++;
+                        var action = new ExportImportDevice { Id = device.DeviceId, ImportMode = ImportMode.Delete };
+                        actions.Add(JsonConvert.SerializeObject(action));
+                    }
+
+                    // Serialize the list of actions to a string
+                    var sb = new StringBuilder();
+                    actions.ForEach(x => sb.AppendLine(x));
+
+                    // Write string to blob
+                    byte[] bytes = Encoding.UTF8.GetBytes(sb.ToString());
+                    for (var i = 0; i < bytes.Length; i += 500)
+                    {
+                        int length = Math.Min(bytes.Length - i, 500);
+                        await stream.WriteAsync(bytes, i, length);
+                    }
+
+                    this.log.Info(count + " devices written to blob", () => new { list.ContinuationToken });
+
+                    list = await this.registry.RunQueryAsync(query, list.ContinuationToken);
+                }
             }
-            catch (Exception error)
+
+            if (count == 0)
             {
-                this.log.Error("Failed to delete devices", error);
-                throw;
+                this.log.Info("No devices found");
+                return;
+            }
+
+            // Create job
+            var sasToken = this.GetSasTokenForImportExport();
+            this.log.Info("Creating job to delete devices");
+            JobProperties importJob = await this.registry.ImportDevicesAsync(
+                blob.Container.StorageUri.PrimaryUri.AbsoluteUri + sasToken, blob.Name);
+
+            // Wait until job is finished
+            // TODO: don't block
+            while (true)
+            {
+                this.log.Info("Checking bulk deletion job status...");
+                importJob = await this.registry.GetJobAsync(importJob.JobId);
+                if (importJob.Status == JobStatus.Completed ||
+                    importJob.Status == JobStatus.Failed ||
+                    importJob.Status == JobStatus.Cancelled)
+                {
+                    // Job has finished executing
+                    break;
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(10));
             }
         }
 
-        // Log the errors occurred during a batch operation
-        private int AnalyzeBatchErrors(BulkRegistryOperationResult result)
+        // =========================================================================================================
+        // =========================================================================================================
+        // =========================================================================================================
+
+        private async Task<CloudBlockBlob> WriteDevicesToBlobAsync(List<string> serializedDevices)
         {
-            if (result.Errors.Length == 0) return 0;
+            var sb = new StringBuilder();
+            serializedDevices.ForEach(serializedDevice => sb.AppendLine(serializedDevice));
 
-            var errorsByType = new Dictionary<string, int>();
-
-            // Ignore errors reporting that devices already exist
-            var errorToIgnore = ErrorCode.DeviceAlreadyExists.ToString();
-
-            foreach (var error in result.Errors)
+            // Write to blob
+            var blob = await this.CreateImportExportBlobAsync();
+            using (var stream = await blob.OpenWriteAsync())
             {
-                var k = error.ErrorCode.ToString();
-                if (k == errorToIgnore) continue;
-
-                if (errorsByType.ContainsKey(k))
+                byte[] bytes = Encoding.UTF8.GetBytes(sb.ToString());
+                for (var i = 0; i < bytes.Length; i += 500)
                 {
-                    errorsByType[k]++;
-                }
-                else
-                {
-                    errorsByType[k] = 1;
+                    int length = Math.Min(bytes.Length - i, 500);
+                    await stream.WriteAsync(bytes, i, length);
                 }
             }
 
-            if (errorsByType.Count == 0) return 0;
+            return blob;
+        }
 
-            this.log.Error("Some errors occurred in the batch operation",
-                () => new { errorsByType, result.Errors });
+        private async Task<CloudBlockBlob> CreateImportExportBlobAsync()
+        {
+            // Container for the files managed by Azure IoT SDK.
+            // Note: use a new container to speed up the operation and avoid old files left over
+            string containerName = ("iothub-" + DateTimeOffset.UtcNow.ToString("yyyy-MM-dd-HH-mm-ss-") + Guid.NewGuid().ToString("N")).ToLowerInvariant();
+            string blobName = "devices.txt";
 
-            return errorsByType.Count;
+            this.log.Info("Creating import blob", () => new { containerName, blobName });
+
+            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(this.config.IoTHubImportStorageAccount);
+            CloudBlobClient client = storageAccount.CreateCloudBlobClient();
+            CloudBlobContainer container = client.GetContainerReference(containerName);
+            CloudBlockBlob blob = container.GetBlockBlobReference(blobName);
+
+            await container.CreateIfNotExistsAsync();
+            await blob.DeleteIfExistsAsync();
+
+            return blob;
+        }
+
+        private string GetSasTokenForImportExport()
+        {
+            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(this.config.IoTHubImportStorageAccount);
+
+            var policy = new SharedAccessAccountPolicy
+            {
+                Permissions = SharedAccessAccountPermissions.Read
+                              | SharedAccessAccountPermissions.Write
+                              | SharedAccessAccountPermissions.Delete
+                              | SharedAccessAccountPermissions.Add
+                              | SharedAccessAccountPermissions.Create
+                              | SharedAccessAccountPermissions.Update,
+                Services = SharedAccessAccountServices.Blob,
+                ResourceTypes = SharedAccessAccountResourceTypes.Container | SharedAccessAccountResourceTypes.Object,
+                SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(60),
+                Protocols = SharedAccessProtocol.HttpsOnly
+            };
+
+            return storageAccount.GetSharedAccessSignature(policy);
         }
 
         // Create a Device object using a predefined authentication secret key
@@ -407,13 +571,154 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return sdkClient;
         }
 
-        private IEnumerable<IEnumerable<T>> SplitArray<T>(IReadOnlyCollection<T> array, int size)
-        {
-            var count = (int) Math.Ceiling((float) array.Count / size);
-            for (int i = 0; i < count; i++)
-            {
-                yield return array.Skip(i * size).Take(size);
-            }
-        }
+        // // Create a list of devices
+        // public async Task CreateListAsync(IEnumerable<string> deviceIds)
+        // {
+        //     throw new Exception("Method deprecated. Use BulkCreateListAsync.");
+        //
+        //     this.instance.InitRequired();
+        //
+        //     var batches = this.SplitArray(deviceIds.ToList(), REGISTRY_MAX_BATCH_SIZE).ToArray();
+        //
+        //     this.log.Info("Creating devices",
+        //         () => new { Count = deviceIds.Count(), Batches = batches.Length, REGISTRY_MAX_BATCH_SIZE });
+        //
+        //     for (var batchNumber = 0; batchNumber < batches.Length; batchNumber++)
+        //     {
+        //         var batch = batches[batchNumber];
+        //
+        //         this.log.Debug("Creating devices batch",
+        //             () => new { batchNumber, batchSize = batch.Count() });
+        //
+        //         BulkRegistryOperationResult result = await this.registry.AddDevices2Async(
+        //             batch.Select(id => this.PrepareDeviceObject(id, this.fixedDeviceKey)));
+        //
+        //         this.log.Debug("Devices batch created",
+        //             () => new { batchNumber, result.IsSuccessful, ErrorsCount = result.Errors.Length });
+        //
+        //         var errors = this.AnalyzeBatchErrors(result);
+        //         if (errors > 0)
+        //         {
+        //             throw new ExternalDependencyException($"Batch operation failed with {errors} errors");
+        //         }
+        //     }
+        //
+        //     this.log.Info("Device creation completed",
+        //         () => new { Count = deviceIds.Count(), Batches = batches.Length, REGISTRY_MAX_BATCH_SIZE });
+        // }
+
+        // // Delete a list of devices
+        // public async Task DeleteListAsync(IEnumerable<string> deviceIds)
+        // {
+        //     throw new Exception("Method deprecated. Use BulkDeleteListAsync.");
+        //
+        //     this.instance.InitRequired();
+        //
+        //     var batches = this.SplitArray(deviceIds.ToList(), REGISTRY_MAX_BATCH_SIZE).ToArray();
+        //
+        //     this.log.Info("Deleting devices",
+        //         () => new { Count = deviceIds.Count(), Batches = batches.Length, REGISTRY_MAX_BATCH_SIZE });
+        //
+        //     try
+        //     {
+        //         for (var batchNumber = 0; batchNumber < batches.Length; batchNumber++)
+        //         {
+        //             var batch = batches[batchNumber];
+        //
+        //             this.log.Debug("Deleting devices batch",
+        //                 () => new { batchNumber, batchSize = batch.Count() });
+        //
+        //             BulkRegistryOperationResult result = await this.registry.RemoveDevices2Async(
+        //                 batch.Select(id => new Azure.Devices.Device(id)),
+        //                 forceRemove: true);
+        //
+        //             this.log.Debug("Devices batch deleted",
+        //                 () => new { batchNumber, result.IsSuccessful, result.Errors });
+        //
+        //             var errors = this.AnalyzeBatchErrors(result);
+        //             if (errors > 0)
+        //             {
+        //                 throw new ExternalDependencyException($"Batch operation failed with {errors} errors");
+        //             }
+        //         }
+        //     }
+        //     catch (TooManyDevicesException error)
+        //     {
+        //         this.log.Error("Failed to delete devices, the batch is too big", error);
+        //         throw;
+        //     }
+        //     catch (IotHubCommunicationException error)
+        //     {
+        //         this.log.Error("Failed to delete devices (IotHubCommunicationException)", () => new { error.InnerException, error });
+        //         throw;
+        //     }
+        //     catch (Exception error)
+        //     {
+        //         this.log.Error("Failed to delete devices", error);
+        //         throw;
+        //     }
+        // }
+
+        // // Add a tag to the device, to say it is a simulated device
+        // public async Task AddTagAsync(string deviceId)
+        // {
+        //     // TODO: re-enable, for devices created while the simulation runs, or use bulk import?
+        //
+        //     throw new Exception("Method deprecated. Use BulkCreateListAsync.");
+        //
+        //     this.instance.InitRequired();
+        //
+        //     this.log.Debug("Writing device twin and adding the `IsSimulated` Tag",
+        //         () => new { deviceId, SIMULATED_TAG_KEY, SIMULATED_TAG_VALUE });
+        //
+        //     var twin = new Twin
+        //     {
+        //         Tags = { [SIMULATED_TAG_KEY] = SIMULATED_TAG_VALUE }
+        //     };
+        //
+        //     await this.registry.UpdateTwinAsync(deviceId, twin, "*");
+        // }
+
+        // // Log the errors occurred during a batch operation
+        // private int AnalyzeBatchErrors(BulkRegistryOperationResult result)
+        // {
+        //     if (result.Errors.Length == 0) return 0;
+        //
+        //     var errorsByType = new Dictionary<string, int>();
+        //
+        //     // Ignore errors reporting that devices already exist
+        //     var errorToIgnore = ErrorCode.DeviceAlreadyExists.ToString();
+        //
+        //     foreach (var error in result.Errors)
+        //     {
+        //         var k = error.ErrorCode.ToString();
+        //         if (k == errorToIgnore) continue;
+        //
+        //         if (errorsByType.ContainsKey(k))
+        //         {
+        //             errorsByType[k]++;
+        //         }
+        //         else
+        //         {
+        //             errorsByType[k] = 1;
+        //         }
+        //     }
+        //
+        //     if (errorsByType.Count == 0) return 0;
+        //
+        //     this.log.Error("Some errors occurred in the batch operation",
+        //         () => new { errorsByType, result.Errors });
+        //
+        //     return errorsByType.Count;
+        // }
+
+        // private IEnumerable<IEnumerable<T>> SplitArray<T>(IReadOnlyCollection<T> array, int size)
+        // {
+        //     var count = (int) Math.Ceiling((float) array.Count / size);
+        //     for (int i = 0; i < count; i++)
+        //     {
+        //         yield return array.Skip(i * size).Take(size);
+        //     }
+        // }
     }
 }

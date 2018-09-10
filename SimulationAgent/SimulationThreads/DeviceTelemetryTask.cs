@@ -23,7 +23,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     public class DeviceTelemetryTask : IDeviceTelemetryTask
     {
         private readonly ILogger log;
-        
+
         // Global settings, not affected by hub SKU or simulation settings
         private readonly IAppConcurrencyConfig appConcurrencyConfig;
 
@@ -103,7 +103,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             if (duration >= min || min - duration <= 1) return;
 
             var pauseMsecs = min - (int) duration;
-            this.log.Debug("Pausing", () => new { pauseMsecs });
+            this.log.Debug("Pausing device telemetry thread", () => new { pauseMsecs });
             Thread.Sleep(pauseMsecs);
         }
     }

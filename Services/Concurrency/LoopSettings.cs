@@ -17,9 +17,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             this.NewLoop();
         }
 
-        // TODO: this is invoked by a thread, every few seconds. It doesn't seem right to
-        //       reset per-minute counters, is it?
-        public void NewLoop()
+        // TODO: this is invoked by a thread, every few seconds. It doesn't seem right
+        //       to reset per-minute counters, is it?
+        private void NewLoop()
         {
             // Prioritize connections and registrations, so that devices connect as soon as possible
             this.SchedulableFetches = Math.Max(1, this.registryOperationsPerMinute / 25);
@@ -44,7 +44,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         // TODO: this is invoked by a thread, every few seconds. It doesn't seem right to
         //       reset per-minute counters, is it?
-        public void NewLoop()
+        private void NewLoop()
         {
             // In order for other threads to be able to schedule twin operations,
             // divide by a constant value to prevent the tagging thread from having

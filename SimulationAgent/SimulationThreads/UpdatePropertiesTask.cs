@@ -48,15 +48,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             while (!runningToken.IsCancellationRequested)
             {
                 // TODO: resetting counters every few seconds seems to be a bug - to be revisited
-                foreach (var manager in simulationManagers)
-                {
-                    manager.Value.NewPropertiesLoop();
-                }
+                // foreach (var manager in simulationManagers)
+                // {
+                //     manager.Value.NewPropertiesLoop();
+                // }
 
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 foreach (var device in devicePropertiesActors)
                 {
-                    tasks.Add(device.Value.RunAsync());
+                    if (device.Value.HasWorkToDo())
+                    {
+                        tasks.Add(device.Value.RunAsync());
+                    }
+
                     if (tasks.Count < pendingTasksLimit) continue;
 
                     await Task.WhenAll(tasks);
@@ -82,7 +86,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             if (duration >= min || min - duration <= 1) return;
 
             var pauseMsecs = min - (int) duration;
-            this.log.Debug("Pausing", () => new { pauseMsecs });
+            this.log.Debug("Pausing device properties thread", () => new { pauseMsecs });
             Thread.Sleep(pauseMsecs);
         }
     }

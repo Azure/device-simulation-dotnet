@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
@@ -17,15 +18,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
     public class SimulationsController : Controller
     {
         private readonly ISimulations simulationsService;
+        private readonly IDevices devices;
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly ILogger log;
 
         public SimulationsController(
             ISimulations simulationsService,
+            IDevices devices,
             IIotHubConnectionStringManager connectionStringManager,
             ILogger logger)
         {
             this.simulationsService = simulationsService;
+            this.devices = devices;
             this.connectionStringManager = connectionStringManager;
             this.log = logger;
         }
@@ -108,10 +112,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 await this.simulationsService.MergeAsync(patch.ToServiceModel(id)));
         }
 
-        // [HttpDelete("{id}")]
-        // public async Task DeleteAsync(string id)
-        // {
-        //     await this.simulationsService.DeleteAsync(id);
-        // }
+        [HttpPost("{id}/devices!deleteAll")]
+        public async Task PostDeleteAllAsync(string id)
+        {
+            var sim = await this.simulationsService.GetAsync(id);
+            await this.devices.InitAsync(sim);
+
+            var allDeviceIdsByModel = this.simulationsService.GetDeviceIdsByModel(sim);
+            var list = new List<string>();
+            foreach (var deviceIdsInModel in allDeviceIdsByModel)
+            {
+                foreach (var deviceId in deviceIdsInModel.Value)
+                {
+                    list.Add(deviceId);
+                }
+            }
+
+            await this.devices.DeleteListUsingJobsAsync(list);
+        }
+
+        [HttpPost("{id}/devices!eraseHub")]
+        public async Task<string> PostEraseHubAsync(string id)
+        {
+            var sim = await this.simulationsService.GetAsync(id);
+            await this.devices.InitAsync(sim);
+
+            await this.devices.DeleteAllDevicesAsync();
+
+            return "Delete job running";
+        }
     }
 }

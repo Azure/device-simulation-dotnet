@@ -14,7 +14,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     public interface IDeviceConnectionTask
     {
         Task RunAsync(
-            ConcurrentDictionary<string, ISimulationManager> simulationManagers, 
+            ConcurrentDictionary<string, ISimulationManager> simulationManagers,
             ConcurrentDictionary<string, IDeviceConnectionActor> deviceConnectionActors,
             CancellationToken runningToken);
     }
@@ -27,17 +27,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private readonly ILogger log;
 
         public DeviceConnectionTask(
-            //IRateLimitingConfig ratingConfig,
             IAppConcurrencyConfig appConcurrencyConfig,
             ILogger logger)
         {
-            //this.connectionLoopSettings = new ConnectionLoopSettings(ratingConfig);
             this.appConcurrencyConfig = appConcurrencyConfig;
             this.log = logger;
         }
 
         public async Task RunAsync(
-            ConcurrentDictionary<string, ISimulationManager> simulationManagers, 
+            ConcurrentDictionary<string, ISimulationManager> simulationManagers,
             ConcurrentDictionary<string, IDeviceConnectionActor> deviceConnectionActors,
             CancellationToken runningToken)
         {
@@ -48,13 +46,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             while (!runningToken.IsCancellationRequested)
             {
                 // TODO: resetting counters every few seconds seems to be a bug - to be revisited
-                foreach (var manager in simulationManagers)
-                {
-                    manager.Value.NewConnectionLoop();
-                }
-                
-                var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                // Was this introduced to react to the changing number of nodes?
+                // foreach (var manager in simulationManagers)
+                // {
+                //     manager.Value.NewConnectionLoop();
+                // }
 
+                var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 foreach (var device in deviceConnectionActors)
                 {
                     if (device.Value.HasWorkToDo())
@@ -87,7 +85,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             if (duration >= min || min - duration <= 1) return;
 
             var pauseMsecs = min - (int) duration;
-            this.log.Debug("Pausing", () => new { pauseMsecs });
+            this.log.Debug("Pausing device connections thread", () => new { pauseMsecs });
             Thread.Sleep(pauseMsecs);
         }
     }

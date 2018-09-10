@@ -32,6 +32,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         Task UpdateTwinAsync(string deviceId, Twin twinPatch, string eTag);
 
+        Task<JobProperties> ImportDevicesAsync(string containerUri, string inputBlobName);
+
+        Task<JobProperties> GetJobAsync(string jobId);
+
+        Task<QueryResponse<Twin>> RunQueryAsync(string query, string continuationToken = null);
+
         void Dispose();
     }
 
@@ -102,6 +108,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         {
             this.instance.InitRequired();
             await this.registry.UpdateTwinAsync(deviceId, twinPatch, eTag);
+        }
+
+        public async Task<JobProperties> ImportDevicesAsync(string containerUri, string inputBlobName)
+        {
+            this.instance.InitRequired();
+            return await this.registry.ImportDevicesAsync(containerUri, containerUri, inputBlobName);
+        }
+
+        public Task<JobProperties> GetJobAsync(string jobId)
+        {
+            this.instance.InitRequired();
+            return this.registry.GetJobAsync(jobId);
+        }
+
+        public async Task<QueryResponse<Twin>> RunQueryAsync(string query, string continuationToken = null)
+        {
+            this.instance.InitRequired();
+
+            var q = this.registry.CreateQuery(query);
+
+            var options = string.IsNullOrEmpty(continuationToken)
+                ? new QueryOptions()
+                : new QueryOptions { ContinuationToken = continuationToken };
+
+            return await q.GetNextAsTwinAsync(options);
         }
 
         public void Dispose()

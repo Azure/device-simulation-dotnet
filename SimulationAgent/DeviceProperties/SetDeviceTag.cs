@@ -26,6 +26,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
         public void Init(IDevicePropertiesActor deviceContext, string deviceId)
         {
+            throw new Exception("Task disabled. The tag is set during bulk import.");
+
             this.instance.InitOnce();
             this.deviceContext = deviceContext;
             this.simulationContext = deviceContext.SimulationContext;
@@ -35,6 +37,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
         public async Task RunAsync()
         {
+            throw new Exception("Task disabled. The tag is set during bulk import.");
+
             this.instance.InitRequired();
 
             this.log.Debug("Adding tag to device twin...", () => new { this.deviceId });
@@ -42,16 +46,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
             try
             {
-                await this.simulationContext.Devices.AddTagAsync(this.deviceId);
+                //await this.simulationContext.Devices.AddTagAsync(this.deviceId);
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Debug("Device tag set", () => new { timeSpentMsecs, this.deviceId });
-                this.deviceContext.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTagged);
+                //this.deviceContext.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTagged);
             }
             catch (Exception e)
             {
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Error("Error while tagging the device twin", () => new { timeSpentMsecs, this.deviceId, e });
-                this.deviceContext.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTaggingFailed);
+                //this.deviceContext.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTaggingFailed);
             }
         }
     }

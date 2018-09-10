@@ -12,4 +12,9 @@ IF "%PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING%" == "" (
     exit /B 1
 )
 
+IF "%PCS_AZURE_STORAGE_ACCOUNT%" == "" (
+    echo Error: the PCS_AZURE_STORAGE_ACCOUNT environment variable is not defined.
+    exit /B 1
+)
+
 endlocal

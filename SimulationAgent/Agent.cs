@@ -117,17 +117,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.runningToken.Cancel();
             this.runningToken = new CancellationTokenSource();
 
-            // Start thread updating each device state
-            this.TryToStartStateThread();
-
-            // Start thread managing devices connection
-            this.TryToStartConnectionThread();
-
-            // Start thread sending devices telemetry
-            this.TryToStartTelemetryThreads();
-
-            // Start thread uploading reported properties
-            this.TryToStartReportedPropertiesThread();
+            this.TryToStartThreads();
 
             this.running = true;
             this.startingOrStopping = false;
@@ -151,43 +141,53 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.runningToken.Cancel();
             this.runningToken = new CancellationTokenSource();
 
-            // Allow 3 seconds to complete before stopping the threads
+            // Allow some seconds to complete before stopping the threads
             Thread.Sleep(3000);
-            this.TryToStopStateThread();
-            this.TryToStopConnectionThread();
-            this.TryToStopTelemetryThreads();
-            this.TryToStopReportedPropertiesThread();
+            this.TryToStopThreads();
         }
+
+        // =========================================================================================================
+        // =========================================================================================================
+        // =========================================================================================================
 
         private async Task RunAsync()
         {
-            while (this.running)
+            try
             {
-                // Get list of active simulations. Active simulations are already partioned.
-                IList<Simulation> activeSimulations = await this.GetActiveSimulationsAsync();
+                while (this.running)
+                {
+                    this.log.Debug("Starting simulation agent loop",
+                        () => new { SimulationsCount = this.simulationManagers.Count });
 
-                await this.StartNewSimulations(activeSimulations);
-                await this.MonitorClusterSizeAsync();
-                await this.MonitorDevicePartitionsAsync();
-                this.StopInactiveSimulations(activeSimulations);
-                this.PrintStats();
+                    // Get list of active simulations. Active simulations are already partitioned.
+                    IList<Simulation> activeSimulations = (await this.simulations.GetListAsync())
+                        .Where(x => x.IsActiveNow).ToList();
+                    this.log.Debug("Active simulations loaded", () => new { activeSimulations.Count });
 
-                Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
+                    await this.CreateSimulationManagersAsync(activeSimulations);
+                    await this.RunSimulationManagersMaintenanceAsync();
+
+                    this.StopInactiveSimulations(activeSimulations);
+
+                    Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
+                }
+            }
+            catch (Exception e)
+            {
+                this.log.Error("A critical error occurred in the simulation agent", e);
+                this.Stop();
             }
         }
 
-        private async Task<IList<Simulation>> GetActiveSimulationsAsync()
+        private async Task CreateSimulationManagersAsync(IEnumerable<Simulation> activeSimulations)
         {
-            IList<Simulation> activeSimulations = (await this.simulations.GetListAsync())
-                .Where(x => x.ShouldBeRunning() && x.PartitioningComplete).ToList();
-            return activeSimulations;
-        }
+            // Skip simulations not ready or already with a manager
+            var list = activeSimulations
+                .Where(x => x.ShouldBeRunning && !this.simulationManagers.ContainsKey(x.Id));
 
-        private async Task StartNewSimulations(IList<Simulation> activeSimulations)
-        {
-            foreach (var simulation in activeSimulations)
+            foreach (var simulation in list)
             {
-                if (this.simulationManagers.ContainsKey(simulation.Id)) continue;
+                this.log.Info("Creating new simulation manager...", () => new { SimulationId = simulation.Id });
 
                 try
                 {
@@ -200,31 +200,54 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                         this.devicePropertiesActors);
 
                     this.simulationManagers[simulation.Id] = manager;
+
+                    this.log.Info("New simulation manager created", () => new { SimulationId = simulation.Id });
                 }
                 catch (Exception e)
                 {
-                    this.log.Error("Failed to start simulation", () => new { simulation.Id, e });
+                    this.log.Error("Failed to create simulation manager, will retry", () => new { simulation.Id, e });
                 }
             }
         }
 
-        private async Task MonitorClusterSizeAsync()
+        private async Task RunSimulationManagersMaintenanceAsync()
         {
-            // TODO: this can be optimized, fetching all the information just once
-            //       and passing it to the list of managers
-            foreach (var simulationManager in this.simulationManagers)
+            var printStats = false;
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            if (now - this.lastStatsTime > STATS_INTERVAL_MSECS)
             {
-                await simulationManager.Value.SyncClusterSizeAsync();
+                printStats = true;
+                this.lastStatsTime = now;
             }
-        }
 
-        private async Task MonitorDevicePartitionsAsync()
-        {
-            // TODO: this can be optimized, fetching all the information just once
-            //       and passing it to the list of managers
+            // TODO: check if these can run in parallel
             foreach (var manager in this.simulationManagers)
             {
-                await manager.Value.ManageDevicePartitionsAsync();
+                await TryToAsync(manager.Value.HoldAssignedPartitionsAsync(),
+                    e => this.log.Error("An unexpected error occurred while renewing partition locks", e));
+
+                await TryToAsync(manager.Value.AssignNewPartitionsAsync(),
+                    e => this.log.Error("An unexpected error occurred while assigning new partitions", e));
+
+                await TryToAsync(manager.Value.HandleAssignedPartitionChangesAsync(),
+                    e => this.log.Error("An unexpected error occurred while handling partition changes", e));
+
+                await TryToAsync(manager.Value.UpdateThrottlingLimitsAsync(),
+                    e => this.log.Error("An unexpected error occurred while updating the throttling limits", e));
+
+                if (printStats) manager.Value.PrintStats();
+            }
+
+            async Task TryToAsync(Task task, Action<Exception> onException)
+            {
+                try
+                {
+                    await task;
+                }
+                catch (Exception e)
+                {
+                    onException.Invoke(e);
+                }
             }
         }
 
@@ -244,26 +267,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private void PrintStats()
-        {
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
-            if (now - this.lastStatsTime < STATS_INTERVAL_MSECS) return;
-            this.lastStatsTime = now;
-
-            foreach (var manager in this.simulationManagers)
-            {
-                manager.Value.PrintStats();
-            }
-        }
-
-        // =============== STATE ===============
-
-        private void TryToStartStateThread()
+        private void TryToStartThreads()
         {
             this.devicesStateTask = this.factory.Resolve<IDeviceStateTask>();
             this.devicesStateThread = new Thread(
                 () => this.devicesStateTask.Run(this.deviceStateActors, this.runningToken.Token));
+
+            this.devicesConnectionTask = this.factory.Resolve<IDeviceConnectionTask>();
+            this.devicesConnectionThread = new Thread(
+                () => this.devicesConnectionTask.RunAsync(
+                    this.simulationManagers,
+                    this.deviceConnectionActors,
+                    this.runningToken.Token));
+
+            this.devicesPropertiesTask = this.factory.Resolve<IUpdatePropertiesTask>();
+            this.devicesPropertiesThread = new Thread(
+                () => this.devicesPropertiesTask.RunAsync(
+                    this.simulationManagers,
+                    this.devicePropertiesActors,
+                    this.runningToken.Token));
 
             try
             {
@@ -274,30 +296,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.log.Error("Unable to start the device state thread", e);
                 throw new Exception("Unable to start the device state thread", e);
             }
-        }
 
-        private void TryToStopStateThread()
-        {
-            try
-            {
-                this.devicesStateThread.Interrupt();
-            }
-            catch (Exception e)
-            {
-                this.log.Warn("Unable to stop the devices state thread in a clean way", e);
-            }
-        }
-
-        // =============== CONNECTION ===============
-
-        private void TryToStartConnectionThread()
-        {
-            this.devicesConnectionTask = this.factory.Resolve<IDeviceConnectionTask>();
-            this.devicesConnectionThread = new Thread(
-                () => this.devicesConnectionTask.RunAsync(
-                    this.simulationManagers,
-                    this.deviceConnectionActors,
-                    this.runningToken.Token));
             try
             {
                 this.devicesConnectionThread.Start();
@@ -307,24 +306,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.log.Error("Unable to start the device connection thread", e);
                 throw new Exception("Unable to start the device connection thread", e);
             }
-        }
 
-        private void TryToStopConnectionThread()
-        {
             try
             {
-                this.devicesConnectionThread.Interrupt();
+                this.devicesPropertiesThread.Start();
             }
             catch (Exception e)
             {
-                this.log.Warn("Unable to stop the connections thread in a clean way", e);
+                this.log.Error("Unable to start the device properties thread", e);
+                throw new Exception("Unable to start the device properties thread", e);
             }
-        }
 
-        // =============== TELEMETRY ===============
-
-        private void TryToStartTelemetryThreads()
-        {
             try
             {
                 var count = this.appConcurrencyConfig.TelemetryThreads;
@@ -348,8 +340,35 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private void TryToStopTelemetryThreads()
+        private void TryToStopThreads()
         {
+            try
+            {
+                this.devicesStateThread.Interrupt();
+            }
+            catch (Exception e)
+            {
+                this.log.Warn("Unable to stop the devices state thread in a clean way", e);
+            }
+
+            try
+            {
+                this.devicesConnectionThread.Interrupt();
+            }
+            catch (Exception e)
+            {
+                this.log.Warn("Unable to stop the connections thread in a clean way", e);
+            }
+
+            try
+            {
+                this.devicesPropertiesThread.Interrupt();
+            }
+            catch (Exception e)
+            {
+                this.log.Warn("Unable to stop the devices state thread in a clean way", e);
+            }
+
             this.devicesTelemetryTasks.Clear();
             for (int i = 0; i < this.devicesTelemetryThreads.Length; i++)
             {
@@ -364,40 +383,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 {
                     this.log.Warn("Unable to stop the telemetry thread in a clean way", () => new { threadNumber = i, e });
                 }
-            }
-        }
-
-        // =============== TWIN ===============
-
-        private void TryToStartReportedPropertiesThread()
-        {
-            this.devicesPropertiesTask = this.factory.Resolve<IUpdatePropertiesTask>();
-            this.devicesPropertiesThread = new Thread(
-                () => this.devicesPropertiesTask.RunAsync(
-                    this.simulationManagers,
-                    this.devicePropertiesActors,
-                    this.runningToken.Token));
-
-            try
-            {
-                this.devicesPropertiesThread.Start();
-            }
-            catch (Exception e)
-            {
-                this.log.Error("Unable to start the device properties thread", e);
-                throw new Exception("Unable to start the device properties thread", e);
-            }
-        }
-
-        private void TryToStopReportedPropertiesThread()
-        {
-            try
-            {
-                this.devicesPropertiesThread.Interrupt();
-            }
-            catch (Exception e)
-            {
-                this.log.Warn("Unable to stop the devices state thread in a clean way", e);
             }
         }
     }

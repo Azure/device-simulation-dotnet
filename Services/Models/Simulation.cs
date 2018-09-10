@@ -14,35 +14,69 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         private string iotHubConnectionString;
 
         [JsonIgnore]
+        public bool IsActiveNow => this.Enabled &&
+                                   (!this.StartTime.HasValue || this.StartTime.Value.CompareTo(DateTimeOffset.UtcNow) <= 0) &&
+                                   (!this.EndTime.HasValue || this.EndTime.Value.CompareTo(DateTimeOffset.UtcNow) > 0);
+
+        [JsonIgnore]
+        public bool DeviceCreationRequired => this.IsActiveNow && !this.DevicesCreationComplete;
+
+        [JsonIgnore]
+        public bool PartitioningRequired => this.IsActiveNow && !this.PartitioningComplete;
+
+        [JsonIgnore]
+        public bool ShouldBeRunning => this.IsActiveNow && this.PartitioningComplete && this.DevicesCreationComplete;
+
+        [JsonIgnore]
         public string ETag { get; set; }
 
         [JsonIgnore]
         public string Id { get; set; }
 
+        [JsonProperty(Order = 10)]
         public bool Enabled { get; set; }
-        public IList<DeviceModelRef> DeviceModels { get; set; }
-        public DateTimeOffset Created { get; set; }
-        public DateTimeOffset Modified { get; set; }
 
-        public DateTimeOffset? StartTime
-        {
-            get => this.startTime;
-            set => this.startTime = value ?? DateTimeOffset.MinValue;
-        }
+        [JsonProperty(Order = 20)]
+        public bool DevicesCreationStarted { get; set; }
 
-        public DateTimeOffset? EndTime
-        {
-            get => this.endTime;
-            set => this.endTime = value ?? DateTimeOffset.MaxValue;
-        }
+        [JsonProperty(Order = 30)]
+        public bool DevicesCreationComplete { get; set; }
 
+        [JsonProperty(Order = 1000)]
+        public string DeviceCreationJobId { get; set; }
+
+        [JsonProperty(Order = 40)]
+        public bool PartitioningComplete { get; set; }
+
+        [JsonProperty(Order = 50)]
         public string IotHubConnectionString
         {
             get => this.iotHubConnectionString;
             set => this.iotHubConnectionString = value ?? ServicesConfig.USE_DEFAULT_IOTHUB;
         }
 
-        public bool PartitioningComplete { get; set; }
+        [JsonProperty(Order = 60)]
+        public DateTimeOffset? StartTime
+        {
+            get => this.startTime;
+            set => this.startTime = value ?? DateTimeOffset.MinValue;
+        }
+
+        [JsonProperty(Order = 70)]
+        public DateTimeOffset? EndTime
+        {
+            get => this.endTime;
+            set => this.endTime = value ?? DateTimeOffset.MaxValue;
+        }
+
+        [JsonProperty(Order = 80)]
+        public IList<DeviceModelRef> DeviceModels { get; set; }
+
+        [JsonProperty(Order = 90)]
+        public DateTimeOffset Created { get; set; }
+
+        [JsonProperty(Order = 100)]
+        public DateTimeOffset Modified { get; set; }
 
         public Simulation()
         {
@@ -165,15 +199,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
                 this.Format = null;
                 this.Fields = null;
             }
-        }
-
-        public bool ShouldBeRunning()
-        {
-            var now = DateTimeOffset.UtcNow;
-
-            return this.Enabled
-                   && (!this.StartTime.HasValue || this.StartTime.Value.CompareTo(now) <= 0)
-                   && (!this.EndTime.HasValue || this.EndTime.Value.CompareTo(now) > 0);
         }
     }
 }

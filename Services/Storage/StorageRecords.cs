@@ -6,10 +6,10 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
+using Microsoft.Azure.Documents.Client;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.DocumentDb;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
@@ -108,7 +108,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
 
                 if (record.IsExpired())
                 {
-                    this.log.Info("The resource requested has expired.", () => new { this.storageName, id });
+                    this.log.Debug("The resource requested has expired.", () => new { this.storageName, id });
                     await this.TryToDeleteExpiredRecord(id);
                     return false;
                 }
@@ -200,7 +200,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.Conflict)
             {
-                this.log.Info("There is already a resource with the id specified.", () => new { this.storageName, input.Id });
+                this.log.Debug("There is already a resource with the id specified.", () => new { this.storageName, input.Id });
                 throw new ConflictingResourceException($"There is already a resource with id = '{input.Id}'.");
             }
         }
@@ -223,7 +223,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.PreconditionFailed)
             {
-                this.log.Info(
+                this.log.Debug(
                     "E-Tag mismatch: the resource has been updated by another client.",
                     () => new { this.storageName, input.Id, input.ETag });
                 throw new ConflictingResourceException("E-Tag mismatch: the resource has been updated by another client.");

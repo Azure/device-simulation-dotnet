@@ -3,7 +3,7 @@
 using System.Reflection;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.ClusteringAgent;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
@@ -67,7 +67,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
 
             // Auto-wire ClusteringAgent.DLL
-            assembly = typeof(IClusteringAgent).GetTypeInfo().Assembly;
+            assembly = typeof(IPartitioningAgent).GetTypeInfo().Assembly;
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
         }
 

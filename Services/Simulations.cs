@@ -17,46 +17,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface ISimulations
     {
-        /// <summary>
-        /// Get list of simulations.
-        /// </summary>
+        // Get list of simulations
         Task<IList<Models.Simulation>> GetListAsync();
 
-        /// <summary>
-        /// Get a simulation.
-        /// </summary>
+        // Get a simulation
         Task<Models.Simulation> GetAsync(string id);
 
-        /// <summary>
-        /// Create a simulation.
-        /// </summary>
+        // Create a simulation
         Task<Models.Simulation> InsertAsync(Models.Simulation simulation, string template = "");
 
-        /// <summary>
-        /// Create or Replace a simulation.
-        /// </summary>
+        // Create or Replace a simulation
         Task<Models.Simulation> UpsertAsync(Models.Simulation simulation);
 
-        /// <summary>
-        /// Modify a simulation.
-        /// </summary>
+        // Modify some simulation details
         Task<Models.Simulation> MergeAsync(SimulationPatch patch);
 
-        /*
-        /// <summary>
-        /// Delete a simulation and its devices.
-        /// </summary>
-        Task DeleteAsync(string id);
+        // Try to start a job to create all the devices
+        Task<bool> TryToStartDevicesCreationAsync(string simulationId, IDevices devices);
 
-        /// <summary>
-        /// Get the ID of the devices in a simulation.
-        /// </summary>
-        IList<string> GetDeviceIds(Models.Simulation simulation);
-        */
+        // Change the simulation, setting the device creation complete
+        Task<bool> TryToSetDeviceCreationCompleteAsync(string simulationId);
 
-        /// <summary>
-        /// Get the ID of the devices in a simulation, organized by device model ID.
-        /// </summary>
+        // Get the ID of the devices in a simulation, organized by device model ID.
         Dictionary<string, List<string>> GetDeviceIdsByModel(Models.Simulation simulation);
     }
 
@@ -186,12 +168,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var simulations = await this.GetListAsync();
             if (simulations.Count > 0)
             {
-                this.log.Info("Modifying simulation");
+                this.log.Debug("Modifying simulation");
 
                 if (simulation.ETag == "*")
                 {
                     simulation.ETag = simulations[0].ETag;
-                    this.log.Info("The client used ETag='*' choosing to overwrite the current simulation");
+                    this.log.Warn("The client used ETag='*' choosing to overwrite the current simulation");
                 }
 
                 if (simulation.ETag != simulations[0].ETag)
@@ -201,7 +183,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
 
                 simulation.Created = simulations[0].Created;
-                simulation.Modified = DateTimeOffset.UtcNow;
 
                 // When a simulation is disabled, its partitions are deleted
                 if (!simulation.Enabled)
@@ -215,7 +196,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 // new simulation
                 simulation.Created = DateTimeOffset.UtcNow;
-                simulation.Modified = simulation.Created;
 
                 // This value cannot be set by the user, so we set it here
                 simulation.PartitioningComplete = false;
@@ -230,14 +210,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             //      https://github.com/Azure/device-simulation-dotnet/issues/129
             simulation.IotHubConnectionString = await this.connectionStringManager.RedactAndStoreAsync(simulation.IotHubConnectionString);
 
-            var result = await this.simulationsStorage.UpsertAsync(
-                new StorageRecord { Id = SIMULATION_ID, Data = JsonConvert.SerializeObject(simulation) },
-                simulation.ETag);
-
-            // Use the new ETag provided by the storage
-            simulation.ETag = result.ETag;
-
-            return simulation;
+            return await this.SaveAsync(simulation, simulation.ETag);
         }
 
         /// <summary>
@@ -251,10 +224,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 throw new InvalidInputException("Invalid simulation ID. Use ID '" + SIMULATION_ID + "'.");
             }
 
-            var item = await this.simulationsStorage.GetAsync(patch.Id);
-            var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
-            simulation.ETag = item.ETag;
-            simulation.Id = item.Id;
+            var simulation = await this.GetAsync(patch.Id);
 
             // Even when there's nothing to do, verify the ETag mismatch
             if (patch.ETag != simulation.ETag)
@@ -272,54 +242,83 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             simulation.Enabled = patch.Enabled.Value;
+
+            return await this.SaveAsync(simulation, patch.ETag);
+        }
+
+        public async Task<bool> TryToStartDevicesCreationAsync(string simulationId, IDevices devices)
+        {
+            // Fetch latest record
+            var simulation = await this.GetAsync(simulationId);
+
+            // Edit the record only if required
+            if (!simulation.DevicesCreationStarted)
+            {
+                try
+                {
+                    Dictionary<string, List<string>> deviceList = this.GetDeviceIdsByModel(simulation);
+                    var deviceIds = deviceList.SelectMany(x => x.Value);
+                    this.log.Info("Creating devices...", () => new { simulationId });
+
+                    simulation.DeviceCreationJobId = await devices.CreateListUsingJobsAsync(deviceIds);
+                    simulation.DevicesCreationStarted = true;
+
+                    this.log.Info("Device import job created", () => new { simulationId, simulation.DeviceCreationJobId });
+
+                    await this.SaveAsync(simulation, simulation.ETag);
+                }
+                catch (Exception e)
+                {
+                    this.log.Error("Failed to create device import job", e);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // Change the simulation, setting the device creation complete
+        public async Task<bool> TryToSetDeviceCreationCompleteAsync(string simulationId)
+        {
+            var simulation = await this.GetAsync(simulationId);
+
+            // Edit the record only if required
+            if (simulation.DevicesCreationComplete) return true;
+            
+            try
+            {
+                simulation.DevicesCreationComplete = true;
+                await this.SaveAsync(simulation, simulation.ETag);
+            }
+            catch (ConflictingResourceException e)
+            {
+                this.log.Warn("Update failed, another client modified the simulation record", e);
+                return false;
+            }
+
+            return true;
+        }
+
+        private async Task<Models.Simulation> SaveAsync(Models.Simulation simulation, string eTag)
+        {
             simulation.Modified = DateTimeOffset.UtcNow;
 
-            item = await this.simulationsStorage.UpsertAsync(
-                new StorageRecord { Id = SIMULATION_ID, Data = JsonConvert.SerializeObject(simulation) },
-                patch.ETag);
+            var result = await this.simulationsStorage.UpsertAsync(
+                new StorageRecord { Id = simulation.Id, Data = JsonConvert.SerializeObject(simulation) },
+                eTag);
+
+            this.log.Info("Simulation written to storage",
+                () => new
+                {
+                    simulation.Id, simulation.Enabled,
+                    simulation.PartitioningComplete, simulation.DevicesCreationStarted, DevicesCreationCompleted = simulation.DevicesCreationComplete
+                });
 
             // Use the new ETag provided by the storage
-            simulation.ETag = item.ETag;
+            simulation.ETag = result.ETag;
 
             return simulation;
         }
-
-        /*
-        /// <summary>
-        /// Delete a simulation and its devices.
-        /// </summary>
-        public async Task DeleteAsync(string id)
-        {
-            // Delete devices first
-            var deviceIds = this.GetDeviceIds(await this.GetAsync(id));
-            await this.devices.DeleteListAsync(deviceIds);
-            
-            // Then delete the simulation from the storage
-            await this.simulationsStorage.DeleteAsync(id);
-        }
-        
-        /// <summary>
-        /// Generate the list of device IDs. This list will eventually be retrieved from the database.
-        /// </summary>
-        public IList<string> GetDeviceIds(Models.Simulation simulation)
-        {
-            var result = new List<string>();
-            
-            // Calculate the device IDs used in the simulation
-            var models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
-            foreach (var model in models)
-            {
-                for (var i = 1; i <= model.Count; i++)
-                {
-                    result.Add(this.GenerateId(simulation.Id, model.Id, i));
-                }
-            }
-            
-            this.log.Debug("Device IDs loaded", () => new { Simulation = simulation.Id, result.Count });
-            
-            return result;
-        }
-        */
 
         /// <summary>
         /// Generate the list of device IDs. This list will eventually be retrieved from the database.

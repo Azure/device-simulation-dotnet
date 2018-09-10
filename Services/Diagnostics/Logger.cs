@@ -72,57 +72,109 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         // The following 5 methods allow to log a message, capturing the location where the log is generated
         // Use "Write()" to write the message regardless of the log level, e.g. at startup
 
-        public void Write(string message, [CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0)
+        public void Write(string message, 
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
         {
             this.Write(LogLevel.Always, message, callerName, filePath, lineNumber);
         }
 
-        public void Debug(string message, [CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0)
+        public void Debug(string message,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
         {
             if (!this.useDebuggingBuffer && this.priorityThreshold > LogLevel.Debug) return;
             this.Write(LogLevel.Debug, message, callerName, filePath, lineNumber);
         }
 
-        public void Info(string message, [CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0)
+        public void Info(string message,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
         {
             if (!this.useDebuggingBuffer && this.priorityThreshold > LogLevel.Info) return;
             this.Write(LogLevel.Info, message, callerName, filePath, lineNumber);
         }
 
-        public void Warn(string message, [CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0)
+        public void Warn(string message,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
+        {
+            if (!this.useDebuggingBuffer && this.priorityThreshold > LogLevel.Info) return;
+            this.Write(LogLevel.Info, message, callerName, filePath, lineNumber);
+        }
+
+        public void Error(string message,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
+        {
+            if (!this.useDebuggingBuffer && this.priorityThreshold > LogLevel.Error) return;
+            this.Write(LogLevel.Error, message, callerName, filePath, lineNumber);
+        }
+
+        // The following 5 methods allow to log data, without a message, capturing the location
+        // where the log is generated. Use "Write()" to write the message regardless of the log level, e.g. at startup
+
+        public void Write(Func<object> data,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
+        {
+            var message = Serialization.Serialize(data.Invoke());
+            this.Write(LogLevel.Always, message, callerName, filePath, lineNumber);
+        }
+
+        public void Debug(Func<object> data,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
+        {
+            if (!this.useDebuggingBuffer && this.priorityThreshold > LogLevel.Debug) return;
+            var message = Serialization.Serialize(data.Invoke());
+            this.Write(LogLevel.Debug, message, callerName, filePath, lineNumber);
+        }
+
+        public void Info(Func<object> data,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
+        {
+            if (!this.useDebuggingBuffer && this.priorityThreshold > LogLevel.Info) return;
+            var message = Serialization.Serialize(data.Invoke());
+            this.Write(LogLevel.Info, message, callerName, filePath, lineNumber);
+        }
+
+        public void Warn(Func<object> data,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
         {
             if (!this.useDebuggingBuffer && this.priorityThreshold > LogLevel.Warn) return;
+            var message = Serialization.Serialize(data.Invoke());
             this.Write(LogLevel.Warn, message, callerName, filePath, lineNumber);
         }
 
-        public void Error(string message, [CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0)
+        public void Error(Func<object> data,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
         {
             if (!this.useDebuggingBuffer && this.priorityThreshold > LogLevel.Error) return;
+            var message = Serialization.Serialize(data.Invoke());
             this.Write(LogLevel.Error, message, callerName, filePath, lineNumber);
         }
 
         // The following 5 methods allow to log a message and some data, capturing the location where the log is generated
         // Use "Write()" to write the message regardless of the log level, e.g. at startup
 
-        public void Write(string message, Func<object> data, [CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0)
+        public void Write(string message, Func<object> data,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
         {
             if (!string.IsNullOrEmpty(message)) message += ", ";
             message += Serialization.Serialize(data.Invoke());
@@ -130,10 +182,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.Write(LogLevel.Always, message, callerName, filePath, lineNumber);
         }
 
-        public void Debug(string message, Func<object> data, [CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0)
+        public void Debug(string message, Func<object> data,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
         {
             if (!this.useDebuggingBuffer && this.priorityThreshold > LogLevel.Debug) return;
 
@@ -143,10 +195,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.Write(LogLevel.Debug, message, callerName, filePath, lineNumber);
         }
 
-        public void Info(string message, Func<object> data, [CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0)
+        public void Info(string message, Func<object> data,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
         {
             if (!this.useDebuggingBuffer && this.priorityThreshold > LogLevel.Info) return;
 
@@ -156,10 +208,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.Write(LogLevel.Info, message, callerName, filePath, lineNumber);
         }
 
-        public void Warn(string message, Func<object> data, [CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0)
+        public void Warn(string message, Func<object> data,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
         {
             if (!this.useDebuggingBuffer && this.priorityThreshold > LogLevel.Warn) return;
 
@@ -169,10 +221,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.Write(LogLevel.Warn, message, callerName, filePath, lineNumber);
         }
 
-        public void Error(string message, Func<object> data, [CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0)
+        public void Error(string message, Func<object> data,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
         {
             if (!this.useDebuggingBuffer && this.priorityThreshold > LogLevel.Error) return;
 
@@ -186,10 +238,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         // Use the methods with <Func<object> data> to pass more data than just the exception
         // Use "Write()" to write the message regardless of the log level, e.g. at startup
 
-        public void Write(string message, Exception e, [CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0)
+        public void Write(string message, Exception e,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
         {
             if (!string.IsNullOrEmpty(message)) message += ", ";
             message += Serialization.SerializeException(e);
@@ -197,10 +249,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.Write(LogLevel.Always, message, callerName, filePath, lineNumber);
         }
 
-        public void Debug(string message, Exception e, [CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0)
+        public void Debug(string message, Exception e,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
         {
             if (!this.useDebuggingBuffer && this.priorityThreshold > LogLevel.Debug) return;
 
@@ -210,10 +262,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.Write(LogLevel.Debug, message, callerName, filePath, lineNumber);
         }
 
-        public void Info(string message, Exception e, [CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0)
+        public void Info(string message, Exception e,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
         {
             if (!this.useDebuggingBuffer && this.priorityThreshold > LogLevel.Info) return;
 
@@ -223,10 +275,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.Write(LogLevel.Info, message, callerName, filePath, lineNumber);
         }
 
-        public void Warn(string message, Exception e, [CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0)
+        public void Warn(string message, Exception e,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
         {
             if (!this.useDebuggingBuffer && this.priorityThreshold > LogLevel.Warn) return;
 
@@ -236,10 +288,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.Write(LogLevel.Warn, message, callerName, filePath, lineNumber);
         }
 
-        public void Error(string message, Exception e, [CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0)
+        public void Error(string message, Exception e,
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0)
         {
             if (!this.useDebuggingBuffer && this.priorityThreshold > LogLevel.Error) return;
 

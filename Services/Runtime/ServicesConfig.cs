@@ -13,6 +13,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         // TODO: make it a simulation parameter
         string IoTHubConnString { get; }
 
+        string IoTHubImportStorageAccount { get; }
+
         uint? IoTHubSdkDeviceClientTimeout { get; set; }
 
         // TODO: manage per simulation
@@ -55,6 +57,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 
         // TODO: make it a simulation parameter
         public string IoTHubConnString { get; set; }
+
+        public string IoTHubImportStorageAccount { get; set; }
 
         public uint? IoTHubSdkDeviceClientTimeout { get; set; }
 

@@ -17,8 +17,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         PropertiesLoopSettings PropertiesLoopSettings { get; }
 
         Task InitAsync(Simulation simulation);
-        void NewConnectionLoop();
-        void NewPropertiesLoop();
+        
+        // Invoked by SimulationManager.NewConnectionLoop()
+        //   DeviceConnectionTask.RunAsync()
+        //      -> SimulationManager.NewConnectionLoop()
+        //         -> ISimulationContext.NewConnectionLoop()
+        //void NewConnectionLoop();
+        
+        // Invoked by SimulationManager.NewPropertiesLoop()
+        //   UpdatePropertiesTask.RunAsync()
+        //      -> SimulationManager.NewPropertiesLoop()
+        //         -> ISimulationContext.NewPropertiesLoop()
+        //void NewPropertiesLoop();
     }
 
     /// <summary>
@@ -63,19 +73,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         }
 
         // TODO: fix usage, resetting the counter this way looks like a bug
-        public void NewConnectionLoop()
-        {
-            this.instance.InitRequired();
-            
-            this.ConnectionLoopSettings.NewLoop();
-        }
+        // Invoked by SimulationManager.NewConnectionLoop()
+        //   DeviceConnectionTask.RunAsync()
+        //      -> SimulationManager.NewConnectionLoop()
+        //         -> ISimulationContext.NewConnectionLoop()
+        // public void NewConnectionLoop()
+        // {
+        //     this.instance.InitRequired();
+        //     this.ConnectionLoopSettings.NewLoop();
+        // }
 
         // TODO: fix usage, resetting the counter this way looks like a bug
-        public void NewPropertiesLoop()
-        {
-            this.instance.InitRequired();
-            
-            this.PropertiesLoopSettings.NewLoop();
-        }
+        // Invoked by SimulationManager.NewPropertiesLoop()
+        //   UpdatePropertiesTask.RunAsync()
+        //      -> SimulationManager.NewPropertiesLoop()
+        //         -> ISimulationContext.NewPropertiesLoop()
+        // public void NewPropertiesLoop()
+        // {
+        //     this.instance.InitRequired();
+        //     this.PropertiesLoopSettings.NewLoop();
+        // }
     }
 }

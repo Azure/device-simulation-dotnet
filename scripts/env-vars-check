@@ -10,3 +10,9 @@ if [[ -z "PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING" ]]; then
     echo "Error: the PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING environment variable is not defined."
     exit 1
 fi
+
+if [[ -z "PCS_AZURE_STORAGE_ACCOUNT" ]]; then
+    echo "Error: the PCS_AZURE_STORAGE_ACCOUNT environment variable is not defined."
+    exit 1
+fi
+

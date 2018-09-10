@@ -5,7 +5,7 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.ClusteringAgent;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
@@ -20,7 +20,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
     public class Startup
     {
         private ISimulationAgent simulationAgent;
-        private IClusteringAgent clusteringAgent;
+        private IPartitioningAgent partitioningAgent;
 
         // Initialized in `Startup`
         public IConfigurationRoot Configuration { get; }
@@ -95,8 +95,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
                 CheckAdditionalContent = false
             };
 
-            this.clusteringAgent = this.ApplicationContainer.Resolve<IClusteringAgent>();
-            this.clusteringAgent.StartAsync();
+            this.partitioningAgent = this.ApplicationContainer.Resolve<IPartitioningAgent>();
+            this.partitioningAgent.StartAsync();
 
             this.simulationAgent = this.ApplicationContainer.Resolve<ISimulationAgent>();
             this.simulationAgent.StartAsync();
@@ -104,7 +104,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
         private void StopAgents()
         {
-            this.clusteringAgent?.Stop();
+            this.partitioningAgent?.Stop();
             this.simulationAgent?.Stop();
         }
 

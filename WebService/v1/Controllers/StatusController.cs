@@ -175,7 +175,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             try
             {
                 var simulation = (await this.simulations.GetListAsync()).FirstOrDefault();
-                simulationRunning = (simulation != null && simulation.ShouldBeRunning());
+                simulationRunning = (simulation != null && simulation.ShouldBeRunning);
             }
             catch (Exception e)
             {

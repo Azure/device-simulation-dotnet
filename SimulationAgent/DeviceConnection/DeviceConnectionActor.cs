@@ -29,10 +29,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             IDeviceStateActor deviceStateActor,
             ConnectionLoopSettings loopSettings);
 
+        bool HasWorkToDo();
         Task RunAsync();
         void HandleEvent(DeviceConnectionActor.ActorEvents e);
         void Stop();
-        bool HasWorkToDo();
     }
 
     public class DeviceConnectionActor : IDeviceConnectionActor
@@ -221,6 +221,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             }
         }
 
+        public bool HasWorkToDo()
+        {
+            switch (this.status)
+            {
+                case ActorStatus.None:
+                case ActorStatus.ReadyToStart:
+                case ActorStatus.ReadyToSetupCredentials:
+                case ActorStatus.ReadyToFetch:
+                case ActorStatus.PreparingCredentials:
+                case ActorStatus.Fetching:
+                case ActorStatus.ReadyToRegister:
+                case ActorStatus.Registering:
+                case ActorStatus.ReadyToConnect:
+                case ActorStatus.Connecting:
+                    return true;
+
+                case ActorStatus.Done:
+                case ActorStatus.Stopped:
+                    return false;
+
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
         public async Task RunAsync()
         {
             this.instance.InitRequired();
@@ -340,31 +365,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(e), e, null);
-            }
-        }
-
-        public bool HasWorkToDo()
-        {
-            switch (this.status)
-            {
-                case ActorStatus.None:
-                case ActorStatus.ReadyToStart:
-                case ActorStatus.ReadyToSetupCredentials:
-                case ActorStatus.ReadyToFetch:
-                case ActorStatus.PreparingCredentials:
-                case ActorStatus.Fetching:
-                case ActorStatus.ReadyToRegister:
-                case ActorStatus.Registering:
-                case ActorStatus.ReadyToConnect:
-                case ActorStatus.Connecting:
-                    return true;
-
-                case ActorStatus.Done:
-                case ActorStatus.Stopped:
-                    return false;
-
-                default:
-                    throw new ArgumentOutOfRangeException();
             }
         }
 

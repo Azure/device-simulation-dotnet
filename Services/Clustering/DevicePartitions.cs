@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-//using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -15,21 +14,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
 {
     public interface IDevicePartitions
     {
-        Task UpdateDevicePartitionsAsync();
+        // Create all the partitions for the simulation
+        Task CreateAsync(string simulationId);
 
-        Task DeleteOldSimulationsPartitionsAsync();
+        // Find the partitions not assigned to any node
+        Task<IList<DevicesPartition>> GetUnassignedAsync(string simulationId);
 
-        //Task<IList<DevicesPartition>> GetPartitionsAssignedToCurrentNodeAsync(string simulationId);
-
-        //Task<DevicesPartition> GetPartitionAsync(string partitionId);
+        // Load all the partitions from storage
+        Task<IList<DevicesPartition>> GetAllAsync();
         
-        Task<IList<DevicesPartition>> GetUnassignedPartitionsAsync(string simulationId);
+        // Delete a list of partitions 
+        Task DeleteListAsync(List<string> partitionIds);
 
         // Lock the partition, so that the current node is the only one simulating its devices
         Task<bool> TryToAssignPartitionAsync(string partitionId);
-        
+
         // Renew a lock on the partition
-        Task<bool> TryToRenewPartitionAssignmentAsync(string partitionId);
+        Task<bool> TryToKeepPartitionAsync(string partitionId);
 
         // Unlock the partition, so that other nodes can pick it up
         Task<bool> TryToReleasePartitionAsync(string partitionId);
@@ -37,14 +38,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
 
     public class DevicePartitions : IDevicePartitions
     {
-        // When creating partitions, assing 40 partitions (up to 20k devices) by default
+        // When creating partitions, assign 40 partitions (up to 20k devices) by default
         //private const int MAX_INITIAL_NODE_LOAD = 40;
 
         private readonly ISimulations simulations;
         private readonly IStorageRecords partitionsStorage;
         private readonly ICluster cluster;
         private readonly ILogger log;
-        
+
         private readonly int partitionLockDurationSecs;
         private readonly int maxPartitionSize;
 
@@ -66,99 +67,35 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         }
 
         // Used by ClusteringAgent, where there is no simulation context, i.e. no IoT hub connection
-        public async Task UpdateDevicePartitionsAsync()
+        public async Task CreateAsync(string simulationId)
         {
-            // #4 : Load new simulations
-            IList<Models.Simulation> simulationsToPartition = await this.FindActiveSimulationsToBePartitionedAsync();
+            this.log.Debug("Creating partitions...", () => new { simulationId });
+            
+            // Fetch latest record
+            var simulation = await this.simulations.GetAsync(simulationId);
+            
+            // #5 : Find devices for the simulations to be partitioned
+            Dictionary<string, List<string>> deviceIdsByModel = this.simulations.GetDeviceIdsByModel(simulation);
+            var deviceCount = deviceIdsByModel.Select(x => x.Value.Count).Sum();
+            this.log.Debug("Loaded device IDs", () => new { SimulationId = simulation.Id, deviceCount });
 
-            foreach (Models.Simulation sim in simulationsToPartition)
-            {
-                // #5 : Find devices for the simulations to be partitioned
-                //var deviceIds = this.simulations.GetDeviceIds(sim);
-                Dictionary<string, List<string>> deviceIdsByModel = this.simulations.GetDeviceIdsByModel(sim);
-                var deviceCount = deviceIdsByModel.Select(x => x.Value.Count).Sum();
+            // #5 : Delete partitions in case the previous partitioning setup crashed
+            await this.DeletePartitionsAsync(simulation, deviceCount);
 
-                // #5 : Delete partitions in case the previous partitioning setup crashed
-                await this.DeletePartitionsAsync(sim, deviceCount);
-
-                // #6 : Create partitions
-                await this.CreatePartitionsAsync(sim, deviceIdsByModel);
-                this.log.Debug("Marking the simulation partitioning to complete");
-                sim.PartitioningComplete = true;
-                await this.simulations.UpsertAsync(sim);
-                
-                // Create devices
-                // var deviceIds = new List<string>();
-                // foreach (var foo in deviceIdsByModel)
-                // {
-                //     foreach (var id in foo.Value)
-                //     {
-                //         deviceIds.Add(id);
-                //     }
-                // }
-            }
+            // #6 : Create partitions
+            await this.CreatePartitionsInternalAsync(simulation, deviceIdsByModel);
+            this.log.Debug("The simulation partitioning is complete", () => new { SimulationId = simulation.Id });
+            simulation.PartitioningComplete = true;
+            await this.simulations.UpsertAsync(simulation);
 
             // #7 : insert new devices, remove deleted devices
             // TODO
+            
+            this.log.Debug("Partitions created", () => new { simulationId });
         }
 
-        // #8 : Delete partitions of inactive simulations (free up nodes)
-        public async Task DeleteOldSimulationsPartitionsAsync()
-        {
-            this.log.Debug("Deleting partitions of old simulations...");
-
-            IList<Models.Simulation> activeSimulations = await this.FindActiveSimulationsAsync();
-            var simulationIds = new HashSet<string>(activeSimulations.Select(x => x.Id));
-
-            var recordsToDelete = new List<string>();
-            var partitions = await this.partitionsStorage.GetAllAsync();
-            foreach (StorageRecord storageRecord in partitions)
-            {
-                // TODO: revisit StorageRecord structure, this ID could be a main field to avoid the expensive deserialization
-                var partition = JsonConvert.DeserializeObject<DevicesPartition>(storageRecord.Data);
-                if (!simulationIds.Contains(partition.SimulationId))
-                {
-                    recordsToDelete.Add(storageRecord.Id);
-                }
-            }
-
-            if (recordsToDelete.Count == 0)
-            {
-                this.log.Debug("No partitions to delete");
-                return;
-            }
-
-            this.log.Debug("Found some partitions to delete", () => new { recordsToDelete.Count });
-            await this.partitionsStorage.DeleteMultiAsync(recordsToDelete);
-        }
-
-        // public async Task<IList<DevicesPartition>> GetPartitionsAssignedToCurrentNodeAsync(string simulationId)
-        // {
-        //     var nodeId = this.cluster.GetCurrentNodeId();
-        //
-        //     this.log.Debug("Searching partitions assigned to this node...", () => new { simulationId, nodeId });
-        //
-        //     var partitions = await this.partitionsStorage.GetAllAsync();
-        //
-        //     var result = partitions
-        //         .Where(p => p.IsLockedBy(nodeId, nodeId))
-        //         .Select(p => JsonConvert.DeserializeObject<DevicesPartition>(p.Data))
-        //         .Where(x => x.SimulationId == simulationId)
-        //         .ToList();
-        //
-        //     this.log.Debug(result.Count > 0 ? "Assigned partitions found" : "No assigned partitions found",
-        //         () => new { simulationId, count = result.Count });
-        //
-        //     return result;
-        // }
-
-        // public async Task<DevicesPartition> GetPartitionAsync(string partitionId)
-        // {
-        //     StorageRecord partition = await this.partitionsStorage.GetAsync(partitionId);
-        //     return JsonConvert.DeserializeObject<DevicesPartition>(partition.Data);
-        // }
-
-        public async Task<IList<DevicesPartition>> GetUnassignedPartitionsAsync(string simulationId)
+        // Return partitions ready to be simulated, not yet assigned to any node.
+        public async Task<IList<DevicesPartition>> GetUnassignedAsync(string simulationId)
         {
             var nodeId = this.cluster.GetCurrentNodeId();
 
@@ -178,6 +115,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             return result;
         }
 
+        public async Task<IList<DevicesPartition>> GetAllAsync()
+        {
+            return (await this.partitionsStorage.GetAllAsync())
+                .Select(p => JsonConvert.DeserializeObject<DevicesPartition>(p.Data))
+                .ToList();
+        }
+
+        public async Task DeleteListAsync(List<string> partitionIds)
+        {
+            await this.partitionsStorage.DeleteMultiAsync(partitionIds);
+        }
+
         // Lock the partition, so that the current node is the only one simulating its devices
         public async Task<bool> TryToAssignPartitionAsync(string partitionId)
         {
@@ -191,14 +140,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         }
 
         // Renew a lock on a partition
-        public async Task<bool> TryToRenewPartitionAssignmentAsync(string partitionId)
+        public async Task<bool> TryToKeepPartitionAsync(string partitionId)
         {
             var nodeId = this.cluster.GetCurrentNodeId();
 
             this.log.Debug("Attempting to renew lock on partition...", () => new { partitionId, nodeId });
             var renewed = await this.partitionsStorage.TryToLockAsync(partitionId, nodeId, null, this.partitionLockDurationSecs);
             this.log.Debug(renewed ? "Partition lock renewed" : "Partition lock not renewed", () => new { partitionId, nodeId });
-            
+
             return renewed;
         }
 
@@ -217,27 +166,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             return false;
         }
 
-        private async Task<IList<Models.Simulation>> FindActiveSimulationsToBePartitionedAsync()
-        {
-            var allSimulations = await this.FindActiveSimulationsAsync();
-            this.log.Debug(allSimulations.Count + " active simulations loaded");
-
-            // Use ShouldBeRunning() instead of Enabled, to create partitions only when it's time to start
-            var unpartitionedSimulations = allSimulations.Where(s => s.ShouldBeRunning() && !s.PartitioningComplete).ToList();
-
-            this.log.Debug(unpartitionedSimulations.Count + " simulations need to be partitioned");
-
-            return unpartitionedSimulations;
-        }
-
-        private async Task<IList<Models.Simulation>> FindActiveSimulationsAsync()
-        {
-            return (await this.simulations.GetListAsync())
-                .Where(s => s.ShouldBeRunning()).ToList();
-        }
+        // =========================================================================================================
+        // =========================================================================================================
+        // =========================================================================================================
 
         // Split the full list of devices in small chunks and save them as partitions
-        private async Task CreatePartitionsAsync(Models.Simulation sim, Dictionary<string, List<string>> allDeviceIdsByModel)
+        private async Task CreatePartitionsInternalAsync(Models.Simulation sim, Dictionary<string, List<string>> allDeviceIdsByModel)
         {
             var deviceCount = allDeviceIdsByModel.Select(x => x.Value.Count).Sum();
 
@@ -303,7 +237,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
 
             var partitionRecord = new StorageRecord
             {
-                Id = partitionId,
+                Id = partition.Id,
                 Data = JsonConvert.SerializeObject(partition)
             };
 
@@ -317,7 +251,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         private async Task DeletePartitionsAsync(Models.Simulation sim, int deviceCount)
         {
             int partitionCount = (int) Math.Ceiling(deviceCount / (double) this.maxPartitionSize);
-            this.log.Debug("Deleting incomplete partitions", () => new { Simulation = sim.Id, this.maxPartitionSize, partitionCount });
+            this.log.Debug("Deleting incomplete partitions",
+                () => new { SimulationId = sim.Id, this.maxPartitionSize, partitionCount });
             for (int i = 1; i <= partitionCount; i++)
             {
                 await this.partitionsStorage.DeleteAsync(this.GetPartitionId(sim.Id, i));

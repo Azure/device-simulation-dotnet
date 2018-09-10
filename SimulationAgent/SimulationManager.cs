@@ -28,23 +28,37 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             ConcurrentDictionary<string, IDeviceTelemetryActor> deviceTelemetryActors,
             ConcurrentDictionary<string, IDevicePropertiesActor> devicePropertiesActors);
 
+        // === BEGIN - Executed by Agent.RunAsync
+
+        // Ensure the partitions assigned to this node remain assigned
+        Task HoldAssignedPartitionsAsync();
+
+        // Check if there are new partitions
+        Task AssignNewPartitionsAsync();
+
+        // Check if there are partitions changes and act accordingly
+        Task HandleAssignedPartitionChangesAsync();
+
         // Check if the cluster size has changed and act accordingly
-        Task SyncClusterSizeAsync();
+        Task UpdateThrottlingLimitsAsync();
 
-        // Check if there are new partitions or changes, and act accordingly
-        Task ManageDevicePartitionsAsync();
+        void PrintStats();
 
-        // Stop all the actors and delete them
+        // === END - Executed by Agent.RunAsync
+
+        // Stop all the actors and delete them - executed by Agent.StopInactiveSimulations
         void TearDown();
 
-        void NewConnectionLoop();
-        void NewPropertiesLoop();
-        void PrintStats();
+        // // Executed by DeviceConnectionTask.RunAsync
+        // void NewConnectionLoop();
+        //
+        // // Executed by UpdatePropertiesTask.RunAsync
+        // void NewPropertiesLoop();
     }
 
     public class SimulationManager : ISimulationManager
     {
-        // Used to acess the actors dictionaries, which contain data about other simulations
+        // Used to access the actors dictionaries, which contain data about other simulations
         private const string ACTOR_PREFIX_SEPARATOR = "//";
         private const string ACTOR_TELEMETRY_PREFIX_SEPARATOR = "#";
 
@@ -64,8 +78,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private ConcurrentDictionary<string, IDevicePropertiesActor> devicePropertiesActors;
 
         // List of the device partitions assigned to this node, including their content
-        // in case they disappear from storage and to reduce storage lookups
-        private readonly Dictionary<string, DevicesPartition> assignedPartitions;
+        // in case they disappear from storage, used also to reduce storage lookups
+        private readonly ConcurrentDictionary<string, DevicesPartition> assignedPartitions;
 
         private Simulation simulation;
         private int nodeCount;
@@ -90,7 +104,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.instance = instance;
             this.maxDeviceCount = clusteringConfig.MaxDevicesPerNode;
 
-            this.assignedPartitions = new Dictionary<string, DevicesPartition>();
+            this.assignedPartitions = new ConcurrentDictionary<string, DevicesPartition>();
             this.nodeCount = 1;
             this.deviceCount = 0;
         }
@@ -115,8 +129,104 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.instance.InitComplete();
         }
 
+        public async Task HoldAssignedPartitionsAsync()
+        {
+            this.instance.InitRequired();
+
+            var partitionsToRelease = new List<DevicesPartition>();
+
+            foreach (var partition in this.assignedPartitions)
+            {
+                try
+                {
+                    if (!await this.devicePartitions.TryToKeepPartitionAsync(partition.Value.Id))
+                    {
+                        partitionsToRelease.Add(partition.Value);
+                    }
+                }
+                catch (ResourceNotFoundException)
+                {
+                    this.log.Error("Partition not found, assignment cannot continue", () => new { partition.Value.Id });
+                    partitionsToRelease.Add(partition.Value);
+                }
+            }
+
+            foreach (DevicesPartition partition in partitionsToRelease)
+            {
+                this.log.Info("Removing partition from this node", () => new { partition.Id });
+                var actorsCount = this.DeleteActorsForPartition(partition);
+                this.assignedPartitions.TryRemove(partition.Id, out _);
+                this.log.Info("Partition and actors removed", () => new { partition.Id, actorsCount });
+            }
+        }
+
+        public async Task AssignNewPartitionsAsync()
+        {
+            this.instance.InitRequired();
+
+            if (this.deviceCount >= this.maxDeviceCount) return;
+
+            this.log.Debug("Searching for unassigned partitions...");
+            var unassignedPartitions = await this.devicePartitions.GetUnassignedAsync(this.simulation.Id);
+            this.log.Debug(() => new { UnassignedPartitions = unassignedPartitions.Count });
+
+            // Randomize the list, to reduce the probability of contention with other nodes
+            unassignedPartitions.Shuffle();
+
+            /**
+             * Important: after assigning a partition, the following operations could fail, in which case
+             * the partition should be (eventually) released, and the actors should be removed.
+             */
+            foreach (DevicesPartition partition in unassignedPartitions)
+            {
+                // Stop adding partitions as soon as the current node has enough work to do
+                if (this.deviceCount >= this.maxDeviceCount)
+                {
+                    this.log.Info("Maximum number of devices per node reached", () => new { this.deviceCount, this.maxDeviceCount });
+                    return;
+                }
+
+                // Try to lock partition
+                if (await this.devicePartitions.TryToAssignPartitionAsync(partition.Id))
+                {
+                    this.assignedPartitions[partition.Id] = partition;
+                    this.log.Debug("Partition assigned", () => new { SimulationId = this.simulation.Id, PartitionId = partition.Id });
+
+                    if (await this.TryToCreateActorsForPartitionAsync(partition))
+                    {
+                        this.log.Debug("Device actors started", () => new { SimulationId = this.simulation.Id, PartitionId = partition.Id });
+                    }
+                    else
+                    {
+                        this.log.Error("Unexpected error while starting actors for the devices in the partition, will try to release it, or eventually release by lock expiration",
+                            () => new { SimulationId = this.simulation.Id, PartitionId = partition.Id });
+
+                        try
+                        {
+                            await this.devicePartitions.TryToReleasePartitionAsync(partition.Id);
+                        }
+                        catch (Exception e)
+                        {
+                            this.log.Error("Unexpected error while releasing the partition. The partition is assigned to this node but there are no actors running its devices.",
+                                () => new { SimulationId = this.simulation.Id, PartitionId = partition.Id, e });
+                        }
+                    }
+                }
+                else
+                {
+                    this.log.Debug("Unable to acquire lock on partition", () => new { SimulationId = this.simulation.Id, PartitionId = partition.Id });
+                }
+            }
+        }
+
+        public Task HandleAssignedPartitionChangesAsync()
+        {
+            // TODO
+            return Task.CompletedTask;
+        }
+
         // Check if the cluster size has changed and act accordingly
-        public async Task SyncClusterSizeAsync()
+        public async Task UpdateThrottlingLimitsAsync()
         {
             this.instance.InitRequired();
 
@@ -128,17 +238,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.log.Info("The number of nodes has changed, updating rating limits...");
                 this.simulationContext.RateLimiting.ChangeClusterSize(this.nodeCount);
             }
-        }
-
-        // Check if there are new partitions or changes, and act accordingly
-        // and renew partition locks
-        public async Task ManageDevicePartitionsAsync()
-        {
-            this.instance.InitRequired();
-
-            await this.RenewPartitionAssignmentsAsync();
-            await this.HandleUnassignedPartitionsAsync();
-            // TODO: await this.HandleAssignedPartitionChangesAsync();
         }
 
         // Stop all the actors and delete them
@@ -153,18 +252,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         }
 
         // Reset the connection counters
-        public void NewConnectionLoop()
-        {
-            this.instance.InitRequired();
-            this.simulationContext.NewConnectionLoop();
-        }
+        // Invoked by DeviceConnectionTask.RunAsync()
+        //   DeviceConnectionTask.RunAsync()
+        //      -> SimulationManager.NewConnectionLoop()
+        //         -> ISimulationContext.NewConnectionLoop()
+        // public void NewConnectionLoop()
+        // {
+        //     this.instance.InitRequired();
+        //     this.simulationContext.NewConnectionLoop();
+        // }
 
         // Reset the device properties counters
-        public void NewPropertiesLoop()
-        {
-            this.instance.InitRequired();
-            this.simulationContext.NewPropertiesLoop();
-        }
+        // Invoked by UpdatePropertiesTask.RunAsync()
+        //   UpdatePropertiesTask.RunAsync()
+        //      -> SimulationManager.NewPropertiesLoop()
+        //         -> ISimulationContext.NewPropertiesLoop()
+        // public void NewPropertiesLoop()
+        // {
+        //     this.instance.InitRequired();
+        //     this.simulationContext.NewPropertiesLoop();
+        // }
 
         public void PrintStats()
         {
@@ -172,7 +279,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             var connectedCount = this.deviceConnectionActors.Count(x => x.Value.Connected);
 
-            this.log.Info($"Simulation {this.simulation.Id} stats",
+            this.log.Info($"Simulation stats",
                 () => new
                 {
                     SimulationId = this.simulation.Id,
@@ -210,104 +317,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             return false;
         }
 
-        private async Task RenewPartitionAssignmentsAsync()
-        {
-            var partitionsToUnload = new List<DevicesPartition>();
-
-            foreach (var partition in this.assignedPartitions)
-            {
-                var partitionId = partition.Value.Id;
-
-                try
-                {
-                    if (!await this.devicePartitions.TryToRenewPartitionAssignmentAsync(partitionId))
-                    {
-                        partitionsToUnload.Add(partition.Value);
-                    }
-                }
-                catch (ResourceNotFoundException)
-                {
-                    this.log.Error("Partition not found, lock cannot be renewed", () => new { partitionId });
-                    partitionsToUnload.Add(partition.Value);
-                }
-            }
-
-            foreach (DevicesPartition partition in partitionsToUnload)
-            {
-                this.log.Debug("Removing partition from this node", () => new { partition.Id });
-                var actorsCount = this.DeleteActorsForPartition(partition);
-                this.assignedPartitions.Remove(partition.Id);
-                this.log.Debug("Partition and actors removed", () => new { partition.Id, actorsCount });
-            }
-        }
-
-        private async Task HandleUnassignedPartitionsAsync()
-        {
-            if (this.deviceCount >= this.maxDeviceCount) return;
-
-            this.log.Debug("Searching for unassigned partitions...");
-            var unassignedPartitions = await this.devicePartitions.GetUnassignedPartitionsAsync(this.simulation.Id);
-
-            // Randomize the list, to reduce the probability of contention with other nodes
-            unassignedPartitions.Shuffle();
-
-            /**
-             * Important: after assigning a partition, the following operations could fail, in which case
-             * the partition should be (eventually) released, and the actors should be removed.
-             */
-            foreach (DevicesPartition partition in unassignedPartitions)
-            {
-                // Stop adding partitions as soon as the current node has enough work to do
-                if (this.deviceCount >= this.maxDeviceCount)
-                {
-                    this.log.Debug("Maximum number of devices per node reached", () => new { this.deviceCount, this.maxDeviceCount });
-                    return;
-                }
-
-                // Try to lock partition
-                if (await this.devicePartitions.TryToAssignPartitionAsync(partition.Id))
-                {
-                    var success = await this.CreateActorsForPartitionAsync(partition);
-                    if (success)
-                    {
-                        this.assignedPartitions.Add(partition.Id, partition);
-                        this.log.Debug("Partition assigned", () => new { SimulationId = this.simulation.Id, PartitionId = partition.Id });
-
-                        // TODO: handle exceptions
-                        await this.CreateDevicesAsync(partition);
-                    }
-                    else
-                    {
-                        this.log.Error("Unexpected error while adding partition, will try to unassign it, or eventually release by lock expiration",
-                            () => new { SimulationId = this.simulation.Id, PartitionId = partition.Id });
-
-                        try
-                        {
-                            await this.devicePartitions.TryToReleasePartitionAsync(partition.Id);
-                        }
-                        catch (Exception e)
-                        {
-                            this.log.Error("Unexpected error while releasing the partition. The partition is assigned to this node but there are no actors running its devices.",
-                                () => new { SimulationId = this.simulation.Id, PartitionId = partition.Id, e });
-                        }
-                    }
-                }
-                else
-                {
-                    this.log.Debug("Unable to acquire lock on partition", () => new { SimulationId = this.simulation.Id, PartitionId = partition.Id });
-                }
-            }
-        }
-
-        private async Task CreateDevicesAsync(DevicesPartition partition)
-        {
-            var deviceIds = partition.DeviceIdsByModel.SelectMany(x => x.Value).ToList();
-            this.log.Debug("Creating devices...", () => new { SimulationId = this.simulation.Id, PartitionId = partition.Id, deviceIds.Count });
-            await this.simulationContext.Devices.CreateListAsync(deviceIds);
-            this.log.Debug("Devices created", () => new { SimulationId = this.simulation.Id, PartitionId = partition.Id, deviceIds.Count });
-        }
-
-        private async Task<bool> CreateActorsForPartitionAsync(DevicesPartition partition)
+        private async Task<bool> TryToCreateActorsForPartitionAsync(DevicesPartition partition)
         {
             var count = 0;
 
@@ -442,11 +452,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     toRemove.Add(actor.Key);
                 }
             }
-        }
-
-        private Task HandleAssignedPartitionChangesAsync()
-        {
-            throw new NotImplementedException();
         }
 
         private void DeleteAllStateActors()
