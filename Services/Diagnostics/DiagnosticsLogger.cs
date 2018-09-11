@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 {
@@ -33,7 +34,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
     {
         public struct JsonStruct
         {
+            [JsonProperty(PropertyName = "EventType")]
             public string EventType;
+
+            [JsonProperty(PropertyName = "EventProperties")]
             public Dictionary<string, object> EventProperties;
 
             public JsonStruct(string eventType, Dictionary<string, object> eventProps)
