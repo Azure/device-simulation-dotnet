@@ -26,7 +26,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             object data,
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
-            [CallerLineNumber] int lineNumber = 0);        
+            [CallerLineNumber] int lineNumber = 0);
     }
 
     public class DiagnosticsLogger : IDiagnosticsLogger
@@ -50,7 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         private const string SERVICE_ERROR_EVENT = "ServiceError";
         private const string SERVICE_START_EVENT = "ServiceStart";
         private const string SERVICE_HEARTBEAT_EVENT = "ServiceHeartbeat";
-        
+
         public DiagnosticsLogger(IHttpClient httpClient, IServicesConfig servicesConfig)
         {
             this.httpClient = httpClient;
@@ -66,7 +66,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
         public async Task<IHttpResponse> LogServiceHeartbeatAsync()
         {
-            JsonStruct jsonStruct = new JsonStruct(SERVICE_HEARTBEAT_EVENT,null);
+            JsonStruct jsonStruct = new JsonStruct(SERVICE_HEARTBEAT_EVENT, null);
             return await this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
         }
 
@@ -77,7 +77,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0)
         {
-            JsonStruct jsonStruct = this.ConvertToJson(message, exceptionMessage, null, callerName, filePath, lineNumber);
+            JsonStruct jsonStruct = this.ConvertServiceErrorToJson(message, exceptionMessage, null, callerName, filePath, lineNumber);
             return await this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
         }
 
@@ -88,11 +88,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0)
         {
-            JsonStruct jsonStruct = this.ConvertToJson(message, "", data, callerName, filePath, lineNumber);
+            JsonStruct jsonStruct = this.ConvertServiceErrorToJson(message, "", data, callerName, filePath, lineNumber);
             return await this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
         }
 
-        private JsonStruct ConvertToJson(string message,
+        private JsonStruct ConvertServiceErrorToJson(string message,
             string exceptionMessage,
             object data,
             [CallerMemberName] string callerName = "",
