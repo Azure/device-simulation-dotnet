@@ -213,9 +213,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             TimeSpan duration = now - this.lastPolledTime;
 
             // Send heartbeat every 24 hours
-            if (duration.Days >= 1)
+            if (duration.Days >= DIAGNOSTICS_POLLING_FREQUENCY_DAYS)
             {
-                this.lastPolledTime = DateTimeOffset.UtcNow;
+                this.lastPolledTime = now;
                 this.logDiagnostics.LogServiceHeartbeatAsync();
             }
         }
