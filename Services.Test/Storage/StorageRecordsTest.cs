@@ -25,7 +25,6 @@ namespace Services.Test.Storage
         private static readonly TimeSpan testTimeout = TimeSpan.FromSeconds(5);
         private static readonly long testOffsetMs = 5000;
         private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        private static string EXPECTED_DEBUG_LOG_RESOURCE_DOES_NOT_EXIST = "The resource requested doesn't exist, nothing to do.";
 
         private Mock<IDocumentDbWrapper> mockDocumentDbWrapper;
         private Mock<ILogger> mockLogger;
@@ -242,7 +241,7 @@ namespace Services.Test.Storage
         public void ItThrowsConflictingResourceExceptionWhenCreatingAResourceWithAnIdThatIsInUse()
         {
             // Arrange
-            var exception = this.BuildDocumentClinetException(HttpStatusCode.Conflict);
+            var exception = this.BuildDocumentClientException(HttpStatusCode.Conflict);
 
             this.mockDocumentDbWrapper.Setup(
                 x => x.CreateAsync(It.IsAny<IDocumentClient>(), It.IsAny<StorageConfig>(), It.IsAny<DocumentDbRecord>())
@@ -258,32 +257,6 @@ namespace Services.Test.Storage
                     () => this.target.CreateAsync(mockStorageRecord.Object)
                 )
                 .Wait(testTimeout);
-        }
-
-        [Fact]
-        public void ItLogsErrorWhenTryingToDeleteARecordThatDoesNotExist()
-        {
-            // Arrange
-            var exception = this.BuildDocumentClinetException(HttpStatusCode.NotFound);
-
-            this.mockDocumentDbWrapper.Setup(
-                x => x.DeleteAsync(It.IsAny<IDocumentClient>(), It.IsAny<StorageConfig>(), It.IsAny<string>())
-            ).ThrowsAsync(
-                (DocumentClientException)exception
-            );
-
-            // Act
-            var deleteTask = this.target.DeleteAsync("123");
-            deleteTask.Wait(testTimeout);
-
-            // Act, Assert
-            this.mockLogger.Verify(
-                x => x.Debug(
-                    It.Is<string>(_ => _.Contains(EXPECTED_DEBUG_LOG_RESOURCE_DOES_NOT_EXIST)),
-                    It.IsAny<Func<object>>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<int>()), Times.Once());
         }
 
         [Fact]
@@ -373,7 +346,12 @@ namespace Services.Test.Storage
             unlockTask.Wait(testTimeout);
 
             // Assert
-            Assert.True(unlockTask.Result);
+            this.mockDocumentDbWrapper.Verify(
+                x => x.UpsertAsync(
+                    It.IsAny<IDocumentClient>(),
+                    It.IsAny<StorageConfig>(),
+                    It.IsAny<DocumentDbRecord>()
+                ), Times.Once());
         }
 
         [Fact]
@@ -422,7 +400,7 @@ namespace Services.Test.Storage
             Assert.False(unlockTask.Result);
         }
 
-        private DocumentClientException BuildDocumentClinetException(HttpStatusCode statusCode)
+        private DocumentClientException BuildDocumentClientException(HttpStatusCode statusCode)
         {
             // Create an error message object
             var err = new Error

@@ -35,7 +35,6 @@ namespace Services.Test.Storage
 
             // Act
             var target = StorageRecord.FromDocumentDb(document);
-            Thread.Sleep(1);
 
             // Assert
             Assert.Equal(id, target.Id);
@@ -65,6 +64,9 @@ namespace Services.Test.Storage
 
             // Act
             var target = StorageRecord.FromDocumentDb(document);
+
+            // Adding a small sleep to avoid the test executing the subsequent call(s) to
+            // time-related methods in sub-millisecond time.
             Thread.Sleep(1);
 
             // Assert
@@ -95,7 +97,6 @@ namespace Services.Test.Storage
 
             // Act
             var target = StorageRecord.FromDocumentDbRecord(document);
-            Thread.Sleep(1);
 
             // Assert
             Assert.Equal(id, target.Id);
@@ -125,6 +126,9 @@ namespace Services.Test.Storage
 
             // Act
             var target = StorageRecord.FromDocumentDbRecord(document);
+
+            // Adding a small sleep to avoid the test executing the subsequent call(s) to
+            // time-related methods in sub-millisecond time.
             Thread.Sleep(1);
 
             // Assert
