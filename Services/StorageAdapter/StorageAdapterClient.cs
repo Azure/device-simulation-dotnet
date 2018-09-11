@@ -33,18 +33,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
 
         private readonly IHttpClient httpClient;
         private readonly ILogger log;
+        private readonly IDiagnosticsLogger diagnosticsLogger;
         private readonly string serviceUri;
         private readonly int timeout;
 
         public StorageAdapterClient(
             IHttpClient httpClient,
             IServicesConfig config,
-            ILogger logger)
+            ILogger logger,
+            IDiagnosticsLogger diagnosticsLogger)
         {
             this.httpClient = httpClient;
             this.log = logger;
             this.serviceUri = config.StorageAdapterApiUrl;
             this.timeout = config.StorageAdapterApiTimeout;
+            this.diagnosticsLogger = diagnosticsLogger;
         }
 
         public async Task<Tuple<bool, string>> PingAsync()
@@ -68,7 +71,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
             }
             catch (Exception e)
             {
-                this.log.Error("Storage adapter check failed", e);
+                var msg= "Storage adapter check failed";
+                this.log.Error(msg, e);
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
                 message = e.Message;
             }
 

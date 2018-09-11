@@ -17,6 +17,7 @@ namespace Services.Test
     public class StockDeviceModelTest
     {
         private readonly Mock<ILogger> logger;
+        private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
         private readonly Mock<IServicesConfig> config;
         private readonly StockDeviceModels target;
 
@@ -24,10 +25,12 @@ namespace Services.Test
         {
             this.logger = new Mock<ILogger>();
             this.config = new Mock<IServicesConfig>();
+            this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
 
             this.target = new StockDeviceModels(
                 this.config.Object,
-                this.logger.Object);
+                this.logger.Object,
+                this.diagnosticsLogger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

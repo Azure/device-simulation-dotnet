@@ -24,18 +24,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     public class Agent : ISimulationAgent
     {
         private const int CHECK_INTERVAL_MSECS = 10000;
+        private const int DIAGNOSTICS_POLLING_FREQUENCY_DAYS = 1;
 
         private readonly ILogger log;
+        private readonly IDiagnosticsLogger logDiagnostics;
         private readonly ISimulations simulations;
         private readonly ISimulationRunner runner;
         private readonly IRateLimiting rateReporter;
         private readonly IDeviceModels deviceModels;
-        private Simulation simulation;
         private readonly IDevices devices;
+        private DateTimeOffset lastPolledTime;
+        private Simulation simulation;
         private bool running;
 
         public Agent(
             ILogger logger,
+            IDiagnosticsLogger diagnosticsLogger,
             ISimulations simulations,
             ISimulationRunner runner,
             IRateLimiting rateReporter,
@@ -43,12 +47,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             IDevices devices)
         {
             this.log = logger;
+            this.logDiagnostics = diagnosticsLogger;
             this.simulations = simulations;
             this.runner = runner;
             this.rateReporter = rateReporter;
             this.deviceModels = deviceModels;
             this.devices = devices;
             this.running = true;
+            this.lastPolledTime = DateTimeOffset.UtcNow;
         }
 
         public async Task RunAsync()
@@ -59,6 +65,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             while (this.running)
             {
                 var oldSimulation = this.simulation;
+                
+                this.SendSolutionHeartbeatAsync();
+
                 try
                 {
                     this.log.Debug("------ Checking for simulation changes ------");
@@ -198,6 +207,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
+        private void SendSolutionHeartbeatAsync()
+        {
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+            TimeSpan duration = now - this.lastPolledTime;
+
+            // Send heartbeat every 24 hours
+            if (duration.Days >= DIAGNOSTICS_POLLING_FREQUENCY_DAYS)
+            {
+                this.lastPolledTime = now;
+                this.logDiagnostics.LogServiceHeartbeatAsync();
+            }
+        }
+
         private void CheckForNewSimulation(Simulation newSimulation)
         {
             if (newSimulation != null && this.simulation == null)
@@ -206,8 +228,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 if (this.simulation.ShouldBeRunning())
                 {
                     this.log.Debug("------ Starting new simulation ------", () => new { this.simulation });
+                    this.logDiagnostics.LogServiceStartAsync("Starting new simulation");
                     this.runner.Start(this.simulation);
                     this.log.Debug("------ New simulation started ------", () => new { this.simulation });
+                    this.logDiagnostics.LogServiceStartAsync("New simulation started");
                 }
             }
         }
