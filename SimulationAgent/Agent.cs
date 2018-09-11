@@ -72,7 +72,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 if (duration.Days >= DIAGNOSTICS_POLLING_FREQUENCY_DAYS)
                 {
                     this.lastPolledTime = DateTime.Now;
-                    this.logDiagnostics.LogServiceHeartbeatAsync();
+                    this.SendSolutionHeartbeatAsync();
                 }
 
                 try
@@ -212,6 +212,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.log.Debug("------ Simulation started ------", () => new { this.simulation });
                 }
             }
+        }
+
+        private void SendSolutionHeartbeatAsync()
+        {
+            this.logDiagnostics.LogServiceHeartbeatAsync();
         }
 
         private void CheckForNewSimulation(Simulation newSimulation)
