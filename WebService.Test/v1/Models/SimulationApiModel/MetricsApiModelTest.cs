@@ -19,7 +19,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             var result = apiModel.ToServiceModel();
 
             // Assert
-            Assert.IsType<MetricsRequestModel>(result);
+            Assert.IsType<MetricsRequestsModel>(result);
         }
     }
 }
