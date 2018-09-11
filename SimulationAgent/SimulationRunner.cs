@@ -40,9 +40,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Allow 30 seconds to create the devices (1000 devices normally takes 2-3 seconds)
         private const int DEVICES_CREATION_TIMEOUT_SECS = 30;
 
-        // Sending service heartbeat to diagnostics backend every 24 hours/ 1 day
-        private const int DIAGNOSTICS_POLLING_FREQUENCY = 1;
-
         // Application logger
         private readonly ILogger log;
 

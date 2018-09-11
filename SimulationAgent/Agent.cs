@@ -24,7 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     public class Agent : ISimulationAgent
     {
         private const int CHECK_INTERVAL_MSECS = 10000;
-        private const int DIAGNOSTICS_POLLING_FREQUENCY = 1;
+        private const int DIAGNOSTICS_POLLING_FREQUENCY_DAYS = 1;
 
         private readonly ILogger log;
         private readonly IDiagnosticsLogger logDiagnostics;
@@ -33,7 +33,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private readonly IRateLimiting rateReporter;
         private readonly IDeviceModels deviceModels;
         private readonly IDevices devices;
-        private DateTime lastPolledTime;
+        private DateTimeOffset lastPolledTime;
         private Simulation simulation;
         private bool running;
 
@@ -65,11 +65,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             while (this.running)
             {
                 var oldSimulation = this.simulation;
-                DateTime now = DateTime.Now;
+                DateTimeOffset now = DateTimeOffset.UtcNow;
                 TimeSpan duration = now - this.lastPolledTime;
                 
                 // Send heartbeat every 24 hours
-                if (duration.Days >= DIAGNOSTICS_POLLING_FREQUENCY)
+                if (duration.Days >= DIAGNOSTICS_POLLING_FREQUENCY_DAYS)
                 {
                     this.lastPolledTime = DateTime.Now;
                     this.logDiagnostics.LogServiceHeartbeatAsync();

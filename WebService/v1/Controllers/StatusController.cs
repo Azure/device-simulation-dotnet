@@ -36,8 +36,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             IStorageAdapterClient storage,
             ISimulations simulations,
             ILogger logger,
-            IServicesConfig servicesConfig,
-            IDeploymentConfig deploymentConfig)
+            IServicesConfig servicesConfig)
         {
             this.preprovisionedIotHub = preprovisionedIotHub;
             this.storage = storage;
