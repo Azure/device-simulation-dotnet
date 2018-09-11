@@ -99,9 +99,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         private JsonStruct ConvertServiceErrorToJson(string message,
             string exceptionMessage,
             object data,
-            [CallerMemberName] string callerName = "",
-            [CallerFilePath] string filePath = "",
-            [CallerLineNumber] int lineNumber = 0)
+            string callerName = "",
+            string filePath = "",
+            int lineNumber = 0)
         {
             var eventProps = new Dictionary<string, object>
             {
