@@ -14,6 +14,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         uint? IoTHubSdkDeviceClientTimeout { get; set; }
         string StorageAdapterApiUrl { get; }
         int StorageAdapterApiTimeout { get; }
+        string AzureManagementAdapterApiUrl { get; }
+        int AzureManagementAdapterApiTimeout { get; }
         bool TwinReadWriteEnabled { get; }
         StorageConfig MainStorage { get; }
         StorageConfig NodesStorage { get; set; }
@@ -64,6 +66,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         public string StorageAdapterApiUrl { get; set; }
 
         public int StorageAdapterApiTimeout { get; set; }
+
+        public string AzureManagementAdapterApiUrl { get; set; }
+
+        public int AzureManagementAdapterApiTimeout { get; set; }
 
         public bool TwinReadWriteEnabled { get; set; }
 

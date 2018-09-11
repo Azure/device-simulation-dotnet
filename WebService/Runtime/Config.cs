@@ -71,6 +71,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string STORAGE_ADAPTER_API_URL_KEY = STORAGE_ADAPTER_KEY + "webservice_url";
         private const string STORAGE_ADAPTER_API_TIMEOUT_KEY = STORAGE_ADAPTER_KEY + "webservice_timeout";
 
+        private const string AZURE_MANAGEMENT_ADAPTER_KEY = "AzureManagementService:";
+        private const string AZURE_MANAGEMENT_ADAPTER_API_URL_KEY = AZURE_MANAGEMENT_ADAPTER_KEY + "webservice_url";
+        private const string AZURE_MANAGEMENT_ADAPTER_API_TIMEOUT_KEY = AZURE_MANAGEMENT_ADAPTER_KEY + "webservice_timeout";
+
         private const string MAIN_STORAGE_KEY = APPLICATION_KEY + "Storage:Main:";
         private const string NODES_STORAGE_KEY = APPLICATION_KEY + "Storage:Nodes:";
         private const string SIMULATIONS_STORAGE_KEY = APPLICATION_KEY + "Storage:Simulations:";
@@ -206,6 +210,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 IoTHubSdkDeviceClientTimeout = configData.GetOptionalUInt(IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY),
                 StorageAdapterApiUrl = configData.GetString(STORAGE_ADAPTER_API_URL_KEY),
                 StorageAdapterApiTimeout = configData.GetInt(STORAGE_ADAPTER_API_TIMEOUT_KEY),
+                AzureManagementAdapterApiUrl = configData.GetString(AZURE_MANAGEMENT_ADAPTER_API_URL_KEY),
+                AzureManagementAdapterApiTimeout = configData.GetInt(AZURE_MANAGEMENT_ADAPTER_API_TIMEOUT_KEY),
                 TwinReadWriteEnabled = configData.GetBool(TWIN_READ_WRITE_ENABLED_KEY, true),
                 MainStorage = GetStorageConfig(configData, MAIN_STORAGE_KEY),
                 NodesStorage = GetStorageConfig(configData, NODES_STORAGE_KEY),
