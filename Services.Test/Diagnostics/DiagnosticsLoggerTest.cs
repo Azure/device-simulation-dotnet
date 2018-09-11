@@ -14,92 +14,53 @@ namespace Services.Test.Diagnostics
         private const string DIAGNOSTICS_SERVICE_URL = @"http://diagnostics";
 
         private readonly Mock<IHttpClient> mockHttpClient;
+        private DiagnosticsLogger target;
 
         public DiagnosticsLoggerTest()
         {
             this.mockHttpClient = new Mock<IHttpClient>();
+
+            this.target = new DiagnosticsLogger(
+                            this.mockHttpClient.Object,
+                            new ServicesConfig
+                            {
+                                DiagnosticsEndpointUrl = DIAGNOSTICS_SERVICE_URL
+                            });
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ShouldLogServiceStart()
         {
-            // Arrange
-            var response = new HttpResponse();
-
-            DiagnosticsLogger diagnosticsLogger = new DiagnosticsLogger(
-                this.mockHttpClient.Object,
-                new ServicesConfig
-                {
-                    DiagnosticsEndpointUrl = DIAGNOSTICS_SERVICE_URL
-                });
-
-            this.mockHttpClient
-                .Setup(x => x.PostAsync(It.IsAny<IHttpRequest>()))
-                .ReturnsAsync(response);
-
             // Act
-            IHttpResponse result = diagnosticsLogger.LogServiceStartAsync("test").Result;
+            target.LogServiceStartAsync("test").Wait(Constants.TEST_TIMEOUT);
 
-            // Assert - Testing to see if the logic in the function is working fine. 
-            // So, asserting if the expected response and actual responses are similar.
-            Assert.Equal(response, result);
+            // Assert - Checking if the httpcall is made just once
+            this.mockHttpClient.Verify(x => x.PostAsync(It.IsAny<HttpRequest>()), Times.Once);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ShouldLogServiceHeartbeat()
         {
-            // Arrange
-            var response = new HttpResponse();
-
-            DiagnosticsLogger diagnosticsLogger = new DiagnosticsLogger(
-                this.mockHttpClient.Object,
-                new ServicesConfig
-                {
-                    DiagnosticsEndpointUrl = DIAGNOSTICS_SERVICE_URL
-                });
-
-            this.mockHttpClient
-                .Setup(x => x.PostAsync(It.IsAny<IHttpRequest>()))
-                .ReturnsAsync(response);
-
             // Act
-            IHttpResponse result = diagnosticsLogger.LogServiceHeartbeatAsync().Result;
+            target.LogServiceHeartbeatAsync().Wait(Constants.TEST_TIMEOUT);
 
-            // Assert - Testing to see if the logic in the function is working fine. 
-            // So, asserting if the expected response and actual responses are similar.
-            Assert.Equal(response, result);
+            // Assert - Checking if the httpcall is made just once
+            this.mockHttpClient.Verify(x => x.PostAsync(It.IsAny<HttpRequest>()), Times.Once);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ShouldLogServiceError()
         {
-            // Arrange
-            var response = new HttpResponse();
-
-            DiagnosticsLogger diagnosticsLogger = new DiagnosticsLogger(
-                this.mockHttpClient.Object,
-                new ServicesConfig
-                {
-                    DiagnosticsEndpointUrl = DIAGNOSTICS_SERVICE_URL
-                });
-
-            this.mockHttpClient
-                .Setup(x => x.PostAsync(It.IsAny<IHttpRequest>()))
-                .ReturnsAsync(response);
-
             // Act
             // Logging service error sending just a message string
-            IHttpResponse logging_service_error_message = diagnosticsLogger.LogServiceErrorAsync("testmessage").Result;
+            target.LogServiceErrorAsync("testmessage").Wait(Constants.TEST_TIMEOUT);
             // Logging service error along with an exception
-            IHttpResponse logging_service_error_message_and_exception = diagnosticsLogger.LogServiceErrorAsync("testmessage", new System.Exception().Message).Result;
+            target.LogServiceErrorAsync("testmessage", new System.Exception().Message).Wait(Constants.TEST_TIMEOUT);
             // Logging service error along with an object
-            IHttpResponse logging_service_error_message_and_object = diagnosticsLogger.LogServiceErrorAsync("testmessage", new { Test = "test" }).Result;
+            target.LogServiceErrorAsync("testmessage", new { Test = "test" }).Wait(Constants.TEST_TIMEOUT);
 
-            // Assert - Testing to see if the logic in the function is working fine. 
-            // So, asserting if the expected response and actual responses are similar.
-            Assert.Equal(response, logging_service_error_message);
-            Assert.Equal(response, logging_service_error_message_and_exception);
-            Assert.Equal(response, logging_service_error_message_and_object);
+            // Assert - Checking if the httpcall is made exactly 3 times one for each type of service error
+            this.mockHttpClient.Verify(x => x.PostAsync(It.IsAny<HttpRequest>()), Times.Exactly(3));
         }
     }
 }
