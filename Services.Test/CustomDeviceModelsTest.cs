@@ -19,16 +19,19 @@ namespace Services.Test
 
         private readonly Mock<IStorageAdapterClient> storage;
         private readonly Mock<ILogger> logger;
+        private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
         private readonly CustomDeviceModels target;
 
         public CustomDeviceModelsTest()
         {
             this.storage = new Mock<IStorageAdapterClient>();
             this.logger = new Mock<ILogger>();
+            this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
 
             this.target = new CustomDeviceModels(
                 this.storage.Object,
-                this.logger.Object);
+                this.logger.Object,
+                this.diagnosticsLogger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
