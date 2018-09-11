@@ -6,22 +6,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
     public class ConnectionLoopSettings
     {
-        private readonly IRateLimitingConfig ratingConfig;
+        private readonly int registryOperationsPerMinute;
 
         public double SchedulableFetches { get; set; }
         public double SchedulableRegistrations { get; set; }
 
-        public ConnectionLoopSettings(IRateLimitingConfig ratingConfig)
+        public ConnectionLoopSettings(int registryOperationsPerMinute)
         {
-            this.ratingConfig = ratingConfig;
+            this.registryOperationsPerMinute = registryOperationsPerMinute;
             this.NewLoop();
         }
 
         public void NewLoop()
         {
             // Prioritize connections and registrations, so that devices connect as soon as possible
-            this.SchedulableFetches = Math.Max(1, this.ratingConfig.RegistryOperationsPerMinute / 25);
-            this.SchedulableRegistrations = Math.Max(1, this.ratingConfig.RegistryOperationsPerMinute / 10);
+            this.SchedulableFetches = Math.Max(1, this.registryOperationsPerMinute / 25);
+            this.SchedulableRegistrations = Math.Max(1, this.registryOperationsPerMinute / 10);
         }
     }
 
@@ -29,13 +29,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
     {
         private const int SHARED_TWIN_WRITES_ALLOCATION = 2;
 
-        private readonly IRateLimitingConfig ratingConfig;
+        private readonly int twinWritesPerSecond;
 
         public double SchedulableTaggings { get; set; }
 
-        public PropertiesLoopSettings(IRateLimitingConfig ratingConfig)
+        public PropertiesLoopSettings(int twinWritesPerSecond)
         {
-            this.ratingConfig = ratingConfig;
+            this.twinWritesPerSecond = twinWritesPerSecond;
             this.NewLoop();
         }
 
@@ -44,7 +44,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             // In order for other threads to be able to schedule twin operations,
             // divide by a constant value to prevent the tagging thread from having
             // first priority over twin writes all of the time.
-            this.SchedulableTaggings = Math.Max(1, this.ratingConfig.TwinWritesPerSecond / SHARED_TWIN_WRITES_ALLOCATION);
+            this.SchedulableTaggings = Math.Max(1, this.twinWritesPerSecond / SHARED_TWIN_WRITES_ALLOCATION);
         }
     }
 }

@@ -245,7 +245,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
         private void SchedulePropertiesUpdate(bool isRetry = false)
         {
-            // considering the throttling settings, when can the properties can be updated
+            // considering the throttling settings, when can the properties be updated
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var pauseMsec = this.rateLimiting.GetPauseForNextTwinWrite();
             this.whenToRun = now + pauseMsec;

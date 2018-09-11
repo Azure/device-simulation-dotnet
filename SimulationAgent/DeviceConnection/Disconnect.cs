@@ -44,7 +44,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
             try
             {
-                this.context.Client = this.devices.GetClient(this.context.Device, this.deviceModel.Protocol, this.scriptInterpreter);
+                this.context.Client = this.devices.GetDeviceClient(this.context.Device, this.deviceModel.Protocol, this.scriptInterpreter);
 
                 var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 await this.context.Client.DisconnectAsync();

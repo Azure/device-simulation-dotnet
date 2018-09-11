@@ -16,7 +16,7 @@ namespace Services.Test.Concurrency
          * Also covers https://github.com/Azure/device-simulation-dotnet/issues/122
          */
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItDoesntAllowLowCounterRate()
+        public void ItDoesNotAllowLowCounterRate()
         {
             Assert.Throws<InvalidConfigurationException>(() => new BadCounter1(new Mock<ILogger>().Object));
             Assert.Throws<InvalidConfigurationException>(() => new BadCounter2(new Mock<ILogger>().Object));
