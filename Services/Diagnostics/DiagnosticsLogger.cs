@@ -59,7 +59,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         {
             this.httpClient = httpClient;
             this.servicesConfig = servicesConfig;
-            this.diagnosticsEndpoint = this.servicesConfig.DiagnosticsEndpointUrl + "/diagnosticsevents";
+            this.diagnosticsEndpoint = this.servicesConfig.DiagnosticsEndpointUrl;
         }
 
         public async Task LogServiceStartAsync(string message)
