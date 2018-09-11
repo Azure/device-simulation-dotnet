@@ -54,7 +54,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.deviceModels = deviceModels;
             this.devices = devices;
             this.running = true;
-            this.lastPolledTime = DateTime.Now;
+            this.lastPolledTime = DateTimeOffset.UtcNow;
         }
 
         public async Task RunAsync()
@@ -65,15 +65,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             while (this.running)
             {
                 var oldSimulation = this.simulation;
-                DateTimeOffset now = DateTimeOffset.UtcNow;
-                TimeSpan duration = now - this.lastPolledTime;
                 
-                // Send heartbeat every 24 hours
-                if (duration.Days >= DIAGNOSTICS_POLLING_FREQUENCY_DAYS)
-                {
-                    this.lastPolledTime = DateTime.Now;
-                    this.SendSolutionHeartbeatAsync();
-                }
+                this.SendSolutionHeartbeatAsync();
 
                 try
                 {
@@ -216,7 +209,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         private void SendSolutionHeartbeatAsync()
         {
-            this.logDiagnostics.LogServiceHeartbeatAsync();
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+            TimeSpan duration = now - this.lastPolledTime;
+
+            // Send heartbeat every 24 hours
+            if (duration.Days >= 1)
+            {
+                this.lastPolledTime = DateTimeOffset.UtcNow;
+                this.logDiagnostics.LogServiceHeartbeatAsync();
+            }
         }
 
         private void CheckForNewSimulation(Simulation newSimulation)
