@@ -40,7 +40,6 @@ namespace WebService.Test.v1.Controllers
             this.simulations = new Mock<ISimulations>();
             this.logger = new Mock<ILogger>();
             this.servicesConfig = new Mock<IServicesConfig>();
-            this.deploymentConfig = new Mock<IDeploymentConfig>();
             this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
             this.simulationRunner = new Mock<ISimulationRunner>();
             this.rateReporter = new Mock<IRateLimiting>();
@@ -50,8 +49,7 @@ namespace WebService.Test.v1.Controllers
                 this.storage.Object,
                 this.simulations.Object,
                 this.logger.Object,
-                this.servicesConfig.Object,
-                this.deploymentConfig.Object);
+                this.servicesConfig.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
