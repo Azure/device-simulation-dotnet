@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth;
@@ -91,6 +92,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string LOGGING_WHITELIST_SOURCES_KEY = LOGGING_KEY + "WhiteListSources";
         private const string LOGGING_EXTRADIAGNOSTICS_KEY = LOGGING_KEY + "ExtraDiagnostics";
         private const string LOGGING_EXTRADIAGNOSTICSPATH_KEY = LOGGING_KEY + "ExtraDiagnosticsPath";
+        private const string LOGGING_DIAGNOSTICS_URL_KEY = LOGGING_KEY + "diagnostics_endpoint_url";
 
         private const string CLIENT_AUTH_KEY = APPLICATION_KEY + "ClientAuth:";
         private const string CORS_WHITELIST_KEY = CLIENT_AUTH_KEY + "cors_whitelist";
@@ -211,7 +213,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 NodesStorage = GetStorageConfig(configData, NODES_STORAGE_KEY),
                 SimulationsStorage = GetStorageConfig(configData, SIMULATIONS_STORAGE_KEY),
                 DevicesStorage = GetStorageConfig(configData, DEVICES_STORAGE_KEY),
-                PartitionsStorage = GetStorageConfig(configData, PARTITIONS_STORAGE_KEY)
+                PartitionsStorage = GetStorageConfig(configData, PARTITIONS_STORAGE_KEY),
+                DiagnosticsEndpointUrl = configData.GetString(LOGGING_DIAGNOSTICS_URL_KEY) + "/diagnosticsevents"
             };
         }
 

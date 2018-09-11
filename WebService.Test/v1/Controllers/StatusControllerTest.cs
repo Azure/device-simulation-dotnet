@@ -50,7 +50,8 @@ namespace WebService.Test.v1.Controllers
                 this.storage.Object,
                 this.simulations.Object,
                 this.logger.Object,
-                this.servicesConfig.Object);
+                this.servicesConfig.Object,
+                this.deploymentConfig.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
