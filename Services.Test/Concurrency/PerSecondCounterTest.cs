@@ -127,7 +127,7 @@ namespace Services.Test.Concurrency
         public void ItObtainsTheDesiredFrequency_SeveralEventsPerSecond()
         {
             // TODO: find out why the test sometimes fails - in the mean time repeat the test a couple of times
-            TryTest(atMost: 3, () =>
+            TryTest(3, () =>
             {
                 log.WriteLine("Starting test at " + DateTimeOffset.UtcNow.ToString("HH:mm:ss.fff"));
 
@@ -173,7 +173,7 @@ namespace Services.Test.Concurrency
         public void ItAllowsBurstOfEvents()
         {
             // TODO: find out why the test sometimes fails - in the mean time repeat the test a couple of times
-            TryTest(atMost: 3, () =>
+            TryTest(3, () =>
             {
                 log.WriteLine("Starting test at " + DateTimeOffset.UtcNow.ToString("HH:mm:ss.fff"));
 
