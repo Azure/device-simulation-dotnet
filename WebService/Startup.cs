@@ -5,6 +5,7 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
@@ -18,6 +19,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 {
     public class Startup
     {
+        // Agent responsible for creating devices and partitions
+        private IPartitioningAgent partitioningAgent;
+
+        // Agent responsible for simulating IoT devicesw
         private ISimulationAgent simulationAgent;
 
         // Initialized in `Startup`
@@ -77,7 +82,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             app.UseMvc();
 
             // Start simulation agent thread
-            appLifetime.ApplicationStarted.Register(this.StartAgent);
+            appLifetime.ApplicationStarted.Register(this.StartAgents);
             appLifetime.ApplicationStopping.Register(this.StopAgent);
 
             // If you want to dispose of resources that have been resolved in the
@@ -85,7 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             appLifetime.ApplicationStopped.Register(() => this.ApplicationContainer.Dispose());
         }
 
-        private void StartAgent()
+        private void StartAgents()
         {
             // Temporary workaround to allow twin JSON deserialization in IoT SDK
             JsonConvert.DefaultSettings = () => new JsonSerializerSettings
@@ -93,12 +98,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
                 CheckAdditionalContent = false
             };
 
+            this.partitioningAgent = this.ApplicationContainer.Resolve<IPartitioningAgent>();
+
+            // TODO: uncomment when ready
+            //this.partitioningAgent.StartAsync();
+
             this.simulationAgent = this.ApplicationContainer.Resolve<ISimulationAgent>();
             this.simulationAgent.RunAsync();
         }
 
         private void StopAgent()
         {
+            this.partitioningAgent.Stop();
             this.simulationAgent.Stop();
         }
 
@@ -107,7 +118,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             var log = container.Resolve<ILogger>();
             var config = container.Resolve<IConfig>();
             log.Write("Service started", () => new { Uptime.ProcessId, LogLevel = config.LoggingConfig.LogLevel.ToString() });
-            
+
             log.Write("Logging level:             " + config.LoggingConfig.LogLevel);
             log.Write("Web service auth required: " + config.ClientAuthConfig.AuthRequired);
 

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
-    <LangVersion>7</LangVersion>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
     <AssemblyName>Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService</AssemblyName>
     <RootNamespace>Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService</RootNamespace>
@@ -39,6 +39,7 @@
     <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="2.1.5" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\PartitioningAgent\PartitioningAgent.csproj" />
     <ProjectReference Include="..\Services\Services.csproj" />
     <ProjectReference Include="..\SimulationAgent\SimulationAgent.csproj" />
   </ItemGroup>
