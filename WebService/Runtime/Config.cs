@@ -3,9 +3,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth;
@@ -34,8 +34,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         // Deployment details
         IDeploymentConfig DeploymentConfig { get; }
 
-        // Multi-threading settings
-        IConcurrencyConfig ConcurrencyConfig { get; }
+        // Simulation multi-threading settings
+        ISimulationConcurrencyConfig SimulationConcurrencyConfig { get; }
+
+        // Clustering and partitioning settings
+        IClusteringConfig ClusteringConfig { get; }
     }
 
     public class Config : IConfig
@@ -58,7 +61,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string TWIN_READS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "twin_reads_per_second";
         private const string TWIN_WRITES_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "twin_writes_per_second";
 
-        private const string CONCURRENCY_KEY = APPLICATION_KEY + "Concurrency:";
+        private const string CONCURRENCY_KEY = APPLICATION_KEY + "SimulationConcurrency:";
         private const string CONCURRENCY_TELEMETRY_THREADS_KEY = CONCURRENCY_KEY + "telemetry_threads";
         private const string CONCURRENCY_MAX_PENDING_CONNECTIONS_KEY = CONCURRENCY_KEY + "max_pending_connections";
         private const string CONCURRENCY_MAX_PENDING_TELEMETRY_KEY = CONCURRENCY_KEY + "max_pending_telemetry_messages";
@@ -67,7 +70,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string CONCURRENCY_MIN_DEVICE_STATE_LOOP_DURATION_KEY = CONCURRENCY_KEY + "min_device_state_loop_duration";
         private const string CONCURRENCY_MIN_DEVICE_CONNECTION_LOOP_DURATION_KEY = CONCURRENCY_KEY + "min_device_connection_loop_duration";
         private const string CONCURRENCY_MIN_DEVICE_PROPERTIES_LOOP_DURATION_KEY = CONCURRENCY_KEY + "min_device_properties_loop_duration";
-        private const string CONCURRENCY_MAX_PENDING_STORAGE_TASKS = CONCURRENCY_KEY + "max_pending_storage_tasks";
+
+        private const string CLUSTERING_KEY = APPLICATION_KEY + "Clustering:";
+        private const string CLUSTERING_CHECK_INTERVAL_KEY = CLUSTERING_KEY + "check_interval";
 
         private const string STORAGE_ADAPTER_KEY = "StorageAdapterService:";
         private const string STORAGE_ADAPTER_API_URL_KEY = STORAGE_ADAPTER_KEY + "webservice_url";
@@ -80,10 +85,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string PARTITIONS_STORAGE_KEY = APPLICATION_KEY + "Storage:Partitions:";
 
         private const string STORAGE_TYPE_KEY = "type";
+        private const string STORAGE_MAX_PENDING_OPERATIONS = APPLICATION_KEY + "max_pending_storage_tasks";
         private const string DOCUMENTDB_CONNECTION_STRING_KEY = "documentdb_connstring";
         private const string DOCUMENTDB_DATABASE_KEY = "documentdb_database";
         private const string DOCUMENTDB_COLLECTION_KEY = "documentdb_collection";
-        private const string DOCUMENTDB_RUS_KEY = "documentdb_collection_RUs";
+        private const string DOCUMENTDB_THROUGHPUT_KEY = "documentdb_collection_throughput";
 
         private const string LOGGING_KEY = APPLICATION_KEY + "Logging:";
         private const string LOGGING_LOGLEVEL_KEY = LOGGING_KEY + "LogLevel";
@@ -118,7 +124,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         public IServicesConfig ServicesConfig { get; }
         public IRateLimitingConfig RateLimitingConfig { get; set; }
         public IDeploymentConfig DeploymentConfig { get; set; }
-        public IConcurrencyConfig ConcurrencyConfig { get; set; }
+        public ISimulationConcurrencyConfig SimulationConcurrencyConfig { get; set; }
+        public IClusteringConfig ClusteringConfig { get; }
 
         public Config(IConfigData configData)
         {
@@ -128,7 +135,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             this.ClientAuthConfig = GetClientAuthConfig(configData);
             this.RateLimitingConfig = GetRateLimitingConfig(configData);
             this.DeploymentConfig = GetDeploymentConfig(configData);
-            this.ConcurrencyConfig = GetConcurrencyConfig(configData);
+            this.SimulationConcurrencyConfig = GetConcurrencyConfig(configData);
+            this.ClusteringConfig = GetClusteringConfig(configData);
         }
 
         private static ILoggingConfig GetLogConfig(IConfigData configData)
@@ -215,19 +223,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 SimulationsStorage = GetStorageConfig(configData, SIMULATIONS_STORAGE_KEY),
                 DevicesStorage = GetStorageConfig(configData, DEVICES_STORAGE_KEY),
                 PartitionsStorage = GetStorageConfig(configData, PARTITIONS_STORAGE_KEY),
-                DiagnosticsEndpointUrl = configData.GetString(LOGGING_DIAGNOSTICS_URL_KEY) + "/diagnosticsevents"
+                DiagnosticsEndpointUrl = configData.GetString(LOGGING_DIAGNOSTICS_URL_KEY)
             };
         }
 
         private static StorageConfig GetStorageConfig(IConfigData configData, string prefix)
         {
+            var defaults = new StorageConfig();
             return new StorageConfig
             {
-                StorageType = configData.GetString(prefix + STORAGE_TYPE_KEY),
+                StorageType = configData.GetString(prefix + STORAGE_TYPE_KEY, defaults.StorageType),
+                MaxPendingOperations = configData.GetInt(STORAGE_MAX_PENDING_OPERATIONS, defaults.MaxPendingOperations),
                 DocumentDbConnString = configData.GetString(prefix + DOCUMENTDB_CONNECTION_STRING_KEY),
                 DocumentDbDatabase = configData.GetString(prefix + DOCUMENTDB_DATABASE_KEY),
                 DocumentDbCollection = configData.GetString(prefix + DOCUMENTDB_COLLECTION_KEY),
-                DocumentDbRUs = configData.GetInt(prefix + DOCUMENTDB_RUS_KEY)
+                DocumentDbThroughput = configData.GetInt(prefix + DOCUMENTDB_THROUGHPUT_KEY, defaults.DocumentDbThroughput)
             };
         }
 
@@ -283,10 +293,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             };
         }
 
-        private static IConcurrencyConfig GetConcurrencyConfig(IConfigData configData)
+        private static ISimulationConcurrencyConfig GetConcurrencyConfig(IConfigData configData)
         {
-            var defaults = new ConcurrencyConfig();
-            return new ConcurrencyConfig
+            var defaults = new SimulationConcurrencyConfig();
+            return new SimulationConcurrencyConfig
             {
                 TelemetryThreads = configData.GetInt(CONCURRENCY_TELEMETRY_THREADS_KEY, defaults.TelemetryThreads),
                 MaxPendingConnections = configData.GetInt(CONCURRENCY_MAX_PENDING_CONNECTIONS_KEY, defaults.MaxPendingConnections),
@@ -295,8 +305,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 MinDeviceStateLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_STATE_LOOP_DURATION_KEY, defaults.MinDeviceStateLoopDuration),
                 MinDeviceConnectionLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_CONNECTION_LOOP_DURATION_KEY, defaults.MinDeviceConnectionLoopDuration),
                 MinDeviceTelemetryLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_TELEMETRY_LOOP_DURATION_KEY, defaults.MinDeviceTelemetryLoopDuration),
-                MinDevicePropertiesLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_PROPERTIES_LOOP_DURATION_KEY, defaults.MinDevicePropertiesLoopDuration),
-                MaxPendingStorageTasks = configData.GetInt(CONCURRENCY_MAX_PENDING_STORAGE_TASKS, defaults.MaxPendingStorageTasks)
+                MinDevicePropertiesLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_PROPERTIES_LOOP_DURATION_KEY, defaults.MinDevicePropertiesLoopDuration)
+            };
+        }
+
+        private static IClusteringConfig GetClusteringConfig(IConfigData configData)
+        {
+            var defaults = new ClusteringConfig();
+            return new ClusteringConfig
+            {
+                CheckIntervalMsecs = configData.GetInt(CLUSTERING_CHECK_INTERVAL_KEY, defaults.CheckIntervalMsecs),
             };
         }
 

@@ -182,8 +182,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             catch (Exception e)
             {
                 var message = "Could not connect to IotHub with the connection " +
-                                 "string provided. Check that the key is valid and " +
-                                 "that the hub exists.";
+                              "string provided. Check that the key is valid and " +
+                              "that the hub exists.";
                 this.log.Error(message, e);
                 this.diagnosticsLogger.LogServiceErrorAsync(message, e.Message);
                 throw new IotHubConnectionException(message, e);
@@ -201,8 +201,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             catch (Exception e)
             {
                 var message = "Could not read devices with the Iot Hub connection " +
-                                 "string provided. Check that the policy for the key allows " +
-                                 "`Registry Read/Write` and `Service Connect` permissions.";
+                              "string provided. Check that the policy for the key allows " +
+                              "`Registry Read/Write` and `Service Connect` permissions.";
                 this.log.Error(message, e);
                 this.diagnosticsLogger.LogServiceErrorAsync(message, e.Message);
                 throw new IotHubConnectionException(message, e);
@@ -224,8 +224,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             catch (Exception e)
             {
                 var message = "Could not create devices with the Iot Hub connection " +
-                                 "string provided. Check that the policy for the key allows " +
-                                 "`Registry Read/Write` and `Service Connect` permissions.";
+                              "string provided. Check that the policy for the key allows " +
+                              "`Registry Read/Write` and `Service Connect` permissions.";
                 this.log.Error(message, e);
                 this.diagnosticsLogger.LogServiceErrorAsync(message, e.Message);
                 throw new IotHubConnectionException(message, e);
@@ -245,7 +245,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 catch (Exception e)
                 {
                     var message = "Could not delete test device from IotHub. Attempt " +
-                                     deleteRetryCount + 1 + " of " + MAX_DELETE_RETRY;
+                                  deleteRetryCount + 1 + " of " + MAX_DELETE_RETRY;
                     this.log.Error(message, () => new { testDeviceId, e });
                     this.diagnosticsLogger.LogServiceErrorAsync(message, new { testDeviceId, e.Message });
                     throw new IotHubConnectionException(message, e);
@@ -281,7 +281,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             catch (Exception e)
             {
                 var msg = "Unable to use default IoT Hub. Check that the " +
-                             "pre-provisioned hub exists and has the correct permissions.";
+                          "pre-provisioned hub exists and has the correct permissions.";
                 this.log.Error(msg, e);
                 this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
                 throw new IotHubConnectionException(msg, e);

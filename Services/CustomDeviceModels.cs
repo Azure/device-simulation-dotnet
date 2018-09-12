@@ -174,10 +174,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var msg = "Failed to insert new device model into storage";
                 this.log.Error(msg,
                     () => new { deviceModel, generateId, e });
-                this.diagnosticsLogger.LogServiceErrorAsync(msg,
-                    new { deviceModel, generateId, e.Message });
-                throw new ExternalDependencyException(
-                   msg, e);
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, new { deviceModel, generateId, e.Message });
+                throw new ExternalDependencyException(msg, e);
             }
 
             return deviceModel;

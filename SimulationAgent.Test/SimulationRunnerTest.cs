@@ -25,7 +25,7 @@ namespace SimulationAgent.Test
     public class SimulationRunnerTest
     {
         private readonly Mock<IRateLimitingConfig> ratingConfig;
-        private readonly Mock<IConcurrencyConfig> concurrencyConfig;
+        private readonly Mock<ISimulationConcurrencyConfig> concurrencyConfig;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
         private readonly Mock<IDeviceModels> deviceModels;
@@ -43,7 +43,7 @@ namespace SimulationAgent.Test
         public SimulationRunnerTest(ITestOutputHelper log)
         {
             this.ratingConfig = new Mock<IRateLimitingConfig>();
-            this.concurrencyConfig = new Mock<IConcurrencyConfig>();
+            this.concurrencyConfig = new Mock<ISimulationConcurrencyConfig>();
             this.logger = new Mock<ILogger>();
             this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
             this.deviceModels = new Mock<IDeviceModels>();

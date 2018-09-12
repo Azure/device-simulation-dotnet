@@ -4,7 +4,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
-    public interface IConcurrencyConfig
+    public interface ISimulationConcurrencyConfig
     {
         int TelemetryThreads { get; }
         int MaxPendingConnections { get; }
@@ -14,10 +14,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         int MinDeviceConnectionLoopDuration { get; }
         int MinDeviceTelemetryLoopDuration { get; }
         int MinDevicePropertiesLoopDuration { get; }
-        int MaxPendingStorageTasks { get; }
     }
 
-    public class ConcurrencyConfig : IConcurrencyConfig
+    public class SimulationConcurrencyConfig : ISimulationConcurrencyConfig
     {
         private const int DEFAULT_TELEMETRY_THREADS = 4;
         private const int DEFAULT_MAX_PENDING_CONNECTIONS = 200;
@@ -27,7 +26,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         private const int DEFAULT_MIN_DEVICE_CONNECTION_LOOP_DURATION = 1000;
         private const int DEFAULT_MIN_DEVICE_TELEMETRY_LOOP_DURATION = 500;
         private const int DEFAULT_MIN_DEVICE_PROPERTIES_LOOP_DURATION = 2000;
-        private const int DEFAULT_MAX_PENDING_STORAGE_TASKS = 25;
 
         private const int MAX_TELEMETRY_THREADS = 20;
         private const int MAX_MAX_PENDING_CONNECTIONS = 1000;
@@ -43,9 +41,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         private int minDeviceConnectionLoopDuration;
         private int minDeviceTelemetryLoopDuration;
         private int minDevicePropertiesLoopDuration;
-        private int maxPendingStorageTasks;
 
-        public ConcurrencyConfig()
+        public SimulationConcurrencyConfig()
         {
             // Initialize object with default values
             this.TelemetryThreads = DEFAULT_TELEMETRY_THREADS;
@@ -56,7 +53,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             this.MinDeviceConnectionLoopDuration = DEFAULT_MIN_DEVICE_CONNECTION_LOOP_DURATION;
             this.MinDeviceTelemetryLoopDuration = DEFAULT_MIN_DEVICE_TELEMETRY_LOOP_DURATION;
             this.MinDevicePropertiesLoopDuration = DEFAULT_MIN_DEVICE_PROPERTIES_LOOP_DURATION;
-            this.MaxPendingStorageTasks = DEFAULT_MAX_PENDING_STORAGE_TASKS;
         }
 
         /// <summary>
@@ -223,15 +219,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
                 this.minDevicePropertiesLoopDuration = value;
             }
-        }
-
-        /// <summary>
-        /// The maximum number of pending tasks on a thread.
-        /// </summary>
-        public int MaxPendingStorageTasks
-        {
-            get => this.maxPendingStorageTasks;
-            set => this.maxPendingStorageTasks = value;
         }
     }
 }

@@ -13,6 +13,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.DocumentDb;
 using Moq;
@@ -26,21 +27,19 @@ namespace Services.Test.Storage
         private static readonly long testOffsetMs = 5000;
         private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
+        private StorageRecords target;
         private Mock<IDocumentDbWrapper> mockDocumentDbWrapper;
         private Mock<ILogger> mockLogger;
         private Mock<IInstance> mockInstance;
-        private StorageConfig storageConfig;
         private Mock<IDocumentClient> mockDocumentClient;
+        private StorageConfig storageConfig;
         private readonly Mock<IResourceResponse<Document>> mockStorageDocument;
-        private Mock<IConcurrencyConfig> mockConcurrencyConfig;
-        private StorageRecords target;
 
         public StorageRecordsTest()
         {
             this.mockLogger = new Mock<ILogger>();
             this.mockInstance = new Mock<IInstance>();
             this.mockDocumentClient = new Mock<IDocumentClient>();
-            this.mockConcurrencyConfig = new Mock<IConcurrencyConfig>();
             this.mockStorageDocument = new Mock<IResourceResponse<Document>>();
 
             // Set up a DocumentDbWrapper Mock to return the mock storage document
@@ -58,10 +57,9 @@ namespace Services.Test.Storage
             ).ReturnsAsync(this.mockStorageDocument.Object);
 
             this.target = new StorageRecords(
-                this.mockDocumentDbWrapper.Object, 
-                this.mockLogger.Object, 
+                this.mockDocumentDbWrapper.Object,
                 this.mockInstance.Object,
-                this.mockConcurrencyConfig.Object);
+                this.mockLogger.Object);
 
             this.storageConfig = new StorageConfig();
             this.target.Init(this.storageConfig);
