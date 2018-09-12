@@ -35,7 +35,6 @@ namespace SimulationAgent.Test.DeviceTelemetry
             this.devices = new Mock<IDevices>();
             this.sendTelemetryLogic = new Mock<SendTelemetry>(this.logger.Object);
 
- 
             this.deviceStateActor = new Mock<IDeviceStateActor>();
             this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
 
