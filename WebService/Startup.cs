@@ -132,14 +132,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             log.Write("Messages per second:       " + config.RateLimitingConfig.DeviceMessagesPerSecond);
             log.Write("Messages per day:          " + config.RateLimitingConfig.DeviceMessagesPerDay);
 
-            log.Write("Number of telemetry threads:      " + config.ConcurrencyConfig.TelemetryThreads);
-            log.Write("Max pending connections:          " + config.ConcurrencyConfig.MaxPendingConnections);
-            log.Write("Max pending telemetry messages:   " + config.ConcurrencyConfig.MaxPendingTelemetry);
-            log.Write("Max pending twin writes:          " + config.ConcurrencyConfig.MaxPendingTwinWrites);
-            log.Write("Min duration of state loop:       " + config.ConcurrencyConfig.MinDeviceStateLoopDuration);
-            log.Write("Min duration of connection loop:  " + config.ConcurrencyConfig.MinDeviceConnectionLoopDuration);
-            log.Write("Min duration of telemetry loop:   " + config.ConcurrencyConfig.MinDeviceTelemetryLoopDuration);
-            log.Write("Min duration of twin write loop:  " + config.ConcurrencyConfig.MinDevicePropertiesLoopDuration);
+            log.Write("Number of telemetry threads:      " + config.SimulationConcurrencyConfig.TelemetryThreads);
+            log.Write("Max pending connections:          " + config.SimulationConcurrencyConfig.MaxPendingConnections);
+            log.Write("Max pending telemetry messages:   " + config.SimulationConcurrencyConfig.MaxPendingTelemetry);
+            log.Write("Max pending twin writes:          " + config.SimulationConcurrencyConfig.MaxPendingTwinWrites);
+            log.Write("Min duration of state loop:       " + config.SimulationConcurrencyConfig.MinDeviceStateLoopDuration);
+            log.Write("Min duration of connection loop:  " + config.SimulationConcurrencyConfig.MinDeviceConnectionLoopDuration);
+            log.Write("Min duration of telemetry loop:   " + config.SimulationConcurrencyConfig.MinDeviceTelemetryLoopDuration);
+            log.Write("Min duration of twin write loop:  " + config.SimulationConcurrencyConfig.MinDevicePropertiesLoopDuration);
         }
     }
 }
