@@ -157,7 +157,7 @@ function main(context, previousState, previousProperties) {
 
     // Apply some variability to the pre-defined values
     state.altitude = vary(nextMessage.altitude, 5, nextMessage.altitude - 3, nextMessage.altitude + 3);
-    state.temperature = vary(nextMessage.temperature, 5, nextMessage.temperature - 3, nextMessage.temperature + 3);
+    state.temperature = vary(nextMessage.temperature, 5, nextMessage.temperature - 1, nextMessage.temperature + 1);
 
     // 25 +/- 5%,  Min 0, Max 80
     state.speed = vary(25, 5, 0, 80);
