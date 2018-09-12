@@ -70,7 +70,6 @@ namespace SimulationAgent.Test.DeviceProperties
                 () => this.SetupDevicePropertiesActor());
         }
 
-
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void Handle_Event_Should_Throw_When_Out_Of_Range()
         {

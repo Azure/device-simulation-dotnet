@@ -36,7 +36,6 @@ namespace WebService.Test.v1.Models.DeviceModelApiModel
             Assert.IsType<DeviceModel.DeviceModelMessageSchema>(result);
         }
 
-
         private DeviceModel.DeviceModelMessageSchema GetDeviceModelMessageSchema()
         {
             var schema = new DeviceModel.DeviceModelMessageSchema()

@@ -168,12 +168,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     }
                 }
             }
+
             List<string> result = new List<string>();
 
             foreach (string property in properties)
             {
                 result.Add(REPORTED_PREFIX + property);
             }
+
             return result;
         }
 
