@@ -21,18 +21,6 @@ namespace WebService.Test.v1.Controllers
 {
     public class SimulationsControllerTest
     {
-        private readonly Mock<ISimulations> simulationsService;
-        private readonly Mock<IServicesConfig> servicesConfig;
-        private readonly Mock<IDeploymentConfig> deploymentConfig;
-        private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
-        private readonly Mock<IIothubMetrics> iothubMetrics;
-        private readonly Mock<IPreprovisionedIotHub> preprovisionedIotHub;
-        private readonly Mock<ISimulationAgent> simulationAgent;
-        private readonly Mock<ISimulationRunner> simulationRunner;
-        private readonly Mock<IRateLimiting> rateReporter;
-        private readonly Mock<ILogger> log;
-        private readonly SimulationsController target;
-
         public SimulationsControllerTest()
         {
             this.simulationsService = new Mock<ISimulations>();
@@ -59,6 +47,139 @@ namespace WebService.Test.v1.Controllers
                 this.log.Object);
         }
 
+        private readonly Mock<ISimulations> simulationsService;
+        private readonly Mock<IServicesConfig> servicesConfig;
+        private readonly Mock<IDeploymentConfig> deploymentConfig;
+        private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
+        private readonly Mock<IIothubMetrics> iothubMetrics;
+        private readonly Mock<IPreprovisionedIotHub> preprovisionedIotHub;
+        private readonly Mock<ISimulationAgent> simulationAgent;
+        private readonly Mock<ISimulationRunner> simulationRunner;
+        private readonly Mock<IRateLimiting> rateReporter;
+        private readonly Mock<ILogger> log;
+        private readonly SimulationsController target;
+
+        private Simulation GetSimulationById(string id)
+        {
+            return new Simulation
+            {
+                Id = id,
+                DeviceModels = new List<Simulation.DeviceModelRef>
+                {
+                    new Simulation.DeviceModelRef { Id = "Chiller_01", Count = 10 }
+                }
+            };
+        }
+
+        private List<Simulation> GetSimulations()
+        {
+            return new List<Simulation>
+            {
+                new Simulation { ETag = "ETag_1" },
+                new Simulation { ETag = "ETag_2" },
+                new Simulation { ETag = "ETag_3" }
+            };
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItCreatesSimulationWithValidInput()
+        {
+            // Arrange
+            const string ID = "1";
+            var simulation = this.GetSimulationById(ID);
+
+            this.simulationsService
+                .Setup(x => x.InsertAsync(It.IsAny<Simulation>(), It.IsAny<string>()))
+                .ReturnsAsync(simulation);
+
+            // Act
+            var result = this.target.PostAsync(
+                SimulationApiModel.FromServiceModel(
+                    simulation,
+                    this.servicesConfig.Object,
+                    this.deploymentConfig.Object,
+                    this.connectionStringManager.Object,
+                    this.simulationRunner.Object,
+                    this.rateReporter.Object
+                )
+            ).Result;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(simulation.Id, result.Id);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItCreatesTheDefaultSimulation()
+        {
+            // Arrange
+            const string DEFAULT_SIMULATION_ID = "1";
+            var simulation = this.GetSimulationById(DEFAULT_SIMULATION_ID);
+
+            this.simulationsService
+                .Setup(x => x.InsertAsync(It.IsAny<Simulation>(), "default"))
+                .ReturnsAsync(simulation);
+
+            // Act
+            var result = this.target.PostAsync(
+                null,
+                "default"
+            ).Result;
+
+            // Assert
+            Assert.Equal(DEFAULT_SIMULATION_ID, result.Id);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItInvokesDeleteOnceWhenDeleteSimulationWithId()
+        {
+            // Arrange
+            const string ID = "1";
+
+            // Act
+            this.target.DeleteAsync(ID)
+                .Wait(Constants.TEST_TIMEOUT);
+
+            // Assert
+            this.simulationsService.Verify(x => x.DeleteAsync(ID), Times.Once);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItInvokesMetricsServiceOnceWhenQueryIotHubMetrics()
+        {
+            // Arrange
+            const string AUTH_TOKEN = "token";
+            const string ID = "1";
+
+            // Act
+            this.target.PostAsync(
+                    new MetricsRequestsApiModel(),
+                    AUTH_TOKEN,
+                    ID)
+                .Wait(Constants.TEST_TIMEOUT);
+
+            // Assert
+            this.iothubMetrics
+                .Verify(x => x.GetIothubMetrics(
+                    AUTH_TOKEN,
+                    It.IsAny<MetricsRequestsModel>()
+                ), Times.Once);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReturnsNullWhenGetSimulationByIdNotFound()
+        {
+            // Arrange
+            const string ID = "1";
+            var simulation = this.GetSimulationById(ID);
+
+            // Act
+            var result = this.target.GetAsync(ID).Result;
+
+            // Assert
+            Assert.Null(result);
+        }
+
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItReturnsTheListOfSimulations()
         {
@@ -80,7 +201,7 @@ namespace WebService.Test.v1.Controllers
         public void ItReturnsTheSimulationById()
         {
             // Arrange
-            const string ID = "simulationId";
+            const string ID = "1";
             var simulation = this.GetSimulationById(ID);
 
             this.simulationsService
@@ -89,48 +210,6 @@ namespace WebService.Test.v1.Controllers
 
             // Act
             var result = this.target.GetAsync(ID).Result;
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(simulation.Id, result.Id);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsNullWhenGetSimulationByIdNotFound()
-        {
-            // Arrange
-            const string ID = "simulationId";
-            var simulation = this.GetSimulationById(ID);
-
-            // Act
-            var result = this.target.GetAsync(ID).Result;
-
-            // Assert
-            Assert.Null(result);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItCreatesSimulationWithValidInput()
-        {
-            // Arrange
-            const string ID = "simulationId";
-            var simulation = this.GetSimulationById(ID);
-
-            this.simulationsService
-                .Setup(x => x.InsertAsync(It.IsAny<Simulation>(), It.IsAny<string>()))
-                .ReturnsAsync(simulation);
-
-            // Act
-            var result = this.target.PostAsync(
-                SimulationApiModel.FromServiceModel(
-                    simulation,
-                    this.servicesConfig.Object,
-                    this.deploymentConfig.Object,
-                    this.connectionStringManager.Object,
-                    this.simulationRunner.Object,
-                    this.rateReporter.Object
-                )
-            ).Result;
 
             // Assert
             Assert.NotNull(result);
@@ -160,20 +239,23 @@ namespace WebService.Test.v1.Controllers
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItCreatesTheDefaultSimulation()
+        public void ItUpdatesSimulationThroughPatchtMethod()
         {
             // Arrange
             const string DEFAULT_SIMULATION_ID = "1";
             var simulation = this.GetSimulationById(DEFAULT_SIMULATION_ID);
-            
+
             this.simulationsService
-                .Setup(x => x.InsertAsync(It.IsAny<Simulation>(), "default"))
+                .Setup(x => x.MergeAsync(It.IsAny<SimulationPatch>()))
                 .ReturnsAsync(simulation);
 
             // Act
-            var result = this.target.PostAsync(
-                null,
-                "default"
+            var result = this.target.PatchAsync(
+                DEFAULT_SIMULATION_ID,
+                new SimulationPatchApiModel
+                {
+                    ETag = simulation.ETag
+                }
             ).Result;
 
             // Assert
@@ -206,88 +288,6 @@ namespace WebService.Test.v1.Controllers
 
             // Assert
             Assert.Equal(DEFAULT_SIMULATION_ID, result.Id);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItUpdatesSimulationThroughPatchtMethod()
-        {
-            // Arrange
-            const string DEFAULT_SIMULATION_ID = "1";
-            var simulation = this.GetSimulationById(DEFAULT_SIMULATION_ID);
-
-            this.simulationsService
-                .Setup(x => x.MergeAsync(It.IsAny<SimulationPatch>()))
-                .ReturnsAsync(simulation);
-
-            // Act
-            var result = this.target.PatchAsync(
-                DEFAULT_SIMULATION_ID,
-                new SimulationPatchApiModel
-                {
-                    ETag = simulation.ETag
-                }
-            ).Result;
-
-            // Assert
-            Assert.Equal(DEFAULT_SIMULATION_ID, result.Id);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItInvokesDeleteOnceWhenDeleteSimulationWithId()
-        {
-            // Arrange
-            const string ID = "simulationId";
-
-            // Act
-            this.target.DeleteAsync(ID)
-                .Wait(Constants.TEST_TIMEOUT);
-
-            // Assert
-            this.simulationsService.Verify(x => x.DeleteAsync(ID), Times.Once);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItInvokesMetricsServiceOnceWhenQueryIotHubMetrics()
-        {
-            // Arrange
-            const string AUTH_TOKEN = "token";
-            const string ID = "simulationId";
-
-            // Act
-            this.target.PostAsync(
-                    new MetricsRequestsApiModel(), 
-                    AUTH_TOKEN,
-                    ID)
-                .Wait(Constants.TEST_TIMEOUT);
-
-            // Assert
-            this.iothubMetrics
-                .Verify(x => x.GetIothubMetrics(
-                    AUTH_TOKEN, 
-                    It.IsAny<MetricsRequestsModel>()
-                ), Times.Once);
-        }
-
-        private Simulation GetSimulationById(string id)
-        {
-            return new Simulation
-            {
-                Id = id,
-                DeviceModels = new List<Simulation.DeviceModelRef>
-                {
-                    new Simulation.DeviceModelRef { Id = "Chiller_01", Count = 10 }
-                }
-            };
-        }
-
-        private List<Simulation> GetSimulations()
-        {
-            return new List<Simulation>
-            {
-                new Simulation { ETag = "ETag_1" },
-                new Simulation { ETag = "ETag_2" },
-                new Simulation { ETag = "ETag_3" }
-            };
         }
     }
 }

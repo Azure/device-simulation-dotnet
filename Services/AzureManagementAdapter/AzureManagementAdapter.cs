@@ -46,7 +46,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
                 requests = this.GetMetricsRequests();
             }
 
-            var request = this.PrepareRequest("batch?api-version=2015-11-01", token, requests);
+            var request = this.PrepareRequest($"batch?api-version={this.config.AzureManagementAdapterApiVersion}", token, requests);
             var response = await this.httpClient.PostAsync(request);
 
             this.log.Debug("Azure Management response", () => new { response });

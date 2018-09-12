@@ -75,6 +75,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string AZURE_MANAGEMENT_ADAPTER_KEY = "AzureManagementService:";
         private const string AZURE_MANAGEMENT_ADAPTER_API_URL_KEY = AZURE_MANAGEMENT_ADAPTER_KEY + "webservice_url";
         private const string AZURE_MANAGEMENT_ADAPTER_API_TIMEOUT_KEY = AZURE_MANAGEMENT_ADAPTER_KEY + "webservice_timeout";
+        private const string AZURE_MANAGEMENT_ADAPTER_API_VERSION = AZURE_MANAGEMENT_ADAPTER_KEY + "api_version";
 
         private const string MAIN_STORAGE_KEY = APPLICATION_KEY + "Storage:Main:";
         private const string NODES_STORAGE_KEY = APPLICATION_KEY + "Storage:Nodes:";
@@ -214,6 +215,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 StorageAdapterApiTimeout = configData.GetInt(STORAGE_ADAPTER_API_TIMEOUT_KEY),
                 AzureManagementAdapterApiUrl = configData.GetString(AZURE_MANAGEMENT_ADAPTER_API_URL_KEY),
                 AzureManagementAdapterApiTimeout = configData.GetInt(AZURE_MANAGEMENT_ADAPTER_API_TIMEOUT_KEY),
+                AzureManagementAdapterApiVersion = configData.GetString(AZURE_MANAGEMENT_ADAPTER_API_VERSION),
                 TwinReadWriteEnabled = configData.GetBool(TWIN_READ_WRITE_ENABLED_KEY, true),
                 MainStorage = GetStorageConfig(configData, MAIN_STORAGE_KEY),
                 NodesStorage = GetStorageConfig(configData, NODES_STORAGE_KEY),

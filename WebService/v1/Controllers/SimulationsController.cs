@@ -103,9 +103,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromHeader]string authorization,
             string id)
         {
-            return requests == null
-                ? await this.iothubMetrics.GetIothubMetrics(authorization, null)
-                : await this.iothubMetrics.GetIothubMetrics(authorization, requests.ToServiceModel());
+            var payload = requests?.ToServiceModel();
+
+            return await this.iothubMetrics.GetIothubMetrics(authorization, payload);
         }
 
         [HttpPut("{id}")]
@@ -113,7 +113,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromBody] SimulationApiModel simulationApiModel,
             string id = "")
         {
-            await simulationApiModel?.ValidateInputRequestAsync(this.log, this.connectionStringManager);
+            simulationApiModel?.ValidateInputRequestAsync(this.log, this.connectionStringManager);
 
             if (simulationApiModel == null)
             {
