@@ -22,7 +22,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         // Agent responsible for creating devices and partitions
         private IPartitioningAgent partitioningAgent;
 
-        // Agent responsible for simulating IoT devicesw
+        // Agent responsible for simulating IoT devices
         private ISimulationAgent simulationAgent;
 
         // Initialized in `Startup`
@@ -83,7 +83,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
             // Start simulation agent thread
             appLifetime.ApplicationStarted.Register(this.StartAgents);
-            appLifetime.ApplicationStopping.Register(this.StopAgent);
+            appLifetime.ApplicationStopping.Register(this.StopAgents);
 
             // If you want to dispose of resources that have been resolved in the
             // application container, register for the "ApplicationStopped" event.
@@ -107,7 +107,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             this.simulationAgent.RunAsync();
         }
 
-        private void StopAgent()
+        private void StopAgents()
         {
             this.partitioningAgent.Stop();
             this.simulationAgent.Stop();
