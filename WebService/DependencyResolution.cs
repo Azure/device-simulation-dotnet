@@ -3,6 +3,7 @@
 using System.Reflection;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -15,6 +16,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTeleme
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Agent = Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Agent;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 {
@@ -62,6 +64,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
             // Auto-wire SimulationAgent.DLL
             assembly = typeof(ISimulationAgent).GetTypeInfo().Assembly;
+            builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
+
+            // Auto-wire PartitioningAgent.DLL
+            assembly = typeof(IPartitioningAgent).GetTypeInfo().Assembly;
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
         }
 
