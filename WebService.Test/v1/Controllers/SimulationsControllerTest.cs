@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
@@ -35,7 +34,6 @@ namespace WebService.Test.v1.Controllers
             this.simulationRunner = new Mock<ISimulationRunner>();
             this.rateReporter = new Mock<IRateLimiting>();
             this.log = new Mock<ILogger>();
-            this.logger = this.logger;
 
             this.target = new SimulationsController(
                 this.simulationsService.Object,
@@ -61,7 +59,6 @@ namespace WebService.Test.v1.Controllers
         private readonly Mock<IRateLimiting> rateReporter;
         private readonly Mock<ILogger> log;
         private readonly SimulationsController target;
-        private readonly ILogger logger;
 
         private Simulation GetSimulationById(string id)
         {
@@ -71,7 +68,9 @@ namespace WebService.Test.v1.Controllers
                 DeviceModels = new List<Simulation.DeviceModelRef>
                 {
                     new Simulation.DeviceModelRef { Id = "Chiller_01", Count = 10 }
-                }
+                },
+                StartTime = DateTimeOffset.UtcNow,
+                EndTime = DateTimeOffset.UtcNow.AddHours(2)
             };
         }
 
@@ -96,20 +95,6 @@ namespace WebService.Test.v1.Controllers
                 .Setup(x => x.InsertAsync(It.IsAny<Simulation>(), It.IsAny<string>()))
                 .ReturnsAsync(simulation);
 
-            // -------------TODO: -Remove logs after testing -------------------------
-            var simulationApiModel = SimulationApiModel.FromServiceModel(
-                simulation,
-                this.servicesConfig.Object,
-                this.deploymentConfig.Object,
-                this.connectionStringManager.Object,
-                this.simulationRunner.Object,
-                this.rateReporter.Object
-            );
-            Trace.Write(simulation, "simulation model");
-            Trace.Write(simulationApiModel, "simulation api mode");
-            // this.logger.Warn("simulation model", () => new { simulation });
-            //this.logger.Warn("simulation api model", () => new { simulationApiModel });
-            // -----------------------------------------------------------------------
             // Act
             var result = this.target.PostAsync(
                 SimulationApiModel.FromServiceModel(
