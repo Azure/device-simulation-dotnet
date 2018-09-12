@@ -253,7 +253,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
                 this.log.Error("Error while creating DocumentDb collection",
                     () => new { dbName, collName, e });
 
-                throw new ExternalException("Error while creating DocumentDb collection", e);
+                throw new ExternalDependencyException("Error while creating DocumentDb collection", e);
             }
             catch (Exception e)
             {
