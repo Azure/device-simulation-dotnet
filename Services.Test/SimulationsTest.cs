@@ -81,7 +81,8 @@ namespace Services.Test
                 this.mockStorageAdapterClient.Object,
                 this.connStringManager.Object,
                 this.devices.Object,
-                this.logger.Object);
+                this.logger.Object,
+                this.diagnosticsLogger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
