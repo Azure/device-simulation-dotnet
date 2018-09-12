@@ -20,23 +20,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
     public class AzureManagementAdapterClient : IAzureManagementAdapterClient
     {
         private const string DATE_FORMAT = "yyyy-MM-ddTHH:mm:ssZ";
-        private const string METIRCS_API_VERSION = "2016-06-01";
+        private const string METRICS_API_VERSION = "2016-06-01";
         private const bool ALLOW_INSECURE_SSL_SERVER = true;
         private readonly IHttpClient httpClient;
         private readonly ILogger log;
         private readonly IServicesConfig config;
         private readonly IDeploymentConfig deploymentConfig;
+        private readonly IDiagnosticsLogger diagnosticsLogger;
 
         public AzureManagementAdapterClient(
             IHttpClient httpClient,
             IServicesConfig config,
             IDeploymentConfig deploymentConfig,
-            ILogger logger)
+            ILogger logger,
+            IDiagnosticsLogger diagnosticsLogger)
         {
             this.httpClient = httpClient;
             this.log = logger;
             this.config = config;
             this.deploymentConfig = deploymentConfig;
+            this.diagnosticsLogger = diagnosticsLogger;
         }
 
         public async Task<MetricsResponseModel> PostAsync(string token, MetricsRequestsModel requests)
@@ -84,6 +87,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         {
             if (response.IsError)
             {
+                this.diagnosticsLogger.LogServiceErrorAsync("Metrics request error", new { response.Content });
                 throw new ExternalDependencyException(
                     new HttpRequestException($"Metrics request error: status code {response.StatusCode}"));
             }
@@ -94,7 +98,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
             return $"/subscriptions/{this.deploymentConfig.AzureSubscriptionId}" +
                    $"/resourceGroups/{this.deploymentConfig.AzureResourceGroup}" +
                    $"/providers/Microsoft.Devices/IotHubs/{this.deploymentConfig.AzureIothubName}" +
-                   $"/providers/Microsoft.Insights/metrics?api-version={METIRCS_API_VERSION}&" +
+                   $"/providers/Microsoft.Insights/metrics?api-version={METRICS_API_VERSION}&" +
                    $"$filter={this.GetMetricsQuery()}";
         }
 

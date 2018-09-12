@@ -20,18 +20,21 @@ namespace Services.Test
             this.config = new Mock<IServicesConfig>();
             this.deploymentConfig = new Mock<IDeploymentConfig>();
             this.logger = new Mock<ILogger>();
+            this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
 
             this.target = new AzureManagementAdapterClient(
                 this.httpClient.Object,
                 this.config.Object,
                 this.deploymentConfig.Object,
-                this.logger.Object);
+                this.logger.Object,
+                this.diagnosticsLogger.Object);
         }
 
         private readonly Mock<IHttpClient> httpClient;
         private readonly Mock<IServicesConfig> config;
         private readonly Mock<IDeploymentConfig> deploymentConfig;
         private readonly Mock<ILogger> logger;
+        private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
         private readonly AzureManagementAdapterClient target;
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

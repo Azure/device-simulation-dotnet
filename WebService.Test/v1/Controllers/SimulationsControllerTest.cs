@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter;
@@ -33,6 +34,7 @@ namespace WebService.Test.v1.Controllers
             this.simulationRunner = new Mock<ISimulationRunner>();
             this.rateReporter = new Mock<IRateLimiting>();
             this.log = new Mock<ILogger>();
+            this.logger = this.logger;
 
             this.target = new SimulationsController(
                 this.simulationsService.Object,
@@ -58,6 +60,7 @@ namespace WebService.Test.v1.Controllers
         private readonly Mock<IRateLimiting> rateReporter;
         private readonly Mock<ILogger> log;
         private readonly SimulationsController target;
+        private readonly ILogger logger;
 
         private Simulation GetSimulationById(string id)
         {
@@ -92,6 +95,20 @@ namespace WebService.Test.v1.Controllers
                 .Setup(x => x.InsertAsync(It.IsAny<Simulation>(), It.IsAny<string>()))
                 .ReturnsAsync(simulation);
 
+            // -------------TODO: -Remove logs after testing -------------------------
+            var simulationApiModel = SimulationApiModel.FromServiceModel(
+                simulation,
+                this.servicesConfig.Object,
+                this.deploymentConfig.Object,
+                this.connectionStringManager.Object,
+                this.simulationRunner.Object,
+                this.rateReporter.Object
+            );
+            Console.WriteLine("simulation model", simulation);
+            Console.WriteLine("simulation api mode", simulationApiModel);
+           // this.logger.Warn("simulation model", () => new { simulation });
+            //this.logger.Warn("simulation api model", () => new { simulationApiModel });
+            // -----------------------------------------------------------------------
             // Act
             var result = this.target.PostAsync(
                 SimulationApiModel.FromServiceModel(
