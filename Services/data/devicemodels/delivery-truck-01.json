@@ -1,0 +1,67 @@
+{
+    "SchemaVersion": "1.0.0",
+    "Id": "delivery-truck-01",
+    "Version": "0.0.1",
+    "Name": "Delivery Truck",
+    "Description": "Truck on a repeating route with GPS, altitude, speed, and cargo temperature sensors.",
+    "Protocol": "AMQP",
+    "Simulation": {
+        "InitialState": {
+            "online": true,
+            "altitude": 83.0,
+            "current_data_index": 0,
+            "latitude": 47.50066160,
+            "longitude": -122.1859029,
+            "speed": 30.0,
+            "speed_unit": "mph",
+            "temperature": 38.0,
+            "temperature_unit": "F"
+        },
+        "Interval": "00:00:10",
+        "Scripts": [
+            {
+                "Type": "javascript",
+                "Path": "delivery-truck-01-state.js"
+            }
+        ]
+    },
+    "Properties": {
+        "Type": "Truck",
+        "Location": "Field",
+        "Latitude": 47.50066160,
+        "Longitude": -122.1859029
+    },
+    "Telemetry": [
+        {
+            "Interval": "00:00:10",
+            "MessageTemplate": "{\"altitude\":${altitude},\"latitude\":${latitude},\"longitude\":${longitude},\"speed\": ${speed},\"speed_unit\":\"${speed_unit}\",\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\"}",
+            "MessageSchema": {
+                "Name": "truck-sensors;v1",
+                "Format": "JSON",
+                "Fields": {
+                    "altitude": "double",
+                    "latitude": "double",
+                    "longitude": "double",
+                    "speed": "double",
+                    "speed_unit": "text",
+                    "temperature": "double",
+                    "temperature_unit": "text"
+                }
+            }
+        }
+    ],
+    "CloudToDeviceMethods": {
+        "FirmwareUpdate": {
+            "Type": "javascript",
+            "Path": "FirmwareUpdate-method.js"
+        },
+        "DecreaseCargoTemperature": {
+            "Type": "javascript",
+            "Path": "TempDecrease-method.js"
+        },
+        "IncreaseCargoTemperature": {
+            "Type": "javascript",
+            "Path": "TempIncrease-method.js"
+        }
+    }
+}

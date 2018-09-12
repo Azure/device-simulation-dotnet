@@ -39,7 +39,7 @@ namespace Services.Test
             // Arrange
             this.config.Setup(x => x.DeviceModelsFolder).Returns("./data/devicemodels/");
             // Note, based on current setup, simulation service has 10 stock models available.
-            const int STOCK_MODEL_COUNT = 11;
+            const int STOCK_MODEL_COUNT = 13;
 
             // Act
             var result = this.target.GetList();
