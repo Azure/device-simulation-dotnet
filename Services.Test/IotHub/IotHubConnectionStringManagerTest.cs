@@ -14,6 +14,8 @@ namespace Services.Test.IotHub
     public class IotHubConnectionStringManagerTest
     {
         private readonly Mock<ILogger> logger;
+        private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
+        private readonly IServicesConfig config;
         private readonly Mock<IServicesConfig> mockConfig;
         private readonly Mock<IFactory> mockFactory;
         private readonly IotHubConnectionStringManager target;
@@ -21,6 +23,9 @@ namespace Services.Test.IotHub
         public IotHubConnectionStringManagerTest()
         {
             this.logger = new Mock<ILogger>();
+            this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
+            this.config = new ServicesConfig();
+            this.target = new IotHubConnectionStringManager(this.config, this.diagnosticsLogger.Object, this.logger.Object);
             this.mockConfig = new Mock<IServicesConfig>();
             this.mockFactory = new Mock<IFactory>();
             this.mockFactory.Setup(x => x.Resolve<IStorageRecords>()).Returns(new Mock<IStorageRecords>().Object);

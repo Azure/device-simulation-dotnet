@@ -4,12 +4,14 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
@@ -43,6 +45,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         // Application logger
         private readonly ILogger log;
+
+        // Diagnostics logger
+        private readonly IDiagnosticsLogger diagnosticsLogger;
 
         // Settings to optimize scheduling
         private readonly ConnectionLoopSettings connectionLoopSettings;
@@ -112,6 +117,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             IRateLimiting rateLimiting,
             IConcurrencyConfig concurrencyConfig,
             ILogger logger,
+            IDiagnosticsLogger diagnosticsLogger,
             IDeviceModels deviceModels,
             IDeviceModelsGeneration deviceModelsOverriding,
             IDevices devices,
@@ -123,6 +129,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             this.concurrencyConfig = concurrencyConfig;
             this.log = logger;
+            this.diagnosticsLogger = diagnosticsLogger;
             this.deviceModels = deviceModels;
             this.deviceModelsOverriding = deviceModelsOverriding;
             this.devices = devices;
@@ -179,9 +186,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 }
                 catch (Exception e)
                 {
+                    var msg = "Failed to create devices";
                     this.running = false;
                     this.starting = false;
-                    this.log.Error("Failed to create devices", e);
+                    this.log.Error(msg, e);
+                    this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
                     this.IncrementSimulationErrorsCount();
 
                     // Return and retry
@@ -208,13 +217,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     }
                     catch (ResourceNotFoundException)
                     {
+                        var msg = "The device model doesn't exist";
                         this.IncrementSimulationErrorsCount();
-                        this.log.Error("The device model doesn't exist", () => new { model.Id });
+                        this.log.Error(msg, () => new { model.Id });
+                        this.diagnosticsLogger.LogServiceErrorAsync(msg, new { model.Id });
                     }
                     catch (Exception e)
                     {
+                        var msg = "Unexpected error preparing the device model";
                         this.IncrementSimulationErrorsCount();
-                        this.log.Error("Unexpected error preparing the device model", () => new { model.Id, e });
+                        this.log.Error(msg, () => new { model.Id, e });
+                        this.diagnosticsLogger.LogServiceErrorAsync(msg, new { model.Id, e.Message });
                     }
                 }
 
@@ -630,9 +643,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
             catch (Exception e)
             {
+                var msg = "Unable to start the telemetry threads";
                 this.IncrementSimulationErrorsCount();
-                this.log.Error("Unable to start the telemetry threads", e);
-                throw new Exception("Unable to start the telemetry threads", e);
+                this.log.Error(msg, e);
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
+                throw new Exception(msg, e);
             }
         }
 
@@ -645,9 +660,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
             catch (Exception e)
             {
+                var msg = "Unable to start the device connection thread";
                 this.IncrementSimulationErrorsCount();
-                this.log.Error("Unable to start the device connection thread", e);
-                throw new Exception("Unable to start the device connection thread", e);
+                this.log.Error(msg, e);
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
+                throw new Exception(msg, e);
             }
         }
 
@@ -660,9 +677,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
             catch (Exception e)
             {
+                var msg = "Unable to start the device state thread";
                 this.IncrementSimulationErrorsCount();
-                this.log.Error("Unable to start the device state thread", e);
-                throw new Exception("Unable to start the device state thread", e);
+                this.log.Error(msg, e);
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
+                throw new Exception(msg, e);
             }
         }
 
@@ -675,9 +694,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
             catch (Exception e)
             {
+                var msg = "Unable to start the device properties thread";
                 this.IncrementSimulationErrorsCount();
-                this.log.Error("Unable to start the device properties thread", e);
-                throw new Exception("Unable to start the device properties thread", e);
+                this.log.Error(msg, e);
+                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
+                throw new Exception(msg, e);
             }
         }
 

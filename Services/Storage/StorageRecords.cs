@@ -50,10 +50,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
             this.log = logger;
             this.instance = instance;
             this.docDb = docDb;
+            this.concurrencyConfig = concurrencyConfig;
             this.disposedValue = false;
             this.storageConfig = null;
             this.client = null;
-            this.concurrencyConfig = concurrencyConfig;
         }
 
         public IStorageRecords Init(StorageConfig cfg)
@@ -99,6 +99,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
                 throw new ResourceNotFoundException($"The resource {id} doesn't exist.");
             }
         }
+
         public async Task<bool> ExistsAsync(string id)
         {
             await this.SetupStorageAsync();
@@ -122,6 +123,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
                 return false;
             }
         }
+
         public async Task<IEnumerable<StorageRecord>> GetAllAsync()
         {
             await this.SetupStorageAsync();
@@ -134,13 +136,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
 
                 // Delete expired records
                 foreach (var record in storageRecords)
-                {
                     if (record.IsExpired())
                     {
                         this.log.Debug("Deleting expired resource", () => new { this.storageName, record.Id, record.ETag });
                         await this.TryToDeleteExpiredRecord(record.Id);
                     }
-                }
 
                 return storageRecords.Where(x => !x.IsExpired());
             }
@@ -217,16 +217,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
             foreach (var id in ids)
             {
                 tasks.Add(this.DeleteAsync(id));
-                if (tasks.Count < this.concurrencyConfig.MaxPendingTasks) continue;
+                if (tasks.Count < this.concurrencyConfig.MaxPendingStorageTasks) continue;
 
                 await Task.WhenAll(tasks);
                 tasks.Clear();
             }
 
-            if (tasks.Count > 0)
-            {
-                await Task.WhenAll(tasks);
-            }
+            if (tasks.Count > 0) await Task.WhenAll(tasks);
         }
 
         public async Task<bool> TryToLockAsync(
@@ -332,10 +329,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
 
         private void Dispose(bool disposing)
         {
-            if (!this.disposedValue && disposing)
-            {
-                (this.client as IDisposable)?.Dispose();
-            }
+            if (!this.disposedValue && disposing) (this.client as IDisposable)?.Dispose();
 
             this.disposedValue = true;
         }
