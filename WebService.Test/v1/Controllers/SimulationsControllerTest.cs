@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
@@ -104,9 +105,9 @@ namespace WebService.Test.v1.Controllers
                 this.simulationRunner.Object,
                 this.rateReporter.Object
             );
-            Console.WriteLine("simulation model", simulation);
-            Console.WriteLine("simulation api mode", simulationApiModel);
-           // this.logger.Warn("simulation model", () => new { simulation });
+            Trace.Write(simulation, "simulation model");
+            Trace.Write(simulationApiModel, "simulation api mode");
+            // this.logger.Warn("simulation model", () => new { simulation });
             //this.logger.Warn("simulation api model", () => new { simulationApiModel });
             // -----------------------------------------------------------------------
             // Act
