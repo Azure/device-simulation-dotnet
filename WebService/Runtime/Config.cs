@@ -257,7 +257,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             WriteLine(ConsoleColor.White, ConsoleColor.Black, "  - Visual Studio for Mac: check the WebService project settings (or check WebService/WebService.csproj)");
             WriteLine(ConsoleColor.White, ConsoleColor.Black, "  - Visual Studio Code: check .vscode/launch.json");
             WriteLine(ConsoleColor.White, ConsoleColor.Black, "  - IntelliJ Rider: check your Run Configuration (or files under .idea folder)");
-            WriteLine(ConsoleColor.White, ConsoleColor.Black, "  - Check also your develoment environment, where you might have environment variables set");
+            WriteLine(ConsoleColor.White, ConsoleColor.Black, "  - Check also your development environment, where you might have environment variables set");
             WriteLine(ConsoleColor.White, ConsoleColor.Black, "");
         }
 

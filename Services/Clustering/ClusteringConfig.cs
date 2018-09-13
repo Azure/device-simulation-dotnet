@@ -39,7 +39,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             if (value < min || value > max)
             {
                 throw new InvalidConfigurationException(
-                    name + " value is not valid. Use a value within `" + min + "` and `" + max + "`.");
+                    $"{name} value [{value}] is not valid. Use a value within `{min}` and `{max}`.");
             }
         }
     }

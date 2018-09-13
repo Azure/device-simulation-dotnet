@@ -26,7 +26,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         void Start(Simulation simulation);
         void Stop();
         Task AddDeviceAsync(string deviceId, string modelId);
-        Task DeleteDevicesAsync(List<string> ids);
+        void DeleteDevices(List<string> ids);
         long ActiveDevicesCount { get; }
         long TotalMessagesCount { get; }
         long FailedMessagesCount { get; }
@@ -187,7 +187,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.running = false;
                     this.starting = false;
                     this.log.Error(msg, e);
-                    this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
+                    this.diagnosticsLogger.LogServiceError(msg, e.Message);
                     this.IncrementSimulationErrorsCount();
 
                     // Return and retry
@@ -217,14 +217,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                         var msg = "The device model doesn't exist";
                         this.IncrementSimulationErrorsCount();
                         this.log.Error(msg, () => new { model.Id });
-                        this.diagnosticsLogger.LogServiceErrorAsync(msg, new { model.Id });
+                        this.diagnosticsLogger.LogServiceError(msg, new { model.Id });
                     }
                     catch (Exception e)
                     {
                         var msg = "Unexpected error preparing the device model";
                         this.IncrementSimulationErrorsCount();
                         this.log.Error(msg, () => new { model.Id, e });
-                        this.diagnosticsLogger.LogServiceErrorAsync(msg, new { model.Id, e.Message });
+                        this.diagnosticsLogger.LogServiceError(msg, new { model.Id, e.Message });
                     }
                 }
 
@@ -302,7 +302,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         /// <summary>
         /// Delete a list of devices
         /// </summary>
-        public async Task DeleteDevicesAsync(List<string> ids)
+        public void DeleteDevices(List<string> ids)
         {
             foreach (var device in this.deviceConnectionActors)
             {
@@ -643,7 +643,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var msg = "Unable to start the telemetry threads";
                 this.IncrementSimulationErrorsCount();
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
+                this.diagnosticsLogger.LogServiceError(msg, e.Message);
                 throw new Exception(msg, e);
             }
         }
@@ -660,7 +660,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var msg = "Unable to start the device connection thread";
                 this.IncrementSimulationErrorsCount();
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
+                this.diagnosticsLogger.LogServiceError(msg, e.Message);
                 throw new Exception(msg, e);
             }
         }
@@ -677,7 +677,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var msg = "Unable to start the device state thread";
                 this.IncrementSimulationErrorsCount();
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
+                this.diagnosticsLogger.LogServiceError(msg, e.Message);
                 throw new Exception(msg, e);
             }
         }
@@ -694,7 +694,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var msg = "Unable to start the device properties thread";
                 this.IncrementSimulationErrorsCount();
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
+                this.diagnosticsLogger.LogServiceError(msg, e.Message);
                 throw new Exception(msg, e);
             }
         }
