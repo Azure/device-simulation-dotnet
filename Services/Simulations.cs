@@ -212,7 +212,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 if (simulation.ETag != existingSimulation.ETag)
                 {
-                    var msg = "Invalid ETag. Running simulation ETag is:'";
+                    var msg = $"Invalid ETag. The simulation ETag is '{existingSimulation.ETag}'";
                     this.log.Error(msg, () => new { simulation });
                     this.diagnosticsLogger.LogServiceError(msg, new { simulation.Id, simulation.Name });
                     throw new ResourceOutOfDateException(msg + simulation.ETag + "'.");
