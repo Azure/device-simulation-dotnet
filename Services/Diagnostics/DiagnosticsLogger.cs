@@ -11,18 +11,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 {
     public interface IDiagnosticsLogger
     {
-        Task LogServiceStartAsync(string message);
+        void LogServiceStart(string message);
 
-        Task LogServiceHeartbeatAsync();
+        void LogServiceHeartbeat();
 
-        Task LogServiceErrorAsync(
+        void LogServiceError(
             string message,
             string exceptionMessage = "",
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0);
 
-        Task LogServiceErrorAsync(
+        void LogServiceError(
             string message,
             object data,
             [CallerMemberName] string callerName = "",
@@ -49,7 +49,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
         private readonly IHttpClient httpClient;
         private readonly IServicesConfig servicesConfig;
-        private readonly string diagnosticsEndpoint = string.Empty;
+        private readonly string diagnosticsEndpoint;
 
         private const string SERVICE_ERROR_EVENT = "ServiceError";
         private const string SERVICE_START_EVENT = "ServiceStart";
@@ -62,19 +62,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.diagnosticsEndpoint = this.servicesConfig.DiagnosticsEndpointUrl;
         }
 
-        public async Task LogServiceStartAsync(string message)
+        public void LogServiceStart(string message)
         {
             JsonStruct jsonStruct = new JsonStruct(SERVICE_START_EVENT + message, null);
-            await this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
+
+            // Run in the background without blocking
+            this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
         }
 
-        public async Task LogServiceHeartbeatAsync()
+        public void LogServiceHeartbeat()
         {
             JsonStruct jsonStruct = new JsonStruct(SERVICE_HEARTBEAT_EVENT, null);
-            await this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
+
+            // Run in the background without blocking
+            this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
         }
 
-        public async Task LogServiceErrorAsync(
+        public  void LogServiceError(
             string message,
             string exceptionMessage = "",
             [CallerMemberName] string callerName = "",
@@ -82,10 +86,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             [CallerLineNumber] int lineNumber = 0)
         {
             JsonStruct jsonStruct = this.ConvertServiceErrorToJson(message, exceptionMessage, null, callerName, filePath, lineNumber);
-            await this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
+
+            // Run in the background without blocking
+            this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
         }
 
-        public async Task LogServiceErrorAsync(
+        public void LogServiceError(
             string message,
             object data,
             [CallerMemberName] string callerName = "",
@@ -93,7 +99,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             [CallerLineNumber] int lineNumber = 0)
         {
             JsonStruct jsonStruct = this.ConvertServiceErrorToJson(message, "", data, callerName, filePath, lineNumber);
-            await this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
+
+            // Run in the background without blocking
+            this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
         }
 
         private JsonStruct ConvertServiceErrorToJson(string message,
