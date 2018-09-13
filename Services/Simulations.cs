@@ -174,7 +174,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             // This value cannot be set by the user, so we set it here
-            // TODO: Can this be removed as this value is set in the Simulation constructor?
             simulation.PartitioningComplete = false;
 
             var result = await this.simulationsStorage.CreateAsync(

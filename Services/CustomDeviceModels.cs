@@ -176,8 +176,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     () => new { deviceModel, generateId, e });
                 this.diagnosticsLogger.LogServiceErrorAsync(msg,
                     new { deviceModel, generateId, e.Message });
-                throw new ExternalDependencyException(
-                   msg, e);
+                throw new ExternalDependencyException(msg, e);
             }
 
             return deviceModel;
