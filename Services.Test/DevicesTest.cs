@@ -27,7 +27,6 @@ namespace Services.Test
         private readonly Mock<IDeviceClientWrapper> deviceClient;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
-        private readonly int testTimeout = 1000;
 
         public DevicesTest(ITestOutputHelper log)
         {
