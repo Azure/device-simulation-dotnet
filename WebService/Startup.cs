@@ -99,9 +99,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             };
 
             this.partitioningAgent = this.ApplicationContainer.Resolve<IPartitioningAgent>();
-
-            // TODO: uncomment when ready
-            //this.partitioningAgent.StartAsync();
+            this.partitioningAgent.StartAsync();
 
             this.simulationAgent = this.ApplicationContainer.Resolve<ISimulationAgent>();
             this.simulationAgent.RunAsync();
