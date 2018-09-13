@@ -160,7 +160,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     if (this.running)
                     {
                         this.log.Info("Deleting devices from running simulation");
-                        await this.runner.DeleteDevicesAsync(ids);
+                        this.runner.DeleteDevices(ids);
                     }
                     else
                     {
@@ -216,7 +216,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             if (duration.Days >= DIAGNOSTICS_POLLING_FREQUENCY_DAYS)
             {
                 this.lastPolledTime = now;
-                this.logDiagnostics.LogServiceHeartbeatAsync();
+                this.logDiagnostics.LogServiceHeartbeat();
             }
         }
 
@@ -228,10 +228,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 if (this.simulation.ShouldBeRunning())
                 {
                     this.log.Debug("------ Starting new simulation ------", () => new { this.simulation });
-                    this.logDiagnostics.LogServiceStartAsync("Starting new simulation");
+                    this.logDiagnostics.LogServiceStart("Starting new simulation");
                     this.runner.Start(this.simulation);
                     this.log.Debug("------ New simulation started ------", () => new { this.simulation });
-                    this.logDiagnostics.LogServiceStartAsync("New simulation started");
+                    this.logDiagnostics.LogServiceStart("New simulation started");
                 }
             }
         }

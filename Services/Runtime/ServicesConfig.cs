@@ -23,7 +23,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         StorageConfig SimulationsStorage { get; set; }
         StorageConfig DevicesStorage { get; set; }
         StorageConfig PartitionsStorage { get; set; }
-        string DiagnosticsEndpointUrl { get;  }
+        string DiagnosticsEndpointUrl { get; }
     }
 
     // TODO: test Windows/Linux folder separator
@@ -76,7 +76,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         public string AzureManagementAdapterApiVersion { get; set; }
 
         public string DiagnosticsEndpointUrl { get; set; }
-                
+
         public bool TwinReadWriteEnabled { get; set; }
 
         public StorageConfig MainStorage { get; set; }

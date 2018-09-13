@@ -27,7 +27,6 @@ namespace WebService.Test.v1.Controllers
         private readonly Mock<ISimulations> simulations;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IServicesConfig> servicesConfig;
-        private readonly Mock<IDeploymentConfig> deploymentConfig;
         private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
         private readonly Mock<ISimulationRunner> simulationRunner;
         private readonly Mock<IRateLimiting> rateReporter;
