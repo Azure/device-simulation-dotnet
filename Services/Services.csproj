@@ -1,15 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>7</LangVersion>
+    <LangVersion>latest</LangVersion>
     <AssemblyName>Microsoft.Azure.IoTSolutions.DeviceSimulation.Services</AssemblyName>
     <RootNamespace>Microsoft.Azure.IoTSolutions.DeviceSimulation.Services</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.5.1" />
     <PackageReference Include="jint" Version="2.10.4" />
-    <PackageReference Include="Microsoft.Azure.Devices" Version="1.16.1" />
-    <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.17.1" />
+    <PackageReference Include="Microsoft.Azure.Devices" Version="1.17.0" />
+    <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.18.0" />
     <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="1.9.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="2.1.1" />
@@ -100,11 +100,23 @@
     <None Update="data\devicemodels\scripts\TempIncrease-method.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="data\devicemodels\scripts\delivery-truck-01-state.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="data\devicemodels\scripts\delivery-truck-02-state.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="data\devicemodels\scripts\truck-02-state.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="data\devicemodels\delivery-truck-01.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="data\devicemodels\truck-01-protobuf.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="data\devicemodels\delivery-truck-02.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="data\devicemodels\truck-02.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

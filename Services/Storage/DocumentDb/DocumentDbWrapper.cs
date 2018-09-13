@@ -146,7 +146,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
 
             var docDbOptions = new RequestOptions
             {
-                OfferThroughput = cfg.DocumentDbRUs,
+                OfferThroughput = cfg.DocumentDbThroughput,
                 ConsistencyLevel = ConsistencyLevel.Strong
             };
 

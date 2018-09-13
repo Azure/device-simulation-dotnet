@@ -26,7 +26,6 @@ namespace WebService.Test.v1.Models.SimulationApiModel
         private readonly Mock<ISimulationRunner> simulationRunner;
         private readonly Mock<IRateLimiting> rateReporter;
 
-
         public SimulationApiModelTest()
         {
             this.logger = new Mock<ILogger>();
