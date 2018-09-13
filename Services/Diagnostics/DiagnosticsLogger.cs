@@ -78,7 +78,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
         }
 
-        public  void LogServiceError(
+        public void LogServiceError(
             string message,
             string exceptionMessage = "",
             [CallerMemberName] string callerName = "",
