@@ -78,7 +78,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         {
             if (simulationApiModel != null)
             {
-                await simulationApiModel?.ValidateInputRequestAsync(this.log, this.connectionStringManager);
+                await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringManager);
             }
             else
             {
@@ -97,15 +97,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
 
-        [HttpPost("{id}/metrics/iothub")]
+        // TODO: remove authorization from controller 
+        [HttpPost("{id}/metrics/iothub!search")]
         public async Task<object> PostAsync(
             [FromBody] MetricsRequestsApiModel requests,
-            [FromHeader]string authorization,
+            [FromHeader] string authorization,
             string id)
         {
             var payload = requests?.ToServiceModel();
 
-            return await this.iothubMetrics.GetIothubMetrics(authorization, payload);
+            return await this.iothubMetrics.GetIothubMetricsAsync(authorization, payload);
         }
 
         [HttpPut("{id}")]
@@ -113,13 +114,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromBody] SimulationApiModel simulationApiModel,
             string id = "")
         {
-            simulationApiModel?.ValidateInputRequestAsync(this.log, this.connectionStringManager);
-
             if (simulationApiModel == null)
             {
                 this.log.Warn("No data provided, request object is null");
                 throw new BadRequestException("No data provided, request object is empty.");
             }
+
+            await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringManager);
 
             var simulation = await this.simulationsService.UpsertAsync(simulationApiModel.ToServiceModel(id));
             return SimulationApiModel.FromServiceModel(

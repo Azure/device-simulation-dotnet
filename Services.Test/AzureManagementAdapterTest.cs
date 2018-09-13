@@ -22,7 +22,7 @@ namespace Services.Test
             this.logger = new Mock<ILogger>();
             this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
 
-            this.target = new AzureManagementAdapterClient(
+            this.target = new AzureManagementAdapter(
                 this.httpClient.Object,
                 this.config.Object,
                 this.deploymentConfig.Object,
@@ -35,7 +35,7 @@ namespace Services.Test
         private readonly Mock<IDeploymentConfig> deploymentConfig;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
-        private readonly AzureManagementAdapterClient target;
+        private readonly AzureManagementAdapter target;
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItThrowsExteneralExceptionWhenFailedFetchIothubMetrics()

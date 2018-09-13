@@ -23,7 +23,7 @@ namespace Services.Test
         public void ItInvokesAzureManagementAdapterOnceWhenQueryIothubMetrics()
         {
             // Act
-            this.target.GetIothubMetrics(It.IsAny<string>(), It.IsAny<MetricsRequestsModel>())
+            this.target.GetIothubMetricsAsync(It.IsAny<string>(), It.IsAny<MetricsRequestsModel>())
                 .Wait(Constants.TEST_TIMEOUT);
 
             // Assert

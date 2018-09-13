@@ -17,7 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         Task<MetricsResponseModel> PostAsync(string token, MetricsRequestsModel requests);
     }
 
-    public class AzureManagementAdapterClient : IAzureManagementAdapterClient
+    public class AzureManagementAdapter : IAzureManagementAdapterClient
     {
         private const string DATE_FORMAT = "yyyy-MM-ddTHH:mm:ssZ";
         private const string METRICS_API_VERSION = "2016-06-01";
@@ -28,7 +28,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         private readonly IDeploymentConfig deploymentConfig;
         private readonly IDiagnosticsLogger diagnosticsLogger;
 
-        public AzureManagementAdapterClient(
+        public AzureManagementAdapter(
             IHttpClient httpClient,
             IServicesConfig config,
             IDeploymentConfig deploymentConfig,
@@ -46,7 +46,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         {
             if (requests == null)
             {
-                requests = this.GetMetricsRequests();
+                requests = this.GetDefaultMetricsRequests();
             }
 
             var request = this.PrepareRequest($"batch?api-version={this.config.AzureManagementAdapterApiVersion}", token, requests);
@@ -87,22 +87,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         {
             if (response.IsError)
             {
-                this.diagnosticsLogger.LogServiceErrorAsync("Metrics request error", new { response.Content });
+                this.diagnosticsLogger.LogServiceError("Metrics request error", new { response.Content });
                 throw new ExternalDependencyException(
                     new HttpRequestException($"Metrics request error: status code {response.StatusCode}"));
             }
         }
 
-        private string GetIoTHubMetricsUrl()
+        private string GetDefaultIoTHubMetricsUrl()
         {
             return $"/subscriptions/{this.deploymentConfig.AzureSubscriptionId}" +
                    $"/resourceGroups/{this.deploymentConfig.AzureResourceGroup}" +
                    $"/providers/Microsoft.Devices/IotHubs/{this.deploymentConfig.AzureIothubName}" +
                    $"/providers/Microsoft.Insights/metrics?api-version={METRICS_API_VERSION}&" +
-                   $"$filter={this.GetMetricsQuery()}";
+                   $"$filter={this.GetDefaultMetricsQuery()}";
         }
 
-        private string GetMetricsQuery()
+        /// <summary>
+        /// Return the default query for Azure management API.
+        /// 
+        /// Data points:
+        /// 1) Total devices
+        /// 2) Connected devices
+        /// 3) Telemetry message sent
+        ///
+        /// Time range: Last one hour
+        /// Time Grain: 1 minite
+        /// </summary>
+        /// <returns></returns>
+        private string GetDefaultMetricsQuery()
         {
             // TODO: consider using query params from controller
             var now = DateTimeOffset.UtcNow;
@@ -134,12 +146,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
             return string.Join(" and ", filterArray);
         }
 
-        private MetricsRequestsModel GetMetricsRequests()
+        private MetricsRequestsModel GetDefaultMetricsRequests()
         {
             MetricsRequestModel request = new MetricsRequestModel
             {
                 HttpMethod = "GET",
-                RelativeUrl = this.GetIoTHubMetricsUrl()
+                RelativeUrl = this.GetDefaultIoTHubMetricsUrl()
             };
 
             MetricsRequestsModel result = new MetricsRequestsModel();
