@@ -65,7 +65,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             while (this.running)
             {
                 var oldSimulation = this.simulation;
-                
+
                 this.SendSolutionHeartbeatAsync();
 
                 try
@@ -86,7 +86,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                     // if there's a new simulation and it's different from the current one
                     // stop the current one from running & start the new one if it's enabled
-                    await this.CheckForChangedSimulation(runningSimulation);
+                    this.CheckForChangedSimulation(runningSimulation);
 
                     // if there's no simulation running but there's one from storage start it
                     this.CheckForNewSimulation(runningSimulation);
@@ -160,7 +160,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     if (this.running)
                     {
                         this.log.Info("Deleting devices from running simulation");
-                        await this.runner.DeleteDevicesAsync(ids);
+                        this.runner.DeleteDevices(ids);
                     }
                     else
                     {
@@ -187,21 +187,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private async Task CheckForChangedSimulation(Services.Models.Simulation newSimulation)
+        private void CheckForChangedSimulation(Services.Models.Simulation newSimulation)
         {
             if (newSimulation != null && this.simulation != null &&
                 newSimulation.Modified != this.simulation.Modified)
             {
                 this.log.Debug("The simulation has been modified, stopping the current " +
                                "simulation and starting the new one if enabled");
-                this.simulation.Enabled = false;
-                this.simulation.Statistics.AverageMessagesPerSecond = this.rateReporter.GetThroughputForMessages();
-                this.simulation.Statistics.TotalMessagesSent = this.runner.TotalMessagesCount;
-
                 this.runner.Stop();
-
-                // Update simulation statistics in storage
-                await this.simulations.UpsertAsync(this.simulation);
 
                 this.simulation = newSimulation;
 
@@ -223,7 +216,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             if (duration.Days >= DIAGNOSTICS_POLLING_FREQUENCY_DAYS)
             {
                 this.lastPolledTime = now;
-                this.logDiagnostics.LogServiceHeartbeatAsync();
+                this.logDiagnostics.LogServiceHeartbeat();
             }
         }
 
@@ -235,10 +228,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 if (this.simulation.ShouldBeRunning())
                 {
                     this.log.Debug("------ Starting new simulation ------", () => new { this.simulation });
-                    this.logDiagnostics.LogServiceStartAsync("Starting new simulation");
+                    this.logDiagnostics.LogServiceStart("Starting new simulation");
                     this.runner.Start(this.simulation);
                     this.log.Debug("------ New simulation started ------", () => new { this.simulation });
-                    this.logDiagnostics.LogServiceStartAsync("New simulation started");
+                    this.logDiagnostics.LogServiceStart("New simulation started");
                 }
             }
         }
