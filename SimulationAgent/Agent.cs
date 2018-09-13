@@ -86,7 +86,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                     // if there's a new simulation and it's different from the current one
                     // stop the current one from running & start the new one if it's enabled
-                    this.CheckForChangedSimulation(runningSimulation);
+                    await this.CheckForChangedSimulation(runningSimulation);
 
                     // if there's no simulation running but there's one from storage start it
                     this.CheckForNewSimulation(runningSimulation);
@@ -187,14 +187,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private void CheckForChangedSimulation(Services.Models.Simulation newSimulation)
+        private async Task CheckForChangedSimulation(Services.Models.Simulation newSimulation)
         {
             if (newSimulation != null && this.simulation != null &&
                 newSimulation.Modified != this.simulation.Modified)
             {
                 this.log.Debug("The simulation has been modified, stopping the current " +
                                "simulation and starting the new one if enabled");
+                this.simulation.Enabled = false;
+                this.simulation.Statistics.AverageMessagesPerSecond = this.rateReporter.GetThroughputForMessages();
+                this.simulation.Statistics.TotalMessagesSent = this.runner.TotalMessagesCount;
+
                 this.runner.Stop();
+
+                // Update simulation statistics in storage
+                await this.simulations.UpsertAsync(this.simulation);
 
                 this.simulation = newSimulation;
 
