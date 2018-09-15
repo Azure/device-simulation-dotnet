@@ -55,7 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         IEnumerable<string> GetDeviceIds(Models.Simulation simulation);
 
-        // Get the ID of the devices in a simulation, organized by device model ID.
+        // Get the ID of the devices in a simulation, grouped by device model ID.
         Dictionary<string, List<string>> GetDeviceIdsByModel(Models.Simulation simulation);
     }
 

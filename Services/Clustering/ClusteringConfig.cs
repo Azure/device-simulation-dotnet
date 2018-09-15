@@ -18,7 +18,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         // example in case the current master crashed
         int MasterLockDurationSecs { get; }
 
-        // Max device partition size
+        // Max number of devices in a partition
         int MaxPartitionSize { get; }
     }
 

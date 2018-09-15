@@ -461,7 +461,7 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItIncludesCustomDeviceWhenGeneratingTheListOfDevices()
+        public void ItIncludesCustomDevicesWhenGeneratingTheListOfDevices()
         {
             // Arrange
             var simulationId = Guid.NewGuid().ToString();

@@ -232,7 +232,8 @@ namespace Services.Test.Clustering
             };
             var deviceIdsByModel = new Dictionary<string, List<string>>
             {
-                { "foo-bar", new List<string> { "d1" } }
+                { "foo-bar", new List<string> { "d1" } },
+                { "somemodel", new List<string> { "l1", "l2" } }
             };
             this.simulations.Setup(x => x.GetAsync(simulationId)).ReturnsAsync(simulation);
             this.simulations.Setup(x => x.GetDeviceIdsByModel(simulation)).Returns(deviceIdsByModel);
