@@ -22,20 +22,21 @@ namespace Services.Test
         private const string STORAGE_COLLECTION = "simulations";
         private const string SIMULATION_ID = "1";
 
-        private readonly Mock<IDeviceModels> deviceModels;
-        private readonly Mock<IStorageAdapterClient> storage;
-        private readonly Mock<IDevices> devices;
-        private readonly Mock<ILogger> logger;
-        private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
-        private readonly Mock<IIotHubConnectionStringManager> connStringManager;
         private readonly Simulations target;
         private readonly List<DeviceModel> models;
 
-        public SimulationsTest(ITestOutputHelper log)
+        private readonly Mock<IDeviceModels> deviceModels;
+        private readonly Mock<IStorageAdapterClient> storage;
+        private readonly Mock<IDevices> devices;
+        private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
+        private readonly Mock<IIotHubConnectionStringManager> connStringManager;
+        private readonly Mock<ILogger> log;
+
+        public SimulationsTest()
         {
             this.deviceModels = new Mock<IDeviceModels>();
             this.storage = new Mock<IStorageAdapterClient>();
-            this.logger = new Mock<ILogger>();
+            this.log = new Mock<ILogger>();
             this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
             this.devices = new Mock<IDevices>();
             this.connStringManager = new Mock<IIotHubConnectionStringManager>();
@@ -52,7 +53,7 @@ namespace Services.Test
                 this.storage.Object,
                 this.connStringManager.Object,
                 this.devices.Object,
-                this.logger.Object,
+                this.log.Object,
                 this.diagnosticsLogger.Object);
         }
 
@@ -450,11 +451,96 @@ namespace Services.Test
             // Assert
             Assert.True(result.ContainsKey(modelId1));
             Assert.True(result.ContainsKey(modelId2));
+
             Assert.Contains($"{simulationId}.{modelId1}.1", result[modelId1]);
             Assert.Contains($"{simulationId}.{modelId1}.2", result[modelId1]);
             Assert.Contains($"{simulationId}.{modelId1}.3", result[modelId1]);
+
             Assert.Contains($"{simulationId}.{modelId2}.1", result[modelId2]);
             Assert.Contains($"{simulationId}.{modelId2}.2", result[modelId2]);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItIncludesCustomDeviceWhenGeneratingTheListOfDevices()
+        {
+            // Arrange
+            var simulationId = Guid.NewGuid().ToString();
+            var modelId1 = Guid.NewGuid().ToString();
+            var modelId2 = Guid.NewGuid().ToString();
+            var modelId3 = Guid.NewGuid().ToString();
+            var modelId4 = Guid.NewGuid().ToString();
+            var custom1 = Guid.NewGuid().ToString();
+            var custom2 = Guid.NewGuid().ToString();
+            var custom3 = Guid.NewGuid().ToString();
+            var custom4 = Guid.NewGuid().ToString();
+            var custom5 = Guid.NewGuid().ToString();
+            var sim = new SimulationModel
+            {
+                Id = simulationId,
+                Enabled = true,
+                PartitioningComplete = true,
+                DeviceModels = new List<SimulationModel.DeviceModelRef>
+                {
+                    new SimulationModel.DeviceModelRef { Id = modelId1, Count = 3 },
+                    new SimulationModel.DeviceModelRef { Id = modelId2, Count = 2 }
+                },
+                CustomDevices = new List<SimulationModel.CustomDeviceRef>
+                {
+                    new SimulationModel.CustomDeviceRef
+                    {
+                        DeviceId = custom1,
+                        DeviceModel = new SimulationModel.DeviceModelRef { Id = modelId1 }
+                    },
+                    new SimulationModel.CustomDeviceRef
+                    {
+                        DeviceId = custom2,
+                        DeviceModel = new SimulationModel.DeviceModelRef { Id = modelId1 }
+                    },
+                    new SimulationModel.CustomDeviceRef
+                    {
+                        DeviceId = custom3,
+                        DeviceModel = new SimulationModel.DeviceModelRef { Id = modelId3 }
+                    },
+                    new SimulationModel.CustomDeviceRef
+                    {
+                        DeviceId = custom4,
+                        DeviceModel = new SimulationModel.DeviceModelRef { Id = modelId3 }
+                    },
+                    new SimulationModel.CustomDeviceRef
+                    {
+                        DeviceId = custom5,
+                        DeviceModel = new SimulationModel.DeviceModelRef { Id = modelId4 }
+                    }
+                }
+            };
+
+            // Act
+            Dictionary<string, List<string>> result = this.target.GetDeviceIdsByModel(sim);
+
+            // Assert
+            Assert.Equal(4, result.Count);
+            Assert.True(result.ContainsKey(modelId1));
+            Assert.True(result.ContainsKey(modelId2));
+            Assert.True(result.ContainsKey(modelId3));
+            Assert.True(result.ContainsKey(modelId4));
+
+            Assert.Equal(5, result[modelId1].Count);
+            Assert.Equal(2, result[modelId2].Count);
+            Assert.Equal(2, result[modelId3].Count);
+            Assert.Equal(1, result[modelId4].Count);
+
+            Assert.Contains($"{simulationId}.{modelId1}.1", result[modelId1]);
+            Assert.Contains($"{simulationId}.{modelId1}.2", result[modelId1]);
+            Assert.Contains($"{simulationId}.{modelId1}.3", result[modelId1]);
+
+            Assert.Contains($"{simulationId}.{modelId2}.1", result[modelId2]);
+            Assert.Contains($"{simulationId}.{modelId2}.2", result[modelId2]);
+
+            Assert.Contains(custom1, result[modelId1]);
+            Assert.Contains(custom2, result[modelId1]);
+            Assert.Contains(custom3, result[modelId3]);
+            Assert.Contains(custom4, result[modelId3]);
+            Assert.Contains(custom5, result[modelId4]);
         }
 
         private void ThereAreSomeDeviceModels()

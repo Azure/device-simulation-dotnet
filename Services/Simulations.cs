@@ -329,8 +329,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var result = new Dictionary<string, List<string>>();
             var deviceCount = 0;
 
-            // Load the simulation models with at least 1 device to simulate
-            var models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
+            // Load the simulation models with at least 1 device to simulate (ignoring the custom device ID for now)
+            List<Models.Simulation.DeviceModelRef> models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
 
             // Generate ID, e.g. "1.chiller-01.1", "1.chiller-01.2", etc
             foreach (var model in models)
@@ -343,6 +343,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
 
                 result.Add(model.Id, deviceIds);
+            }
+
+            // Add custom device IDs
+            foreach (var device in simulation.CustomDevices)
+            {
+                if (!result.ContainsKey(device.DeviceModel.Id))
+                {
+                    result.Add(device.DeviceModel.Id, new List<string>());
+                }
+
+                result[device.DeviceModel.Id].Add(device.DeviceId);
+                deviceCount++;
             }
 
             this.log.Debug("Device IDs loaded", () => new { Simulation = simulation.Id, deviceCount });
