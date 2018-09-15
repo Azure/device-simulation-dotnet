@@ -17,6 +17,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         // before it automatically expires, allowing another node to become master, for
         // example in case the current master crashed
         int MasterLockDurationSecs { get; }
+
+        // Max device partition size
+        int MaxPartitionSize { get; }
     }
 
     public class ClusteringConfig : IClusteringConfig
@@ -33,9 +36,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         private const int MIN_MASTER_LOCK_DURATION_MSECS = 10000;
         private const int MAX_MASTER_LOCK_DURATION_MSECS = 300000;
 
+        private const int DEFAULT_PARTITION_SIZE = 1000;
+        private const int MIN_MAX_PARTITION_SIZE = 1;
+        private const int MAX_MAX_PARTITION_SIZE = 10000;
+
         private int checkIntervalMsecs;
         private int nodeRecordMaxAgeMsecs;
         private int masterLockDurationMsecs;
+        private int maxPartitionSize;
 
         public int CheckIntervalMsecs
         {
@@ -71,12 +79,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             }
         }
 
+        public int MaxPartitionSize
+        {
+            get => this.maxPartitionSize;
+            set
+            {
+                this.Validate("MaxPartitionSize", value, MIN_MAX_PARTITION_SIZE, MAX_MAX_PARTITION_SIZE);
+                this.maxPartitionSize = value;
+            }
+        }
+
         public ClusteringConfig()
         {
             // Initialize object with default values
             this.CheckIntervalMsecs = DEFAULT_CHECK_INTERVAL_MSECS;
             this.NodeRecordMaxAgeMsecs = DEFAULT_NODE_RECORD_MAX_AGE_MSECS;
             this.MasterLockDurationMsecs = DEFAULT_MASTER_LOCK_DURATION_MSECS;
+            this.MaxPartitionSize = DEFAULT_PARTITION_SIZE;
         }
 
         private void Validate(string name, int value, int min, int max)

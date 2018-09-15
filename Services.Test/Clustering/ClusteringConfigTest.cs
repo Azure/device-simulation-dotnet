@@ -87,5 +87,22 @@ namespace Services.Test.Clustering
             Assert.Equal(20100, target.MasterLockDurationMsecs);
             Assert.Equal(21, target.MasterLockDurationSecs);
         }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItSupportsOnlyValid_MaxPartitionSize()
+        {
+            // Arrange
+            const int MIN = 1;
+            const int MAX = 10000;
+            var target = new ClusteringConfig();
+
+            // Act - no exceptions here
+            target.MaxPartitionSize = MIN;
+            target.MaxPartitionSize = MAX;
+
+            // Assert
+            Assert.Throws<InvalidConfigurationException>(() => target.MaxPartitionSize = MIN - 1);
+            Assert.Throws<InvalidConfigurationException>(() => target.MaxPartitionSize = MAX + 1);
+        }
     }
 }

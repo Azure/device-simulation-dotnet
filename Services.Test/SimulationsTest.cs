@@ -19,9 +19,6 @@ namespace Services.Test
 {
     public class SimulationsTest
     {
-        /// <summary>The test logger</summary>
-        private readonly ITestOutputHelper log;
-
         private const string STORAGE_COLLECTION = "simulations";
         private const string SIMULATION_ID = "1";
 
@@ -36,8 +33,6 @@ namespace Services.Test
 
         public SimulationsTest(ITestOutputHelper log)
         {
-            this.log = log;
-
             this.deviceModels = new Mock<IDeviceModels>();
             this.storage = new Mock<IStorageAdapterClient>();
             this.logger = new Mock<ILogger>();
@@ -52,7 +47,13 @@ namespace Services.Test
                 new DeviceModel { Id = "AA" }
             };
 
-            this.target = new Simulations(this.deviceModels.Object, this.storage.Object, this.connStringManager.Object, this.devices.Object, this.logger.Object, this.diagnosticsLogger.Object);
+            this.target = new Simulations(
+                this.deviceModels.Object,
+                this.storage.Object,
+                this.connStringManager.Object,
+                this.devices.Object,
+                this.logger.Object,
+                this.diagnosticsLogger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -79,7 +80,9 @@ namespace Services.Test
             SimulationModel result = this.target.InsertAsync(new SimulationModel(), "default").Result;
 
             // Assert
-            Assert.Equal(result.Created, result.Modified);
+            Assert.False(result.PartitioningComplete);
+            // Note: the 2 dates are not set at the same time, we just check that they're close enough
+            Assert.True(Math.Abs(result.Modified.ToUnixTimeSeconds() - result.Created.ToUnixTimeSeconds()) < 10);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -94,6 +97,7 @@ namespace Services.Test
             SimulationModel result = this.target.InsertAsync(new SimulationModel(), "default").Result;
 
             // Assert
+            Assert.False(result.PartitioningComplete);
             Assert.Equal(this.models.Count, result.DeviceModels.Count);
             for (var i = 0; i < this.models.Count; i++)
             {
@@ -148,12 +152,23 @@ namespace Services.Test
             this.ThereAreNoSimulationsInTheStorage();
 
             // Act
-            var simulation = new SimulationModel { Id = Guid.NewGuid().ToString(), Enabled = false };
+            var simulation = new SimulationModel
+            {
+                Id = Guid.NewGuid().ToString(),
+                Enabled = false,
+                Description = "some-description"
+            };
             this.target.InsertAsync(simulation, "default").Wait();
 
             // Assert
             this.storage.Verify(
-                x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.IsAny<string>(), "*"));
+                x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.Is<string>(
+                    s => !JsonConvert.DeserializeObject<SimulationModel>(s).Enabled
+                ), "*"));
+            this.storage.Verify(
+                x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.Is<string>(
+                    s => JsonConvert.DeserializeObject<SimulationModel>(s).Description == "some-description"
+                ), "*"));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -186,10 +201,10 @@ namespace Services.Test
         public void UpsertRequiresIdWhileInsertDoesNot()
         {
             // Arrange
-            var s1 = new SimulationModel() { Name = "Test Simulation 1"};
-            var s2 = new SimulationModel() { Name = "Test Simulation 2" };
+            var s1 = new SimulationModel { Name = "Test Simulation 1" };
+            var s2 = new SimulationModel { Name = "Test Simulation 2" };
             this.ThereAreNoSimulationsInTheStorage();
-            
+
             // Act - No exception occurs
             this.target.InsertAsync(s1).Wait(Constants.TEST_TIMEOUT);
 
@@ -284,6 +299,164 @@ namespace Services.Test
                 "ETag0"));
         }
 
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItDoesntAllowUsersToOverwritePartitioningStatus()
+        {
+            // Arrange
+            var sim = new SimulationModel
+            {
+                Id = "1",
+                Enabled = true,
+                PartitioningComplete = false
+            };
+            var record = new ValueApiModel
+            {
+                Key = "1",
+                Data = JsonConvert.SerializeObject(sim)
+            };
+            this.storage.Setup(x => x.GetAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(record);
+            this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(record);
+
+            // Act
+            var update = new SimulationModel
+            {
+                Id = sim.Id,
+                Enabled = true,
+                PartitioningComplete = true,
+                ETag = "*"
+            };
+            SimulationModel result = this.target.UpsertAsync(update).CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.False(result.PartitioningComplete);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItCreatesNewSimulationsWithPartitioningStateNotComplete()
+        {
+            // Arrange
+            this.storage.Setup(x => x.GetAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync((ValueApiModel) null);
+            var sim = new SimulationModel
+            {
+                Id = "1",
+                Enabled = true,
+                PartitioningComplete = true
+            };
+            var record = new ValueApiModel
+            {
+                Key = "1",
+                Data = JsonConvert.SerializeObject(sim),
+            };
+            this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(record);
+
+            // Act
+            SimulationModel result = this.target.UpsertAsync(sim).CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.False(result.PartitioningComplete);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItTriggersPartitionsDeletionWhenASimulationIsDisabled()
+        {
+            // Arrange
+            var sim = new SimulationModel
+            {
+                Id = "1",
+                Enabled = true,
+                PartitioningComplete = true
+            };
+            var record = new ValueApiModel
+            {
+                Key = "1",
+                Data = JsonConvert.SerializeObject(sim)
+            };
+            this.storage.Setup(x => x.GetAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(record);
+            this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(record);
+
+            // Act
+            var update = new SimulationModel
+            {
+                Id = sim.Id,
+                Enabled = false,
+                PartitioningComplete = true,
+                ETag = "*"
+            };
+            SimulationModel result = this.target.UpsertAsync(update).CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.False(result.Enabled);
+            Assert.False(result.PartitioningComplete);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItGenerateDevicesIdGroupedByModel()
+        {
+            // Arrange
+            var sim = new SimulationModel
+            {
+                Id = "1",
+                Enabled = true,
+                PartitioningComplete = true,
+                DeviceModels = new List<SimulationModel.DeviceModelRef>
+                {
+                    new SimulationModel.DeviceModelRef { Id = "modelA", Count = 5 },
+                    new SimulationModel.DeviceModelRef { Id = "modelB", Count = 2 },
+                    new SimulationModel.DeviceModelRef { Id = "modelC", Count = 4 }
+                }
+            };
+
+            // Act
+            Dictionary<string, List<string>> result = this.target.GetDeviceIdsByModel(sim);
+
+            // Assert
+            Assert.Equal(3, result.Count);
+            Assert.True(result.ContainsKey("modelA"));
+            Assert.True(result.ContainsKey("modelB"));
+            Assert.True(result.ContainsKey("modelC"));
+            Assert.Equal(5, result["modelA"].Count);
+            Assert.Equal(2, result["modelB"].Count);
+            Assert.Equal(4, result["modelC"].Count);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItGeneratesDeviceIdsFollowingAKnownFormat()
+        {
+            // Arrange
+            var simulationId = Guid.NewGuid().ToString();
+            var modelId1 = Guid.NewGuid().ToString();
+            var modelId2 = Guid.NewGuid().ToString();
+            var sim = new SimulationModel
+            {
+                Id = simulationId,
+                Enabled = true,
+                PartitioningComplete = true,
+                DeviceModels = new List<SimulationModel.DeviceModelRef>
+                {
+                    new SimulationModel.DeviceModelRef { Id = modelId1, Count = 3 },
+                    new SimulationModel.DeviceModelRef { Id = modelId2, Count = 2 }
+                }
+            };
+
+            // Act
+            Dictionary<string, List<string>> result = this.target.GetDeviceIdsByModel(sim);
+
+            // Assert
+            Assert.True(result.ContainsKey(modelId1));
+            Assert.True(result.ContainsKey(modelId2));
+            Assert.Contains($"{simulationId}.{modelId1}.1", result[modelId1]);
+            Assert.Contains($"{simulationId}.{modelId1}.2", result[modelId1]);
+            Assert.Contains($"{simulationId}.{modelId1}.3", result[modelId1]);
+            Assert.Contains($"{simulationId}.{modelId2}.1", result[modelId2]);
+            Assert.Contains($"{simulationId}.{modelId2}.2", result[modelId2]);
+        }
+
         private void ThereAreSomeDeviceModels()
         {
             this.deviceModels.Setup(x => x.GetListAsync())
@@ -296,29 +469,6 @@ namespace Services.Test
             // In case the test inserts a record, return a valid storage object
             this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new ValueApiModel { Key = SIMULATION_ID, Data = "{}", ETag = "someETag" });
-        }
-
-        private void ThereIsAnEnabledSimulationInTheStorage()
-        {
-            var simulation = new SimulationModel
-            {
-                Id = SIMULATION_ID,
-                Created = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
-                Modified = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
-                ETag = "ETag0",
-                Enabled = true
-            };
-
-            var list = new ValueListApiModel();
-            var value = new ValueApiModel
-            {
-                Key = SIMULATION_ID,
-                Data = JsonConvert.SerializeObject(simulation),
-                ETag = simulation.ETag
-            };
-            list.Items.Add(value);
-
-            this.storage.Setup(x => x.GetAllAsync(STORAGE_COLLECTION)).ReturnsAsync(list);
         }
     }
 }

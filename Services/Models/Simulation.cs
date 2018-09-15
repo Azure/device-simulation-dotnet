@@ -99,6 +99,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.DeviceModels = new List<DeviceModelRef>();
             this.CustomDevices = new List<CustomDeviceRef>();
             this.Statistics = new StatisticsRef();
+
+            this.PartitioningComplete = false;
         }
 
         public class DeviceModelRef
