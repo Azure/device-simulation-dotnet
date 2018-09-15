@@ -527,7 +527,7 @@ namespace Services.Test
             Assert.Equal(5, result[modelId1].Count);
             Assert.Equal(2, result[modelId2].Count);
             Assert.Equal(2, result[modelId3].Count);
-            Assert.Equal(1, result[modelId4].Count);
+            Assert.Single(result[modelId4]);
 
             Assert.Contains($"{simulationId}.{modelId1}.1", result[modelId1]);
             Assert.Contains($"{simulationId}.{modelId1}.2", result[modelId1]);
