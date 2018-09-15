@@ -23,12 +23,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
         private bool running;
 
         public Agent(
-            IClusterNodes cluster,
+            IClusterNodes clusterNodes,
             IThreadWrapper thread,
             IClusteringConfig clusteringConfig,
             ILogger logger)
         {
-            this.clusterNodes = cluster;
+            this.clusterNodes = clusterNodes;
             this.thread = thread;
             this.log = logger;
             this.checkIntervalMsecs = clusteringConfig.CheckIntervalMsecs;
@@ -45,6 +45,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
             while (this.running)
             {
                 await this.clusterNodes.KeepAliveNodeAsync();
+
+                // Only one process in the network becomes a master, and the master
+                // is responsible for running tasks not meant to run in parallel, like
+                // creating devices and partitions, and other tasks
+                var isMaster = await this.clusterNodes.SelfElectToMasterNodeAsync();
+                if (isMaster)
+                {
+                    await this.clusterNodes.RemoveStaleNodesAsync();
+                }
 
                 this.thread.Sleep(this.checkIntervalMsecs);
             }
