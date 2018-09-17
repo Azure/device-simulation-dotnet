@@ -4,6 +4,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
@@ -27,6 +28,7 @@ namespace Services.Test
         private readonly Mock<IDeviceClientWrapper> deviceClient;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
+        private readonly Mock<IInstance> instance;
 
         public DevicesTest(ITestOutputHelper log)
         {
@@ -38,6 +40,7 @@ namespace Services.Test
             this.deviceClient = new Mock<IDeviceClientWrapper>();
             this.logger = new Mock<ILogger>();
             this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
+            this.instance = new Mock<IInstance>();
 
             this.target = new Devices(
                 this.config.Object,
@@ -45,13 +48,12 @@ namespace Services.Test
                 this.registry.Object,
                 this.deviceClient.Object,
                 this.logger.Object,
-                this.diagnosticsLogger.Object);
+                this.diagnosticsLogger.Object,
+                this.instance.Object);
 
             this.connectionStringManager
-                .Setup(x => x.GetIotHubConnectionString())
-                .Returns("HostName=iothub-AAAA.azure-devices.net;SharedAccessKeyName=AAAA;SharedAccessKey=AAAA");
-
-            this.target.SetCurrentIotHub();
+                .Setup(x => x.GetConnectionStringAsync())
+                .ReturnsAsync("HostName=iothub-AAAA.azure-devices.net;SharedAccessKeyName=AAAA;SharedAccessKey=AAAA");
         }
 
         /** 
@@ -63,6 +65,10 @@ namespace Services.Test
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItThrowsWhenCreationTimesOut()
         {
+            // Arrange
+            var simulation = new Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation();
+            this.target.InitAsync(simulation).CompleteOrTimeout();
+
             // Case 1: the code uses async, and the exception surfaces explicitly
 
             // Arrange

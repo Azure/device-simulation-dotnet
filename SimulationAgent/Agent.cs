@@ -86,10 +86,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                     // if there's a new simulation and it's different from the current one
                     // stop the current one from running & start the new one if it's enabled
-                    this.CheckForChangedSimulation(runningSimulation);
+                    await this.CheckForChangedSimulationAsync(runningSimulation);
 
                     // if there's no simulation running but there's one from storage start it
-                    this.CheckForNewSimulation(runningSimulation);
+                    await this.CheckForNewSimulationAsync(runningSimulation);
 
                     // if the current simulation was asked to stop, stop it.
                     await this.CheckForStopOrStartToSimulationAsync();
@@ -176,7 +176,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private void CheckForDeletedSimulation(Services.Models.Simulation newSimulation)
+        private void CheckForDeletedSimulation(Simulation newSimulation)
         {
             if (newSimulation == null && this.simulation != null)
             {
@@ -187,7 +187,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private void CheckForChangedSimulation(Services.Models.Simulation newSimulation)
+        private async Task CheckForChangedSimulationAsync(Simulation newSimulation)
         {
             if (newSimulation != null && this.simulation != null &&
                 newSimulation.Modified != this.simulation.Modified)
@@ -201,7 +201,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 if (this.simulation.ShouldBeRunning)
                 {
                     this.log.Debug("------ Starting simulation ------", () => new { this.simulation });
-                    this.runner.Start(this.simulation);
+                    await this.runner.StartAsync(this.simulation);
                     this.log.Debug("------ Simulation started ------", () => new { this.simulation });
                 }
             }
@@ -220,7 +220,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private void CheckForNewSimulation(Simulation newSimulation)
+        private async Task CheckForNewSimulationAsync(Simulation newSimulation)
         {
             if (newSimulation != null && this.simulation == null)
             {
@@ -229,7 +229,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 {
                     this.log.Debug("------ Starting new simulation ------", () => new { this.simulation });
                     this.logDiagnostics.LogServiceStart("Starting new simulation");
-                    this.runner.Start(this.simulation);
+                    await this.runner.StartAsync(this.simulation);
                     this.log.Debug("------ New simulation started ------", () => new { this.simulation });
                     this.logDiagnostics.LogServiceStart("New simulation started");
                 }
@@ -253,7 +253,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // started
             if (this.simulation != null && this.simulation.ShouldBeRunning)
             {
-                this.runner.Start(this.simulation);
+                await this.runner.StartAsync(this.simulation);
             }
         }
 

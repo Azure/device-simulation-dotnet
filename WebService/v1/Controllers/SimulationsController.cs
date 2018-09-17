@@ -63,7 +63,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         public async Task<SimulationApiModel> GetAsync(string id)
         {
             var simulation = await this.simulationsService.GetAsync(id);
-            var simulationApiModel = SimulationApiModel.FromServiceModel(
+            var simulationApiModel = await SimulationApiModel.FromServiceModelAsync(
                 simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
             return simulationApiModel;
         }
@@ -73,8 +73,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromBody] SimulationApiModel simulationApiModel,
             [FromQuery(Name = "template")] string template = "")
         {
-            await simulationApiModel?.ValidateInputRequestAsync(this.log, this.connectionStringManager);
-
             if (simulationApiModel == null)
             {
                 if (string.IsNullOrEmpty(template))
@@ -86,9 +84,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 // Simulation can be created with `template=default` other than created with input data
                 simulationApiModel = new SimulationApiModel();
             }
+            else
+            {
+                await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringManager);
+            }
 
             var simulation = await this.simulationsService.InsertAsync(simulationApiModel.ToServiceModel(), template);
-            return SimulationApiModel.FromServiceModel(
+            return await SimulationApiModel.FromServiceModelAsync(
                 simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
 
@@ -97,16 +99,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromBody] SimulationApiModel simulationApiModel,
             string id = "")
         {
-            await simulationApiModel?.ValidateInputRequestAsync(this.log, this.connectionStringManager);
-
             if (simulationApiModel == null)
             {
                 this.log.Warn("No data provided, request object is null");
                 throw new BadRequestException("No data provided, request object is empty.");
             }
 
+            await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringManager);
+
             var simulation = await this.simulationsService.UpsertAsync(simulationApiModel.ToServiceModel(id));
-            return SimulationApiModel.FromServiceModel(
+            return await SimulationApiModel.FromServiceModelAsync(
                 simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
 
@@ -120,7 +122,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data provided, request object is empty.");
             }
 
-            device?.ValidateInputRequest(this.log);
+            device.ValidateInputRequest(this.log);
 
             await this.simulationAgent.AddDeviceAsync(device.DeviceId, device.ModelId);
         }
@@ -167,7 +169,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             var simulation = await this.simulationsService.MergeAsync(patchServiceModel);
-            return SimulationApiModel.FromServiceModel(
+            return await SimulationApiModel.FromServiceModelAsync(
                 simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
 

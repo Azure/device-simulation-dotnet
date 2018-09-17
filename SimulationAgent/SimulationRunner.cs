@@ -23,7 +23,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
     public interface ISimulationRunner
     {
-        void Start(Simulation simulation);
+        Task StartAsync(Simulation simulation);
         void Stop();
         Task AddDeviceAsync(string deviceId, string modelId);
         void DeleteDevices(List<string> ids);
@@ -97,11 +97,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // The thread responsible for sending device property updates to Azure IoT Hub
         private Thread devicesPropertiesThread;
 
-        // Simple lock objects toi avoid contentions
-        private readonly object startLock;
-
-        // Flag signaling whether the simulation is starting (to reduce blocked threads)
+        // Flag signaling whether the simulation is starting or stopping (to reduce blocked threads)
         private bool starting;
+        private bool stopping;
 
         // Flag signaling whether the simulation has started and is running (to avoid contentions)
         private bool running;
@@ -133,9 +131,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.simulations = simulations;
             this.factory = factory;
 
-            this.startLock = new { };
             this.running = false;
             this.starting = false;
+            this.stopping = false;
             this.rateLimiting = rateLimiting;
 
             this.deviceStateActors = new ConcurrentDictionary<string, IDeviceStateActor>();
@@ -152,146 +150,151 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         /// create an actor responsible for
         /// sending the telemetry.
         /// </summary>
-        public void Start(Simulation simulation)
+        public async Task StartAsync(Simulation simulation)
         {
-            // Use `starting` to exit as soon as possible, to minimize the number 
-            // of threads pending on the lock statement
-            if (this.starting || this.running) return;
+            if (this.starting || this.stopping || this.running) return;
 
-            lock (this.startLock)
+            // Used to prevent contentions between Start and Stop
+            this.starting = true;
+
+            this.log.Info("Starting simulation...", () => new { simulation.Id });
+
+            // Note: this is a singleton class, so we can call this once. This sets
+            // the active hub, e.g. in case the user provided a custom connection string.
+            await this.devices.InitAsync(simulation);
+
+            // Create the devices
+            try
             {
-                if (this.running) return;
+                var devices = this.simulations.GetDeviceIds(simulation);
 
-                // Use `starting` to exit as soon as possible, to minimize the number 
-                // of threads pending on the lock statement
-                this.starting = true;
+                // This will ignore existing devices, creating only the missing ones
+                this.devices.CreateListAsync(devices)
+                    .Wait(TimeSpan.FromSeconds(DEVICES_CREATION_TIMEOUT_SECS));
+            }
+            catch (Exception e)
+            {
+                var msg = "Failed to create devices";
+                this.running = false;
+                this.starting = false;
+                this.log.Error(msg, e);
+                this.diagnosticsLogger.LogServiceError(msg, e.Message);
+                this.IncrementSimulationErrorsCount();
 
-                this.log.Info("Starting simulation...", () => new { simulation.Id });
+                // Return and retry
+                return;
+            }
 
-                // Note: this is a singleton class, so we can call this once. This sets
-                // the active hub, e.g. in case the user provided a custom connection string.
-                this.devices.SetCurrentIotHub();
+            // Loop through all the device models used in the simulation
+            var models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
 
-                // Create the devices
+            // Calculate the total number of devices
+            var total = models.Sum(model => model.Count);
+
+            foreach (var model in models)
+            {
                 try
                 {
-                    var devices = this.simulations.GetDeviceIds(simulation);
+                    // Load device model and merge with overrides
+                    var deviceModel = this.GetDeviceModel(model.Id, model.Override);
 
-                    // This will ignore existing devices, creating only the missing ones
-                    this.devices.CreateListAsync(devices)
-                        .Wait(TimeSpan.FromSeconds(DEVICES_CREATION_TIMEOUT_SECS));
+                    for (var i = 0; i < model.Count; i++)
+                    {
+                        this.CreateActorsForDevice(deviceModel, i, total);
+                    }
+                }
+                catch (ResourceNotFoundException)
+                {
+                    var msg = "The device model doesn't exist";
+                    this.IncrementSimulationErrorsCount();
+                    this.log.Error(msg, () => new { model.Id });
+                    this.diagnosticsLogger.LogServiceError(msg, new { model.Id });
                 }
                 catch (Exception e)
                 {
-                    var msg = "Failed to create devices";
-                    this.running = false;
-                    this.starting = false;
-                    this.log.Error(msg, e);
-                    this.diagnosticsLogger.LogServiceError(msg, e.Message);
+                    var msg = "Unexpected error preparing the device model";
                     this.IncrementSimulationErrorsCount();
-
-                    // Return and retry
-                    return;
+                    this.log.Error(msg, () => new { model.Id, e });
+                    this.diagnosticsLogger.LogServiceError(msg, new { model.Id, e.Message });
                 }
-
-                // Loop through all the device models used in the simulation
-                var models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
-
-                // Calculate the total number of devices
-                var total = models.Sum(model => model.Count);
-
-                foreach (var model in models)
-                {
-                    try
-                    {
-                        // Load device model and merge with overrides
-                        var deviceModel = this.GetDeviceModel(model.Id, model.Override);
-
-                        for (var i = 0; i < model.Count; i++)
-                        {
-                            this.CreateActorsForDevice(deviceModel, i, total);
-                        }
-                    }
-                    catch (ResourceNotFoundException)
-                    {
-                        var msg = "The device model doesn't exist";
-                        this.IncrementSimulationErrorsCount();
-                        this.log.Error(msg, () => new { model.Id });
-                        this.diagnosticsLogger.LogServiceError(msg, new { model.Id });
-                    }
-                    catch (Exception e)
-                    {
-                        var msg = "Unexpected error preparing the device model";
-                        this.IncrementSimulationErrorsCount();
-                        this.log.Error(msg, () => new { model.Id, e });
-                        this.diagnosticsLogger.LogServiceError(msg, new { model.Id, e.Message });
-                    }
-                }
-
-                foreach (var customDevice in simulation.CustomDevices)
-                {
-                    this.AddCustomDevice(customDevice.DeviceId, customDevice.DeviceModel.Id);
-                }
-
-                // Use `running` to avoid starting the simulation more than once
-                this.running = true;
-
-                // Reset, just in case
-                this.starting = false;
-
-                // Start threads
-                this.TryToStartStateThread();
-
-                this.TryToStartConnectionThread();
-
-                this.TryToStartTelemetryThreads();
-
-                this.TryToStartPropertiesThread();
             }
+
+            foreach (var customDevice in simulation.CustomDevices)
+            {
+                this.AddCustomDevice(customDevice.DeviceId, customDevice.DeviceModel.Id);
+            }
+
+            // Use `running` to avoid starting the simulation more than once
+            this.running = true;
+
+            // Reset, just in case
+            this.starting = false;
+
+            // Start threads
+            this.TryToStartStateThread();
+
+            this.TryToStartConnectionThread();
+
+            this.TryToStartTelemetryThreads();
+
+            this.TryToStartPropertiesThread();
         }
 
         public void Stop()
         {
-            lock (this.startLock)
+            if (this.stopping || !this.running) return;
+
+            // Used to prevent contentions between Start and Stop, setting this here prevents another start to be enqueued
+            this.stopping = true;
+
+            var attempts = 20;
+            while (this.starting)
             {
-                if (!this.running) return;
-
-                this.log.Info("Stopping simulation...");
-
-                this.running = false;
-
-                foreach (var device in this.deviceConnectionActors)
+                Thread.Sleep(1000);
+                if (this.starting && attempts-- <= 0)
                 {
-                    device.Value.Stop();
+                    throw new Exception("Unable to stop the simulation, the simulation is also starting");
                 }
-
-                foreach (var device in this.deviceTelemetryActors)
-                {
-                    device.Value.Stop();
-                }
-
-                foreach (var device in this.devicePropertiesActors)
-                {
-                    device.Value.Stop();
-                }
-
-                // Allow 3 seconds to complete before stopping the threads
-                Thread.Sleep(3000);
-                this.TryToStopStateThread();
-                this.TryToStopConnectionThread();
-                this.TryToStopTelemetryThreads();
-                this.TryToStopPropertiesThread();
-
-                // Reset local state
-                this.deviceStateActors.Clear();
-                this.deviceTelemetryActors.Clear();
-                this.deviceConnectionActors.Clear();
-                this.devicePropertiesActors.Clear();
-                this.starting = false;
-
-                // Reset rateLimiting counters
-                this.rateLimiting.ResetCounters();
             }
+
+            if (this.stopping || !this.running) return;
+
+            this.log.Info("Stopping simulation...");
+
+            this.running = false;
+
+            foreach (var device in this.deviceConnectionActors)
+            {
+                device.Value.Stop();
+            }
+
+            foreach (var device in this.deviceTelemetryActors)
+            {
+                device.Value.Stop();
+            }
+
+            foreach (var device in this.devicePropertiesActors)
+            {
+                device.Value.Stop();
+            }
+
+            // Allow 3 seconds to complete before stopping the threads
+            Thread.Sleep(3000);
+            this.TryToStopStateThread();
+            this.TryToStopConnectionThread();
+            this.TryToStopTelemetryThreads();
+            this.TryToStopPropertiesThread();
+
+            // Reset local state
+            this.deviceStateActors.Clear();
+            this.deviceTelemetryActors.Clear();
+            this.deviceConnectionActors.Clear();
+            this.devicePropertiesActors.Clear();
+            this.starting = false;
+            this.stopping = false;
+
+            // Reset rateLimiting counters
+            this.rateLimiting.ResetCounters();
         }
 
         public async Task AddDeviceAsync(string deviceId, string modelId)

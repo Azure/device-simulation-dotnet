@@ -172,7 +172,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             simulation.IotHubConnectionStrings.Clear();
             foreach (var iotHubConnectionString in iotHubConnectionStrings)
             {
-                var connString = await this.connectionStringManager.RedactAndStoreAsync(iotHubConnectionString);
+                var connString = await this.connectionStringManager.RedactAndSaveAsync(iotHubConnectionString);
                 simulation.IotHubConnectionStrings.Add(connString);
             }
 
@@ -233,7 +233,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             //      https://github.com/Azure/device-simulation-dotnet/issues/129
             for (var index = 0; index < simulation.IotHubConnectionStrings.Count; index++)
             {
-                var connString = await this.connectionStringManager.RedactAndStoreAsync(simulation.IotHubConnectionStrings[index]);
+                var connString = await this.connectionStringManager.RedactAndSaveAsync(simulation.IotHubConnectionStrings[index]);
                 simulation.IotHubConnectionStrings[index] = connString;
             }
 

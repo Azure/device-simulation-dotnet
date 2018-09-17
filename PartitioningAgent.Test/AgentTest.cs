@@ -10,6 +10,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Moq;
 using PartitioningAgent.Test.helpers;
 using Xunit;
@@ -24,6 +25,7 @@ namespace PartitioningAgent.Test
         private readonly Mock<ISimulations> simulations;
         private readonly Mock<IThreadWrapper> thread;
         private readonly Mock<IClusteringConfig> clusteringConfig;
+        private readonly Mock<IFactory> factory;
         private readonly Mock<ILogger> log;
 
         public AgentTest()
@@ -33,6 +35,7 @@ namespace PartitioningAgent.Test
             this.simulations = new Mock<ISimulations>();
             this.thread = new Mock<IThreadWrapper>();
             this.clusteringConfig = new Mock<IClusteringConfig>();
+            this.factory = new Mock<IFactory>();
             this.log = new Mock<ILogger>();
 
             this.clusteringConfig.SetupGet(x => x.CheckIntervalMsecs).Returns(5);
@@ -49,6 +52,7 @@ namespace PartitioningAgent.Test
                 this.simulations.Object,
                 this.thread.Object,
                 this.clusteringConfig.Object,
+                this.factory.Object,
                 this.log.Object);
         }
 
