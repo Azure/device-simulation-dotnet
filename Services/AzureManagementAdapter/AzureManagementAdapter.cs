@@ -21,12 +21,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
     {
         private const string DATE_FORMAT = "yyyy-MM-ddTHH:mm:ssZ";
         private const string METRICS_API_VERSION = "2016-06-01";
-        private const bool ALLOW_INSECURE_SSL_SERVER = true;
-        private readonly IHttpClient httpClient;
-        private readonly ILogger log;
         private readonly IServicesConfig config;
         private readonly IDeploymentConfig deploymentConfig;
         private readonly IDiagnosticsLogger diagnosticsLogger;
+        private readonly IHttpClient httpClient;
+        private readonly ILogger log;
 
         public AzureManagementAdapter(
             IHttpClient httpClient,
@@ -42,14 +41,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
             this.diagnosticsLogger = diagnosticsLogger;
         }
 
+        /// <summary>
+        ///     Query Azure Managemet API for the IotHub metrics.
+        ///     More details in following docs:
+        ///     https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-metrics
+        ///     https://docs.microsoft.com/en-us/rest/api/monitor/metrics/list
+        /// </summary>
+        /// <param name="token"></param>
+        /// <param name="requests"></param>
+        /// <returns></returns>
         public async Task<MetricsResponseModel> PostAsync(string token, MetricsRequestsModel requests)
         {
-            if (requests == null)
-            {
-                requests = this.GetDefaultMetricsRequests();
-            }
+            if (requests == null) requests = this.GetDefaultMetricsRequests();
 
             var request = this.PrepareRequest($"batch?api-version={this.config.AzureManagementAdapterApiVersion}", token, requests);
+
+            this.log.Debug("Azure Management request content", () => new { request.Content });
+
             var response = await this.httpClient.PostAsync(request);
 
             this.log.Debug("Azure Management response", () => new { response });
@@ -68,15 +76,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
             request.SetUriFromString($"{this.config.AzureManagementAdapterApiUrl}/{path}");
             request.Options.EnsureSuccess = false;
             request.Options.Timeout = this.config.AzureManagementAdapterApiTimeout;
-            if (this.config.AzureManagementAdapterApiUrl.ToLowerInvariant().StartsWith("https:"))
-            {
-                request.Options.AllowInsecureSSLServer = ALLOW_INSECURE_SSL_SERVER;
-            }
+            if (!this.config.AzureManagementAdapterApiUrl.ToLowerInvariant().StartsWith("https:")) throw new InvalidConfigurationException("Azure Management API url must start with https");
 
-            if (content != null)
-            {
-                request.SetContent(content);
-            }
+            if (content != null) request.SetContent(content);
 
             this.log.Debug("Azure Management request", () => new { request });
 
@@ -85,12 +87,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
 
         private void ThrowIfError(IHttpResponse response)
         {
-            if (response.IsError)
-            {
-                this.diagnosticsLogger.LogServiceError("Metrics request error", new { response.Content });
-                throw new ExternalDependencyException(
-                    new HttpRequestException($"Metrics request error: status code {response.StatusCode}"));
-            }
+            if (!response.IsError) return;
+
+            this.log.Error("Metrics request error", () => new { response.Content });
+            this.diagnosticsLogger.LogServiceError("Metrics request error", new { response.Content });
+            throw new ExternalDependencyException(
+                new HttpRequestException($"Metrics request error: status code {response.StatusCode}"));
         }
 
         private string GetDefaultIoTHubMetricsUrl()
@@ -103,20 +105,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         }
 
         /// <summary>
-        /// Return the default query for Azure management API.
-        /// 
-        /// Data points:
-        /// 1) Total devices
-        /// 2) Connected devices
-        /// 3) Telemetry message sent
-        ///
-        /// Time range: Last one hour
-        /// Time Grain: 1 minite
+        ///     Return the default query for Azure management API.
+        ///     Data points:
+        ///     1) Total devices
+        ///     2) Connected devices
+        ///     3) Telemetry message sent
+        ///     Time range: Last one hour
+        ///     Time Grain: 1 minite
         /// </summary>
         /// <returns></returns>
         private string GetDefaultMetricsQuery()
         {
-            // TODO: consider using query params from controller
+            // TODO: consider add support for query params from controller
             var now = DateTimeOffset.UtcNow;
             var startTime = now.AddHours(-1).ToString(DATE_FORMAT);
             var endTime = now.ToString(DATE_FORMAT);
@@ -135,26 +135,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
                 "aggregationType eq 'Total'"
             };
 
-            string[] filterArray = {
+            string[] filterArray =
+            {
                 $"({string.Join(" or ", nameArray)})",
                 $"({string.Join(" or ", typeArray)})",
                 $"startTime eq {startTime}",
                 $"endTime eq {endTime}",
                 "timeGrain eq duration'PT1M'"
             };
-            
+
             return string.Join(" and ", filterArray);
         }
 
         private MetricsRequestsModel GetDefaultMetricsRequests()
         {
-            MetricsRequestModel request = new MetricsRequestModel
+            var request = new MetricsRequestModel
             {
                 HttpMethod = "GET",
                 RelativeUrl = this.GetDefaultIoTHubMetricsUrl()
             };
 
-            MetricsRequestsModel result = new MetricsRequestsModel();
+            var result = new MetricsRequestsModel();
             result.Requests.Add(request);
 
             return result;

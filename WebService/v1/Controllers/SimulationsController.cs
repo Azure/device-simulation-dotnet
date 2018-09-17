@@ -106,6 +106,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         {
             var payload = requests?.ToServiceModel();
 
+            // Service will generate default query if payload is null.
+            // See default query details in /Services/AzureManagementAdapter/AzureManagementAdapter.cs
             return await this.iothubMetrics.GetIothubMetricsAsync(authorization, payload);
         }
 
