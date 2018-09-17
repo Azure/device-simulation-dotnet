@@ -326,8 +326,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             return new ClusteringConfig
             {
                 CheckIntervalMsecs = configData.GetInt(CLUSTERING_CHECK_INTERVAL_KEY, defaults.CheckIntervalMsecs),
-                MasterLockDurationMsecs = configData.GetInt(CLUSTERING_MASTER_LOCK_MAX_AGE_KEY, defaults.MasterLockDurationMsecs),
                 NodeRecordMaxAgeMsecs = configData.GetInt(CLUSTERING_NODE_RECORD_MAX_AGE_KEY, defaults.NodeRecordMaxAgeMsecs),
+                MasterLockDurationMsecs = configData.GetInt(CLUSTERING_MASTER_LOCK_MAX_AGE_KEY, defaults.MasterLockDurationMsecs),
                 PartitionLockDurationMsecs = configData.GetInt(CLUSTERING_PARTITION_LOCK_DURATION_KEY, defaults.PartitionLockDurationMsecs),
                 MaxPartitionSize = configData.GetInt(CLUSTERING_MAX_PARTITION_SIZE_KEY, defaults.MaxPartitionSize),
                 MaxDevicesPerNode = configData.GetInt(CLUSTERING_MAX_DEVICES_PER_NODE_KEY, defaults.MaxDevicesPerNode)

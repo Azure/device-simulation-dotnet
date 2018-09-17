@@ -10,40 +10,41 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
 {
-    public interface ICluster
+    public interface IClusterNodes
     {
         string GetCurrentNodeId();
         Task KeepAliveNodeAsync();
-        Task RemoveStaleNodesAsync();
         Task<bool> SelfElectToMasterNodeAsync();
+        Task RemoveStaleNodesAsync();
         Task<SortedSet<string>> GetSortedListAsync();
     }
 
-    public class Cluster : ICluster
+    public class ClusterNodes : IClusterNodes
     {
-        // Master node record id
+        // Master node record id written and locked by the master node
         private const string MASTER_NODE_KEY = "MasterNode";
 
-        private readonly IStorageRecords clusterNodes;
+        // Generate a node id when the class is loaded. The value is shared across threads in the process.
+        private static readonly string currentProcessNodeId = GenerateSharedNodeId();
+
+        private readonly IStorageRecords clusterNodesStorage;
         private readonly IStorageRecords mainStorage;
         private readonly ILogger log;
         private readonly int nodeRecordMaxAgeSecs;
         private readonly int masterLockMaxAgeSecs;
 
-        // Generate a node id when the class is loaded. The value is shared across threads in the process.
-        private static readonly string currentProcessNodeId = GenerateSharedNodeId();
-
-        public Cluster(
+        public ClusterNodes(
             IServicesConfig config,
             IClusteringConfig clusteringConfig,
             IFactory factory,
             ILogger logger)
         {
-            this.clusterNodes = factory.Resolve<IStorageRecords>().Init(config.NodesStorage);
-            this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
             this.log = logger;
-            this.masterLockMaxAgeSecs = clusteringConfig.MasterLockDurationSecs;
+            
+            this.clusterNodesStorage = factory.Resolve<IStorageRecords>().Init(config.NodesStorage);
+            this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
             this.nodeRecordMaxAgeSecs = clusteringConfig.NodeRecordMaxAgeSecs;
+            this.masterLockMaxAgeSecs = clusteringConfig.MasterLockDurationSecs;
         }
 
         // Get the node Id generated at startup
@@ -60,9 +61,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             try
             {
                 this.log.Debug("Getting cluster node record");
-                StorageRecord node = await this.clusterNodes.GetAsync(currentProcessNodeId);
+                StorageRecord node = await this.clusterNodesStorage.GetAsync(currentProcessNodeId);
                 node.ExpiresInSecs(this.nodeRecordMaxAgeSecs);
-                await this.clusterNodes.UpsertAsync(node);
+                await this.clusterNodesStorage.UpsertAsync(node);
             }
             catch (ResourceNotFoundException)
             {
@@ -70,25 +71,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
                 await this.InsertNodeAsync(currentProcessNodeId);
             }
 
-            this.log.Debug("Node keepalive complete", () => new { currentProcessNodeId });
-        }
-
-        // Delete old node records, so that the count of nodes is eventually consistent.
-        // Keeping the count correct is important, so that each node will adjust the speed
-        // accordingly to IoT Hub quota, trying to avoid throttling.
-        public async Task RemoveStaleNodesAsync()
-        {
-            this.log.Debug("Removing unresponsive nodes...");
-
-            try
-            {
-                // GetAllAsync internally deletes expired records
-                await this.clusterNodes.GetAllAsync();
-            }
-            catch (Exception e)
-            {
-                this.log.Error("Unexpected error while purging expired nodes", e);
-            }
+            this.log.Debug("Node keep-alive complete", () => new { currentProcessNodeId });
         }
 
         // Try to elect the current node to master node. Master node is responsible for
@@ -126,9 +109,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             }
         }
 
+        // Delete old node records, so that the count of nodes is eventually consistent.
+        // Keeping the count correct is important, so that each node will adjust the speed
+        // accordingly to IoT Hub quota, trying to avoid throttling.
+        public async Task RemoveStaleNodesAsync()
+        {
+            this.log.Debug("Removing unresponsive nodes...");
+
+            try
+            {
+                // GetAllAsync internally deletes expired records
+                await this.clusterNodesStorage.GetAllAsync();
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unexpected error while purging expired nodes", e);
+            }
+        }
+
         public async Task<SortedSet<string>> GetSortedListAsync()
         {
-            var nodeRecords = await this.clusterNodes.GetAllAsync();
+            var nodeRecords = await this.clusterNodesStorage.GetAllAsync();
             var result = new SortedSet<string>();
             foreach (var nodeRecord in nodeRecords)
             {
@@ -154,7 +155,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             try
             {
                 // If this throws an exception, the application will retry later
-                await this.clusterNodes.CreateAsync(node);
+                await this.clusterNodesStorage.CreateAsync(node);
             }
             catch (ConflictingResourceException e)
             {

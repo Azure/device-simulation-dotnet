@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.Devices.Common.Exceptions;
@@ -116,18 +115,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.connString = await this.connectionStringManager.GetIotHubConnectionStringAsync();
 
                 // Parse connection string, this triggers an exception if the string is invalid
-                IotHubConnectionStringBuilder cs = IotHubConnectionStringBuilder.Create(this.connString);
+                IotHubConnectionStringBuilder connStringBuilder = IotHubConnectionStringBuilder.Create(this.connString);
 
                 // Prepare registry class used to create/retrieve devices
                 this.registry.Init(this.connString);
                 this.log.Debug("Device registry object ready", () => new { this.ioTHubHostName });
 
                 // Prepare hostname used to build device connection strings
-                this.ioTHubHostName = cs.HostName;
+                this.ioTHubHostName = connStringBuilder.HostName;
                 this.log.Info("Selected active IoT Hub for devices", () => new { this.ioTHubHostName });
 
                 // Prepare the auth key used for all the devices
-                this.fixedDeviceKey = cs.SharedAccessKey;
+                this.fixedDeviceKey = connStringBuilder.SharedAccessKey;
                 this.log.Debug("Device authentication key defined", () => new { this.ioTHubHostName });
 
                 this.instance.InitComplete();

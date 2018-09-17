@@ -43,7 +43,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
 
         private readonly ISimulations simulations;
         private readonly IStorageRecords partitionsStorage;
-        private readonly ICluster cluster;
+        private readonly IClusterNodes clusterNodes;
         private readonly ILogger log;
 
         private readonly int partitionLockDurationSecs;
@@ -53,13 +53,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             IServicesConfig config,
             IClusteringConfig clusteringConfig,
             ISimulations simulations,
-            ICluster cluster,
+            IClusterNodes clusterNodes,
             IFactory factory,
             ILogger logger)
         {
             this.simulations = simulations;
             this.partitionsStorage = factory.Resolve<IStorageRecords>().Init(config.PartitionsStorage);
-            this.cluster = cluster;
+            this.clusterNodes = clusterNodes;
             this.log = logger;
 
             this.partitionLockDurationSecs = clusteringConfig.PartitionLockDurationMsecs / 1000;
@@ -97,7 +97,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         // Return partitions ready to be simulated, not yet assigned to any node.
         public async Task<IList<DevicesPartition>> GetUnassignedAsync(string simulationId)
         {
-            var nodeId = this.cluster.GetCurrentNodeId();
+            var nodeId = this.clusterNodes.GetCurrentNodeId();
 
             this.log.Debug("Searching partitions not assigned to any node...", () => new { simulationId, nodeId });
 
@@ -130,7 +130,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         // Lock the partition, so that the current node is the only one simulating its devices
         public async Task<bool> TryToAssignPartitionAsync(string partitionId)
         {
-            var nodeId = this.cluster.GetCurrentNodeId();
+            var nodeId = this.clusterNodes.GetCurrentNodeId();
 
             this.log.Debug("Attempting to acquire partition...", () => new { partitionId, nodeId });
             var acquired = await this.partitionsStorage.TryToLockAsync(partitionId, nodeId, null, this.partitionLockDurationSecs);
@@ -142,7 +142,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         // Renew a lock on a partition
         public async Task<bool> TryToKeepPartitionAsync(string partitionId)
         {
-            var nodeId = this.cluster.GetCurrentNodeId();
+            var nodeId = this.clusterNodes.GetCurrentNodeId();
 
             this.log.Debug("Attempting to renew lock on partition...", () => new { partitionId, nodeId });
             var renewed = await this.partitionsStorage.TryToLockAsync(partitionId, nodeId, null, this.partitionLockDurationSecs);
@@ -153,7 +153,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
 
         public async Task<bool> TryToReleasePartitionAsync(string partitionId)
         {
-            var nodeId = this.cluster.GetCurrentNodeId();
+            var nodeId = this.clusterNodes.GetCurrentNodeId();
 
             this.log.Debug("Releasing partition...", () => new { partitionId, nodeId });
             if (await this.partitionsStorage.TryToUnlockAsync(partitionId, nodeId, null))

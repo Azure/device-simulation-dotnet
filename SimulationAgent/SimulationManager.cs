@@ -64,7 +64,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         private readonly ISimulationContext simulationContext;
         private readonly IDevicePartitions devicePartitions;
-        private readonly ICluster cluster;
+        private readonly IClusterNodes clusterNodes;
         private readonly IDeviceModels deviceModels;
         private readonly IFactory factory;
         private readonly ILogger log;
@@ -88,7 +88,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         public SimulationManager(
             ISimulationContext simulationContext,
             IDevicePartitions devicePartitions,
-            ICluster cluster,
+            IClusterNodes clusterNodes,
             IDeviceModels deviceModels,
             IFactory factory,
             IClusteringConfig clusteringConfig,
@@ -97,7 +97,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             this.simulationContext = simulationContext;
             this.devicePartitions = devicePartitions;
-            this.cluster = cluster;
+            this.clusterNodes = clusterNodes;
             this.deviceModels = deviceModels;
             this.factory = factory;
             this.log = logger;
@@ -301,7 +301,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             try
             {
-                int newCount = (await this.cluster.GetSortedListAsync()).Count;
+                int newCount = (await this.clusterNodes.GetSortedListAsync()).Count;
                 if (newCount > 0 && newCount != this.nodeCount)
                 {
                     this.log.Info("The number of nodes has changed", () => new { this.nodeCount, newCount });

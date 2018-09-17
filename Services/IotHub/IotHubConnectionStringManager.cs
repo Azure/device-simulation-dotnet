@@ -26,13 +26,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private const string CONNSTRING_REGEX = @"^HostName=(?<hostName>.*);SharedAccessKeyName=(?<keyName>.*);SharedAccessKey=(?<key>.*)$";
         private const string CONNSTRING_REGEX_HOSTNAME = "hostName";
         private const string CONNSTRING_REGEX_KEYNAME = "keyName";
-
         private const string CONNSTRING_REGEX_KEY = "key";
-
-        //private const string CONNSTRING_FILE_NAME = "custom_iothub_key.txt";
         private const string RECORD_ID = "custom_iothub_key";
-
-        //private readonly string connStringFilePath;
 
         private readonly IServicesConfig config;
         private readonly ILogger log;
@@ -45,7 +40,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         {
             this.config = config;
             this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
-            //this.connStringFilePath = config.IoTHubDataFolder + CONNSTRING_FILE_NAME;
             this.log = logger;
         }
 
@@ -58,7 +52,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// <returns>Full connection string including secret</returns>
         public async Task<string> GetIotHubConnectionStringAsync()
         {
-            // read connection string file from webservice
             string customIotHub = await this.ReadFromStorageAsync();
 
             // check if default hub should be used
@@ -100,11 +93,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             // check if hub is in storage
             if (key.IsNullOrWhiteSpace())
             {
-                if (await this.ConnectionStringIsStoredAsync(connectionString))
-                {
-                    return connectionString;
-                }
-                else
+                if (!await this.ConnectionStringIsStoredAsync(connectionString))
                 {
                     string message = "Could not connect to IotHub with the connection " +
                                      "string provided. Check that the key is valid and " +
@@ -112,6 +101,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                     this.log.Debug(message);
                     throw new IotHubConnectionException(message);
                 }
+
+                return connectionString;
             }
 
             // store full connection string with key in local file
@@ -309,7 +300,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// </summary>
         private async Task<bool> ConnectionStringIsStoredAsync(string connectionString)
         {
-            // get stored string from file
             var storedHubString = await this.ReadFromStorageAsync();
 
             if (connectionString.IsNullOrWhiteSpace() ||

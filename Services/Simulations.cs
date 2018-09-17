@@ -311,7 +311,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 () => new
                 {
                     simulation.Id, simulation.Enabled,
-                    simulation.PartitioningComplete, simulation.DevicesCreationStarted, DevicesCreationCompleted = simulation.DevicesCreationComplete
+                    simulation.PartitioningComplete, simulation.DevicesCreationStarted, simulation.DevicesCreationComplete
                 });
 
             // Use the new ETag provided by the storage

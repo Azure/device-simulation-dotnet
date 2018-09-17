@@ -8,29 +8,52 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
     public interface IClusteringConfig
     {
         // How often to check the list of nodes and partitions
-        int CheckIntervalMsecs { get; set; }
-
-        // When a node is elected to master via a lock, the max age of the lock before it expires,
-        // allowing another node to become master in case the current master crashes
-        int MasterLockDurationMsecs { get; set; }
-        int MasterLockDurationSecs { get; }
+        int CheckIntervalMsecs { get; }
 
         // Age of a node before being considered stale and removed
-        int NodeRecordMaxAgeMsecs { get; set; }
         int NodeRecordMaxAgeSecs { get; }
 
+        // When a node is elected to master via a lock, this is the max age of the lock
+        // before it automatically expires, allowing another node to become master, for
+        // example in case the current master crashed
+        int MasterLockDurationSecs { get; }
+
         // Max time to lock a partition
-        int PartitionLockDurationMsecs { get; set; }
+        int PartitionLockDurationMsecs { get; }
 
         // Max device partition size
-        int MaxPartitionSize { get; set; }
+        int MaxPartitionSize { get; }
 
         // Max number of devices simulated in a node
-        int MaxDevicesPerNode { get; set; }
+        int MaxDevicesPerNode { get; }
     }
 
     public class ClusteringConfig : IClusteringConfig
     {
+        private const int DEFAULT_CHECK_INTERVAL_MSECS = 15000;
+        private const int MIN_CHECK_INTERVAL_MSECS = 1000;
+        private const int MAX_CHECK_INTERVAL_MSECS = 300000;
+        
+        private const int DEFAULT_NODE_RECORD_MAX_AGE_MSECS = 60000;
+        private const int MIN_NODE_RECORD_MAX_AGE_MSECS = 10000;
+        private const int MAX_NODE_RECORD_MAX_AGE_MSECS = 600000;
+        
+        private const int DEFAULT_MASTER_LOCK_DURATION_MSECS = 120000;
+        private const int MIN_MASTER_LOCK_DURATION_MSECS = 10000;
+        private const int MAX_MASTER_LOCK_DURATION_MSECS = 300000;
+
+        private const int DEFAULT_PARTITION_LOCK_DURATION_MSECS = 60000;
+        private const int DEFAULT_PARTITION_SIZE = 1000;
+        private const int DEFAULT_MAX_DEVICES_PER_NODE = 20000;
+
+        private const int MIN_PARTITION_LOCK_DURATION = 10000;
+        private const int MIN_MAX_PARTITION_SIZE = 1;
+        private const int MIN_MAX_DEVICES_PER_NODE = 1;
+
+        private const int MAX_PARTITION_LOCK_DURATION = 300000;
+        private const int MAX_MAX_PARTITION_SIZE = 10000;
+        private const int MAX_MAX_DEVICES_PER_NODE = 1000000;
+        
         private int checkIntervalMsecs;
         private int nodeRecordMaxAgeMsecs;
         private int masterLockDurationMsecs;
@@ -38,33 +61,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         private int maxPartitionSize;
         private int maxDevicesPerNode;
 
-        private const int DEFAULT_CHECK_INTERVAL_MSECS = 15000;
-        private const int DEFAULT_NODE_RECORD_MAX_AGE_MSECS = 60000;
-        private const int DEFAULT_MASTER_LOCK_DURATION_MSECS = 120000;
-        private const int DEFAULT_PARTITION_LOCK_DURATION_MSECS = 60000;
-        private const int DEFAULT_PARTITION_SIZE = 1000;
-        private const int DEFAULT_MAX_DEVICES_PER_NODE = 20000;
-
-        private const int MIN_CHECK_INTERVAL_MSECS = 1000;
-        private const int MIN_NODE_RECORD_MAX_AGE_MSECS = 10000;
-        private const int MIN_MASTER_LOCK_DURATION_MSECS = 10000;
-        private const int MIN_PARTITION_LOCK_DURATION = 10000;
-        private const int MIN_MAX_PARTITION_SIZE = 1;
-        private const int MIN_MAX_DEVICES_PER_NODE = 1;
-
-        private const int MAX_CHECK_INTERVAL_MSECS = 300000;
-        private const int MAX_NODE_RECORD_MAX_AGE_MSECS = 600000;
-        private const int MAX_MASTER_LOCK_DURATION_MSECS = 300000;
-        private const int MAX_PARTITION_LOCK_DURATION = 300000;
-        private const int MAX_MAX_PARTITION_SIZE = 10000;
-        private const int MAX_MAX_DEVICES_PER_NODE = 1000000;
-
         public ClusteringConfig()
         {
             // Initialize object with default values
             this.CheckIntervalMsecs = DEFAULT_CHECK_INTERVAL_MSECS;
-            this.NodeRecordMaxAgeMsecs = DEFAULT_NODE_RECORD_MAX_AGE_MSECS;
             this.MasterLockDurationMsecs = DEFAULT_MASTER_LOCK_DURATION_MSECS;
+            this.NodeRecordMaxAgeMsecs = DEFAULT_NODE_RECORD_MAX_AGE_MSECS;
             this.PartitionLockDurationMsecs = DEFAULT_PARTITION_LOCK_DURATION_MSECS;
             this.MaxPartitionSize = DEFAULT_PARTITION_SIZE;
             this.MaxDevicesPerNode = DEFAULT_MAX_DEVICES_PER_NODE;
@@ -80,6 +82,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             }
         }
 
+        public int NodeRecordMaxAgeSecs => (int) Math.Ceiling((double) this.NodeRecordMaxAgeMsecs / 1000);
+
         public int NodeRecordMaxAgeMsecs
         {
             get => this.nodeRecordMaxAgeMsecs;
@@ -90,7 +94,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             }
         }
 
-        public int NodeRecordMaxAgeSecs => (int) Math.Ceiling((double) this.NodeRecordMaxAgeMsecs / 1000);
+        public int MasterLockDurationSecs => (int) Math.Ceiling((double) this.MasterLockDurationMsecs / 1000);
 
         public int MasterLockDurationMsecs
         {
@@ -101,8 +105,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
                 this.masterLockDurationMsecs = value;
             }
         }
-
-        public int MasterLockDurationSecs => (int) Math.Ceiling((double) this.MasterLockDurationMsecs / 1000);
 
         public int PartitionLockDurationMsecs
         {
@@ -139,7 +141,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             if (value < min || value > max)
             {
                 throw new InvalidConfigurationException(
-                    name + " value is not valid. Use a value within `" + min + "` and `" + max + "`.");
+                    $"{name} value [{value}] is not valid. Use a value within `{min}` and `{max}`.");
             }
         }
     }

@@ -20,7 +20,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
 
     public class Agent : IPartitioningAgent
     {
-        private readonly ICluster cluster;
+        private readonly IClusterNodes clusterNodesNodes;
         private readonly IDevicePartitions partitions;
         private readonly ISimulations simulations;
         private readonly ILogger log;
@@ -30,7 +30,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
         private bool running;
 
         public Agent(
-            ICluster cluster,
+            IClusterNodes clusterNodesNodes,
             IDevicePartitions partitions,
             ISimulations simulations,
             IThreadWrapper thread,
@@ -38,7 +38,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
             IFactory factory,
             ILogger logger)
         {
-            this.cluster = cluster;
+            this.clusterNodesNodes = clusterNodesNodes;
             this.partitions = partitions;
             this.simulations = simulations;
             this.thread = thread;
@@ -50,14 +50,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
 
         public async Task StartAsync()
         {
-            this.log.Info("Partitioning agent started", () => new { Node = this.cluster.GetCurrentNodeId() });
+            this.log.Info("Partitioning agent started", () => new { Node = this.clusterNodesNodes.GetCurrentNodeId() });
 
             // Repeat until the agent is stopped
             while (this.running)
             {
-                await this.cluster.KeepAliveNodeAsync(); // #1
+                await this.clusterNodesNodes.KeepAliveNodeAsync(); // #1
 
-                var isMaster = await this.cluster.SelfElectToMasterNodeAsync(); // #2
+                // Only one process in the network becomes a master, and the master
+                // is responsible for running tasks not meant to run in parallel, like
+                // creating devices and partitions, and other tasks
+                var isMaster = await this.clusterNodesNodes.SelfElectToMasterNodeAsync(); // #2
                 if (isMaster)
                 {
                     // #4 : Load all simulations to have fresh status and new simulations
@@ -66,7 +69,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                     this.log.Debug("Active simulations loaded", () => new { activeSimulations.Count });
 
                     // Note: do not run in parallel to avoid conflicting db writes and retries
-                    await this.cluster.RemoveStaleNodesAsync(); // #3
+                    await this.clusterNodesNodes.RemoveStaleNodesAsync(); // #3
                     await this.CreateDevicesAsync(activeSimulations);
                     await this.CreatePartitionsAsync(activeSimulations); // #5 #6 #7
                     await this.DeletePartitionsAsync(activeSimulations); // #8
