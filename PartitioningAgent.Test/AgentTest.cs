@@ -27,6 +27,7 @@ namespace PartitioningAgent.Test
         private readonly Mock<IClusteringConfig> clusteringConfig;
         private readonly Mock<IFactory> factory;
         private readonly Mock<ILogger> log;
+        private readonly Mock<IDevices> devices;
 
         public AgentTest()
         {
@@ -54,6 +55,9 @@ namespace PartitioningAgent.Test
                 this.clusteringConfig.Object,
                 this.factory.Object,
                 this.log.Object);
+
+            this.devices = new Mock<IDevices>();
+            this.factory.Setup(x => x.Resolve<IDevices>()).Returns(this.devices.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -90,9 +94,7 @@ namespace PartitioningAgent.Test
         {
             // Arrange
             this.AfterStartRunOnlyOneLoop();
-
-            // Arrange - Not Master
-            this.clusterNodes.Setup(x => x.SelfElectToMasterNodeAsync()).ReturnsAsync(false);
+            this.TheCurrentNodeIsNotMaster();
 
             // Act
             this.target.StartAsync().CompleteOrTimeout();
@@ -100,14 +102,52 @@ namespace PartitioningAgent.Test
             // Assert
             this.clusterNodes.Verify(x => x.RemoveStaleNodesAsync(), Times.Never);
 
-            // Arrange - Is Master
-            this.clusterNodes.Setup(x => x.SelfElectToMasterNodeAsync()).ReturnsAsync(true);
+            // Arrange
+            this.TheCurrentNodeIsMaster();
 
             // Act
             this.target.StartAsync().CompleteOrTimeout();
 
             // Assert
             this.clusterNodes.Verify(x => x.RemoveStaleNodesAsync(), Times.Once);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItCreatesDevicesOnlyIfItIsAMaster()
+        {
+            // Arrange
+            this.AfterStartRunOnlyOneLoop();
+
+            // Arrange - List of simulations with devices to create
+            this.simulations.Setup(x => x.GetListAsync()).ReturnsAsync(new List<Simulation>
+            {
+                new Simulation
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Enabled = true,
+                    StartTime = DateTimeOffset.UtcNow.AddHours(-1),
+                    EndTime = DateTimeOffset.UtcNow.AddHours(+1),
+                    DevicesCreationComplete = false
+                }
+            });
+
+            // Arrange
+            this.TheCurrentNodeIsNotMaster();
+
+            // Act
+            this.target.StartAsync().CompleteOrTimeout();
+
+            // Assert
+            this.simulations.Verify(x => x.TryToStartDevicesCreationAsync(It.IsAny<string>(), It.IsAny<IDevices>()), Times.Never);
+
+            // Arrange
+            this.TheCurrentNodeIsMaster();
+
+            // Act
+            this.target.StartAsync().CompleteOrTimeout();
+
+            // Assert
+            this.simulations.Verify(x => x.TryToStartDevicesCreationAsync(It.IsAny<string>(), It.IsAny<IDevices>()), Times.Once);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -121,7 +161,7 @@ namespace PartitioningAgent.Test
             {
                 new Simulation
                 {
-                    Id = "1111",
+                    Id = Guid.NewGuid().ToString(),
                     Enabled = true,
                     StartTime = DateTimeOffset.UtcNow.AddHours(-1),
                     EndTime = DateTimeOffset.UtcNow.AddHours(+1),
@@ -132,11 +172,11 @@ namespace PartitioningAgent.Test
             // Arrange - List of partitions to delete
             this.partitions.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<DevicesPartition>
             {
-                new DevicesPartition { SimulationId = "9999" }
+                new DevicesPartition { SimulationId = Guid.NewGuid().ToString() }
             });
 
-            // #1: Arrange - Not Master
-            this.clusterNodes.Setup(x => x.SelfElectToMasterNodeAsync()).ReturnsAsync(false);
+            // #1: Arrange
+            this.TheCurrentNodeIsNotMaster();
 
             // Act
             this.target.StartAsync().CompleteOrTimeout();
@@ -145,8 +185,8 @@ namespace PartitioningAgent.Test
             this.partitions.Verify(x => x.CreateAsync(It.IsAny<string>()), Times.Never);
             this.partitions.Verify(x => x.DeleteListAsync(It.IsAny<List<string>>()), Times.Never);
 
-            // #2: Arrange - Is Master
-            this.clusterNodes.Setup(x => x.SelfElectToMasterNodeAsync()).ReturnsAsync(true);
+            // #2: Arrange
+            this.TheCurrentNodeIsMaster();
 
             // Act
             this.target.StartAsync().CompleteOrTimeout();
@@ -161,16 +201,14 @@ namespace PartitioningAgent.Test
         {
             // Arrange
             this.AfterStartRunOnlyOneLoop();
-
-            // Arrange - Is Master
-            this.clusterNodes.Setup(x => x.SelfElectToMasterNodeAsync()).ReturnsAsync(true);
+            this.TheCurrentNodeIsMaster();
 
             // Arrange - List of simulations, one is already partitioned
             this.simulations.Setup(x => x.GetListAsync()).ReturnsAsync(new List<Simulation>
             {
                 new Simulation
                 {
-                    Id = "1111",
+                    Id = Guid.NewGuid().ToString(),
                     Enabled = true,
                     StartTime = DateTimeOffset.UtcNow.AddHours(-1),
                     EndTime = DateTimeOffset.UtcNow.AddHours(+1),
@@ -178,7 +216,7 @@ namespace PartitioningAgent.Test
                 },
                 new Simulation
                 {
-                    Id = "1111",
+                    Id = Guid.NewGuid().ToString(),
                     Enabled = true,
                     StartTime = DateTimeOffset.UtcNow.AddHours(-1),
                     EndTime = DateTimeOffset.UtcNow.AddHours(+1),
@@ -186,7 +224,7 @@ namespace PartitioningAgent.Test
                 },
                 new Simulation
                 {
-                    Id = "1111",
+                    Id = Guid.NewGuid().ToString(),
                     Enabled = true,
                     StartTime = DateTimeOffset.UtcNow.AddHours(-1),
                     EndTime = DateTimeOffset.UtcNow.AddHours(+1),
@@ -206,15 +244,16 @@ namespace PartitioningAgent.Test
         {
             // Arrange
             this.AfterStartRunOnlyOneLoop();
+            this.TheCurrentNodeIsMaster();
 
             // Arrange - List of simulations to partition
-            const string SIM1_ID = "1111";
-            const string SIM2_ID = "2222";
+            string sim1Id = Guid.NewGuid().ToString();
+            string sim2Id = Guid.NewGuid().ToString();
             this.simulations.Setup(x => x.GetListAsync()).ReturnsAsync(new List<Simulation>
             {
                 new Simulation
                 {
-                    Id = SIM1_ID,
+                    Id = sim1Id,
                     Enabled = true,
                     StartTime = DateTimeOffset.UtcNow.AddHours(-1),
                     EndTime = DateTimeOffset.UtcNow.AddHours(+1),
@@ -222,7 +261,7 @@ namespace PartitioningAgent.Test
                 },
                 new Simulation
                 {
-                    Id = SIM2_ID,
+                    Id = sim2Id,
                     Enabled = false,
                     StartTime = DateTimeOffset.UtcNow.AddHours(-1),
                     EndTime = DateTimeOffset.UtcNow.AddHours(+1),
@@ -234,23 +273,174 @@ namespace PartitioningAgent.Test
             // they belong to SIM2_ID which is not active
             this.partitions.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<DevicesPartition>
             {
-                new DevicesPartition { Id = SIM1_ID + "_1", SimulationId = SIM1_ID },
-                new DevicesPartition { Id = SIM1_ID + "_2", SimulationId = SIM1_ID },
-                new DevicesPartition { Id = SIM1_ID + "_3", SimulationId = SIM1_ID },
-                new DevicesPartition { Id = SIM2_ID + "_1", SimulationId = SIM2_ID },
-                new DevicesPartition { Id = SIM2_ID + "_2", SimulationId = SIM2_ID },
-                new DevicesPartition { Id = SIM2_ID + "_3", SimulationId = SIM2_ID },
-                new DevicesPartition { Id = SIM2_ID + "_4", SimulationId = SIM2_ID }
+                new DevicesPartition { Id = sim1Id + "_1", SimulationId = sim1Id },
+                new DevicesPartition { Id = sim1Id + "_2", SimulationId = sim1Id },
+                new DevicesPartition { Id = sim1Id + "_3", SimulationId = sim1Id },
+                new DevicesPartition { Id = sim2Id + "_1", SimulationId = sim2Id },
+                new DevicesPartition { Id = sim2Id + "_2", SimulationId = sim2Id },
+                new DevicesPartition { Id = sim2Id + "_3", SimulationId = sim2Id },
+                new DevicesPartition { Id = sim2Id + "_4", SimulationId = sim2Id }
             });
-
-            // Arrange - Not Master
-            this.clusterNodes.Setup(x => x.SelfElectToMasterNodeAsync()).ReturnsAsync(true);
 
             // Act
             this.target.StartAsync().CompleteOrTimeout();
 
             // Assert
             this.partitions.Verify(x => x.DeleteListAsync(It.Is<List<string>>(l => l.Count == 4)), Times.Once);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItCreatesDevicesOnlyIfNeeded()
+        {
+            // Arrange
+            this.AfterStartRunOnlyOneLoop();
+            this.TheCurrentNodeIsMaster();
+
+            // Arrange - List of simulations with devices to create
+            this.simulations.Setup(x => x.GetListAsync()).ReturnsAsync(new List<Simulation>
+            {
+                // Not active
+                new Simulation
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Enabled = false,
+                    StartTime = DateTimeOffset.UtcNow.AddHours(-2),
+                    EndTime = DateTimeOffset.UtcNow.AddHours(+1),
+                    DevicesCreationComplete = false
+                },
+                // Ran in the past
+                new Simulation
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Enabled = true,
+                    StartTime = DateTimeOffset.UtcNow.AddHours(-2),
+                    EndTime = DateTimeOffset.UtcNow.AddHours(-1),
+                    DevicesCreationComplete = false
+                },
+                // Device creation already done
+                new Simulation
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Enabled = true,
+                    StartTime = DateTimeOffset.UtcNow.AddHours(-1),
+                    EndTime = DateTimeOffset.UtcNow.AddHours(+1),
+                    DevicesCreationComplete = true
+                },
+                // Device creation already started
+                new Simulation
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Enabled = true,
+                    StartTime = DateTimeOffset.UtcNow.AddHours(-1),
+                    EndTime = DateTimeOffset.UtcNow.AddHours(+1),
+                    DevicesCreationStarted = true,
+                    DevicesCreationComplete = false
+                }
+            });
+
+            // Act
+            this.target.StartAsync().CompleteOrTimeout();
+
+            // Assert
+            this.simulations.Verify(x => x.TryToStartDevicesCreationAsync(It.IsAny<string>(), It.IsAny<IDevices>()), Times.Never);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItChecksIfDeviceCreationIsCompleteWhenItAlreadyStarted()
+        {
+            // Arrange
+            this.AfterStartRunOnlyOneLoop();
+            this.TheCurrentNodeIsMaster();
+
+            var jobId = Guid.NewGuid().ToString();
+            var deviceService = new Mock<IDevices>();
+            deviceService.Setup(x => x.IsJobCompleteAsync(jobId, It.IsAny<Action>())).ReturnsAsync(false);
+            this.factory.Setup(x => x.Resolve<IDevices>()).Returns(deviceService.Object);
+            var simulation = new Simulation
+            {
+                Id = Guid.NewGuid().ToString(),
+                Enabled = true,
+                StartTime = DateTimeOffset.UtcNow.AddHours(-1),
+                EndTime = DateTimeOffset.UtcNow.AddHours(+1),
+                DevicesCreationStarted = true,
+                DevicesCreationComplete = false,
+                DeviceCreationJobId = jobId
+            };
+            this.simulations.Setup(x => x.GetListAsync()).ReturnsAsync(new List<Simulation> { simulation });
+
+            // Act
+            this.target.StartAsync().CompleteOrTimeout();
+
+            // Assert
+            this.simulations.Verify(x => x.TryToStartDevicesCreationAsync(It.IsAny<string>(), It.IsAny<IDevices>()), Times.Never);
+            deviceService.Verify(x => x.InitAsync(simulation), Times.Once);
+            deviceService.Verify(x => x.IsJobCompleteAsync(simulation.DeviceCreationJobId, It.IsAny<Action>()), Times.Once);
+            this.simulations.Verify(x => x.TryToSetDeviceCreationCompleteAsync(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItChangesTheSimulationStateWhenTheSimulationIsComplete()
+        {
+            // Arrange
+            this.AfterStartRunOnlyOneLoop();
+            this.TheCurrentNodeIsMaster();
+
+            var jobId = Guid.NewGuid().ToString();
+            var deviceService = new Mock<IDevices>();
+            deviceService.Setup(x => x.IsJobCompleteAsync(jobId, It.IsAny<Action>())).ReturnsAsync(true);
+            this.factory.Setup(x => x.Resolve<IDevices>()).Returns(deviceService.Object);
+            var simulation = new Simulation
+            {
+                Id = Guid.NewGuid().ToString(),
+                Enabled = true,
+                StartTime = DateTimeOffset.UtcNow.AddHours(-1),
+                EndTime = DateTimeOffset.UtcNow.AddHours(+1),
+                DevicesCreationStarted = true,
+                DevicesCreationComplete = false,
+                DeviceCreationJobId = jobId
+            };
+            this.simulations.Setup(x => x.GetListAsync()).ReturnsAsync(new List<Simulation> { simulation });
+
+            // Act
+            this.target.StartAsync().CompleteOrTimeout();
+
+            // Assert
+            deviceService.Verify(x => x.IsJobCompleteAsync(jobId, It.IsAny<Action>()), Times.Once);
+            this.simulations.Verify(x => x.TryToSetDeviceCreationCompleteAsync(simulation.Id), Times.Once);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItRetriesTheDeviceCreationIfThePreviousCreationFailed()
+        {
+            // Arrange
+            this.AfterStartRunOnlyOneLoop();
+            this.TheCurrentNodeIsMaster();
+
+            var jobId = Guid.NewGuid().ToString();
+            var deviceService = new Mock<IDevices>();
+            deviceService.Setup(x => x.IsJobCompleteAsync(jobId, It.IsAny<Action>()))
+                .Callback((string job, Action recreateJobSignal) => recreateJobSignal.Invoke())
+                .ReturnsAsync(false);
+            this.factory.Setup(x => x.Resolve<IDevices>()).Returns(deviceService.Object);
+            var simulation = new Simulation
+            {
+                Id = Guid.NewGuid().ToString(),
+                Enabled = true,
+                StartTime = DateTimeOffset.UtcNow.AddHours(-1),
+                EndTime = DateTimeOffset.UtcNow.AddHours(+1),
+                DevicesCreationComplete = false,
+                DevicesCreationStarted = true,
+                DeviceCreationJobId = jobId
+            };
+            this.simulations.Setup(x => x.GetListAsync()).ReturnsAsync(new List<Simulation> { simulation });
+
+            // Act
+            this.target.StartAsync().CompleteOrTimeout();
+
+            // Assert
+            deviceService.Verify(x => x.IsJobCompleteAsync(simulation.DeviceCreationJobId, It.IsAny<Action>()), Times.Once);
+            this.simulations.Verify(x => x.TryToSetDeviceCreationCompleteAsync(It.IsAny<string>()), Times.Never);
+            this.simulations.Verify(x => x.TryToStartDevicesCreationAsync(simulation.Id, It.IsAny<IDevices>()), Times.Once);
         }
 
         // Helper used to ensure that a task reaches an expected state
@@ -266,6 +456,16 @@ namespace PartitioningAgent.Test
         {
             this.thread.Setup(x => x.Sleep(It.IsAny<int>()))
                 .Callback(() => this.target.Stop());
+        }
+
+        private void TheCurrentNodeIsMaster()
+        {
+            this.clusterNodes.Setup(x => x.SelfElectToMasterNodeAsync()).ReturnsAsync(true);
+        }
+
+        private void TheCurrentNodeIsNotMaster()
+        {
+            this.clusterNodes.Setup(x => x.SelfElectToMasterNodeAsync()).ReturnsAsync(false);
         }
     }
 }

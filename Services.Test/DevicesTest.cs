@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
@@ -89,6 +90,54 @@ namespace Services.Test
             Assert.ThrowsAsync<ExternalDependencyException>(
                     async () => await this.target.CreateAsync("a-device-id"))
                 .Wait(Constants.TEST_TIMEOUT);
+        }
+
+        [Fact(Skip = "needs some refactoring in Devices.cs to allow mocking the Storage classes"), Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItCreatesDevicesUsingAJob()
+        {
+            // TODO: needs some refactoring in Devices.cs to allow mocking the Storage classes
+
+            // Arrange
+            var list = new List<string> { "AA", "BB", "" };
+
+            // Act
+            var result = this.target.CreateListUsingJobsAsync(list).CompleteOrTimeout().Result;
+
+            // Assert
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReportsIfAJobIsComplete()
+        {
+            // Arrange
+            var failures1 = 0;
+            var failures2 = 0;
+            var jobId1 = Guid.NewGuid().ToString();
+            var jobId2 = Guid.NewGuid().ToString();
+            var jobId3 = Guid.NewGuid().ToString();
+            var jobId4 = Guid.NewGuid().ToString();
+            this.registry.Setup(x => x.GetJobAsync(jobId1))
+                .ReturnsAsync(new JobProperties { Status = JobStatus.Unknown });
+            this.registry.Setup(x => x.GetJobAsync(jobId2))
+                .ReturnsAsync(new JobProperties { Status = JobStatus.Running });
+            this.registry.Setup(x => x.GetJobAsync(jobId3))
+                .ReturnsAsync(new JobProperties { Status = JobStatus.Completed });
+            this.registry.Setup(x => x.GetJobAsync(jobId4))
+                .ReturnsAsync(new JobProperties { Status = JobStatus.Failed });
+
+            // Act
+            var result1 = this.target.IsJobCompleteAsync(jobId1, () => { failures1++; }).CompleteOrTimeout().Result;
+            var result2 = this.target.IsJobCompleteAsync(jobId2, () => { failures1++; }).CompleteOrTimeout().Result;
+            var result3 = this.target.IsJobCompleteAsync(jobId3, () => { failures1++; }).CompleteOrTimeout().Result;
+            var result4 = this.target.IsJobCompleteAsync(jobId4, () => { failures2++; }).CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.False(result1);
+            Assert.False(result2);
+            Assert.True(result3);
+            Assert.False(result4);
+            Assert.Equal(0, failures1);
+            Assert.Equal(1, failures2);
         }
     }
 }

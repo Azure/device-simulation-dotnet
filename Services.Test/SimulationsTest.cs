@@ -12,7 +12,6 @@ using Moq;
 using Newtonsoft.Json;
 using Services.Test.helpers;
 using Xunit;
-using Xunit.Abstractions;
 using SimulationModel = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 
 namespace Services.Test
@@ -165,11 +164,11 @@ namespace Services.Test
             this.storage.Verify(
                 x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.Is<string>(
                     s => !JsonConvert.DeserializeObject<SimulationModel>(s).Enabled
-                ), "*"));
+                ), "*"), Times.Once);
             this.storage.Verify(
                 x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.Is<string>(
                     s => JsonConvert.DeserializeObject<SimulationModel>(s).Description == "some-description"
-                ), "*"));
+                ), "*"), Times.Once);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -194,7 +193,8 @@ namespace Services.Test
 
             // Assert
             this.storage.Verify(
-                x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.IsAny<string>(), "oldETag"));
+                x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.IsAny<string>(), "oldETag"),
+                Times.Once);
             Assert.Equal("newETag", simulation.ETag);
         }
 
@@ -294,10 +294,8 @@ namespace Services.Test
 
             // Assert
             this.storage.Verify(x => x.UpdateAsync(
-                STORAGE_COLLECTION,
-                id,
-                It.IsAny<string>(),
-                "ETag0"));
+                    STORAGE_COLLECTION, id, It.IsAny<string>(), "ETag0"),
+                Times.Once);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -541,6 +539,139 @@ namespace Services.Test
             Assert.Contains(custom3, result[modelId3]);
             Assert.Contains(custom4, result[modelId3]);
             Assert.Contains(custom5, result[modelId4]);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItStartsTheDeviceCreationUsingJobs()
+        {
+            // Arrange
+            var simulationId = Guid.NewGuid().ToString();
+            var sim = new SimulationModel
+            {
+                Id = simulationId, Enabled = true, DevicesCreationStarted = false,
+                DeviceModels = new List<SimulationModel.DeviceModelRef>
+                {
+                    new SimulationModel.DeviceModelRef { Id = "some", Count = 3 }
+                }
+            };
+            var record = new ValueApiModel
+            {
+                Key = simulationId, Data = JsonConvert.SerializeObject(sim)
+            };
+            this.storage.Setup(x => x.GetAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(record);
+
+            // Arrange - needed for the record update
+            this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new ValueApiModel { Key = SIMULATION_ID, Data = "{}", ETag = "someETag" });
+
+            // Act
+            var result = this.target.TryToStartDevicesCreationAsync(simulationId, this.devices.Object)
+                .CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.True(result);
+            this.devices.Verify(x => x.CreateListUsingJobsAsync(It.IsAny<IEnumerable<string>>()), Times.Once);
+            this.storage.Verify(
+                x => x.UpdateAsync(STORAGE_COLLECTION, simulationId, It.Is<string>(
+                    s => JsonConvert.DeserializeObject<SimulationModel>(s).DevicesCreationStarted
+                ), It.IsAny<string>()), Times.Once());
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItStartsTheDeviceCreationOnlyIfNotStarted()
+        {
+            // Arrange
+            var simulationId = Guid.NewGuid().ToString();
+            var sim = new SimulationModel
+            {
+                Id = simulationId, Enabled = true, DevicesCreationStarted = true,
+                DeviceModels = new List<SimulationModel.DeviceModelRef>
+                {
+                    new SimulationModel.DeviceModelRef { Id = "some", Count = 3 }
+                }
+            };
+            var record = new ValueApiModel
+            {
+                Key = simulationId, Data = JsonConvert.SerializeObject(sim)
+            };
+            this.storage.Setup(x => x.GetAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(record);
+
+            // Act
+            var result = this.target.TryToStartDevicesCreationAsync(simulationId, this.devices.Object)
+                .CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.True(result);
+            this.devices.Verify(x => x.CreateListUsingJobsAsync(It.IsAny<IEnumerable<string>>()), Times.Never);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReportsIfTheDeviceCreationStartFails()
+        {
+            // Arrange
+            var simulationId = Guid.NewGuid().ToString();
+            var sim = new SimulationModel
+            {
+                Id = simulationId, Enabled = true, DevicesCreationStarted = false,
+                DeviceModels = new List<SimulationModel.DeviceModelRef>
+                {
+                    new SimulationModel.DeviceModelRef { Id = "some", Count = 3 }
+                }
+            };
+            var record = new ValueApiModel
+            {
+                Key = simulationId, Data = JsonConvert.SerializeObject(sim)
+            };
+            this.storage.Setup(x => x.GetAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(record);
+            this.devices.Setup(x => x.CreateListUsingJobsAsync(It.IsAny<IEnumerable<string>>()))
+                .Throws<SomeException>();
+
+            // Act
+            var result = this.target.TryToStartDevicesCreationAsync(simulationId, this.devices.Object)
+                .CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.False(result);
+            this.devices.Verify(x => x.CreateListUsingJobsAsync(It.IsAny<IEnumerable<string>>()), Times.Once);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItChangesTheSimulationStatusWhenTheDeviceCreationIsComplete()
+        {
+            // Arrange
+            var simulationId = Guid.NewGuid().ToString();
+            var sim = new SimulationModel
+            {
+                Id = simulationId, Enabled = true, DevicesCreationStarted = false,
+                DeviceModels = new List<SimulationModel.DeviceModelRef>
+                {
+                    new SimulationModel.DeviceModelRef { Id = "some", Count = 3 }
+                }
+            };
+            var record = new ValueApiModel
+            {
+                Key = simulationId, Data = JsonConvert.SerializeObject(sim)
+            };
+            this.storage.Setup(x => x.GetAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(record);
+
+            // Arrange - needed for the record update
+            this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new ValueApiModel { Key = simulationId, Data = "{}", ETag = "someETag" });
+
+            // Act
+            var result = this.target.TryToSetDeviceCreationCompleteAsync(simulationId)
+                .CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.True(result);
+            this.storage.Verify(
+                x => x.UpdateAsync(STORAGE_COLLECTION, simulationId, It.Is<string>(
+                    s => JsonConvert.DeserializeObject<SimulationModel>(s).DevicesCreationComplete
+                ), It.IsAny<string>()), Times.Once());
         }
 
         private void ThereAreSomeDeviceModels()

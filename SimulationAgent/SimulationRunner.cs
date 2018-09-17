@@ -37,9 +37,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
     public class SimulationRunner : ISimulationRunner
     {
-        // Allow 30 seconds to create the devices (1000 devices normally takes 2-3 seconds)
-        private const int DEVICES_CREATION_TIMEOUT_SECS = 30;
-
         // Application logger
         private readonly ILogger log;
 
@@ -162,28 +159,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // Note: this is a singleton class, so we can call this once. This sets
             // the active hub, e.g. in case the user provided a custom connection string.
             await this.devices.InitAsync(simulation);
-
-            // Create the devices
-            try
-            {
-                var devices = this.simulations.GetDeviceIds(simulation);
-
-                // This will ignore existing devices, creating only the missing ones
-                this.devices.CreateListAsync(devices)
-                    .Wait(TimeSpan.FromSeconds(DEVICES_CREATION_TIMEOUT_SECS));
-            }
-            catch (Exception e)
-            {
-                var msg = "Failed to create devices";
-                this.running = false;
-                this.starting = false;
-                this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceError(msg, e.Message);
-                this.IncrementSimulationErrorsCount();
-
-                // Return and retry
-                return;
-            }
 
             // Loop through all the device models used in the simulation
             var models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
