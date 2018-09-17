@@ -47,7 +47,7 @@ namespace PartitioningAgent.Test
                 .Returns(Task.CompletedTask);
 
             // Act
-            var task = this.target.StartAsync();
+            this.target.StartAsync().CompleteOrTimeout();
 
             // Assert
             this.clusterNodes.Verify(x => x.KeepAliveNodeAsync(), Times.Once);
@@ -67,6 +67,30 @@ namespace PartitioningAgent.Test
 
             // Assert
             Assert.Equal(TaskStatus.RanToCompletion, task.Status);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItRemovesStaleNodesOnlyIfItIsAMaster()
+        {
+            // Arrange - Not Master
+            this.clusterNodes.Setup(x => x.SelfElectToMasterNodeAsync()).ReturnsAsync(false);
+            this.thread.Setup(x => x.Sleep(It.IsAny<int>())).Callback(() => this.target.Stop());
+
+            // Act
+            this.target.StartAsync().CompleteOrTimeout();
+
+            // Assert
+            this.clusterNodes.Verify(x => x.RemoveStaleNodesAsync(), Times.Never);
+
+            // Arrange - Is Master
+            this.clusterNodes.Setup(x => x.SelfElectToMasterNodeAsync()).ReturnsAsync(true);
+            this.thread.Setup(x => x.Sleep(It.IsAny<int>())).Callback(() => this.target.Stop());
+
+            // Act
+            this.target.StartAsync().CompleteOrTimeout();
+
+            // Assert
+            this.clusterNodes.Verify(x => x.RemoveStaleNodesAsync(), Times.Once);
         }
 
         // Helper used to ensure that a task reaches an expected state
