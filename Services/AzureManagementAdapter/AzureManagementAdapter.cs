@@ -1,20 +1,24 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter
 {
     public interface IAzureManagementAdapterClient
     {
-        Task<MetricsResponseModel> PostAsync(string token, MetricsRequestsModel requests);
+        Task<MetricsResponseModel> PostAsync(MetricsRequestsModel requests);
     }
 
     public class AzureManagementAdapter : IAzureManagementAdapterClient
@@ -50,11 +54,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         /// <param name="token"></param>
         /// <param name="requests"></param>
         /// <returns></returns>
-        public async Task<MetricsResponseModel> PostAsync(string token, MetricsRequestsModel requests)
+        public async Task<MetricsResponseModel> PostAsync(MetricsRequestsModel requests)
         {
             if (requests == null) requests = this.GetDefaultMetricsRequests();
 
-            var request = this.PrepareRequest($"batch?api-version={this.config.AzureManagementAdapterApiVersion}", token, requests);
+            var accessToken = await this.GetAadTokenAsync();
+
+            var request = this.PrepareRequest($"batch?api-version={this.config.AzureManagementAdapterApiVersion}", $"Bearer {accessToken}", requests);
 
             this.log.Debug("Azure Management request content", () => new { request.Content });
 
@@ -102,6 +108,32 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
                    $"/providers/Microsoft.Devices/IotHubs/{this.deploymentConfig.AzureIothubName}" +
                    $"/providers/Microsoft.Insights/metrics?api-version={METRICS_API_VERSION}&" +
                    $"$filter={this.GetDefaultMetricsQuery()}";
+        }
+
+        private async Task<string> GetAadTokenAsync()
+        {
+            var request = new HttpRequest();
+            request.AddHeader(HttpRequestHeader.ContentType.ToString(), "application/x-www-form-urlencoded");
+
+            var values = new Dictionary<string, string>
+            {
+                { "grant_type", "client_credentials" },
+                { "resource", this.config.AzureManagementAdapterApiUrl },
+                { "client_id", this.deploymentConfig.AadAppId },
+                { "client_secret", this.deploymentConfig.AadAppSecret }
+            };
+            var content = new FormUrlEncodedContent(values);
+
+            request.SetUriFromString($"{this.deploymentConfig.AadTokenUrl}/{this.deploymentConfig.AadTenantId}/oauth2/token");
+            request.Options.EnsureSuccess = false;
+            request.Options.Timeout = this.config.AzureManagementAdapterApiTimeout;
+            request.SetContent(content);
+
+            var response = await this.httpClient.PostAsync(request);
+
+            this.ThrowIfError(response);
+
+            return JsonConvert.DeserializeObject<AadTokenResponseModel>(response.Content).AccessToken;
         }
 
         /// <summary>

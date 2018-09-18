@@ -125,6 +125,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string AZURE_RESOURCE_GROUP = DEPLOYMENT_KEY + "azure_resource_group";
         private const string AZURE_IOTHUB_NAME = DEPLOYMENT_KEY + "azure_iothub_name";
 
+        private const string AZURE_ACTIVE_DIRECTORY_KEY = APPLICATION_KEY + "AzureActiveDirectory:";
+        private const string AAD_TENANT_ID = AZURE_ACTIVE_DIRECTORY_KEY + "tenant_id";
+        private const string AAD_APP_ID = AZURE_ACTIVE_DIRECTORY_KEY + "app_id";
+        private const string AAD_APP_SECRET = AZURE_ACTIVE_DIRECTORY_KEY + "app_secret";
+        private const string AAD_ACCESS_TOKEN_URL = AZURE_ACTIVE_DIRECTORY_KEY + "access_token_url";
+
         public int Port { get; }
         public ILoggingConfig LoggingConfig { get; set; }
         public IClientAuthConfig ClientAuthConfig { get; }
@@ -299,7 +305,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 AzureSubscriptionDomain = configData.GetString(AZURE_SUBSCRIPTION_DOMAIN, "undefined.onmicrosoft.com"),
                 AzureSubscriptionId = configData.GetString(AZURE_SUBSCRIPTION_ID, Guid.Empty.ToString()),
                 AzureResourceGroup = configData.GetString(AZURE_RESOURCE_GROUP, "undefined"),
-                AzureIothubName = configData.GetString(AZURE_IOTHUB_NAME, "undefined")
+                AzureIothubName = configData.GetString(AZURE_IOTHUB_NAME, "undefined"),
+                AadTenantId = configData.GetString(AAD_TENANT_ID, "undefined"),
+                AadAppId = configData.GetString(AAD_APP_ID, "undefined"),
+                AadAppSecret = configData.GetString(AAD_APP_SECRET, "undefined"),
+                AadTokenUrl = configData.GetString(AAD_ACCESS_TOKEN_URL, "undefinedd")
             };
         }
 

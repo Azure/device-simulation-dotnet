@@ -97,18 +97,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
 
-        // TODO: remove authorization from controller 
         [HttpPost("{id}/metrics/iothub!search")]
         public async Task<object> PostAsync(
             [FromBody] MetricsRequestsApiModel requests,
-            [FromHeader] string authorization,
             string id)
         {
             var payload = requests?.ToServiceModel();
 
             // Service will generate default query if payload is null.
             // See default query details in /Services/AzureManagementAdapter/AzureManagementAdapter.cs
-            return await this.iothubMetrics.GetIothubMetricsAsync(authorization, payload);
+            return await this.iothubMetrics.GetIothubMetricsAsync(payload);
         }
 
         [HttpPut("{id}")]

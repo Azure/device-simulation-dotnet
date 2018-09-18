@@ -125,7 +125,7 @@ namespace WebService.Test.v1.Controllers
 
             // Act
             var result = this.target.PostAsync(
-                null,
+                (SimulationApiModel) null,
                 "default"
             ).Result;
 
@@ -157,14 +157,12 @@ namespace WebService.Test.v1.Controllers
             // Act
             this.target.PostAsync(
                     new MetricsRequestsApiModel(),
-                    AUTH_TOKEN,
                     ID)
                 .Wait(Constants.TEST_TIMEOUT);
 
             // Assert
             this.iothubMetrics
                 .Verify(x => x.GetIothubMetricsAsync(
-                    AUTH_TOKEN,
                     It.IsAny<MetricsRequestsModel>()
                 ), Times.Once);
         }

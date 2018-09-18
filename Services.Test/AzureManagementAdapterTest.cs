@@ -51,7 +51,7 @@ namespace Services.Test
 
             // Act & Assert
             Assert.ThrowsAsync<ExternalDependencyException>(
-                    async () => await this.target.PostAsync(It.IsAny<string>(), It.IsAny<MetricsRequestsModel>()))
+                    async () => await this.target.PostAsync(It.IsAny<MetricsRequestsModel>()))
                 .Wait(Constants.TEST_TIMEOUT);
         }
     }
