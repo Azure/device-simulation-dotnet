@@ -5,6 +5,7 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
@@ -18,6 +19,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 {
     public class Startup
     {
+        // Agent responsible for creating devices and partitions
+        private IPartitioningAgent partitioningAgent;
+
+        // Agent responsible for simulating IoT devices
         private ISimulationAgent simulationAgent;
 
         // Initialized in `Startup`
@@ -77,15 +82,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             app.UseMvc();
 
             // Start simulation agent thread
-            appLifetime.ApplicationStarted.Register(this.StartAgent);
-            appLifetime.ApplicationStopping.Register(this.StopAgent);
+            appLifetime.ApplicationStarted.Register(this.StartAgents);
+            appLifetime.ApplicationStopping.Register(this.StopAgents);
 
             // If you want to dispose of resources that have been resolved in the
             // application container, register for the "ApplicationStopped" event.
             appLifetime.ApplicationStopped.Register(() => this.ApplicationContainer.Dispose());
         }
 
-        private void StartAgent()
+        private void StartAgents()
         {
             // Temporary workaround to allow twin JSON deserialization in IoT SDK
             JsonConvert.DefaultSettings = () => new JsonSerializerSettings
@@ -93,12 +98,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
                 CheckAdditionalContent = false
             };
 
+            this.partitioningAgent = this.ApplicationContainer.Resolve<IPartitioningAgent>();
+            this.partitioningAgent.StartAsync();
+
             this.simulationAgent = this.ApplicationContainer.Resolve<ISimulationAgent>();
             this.simulationAgent.RunAsync();
         }
 
-        private void StopAgent()
+        private void StopAgents()
         {
+            this.partitioningAgent.Stop();
             this.simulationAgent.Stop();
         }
 
@@ -107,7 +116,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             var log = container.Resolve<ILogger>();
             var config = container.Resolve<IConfig>();
             log.Write("Service started", () => new { Uptime.ProcessId, LogLevel = config.LoggingConfig.LogLevel.ToString() });
-            
+
             log.Write("Logging level:             " + config.LoggingConfig.LogLevel);
             log.Write("Web service auth required: " + config.ClientAuthConfig.AuthRequired);
 
@@ -121,14 +130,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             log.Write("Messages per second:       " + config.RateLimitingConfig.DeviceMessagesPerSecond);
             log.Write("Messages per day:          " + config.RateLimitingConfig.DeviceMessagesPerDay);
 
-            log.Write("Number of telemetry threads:      " + config.ConcurrencyConfig.TelemetryThreads);
-            log.Write("Max pending connections:          " + config.ConcurrencyConfig.MaxPendingConnections);
-            log.Write("Max pending telemetry messages:   " + config.ConcurrencyConfig.MaxPendingTelemetry);
-            log.Write("Max pending twin writes:          " + config.ConcurrencyConfig.MaxPendingTwinWrites);
-            log.Write("Min duration of state loop:       " + config.ConcurrencyConfig.MinDeviceStateLoopDuration);
-            log.Write("Min duration of connection loop:  " + config.ConcurrencyConfig.MinDeviceConnectionLoopDuration);
-            log.Write("Min duration of telemetry loop:   " + config.ConcurrencyConfig.MinDeviceTelemetryLoopDuration);
-            log.Write("Min duration of twin write loop:  " + config.ConcurrencyConfig.MinDevicePropertiesLoopDuration);
+            log.Write("Number of telemetry threads:      " + config.SimulationConcurrencyConfig.TelemetryThreads);
+            log.Write("Max pending connections:          " + config.SimulationConcurrencyConfig.MaxPendingConnections);
+            log.Write("Max pending telemetry messages:   " + config.SimulationConcurrencyConfig.MaxPendingTelemetry);
+            log.Write("Max pending twin writes:          " + config.SimulationConcurrencyConfig.MaxPendingTwinWrites);
+            log.Write("Min duration of state loop:       " + config.SimulationConcurrencyConfig.MinDeviceStateLoopDuration);
+            log.Write("Min duration of connection loop:  " + config.SimulationConcurrencyConfig.MinDeviceConnectionLoopDuration);
+            log.Write("Min duration of telemetry loop:   " + config.SimulationConcurrencyConfig.MinDeviceTelemetryLoopDuration);
+            log.Write("Min duration of twin write loop:  " + config.SimulationConcurrencyConfig.MinDevicePropertiesLoopDuration);
         }
     }
 }
