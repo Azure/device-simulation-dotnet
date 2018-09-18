@@ -6,7 +6,6 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -34,23 +33,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
         private readonly ILogger log;
         private readonly IInstance instance;
         private readonly IDocumentDbWrapper docDb;
-        private readonly IConcurrencyConfig concurrencyConfig;
-        private StorageConfig storageConfig;
 
+        private StorageConfig storageConfig;
         private IDocumentClient client;
-        private bool disposedValue;
         private string storageName;
+        private bool disposedValue;
 
         public StorageRecords(
             IDocumentDbWrapper docDb,
-            ILogger logger,
             IInstance instance,
-            IConcurrencyConfig concurrencyConfig)
+            ILogger logger)
         {
+            this.docDb = docDb;
             this.log = logger;
             this.instance = instance;
-            this.docDb = docDb;
-            this.concurrencyConfig = concurrencyConfig;
             this.disposedValue = false;
             this.storageConfig = null;
             this.client = null;
@@ -217,7 +213,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
             foreach (var id in ids)
             {
                 tasks.Add(this.DeleteAsync(id));
-                if (tasks.Count < this.concurrencyConfig.MaxPendingStorageTasks) continue;
+                if (tasks.Count < this.storageConfig.MaxPendingOperations) continue;
 
                 await Task.WhenAll(tasks);
                 tasks.Clear();

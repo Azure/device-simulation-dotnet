@@ -13,8 +13,8 @@ namespace Services.Test.Diagnostics
     {
         private const string DIAGNOSTICS_SERVICE_URL = @"http://diagnostics";
 
+        private readonly DiagnosticsLogger target;
         private readonly Mock<IHttpClient> mockHttpClient;
-        private DiagnosticsLogger target;
 
         public DiagnosticsLoggerTest()
         {
@@ -32,9 +32,9 @@ namespace Services.Test.Diagnostics
         public void ShouldLogServiceStart()
         {
             // Act
-            this.target.LogServiceStartAsync("test").Wait(Constants.TEST_TIMEOUT);
+            this.target.LogServiceStart("test");
 
-            // Assert - Checking if the httpcall is made just once
+            // Assert - Checking if the http call is made just once
             this.mockHttpClient.Verify(x => x.PostAsync(It.IsAny<HttpRequest>()), Times.Once);
         }
 
@@ -42,9 +42,9 @@ namespace Services.Test.Diagnostics
         public void ShouldLogServiceHeartbeat()
         {
             // Act
-            this.target.LogServiceHeartbeatAsync().Wait(Constants.TEST_TIMEOUT);
+            this.target.LogServiceHeartbeat();
 
-            // Assert - Checking if the httpcall is made just once
+            // Assert - Checking if the http call is made just once
             this.mockHttpClient.Verify(x => x.PostAsync(It.IsAny<HttpRequest>()), Times.Once);
         }
 
@@ -53,15 +53,15 @@ namespace Services.Test.Diagnostics
         {
             // Act
             // Logging service error sending just a message string
-            this.target.LogServiceErrorAsync("testmessage").Wait(Constants.TEST_TIMEOUT);
+            this.target.LogServiceError("testmessage");
             
             // Logging service error along with an exception
-            this.target.LogServiceErrorAsync("testmessage", new System.Exception().Message).Wait(Constants.TEST_TIMEOUT);
+            this.target.LogServiceError("testmessage", new System.Exception().Message);
             
             // Logging service error along with an object
-            this.target.LogServiceErrorAsync("testmessage", new { Test = "test" }).Wait(Constants.TEST_TIMEOUT);
+            this.target.LogServiceError("testmessage", new { Test = "test" });
 
-            // Assert - Checking if the httpcall is made exactly 3 times one for each type of service error
+            // Assert - Checking if the http call is made exactly 3 times one for each type of service error
             this.mockHttpClient.Verify(x => x.PostAsync(It.IsAny<HttpRequest>()), Times.Exactly(3));
         }
     }

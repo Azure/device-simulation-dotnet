@@ -146,7 +146,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                               "The correct format is: HostName=[hubname];SharedAccessKeyName=" +
                               "[iothubowner or service];SharedAccessKey=[null or valid key]";
                 this.log.Error(message);
-                this.diagnosticsLogger.LogServiceErrorAsync(message);
+                this.diagnosticsLogger.LogServiceError(message);
                 throw new InvalidIotHubConnectionStringFormatException(message);
             }
 
@@ -189,7 +189,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                               "string provided. Check that the key is valid and " +
                               "that the hub exists.";
                 this.log.Error(message, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(message, e.Message);
+                this.diagnosticsLogger.LogServiceError(message, e.Message);
                 throw new IotHubConnectionException(message, e);
             }
         }
@@ -208,7 +208,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                               "string provided. Check that the policy for the key allows " +
                               "`Registry Read/Write` and `Service Connect` permissions.";
                 this.log.Error(message, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(message, e.Message);
+                this.diagnosticsLogger.LogServiceError(message, e.Message);
                 throw new IotHubConnectionException(message, e);
             }
         }
@@ -231,7 +231,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                               "string provided. Check that the policy for the key allows " +
                               "`Registry Read/Write` and `Service Connect` permissions.";
                 this.log.Error(message, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(message, e.Message);
+                this.diagnosticsLogger.LogServiceError(message, e.Message);
                 throw new IotHubConnectionException(message, e);
             }
 
@@ -251,7 +251,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                     var message = "Could not delete test device from IotHub. Attempt " +
                                   deleteRetryCount + 1 + " of " + MAX_DELETE_RETRY;
                     this.log.Error(message, () => new { testDeviceId, e });
-                    this.diagnosticsLogger.LogServiceErrorAsync(message, new { testDeviceId, e.Message });
+                    this.diagnosticsLogger.LogServiceError(message, new { testDeviceId, e.Message });
                     throw new IotHubConnectionException(message, e);
                 }
 
@@ -264,7 +264,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             {
                 var message = "Could not delete test device from IotHub.";
                 this.log.Error(message, () => new { testDeviceId });
-                this.diagnosticsLogger.LogServiceErrorAsync(message, new { testDeviceId });
+                this.diagnosticsLogger.LogServiceError(message, new { testDeviceId });
                 throw new IotHubConnectionException(message);
             }
         }
@@ -287,7 +287,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 var msg = "Unable to use default IoT Hub. Check that the " +
                           "pre-provisioned hub exists and has the correct permissions.";
                 this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceErrorAsync(msg, e.Message);
+                this.diagnosticsLogger.LogServiceError(msg, e.Message);
                 throw new IotHubConnectionException(msg, e);
             }
 
@@ -298,7 +298,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to delete connection string.", e);
+                var msg = "Unable to delete connection string from storage.";
+                this.log.Error(msg, e);
+                this.diagnosticsLogger.LogServiceError(msg, e.Message);
                 throw;
             }
         }
@@ -354,7 +356,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to write connection string to storage.", e);
+                var msg = "Unable to write connection string to storage.";
+                this.log.Error(msg, e );
+                this.diagnosticsLogger.LogServiceError(msg, e.Message);
                 throw;
             }
         }
@@ -378,8 +382,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
             catch (Exception e)
             {
-                this.log.Error("Unexpected error while fetching the connection string from storage");
-                throw new ExternalDependencyException(e);
+                var message = "Unable to read connection string from storage.";
+                this.log.Error(message, e);
+                this.diagnosticsLogger.LogServiceError(message, e.Message);
+                return null;
             }
         }
     }
