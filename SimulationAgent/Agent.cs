@@ -75,7 +75,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     var simulationList = await this.simulations.GetListAsync();
 
                     // currently we support only 1 running simulation so the result should return only 1 item
-                    var runningSimulation = simulationList.FirstOrDefault(s => s.ShouldBeRunning());
+                    var runningSimulation = simulationList.FirstOrDefault(s => s.ShouldBeRunning);
 
                     this.log.Debug("Simulation loaded", () => new { runningSimulation });
 
@@ -100,7 +100,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.simulation = oldSimulation;
                 }
 
-                if (this.simulation != null && this.simulation.ShouldBeRunning())
+                if (this.simulation != null && this.simulation.ShouldBeRunning)
                 {
                     this.log.Debug("------ Current simulation being run ------");
                     foreach (var model in this.simulation.DeviceModels)
@@ -198,7 +198,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                 this.simulation = newSimulation;
 
-                if (this.simulation.ShouldBeRunning())
+                if (this.simulation.ShouldBeRunning)
                 {
                     this.log.Debug("------ Starting simulation ------", () => new { this.simulation });
                     this.runner.Start(this.simulation);
@@ -225,7 +225,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             if (newSimulation != null && this.simulation == null)
             {
                 this.simulation = newSimulation;
-                if (this.simulation.ShouldBeRunning())
+                if (this.simulation.ShouldBeRunning)
                 {
                     this.log.Debug("------ Starting new simulation ------", () => new { this.simulation });
                     this.logDiagnostics.LogServiceStart("Starting new simulation");
@@ -239,7 +239,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private async Task CheckForStopOrStartToSimulationAsync()
         {
             // stopped
-            if (this.simulation != null && this.simulation.Enabled && !this.simulation.ShouldBeRunning())
+            if (this.simulation != null && this.simulation.Enabled && !this.simulation.ShouldBeRunning)
             {
                 this.simulation.Statistics.AverageMessagesPerSecond = this.rateReporter.GetThroughputForMessages();
                 this.simulation.Statistics.TotalMessagesSent = this.runner.TotalMessagesCount;
@@ -251,7 +251,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
 
             // started
-            if (this.simulation != null && this.simulation.ShouldBeRunning())
+            if (this.simulation != null && this.simulation.ShouldBeRunning)
             {
                 this.runner.Start(this.simulation);
             }

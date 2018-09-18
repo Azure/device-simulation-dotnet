@@ -99,9 +99,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             };
 
             this.partitioningAgent = this.ApplicationContainer.Resolve<IPartitioningAgent>();
-
-            // TODO: uncomment when ready
-            //this.partitioningAgent.StartAsync();
+            this.partitioningAgent.StartAsync();
 
             this.simulationAgent = this.ApplicationContainer.Resolve<ISimulationAgent>();
             this.simulationAgent.RunAsync();
@@ -140,6 +138,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             log.Write("Min duration of connection loop:  " + config.SimulationConcurrencyConfig.MinDeviceConnectionLoopDuration);
             log.Write("Min duration of telemetry loop:   " + config.SimulationConcurrencyConfig.MinDeviceTelemetryLoopDuration);
             log.Write("Min duration of twin write loop:  " + config.SimulationConcurrencyConfig.MinDevicePropertiesLoopDuration);
+
+            log.Write("Max devices per partition:        " + config.ClusteringConfig.MaxPartitionSize);
         }
     }
 }
