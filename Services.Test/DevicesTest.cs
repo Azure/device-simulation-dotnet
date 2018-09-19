@@ -51,7 +51,7 @@ namespace Services.Test
                 .Setup(x => x.GetIotHubConnectionString())
                 .Returns("HostName=iothub-AAAA.azure-devices.net;SharedAccessKeyName=AAAA;SharedAccessKey=AAAA");
 
-            this.target.SetCurrentIotHub();
+            this.target.Init();
         }
 
         /** 

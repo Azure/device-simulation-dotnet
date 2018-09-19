@@ -244,8 +244,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 if (isHubPreprovisioned && isRunning)
                 {
                     iotHub.PreprovisionedIoTHubInUse = this.IsPreprovisionedIoTHubInUse(servicesConfig, connectionStringManager);
-                    var preprovisionedIoTHubMetricsUrl = this.GetIoTHubMetricsUrl(servicesConfig, deploymentConfig, connectionStringManager);
-                    iotHub.PreprovisionedIoTHubMetricsUrl = preprovisionedIoTHubMetricsUrl;
+                    iotHub.PreprovisionedIoTHubMetricsUrl = this.GetIoTHubMetricsUrl(servicesConfig, deploymentConfig, connectionStringManager);
                 }
             }
 

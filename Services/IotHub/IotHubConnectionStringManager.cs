@@ -10,6 +10,7 @@ using Microsoft.Azure.Devices.Common;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 {
@@ -27,36 +28,39 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private const string CONNSTRING_REGEX_HOSTNAME = "hostName";
         private const string CONNSTRING_REGEX_KEYNAME = "keyName";
         private const string CONNSTRING_REGEX_KEY = "key";
-        private const string CONNSTRING_FILE_NAME = "custom_iothub_key.txt";
-
-        private readonly string connStringFilePath;
+        private const string RECORD_ID = "custom_iothub_key";
+        private const int IOT_HUB_CONNECTION_STRING_TIMEOUT_SECS = 2;
 
         private readonly IServicesConfig config;
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
+        private readonly IStorageRecords mainStorage;
 
         public IotHubConnectionStringManager(
             IServicesConfig config,
+            IFactory factory,
             IDiagnosticsLogger diagnosticsLogger,
             ILogger logger)
         {
             this.config = config;
-            this.connStringFilePath = config.IoTHubDataFolder + CONNSTRING_FILE_NAME;
+            this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
         }
 
         /// <summary>
         /// Checks storage for which connection string to use.
-        /// If value is null or file doesn't exist, return the
+        /// If value is null or doesn't exist, return the
         /// value stored in the configuration file. Otherwise
         /// returns value in local storage.
         /// </summary>
         /// <returns>Full connection string including secret</returns>
         public string GetIotHubConnectionString()
         {
-            // read connection string file from webservice
-            string customIotHub = this.ReadFromFile();
+            // read connection string from webservice
+            var customIotHubTask = this.ReadFromStorageAsync();
+            customIotHubTask.Wait(IOT_HUB_CONNECTION_STRING_TIMEOUT_SECS);
+            string customIotHub = customIotHubTask.Result;
 
             // check if default hub should be used
             if (this.IsDefaultHub(customIotHub))
@@ -71,7 +75,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         /// <summary>
         /// Validates that the IoTHub Connection String is valid, stores the full
-        /// string with key in a local file, then removes the sensitive key data and
+        /// string with key in storage, then removes the sensitive key data and
         /// returns the IoTHub Connection String with an empty string for the SharedAccessKey
         /// 
         /// TODO Encryption for key & storage in documentDb instead of file
@@ -97,7 +101,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             // check if hub is in storage
             if (key.IsNullOrWhiteSpace())
             {
-                if (this.ConnectionStringIsStored(connectionString))
+                if (await this.ConnectionStringIsStoredAsync(connectionString))
                 {
                     return connectionString;
                 }
@@ -111,8 +115,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 }
             }
 
-            // store full connection string with key in local file
-            this.WriteToFile(connectionString);
+            // store full connection string with key in storage
+            await this.WriteToStorageAsync(connectionString);
 
             // redact key from connection string and return
             return connectionString.Replace(key, "");
@@ -290,15 +294,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             try
             {
                 // delete custom IoT Hub string if default hub is being used
-                File.Delete(this.connStringFilePath);
+                await this.mainStorage.DeleteAsync(RECORD_ID);
             }
             catch (Exception e)
             {
-                var msg = "Unable to delete connection string file";
-                this.log.Error(msg,
-                    () => new { this.connStringFilePath, e });
-                this.diagnosticsLogger.LogServiceError(msg,
-                    new { this.connStringFilePath, e.Message });
+                var msg = "Unable to delete connection string from storage.";
+                this.log.Error(msg, e);
+                this.diagnosticsLogger.LogServiceError(msg, e.Message);
                 throw;
             }
         }
@@ -315,10 +317,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// Returns true if the key for the redacted string is in storage.
         /// Returns false if the key for the redacted string is not in storage.
         /// </summary>
-        private bool ConnectionStringIsStored(string connectionString)
+        private async Task<bool> ConnectionStringIsStoredAsync(string connectionString)
         {
-            // get stored string from file
-            var storedHubString = this.ReadFromFile();
+            // get stored string from storage
+            var storedHubString = await this.ReadFromStorageAsync();
 
             if (connectionString.IsNullOrWhiteSpace() ||
                 storedHubString.IsNullOrWhiteSpace())
@@ -340,55 +342,51 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                    userHubKeyName == storedHubKeyName;
         }
 
-        private void WriteToFile(string connectionString)
+        private async Task WriteToStorageAsync(string connectionString)
         {
-            this.log.Debug("Write IotHub connection string to file.",
-                () => new { this.connStringFilePath });
+            this.log.Debug("Write IotHub connection string to storage.");
 
             try
             {
-                File.WriteAllText(this.connStringFilePath, connectionString);
+                await this.mainStorage.UpsertAsync(new StorageRecord
+                {
+                    Id = RECORD_ID,
+                    Data = connectionString
+                });
             }
             catch (Exception e)
             {
-                var msg = "Unable to write connection string to file";
-                this.log.Error(msg,
-                    () => new { this.connStringFilePath, e });
-                this.diagnosticsLogger.LogServiceError(msg,
-                    new { this.connStringFilePath, e.Message });
+                var msg = "Unable to write connection string to storage.";
+                this.log.Error(msg, e );
+                this.diagnosticsLogger.LogServiceError(msg, e.Message);
                 throw;
             }
         }
 
         /// <summary>
-        /// Retrieves connection string from local storage.
-        /// Returns null if file doesn't exist.
+        /// Retrieves connection string from storage.
         /// </summary>
-        private string ReadFromFile()
+        private async Task<string> ReadFromStorageAsync()
         {
-            this.log.Debug("Check for IotHub connection string from file.",
-                () => new { this.connStringFilePath });
-            if (File.Exists(this.connStringFilePath))
+            this.log.Debug("Check for IotHub connection string from storage.");
+            try
             {
-                try
-                {
-                    // remove special characters and return string
-                    return Regex.Replace(File.ReadAllText(this.connStringFilePath), @"[\r\n\t ]+", "");
-                }
-                catch (Exception e)
-                {
-                    var message = "Unable to read connection string from file";
-                    this.log.Error(message,
-                        () => new { this.connStringFilePath, e });
-                    this.diagnosticsLogger.LogServiceError(message,
-                        new { this.connStringFilePath, e.Message });
-                    return null;
-                }
+                // TODO: store into the simulation record, one connection string per simulation
+                var record = await this.mainStorage.GetAsync(RECORD_ID);
+                return record.Data;
             }
-
-            this.log.Debug("IotHub connection string file not present.",
-                () => new { this.connStringFilePath });
-            return null;
+            catch (ResourceNotFoundException)
+            {
+                this.log.Error("IoTHub connection string record not present.");
+                return null;
+            }
+            catch (Exception e)
+            {
+                var message = "Unable to read connection string from storage.";
+                this.log.Error(message, e);
+                this.diagnosticsLogger.LogServiceError(message, e.Message);
+                return null;
+            }
         }
     }
 }
