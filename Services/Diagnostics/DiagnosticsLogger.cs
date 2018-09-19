@@ -50,16 +50,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
         private readonly IHttpClient httpClient;
         private readonly IServicesConfig servicesConfig;
+        private readonly ILogger log;
         private readonly string diagnosticsEndpoint;
 
         private const string SERVICE_ERROR_EVENT = "ServiceError";
         private const string SERVICE_START_EVENT = "ServiceStart";
         private const string SERVICE_HEARTBEAT_EVENT = "ServiceHeartbeat";
 
-        public DiagnosticsLogger(IHttpClient httpClient, IServicesConfig servicesConfig)
+        public DiagnosticsLogger(IHttpClient httpClient, IServicesConfig servicesConfig, ILogger log)
         {
             this.httpClient = httpClient;
             this.servicesConfig = servicesConfig;
+            this.log = log;
             this.diagnosticsEndpoint = this.servicesConfig.DiagnosticsEndpointUrl;
         }
 
@@ -134,6 +136,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             catch
             {
                 // Failed to construct uri 
+                this.log.Info("Failed to construct diagnostics webservice uri ");
                 return null;
             }
         }
