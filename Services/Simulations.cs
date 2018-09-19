@@ -178,18 +178,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             // This value cannot be set by the user, we set it here and make sure it's "false"
             simulation.PartitioningComplete = false;
 
-            var result = await this.simulationsStorage.CreateAsync(
-                new StorageRecord
-                {
-                    Id = simulation.Id,
-                    Data = JsonConvert.SerializeObject(simulation)
-                }
-            );
-
-            simulation.ETag = result.ETag;
-            simulation.Id = result.Id;
-
-            return simulation;
+            return await this.SaveAsync(simulation, "*");
         }
 
         /// <summary>
@@ -243,19 +232,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 simulation.IotHubConnectionStrings[index] = connString;
             }
 
-            var result = await this.simulationsStorage.UpsertAsync(
-                new StorageRecord
-                {
-                    Id = simulation.Id,
-                    Data = JsonConvert.SerializeObject(simulation)
-                }
-            );
-
-            // Return the new ETag provided from storage
-            simulation.ETag = result.ETag;
-            simulation.Id = result.Id;
-
-            return simulation;
+            return await this.SaveAsync(simulation, simulation.ETag);
         }
 
         /// <summary>
@@ -407,23 +384,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 simulation.PartitioningComplete = false;
             }
 
-            var result = await this.storage.UpdateAsync(
-                STORAGE_COLLECTION,
-                simulation.Id,
-                JsonConvert.SerializeObject(simulation),
-                eTag);
+            var result = await this.simulationsStorage.UpsertAsync(
+                new StorageRecord
+                {
+                    Id = simulation.Id,
+                    Data = JsonConvert.SerializeObject(simulation)
+                },
+                eTag
+            );
+
+            // Use the new ETag provided by the storage
+            simulation.ETag = result.ETag;
+            simulation.Id = result.Id;
 
             this.log.Info("Simulation written to storage",
                 () => new
                 {
-                    simulation.Id, simulation.Enabled,
+                    simulation.Id,
+                    simulation.Enabled,
                     simulation.PartitioningComplete
                 });
-
-            simulation.Id = result.Key;
-
-            // Use the new ETag provided by the storage
-            simulation.ETag = result.ETag;
 
             return simulation;
         }

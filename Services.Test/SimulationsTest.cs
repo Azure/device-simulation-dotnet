@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
@@ -54,6 +53,13 @@ namespace Services.Test
             this.deviceModels = new Mock<IDeviceModels>();
             this.mockStorageRecords = new Mock<IStorageRecords>();
             this.mockStorageRecords.Setup(x => x.Init(It.IsAny<StorageConfig>())).Returns(this.mockStorageRecords.Object);
+
+            // Multiple tests require the passed-in StorageRecord object to be returned from storage
+            this.mockStorageRecords.Setup(
+                    x => x.UpsertAsync(
+                        It.IsAny<StorageRecord>(),
+                        It.IsAny<string>()))
+                .ReturnsAsync((StorageRecord storageRecord, string eTag) => storageRecord);
             this.mockDocumentDbWrapper = new Mock<IDocumentDbWrapper>();
             this.mockDocumentClient = new Mock<IDocumentClient>();
             this.mockStorageDocument = new Mock<IResourceResponse<Document>>();
@@ -110,7 +116,8 @@ namespace Services.Test
             SimulationModel result = this.target.InsertAsync(new SimulationModel(), "default").Result;
 
             // Assert
-            Assert.Equal(result.Created, result.Modified);
+            Assert.False(result.PartitioningComplete);
+            Assert.True(Math.Abs(result.Modified.ToUnixTimeSeconds() - result.Created.ToUnixTimeSeconds()) < 10);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -123,10 +130,18 @@ namespace Services.Test
             var simulation = new SimulationModel();
             this.StorageReturnsSimulationRecordOnCreate(simulation);
 
+            // Return the StorageRecord object that will be passed to StorageRecords
+            this.mockStorageRecords.Setup(
+                    x => x.UpsertAsync(
+                        It.IsAny<StorageRecord>(),
+                        It.IsAny<string>()))
+                .ReturnsAsync((StorageRecord storageRecord, string eTag) => storageRecord);
+
             // Act
             SimulationModel result = this.target.InsertAsync(simulation, "default").Result;
 
             // Assert
+            Assert.False(result.PartitioningComplete);
             Assert.Equal(this.models.Count, result.DeviceModels.Count);
             for (var i = 0; i < this.models.Count; i++)
             {
@@ -189,7 +204,7 @@ namespace Services.Test
 
             // Assert
             this.mockStorageRecords.Verify(
-                x => x.CreateAsync(It.IsAny<StorageRecord>()), Times.Once);
+                x => x.UpsertAsync(It.IsAny<StorageRecord>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -294,7 +309,7 @@ namespace Services.Test
             var upsertResultStorageRecord = StorageRecord.FromDocumentDb(upsertResultDocument);
 
             this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(mockStorageRecord);
-            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>())).ReturnsAsync(upsertResultStorageRecord);
+            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>(), It.IsAny<string>())).ReturnsAsync(upsertResultStorageRecord);
 
             // Act
             var returnedSimulationTask = this.target.UpsertAsync(initialSimulation);
@@ -302,6 +317,272 @@ namespace Services.Test
 
             // Assert
             Assert.Matches(ETAG2, returnedSimulationTask.Result.ETag);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItDoesNotAllowUsersToOverwritePartitioningStatus()
+        {
+            // Arrange
+            var sim = new SimulationModel
+            {
+                Id = "1",
+                Enabled = true,
+                PartitioningComplete = false
+            };
+            var record = new ValueApiModel
+            {
+                Key = "1",
+                Data = JsonConvert.SerializeObject(sim)
+            };
+
+            // Create a DocumentDB Document that will be used to create a StorageRecord object
+            var document = new Document();
+            document.Id = "foo";
+            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            var storageRecord = StorageRecord.FromDocumentDb(document);
+
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync(storageRecord);
+            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>()))
+                .ReturnsAsync(storageRecord);
+
+            // Act
+            var update = new SimulationModel
+            {
+                Id = sim.Id,
+                Enabled = true,
+                PartitioningComplete = true,
+                ETag = "*"
+            };
+            SimulationModel result = this.target.UpsertAsync(update).CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.False(result.PartitioningComplete);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItCreatesNewSimulationsWithPartitioningStateNotComplete()
+        {
+            // Arrange
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync((StorageRecord)null);
+            var sim = new SimulationModel
+            {
+                Id = "1",
+                Enabled = true,
+                PartitioningComplete = true
+            };
+            var record = new ValueApiModel
+            {
+                Key = "1",
+                Data = JsonConvert.SerializeObject(sim),
+            };
+
+            // Create a DocumentDB Document that will be used to create a StorageRecord object
+            var document = new Document();
+            document.Id = "foo";
+            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            var storageRecord = StorageRecord.FromDocumentDb(document);
+
+            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>()))
+                .ReturnsAsync(storageRecord);
+
+            // Act
+            SimulationModel result = this.target.UpsertAsync(sim).CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.False(result.PartitioningComplete);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItTriggersPartitionsDeletionWhenASimulationIsDisabled()
+        {
+            // Arrange
+            var sim = new SimulationModel
+            {
+                Id = "1",
+                Enabled = true,
+                PartitioningComplete = true,
+                ETag = "*"
+            };
+            var record = new ValueApiModel
+            {
+                Key = "1",
+                Data = JsonConvert.SerializeObject(sim)
+            };
+
+            // Create a DocumentDB Document that will be used to create a StorageRecord object
+            var document = new Document();
+            document.Id = "foo";
+            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            document.SetPropertyValue("ETag", "*");
+            var storageRecord = StorageRecord.FromDocumentDb(document);
+
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync(storageRecord);
+            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>(), It.IsAny<string>()))
+                .ReturnsAsync(storageRecord);
+
+            // Act
+            var update = new SimulationModel
+            {
+                Id = sim.Id,
+                Enabled = false,
+                PartitioningComplete = true,
+                ETag = "*"
+            };
+            var result = this.target.UpsertAsync(update).CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.False(result.Enabled);
+            Assert.False(result.PartitioningComplete);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItGenerateDevicesIdGroupedByModel()
+        {
+            // Arrange
+            var sim = new SimulationModel
+            {
+                Id = "1",
+                Enabled = true,
+                PartitioningComplete = true,
+                DeviceModels = new List<SimulationModel.DeviceModelRef>
+                {
+                    new SimulationModel.DeviceModelRef { Id = "modelA", Count = 5 },
+                    new SimulationModel.DeviceModelRef { Id = "modelB", Count = 2 },
+                    new SimulationModel.DeviceModelRef { Id = "modelC", Count = 4 }
+                }
+            };
+
+            // Act
+            Dictionary<string, List<string>> result = this.target.GetDeviceIdsByModel(sim);
+
+            // Assert
+            Assert.Equal(3, result.Count);
+            Assert.True(result.ContainsKey("modelA"));
+            Assert.True(result.ContainsKey("modelB"));
+            Assert.True(result.ContainsKey("modelC"));
+            Assert.Equal(5, result["modelA"].Count);
+            Assert.Equal(2, result["modelB"].Count);
+            Assert.Equal(4, result["modelC"].Count);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItGeneratesDeviceIdsFollowingAKnownFormat()
+        {
+            // Arrange
+            var simulationId = Guid.NewGuid().ToString();
+            var modelId1 = Guid.NewGuid().ToString();
+            var modelId2 = Guid.NewGuid().ToString();
+            var sim = new SimulationModel
+            {
+                Id = simulationId,
+                Enabled = true,
+                PartitioningComplete = true,
+                DeviceModels = new List<SimulationModel.DeviceModelRef>
+                {
+                    new SimulationModel.DeviceModelRef { Id = modelId1, Count = 3 },
+                    new SimulationModel.DeviceModelRef { Id = modelId2, Count = 2 }
+                }
+            };
+
+            // Act
+            Dictionary<string, List<string>> result = this.target.GetDeviceIdsByModel(sim);
+
+            // Assert
+            Assert.True(result.ContainsKey(modelId1));
+            Assert.True(result.ContainsKey(modelId2));
+
+            Assert.Contains($"{simulationId}.{modelId1}.1", result[modelId1]);
+            Assert.Contains($"{simulationId}.{modelId1}.2", result[modelId1]);
+            Assert.Contains($"{simulationId}.{modelId1}.3", result[modelId1]);
+
+            Assert.Contains($"{simulationId}.{modelId2}.1", result[modelId2]);
+            Assert.Contains($"{simulationId}.{modelId2}.2", result[modelId2]);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItIncludesCustomDevicesWhenGeneratingTheListOfDevices()
+        {
+            // Arrange
+            var simulationId = Guid.NewGuid().ToString();
+            var modelId1 = Guid.NewGuid().ToString();
+            var modelId2 = Guid.NewGuid().ToString();
+            var modelId3 = Guid.NewGuid().ToString();
+            var modelId4 = Guid.NewGuid().ToString();
+            var custom1 = Guid.NewGuid().ToString();
+            var custom2 = Guid.NewGuid().ToString();
+            var custom3 = Guid.NewGuid().ToString();
+            var custom4 = Guid.NewGuid().ToString();
+            var custom5 = Guid.NewGuid().ToString();
+            var sim = new SimulationModel
+            {
+                Id = simulationId,
+                Enabled = true,
+                PartitioningComplete = true,
+                DeviceModels = new List<SimulationModel.DeviceModelRef>
+                {
+                    new SimulationModel.DeviceModelRef { Id = modelId1, Count = 3 },
+                    new SimulationModel.DeviceModelRef { Id = modelId2, Count = 2 }
+                },
+                CustomDevices = new List<SimulationModel.CustomDeviceRef>
+                {
+                    new SimulationModel.CustomDeviceRef
+                    {
+                        DeviceId = custom1,
+                        DeviceModel = new SimulationModel.DeviceModelRef { Id = modelId1 }
+                    },
+                    new SimulationModel.CustomDeviceRef
+                    {
+                        DeviceId = custom2,
+                        DeviceModel = new SimulationModel.DeviceModelRef { Id = modelId1 }
+                    },
+                    new SimulationModel.CustomDeviceRef
+                    {
+                        DeviceId = custom3,
+                        DeviceModel = new SimulationModel.DeviceModelRef { Id = modelId3 }
+                    },
+                    new SimulationModel.CustomDeviceRef
+                    {
+                        DeviceId = custom4,
+                        DeviceModel = new SimulationModel.DeviceModelRef { Id = modelId3 }
+                    },
+                    new SimulationModel.CustomDeviceRef
+                    {
+                        DeviceId = custom5,
+                        DeviceModel = new SimulationModel.DeviceModelRef { Id = modelId4 }
+                    }
+                }
+            };
+
+            // Act
+            Dictionary<string, List<string>> result = this.target.GetDeviceIdsByModel(sim);
+
+            // Assert
+            Assert.Equal(4, result.Count);
+            Assert.True(result.ContainsKey(modelId1));
+            Assert.True(result.ContainsKey(modelId2));
+            Assert.True(result.ContainsKey(modelId3));
+            Assert.True(result.ContainsKey(modelId4));
+
+            Assert.Equal(5, result[modelId1].Count);
+            Assert.Equal(2, result[modelId2].Count);
+            Assert.Equal(2, result[modelId3].Count);
+            Assert.Single(result[modelId4]);
+
+            Assert.Contains($"{simulationId}.{modelId1}.1", result[modelId1]);
+            Assert.Contains($"{simulationId}.{modelId1}.2", result[modelId1]);
+            Assert.Contains($"{simulationId}.{modelId1}.3", result[modelId1]);
+
+            Assert.Contains($"{simulationId}.{modelId2}.1", result[modelId2]);
+            Assert.Contains($"{simulationId}.{modelId2}.2", result[modelId2]);
+
+            Assert.Contains(custom1, result[modelId1]);
+            Assert.Contains(custom2, result[modelId1]);
+            Assert.Contains(custom3, result[modelId3]);
+            Assert.Contains(custom4, result[modelId3]);
+            Assert.Contains(custom5, result[modelId4]);
         }
 
         private void ThereAreSomeDeviceModels()

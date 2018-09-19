@@ -86,8 +86,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         [JsonProperty(Order = 130)]
         public DateTimeOffset Modified { get; set; }
 
-        public bool PartitioningComplete { get; set; }
-
         public Simulation()
         {
             // When unspecified, a simulation is enabled
