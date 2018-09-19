@@ -54,8 +54,10 @@ namespace Services.Test.Diagnostics
             // Act
             // Logging service error sending just a message string
             this.target.LogServiceError("testmessage");
+            
             // Logging service error along with an exception
             this.target.LogServiceError("testmessage", new System.Exception().Message);
+            
             // Logging service error along with an object
             this.target.LogServiceError("testmessage", new { Test = "test" });
 

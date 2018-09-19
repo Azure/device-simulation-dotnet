@@ -97,6 +97,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             // by default, use environment variable
             this.IotHubConnectionStrings = new List<string>();
             this.DeviceModels = new List<DeviceModelRef>();
+            this.PartitioningComplete = false;
             this.CustomDevices = new List<CustomDeviceRef>();
             this.Statistics = new StatisticsRef();
 
