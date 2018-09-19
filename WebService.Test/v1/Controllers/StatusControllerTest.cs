@@ -87,7 +87,8 @@ namespace WebService.Test.v1.Controllers
                 Created = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 Modified = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 ETag = "ETag0",
-                Enabled = true
+                Enabled = true,
+                PartitioningComplete = true
             };
 
             var simulations = new List<SimulationModel>

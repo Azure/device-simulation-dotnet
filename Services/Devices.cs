@@ -21,7 +21,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface IDevices
     {
-        // Set the current IoT Hub using either the user provided one or the configuration settings
+        // Set IoTHub connection strings, using either the user provided value or the configuration, 
+        // initialize the IoT Hub registry, and perform other initializations. 
         void Init();
 
         // Get a client for the device
@@ -104,7 +105,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.setupDone = false;
         }
 
-        // Set IoTHub connection strings, using either the user provided value or the configuration
+        // Set IoTHub connection strings, using either the user provided value or the configuration, 
+        // initialize the IoT Hub registry, and perform other initializations. 
         // TODO: use the simulation object to decide which conn string to use
         public void Init()
         {
