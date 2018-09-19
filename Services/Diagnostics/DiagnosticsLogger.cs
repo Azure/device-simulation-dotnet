@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -64,18 +65,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
         public void LogServiceStart(string message)
         {
-            JsonStruct jsonStruct = new JsonStruct(SERVICE_START_EVENT + message, null);
-
-            // Run in the background without blocking
-            this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
+            var jsonStruct = new JsonStruct(SERVICE_START_EVENT + message, null);
+            this.PostRequest(this.diagnosticsEndpoint, jsonStruct);
         }
 
         public void LogServiceHeartbeat()
         {
-            JsonStruct jsonStruct = new JsonStruct(SERVICE_HEARTBEAT_EVENT, null);
-
-            // Run in the background without blocking
-            this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
+            var jsonStruct = new JsonStruct(SERVICE_HEARTBEAT_EVENT, null);
+            this.PostRequest(this.diagnosticsEndpoint, jsonStruct);
         }
 
         public void LogServiceError(
@@ -85,10 +82,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0)
         {
-            JsonStruct jsonStruct = this.ConvertServiceErrorToJson(message, exceptionMessage, null, callerName, filePath, lineNumber);
-
-            // Run in the background without blocking
-            this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
+            var jsonStruct = this.ConvertServiceErrorToJson(message, exceptionMessage, null, callerName, filePath, lineNumber);
+            this.PostRequest(this.diagnosticsEndpoint, jsonStruct);
         }
 
         public void LogServiceError(
@@ -98,10 +93,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0)
         {
-            JsonStruct jsonStruct = this.ConvertServiceErrorToJson(message, "", data, callerName, filePath, lineNumber);
-
-            // Run in the background without blocking
-            this.httpClient.PostAsync(this.PrepareRequest(this.diagnosticsEndpoint, jsonStruct));
+            var jsonStruct = this.ConvertServiceErrorToJson(message, "", data, callerName, filePath, lineNumber);
+            this.PostRequest(this.diagnosticsEndpoint, jsonStruct);
         }
 
         private JsonStruct ConvertServiceErrorToJson(string message,
@@ -131,10 +124,29 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
         private HttpRequest PrepareRequest(string path, object obj = null)
         {
-            var request = new HttpRequest();
-            request.SetUriFromString(path);
-            request.SetContent(obj);
-            return request;
+            try
+            {
+                var request = new HttpRequest();
+                request.SetUriFromString(path);
+                request.SetContent(obj);
+                return request;
+            }
+            catch
+            {
+                // Failed to construct uri 
+                return null;
+            }
+        }
+
+        private void PostRequest(string path, object obj = null)
+        {
+            var request = this.PrepareRequest(path, obj);
+
+            if (request != null)
+            {
+                // Run in the background without blocking
+                this.httpClient.PostAsync(request);
+            }
         }
     }
 }
