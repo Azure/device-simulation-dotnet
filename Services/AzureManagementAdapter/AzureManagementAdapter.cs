@@ -4,15 +4,14 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
+using System.Runtime.InteropServices;
+using System.Security;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter
 {
@@ -30,6 +29,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         private readonly IDiagnosticsLogger diagnosticsLogger;
         private readonly IHttpClient httpClient;
         private readonly ILogger log;
+        private SecureString secureAccessToken = new SecureString();
+        private DateTimeOffset tokenExpireTime = DateTimeOffset.UtcNow;
 
         public AzureManagementAdapter(
             IHttpClient httpClient,
@@ -56,11 +57,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         /// <returns></returns>
         public async Task<MetricsResponseModel> PostAsync(MetricsRequestsModel requests)
         {
+            if (this.AccessTokenIsNullOrEmpty()) await this.GetAadTokenAsync();
+
+            if (this.AccessTokenExpireSoon()) this.GetAadTokenAsync();
+
             if (requests == null) requests = this.GetDefaultMetricsRequests();
 
-            var accessToken = await this.GetAadTokenAsync();
+            var accessToken = $"Bearer {this.ReadSecureString(this.secureAccessToken)}";
 
-            var request = this.PrepareRequest($"batch?api-version={this.config.AzureManagementAdapterApiVersion}", $"Bearer {accessToken}", requests);
+            var request = this.PrepareRequest($"batch?api-version={this.config.AzureManagementAdapterApiVersion}", accessToken, requests);
 
             this.log.Debug("Azure Management request content", () => new { request.Content });
 
@@ -71,6 +76,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
             this.ThrowIfError(response);
 
             return JsonConvert.DeserializeObject<MetricsResponseModel>(response.Content);
+        }
+
+        private bool AccessTokenIsNullOrEmpty()
+        {
+            return this.secureAccessToken.Length == 0;
+        }
+
+        private bool AccessTokenExpireSoon()
+        {
+            return this.tokenExpireTime.AddMinutes(-10) < DateTimeOffset.UtcNow;
         }
 
         private HttpRequest PrepareRequest(string path, string token, MetricsRequestsModel content = null)
@@ -110,7 +125,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
                    $"$filter={this.GetDefaultMetricsQuery()}";
         }
 
-        private async Task<string> GetAadTokenAsync()
+        private async Task GetAadTokenAsync()
         {
             var request = new HttpRequest();
             request.AddHeader(HttpRequestHeader.ContentType.ToString(), "application/x-www-form-urlencoded");
@@ -133,7 +148,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
 
             this.ThrowIfError(response);
 
-            return JsonConvert.DeserializeObject<AadTokenResponseModel>(response.Content).AccessToken;
+            var tokenModel = JsonConvert.DeserializeObject<AadTokenModel>(response.Content);
+
+            this.secureAccessToken = this.GetSecureAccessToken(tokenModel.AccessToken);
+            this.tokenExpireTime = DateTimeOffset.FromUnixTimeSeconds(int.Parse(tokenModel.ExpiresOn));
+        }
+
+        private SecureString GetSecureAccessToken(string accessToken)
+        {
+            if (accessToken == null) return null;
+
+            var secureString = new SecureString();
+            foreach (var c in accessToken) secureString.AppendChar(c);
+
+            return secureString;
+        }
+
+        private string ReadSecureString(SecureString secureToken)
+        {
+            var rawToken = IntPtr.Zero;
+            try
+            {
+                rawToken = Marshal.SecureStringToGlobalAllocUnicode(secureToken);
+                return Marshal.PtrToStringUni(rawToken);
+            }
+            finally
+            {
+                Marshal.ZeroFreeGlobalAllocUnicode(rawToken);
+            }
         }
 
         /// <summary>

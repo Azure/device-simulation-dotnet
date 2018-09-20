@@ -5,13 +5,13 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter
 {
-    public class AadTokenResponseModel
+    public class AadTokenModel
     {
         [JsonProperty("token_type", NullValueHandling = NullValueHandling.Ignore)]
         public string TokenType { get; set; }
 
-        [JsonProperty("expires_in", NullValueHandling = NullValueHandling.Ignore)]
-        public string ExpiresIn { get; set; }
+        [JsonProperty("expires_on", NullValueHandling = NullValueHandling.Ignore)]
+        public string ExpiresOn { get; set; }
 
         [JsonProperty("resource", NullValueHandling = NullValueHandling.Ignore)]
         public string Resource { get; set; }
