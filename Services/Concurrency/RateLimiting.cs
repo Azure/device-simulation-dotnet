@@ -42,7 +42,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         // to ensure that concurrent simulations don't share data
         public RateLimiting(
             IRateLimitingConfig config,
-            ILogger log)
+            ILogger log,
+            IInstance instance)
         {
             this.log = log;
             this.clusterSize = 1;

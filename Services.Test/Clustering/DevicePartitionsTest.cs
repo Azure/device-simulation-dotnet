@@ -40,11 +40,11 @@ namespace Services.Test.Clustering
             this.partitionsStorage = new Mock<IStorageRecords>();
 
             // Inject configuration settings with a collection name which is then used
-            // to intercept the call to .Init()
+            // to intercept the call to .InitAsync()
             this.config.SetupGet(x => x.PartitionsStorage)
                 .Returns(new StorageConfig { DocumentDbCollection = PARTITIONS });
 
-            // Intercept the call to IStorageRecords.Init() and return the right storage mock
+            // Intercept the call to IStorageRecords.InitAsync() and return the right storage mock
             var storageMockFactory = new Mock<IStorageRecords>();
             storageMockFactory
                 .Setup(x => x.Init(It.Is<StorageConfig>(c => c.DocumentDbCollection == PARTITIONS)))

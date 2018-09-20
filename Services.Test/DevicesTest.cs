@@ -4,6 +4,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
@@ -17,41 +18,42 @@ namespace Services.Test
 {
     public class DevicesTest
     {
-        /// <summary>The test logger</summary>
+        /// <summary>The test mockLogger</summary>
         private readonly ITestOutputHelper log;
 
         private readonly Devices target;
-        private readonly Mock<IServicesConfig> config;
-        private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
-        private readonly Mock<IRegistryManager> registry;
-        private readonly Mock<IDeviceClientWrapper> deviceClient;
-        private readonly Mock<ILogger> logger;
-        private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
+        private readonly Mock<IServicesConfig> mockServicesConfig;
+        private readonly Mock<IIotHubConnectionStringManager> mockConnectionStringManager;
+        private readonly Mock<IRegistryManager> mockRegistryManager;
+        private readonly Mock<IDeviceClientWrapper> mockDeviceClient;
+        private readonly Mock<ILogger> mockLogger;
+        private readonly Mock<IDiagnosticsLogger> mockDiagnosticsLogger;
+        private readonly Mock<IInstance> mockInstance;
 
         public DevicesTest(ITestOutputHelper log)
         {
             this.log = log;
 
-            this.config = new Mock<IServicesConfig>();
-            this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
-            this.registry = new Mock<IRegistryManager>();
-            this.deviceClient = new Mock<IDeviceClientWrapper>();
-            this.logger = new Mock<ILogger>();
-            this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
+            this.mockServicesConfig = new Mock<IServicesConfig>();
+            this.mockConnectionStringManager = new Mock<IIotHubConnectionStringManager>();
+            this.mockRegistryManager = new Mock<IRegistryManager>();
+            this.mockDeviceClient = new Mock<IDeviceClientWrapper>();
+            this.mockLogger = new Mock<ILogger>();
+            this.mockDiagnosticsLogger = new Mock<IDiagnosticsLogger>();
+            this.mockInstance = new Mock<IInstance>();
 
             this.target = new Devices(
-                this.config.Object,
-                this.connectionStringManager.Object,
-                this.registry.Object,
-                this.deviceClient.Object,
-                this.logger.Object,
-                this.diagnosticsLogger.Object);
+                this.mockServicesConfig.Object,
+                this.mockConnectionStringManager.Object,
+                this.mockRegistryManager.Object,
+                this.mockDeviceClient.Object,
+                this.mockLogger.Object,
+                this.mockDiagnosticsLogger.Object,
+                this.mockInstance.Object);
 
-            this.connectionStringManager
-                .Setup(x => x.GetIotHubConnectionString())
-                .Returns("HostName=iothub-AAAA.azure-devices.net;SharedAccessKeyName=AAAA;SharedAccessKey=AAAA");
-
-            this.target.Init();
+            this.mockConnectionStringManager
+                .Setup(x => x.GetIotHubConnectionStringAsync())
+                .ReturnsAsync("HostName=iothub-AAAA.azure-devices.net;SharedAccessKeyName=AAAA;SharedAccessKey=AAAA");
         }
 
         /** 
@@ -66,7 +68,7 @@ namespace Services.Test
             // Case 1: the code uses async, and the exception surfaces explicitly
 
             // Arrange
-            this.registry.Setup(x => x.AddDeviceAsync(It.IsAny<Device>())).Throws<TaskCanceledException>();
+            this.mockRegistryManager.Setup(x => x.AddDeviceAsync(It.IsAny<Device>())).Throws<TaskCanceledException>();
 
             // Act+Assert
             Assert.ThrowsAsync<ExternalDependencyException>(
@@ -77,7 +79,7 @@ namespace Services.Test
 
             // Arrange
             var e = new AggregateException(new TaskCanceledException());
-            this.registry.Setup(x => x.AddDeviceAsync(It.IsAny<Device>())).Throws(e);
+            this.mockRegistryManager.Setup(x => x.AddDeviceAsync(It.IsAny<Device>())).Throws(e);
 
             // Act+Assert
             Assert.ThrowsAsync<ExternalDependencyException>(

@@ -175,7 +175,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 {
                     // Note: this is a singleton class, so we can call this once. This sets
                     // the active hub, e.g. in case the user provided a custom connection string.
-                    this.devices.Init();
+                    this.devices.InitAsync(simulation);
 
                     // Create the devices
                     var devices = this.simulations.GetDeviceIds(simulation);

@@ -17,13 +17,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         PropertiesLoopSettings PropertiesLoopSettings { get; }
 
         Task InitAsync(Simulation simulation);
-        
+
         // Invoked by SimulationManager.NewConnectionLoop()
         //   DeviceConnectionTask.RunAsync()
         //      -> SimulationManager.NewConnectionLoop()
         //         -> ISimulationContext.NewConnectionLoop()
         //void NewConnectionLoop();
-        
+
         // Invoked by SimulationManager.NewPropertiesLoop()
         //   UpdatePropertiesTask.RunAsync()
         //      -> SimulationManager.NewPropertiesLoop()
@@ -67,7 +67,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.ConnectionLoopSettings = new ConnectionLoopSettings(defaultRatingConfig);
             this.PropertiesLoopSettings = new PropertiesLoopSettings(defaultRatingConfig);
 
-            this.Devices.Init();
+            await this.Devices.InitAsync(simulation);
             
             this.instance.InitComplete();
         }
