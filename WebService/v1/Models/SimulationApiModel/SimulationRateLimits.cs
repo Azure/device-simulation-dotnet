@@ -37,16 +37,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         {
             var defaultRatingLimits = rateReporter.GetCounters();
 
-            if (simulationRateLimits == null)
-            {
-                simulationRateLimits = defaultRatingLimits;
-            }
-
-            var connectionsPerSecond = simulationRateLimits.ConnectionsPerSecond > 0 ? simulationRateLimits.ConnectionsPerSecond : defaultRatingLimits.ConnectionsPerSecond;
-            var registryOperationsPerMinute = simulationRateLimits.RegistryOperationsPerMinute > 0 ? simulationRateLimits.RegistryOperationsPerMinute : defaultRatingLimits.RegistryOperationsPerMinute;
-            var twinReadsPerSecond = simulationRateLimits.TwinReadsPerSecond > 0 ? simulationRateLimits.TwinReadsPerSecond : defaultRatingLimits.TwinReadsPerSecond;
-            var twinWritesPerSecond = simulationRateLimits.TwinWritesPerSecond > 0 ? simulationRateLimits.TwinWritesPerSecond : defaultRatingLimits.TwinWritesPerSecond;
-            var deviceMessagesPerSecond = simulationRateLimits.DeviceMessagesPerSecond > 0 ? simulationRateLimits.DeviceMessagesPerSecond : defaultRatingLimits.DeviceMessagesPerSecond;
+            var connectionsPerSecond = simulationRateLimits?.ConnectionsPerSecond > 0 ? simulationRateLimits.ConnectionsPerSecond : defaultRatingLimits.ConnectionsPerSecond;
+            var registryOperationsPerMinute = simulationRateLimits?.RegistryOperationsPerMinute > 0 ? simulationRateLimits.RegistryOperationsPerMinute : defaultRatingLimits.RegistryOperationsPerMinute;
+            var twinReadsPerSecond = simulationRateLimits?.TwinReadsPerSecond > 0 ? simulationRateLimits.TwinReadsPerSecond : defaultRatingLimits.TwinReadsPerSecond;
+            var twinWritesPerSecond = simulationRateLimits?.TwinWritesPerSecond > 0 ? simulationRateLimits.TwinWritesPerSecond : defaultRatingLimits.TwinWritesPerSecond;
+            var deviceMessagesPerSecond = simulationRateLimits?.DeviceMessagesPerSecond > 0 ? simulationRateLimits.DeviceMessagesPerSecond : defaultRatingLimits.DeviceMessagesPerSecond;
 
             return new SimulationRateLimits
             {
