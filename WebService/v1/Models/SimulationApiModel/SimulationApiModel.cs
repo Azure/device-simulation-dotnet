@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Jint.Parser.Ast;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
@@ -59,6 +60,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "Statistics")]
         public SimulationStatistics Statistics{ get; set; }
 
+        [JsonProperty(PropertyName = "RatingLimits")]
+        public SimulationRateLimits RateLimits { get; set; }
+
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
         {
@@ -103,9 +107,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Enabled = this.Enabled ?? true,
                 StartTime = DateHelper.ParseDateExpression(this.StartTime, now),
                 EndTime = DateHelper.ParseDateExpression(this.EndTime, now),
-                DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList()
+                DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList(),
+                RateLimits = this.RateLimits?.ToServiceModel()
             };
-
             foreach (var hub in this.IotHubs)
             {
                 result.IotHubConnectionStrings.Add(SimulationIotHub.ToServiceModel(hub));
@@ -165,6 +169,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
             result.DeviceModels = SimulationDeviceModelRef.FromServiceModel(value.DeviceModels);
             result.Statistics = SimulationStatistics.FromServiceModel(value.Statistics);
+            result.RateLimits = SimulationRateLimits.FromServiceModel(value.RateLimits, rateReporter);
             result.created = value.Created;
             result.modified = value.Modified;
 

@@ -52,7 +52,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         // The max frequency to enforce, e.g. the maximum number
         // of events allowed within a minute, a second, etc.
-        private readonly int eventsPerTimeUnit;
 
         // A description used for diagnostics logs
         private readonly string name;
@@ -63,6 +62,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         // Note: currently, the memory usage depends on the length of the period to
         //       monitor, so this is a good place for future optimizations
         private readonly Queue<long> timestamps;
+
+        // The max frequency to enforce, e.g. the maximum number
+        // of events allowed within a minute, a second, etc.
+        public int EventsPerTimeUnit { get; }
 
         public RatedCounter(int rate, double timeUnitLength, string name, ILogger logger)
         {
@@ -83,7 +86,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             }
 
             this.name = name;
-            this.eventsPerTimeUnit = rate;
+            this.EventsPerTimeUnit = rate;
             this.timeUnitLength = timeUnitLength;
 
             this.timestamps = new Queue<long>();
@@ -107,7 +110,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 this.CleanQueue(now);
 
                 // No pause if the limit hasn't been reached yet,
-                if (this.timestamps.Count < this.eventsPerTimeUnit)
+                if (this.timestamps.Count < this.EventsPerTimeUnit)
                 {
                     this.timestamps.Enqueue(now);
                     return 0;
@@ -119,14 +122,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 var howManyInTheLastTimeUnit = this.timestamps.Count(t => t > startFrom);
 
                 // No pause if the limit hasn't been reached in the last time unit
-                if (howManyInTheLastTimeUnit < this.eventsPerTimeUnit)
+                if (howManyInTheLastTimeUnit < this.EventsPerTimeUnit)
                 {
                     when = Math.Max(this.timestamps.Last(), now);
                 }
                 else
                 {
                     // Add one [time unit] since when the Nth event ran
-                    var oneUnitTimeAgo = this.timestamps.ElementAt(this.timestamps.Count - this.eventsPerTimeUnit);
+                    var oneUnitTimeAgo = this.timestamps.ElementAt(this.timestamps.Count - this.EventsPerTimeUnit);
                     when = oneUnitTimeAgo + (long) this.timeUnitLength;
                 }
 

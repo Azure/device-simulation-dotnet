@@ -4,14 +4,12 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
@@ -168,6 +166,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 // Use `starting` to exit as soon as possible, to minimize the number 
                 // of threads pending on the lock statement
                 this.starting = true;
+
+                // Override throttling limits in case they are provided by user
+                this.rateLimiting.SetCounters(simulation.RateLimits, this.log);
 
                 this.log.Info("Starting simulation...", () => new { simulation.Id });
 

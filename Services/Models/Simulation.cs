@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
@@ -51,9 +50,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public StatisticsRef Statistics { get; set; }
 
         [JsonProperty(Order = 70)]
-        public IList<CustomDeviceRef> CustomDevices { get; set; }
+        public SimulationRateLimits RateLimits { get; set; }
 
         [JsonProperty(Order = 80)]
+        public IList<CustomDeviceRef> CustomDevices { get; set; }
+
+        [JsonProperty(Order = 90)]
         public IList<string> IotHubConnectionStrings
         {
             get => this.iotHubConnectionStrings;
@@ -61,7 +63,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         }
 
         // StartTime is the time when Simulation was started
-        [JsonProperty(Order = 90)]
+        [JsonProperty(Order = 100)]
         public DateTimeOffset? StartTime
         {
             get => this.startTime;
@@ -69,7 +71,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         }
 
         // EndTime is the time when Simulation ended after running for scheduled duration
-        [JsonProperty(Order = 100)]
+        [JsonProperty(Order = 110)]
         public DateTimeOffset? EndTime
         {
             get => this.endTime;
@@ -77,13 +79,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         }
 
         // StoppedTime is the time when Simulation was explicitly stopped by user
-        [JsonProperty(Order = 100)]
+        [JsonProperty(Order = 120)]
         public DateTimeOffset? StoppedTime { get; set; }
 
-        [JsonProperty(Order = 120)]
+        [JsonProperty(Order = 130)]
         public DateTimeOffset Created { get; set; }
 
-        [JsonProperty(Order = 130)]
+        [JsonProperty(Order = 140)]
         public DateTimeOffset Modified { get; set; }
 
         public Simulation()
@@ -100,6 +102,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.PartitioningComplete = false;
             this.CustomDevices = new List<CustomDeviceRef>();
             this.Statistics = new StatisticsRef();
+            this.RateLimits = new SimulationRateLimits();
 
             this.PartitioningComplete = false;
         }
@@ -121,6 +124,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         {
             public long TotalMessagesSent { get; set; }
             public double AverageMessagesPerSecond { get; set; }
+        }
+
+        public class SimulationRateLimits
+        {
+            public int ConnectionsPerSecond { get; set; }
+            public int RegistryOperationsPerMinute { get; set; }
+            public int TwinReadsPerSecond { get; set; }
+            public int TwinWritesPerSecond { get; set; }
+            public int DeviceMessagesPerSecond { get; set; }
         }
 
         public class DeviceModelOverride
