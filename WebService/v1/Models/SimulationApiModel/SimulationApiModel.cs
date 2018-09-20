@@ -60,7 +60,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "Statistics")]
         public SimulationStatistics Statistics{ get; set; }
 
-        [JsonProperty(PropertyName = "RatingLimits")]
+        [JsonProperty(PropertyName = "RateLimits")]
         public SimulationRateLimits RateLimits { get; set; }
 
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
