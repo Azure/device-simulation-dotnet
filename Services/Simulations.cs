@@ -167,12 +167,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
             }
 
-            var iotHubConnectionStrings = new List<string>(simulation.IotHubConnectionStrings);
-            simulation.IotHubConnectionStrings.Clear();
-            foreach (var iotHubConnectionString in iotHubConnectionStrings)
+            for (var index = 0; index < simulation.IotHubConnectionStrings.Count; index++)
             {
-                var connString = await this.connectionStringManager.RedactAndStoreAsync(iotHubConnectionString);
-                simulation.IotHubConnectionStrings.Add(connString);
+                var connString = await this.connectionStringManager.RedactAndStoreAsync(simulation.IotHubConnectionStrings[index]);
+
+                if (!simulation.IotHubConnectionStrings.Contains(connString))
+                {
+                    simulation.IotHubConnectionStrings[index] = connString;
+                }
             }
 
             // This value cannot be set by the user, we set it here and make sure it's "false"
@@ -241,7 +243,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             for (var index = 0; index < simulation.IotHubConnectionStrings.Count; index++)
             {
                 var connString = await this.connectionStringManager.RedactAndStoreAsync(simulation.IotHubConnectionStrings[index]);
-                simulation.IotHubConnectionStrings[index] = connString;
+
+                if (!simulation.IotHubConnectionStrings.Contains(connString))
+                {
+                    simulation.IotHubConnectionStrings[index] = connString;
+                }
             }
 
             return await this.SaveAsync(simulation, simulation.ETag);
