@@ -18,7 +18,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
     {
         void Init(string connectionString);
 
+        IRegistryManager CreateFromConnectionString(string connString);
+
         Task<BulkRegistryOperationResult> AddDevices2Async(IEnumerable<Device> devices);
+
+        Task RemoveDeviceAsync(string deviceId);
 
         Task<BulkRegistryOperationResult> RemoveDevices2Async(IEnumerable<Device> devices, bool forceRemove);
 
@@ -57,6 +61,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             this.registry = null;
         }
 
+        public RegistryManagerWrapper(string connString)
+        {
+            this.registry = RegistryManager.CreateFromConnectionString(connString);
+        }
+
         public void Init(string connectionString)
         {
             this.instance.InitOnce();
@@ -64,11 +73,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             this.instance.InitComplete();
         }
 
+        public IRegistryManager CreateFromConnectionString(string connString)
+        {
+            return new RegistryManagerWrapper(connString);
+        }
+
+
         public async Task<BulkRegistryOperationResult> AddDevices2Async(
             IEnumerable<Device> devices)
         {
             this.instance.InitRequired();
             return await this.registry.AddDevices2Async(devices, CancellationToken.None);
+        }
+
+        public async Task RemoveDeviceAsync(string deviceId)
+        {
+            await this.registry.RemoveDeviceAsync(deviceId);
         }
 
         public async Task<BulkRegistryOperationResult> RemoveDevices2Async(

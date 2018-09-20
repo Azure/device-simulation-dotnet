@@ -216,7 +216,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             {
                 DeviceModelsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_FOLDER_KEY)),
                 DeviceModelsScriptsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_SCRIPTS_FOLDER_KEY)),
-                IoTHubDataFolder = MapRelativePath(configData.GetString(IOTHUB_DATA_FOLDER_KEY)),
                 IoTHubConnString = connstring,
                 IoTHubSdkDeviceClientTimeout = configData.GetOptionalUInt(IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY),
                 StorageAdapterApiUrl = configData.GetString(STORAGE_ADAPTER_API_URL_KEY),

@@ -34,7 +34,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
         private readonly ILogger log;
         private readonly IInstance instance;
         private readonly IDocumentDbWrapper docDb;
-        private readonly IConcurrencyConfig concurrencyConfig;
         private StorageConfig storageConfig;
 
         private IDocumentClient client;
@@ -44,8 +43,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
         public StorageRecords(
             IDocumentDbWrapper docDb,
             ILogger logger,
-            IInstance instance,
-            IConcurrencyConfig concurrencyConfig)
+            IInstance instance)
         {
             this.log = logger;
             this.instance = instance;
@@ -53,7 +51,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
             this.disposedValue = false;
             this.storageConfig = null;
             this.client = null;
-            this.concurrencyConfig = concurrencyConfig;
         }
 
         public IStorageRecords Init(StorageConfig cfg)
@@ -217,7 +214,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
             foreach (var id in ids)
             {
                 tasks.Add(this.DeleteAsync(id));
-                if (tasks.Count < this.concurrencyConfig.MaxPendingTasks) continue;
+                if (tasks.Count < this.storageConfig.MaxPendingOperations) continue;
 
                 await Task.WhenAll(tasks);
                 tasks.Clear();

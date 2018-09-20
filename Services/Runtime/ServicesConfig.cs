@@ -9,8 +9,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
     {
         string DeviceModelsFolder { get; }
         string DeviceModelsScriptsFolder { get; }
-        string IoTHubDataFolder { get; }
+        //string IoTHubDataFolder { get; }
         string IoTHubConnString { get; }
+        string IoTHubImportStorageAccount { get; set; }
         uint? IoTHubSdkDeviceClientTimeout { get; set; }
         string StorageAdapterApiUrl { get; }
         int StorageAdapterApiTimeout { get; }
@@ -52,13 +53,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             set { this.dtbf = this.NormalizePath(value); }
         }
 
-        public string IoTHubDataFolder
-        {
-            get { return this.ihf; }
-            set { this.ihf = this.NormalizePath(value); }
-        }
+        //public string IoTHubDataFolder
+        //{
+        //    get { return this.ihf; }
+        //    set { this.ihf = this.NormalizePath(value); }
+        //}
 
         public string IoTHubConnString { get; set; }
+
+        public string IoTHubImportStorageAccount { get; set; }
 
         public uint? IoTHubSdkDeviceClientTimeout { get; set; }
 

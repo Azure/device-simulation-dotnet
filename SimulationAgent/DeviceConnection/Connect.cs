@@ -47,7 +47,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
             try
             {
-                this.context.Client = this.devices.GetDeviceClient(this.context.Device, this.deviceModel.Protocol, this.scriptInterpreter);
+                this.context.Client = this.devices.GetClient(this.context.Device, this.deviceModel.Protocol, this.scriptInterpreter);
 
                 await this.context.Client.ConnectAsync();
                 await this.context.Client.RegisterMethodsForDeviceAsync(this.deviceModel.CloudToDeviceMethods, this.context.DeviceState, this.context.DeviceProperties);

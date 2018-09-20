@@ -64,10 +64,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // TODO: init using the simulation settings, not the defaults
             var defaultRatingConfig = this.factory.Resolve<IRateLimitingConfig>();
             this.RateLimiting.Init(defaultRatingConfig);
-            this.ConnectionLoopSettings = new ConnectionLoopSettings(defaultRatingConfig.RegistryOperationsPerMinute);
-            this.PropertiesLoopSettings = new PropertiesLoopSettings(defaultRatingConfig.TwinWritesPerSecond);
+            this.ConnectionLoopSettings = new ConnectionLoopSettings(defaultRatingConfig);
+            this.PropertiesLoopSettings = new PropertiesLoopSettings(defaultRatingConfig);
 
-            await this.Devices.InitAsync(simulation);
+            this.Devices.Init();
             
             this.instance.InitComplete();
         }
