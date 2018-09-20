@@ -26,7 +26,7 @@ namespace Services.Test
         private readonly Mock<IRegistryManager> registry;
         private readonly Mock<IDeviceClientWrapper> deviceClient;
         private readonly Mock<ILogger> logger;
-        private readonly int testTimeout = 1000;
+        private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
 
         public DevicesTest(ITestOutputHelper log)
         {
@@ -37,13 +37,15 @@ namespace Services.Test
             this.registry = new Mock<IRegistryManager>();
             this.deviceClient = new Mock<IDeviceClientWrapper>();
             this.logger = new Mock<ILogger>();
+            this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
 
             this.target = new Devices(
                 this.config.Object,
                 this.connectionStringManager.Object,
                 this.registry.Object,
                 this.deviceClient.Object,
-                this.logger.Object);
+                this.logger.Object,
+                this.diagnosticsLogger.Object);
 
             this.connectionStringManager
                 .Setup(x => x.GetIotHubConnectionString())

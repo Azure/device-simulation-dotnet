@@ -104,13 +104,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             try
             {
                 var simulationList = await this.simulations.GetListAsync();
-                var runningSimulation = simulationList.FirstOrDefault(s => s.ShouldBeRunning());
+                var runningSimulation = simulationList.FirstOrDefault(s => s.ShouldBeRunning);
                 simulationRunning = (runningSimulation != null);
             }
             catch (Exception e)
             {
-                errors.Add("Unable to fetch simulation status");
-                this.log.Error("Unable to fetch simulation status", e);
+                var msg = "Unable to fetch simulation status";
+                errors.Add(msg);
+                this.log.Error(msg, e);
             }
 
             return simulationRunning;

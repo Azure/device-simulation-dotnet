@@ -27,7 +27,6 @@ namespace WebService.Test.v1.Controllers
         private readonly Mock<ISimulations> simulations;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IServicesConfig> servicesConfig;
-        private readonly Mock<IDeploymentConfig> deploymentConfig;
         private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
         private readonly Mock<ISimulationRunner> simulationRunner;
         private readonly Mock<IRateLimiting> rateReporter;
@@ -40,7 +39,6 @@ namespace WebService.Test.v1.Controllers
             this.simulations = new Mock<ISimulations>();
             this.logger = new Mock<ILogger>();
             this.servicesConfig = new Mock<IServicesConfig>();
-            this.deploymentConfig = new Mock<IDeploymentConfig>();
             this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
             this.simulationRunner = new Mock<ISimulationRunner>();
             this.rateReporter = new Mock<IRateLimiting>();
@@ -89,7 +87,8 @@ namespace WebService.Test.v1.Controllers
                 Created = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 Modified = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 ETag = "ETag0",
-                Enabled = true
+                Enabled = true,
+                PartitioningComplete = true
             };
 
             var simulations = new List<SimulationModel>

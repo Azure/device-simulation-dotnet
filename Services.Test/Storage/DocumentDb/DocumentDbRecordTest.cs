@@ -19,15 +19,29 @@ namespace Services.Test.Storage.DocumentDb
         }
 
         [Fact]
+        public void ItIsNotLockedAndNotExpiredByDefault()
+        {
+            // Act
+            // Recreate the target, so that we can have confidence
+            // that a different test hasn't altered it before this test
+            // runs
+            this.target = new DocumentDbRecord();
+
+            // Assert
+            Assert.False(this.target.IsLocked());
+            Assert.False(this.target.IsExpired());
+        }
+
+        [Fact]
         public void ItCanUnlockForCurrentOwner()
         {
             // Arrange
             var ownerId = "foo";
             var ownerType = "bar";
-            var durationMs = 100;
+            var durationSeconds = 100;
 
             // Act
-            this.target.Lock(ownerId, ownerType, durationMs);
+            this.target.Lock(ownerId, ownerType, durationSeconds);
 
             // Assert
             Assert.True(this.target.CanUnlock(ownerId, ownerType));
@@ -42,6 +56,9 @@ namespace Services.Test.Storage.DocumentDb
             var durationSeconds = 1;
 
             // Act
+            // TODO: isolate this test from the actual CPU clock (i.e. find
+            // a way to redefine what "now" means), so that we don't slow
+            // down the build tests, etc.
             this.target.Lock(ownerId, ownerType, durationSeconds);
             Thread.Sleep(durationSeconds * 2 * 1000);
 
@@ -59,10 +76,10 @@ namespace Services.Test.Storage.DocumentDb
 
             // Act
             this.target.Lock(ownerId, ownerType, durationSeconds);
-            var ex = Record.Exception(() => this.target.Unlock("blarg", "bazz"));
 
             // Assert
-            Assert.IsType<ResourceIsLockedByAnotherOwnerException>(ex);
+            Assert.Throws<ResourceIsLockedByAnotherOwnerException>(
+                () => this.target.Unlock("blarg", "bazz"));
         }
 
         [Fact]
@@ -82,10 +99,10 @@ namespace Services.Test.Storage.DocumentDb
             // Arrange
             var ownerId = "foo";
             var ownerType = "bar";
-            var durationMs = 100;
+            var durationSeconds = 100;
 
             // Act
-            this.target.Lock(ownerId, ownerType, durationMs);
+            this.target.Lock(ownerId, ownerType, durationSeconds);
 
             // Assert
             Assert.True(this.target.IsLocked());
@@ -98,10 +115,10 @@ namespace Services.Test.Storage.DocumentDb
             // Arrange
             var ownerId = "foo";
             var ownerType = "bar";
-            var durationMs = 100;
+            var durationSeconds = 100;
 
             // Act
-            this.target.Lock(ownerId, ownerType, durationMs);
+            this.target.Lock(ownerId, ownerType, durationSeconds);
             this.target.Unlock(ownerId, ownerType);
             
             // Assert
@@ -114,13 +131,13 @@ namespace Services.Test.Storage.DocumentDb
             // Arrange
             var ownerId = "foo";
             var ownerType = "bar";
-            var durationMs = 1000;
+            var durationSeconds = 1000;
 
             // Act
-            this.target.Lock(ownerId, ownerType, durationMs);
+            this.target.Lock(ownerId, ownerType, durationSeconds);
 
             // Assert
-            Assert.True(this.target.IsLockedByOthers("blarg","bazz"));
+            Assert.True(this.target.IsLockedByOthers("blarg", "bazz"));
         }
 
         [Fact]
@@ -129,10 +146,10 @@ namespace Services.Test.Storage.DocumentDb
             // Arrange
             var ownerId = "foo";
             var ownerType = "bar";
-            var durationMs = 1000;
+            var durationSeconds = 1000;
 
             // Act
-            this.target.Lock(ownerId, ownerType, durationMs);
+            this.target.Lock(ownerId, ownerType, durationSeconds);
 
             // Assert
             Assert.True(this.target.IsLockedBy(ownerId, ownerType));

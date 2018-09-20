@@ -3,7 +3,9 @@
 using System.Reflection;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
@@ -15,6 +17,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTeleme
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Agent = Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Agent;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 {
@@ -63,6 +66,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             // Auto-wire SimulationAgent.DLL
             assembly = typeof(ISimulationAgent).GetTypeInfo().Assembly;
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
+
+            // Auto-wire PartitioningAgent.DLL
+            assembly = typeof(IPartitioningAgent).GetTypeInfo().Assembly;
+            builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
         }
 
         /// <summary>
@@ -98,6 +105,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterInstance(config.ServicesConfig).As<IServicesConfig>().SingleInstance();
             builder.RegisterInstance(config.RateLimitingConfig).As<IRateLimitingConfig>().SingleInstance();
             builder.RegisterInstance(config.DeploymentConfig).As<IDeploymentConfig>().SingleInstance();
+            builder.RegisterInstance(config.SimulationConcurrencyConfig).As<ISimulationConcurrencyConfig>().SingleInstance();
+            builder.RegisterInstance(config.ClusteringConfig).As<IClusteringConfig>().SingleInstance();
 
             // Instantiate only one logger
             var logger = new Logger(Uptime.ProcessId, config.LoggingConfig);
@@ -115,6 +124,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterType<DeviceModels>().As<IDeviceModels>().SingleInstance();
             builder.RegisterType<Services.Devices>().As<IDevices>().SingleInstance();
             builder.RegisterType<RateLimiting>().As<IRateLimiting>().SingleInstance();
+            builder.RegisterType<DiagnosticsLogger>().As<IDiagnosticsLogger>().SingleInstance();
 
             // The simulation runner contains the service counters, which are read and
             // written by multiple parts of the application, so we need to make sure 

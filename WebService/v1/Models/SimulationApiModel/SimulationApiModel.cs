@@ -133,7 +133,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Name = value.Name,
                 Description = value.Description,
                 Enabled = value.Enabled,
-                Running = value.ShouldBeRunning(),
+                Running = value.ShouldBeRunning,
                 StartTime = value.StartTime.ToString(),
                 EndTime = value.EndTime.ToString(),
                 StoppedTime = value.StoppedTime.ToString(),

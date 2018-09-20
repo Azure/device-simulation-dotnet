@@ -26,6 +26,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     {
         private readonly IDeviceClientWrapper client;
         private readonly ILogger log;
+        private readonly IDiagnosticsLogger diagnosticsLogger;
         private readonly IScriptInterpreter scriptInterpreter;
         private IDictionary<string, Script> cloudToDeviceMethods;
         private ISmartDictionary deviceState;
@@ -36,10 +37,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public DeviceMethods(
             IDeviceClientWrapper client,
             ILogger logger,
+            IDiagnosticsLogger diagnosticsLogger,
             IScriptInterpreter scriptInterpreter)
         {
             this.client = client;
             this.log = logger;
+            this.diagnosticsLogger = diagnosticsLogger;
             this.scriptInterpreter = scriptInterpreter;
             this.deviceId = string.Empty;
             this.isRegistered = false;
@@ -106,7 +109,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Failed executing method.", () => new { methodRequest, e });
+                var msg = "Failed executing method.";
+                this.log.Error(msg, () => new { methodRequest, e });
+                this.diagnosticsLogger.LogServiceError(msg, new { methodRequest, e.Message });
                 return Task.FromResult(new MethodResponse((int) HttpStatusCode.InternalServerError));
             }
         }
@@ -151,13 +156,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Error while executing method for device",
+                var msg = "Error while executing method for device";
+                this.log.Error(msg,
                     () => new
                     {
                         this.deviceId,
                         methodName = methodRequest.Name,
                         methodRequest.DataAsJson,
                         e
+                    });
+                this.diagnosticsLogger.LogServiceError(msg,
+                    new
+                    {
+                        this.deviceId,
+                        methodName = methodRequest.Name,
+                        methodRequest.DataAsJson,
+                        e.Message
                     });
             }
         }

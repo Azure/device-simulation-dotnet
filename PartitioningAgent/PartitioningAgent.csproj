@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp2.0</TargetFramework>
+        <AssemblyName>Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent</AssemblyName>
+        <RootNamespace>Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent</RootNamespace>
+        <LangVersion>latest</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Services\Services.csproj"/>
+    </ItemGroup>
+
+</Project>
