@@ -41,6 +41,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
         {
             // Arrange
             var simulation = this.GetSimulationModel();
+            this.SetupRateReporter();
 
             // Act
             var result = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel.FromServiceModel(
@@ -141,6 +142,20 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             this.connectionStringManager
                 .Setup(x => x.ValidateConnectionStringAsync(It.IsAny<string>()))
                 .Returns(Task.CompletedTask);
+        }
+
+        private void SetupRateReporter()
+        {
+            this.rateReporter
+                .Setup(x => x.GetCounters())
+                .Returns(new Simulation.SimulationRateLimits
+                {
+                    ConnectionsPerSecond = It.IsAny<int>(),
+                    RegistryOperationsPerMinute = It.IsAny<int>(),
+                    TwinWritesPerSecond = It.IsAny<int>(),
+                    TwinReadsPerSecond = It.IsAny<int>(),
+                    DeviceMessagesPerSecond = It.IsAny<int>()
+                });
         }
 
         private Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel GetInvalidSimulationApiModel(Func<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel, Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel> func)
