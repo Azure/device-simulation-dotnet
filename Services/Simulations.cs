@@ -35,7 +35,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Create or Replace a simulation.
         /// </summary>
-        Task<Models.Simulation> UpsertAsync(Models.Simulation simulation);
+        Task<Models.Simulation> UpsertAsync(Models.Simulation simulation, bool updatePartitioningCompleteFlag = false);
 
         /// <summary>
         /// Modify a simulation.
@@ -187,7 +187,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// Create or Replace a simulation.
         /// The logic works under the assumption that there is only one simulation with id "1".
         /// </summary>
-        public async Task<Models.Simulation> UpsertAsync(Models.Simulation simulation)
+        public async Task<Models.Simulation> UpsertAsync(Models.Simulation simulation, bool updatePartitioningCompleteFlag = false)
         {
             if (string.IsNullOrEmpty(simulation.Id))
             {
@@ -227,8 +227,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 simulation.Created = existingSimulation.Created;
 
-                // This value cannot be set by the user, making sure we persist the existing state
-                simulation.PartitioningComplete = existingSimulation.PartitioningComplete;
+                // This value must not be set through an API call, so we need to make sure to use
+                // the value in storage, except for when the partitioning agent is calling Upsert
+                if (!updatePartitioningCompleteFlag)
+                {
+                    simulation.PartitioningComplete = existingSimulation.PartitioningComplete;
+                }
             }
             else
             {

@@ -121,8 +121,8 @@ namespace Services.Test.Clustering
             this.target.CreateAsync(SIM_ID).CompleteOrTimeout();
 
             // Assert
-            this.simulations.Verify(x => x.UpsertAsync(It.Is<SimulationModel>(s => s.Id == SIM_ID && s.PartitioningComplete)), Times.Once);
-            this.simulations.Verify(x => x.UpsertAsync(It.IsAny<SimulationModel>()), Times.Once);
+            this.simulations.Verify(x => x.UpsertAsync(It.Is<SimulationModel>(s => s.Id == SIM_ID && s.PartitioningComplete), It.IsAny<bool>()), Times.Once);
+            this.simulations.Verify(x => x.UpsertAsync(It.IsAny<SimulationModel>(), It.IsAny<bool>()), Times.Once);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -137,7 +137,7 @@ namespace Services.Test.Clustering
 
             // Assert
             this.partitionsStorage.Verify(x => x.DeleteAsync(It.IsAny<string>()), Times.AtLeastOnce);
-            this.simulations.Verify(x => x.UpsertAsync(It.IsAny<SimulationModel>()), Times.Never);
+            this.simulations.Verify(x => x.UpsertAsync(It.IsAny<SimulationModel>(), It.IsAny<bool>()), Times.Never);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

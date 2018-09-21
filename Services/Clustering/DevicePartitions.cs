@@ -65,7 +65,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             await this.CreatePartitionsInternalAsync(simulation, deviceIdsByModel);
             this.log.Debug("The simulation partitioning is complete", () => new { SimulationId = simulation.Id });
             simulation.PartitioningComplete = true;
-            await this.simulations.UpsertAsync(simulation);
+            await this.simulations.UpsertAsync(simulation, true);
 
             // Insert new devices, remove deleted devices
             // TODO
