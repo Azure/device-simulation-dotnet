@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
@@ -13,6 +15,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Devices;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel;
+using SimulationStatistics = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.SimulationStatistics;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers
 {
@@ -92,8 +95,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 simulationApiModel = new SimulationApiModel();
             }
 
-            var simulation = await this.simulationsService.InsertAsync(simulationApiModel.ToServiceModel(), template);
-            return await SimulationApiModel.FromServiceModelAsync(
+            var simulation = await this.simulationsService.InsertAsync(simulationApiModel.ToServiceModel(null), template);
+            return SimulationApiModel.FromServiceModel(
                 simulation, 
                 this.servicesConfig, 
                 this.deploymentConfig, 
@@ -115,8 +118,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data provided, request object is empty.");
             }
 
-            var simulation = await this.simulationsService.UpsertAsync(simulationApiModel.ToServiceModel(id));
-            return await SimulationApiModel.FromServiceModelAsync(
+            // Load the existing resource, so that internal properties can be copied
+            var existingSimulation = await this.GetExistingSimulationAsync(id);
+
+            var simulation = await this.simulationsService.UpsertAsync(simulationApiModel.ToServiceModel(existingSimulation, id));
+            return SimulationApiModel.FromServiceModel(
                 simulation, 
                 this.servicesConfig, 
                 this.deploymentConfig, 
@@ -170,11 +176,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data or invalid data provided");
             }
 
-            var patchServiceModel = patch.ToServiceModel(id);
-
+            SimulationPatch patchServiceModel = patch.ToServiceModel(id);
             if (patchServiceModel.Enabled == false)
             {
-                patchServiceModel.Statistics = new Services.Models.SimulationStatistics
+                patchServiceModel.Statistics = new SimulationStatistics
                 {
                     AverageMessagesPerSecond = this.rateReporter.GetThroughputForMessages(),
                     TotalMessagesSent = this.simulationRunner.TotalMessagesCount
@@ -195,6 +200,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         public async Task DeleteAsync(string id)
         {
             await this.simulationsService.DeleteAsync(id);
+        }
+
+        private async Task<Simulation> GetExistingSimulationAsync(string id)
+        {
+            try
+            {
+                return await this.simulationsService.GetAsync(id);
+            }
+            catch (ResourceNotFoundException)
+            {
+                return null;
+            }
         }
     }
 }

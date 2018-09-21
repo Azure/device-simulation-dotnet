@@ -167,12 +167,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
             }
 
-            var iotHubConnectionStrings = new List<string>(simulation.IotHubConnectionStrings);
-            simulation.IotHubConnectionStrings.Clear();
-            foreach (var iotHubConnectionString in iotHubConnectionStrings)
+            for (var index = 0; index < simulation.IotHubConnectionStrings.Count; index++)
             {
-                var connString = await this.connectionStringManager.RedactAndStoreAsync(iotHubConnectionString);
-                simulation.IotHubConnectionStrings.Add(connString);
+                var connString = await this.connectionStringManager.RedactAndStoreAsync(simulation.IotHubConnectionStrings[index]);
+
+                if (!simulation.IotHubConnectionStrings.Contains(connString))
+                {
+                    simulation.IotHubConnectionStrings[index] = connString;
+                }
             }
 
             // This value cannot be set by the user, we set it here and make sure it's "false"
@@ -192,7 +194,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 throw new InvalidInputException("Simulation ID is not specified.");
             }
 
-            var existingSimulation = await this.GetAsync(simulation.Id);
+            Models.Simulation existingSimulation = null;
+
+            try
+            {
+                existingSimulation = await this.GetAsync(simulation.Id);
+            }
+            catch (ResourceNotFoundException)
+            {
+                // Do nothing - this mean simulation does not exist in storage
+                // Therefore allow to create a new simulation
+                this.log.Info("Simulation not found in storage, hence proceeding to create new simulation");
+            }
+
             if (existingSimulation != null)
             {
                 this.log.Info("Modifying simulation");
@@ -212,10 +226,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
 
                 simulation.Created = existingSimulation.Created;
-
-                // This value cannot be set by the user, making sure we persist the existing state
-                // TODO: figure out how to not overwrite this so that simulations will start
-                //simulation.PartitioningComplete = existingSimulation.PartitioningComplete;
             }
             else
             {
@@ -230,7 +240,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             for (var index = 0; index < simulation.IotHubConnectionStrings.Count; index++)
             {
                 var connString = await this.connectionStringManager.RedactAndStoreAsync(simulation.IotHubConnectionStrings[index]);
-                simulation.IotHubConnectionStrings[index] = connString;
+
+                if (!simulation.IotHubConnectionStrings.Contains(connString))
+                {
+                    simulation.IotHubConnectionStrings[index] = connString;
+                }
             }
 
             return await this.SaveAsync(simulation, simulation.ETag);

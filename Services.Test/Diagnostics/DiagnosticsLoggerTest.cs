@@ -15,17 +15,20 @@ namespace Services.Test.Diagnostics
 
         private readonly DiagnosticsLogger target;
         private readonly Mock<IHttpClient> mockHttpClient;
+        private readonly Mock<ILogger> mockLogger;
 
         public DiagnosticsLoggerTest()
         {
             this.mockHttpClient = new Mock<IHttpClient>();
+            this.mockLogger = new Mock<ILogger>();
 
             this.target = new DiagnosticsLogger(
                 this.mockHttpClient.Object,
                 new ServicesConfig
                 {
                     DiagnosticsEndpointUrl = DIAGNOSTICS_SERVICE_URL
-                });
+                },
+                this.mockLogger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
