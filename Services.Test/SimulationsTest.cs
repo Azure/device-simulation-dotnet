@@ -250,7 +250,7 @@ namespace Services.Test
             // different ETag than the one we're trying to use to upsert
             var document = new Document();
             document.Id = "foo";
-            document.SetPropertyValue("ETag", ETAG2);
+            document.SetPropertyValue("_etag", ETAG2);
             document.SetPropertyValue("Data", JsonConvert.SerializeObject(updatedSimulation));
             var mockStorageRecord = StorageRecord.FromDocumentDb(document);
             this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(mockStorageRecord);
@@ -269,7 +269,7 @@ namespace Services.Test
                 .Wait(Constants.TEST_TIMEOUT);
         }
 
-        [Fact(Skip = "This needs updates around ETag"), Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void UpsertWillSucceedWhenETagsMatch()
         {
             // Arrange
@@ -288,7 +288,7 @@ namespace Services.Test
             // same ETag value as the one we're trying to use to upsert with.
             var document = new Document();
             document.Id = "foo";
-            document.SetPropertyValue("ETag", ETAG1);
+            document.SetPropertyValue("_etag", ETAG1);
             document.SetPropertyValue("Data", JsonConvert.SerializeObject(existingSimulation));
             var mockStorageRecord = StorageRecord.FromDocumentDb(document);
 
@@ -304,7 +304,7 @@ namespace Services.Test
             // which will contain an updated ETag
             var upsertResultDocument = new Document();
             upsertResultDocument.Id = "bar";
-            upsertResultDocument.SetPropertyValue("ETag", ETAG2);
+            upsertResultDocument.SetPropertyValue("_etag", ETAG2);
             upsertResultDocument.SetPropertyValue("Data", JsonConvert.SerializeObject(initialSimulation));
             var upsertResultStorageRecord = StorageRecord.FromDocumentDb(upsertResultDocument);
 
