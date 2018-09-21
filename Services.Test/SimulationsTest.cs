@@ -250,7 +250,7 @@ namespace Services.Test
             // different ETag than the one we're trying to use to upsert
             var document = new Document();
             document.Id = "foo";
-            document.SetPropertyValue("ETag", ETAG2);
+            document.SetPropertyValue("_etag", ETAG2);
             document.SetPropertyValue("Data", JsonConvert.SerializeObject(updatedSimulation));
             var mockStorageRecord = StorageRecord.FromDocumentDb(document);
             this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(mockStorageRecord);
@@ -288,7 +288,7 @@ namespace Services.Test
             // same ETag value as the one we're trying to use to upsert with.
             var document = new Document();
             document.Id = "foo";
-            document.SetPropertyValue("ETag", ETAG1);
+            document.SetPropertyValue("_etag", ETAG1);
             document.SetPropertyValue("Data", JsonConvert.SerializeObject(existingSimulation));
             var mockStorageRecord = StorageRecord.FromDocumentDb(document);
 
@@ -304,7 +304,7 @@ namespace Services.Test
             // which will contain an updated ETag
             var upsertResultDocument = new Document();
             upsertResultDocument.Id = "bar";
-            upsertResultDocument.SetPropertyValue("ETag", ETAG2);
+            upsertResultDocument.SetPropertyValue("_etag", ETAG2);
             upsertResultDocument.SetPropertyValue("Data", JsonConvert.SerializeObject(initialSimulation));
             var upsertResultStorageRecord = StorageRecord.FromDocumentDb(upsertResultDocument);
 
@@ -317,47 +317,6 @@ namespace Services.Test
 
             // Assert
             Assert.Matches(ETAG2, returnedSimulationTask.Result.ETag);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItDoesNotAllowUsersToOverwritePartitioningStatus()
-        {
-            // Arrange
-            var sim = new SimulationModel
-            {
-                Id = "1",
-                Enabled = true,
-                PartitioningComplete = false
-            };
-            var record = new ValueApiModel
-            {
-                Key = "1",
-                Data = JsonConvert.SerializeObject(sim)
-            };
-
-            // Create a DocumentDB Document that will be used to create a StorageRecord object
-            var document = new Document();
-            document.Id = "foo";
-            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
-            var storageRecord = StorageRecord.FromDocumentDb(document);
-
-            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
-                .ReturnsAsync(storageRecord);
-            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>()))
-                .ReturnsAsync(storageRecord);
-
-            // Act
-            var update = new SimulationModel
-            {
-                Id = sim.Id,
-                Enabled = true,
-                PartitioningComplete = true,
-                ETag = "*"
-            };
-            SimulationModel result = this.target.UpsertAsync(update).CompleteOrTimeout().Result;
-
-            // Assert
-            Assert.False(result.PartitioningComplete);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
