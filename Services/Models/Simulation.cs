@@ -59,7 +59,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public IList<string> IotHubConnectionStrings
         {
             get => this.iotHubConnectionStrings;
-            set => this.iotHubConnectionStrings = value ?? new List<string>();
+            set => this.iotHubConnectionStrings = value ?? new List<string> { ServicesConfig.USE_DEFAULT_IOTHUB };
         }
 
         // StartTime is the time when Simulation was started
@@ -97,7 +97,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.EndTime = DateTimeOffset.MaxValue;
 
             // by default, use environment variable
-            this.IotHubConnectionStrings = new List<string>();
+            this.IotHubConnectionStrings = new List<string> { ServicesConfig.USE_DEFAULT_IOTHUB };
             this.DeviceModels = new List<DeviceModelRef>();
             this.PartitioningComplete = false;
             this.CustomDevices = new List<CustomDeviceRef>();
