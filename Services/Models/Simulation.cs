@@ -91,17 +91,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             // When unspecified, a simulation is enabled
             this.Enabled = true;
 
-            this.StartTime = DateTimeOffset.MinValue;
-            this.EndTime = DateTimeOffset.MaxValue;
+            // By default, a new simulation requires partitioning
+            this.PartitioningComplete = false;
 
             // by default, use environment variable
             this.IotHubConnectionStrings = new List<string> { ServicesConfig.USE_DEFAULT_IOTHUB };
+
+            // By default, run forever
+            this.StartTime = DateTimeOffset.MinValue;
+            this.EndTime = DateTimeOffset.MaxValue;
+
             this.DeviceModels = new List<DeviceModelRef>();
-            this.PartitioningComplete = false;
             this.CustomDevices = new List<CustomDeviceRef>();
             this.Statistics = new StatisticsRef();
-
-            this.PartitioningComplete = false;
         }
 
         public class DeviceModelRef

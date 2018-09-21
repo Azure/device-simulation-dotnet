@@ -43,7 +43,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
             var result = new StorageRecord
             {
                 Id = document.Id,
-                ETag = document.GetPropertyValue<string>("ETag"),
+                ETag = document.ETag,
                 Data = document.GetPropertyValue<string>("Data")
             };
 
