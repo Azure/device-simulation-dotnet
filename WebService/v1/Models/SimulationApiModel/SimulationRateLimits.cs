@@ -33,7 +33,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         }
 
         // Map API model to service model
-        public static SimulationRateLimits FromServiceModel(Services.Models.Simulation.SimulationRateLimits simulationRateLimits, IRateLimiting rateReporter)
+        public static SimulationRateLimits FromServiceModel(
+            Services.Models.Simulation.SimulationRateLimits simulationRateLimits,
+            IRateLimiting rateReporter)
         {
             var defaultRatingLimits = rateReporter.GetCounters();
 
