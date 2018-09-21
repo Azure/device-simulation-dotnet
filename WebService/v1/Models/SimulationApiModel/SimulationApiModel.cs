@@ -38,6 +38,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "Enabled")]
         public bool? Enabled { get; set; }
 
+        // Note: read-only property, used only to report the simulation status
         [JsonProperty(PropertyName = "Running")]
         public bool? Running { get; set; }
 
@@ -50,15 +51,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "EndTime")]
         public string EndTime { get; set; }
 
+        // Note: read-only property, used only to report the simulation status
         [JsonProperty(PropertyName = "StoppedTime")]
         public string StoppedTime { get; set; }
 
         [JsonProperty(PropertyName = "DeviceModels")]
         public IList<SimulationDeviceModelRef> DeviceModels { get; set; }
 
+        // Note: read-only property, used only to report the simulation status
         [JsonProperty(PropertyName = "Statistics")]
-        public SimulationStatistics Statistics{ get; set; }
+        public SimulationStatistics Statistics { get; set; }
 
+        // Note: read-only metadata
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
         {
@@ -86,25 +90,36 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             this.Statistics = new SimulationStatistics();
         }
 
-        // Map API model to service model
-        public Simulation ToServiceModel(string id = "")
+        // Map API model to service model, keeping the original fields when needed
+        public Simulation ToServiceModel(Simulation existingSimulation, string id = "")
         {
-            this.Id = id;
-
             var now = DateTimeOffset.UtcNow;
 
-            var result = new Simulation
+            // ID can be empty, e.g. with POST requests
+            this.Id = id;
+
+            // Use the existing simulation fields if available, so that read-only values are not lost
+            // e.g. the state of partitioning, device creation, etc.
+            var result = new Simulation();
+            if (existingSimulation != null)
             {
-                ETag = this.ETag,
-                Id = this.Id,
-                Name = this.Name,
-                Description = this.Description,
-                // When unspecified, a simulation is enabled
-                Enabled = this.Enabled ?? true,
-                StartTime = DateHelper.ParseDateExpression(this.StartTime, now),
-                EndTime = DateHelper.ParseDateExpression(this.EndTime, now),
-                DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList()
-            };
+                result = existingSimulation;
+            }
+
+            result.ETag = this.ETag;
+            result.Id = this.Id;
+            result.Name = this.Name;
+            result.Description = this.Description;
+            result.StartTime = DateHelper.ParseDateExpression(this.StartTime, now);
+            result.EndTime = DateHelper.ParseDateExpression(this.EndTime, now);
+            result.DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList();
+
+            // Overwrite the value only if the request included the field, i.e. don't
+            // enable/disable the simulation if the user didn't explicitly ask to.
+            if (this.Enabled.HasValue)
+            {
+                result.Enabled = this.Enabled.Value;
+            }
 
             foreach (var hub in this.IotHubs)
             {
@@ -132,7 +147,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Name = value.Name,
                 Description = value.Description,
                 Enabled = value.Enabled,
-                Running = value.ShouldBeRunning(),
+                Running = value.ShouldBeRunning,
                 StartTime = value.StartTime.ToString(),
                 EndTime = value.EndTime.ToString(),
                 StoppedTime = value.StoppedTime.ToString(),
@@ -228,8 +243,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
         // Append additional Hub properties and Statistics 
         private void AppendHubPropertiesAndStatistics(
-            IServicesConfig servicesConfig, 
-            IDeploymentConfig deploymentConfig, 
+            IServicesConfig servicesConfig,
+            IDeploymentConfig deploymentConfig,
             IIotHubConnectionStringManager connectionStringManager,
             ISimulationRunner simulationRunner,
             IRateLimiting rateReporter)
@@ -244,8 +259,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 if (isHubPreprovisioned && isRunning)
                 {
                     iotHub.PreprovisionedIoTHubInUse = this.IsPreprovisionedIoTHubInUse(servicesConfig, connectionStringManager);
-                    var preprovisionedIoTHubMetricsUrl = this.GetIoTHubMetricsUrl(servicesConfig, deploymentConfig, connectionStringManager);
-                    iotHub.PreprovisionedIoTHubMetricsUrl = preprovisionedIoTHubMetricsUrl;
+                    iotHub.PreprovisionedIoTHubMetricsUrl = this.GetIoTHubMetricsUrl(servicesConfig, deploymentConfig, connectionStringManager);
                 }
             }
 

@@ -13,6 +13,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         private DateTimeOffset? endTime;
         private IList<string> iotHubConnectionStrings;
 
+        [JsonIgnore]
+        public bool IsActiveNow => this.Enabled &&
+                                   (!this.StartTime.HasValue || this.StartTime.Value.CompareTo(DateTimeOffset.UtcNow) <= 0) &&
+                                   (!this.EndTime.HasValue || this.EndTime.Value.CompareTo(DateTimeOffset.UtcNow) > 0);
+
+        [JsonIgnore]
+        public bool PartitioningRequired => this.IsActiveNow && !this.PartitioningComplete;
+
+        [JsonIgnore]
+        public bool ShouldBeRunning => this.IsActiveNow && this.PartitioningComplete;
+
         // When Simulation is written to storage, Id and Etag are not serialized as part of body
         // These are instead written in dedicated columns (key and eTag)
         [JsonIgnore]
@@ -21,16 +32,36 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         [JsonIgnore]
         public string Id { get; set; }
 
-        public string Name { get; set; }
-        public string Description { get; set; }
+        [JsonProperty(Order = 10)]
         public bool Enabled { get; set; }
+
+        [JsonProperty(Order = 20)]
+        public string Name { get; set; }
+
+        [JsonProperty(Order = 30)]
+        public string Description { get; set; }
+
+        [JsonProperty(Order = 40)]
+        public bool PartitioningComplete { get; set; }
+
+        [JsonProperty(Order = 50)]
         public IList<DeviceModelRef> DeviceModels { get; set; }
-        public DateTimeOffset Created { get; set; }
-        public DateTimeOffset Modified { get; set; }
+
+        [JsonProperty(Order = 60)]
         public StatisticsRef Statistics { get; set; }
+
+        [JsonProperty(Order = 70)]
         public IList<CustomDeviceRef> CustomDevices { get; set; }
 
+        [JsonProperty(Order = 80)]
+        public IList<string> IotHubConnectionStrings
+        {
+            get => this.iotHubConnectionStrings;
+            set => this.iotHubConnectionStrings = value ?? new List<string> { ServicesConfig.USE_DEFAULT_IOTHUB };
+        }
+
         // StartTime is the time when Simulation was started
+        [JsonProperty(Order = 90)]
         public DateTimeOffset? StartTime
         {
             get => this.startTime;
@@ -38,6 +69,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         }
 
         // EndTime is the time when Simulation ended after running for scheduled duration
+        [JsonProperty(Order = 100)]
         public DateTimeOffset? EndTime
         {
             get => this.endTime;
@@ -45,24 +77,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         }
 
         // StoppedTime is the time when Simulation was explicitly stopped by user
+        [JsonProperty(Order = 100)]
         public DateTimeOffset? StoppedTime { get; set; }
 
-        public IList<string> IotHubConnectionStrings
-        {
-            get => this.iotHubConnectionStrings;
-            set => this.iotHubConnectionStrings = value ?? new List<string> { };
-        }
+        [JsonProperty(Order = 120)]
+        public DateTimeOffset Created { get; set; }
+
+        [JsonProperty(Order = 130)]
+        public DateTimeOffset Modified { get; set; }
 
         public Simulation()
         {
             // When unspecified, a simulation is enabled
             this.Enabled = true;
 
+            // By default, a new simulation requires partitioning
+            this.PartitioningComplete = false;
+
+            // by default, use environment variable
+            this.IotHubConnectionStrings = new List<string> { ServicesConfig.USE_DEFAULT_IOTHUB };
+
+            // By default, run forever
             this.StartTime = DateTimeOffset.MinValue;
             this.EndTime = DateTimeOffset.MaxValue;
 
-            // by default, use environment variable
-            this.IotHubConnectionStrings = new List<string> { };
             this.DeviceModels = new List<DeviceModelRef>();
             this.CustomDevices = new List<CustomDeviceRef>();
             this.Statistics = new StatisticsRef();
@@ -193,15 +231,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
                 this.Format = null;
                 this.Fields = null;
             }
-        }
-
-        public bool ShouldBeRunning()
-        {
-            var now = DateTimeOffset.UtcNow;
-
-            return this.Enabled
-                   && (!this.StartTime.HasValue || this.StartTime.Value.CompareTo(now) <= 0)
-                   && (!this.EndTime.HasValue || this.EndTime.Value.CompareTo(now) > 0);
         }
     }
 }
