@@ -175,6 +175,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 simulation.IotHubConnectionStrings.Add(connString);
             }
 
+            // This value cannot be set by the user, we set it here and make sure it's "false"
+            simulation.PartitioningComplete = false;
+
             return await this.SaveAsync(simulation, "*");
         }
 
@@ -209,9 +212,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
 
                 simulation.Created = existingSimulation.Created;
-
-                // This value cannot be set by the user, making sure we persist the existing state
-                simulation.PartitioningComplete = existingSimulation.PartitioningComplete;
             }
             else
             {
