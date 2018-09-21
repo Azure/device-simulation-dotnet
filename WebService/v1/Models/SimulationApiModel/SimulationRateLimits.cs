@@ -7,19 +7,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 {
     public class SimulationRateLimits
     {
-        [JsonProperty(PropertyName = "ConnectionsPerSecond", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(PropertyName = "ConnectionsPerSecond")]
         public int ConnectionsPerSecond { get; set; }
 
-        [JsonProperty(PropertyName = "RegistryOperationsPerMinute", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(PropertyName = "RegistryOperationsPerMinute")]
         public int RegistryOperationsPerMinute { get; set; }
 
-        [JsonProperty(PropertyName = "TwinReadsPerSecond", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(PropertyName = "TwinReadsPerSecond")]
         public int TwinReadsPerSecond { get; set; }
 
-        [JsonProperty(PropertyName = "TwinWritesPerSecond", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(PropertyName = "TwinWritesPerSecond")]
         public int TwinWritesPerSecond { get; set; }
 
-        [JsonProperty(PropertyName = "DeviceMessagesPerSecond", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(PropertyName = "DeviceMessagesPerSecond")]
         public int DeviceMessagesPerSecond { get; set; }
 
         // Default constructor used by web service requests

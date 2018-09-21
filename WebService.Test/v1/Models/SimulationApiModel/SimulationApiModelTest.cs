@@ -50,6 +50,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             // Assert
             Assert.IsType<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel>(result);
             Assert.Equal(simulation.Id, result.Id);
+            Assert.Equal(120, result.RateLimits.ConnectionsPerSecond);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -150,11 +151,11 @@ namespace WebService.Test.v1.Models.SimulationApiModel
                 .Setup(x => x.GetCounters())
                 .Returns(new Simulation.SimulationRateLimits
                 {
-                    ConnectionsPerSecond = It.IsAny<int>(),
-                    RegistryOperationsPerMinute = It.IsAny<int>(),
-                    TwinWritesPerSecond = It.IsAny<int>(),
-                    TwinReadsPerSecond = It.IsAny<int>(),
-                    DeviceMessagesPerSecond = It.IsAny<int>()
+                    ConnectionsPerSecond = 120,
+                    RegistryOperationsPerMinute = 100,
+                    TwinWritesPerSecond = 10,
+                    TwinReadsPerSecond = 10,
+                    DeviceMessagesPerSecond = 120
                 });
         }
 
