@@ -148,7 +148,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
         private void SetupRateReporter()
         {
             this.rateReporter
-                .Setup(x => x.GetCounters())
+                .Setup(x => x.GetRateLimits())
                 .Returns(new Simulation.SimulationRateLimits
                 {
                     ConnectionsPerSecond = 110,

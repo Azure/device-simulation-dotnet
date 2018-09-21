@@ -37,7 +37,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             Services.Models.Simulation.SimulationRateLimits simulationRateLimits,
             IRateLimiting rateReporter)
         {
-            var defaultRatingLimits = rateReporter.GetCounters();
+            var defaultRatingLimits = rateReporter.GetRateLimits();
 
             var connectionsPerSecond = simulationRateLimits?.ConnectionsPerSecond > 0 ? simulationRateLimits.ConnectionsPerSecond : defaultRatingLimits.ConnectionsPerSecond;
             var registryOperationsPerMinute = simulationRateLimits?.RegistryOperationsPerMinute > 0 ? simulationRateLimits.RegistryOperationsPerMinute : defaultRatingLimits.RegistryOperationsPerMinute;

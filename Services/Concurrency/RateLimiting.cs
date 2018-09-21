@@ -12,7 +12,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         long GetPauseForNextTwinWrite();
         long GetPauseForNextMessage();
         double GetThroughputForMessages();
-        Models.Simulation.SimulationRateLimits GetCounters();
+        Models.Simulation.SimulationRateLimits GetRateLimits();
         void SetCounters(Models.Simulation.SimulationRateLimits simulationRateLimits, ILogger log);
         void ResetCounters();
     }
@@ -60,7 +60,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             log.Info("Rate limiting started. This message should appear only once in the logs.");
         }
 
-        public Models.Simulation.SimulationRateLimits GetCounters()
+        public Models.Simulation.SimulationRateLimits GetRateLimits()
         {
             return new Models.Simulation.SimulationRateLimits
             {
