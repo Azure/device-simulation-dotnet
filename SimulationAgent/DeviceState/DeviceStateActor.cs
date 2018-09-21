@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
@@ -18,6 +19,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         bool IsDeviceActive { get; }
         long SimulationErrorsCount { get; }
         void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices);
+
+        void Init(
+            ISimulationContext simulationContext,
+            string deviceId,
+            DeviceModel deviceModel,
+            int deviceCounter);
+
         void Run();
     }
 
@@ -38,12 +46,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
 
         private readonly ILogger log;
         private readonly UpdateDeviceState updateDeviceStateLogic;
+        private readonly IInstance instance;
+
         private string deviceId;
         private DeviceModel deviceModel;
         private long whenCanIUpdate;
         private int startDelayMsecs;
         private ActorStatus status;
         private long simulationErrorsCount;
+
+        /// <summary>
+        /// Contains all the simulation specific dependencies, e.g. hub, rating
+        /// limits, device registry, etc.
+        /// </summary>
+        private ISimulationContext simulationContext;
 
         /// <summary>
         /// The device is considered active when the state is being updated.
@@ -62,18 +78,44 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
 
         public DeviceStateActor(
             ILogger logger,
-            UpdateDeviceState updateDeviceStateLogic)
+            UpdateDeviceState updateDeviceStateLogic,
+            IInstance instance)
         {
             this.log = logger;
             this.updateDeviceStateLogic = updateDeviceStateLogic;
             this.status = ActorStatus.None;
             this.simulationErrorsCount = 0;
+            this.instance = instance;
         }
 
         /// <summary>
         /// Simulation error counter in DeviceStateActor
         /// </summary>
         public long SimulationErrorsCount => this.simulationErrorsCount;
+
+        /// <summary>
+        /// Invoke this method before calling Start(), to initialize the actor
+        /// with details like the device model and message type to simulate.
+        /// If this method is not called before Start(), the application will
+        /// throw an exception.
+        /// </summary>
+        public void Init(
+            ISimulationContext simulationContext,
+            string deviceId,
+            DeviceModel deviceModel,
+            int deviceCounter)
+        {
+            this.instance.InitOnce();
+
+            this.simulationContext = simulationContext;
+            this.deviceModel = deviceModel;
+            this.deviceId = deviceId;
+
+            // Distribute actors start over 10 secs
+            this.startDelayMsecs = deviceCounter % 10000;
+
+            this.instance.InitComplete();
+        }
 
         /// <summary>
         /// Invoke this method before calling Start(), to initialize the actor
@@ -96,7 +138,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
 
             // Distributed start times over 1 or 10 secs
             var msecs = totalDevices < 50 ? 1000 : 10000;
-            this.startDelayMsecs = (int) (msecs * ((double) position / totalDevices));
+            this.startDelayMsecs = (int)(msecs * ((double)position / totalDevices));
         }
 
         public void Run()
@@ -150,7 +192,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                     return;
 
                 case ActorStatus.Updating:
-                    this.whenCanIUpdate += (long) this.deviceModel.Simulation.Interval.TotalMilliseconds;
+                    this.whenCanIUpdate += (long)this.deviceModel.Simulation.Interval.TotalMilliseconds;
                     return;
             }
 
@@ -163,7 +205,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         private ISmartDictionary GetInitialProperties(DeviceModel model)
         {
             var properties = new SmartDictionary();
-            
+
             if (model.Properties == null || this.deviceModel.CloudToDeviceMethods == null) return properties;
 
             // Add telemetry property

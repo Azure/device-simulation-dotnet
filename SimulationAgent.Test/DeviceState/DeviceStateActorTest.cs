@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
@@ -16,6 +17,7 @@ namespace SimulationAgent.Test.DeviceState
         private readonly Mock<ILogger> logger;
         private readonly Mock<IScriptInterpreter> scriptInterpreter;
         private readonly Mock<UpdateDeviceState> updateDeviceStateLogic;
+        private readonly Mock<IInstance> mockInstance;
         private readonly DeviceStateActor target;
 
         public DeviceStateActorTest(ITestOutputHelper log)
@@ -25,10 +27,12 @@ namespace SimulationAgent.Test.DeviceState
             this.updateDeviceStateLogic = new Mock<UpdateDeviceState>(
                 this.scriptInterpreter.Object,
                 this.logger.Object);
+            this.mockInstance = new Mock<IInstance>();
 
             this.target = new DeviceStateActor(
                 this.logger.Object,
-                this.updateDeviceStateLogic.Object);
+                this.updateDeviceStateLogic.Object,
+                this.mockInstance.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

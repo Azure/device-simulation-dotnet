@@ -52,7 +52,7 @@ namespace SimulationAgent.Test.DeviceConnection
         {
             // Arrange
             this.SetupDeviceConnectionActor();
-            this.target.Setup(this.deviceConnectionActor.Object, DEVICE_ID, this.deviceModel);
+            this.target.Init(this.deviceConnectionActor.Object, DEVICE_ID, this.deviceModel);
             this.deviceConnectionActor.Setup(x => x.Client).Returns(this.deviceClient.Object);
             
             // Act
@@ -68,7 +68,7 @@ namespace SimulationAgent.Test.DeviceConnection
         {
             // Arrange
             this.SetupDeviceConnectionActor();
-            this.target.Setup(this.deviceConnectionActor.Object, DEVICE_ID, this.deviceModel);
+            this.target.Init(this.deviceConnectionActor.Object, DEVICE_ID, this.deviceModel);
             this.deviceConnectionActor.Setup(x => x.Client).Throws<Exception>();
 
             // Act

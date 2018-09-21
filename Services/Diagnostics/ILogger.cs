@@ -73,27 +73,32 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         // The following 5 methods allow to log a message and some data, capturing the location where the log is generated
         // Use "Write()" to write the message regardless of the log level, e.g. at startup
 
-        void Write(string message, Func<object> data,
+        void Write(string message, 
+            Func<object> data,
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0);
 
-        void Debug(string message, Func<object> data,
+        void Debug(string message, 
+            Func<object> data,
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0);
 
-        void Info(string message, Func<object> data,
+        void Info(string message, 
+            Func<object> data,
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0);
 
-        void Warn(string message, Func<object> data,
+        void Warn(string message, 
+            Func<object> data,
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0);
 
-        void Error(string message, Func<object> data,
+        void Error(string message, 
+            Func<object> data,
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0);
@@ -102,27 +107,32 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         // Use the methods with <Func<object> data> to pass more data than just the exception
         // Use "Write()" to write the message regardless of the log level, e.g. at startup
 
-        void Write(string message, Exception e,
+        void Write(string message, 
+            Exception e,
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0);
 
-        void Debug(string message, Exception e,
+        void Debug(string message, 
+            Exception e,
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0);
 
-        void Info(string message, Exception e,
+        void Info(string message, 
+            Exception e,
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0);
 
-        void Warn(string message, Exception e,
+        void Warn(string message, 
+            Exception e,
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0);
 
-        void Error(string message, Exception e,
+        void Error(string message, 
+            Exception e,
             [CallerMemberName] string callerName = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0);

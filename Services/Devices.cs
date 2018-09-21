@@ -123,7 +123,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 IotHubConnectionStringBuilder connStringBuilder = IotHubConnectionStringBuilder.Create(this.connString);
 
                 // Prepare registry class used to create/retrieve devices
-                this.registry = this.registry.CreateFromConnectionString(this.connString);
+                //this.registry = this.registry.CreateFromConnectionString(this.connString);
+                this.registry.Init(this.connString);
                 this.log.Debug("Device registry object ready", () => new { this.ioTHubHostName });
 
                 // Prepare hostname used to build device connection strings

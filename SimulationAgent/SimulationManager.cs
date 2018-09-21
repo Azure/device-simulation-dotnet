@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Linq;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
@@ -198,6 +199,156 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     }
                 }
             }
+        }
+
+        public Task HandleAssignedPartitionChangesAsync()
+        {
+            // TODO
+            // Check for changes to the list of IDs in a partition?
+            // Check for removed partitions and remove actors?
+            // Check for lost/changed locks on a partition?
+            // New partitions will be picked up by AssignNewPartitionsAsync()
+            return Task.CompletedTask;
+        }
+
+        public void PrintStats()
+        {
+            this.instance.InitRequired();
+
+            var connectedCount = this.deviceConnectionActors.Count(x => x.Value.Connected);
+
+            this.log.Info($"Simulation stats",
+                () => new
+                {
+                    SimulationId = this.simulation.Id,
+                    PartitionsInThisNode = this.assignedPartitions.Count,
+                    DevicesInThisNode = this.deviceCount,
+                    ConnectedDevicesInThisNode = connectedCount,
+                    NodesInTheCluster = this.nodeCount,
+                    RateLimitMessagesThroughput = this.simulationContext.RateLimiting.GetThroughputForMessages(),
+                    RateLimitClusterSize = this.simulationContext.RateLimiting.ClusterSize
+                });
+        }
+
+        // Stop all the actors and delete them
+        public void TearDown()
+        {
+            this.instance.InitRequired();
+
+            this.DeleteAllStateActors();
+            this.DeleteAllConnectionActors();
+            this.DeleteAllTelemetryActors();
+            this.DeleteAllPropertiesActors();
+        }
+
+        // Check if the cluster size has changed and act accordingly
+        public async Task UpdateThrottlingLimitsAsync()
+        {
+            this.instance.InitRequired();
+
+            var countChanged = await this.UpdateNodeCountAsync();
+
+            // Update the rating limits accordingly to the number of nodes
+            if (countChanged)
+            {
+                this.log.Info("The number of nodes has changed, updating rating limits...");
+                this.simulationContext.RateLimiting.ChangeClusterSize(this.nodeCount);
+            }
+        }
+
+        private async Task<bool> UpdateNodeCountAsync()
+        {
+            // TODO: for now we assume that all the nodes are participating, so we just count the number of nodes
+            //       however when running few devices in a big cluster, the number of nodes is 1
+            //       and when running on multiple nodes the load might be unbalanced
+
+            try
+            {
+                int newCount = (await this.clusterNodes.GetSortedIdListAsync()).Count;
+                if (newCount > 0 && newCount != this.nodeCount)
+                {
+                    this.log.Info("The number of nodes has changed", () => new { this.nodeCount, newCount });
+                    this.nodeCount = newCount;
+                    return true;
+                }
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unexpected error while counting the nodes", e);
+            }
+
+            return false;
+        }
+
+        private void DeleteAllStateActors()
+        {
+            var prefix = this.GetDictKey(string.Empty);
+
+            var toRemove = new List<string>();
+            foreach (var actor in this.deviceStateActors)
+            {
+                // TODO: make this simpler, e.g. store the list of keys
+                if (actor.Key.StartsWith(prefix))
+                {
+                    toRemove.Add(actor.Key);
+                }
+            }
+
+            toRemove.ForEach(x => this.deviceStateActors.Remove(x, out _));
+        }
+
+        private void DeleteAllConnectionActors()
+        {
+            var prefix = this.GetDictKey(string.Empty);
+
+            var toRemove = new List<string>();
+            foreach (var actor in this.deviceConnectionActors)
+            {
+                // TODO: make this simpler, e.g. store the list of keys
+                if (actor.Key.StartsWith(prefix))
+                {
+                    actor.Value.Stop();
+                    toRemove.Add(actor.Key);
+                }
+            }
+
+            toRemove.ForEach(x => this.deviceConnectionActors.Remove(x, out _));
+        }
+
+        private void DeleteAllTelemetryActors()
+        {
+            var prefix = this.GetDictKey(string.Empty);
+
+            var toRemove = new List<string>();
+            foreach (var actor in this.deviceTelemetryActors)
+            {
+                // TODO: make this simpler, e.g. store the list of keys
+                if (actor.Key.StartsWith(prefix))
+                {
+                    actor.Value.Stop();
+                    toRemove.Add(actor.Key);
+                }
+            }
+
+            toRemove.ForEach(x => this.deviceTelemetryActors.Remove(x, out _));
+        }
+
+        private void DeleteAllPropertiesActors()
+        {
+            var prefix = this.GetDictKey(string.Empty);
+
+            var toRemove = new List<string>();
+            foreach (var actor in this.devicePropertiesActors)
+            {
+                // TODO: make this simpler, e.g. store the list of keys
+                if (actor.Key.StartsWith(prefix))
+                {
+                    actor.Value.Stop();
+                    toRemove.Add(actor.Key);
+                }
+            }
+
+            toRemove.ForEach(x => this.devicePropertiesActors.Remove(x, out _));
         }
 
         private int DeleteActorsForPartition(DevicesPartition partition)

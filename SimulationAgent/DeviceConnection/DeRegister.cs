@@ -24,7 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.devices = devices;
         }
 
-        public void Setup(IDeviceConnectionActor context, string deviceId, DeviceModel deviceModel)
+        public void Init(IDeviceConnectionActor context, string deviceId, DeviceModel deviceModel)
         {
             this.context = context;
             this.deviceId = deviceId;
