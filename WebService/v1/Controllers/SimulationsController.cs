@@ -96,7 +96,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             var simulation = await this.simulationsService.InsertAsync(simulationApiModel.ToServiceModel(null), template);
-            return SimulationApiModel.FromServiceModel(
+            return await SimulationApiModel.FromServiceModelAsync(
                 simulation, 
                 this.servicesConfig, 
                 this.deploymentConfig, 
@@ -122,7 +122,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             var existingSimulation = await this.GetExistingSimulationAsync(id);
 
             var simulation = await this.simulationsService.UpsertAsync(simulationApiModel.ToServiceModel(existingSimulation, id));
-            return SimulationApiModel.FromServiceModel(
+            return await SimulationApiModel.FromServiceModelAsync(
                 simulation, 
                 this.servicesConfig, 
                 this.deploymentConfig, 
