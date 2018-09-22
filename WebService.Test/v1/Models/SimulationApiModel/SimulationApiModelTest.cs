@@ -41,8 +41,6 @@ namespace WebService.Test.v1.Models.SimulationApiModel
         {
             // Arrange
             var simulation = this.GetSimulationModel();
-            simulation.RateLimits = new Simulation.SimulationRateLimits { ConnectionsPerSecond = 100 };
-
             this.SetupDefaultRateReporter();
 
             // Act
@@ -52,7 +50,6 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             // Assert
             Assert.IsType<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel>(result);
             Assert.Equal(simulation.Id, result.Id);
-            Assert.Equal(100, result.RateLimits.ConnectionsPerSecond);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -158,6 +155,25 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             Assert.Equal(10, result.RateLimits.TwinWritesPerSecond);
             Assert.Equal(10, result.RateLimits.TwinReadsPerSecond);
             Assert.Equal(120, result.RateLimits.DeviceMessagesPerSecond);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReturnsCustomRateLimits()
+        {
+            // Arrange
+            var simulation = this.GetSimulationModel();
+            simulation.RateLimits = new Simulation.SimulationRateLimits { ConnectionsPerSecond = 100 };
+
+            this.SetupDefaultRateReporter();
+
+            // Act
+            var result = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel.FromServiceModel(
+                simulation, this.servicesConfig.Object, this.deploymentConfig.Object, this.connectionStringManager.Object, this.simulationRunner.Object, this.rateReporter.Object);
+
+            // Assert
+            Assert.IsType<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel>(result);
+            Assert.Equal(simulation.Id, result.Id);
+            Assert.Equal(100, result.RateLimits.ConnectionsPerSecond);
         }
 
         private void SetupConnectionStringManager()
