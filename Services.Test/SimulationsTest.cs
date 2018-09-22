@@ -570,16 +570,15 @@ namespace Services.Test
                 Enabled = true
             };
 
-            var list = new ValueListApiModel();
-            var value = new ValueApiModel
-            {
-                Key = SIMULATION_ID,
-                Data = JsonConvert.SerializeObject(simulation),
-                ETag = simulation.ETag
-            };
-            list.Items.Add(value);
+            var list = new List<StorageRecord>();
+            var document = new Document();
+            document.Id = simulation.Id;
+            document.SetPropertyValue("Data", JsonConvert.SerializeObject(simulation));
+            document.SetPropertyValue("ETag", simulation.ETag);
+            var storageRecord = StorageRecord.FromDocumentDb(document);
+            list.Add(storageRecord);
 
-            this.mockStorageAdapterClient.Setup(x => x.GetAllAsync(STORAGE_COLLECTION)).ReturnsAsync(list);
+            this.mockStorageRecords.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<StorageRecord>());
         }
 
         private void StorageReturnsSimulationRecordOnCreate(SimulationModel simulation = null)

@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Newtonsoft.Json;
 
@@ -42,16 +44,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
     public class DeviceModelScripts : IDeviceModelScripts
     {
-        private const string STORAGE_COLLECTION = "deviceModelScripts";
-
-        private readonly IStorageAdapterClient storage;
+        private readonly IStorageRecords deviceModelsStorage;
         private readonly ILogger log;
 
         public DeviceModelScripts(
-            IStorageAdapterClient storage,
+            IServicesConfig config,
+            IFactory factory,
             ILogger logger)
         {
-            this.storage = storage;
+            this.deviceModelsStorage = factory.Resolve<IStorageRecords>().Init(config.DeviceModelScriptsStorage);
             this.log = logger;
         }
 
@@ -62,7 +63,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             try
             {
-                await this.storage.DeleteAsync(STORAGE_COLLECTION, id);
+                await this.deviceModelsStorage.DeleteAsync(id);
             }
             catch (Exception e)
             {
@@ -82,10 +83,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 throw new InvalidInputException("Simulation script id cannot be empty! ");
             }
 
-            ValueApiModel item;
+            StorageRecord item;
             try
             {
-                item = await this.storage.GetAsync(STORAGE_COLLECTION, id);
+                item = await this.deviceModelsStorage.GetAsync(id);
             }
             catch (ResourceNotFoundException)
             {
@@ -117,11 +118,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<IEnumerable<DeviceModelScript>> GetListAsync()
         {
-            ValueListApiModel data;
+            IEnumerable<StorageRecord> items;
 
             try
             {
-                data = await this.storage.GetAllAsync(STORAGE_COLLECTION);
+                items = await this.deviceModelsStorage.GetAllAsync();
             }
             catch (Exception e)
             {
@@ -133,7 +134,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             try
             {
                 var results = new List<DeviceModelScript>();
-                foreach (var item in data.Items)
+                foreach (var item in items)
                 {
                     var deviceModelScript = JsonConvert.DeserializeObject<DeviceModelScript>(item.Data);
                     deviceModelScript.ETag = item.ETag;
@@ -170,11 +171,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             try
             {
                 // Note: using UpdateAsync because the service generates the ID
-                var result = await this.storage.UpdateAsync(
-                    STORAGE_COLLECTION,
-                    deviceModelScript.Id,
-                    JsonConvert.SerializeObject(deviceModelScript),
-                    null);
+                var result = await this.deviceModelsStorage.UpsertAsync(
+                    new StorageRecord
+                    {
+                        Id = deviceModelScript.Id,
+                        Data = JsonConvert.SerializeObject(deviceModelScript)
+                    },
+                    "*"
+                );
 
                 deviceModelScript.ETag = result.ETag;
             }
@@ -209,11 +213,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                     this.log.Debug("Modifying a custom device model script.", () => new { deviceModelScript });
 
-                    var result = await this.storage.UpdateAsync(
-                        STORAGE_COLLECTION,
-                        id,
-                        JsonConvert.SerializeObject(deviceModelScript),
-                        eTag);
+                    var result = await this.deviceModelsStorage.UpsertAsync(
+                        new StorageRecord
+                        {
+                            Id = id,
+                            Data = JsonConvert.SerializeObject(deviceModelScript)
+                        },
+                        eTag
+                    );
 
                     // Return the new ETag provided by the storage
                     deviceModelScript.ETag = result.ETag;

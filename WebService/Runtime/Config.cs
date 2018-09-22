@@ -86,6 +86,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string SIMULATIONS_STORAGE_KEY = APPLICATION_KEY + "Storage:Simulations:";
         private const string DEVICES_STORAGE_KEY = APPLICATION_KEY + "Storage:Devices:";
         private const string PARTITIONS_STORAGE_KEY = APPLICATION_KEY + "Storage:Partitions:";
+        private const string DEVICE_MODELS_STORAGE_KEY = APPLICATION_KEY + "Storage:DeviceModels:";
+        private const string DEVICE_SCRIPTS_STORAGE_KEY = APPLICATION_KEY + "Storage:DeviceModelScripts:";
+        private const string SIMULATED_DEVICES_STORAGE_KEY = APPLICATION_KEY + "Storage:SimulatedDevices:";
 
         private const string STORAGE_TYPE_KEY = "type";
         private const string STORAGE_MAX_PENDING_OPERATIONS = APPLICATION_KEY + "max_pending_storage_tasks";
@@ -226,6 +229,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 SimulationsStorage = GetStorageConfig(configData, SIMULATIONS_STORAGE_KEY),
                 DevicesStorage = GetStorageConfig(configData, DEVICES_STORAGE_KEY),
                 PartitionsStorage = GetStorageConfig(configData, PARTITIONS_STORAGE_KEY),
+                DeviceModelsStorage = GetStorageConfig(configData, DEVICE_MODELS_STORAGE_KEY),
+                DeviceModelScriptsStorage = GetStorageConfig(configData, DEVICE_SCRIPTS_STORAGE_KEY),
+                SimulatedDevicesStorage = GetStorageConfig(configData, SIMULATED_DEVICES_STORAGE_KEY),
                 DiagnosticsEndpointUrl = configData.GetString(LOGGING_DIAGNOSTICS_URL_KEY)
             };
         }

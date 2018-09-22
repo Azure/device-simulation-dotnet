@@ -3,13 +3,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Azure.Documents;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 using Moq;
-using Newtonsoft.Json.Linq;
 using Services.Test.helpers;
 using Xunit;
 
@@ -19,7 +19,7 @@ namespace Services.Test
     {
         private const string STORAGE_COLLECTION = "deviceModels";
 
-        private readonly Mock<IStorageAdapterClient> storage;
+        private readonly Mock<IStorageRecords> mockStorageRecords;
         private readonly Mock<ILogger> logger;
         private readonly Mock<ICustomDeviceModels> customDeviceModels;
         private readonly Mock<IStockDeviceModels> stockDeviceModels;
@@ -28,7 +28,7 @@ namespace Services.Test
 
         public DeviceModelsTest()
         {
-            this.storage = new Mock<IStorageAdapterClient>();
+            this.mockStorageRecords = new Mock<IStorageRecords>();
             this.logger = new Mock<ILogger>();
             this.customDeviceModels = new Mock<ICustomDeviceModels>();
             this.stockDeviceModels = new Mock<IStockDeviceModels>();
@@ -178,15 +178,16 @@ namespace Services.Test
             const string ETAG = "etag";
             var deviceModel = new DeviceModel { ETag = ETAG };
 
+            var document = new Document();
+            document.SetPropertyValue("_etag", deviceModel.ETag);
+            var record = StorageRecord.FromDocumentDb(document);
+
             this.customDeviceModels
                 .Setup(x => x.InsertAsync(It.IsAny<DeviceModel>(), true))
                 .Returns(Task.FromResult(deviceModel));
-            this.storage.Setup(x => x.UpdateAsync(
-                    STORAGE_COLLECTION,
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    null))
-                .Returns(Task.FromResult(new ValueApiModel { ETag = ETAG }));
+            this.mockStorageRecords
+                .Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>(), It.IsAny<string>()))
+                .Returns(Task.FromResult(record));
 
             // Act
             var result = this.target.InsertAsync(deviceModel).Result;
@@ -217,16 +218,16 @@ namespace Services.Test
             // Arrange
             const string ETAG = "etag";
             var deviceModel = new DeviceModel { ETag = ETAG };
+            var document = new Document();
+            document.SetPropertyValue("_etag", deviceModel.ETag);
+            var record = StorageRecord.FromDocumentDb(document);
 
             this.customDeviceModels
                 .Setup(x => x.UpsertAsync(It.IsAny<DeviceModel>()))
                 .Returns(Task.FromResult(deviceModel));
-            this.storage.Setup(x => x.UpdateAsync(
-                    STORAGE_COLLECTION,
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    ETAG))
-                .Returns(Task.FromResult(new ValueApiModel() { ETag = ETAG }));
+            this.mockStorageRecords
+                .Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>(), It.IsAny<string>()))
+                .Returns(Task.FromResult(record));
 
             // Act
             var result = this.target.UpsertAsync(deviceModel).Result;

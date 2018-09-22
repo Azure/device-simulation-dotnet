@@ -71,6 +71,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IDeviceModels deviceModels;
         private readonly IStorageAdapterClient storageAdapterClient;
         private readonly IStorageRecords simulationsStorage;
+        private readonly IStorageRecords simulatedDevicesStorage;
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly IDevices devices;
         private readonly ILogger log;
@@ -87,8 +88,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IDiagnosticsLogger diagnosticsLogger)
         {
             this.deviceModels = deviceModels;
-            this.storageAdapterClient = storageAdapterClient;
             this.simulationsStorage = factory.Resolve<IStorageRecords>().Init(config.SimulationsStorage);
+            this.simulatedDevicesStorage = factory.Resolve<IStorageRecords>().Init(config.SimulatedDevicesStorage);
             this.connectionStringManager = connectionStringManager;
             this.devices = devices;
             this.log = logger;
@@ -328,7 +329,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task AddDeviceAsync(string id)
         {
-            await this.storageAdapterClient.CreateAsync(DEVICES_COLLECTION, id, id);
+            var item = new StorageRecord {
+                Id = id,
+                Data = id
+            };
+
+            await this.simulatedDevicesStorage.CreateAsync(item);
         }
 
         /// <summary>
