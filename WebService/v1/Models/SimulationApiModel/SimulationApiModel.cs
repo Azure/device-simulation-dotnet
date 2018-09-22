@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Jint.Parser.Ast;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
@@ -125,7 +124,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             IDeploymentConfig deploymentConfig,
             IIotHubConnectionStringManager connectionStringManager,
             ISimulationRunner simulationRunner,
-            IRateLimiting rateReporter)
+            IRateLimiting rateLimits)
         {
             if (value == null) return null;
 
@@ -169,11 +168,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
             result.DeviceModels = SimulationDeviceModelRef.FromServiceModel(value.DeviceModels);
             result.Statistics = SimulationStatistics.FromServiceModel(value.Statistics);
-            result.RateLimits = SimulationRateLimits.FromServiceModel(value.RateLimits, rateReporter);
+            result.RateLimits = SimulationRateLimits.FromServiceModel(value.RateLimits, rateLimits);
             result.created = value.Created;
             result.modified = value.Modified;
 
-            result.AppendHubPropertiesAndStatistics(servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
+            result.AppendHubPropertiesAndStatistics(servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateLimits);
 
             return result;
         }
@@ -237,7 +236,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             IDeploymentConfig deploymentConfig, 
             IIotHubConnectionStringManager connectionStringManager,
             ISimulationRunner simulationRunner,
-            IRateLimiting rateReporter)
+            IRateLimiting rateLimits)
         {
             var isRunning = this.Running == true;
 
@@ -256,7 +255,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             if (isRunning)
             {
                 // Average messages per second frequency in the last minutes
-                this.Statistics.AverageMessagesPerSecond = rateReporter.GetThroughputForMessages();
+                this.Statistics.AverageMessagesPerSecond = rateLimits.GetThroughputForMessages();
 
                 // Total messages count
                 this.Statistics.TotalMessagesSent = simulationRunner.TotalMessagesCount;
