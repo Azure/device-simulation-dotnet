@@ -41,7 +41,9 @@ namespace WebService.Test.v1.Models.SimulationApiModel
         {
             // Arrange
             var simulation = this.GetSimulationModel();
-            this.SetupRateReporter();
+            simulation.RateLimits = new Simulation.SimulationRateLimits { ConnectionsPerSecond = 100 };
+
+            this.SetupDefaultRateReporter();
 
             // Act
             var result = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel.FromServiceModel(
@@ -50,7 +52,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             // Assert
             Assert.IsType<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel>(result);
             Assert.Equal(simulation.Id, result.Id);
-            Assert.Equal(110, result.RateLimits.ConnectionsPerSecond);
+            Assert.Equal(100, result.RateLimits.ConnectionsPerSecond);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -138,6 +140,26 @@ namespace WebService.Test.v1.Models.SimulationApiModel
                 .Wait(Constants.TEST_TIMEOUT);
         }
 
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReturnsDefaultRateLimits()
+        {
+            // Arrange
+            var simulation = this.GetSimulationModel();
+            this.SetupDefaultRateReporter();
+
+            // Act
+            var result = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel.FromServiceModel(
+                simulation, this.servicesConfig.Object, this.deploymentConfig.Object, this.connectionStringManager.Object, this.simulationRunner.Object, this.rateReporter.Object);
+
+            // Assert
+            Assert.IsType<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel>(result);
+            Assert.Equal(120, result.RateLimits.ConnectionsPerSecond);
+            Assert.Equal(100, result.RateLimits.RegistryOperationsPerMinute);
+            Assert.Equal(10, result.RateLimits.TwinWritesPerSecond);
+            Assert.Equal(10, result.RateLimits.TwinReadsPerSecond);
+            Assert.Equal(120, result.RateLimits.DeviceMessagesPerSecond);
+        }
+
         private void SetupConnectionStringManager()
         {
             this.connectionStringManager
@@ -145,13 +167,13 @@ namespace WebService.Test.v1.Models.SimulationApiModel
                 .Returns(Task.CompletedTask);
         }
 
-        private void SetupRateReporter()
+        private void SetupDefaultRateReporter()
         {
             this.rateReporter
                 .Setup(x => x.GetRateLimits())
                 .Returns(new Simulation.SimulationRateLimits
                 {
-                    ConnectionsPerSecond = 110,
+                    ConnectionsPerSecond = 120,
                     RegistryOperationsPerMinute = 100,
                     TwinWritesPerSecond = 10,
                     TwinReadsPerSecond = 10,
@@ -182,7 +204,15 @@ namespace WebService.Test.v1.Models.SimulationApiModel
                         Count = 1
                     }
                 },
-                IotHubs = new List<SimulationIotHub> { new SimulationIotHub("HostName=[hubname];SharedAccessKeyName=[iothubowner];SharedAccessKey=[valid key]") }
+                IotHubs = new List<SimulationIotHub> { new SimulationIotHub("HostName=[hubname];SharedAccessKeyName=[iothubowner];SharedAccessKey=[valid key]") },
+                RateLimits = new SimulationRateLimits
+                {
+                    ConnectionsPerSecond = 100,
+                    RegistryOperationsPerMinute = 100,
+                    TwinReadsPerSecond = 10,
+                    TwinWritesPerSecond = 10,
+                    DeviceMessagesPerSecond = 120
+                }
             };
 
             return simulationApiModel;
