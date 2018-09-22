@@ -3,12 +3,14 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Azure.Documents;
+using Microsoft.Azure.Documents.Client;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.DocumentDb;
 using Moq;
 using Newtonsoft.Json;
 using Services.Test.helpers;
@@ -23,6 +25,9 @@ namespace Services.Test
         private readonly Mock<IServicesConfig> mockConfig;
         private readonly Mock<IFactory> mockFactory;
         private readonly Mock<IStorageRecords> mockStorageRecords;
+        private readonly Mock<IDocumentDbWrapper> mockDocumentDbWrapper;
+        private readonly Mock<IDocumentClient> mockDocumentClient;
+        private readonly Mock<IResourceResponse<Document>> mockStorageDocument;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
         private readonly CustomDeviceModels target;
@@ -30,7 +35,22 @@ namespace Services.Test
         public CustomDeviceModelsTest()
         {
             this.mockConfig = new Mock<IServicesConfig>();
+            this.mockStorageRecords = new Mock<IStorageRecords>();
+            this.mockStorageRecords.Setup(x => x.Init(It.IsAny<StorageConfig>())).Returns(this.mockStorageRecords.Object);
+
+            // Multiple tests require the passed-in StorageRecord object to be returned from storage
+            this.mockStorageRecords.Setup(
+                    x => x.UpsertAsync(
+                        It.IsAny<StorageRecord>(),
+                        It.IsAny<string>()))
+                .ReturnsAsync((StorageRecord storageRecord, string eTag) => storageRecord);
+            this.mockDocumentDbWrapper = new Mock<IDocumentDbWrapper>();
+            this.mockDocumentClient = new Mock<IDocumentClient>();
+            this.mockStorageDocument = new Mock<IResourceResponse<Document>>();
+
             this.mockFactory = new Mock<IFactory>();
+            this.mockFactory.Setup(x => x.Resolve<IStorageRecords>()).Returns(this.mockStorageRecords.Object);
+
             this.logger = new Mock<ILogger>();
             this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
 

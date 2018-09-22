@@ -33,7 +33,6 @@ namespace Services.Test
         private readonly Mock<IServicesConfig> mockConfig;
         private readonly Mock<IDeviceModels> deviceModels;
         private readonly Mock<IFactory> mockFactory;
-        private readonly Mock<IStorageAdapterClient> mockStorageAdapterClient;
         private readonly Mock<IStorageRecords> mockStorageRecords;
         private readonly Mock<IDevices> devices;
         private readonly Mock<ILogger> logger;
@@ -67,7 +66,6 @@ namespace Services.Test
             this.mockFactory = new Mock<IFactory>();
             this.mockFactory.Setup(x => x.Resolve<IStorageRecords>()).Returns(this.mockStorageRecords.Object);
 
-            this.mockStorageAdapterClient = new Mock<IStorageAdapterClient>();
             this.logger = new Mock<ILogger>();
             this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
             this.devices = new Mock<IDevices>();
@@ -84,7 +82,6 @@ namespace Services.Test
                 this.mockConfig.Object,
                 this.deviceModels.Object,
                 this.mockFactory.Object,
-                this.mockStorageAdapterClient.Object,
                 this.connStringManager.Object,
                 this.devices.Object,
                 this.logger.Object,

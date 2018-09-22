@@ -69,7 +69,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private const int DEVICES_PER_MODEL_IN_DEFAULT_TEMPLATE = 1;
 
         private readonly IDeviceModels deviceModels;
-        private readonly IStorageAdapterClient storageAdapterClient;
         private readonly IStorageRecords simulationsStorage;
         private readonly IStorageRecords simulatedDevicesStorage;
         private readonly IIotHubConnectionStringManager connectionStringManager;
@@ -81,7 +80,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IServicesConfig config,
             IDeviceModels deviceModels,
             IFactory factory,
-            IStorageAdapterClient storageAdapterClient,
             IIotHubConnectionStringManager connectionStringManager,
             IDevices devices,
             ILogger logger,
