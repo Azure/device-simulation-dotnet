@@ -123,7 +123,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
             foreach (var hub in this.IotHubs)
             {
-                result.IotHubConnectionStrings.Add(SimulationIotHub.ToServiceModel(hub));
+                var connString = SimulationIotHub.ToServiceModel(hub);
+
+                if (!result.IotHubConnectionStrings.Contains(connString))
+                {
+                    result.IotHubConnectionStrings.Add(connString);
+                }
             }
 
             return result;
