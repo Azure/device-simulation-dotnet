@@ -164,9 +164,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             this.instance.InitRequired();
 
-            // TODO: why?
             if (this.deviceCount > this.maxDevicePerNode) return;
-
+                
             this.log.Debug("Searching for unassigned partitions...");
             var unassignedPartitions = await this.devicePartitions.GetUnassignedAsync(this.simulation.Id);
             this.log.Debug(() => new { UnassignedPartitions = unassignedPartitions.Count });

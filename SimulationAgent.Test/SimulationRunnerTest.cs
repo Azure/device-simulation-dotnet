@@ -92,7 +92,7 @@ namespace SimulationAgent.Test
             this.SetupSimulationReadyToStart();
 
             // Act
-            this.target.Start(simulation);
+            this.target.StartAsync(simulation);
             var result = this.target.ActiveDevicesCount;
 
             // Assert
@@ -125,7 +125,7 @@ namespace SimulationAgent.Test
                 .Returns(TOTAL_MESSAGES_PER_DEVICE_COUNT);
 
             // Act
-            this.target.Start(simulation);
+            this.target.StartAsync(simulation);
             var result = this.target.TotalMessagesCount;
 
             // Assert
@@ -158,7 +158,7 @@ namespace SimulationAgent.Test
                 .Returns(FAILED_MESSAGES_PER_DEVICE_COUNT);
 
             // Act
-            this.target.Start(simulation);
+            this.target.StartAsync(simulation);
             var result = this.target.FailedMessagesCount;
 
             // Assert
@@ -191,7 +191,7 @@ namespace SimulationAgent.Test
                 .Returns(FAILED_DEVICE_CONNECTIONS_COUNT);
 
             // Act
-            this.target.Start(simulation);
+            this.target.StartAsync(simulation);
             var result = this.target.FailedDeviceConnectionsCount;
 
             // Assert
@@ -224,7 +224,7 @@ namespace SimulationAgent.Test
                 .Returns(FAILED_DEVICE_TWIN_UPDATES_COUNT);
 
             // Act
-            this.target.Start(simulation);
+            this.target.StartAsync(simulation);
             var result = this.target.FailedDeviceTwinUpdatesCount;
 
             // Assert
@@ -267,7 +267,7 @@ namespace SimulationAgent.Test
                 .Returns(FAILED_MESSAGES_PER_DEVICE_COUNT);
 
             // Act
-            this.target.Start(simulation);
+            this.target.StartAsync(simulation);
             var result = this.target.SimulationErrorsCount;
 
             // Assert
@@ -290,10 +290,11 @@ namespace SimulationAgent.Test
                 .ThrowsAsync(new AggregateException());
 
             // Act
-            var ex = Record.Exception(() => this.target.Start(simulation));
+            var exTask = Record.ExceptionAsync(() => this.target.StartAsync(simulation));
+            exTask.Wait(Constants.TEST_TIMEOUT);
 
             // Assert
-            Assert.Null(ex);
+            Assert.Null(exTask.Result);
         }
 
         private SimulationModel GenerateSimulationModel(int activeDevicesCount)

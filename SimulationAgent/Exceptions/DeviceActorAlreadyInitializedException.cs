@@ -7,7 +7,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptio
     public class DeviceActorAlreadyInitializedException : Exception
     {
         public DeviceActorAlreadyInitializedException()
-            : base("DeviceActor object already initialized. Call 'Start()'.")
+            : base("DeviceActor object already initialized. Call 'StartAsync()'.")
         {
         }
     }

@@ -30,7 +30,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             ConnectionLoopSettings loopSettings);
 
         bool IsDeleted { get; }
-        void Setup(string deviceId, DeviceModel deviceModel, IDeviceStateActor deviceStateActor, ConnectionLoopSettings loopSettings);
+
+        void Setup(
+            string deviceId, 
+            DeviceModel deviceModel, 
+            IDeviceStateActor deviceStateActor, 
+            ConnectionLoopSettings loopSettings);
+
         Task RunAsync();
         void HandleEvent(DeviceConnectionActor.ActorEvents e);
         void Stop();

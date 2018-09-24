@@ -4,14 +4,12 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
@@ -23,9 +21,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
     public interface ISimulationRunner
     {
-        void Start(Simulation simulation);
+        Task StartAsync(Simulation simulation);
         void Stop();
-        Task AddDeviceAsync(string deviceId, string modelId);
+        void AddDevice(string deviceId, string modelId);
         void DeleteDevices(List<string> ids);
         long ActiveDevicesCount { get; }
         long TotalMessagesCount { get; }
@@ -141,6 +139,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.starting = false;
             this.rateLimiting = rateLimiting;
 
+            // TODO: Init will be called from SimulationContext when this runner
+            //       is replaced by the SimulationManager.
+            this.rateLimiting.Init(ratingConfig);
+
             this.deviceStateActors = new ConcurrentDictionary<string, IDeviceStateActor>();
             this.deviceConnectionActors = new ConcurrentDictionary<string, IDeviceConnectionActor>();
             this.deviceTelemetryActors = new ConcurrentDictionary<string, IDeviceTelemetryActor>();
@@ -155,7 +157,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         /// create an actor responsible for
         /// sending the telemetry.
         /// </summary>
-        public void Start(Simulation simulation)
+        public async Task StartAsync(Simulation simulation)
         {
             // Use `starting` to exit as soon as possible, to minimize the number 
             // of threads pending on the lock statement
@@ -175,13 +177,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 {
                     // Note: this is a singleton class, so we can call this once. This sets
                     // the active hub, e.g. in case the user provided a custom connection string.
-                    this.devices.InitAsync(simulation);
+                    this.devices.InitAsync(simulation)
+                        .Wait(TimeSpan.FromSeconds(DEVICES_INIT_TIMEOUT_SECS));
 
                     // Create the devices
-                    var devices = this.simulations.GetDeviceIds(simulation);
+                    var deviceIds = this.simulations.GetDeviceIds(simulation);
 
                     // This will ignore existing devices, creating only the missing ones
-                    this.devices.CreateListAsync(devices)
+                    this.devices.CreateListAsync(deviceIds)
                         .Wait(TimeSpan.FromSeconds(DEVICES_CREATION_TIMEOUT_SECS));
                 }
                 catch (Exception e)
@@ -297,7 +300,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        public async Task AddDeviceAsync(string deviceId, string modelId)
+        public void AddDevice(string deviceId, string modelId)
         {
             this.AddCustomDevice(deviceId, modelId);
         }
@@ -393,15 +396,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             {
                 this.connectionLoopSettings.NewLoop();
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                foreach (var device in this.deviceConnectionActors)
+                foreach (var deviceConnectionActor in this.deviceConnectionActors)
                 {
-                    if (device.Value.IsDeleted)
+                    if (deviceConnectionActor.Value.IsDeleted)
                     {
-                        this.DeleteActorsForDevice(device.Key);
+                        this.DeleteActorsForDevice(deviceConnectionActor.Key);
                     }
                     else
                     {
-                        tasks.Add(device.Value.RunAsync());
+                        tasks.Add(deviceConnectionActor.Value.RunAsync());
                         if (tasks.Count <= pendingTasksLimit) continue;
 
                         Task.WaitAll(tasks.ToArray());

@@ -94,9 +94,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         public long SimulationErrorsCount => this.simulationErrorsCount;
 
         /// <summary>
-        /// Invoke this method before calling Start(), to initialize the actor
+        /// Invoke this method before calling StartAsync(), to initialize the actor
         /// with details like the device model and message type to simulate.
-        /// If this method is not called before Start(), the application will
+        /// If this method is not called before StartAsync(), the application will
         /// throw an exception.
         /// </summary>
         public void Init(
@@ -118,9 +118,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         }
 
         /// <summary>
-        /// Invoke this method before calling Start(), to initialize the actor
+        /// Invoke this method before calling StartAsync(), to initialize the actor
         /// with details like the device model and message type to simulate.
-        /// If this method is not called before Start(), the application will
+        /// If this method is not called before StartAsync(), the application will
         /// throw an exception.
         /// Setup() should be called only once, typically after the constructor.
         /// </summary>

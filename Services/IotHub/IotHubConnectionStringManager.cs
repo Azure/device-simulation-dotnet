@@ -52,7 +52,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// Checks storage for which connection string to use.
         /// If value is null or doesn't exist, return the
         /// value stored in the configuration file. Otherwise
-        /// returns value in local storage.
+        /// returns the default connection string.
         /// </summary>
         /// <returns>Full connection string including secret</returns>
         public async Task<string> GetIotHubConnectionStringAsync()
