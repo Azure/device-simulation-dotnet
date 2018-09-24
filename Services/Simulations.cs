@@ -226,9 +226,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
 
                 simulation.Created = existingSimulation.Created;
-
-                // This value cannot be set by the user, making sure we persist the existing state
-                simulation.PartitioningComplete = existingSimulation.PartitioningComplete;
             }
             else
             {

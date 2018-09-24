@@ -320,47 +320,6 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItDoesNotAllowUsersToOverwritePartitioningStatus()
-        {
-            // Arrange
-            var sim = new SimulationModel
-            {
-                Id = "1",
-                Enabled = true,
-                PartitioningComplete = false
-            };
-            var record = new ValueApiModel
-            {
-                Key = "1",
-                Data = JsonConvert.SerializeObject(sim)
-            };
-
-            // Create a DocumentDB Document that will be used to create a StorageRecord object
-            var document = new Document();
-            document.Id = "foo";
-            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
-            var storageRecord = StorageRecord.FromDocumentDb(document);
-
-            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
-                .ReturnsAsync(storageRecord);
-            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>()))
-                .ReturnsAsync(storageRecord);
-
-            // Act
-            var update = new SimulationModel
-            {
-                Id = sim.Id,
-                Enabled = true,
-                PartitioningComplete = true,
-                ETag = "*"
-            };
-            SimulationModel result = this.target.UpsertAsync(update).CompleteOrTimeout().Result;
-
-            // Assert
-            Assert.False(result.PartitioningComplete);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItCreatesNewSimulationsWithPartitioningStateNotComplete()
         {
             // Arrange
