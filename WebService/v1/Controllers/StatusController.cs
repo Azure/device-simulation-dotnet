@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
 
@@ -26,20 +25,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private const string PREPROVISIONED_IOTHUB_KEY = "PreprovisionedIoTHub";
 
         private readonly IPreprovisionedIotHub preprovisionedIotHub;
-        private readonly IStorageAdapterClient storage;
         private readonly ISimulations simulations;
         private readonly ILogger log;
         private readonly IServicesConfig servicesConfig;
 
         public StatusController(
             IPreprovisionedIotHub preprovisionedIotHub,
-            IStorageAdapterClient storage,
             ISimulations simulations,
             ILogger logger,
             IServicesConfig servicesConfig)
         {
             this.preprovisionedIotHub = preprovisionedIotHub;
-            this.storage = storage;
             this.simulations = simulations;
             this.log = logger;
             this.servicesConfig = servicesConfig;
@@ -61,10 +57,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                     ? (isRunning ? JSON_TRUE : JSON_FALSE)
                     : "unknown");
 
-            // Storage status
-            var storageStatus = await this.CheckStorageStatusAsync(errors);
-            result.Dependencies.Add("Storage", storageStatus?.Item2);
-            var statusIsOk = storageStatus.Item1;
+            var statusIsOk = true;
 
             // Preprovisioned IoT hub status
             var isHubPreprovisioned = this.IsHubConnectionStringConfigured();
@@ -115,27 +108,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             return simulationRunning;
-        }
-
-        // Check the storage dependency status
-        private async Task<Tuple<bool, string>> CheckStorageStatusAsync(ICollection<string> errors)
-        {
-            Tuple<bool, string> result;
-            try
-            {
-                result = await this.storage.PingAsync();
-                if (!result.Item1)
-                {
-                    errors.Add("Unable to use Storage");
-                }
-            }
-            catch (Exception e)
-            {
-                result = new Tuple<bool, string>(false, "Storage check failed");
-                this.log.Error("Storage ping failed", e);
-            }
-
-            return result;
         }
 
         // Check IoT Hub dependency status

@@ -7,7 +7,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers;
 using Moq;
@@ -23,7 +22,6 @@ namespace WebService.Test.v1.Controllers
         private const string SIMULATION_ID = "1";
 
         private readonly Mock<IPreprovisionedIotHub> preprovisionedIotHub;
-        private readonly Mock<IStorageAdapterClient> storage;
         private readonly Mock<ISimulations> simulations;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IServicesConfig> servicesConfig;
@@ -35,7 +33,6 @@ namespace WebService.Test.v1.Controllers
         public StatusControllerTest(ITestOutputHelper log)
         {
             this.preprovisionedIotHub = new Mock<IPreprovisionedIotHub>();
-            this.storage = new Mock<IStorageAdapterClient>();
             this.simulations = new Mock<ISimulations>();
             this.logger = new Mock<ILogger>();
             this.servicesConfig = new Mock<IServicesConfig>();
@@ -45,7 +42,6 @@ namespace WebService.Test.v1.Controllers
 
             this.target = new StatusController(
                 this.preprovisionedIotHub.Object,
-                this.storage.Object,
                 this.simulations.Object,
                 this.logger.Object,
                 this.servicesConfig.Object);
