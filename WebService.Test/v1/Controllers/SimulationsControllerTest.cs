@@ -70,7 +70,11 @@ namespace WebService.Test.v1.Controllers
                     new Simulation.DeviceModelRef { Id = "Chiller_01", Count = 10 }
                 },
                 StartTime = DateTimeOffset.UtcNow,
-                EndTime = DateTimeOffset.UtcNow.AddHours(2)
+                EndTime = DateTimeOffset.UtcNow.AddHours(2),
+                IotHubConnectionStrings = new List<string>
+                {
+                    ""
+                }
             };
         }
 
