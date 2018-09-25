@@ -124,7 +124,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
             foreach (var hub in this.IotHubs)
             {
-                result.IotHubConnectionStrings.Add(SimulationIotHub.ToServiceModel(hub));
+                var connString = SimulationIotHub.ToServiceModel(hub);
+
+                if (!result.IotHubConnectionStrings.Contains(connString))
+                {
+                    result.IotHubConnectionStrings.Add(connString);
+                }
             }
 
             return result;
@@ -196,6 +201,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             const string END_TIME_BEFORE_START_TIME = "The simulation End Time must be after the Start Time";
             const string INVALID_DATE = "Invalid date format";
             const string CANNOT_RUN_IN_THE_PAST = "The simulation end date is in the past";
+            const string NO_IOTHUB_CONNSTRING = "The simulation doesn't contain any IoTHub connection string";
 
             // A simulation must contain at least one device model
             if (this.DeviceModels.Count < 1)
@@ -234,6 +240,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             {
                 log.Error(INVALID_DATE, () => new { simulation = this });
                 throw new BadRequestException(INVALID_DATE, e);
+            }
+
+            // A simulation contains at least one iothub connect string
+            if (this.IotHubs.Count == 0)
+            {
+                throw new BadRequestException(NO_IOTHUB_CONNSTRING);
             }
 
             foreach (var iotHub in this.IotHubs)

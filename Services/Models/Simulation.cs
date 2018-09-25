@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
@@ -57,7 +56,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public IList<string> IotHubConnectionStrings
         {
             get => this.iotHubConnectionStrings;
-            set => this.iotHubConnectionStrings = value ?? new List<string> { ServicesConfig.USE_DEFAULT_IOTHUB };
+            set => this.iotHubConnectionStrings = value ?? new List<string>();
         }
 
         // StartTime is the time when Simulation was started
@@ -95,7 +94,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.PartitioningComplete = false;
 
             // by default, use environment variable
-            this.IotHubConnectionStrings = new List<string> { ServicesConfig.USE_DEFAULT_IOTHUB };
+            this.IotHubConnectionStrings = new List<string>();
 
             // By default, run forever
             this.StartTime = DateTimeOffset.MinValue;
