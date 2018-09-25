@@ -20,6 +20,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         long SimulationErrorsCount { get; }
         void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices);
 
+        // TODO: 'Setup' will be removed when the SimulationManager is hooked up
         void Init(
             ISimulationContext simulationContext,
             string deviceId,

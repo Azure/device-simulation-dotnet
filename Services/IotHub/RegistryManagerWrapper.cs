@@ -40,8 +40,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         Task<JobProperties> GetJobAsync(string jobId);
 
-        Task<QueryResponse<Twin>> RunQueryAsync(string queryString, string continuationToken = null);
-
         void Dispose();
     }
 
@@ -139,19 +137,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         {
             this.instance.InitRequired();
             return this.registry.GetJobAsync(jobId);
-        }
-
-        public async Task<QueryResponse<Twin>> RunQueryAsync(string queryString, string continuationToken = null)
-        {
-            this.instance.InitRequired();
-
-            var query = this.registry.CreateQuery(queryString);
-
-            var options = string.IsNullOrEmpty(continuationToken)
-                ? new QueryOptions()
-                : new QueryOptions { ContinuationToken = continuationToken };
-
-            return await query.GetNextAsTwinAsync(options);
         }
 
         public void Dispose()

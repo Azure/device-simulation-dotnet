@@ -52,7 +52,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             this.log = logger;
             this.partitionsStorage = factory.Resolve<IStorageRecords>().Init(config.PartitionsStorage);
             this.clusterNodes = clusterNodes;
-
             this.partitionLockDurationSecs = clusteringConfig.PartitionLockDurationMsecs / 1000;
             this.maxPartitionSize = clusteringConfig.MaxPartitionSize;
         }

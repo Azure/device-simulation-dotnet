@@ -19,15 +19,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         private readonly int debuggingBufferLength;
         private readonly bool useDebuggingBuffer;
 
-        // private readonly bool bwEnabled;
-        // private readonly bool blackListEnabled;
-        // private readonly bool whiteListEnabled;
-        // private readonly bool bwPrefixUsed;
-        // private readonly HashSet<string> blackList;
-        // private readonly HashSet<string> whiteList;
-        // private readonly string bwListPrefix;
-        // private readonly int bwListPrefixLength;
-
         public Logger(string processId) :
             this(processId, new LoggingConfig())
         {
@@ -39,20 +30,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.priorityThreshold = config.LogLevel;
             this.logProcessId = config.LogProcessId;
             this.dateFormat = config.DateFormat;
-
-            // this.blackList = config.BlackList;
-            // this.whiteList = config.WhiteList;
-            //
-            // this.blackListEnabled = this.blackList.Count > 0;
-            // this.whiteListEnabled = this.whiteList.Count > 0;
-            // this.bwEnabled = this.blackListEnabled || this.whiteListEnabled;
-            //
-            // this.bwPrefixUsed = !string.IsNullOrEmpty(config.BwListPrefix);
-            // this.bwListPrefix = config.BwListPrefix;
-            // this.bwListPrefixLength = config.BwListPrefix.Length;
-
             this.fileLock = new object();
-
             this.debuggingBuffer = new Queue<string>();
             this.debuggingBufferLength = config.DebuggingLogBufferLength;
             this.useDebuggingBuffer = this.debuggingBufferLength > 0;
@@ -342,32 +320,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             }
 
             var methodInfo = $"{filePath}:{lineNumber}:{methodName}";
-
-            // TODO: fix for matching filenames instead of class names
-            // // Check blacklisted and whitelisted classes and methods
-            // if (this.bwEnabled)
-            // {
-            //     var bwClass = classname;
-            //     if (this.bwPrefixUsed && bwClass.StartsWith(this.bwListPrefix))
-            //     {
-            //         bwClass = bwClass.Substring(this.bwListPrefixLength);
-            //     }
-            //
-            //     if (this.blackListEnabled
-            //         && (this.blackList.Contains(bwClass + "." + methodname)
-            //             || this.blackList.Contains(bwClass + ".*")))
-            //     {
-            //         return;
-            //     }
-            //
-            //     if (this.whiteListEnabled
-            //         && !this.whiteList.Contains(bwClass + "." + methodname)
-            //         && !this.whiteList.Contains(bwClass + ".*"))
-            //     {
-            //         return;
-            //     }
-            // }
-
             var time = DateTimeOffset.UtcNow.ToString(this.dateFormat);
             var lev = msgPriority.ToString().ToUpperInvariant();
             var logEntry = this.logProcessId

@@ -216,7 +216,7 @@ namespace SimulationAgent.Test
             // report that locking partitions was successful
             this.mockDevicePartitions.Setup(x => x.TryToAssignPartitionAsync(It.IsAny<string>())).ReturnsAsync(true);
 
-            // Set up a mock device model, the sufficient properties set to allow creation of a telemetry actor
+            // Set up a mock device model, with sufficient properties set to allow creation of a telemetry actor
             this.mockDeviceModels.Setup(x => x.GetWithOverrideAsync(It.IsAny<string>(), It.IsAny<Simulation>()))
                 .ReturnsAsync(
                     new DeviceModel
