@@ -60,34 +60,6 @@ namespace WebService.Test.v1.Controllers
         private readonly Mock<ILogger> log;
         private readonly SimulationsController target;
 
-        private Simulation GetSimulationById(string id)
-        {
-            return new Simulation
-            {
-                Id = id,
-                DeviceModels = new List<Simulation.DeviceModelRef>
-                {
-                    new Simulation.DeviceModelRef { Id = "Chiller_01", Count = 10 }
-                },
-                StartTime = DateTimeOffset.UtcNow,
-                EndTime = DateTimeOffset.UtcNow.AddHours(2),
-                IotHubConnectionStrings = new List<string>
-                {
-                    ""
-                }
-            };
-        }
-
-        private List<Simulation> GetSimulations()
-        {
-            return new List<Simulation>
-            {
-                new Simulation { ETag = "ETag_1" },
-                new Simulation { ETag = "ETag_2" },
-                new Simulation { ETag = "ETag_3" }
-            };
-        }
-
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItCreatesSimulationWithValidInput()
         {
@@ -293,6 +265,34 @@ namespace WebService.Test.v1.Controllers
 
             // Assert
             Assert.Equal(DEFAULT_SIMULATION_ID, result.Id);
+        }
+
+        private Simulation GetSimulationById(string id)
+        {
+            return new Simulation
+            {
+                Id = id,
+                DeviceModels = new List<Simulation.DeviceModelRef>
+                {
+                    new Simulation.DeviceModelRef { Id = "Chiller_01", Count = 10 }
+                },
+                StartTime = DateTimeOffset.UtcNow,
+                EndTime = DateTimeOffset.UtcNow.AddHours(2),
+                IotHubConnectionStrings = new List<string>
+                {
+                    ""
+                }
+            };
+        }
+
+        private List<Simulation> GetSimulations()
+        {
+            return new List<Simulation>
+            {
+                new Simulation { ETag = "ETag_1" },
+                new Simulation { ETag = "ETag_2" },
+                new Simulation { ETag = "ETag_3" }
+            };
         }
     }
 }

@@ -11,6 +11,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter
@@ -99,7 +100,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
             request.SetUriFromString($"{this.config.AzureManagementAdapterApiUrl}/{path}");
             request.Options.EnsureSuccess = false;
             request.Options.Timeout = this.config.AzureManagementAdapterApiTimeout;
-            if (!this.config.AzureManagementAdapterApiUrl.ToLowerInvariant().StartsWith("https:")) throw new InvalidConfigurationException("Azure Management API url must start with https");
+            if (!this.config.AzureManagementAdapterApiUrl.ToLowerInvariant().StartsWith("https:"))
+            {
+                throw new InvalidConfigurationException("Azure Management API url must start with https");
+            }
 
             if (content != null) request.SetContent(content);
 
@@ -127,6 +131,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
                    $"$filter={this.GetDefaultMetricsQuery()}";
         }
 
+        /// <summary>
+        /// TODO: Refactor this method when Azure Key Vault embeded into DS.
+        /// https://docs.microsoft.com/en-us/azure/key-vault/service-to-service-authentication
+        /// </summary>
+        /// <returns></returns>
         private async Task GetAadTokenAsync()
         {
             var request = new HttpRequest();
@@ -192,7 +201,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         /// <returns></returns>
         private string GetDefaultMetricsQuery()
         {
-            // TODO: consider add support for query params from controller
+            // TODO: Consider adding support for query parameters from the controller.
             var now = DateTimeOffset.UtcNow;
             var startTime = now.AddHours(-1).ToString(DATE_FORMAT);
             var endTime = now.ToString(DATE_FORMAT);
