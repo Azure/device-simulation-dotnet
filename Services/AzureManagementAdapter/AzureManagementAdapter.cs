@@ -17,7 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
 {
     public interface IAzureManagementAdapterClient
     {
-        Task<MetricsResponseModel> PostAsync(MetricsRequestsModel requests);
+        Task<MetricsResponseListModel> PostAsync(MetricsRequestListModel requestList);
     }
 
     public class AzureManagementAdapter : IAzureManagementAdapterClient
@@ -54,19 +54,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         ///     https://docs.microsoft.com/en-us/rest/api/monitor/metrics/list
         /// </summary>
         /// <param name="token"></param>
-        /// <param name="requests"></param>
+        /// <param name="requestList"></param>
         /// <returns></returns>
-        public async Task<MetricsResponseModel> PostAsync(MetricsRequestsModel requests)
+        public async Task<MetricsResponseListModel> PostAsync(MetricsRequestListModel requestList)
         {
             if (this.AccessTokenIsNullOrEmpty()) await this.GetAadTokenAsync();
 
+            // Renew access token 10 minutes before it's expire time
             if (this.AccessTokenExpireSoon()) this.GetAadTokenAsync();
 
-            if (requests == null) requests = this.GetDefaultMetricsRequests();
+            if (requestList == null) requestList = this.GetDefaultMetricsRequests();
 
             var accessToken = $"Bearer {this.ReadSecureString(this.secureAccessToken)}";
 
-            var request = this.PrepareRequest($"batch?api-version={this.config.AzureManagementAdapterApiVersion}", accessToken, requests);
+            var request = this.PrepareRequest($"batch?api-version={this.config.AzureManagementAdapterApiVersion}", accessToken, requestList);
 
             this.log.Debug("Azure Management request content", () => new { request.Content });
 
@@ -76,7 +77,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
 
             this.ThrowIfError(response);
 
-            return JsonConvert.DeserializeObject<MetricsResponseModel>(response.Content);
+            return JsonConvert.DeserializeObject<MetricsResponseListModel>(response.Content);
         }
 
         private bool AccessTokenIsNullOrEmpty()
@@ -89,7 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
             return this.tokenExpireTime.AddMinutes(-10) < DateTimeOffset.UtcNow;
         }
 
-        private HttpRequest PrepareRequest(string path, string token, MetricsRequestsModel content = null)
+        private HttpRequest PrepareRequest(string path, string token, MetricsRequestListModel content = null)
         {
             var request = new HttpRequest();
             request.AddHeader(HttpRequestHeader.Accept.ToString(), "application/json");
@@ -186,7 +187,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         ///     2) Connected devices
         ///     3) Telemetry message sent
         ///     Time range: Last one hour
-        ///     Time Grain: 1 minite
+        ///     Time Grain: 1 minute
         /// </summary>
         /// <returns></returns>
         private string GetDefaultMetricsQuery()
@@ -222,7 +223,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
             return string.Join(" and ", filterArray);
         }
 
-        private MetricsRequestsModel GetDefaultMetricsRequests()
+        private MetricsRequestListModel GetDefaultMetricsRequests()
         {
             var request = new MetricsRequestModel
             {
@@ -230,7 +231,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
                 RelativeUrl = this.GetDefaultIoTHubMetricsUrl()
             };
 
-            var result = new MetricsRequestsModel();
+            var result = new MetricsRequestListModel();
             result.Requests.Add(request);
 
             return result;

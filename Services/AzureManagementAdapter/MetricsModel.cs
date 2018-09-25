@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter
 {
-    public class MetricsResponseModel
+    public class MetricsResponseListModel
     {
         [JsonProperty("responses")]
         public List<MetricResponseModel> Responses { get; set; }
@@ -71,12 +71,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         public long Total { get; set; }
     }
 
-    public class MetricsRequestsModel
+    public class MetricsRequestListModel
     {
         [JsonProperty(PropertyName = "requests")]
         public List<MetricsRequestModel> Requests { get; set; }
 
-        public MetricsRequestsModel()
+        public MetricsRequestListModel()
         {
             this.Requests = new List<MetricsRequestModel>();
         }

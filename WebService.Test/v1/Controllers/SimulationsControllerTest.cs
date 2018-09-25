@@ -163,7 +163,7 @@ namespace WebService.Test.v1.Controllers
             // Assert
             this.iothubMetrics
                 .Verify(x => x.GetIothubMetricsAsync(
-                    It.IsAny<MetricsRequestsModel>()
+                    It.IsAny<MetricsRequestListModel>()
                 ), Times.Once);
         }
 

@@ -8,7 +8,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
     // retrieves Iot Hub metrics from Azure management API
     public interface IIothubMetrics
     {
-        Task<MetricsResponseModel> GetIothubMetricsAsync(MetricsRequestsModel requests);
+        Task<MetricsResponseListModel> GetIothubMetricsAsync(MetricsRequestListModel requestList);
     }
 
     public class IotHubMetrics : IIothubMetrics
@@ -24,9 +24,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// Query Azure management API for the iothub metrics.
         /// </summary>
         /// <returns>Responses from the Azure management API</returns>
-        public async Task<MetricsResponseModel> GetIothubMetricsAsync(MetricsRequestsModel requests)
+        public async Task<MetricsResponseListModel> GetIothubMetricsAsync(MetricsRequestListModel requestList)
         {
-            return await this.azureManagementAdapter.PostAsync(requests);
+            return await this.azureManagementAdapter.PostAsync(requestList);
         }
     }
 }

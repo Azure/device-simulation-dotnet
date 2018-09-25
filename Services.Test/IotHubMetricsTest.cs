@@ -23,12 +23,12 @@ namespace Services.Test
         public void ItInvokesAzureManagementAdapterOnceWhenQueryIothubMetrics()
         {
             // Act
-            this.target.GetIothubMetricsAsync(It.IsAny<MetricsRequestsModel>())
+            this.target.GetIothubMetricsAsync(It.IsAny<MetricsRequestListModel>())
                 .Wait(Constants.TEST_TIMEOUT);
 
             // Assert
             this.azureManagementAdapterClient.Verify(
-                x => x.PostAsync(It.IsAny<MetricsRequestsModel>()),
+                x => x.PostAsync(It.IsAny<MetricsRequestListModel>()),
                 Times.Once);
         }
     }

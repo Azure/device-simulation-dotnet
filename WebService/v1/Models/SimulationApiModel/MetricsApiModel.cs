@@ -40,9 +40,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             this.Requests = new List<MetricsRequestApiModel>();
         }
 
-        public MetricsRequestsModel ToServiceModel()
+        public MetricsRequestListModel ToServiceModel()
         {
-            var result = new MetricsRequestsModel();
+            var result = new MetricsRequestListModel();
 
             foreach(var request in this.Requests)
             {
