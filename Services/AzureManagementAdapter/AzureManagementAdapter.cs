@@ -58,12 +58,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         /// <returns></returns>
         public async Task<MetricsResponseListModel> PostAsync(MetricsRequestListModel requestList)
         {
-            if (this.AccessTokenIsNullOrEmpty()) await this.GetAadTokenAsync();
+            if (this.AccessTokenIsNullOrEmpty())
+            {
+                await this.GetAadTokenAsync();
+            }
 
             // Renew access token 10 minutes before it's expire time
-            if (this.AccessTokenExpireSoon()) this.GetAadTokenAsync();
+            if (this.AccessTokenExpireSoon())
+            {
+                this.GetAadTokenAsync();
+            }
 
-            if (requestList == null) requestList = this.GetDefaultMetricsRequests();
+            if (requestList == null)
+            {
+                requestList = this.GetDefaultMetricsRequests();
+            }
 
             var accessToken = $"Bearer {this.ReadSecureString(this.secureAccessToken)}";
 
@@ -104,7 +113,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
                 throw new InvalidConfigurationException("Azure Management API url must start with https");
             }
 
-            if (content != null) request.SetContent(content);
+            if (content != null)
+            {
+                request.SetContent(content);
+            }
 
             this.log.Debug("Azure Management request", () => new { request });
 
