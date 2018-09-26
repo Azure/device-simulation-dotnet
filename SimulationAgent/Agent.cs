@@ -2,13 +2,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Newtonsoft.Json;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
@@ -19,6 +23,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         Task AddDeviceAsync(string name, string modelId);
         Task DeleteDevicesAsync(List<string> ids);
         void Stop();
+        Task SeedAsync();
     }
 
     public class Agent : ISimulationAgent
@@ -118,6 +123,38 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.simulation = null;
             this.running = false;
             this.runner.Stop();
+        }
+
+        public async Task SeedAsync()
+        {
+            string content;
+            var root = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            var file = Path.Combine(root, "Data", "device-simulation-template.json");
+            if (File.Exists(file))
+            {
+                content = File.ReadAllText(file);
+            }
+            else
+            {
+                this.log.Debug("Template not found for setting sample simulations");
+                return;
+            }
+
+            try
+            {
+                var simulationList = JsonConvert.DeserializeObject<List<Simulation>>(content);
+
+                foreach (var sim in simulationList)
+                {
+                    sim.Id = Guid.NewGuid().ToString("N");
+                    sim.StartTime = DateTimeOffset.UtcNow;
+                    await this.simulations.UpsertAsync(sim);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidInputException("Failed to create sample simulation", ex);
+            }
         }
 
         public async Task AddDeviceAsync(string deviceId, string modelId)

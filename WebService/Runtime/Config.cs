@@ -20,6 +20,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         // Web service listening port
         int Port { get; }
 
+        string SolutionType { get; }
+
         ILoggingConfig LoggingConfig { get; }
 
         // Service layer configuration
@@ -45,6 +47,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
     {
         private const string APPLICATION_KEY = "DeviceSimulationService:";
 
+        private const string SOLUTION_TYPE_KEY = APPLICATION_KEY + "solution_type";
         private const string PORT_KEY = APPLICATION_KEY + "webservice_port";
         private const string DEVICE_MODELS_FOLDER_KEY = APPLICATION_KEY + "device_models_folder";
         private const string DEVICE_MODELS_SCRIPTS_FOLDER_KEY = APPLICATION_KEY + "device_models_scripts_folder";
@@ -122,6 +125,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string AZURE_IOTHUB_NAME = DEPLOYMENT_KEY + "azure_iothub_name";
 
         public int Port { get; }
+        public string SolutionType { get; }
         public ILoggingConfig LoggingConfig { get; set; }
         public IClientAuthConfig ClientAuthConfig { get; }
         public IServicesConfig ServicesConfig { get; }
@@ -133,6 +137,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         public Config(IConfigData configData)
         {
             this.Port = configData.GetInt(PORT_KEY);
+            this.SolutionType = configData.GetString(SOLUTION_TYPE_KEY);
             this.LoggingConfig = GetLogConfig(configData);
             this.ServicesConfig = GetServicesConfig(configData);
             this.ClientAuthConfig = GetClientAuthConfig(configData);

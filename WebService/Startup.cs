@@ -1,11 +1,16 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
@@ -103,6 +108,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
             this.simulationAgent = this.ApplicationContainer.Resolve<ISimulationAgent>();
             this.simulationAgent.RunAsync();
+
+            var config = this.ApplicationContainer.Resolve<IConfig>();
+            if (config.SolutionType.StartsWith("devicesimulation", StringComparison.OrdinalIgnoreCase))
+            {
+                this.simulationAgent.SeedAsync();
+            }
         }
 
         private void StopAgents()

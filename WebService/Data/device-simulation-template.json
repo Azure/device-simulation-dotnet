@@ -1,0 +1,35 @@
+﻿[
+  {
+    "Id": "1",
+    "Name": "Sample Simple Simulation",
+    "Enabled": false,
+    "IotHubConnectionStrings": [
+      "default"
+    ],
+    "DeviceModels": [
+      {
+        "Id": "truck-01",
+        "Count": 10
+      }
+    ]
+  },
+    {
+      "Id": "2",
+      "Name": "Sample Multiple Devices",
+      "ETag": "*",
+      "Enabled": false,
+      "IotHubConnectionStrings": [
+          "default"
+        ],
+      "DeviceModels": [
+          {
+            "Id": "chiller-01",
+            "Count": 50
+          },
+          {
+            "Id": "elevator-01",
+            "Count": 10
+          }
+        ]
+    }
+  ]
