@@ -125,6 +125,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.runner.Stop();
         }
 
+        // This creates sample simulations that will be shown on simulation dashboard by default
         public async Task SeedAsync()
         {
             string content;
