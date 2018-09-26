@@ -143,7 +143,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data provided, request object is empty.");
             }
 
-            device?.ValidateInputRequest(this.log);
+            device.ValidateInputRequest(this.log);
 
             await this.simulationAgent.AddDeviceAsync(device.DeviceId, device.ModelId);
         }

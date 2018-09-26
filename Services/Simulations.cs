@@ -165,6 +165,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         Count = DEVICES_PER_MODEL_IN_DEFAULT_TEMPLATE
                     });
                 }
+
+                simulation.IotHubConnectionStrings = new List<string> { ServicesConfig.USE_DEFAULT_IOTHUB };
             }
 
             for (var index = 0; index < simulation.IotHubConnectionStrings.Count; index++)
