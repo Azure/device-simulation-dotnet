@@ -118,7 +118,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                 this.log.Info("Checking if the device creation is complete...", () => new { SimulationId = simulation.Id });
 
                 var deviceService = this.factory.Resolve<IDevices>();
-                await deviceService.InitAsync(simulation);
+                await deviceService.InitAsync();
 
                 if (await deviceService.IsJobCompleteAsync(simulation.DeviceCreationJobId, () => { creationFailed = true; }))
                 {
@@ -148,7 +148,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                 this.log.Debug("Starting devices creation", () => new { SimulationId = simulation.Id });
 
                 var deviceService = this.factory.Resolve<IDevices>();
-                await deviceService.InitAsync(simulation);
+                await deviceService.InitAsync();
 
                 if (await this.simulations.TryToStartDevicesCreationAsync(simulation.Id, deviceService))
                 {

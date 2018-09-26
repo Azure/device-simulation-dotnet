@@ -65,7 +65,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             while (this.running)
             {
                 var oldSimulation = this.simulation;
-                
+
                 this.SendSolutionHeartbeatAsync();
 
                 try

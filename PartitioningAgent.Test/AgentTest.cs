@@ -373,7 +373,7 @@ namespace PartitioningAgent.Test
 
             // Assert
             this.simulations.Verify(x => x.TryToStartDevicesCreationAsync(It.IsAny<string>(), It.IsAny<IDevices>()), Times.Never);
-            deviceService.Verify(x => x.InitAsync(simulation), Times.Once);
+            deviceService.Verify(x => x.InitAsync(), Times.Once);
             deviceService.Verify(x => x.IsJobCompleteAsync(simulation.DeviceCreationJobId, It.IsAny<Action>()), Times.Once);
             this.simulations.Verify(x => x.TryToSetDeviceCreationCompleteAsync(It.IsAny<string>()), Times.Never);
         }

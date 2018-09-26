@@ -59,10 +59,39 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             var simulationApiModel = this.GetSimulationApiModel();
 
             // Act
-            var result = simulationApiModel.ToServiceModel(simulationApiModel.Id);
+            var result = simulationApiModel.ToServiceModel(null, simulationApiModel.Id);
 
             // Assert
             Assert.IsType<Simulation>(result);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItKeepsInternalReadonlyProperties()
+        {
+            // Arrange
+            var simulationApiModel = this.GetSimulationApiModel();
+
+            var existingSimulation1 = new Simulation
+            {
+                PartitioningComplete = true,
+                StoppedTime = DateTimeOffset.UtcNow.AddHours(-10)
+            };
+
+            var existingSimulation2 = new Simulation
+            {
+                PartitioningComplete = false,
+                StoppedTime = DateTimeOffset.UtcNow.AddHours(-20)
+            };
+
+            // Act
+            var result1 = simulationApiModel.ToServiceModel(existingSimulation1, simulationApiModel.Id);
+            var result2 = simulationApiModel.ToServiceModel(existingSimulation2, simulationApiModel.Id);
+
+            // Assert
+            Assert.True(result1.PartitioningComplete);
+            Assert.False(result2.PartitioningComplete);
+            Assert.Equal(existingSimulation1.StoppedTime, result1.StoppedTime);
+            Assert.Equal(existingSimulation2.StoppedTime, result2.StoppedTime);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

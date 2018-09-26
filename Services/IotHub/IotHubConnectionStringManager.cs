@@ -28,11 +28,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private const string CONNSTRING_REGEX_KEYNAME = "keyName";
         private const string CONNSTRING_REGEX_KEY = "key";
         private const string RECORD_ID = "custom_iothub_key";
+        private const int IOT_HUB_CONNECTION_STRING_TIMEOUT_SECS = 2;
 
         private readonly IServicesConfig config;
-        private readonly IStorageRecords mainStorage;
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
+        private readonly IStorageRecords mainStorage;
 
         public IotHubConnectionStringManager(
             IServicesConfig config,
@@ -69,8 +70,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         /// <summary>
         /// Validates that the IoTHub Connection String is valid, stores the full
-        /// string with key, then removes the sensitive key data and returns the
-        /// IoTHub Connection String with an empty string for the SharedAccessKey
+        /// string with key in storage, then removes the sensitive key data and
+        /// returns the IoTHub Connection String with an empty string for the SharedAccessKey
         /// 
         /// TODO: use KeyVault https://github.com/Azure/device-simulation-dotnet/issues/129
         /// </summary>
@@ -303,6 +304,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// </summary>
         private async Task<bool> ConnectionStringIsStoredAsync(string connectionString)
         {
+            // get stored string from storage
             var storedHubString = await this.ReadConnectionStringFromStorageAsync();
 
             if (connectionString.IsNullOrWhiteSpace() || storedHubString.IsNullOrWhiteSpace())
@@ -337,15 +339,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
             catch (Exception e)
             {
-                var msg = "Unable to write connection string";
-                this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceError(msg, new { e.Message });
+                var msg = "Unable to write connection string to storage.";
+                this.log.Error(msg, e );
+                this.diagnosticsLogger.LogServiceError(msg, e.Message);
                 throw;
             }
         }
 
         /// <summary>
-        /// Retrieves connection string from local storage.
+        /// Retrieves connection string from storage.
         /// Returns null if record doesn't exist.
         /// </summary>
         private async Task<string> ReadConnectionStringFromStorageAsync()

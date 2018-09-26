@@ -38,6 +38,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "Enabled")]
         public bool? Enabled { get; set; }
 
+        // Note: read-only property, used only to report the simulation status
         [JsonProperty(PropertyName = "Running")]
         public bool? Running { get; set; }
 
@@ -50,15 +51,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "EndTime")]
         public string EndTime { get; set; }
 
+        // Note: read-only property, used only to report the simulation status
         [JsonProperty(PropertyName = "StoppedTime")]
         public string StoppedTime { get; set; }
 
         [JsonProperty(PropertyName = "DeviceModels")]
         public IList<SimulationDeviceModelRef> DeviceModels { get; set; }
 
+        // Note: read-only property, used only to report the simulation status
         [JsonProperty(PropertyName = "Statistics")]
-        public SimulationStatistics Statistics{ get; set; }
+        public SimulationStatistics Statistics { get; set; }
 
+        // Note: read-only metadata
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
         {
@@ -86,29 +90,45 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             this.Statistics = new SimulationStatistics();
         }
 
-        // Map API model to service model
-        public Simulation ToServiceModel(string id = "")
+        // Map API model to service model, keeping the original fields when needed
+        public Simulation ToServiceModel(Simulation existingSimulation, string id = "")
         {
-            this.Id = id;
-
             var now = DateTimeOffset.UtcNow;
 
-            var result = new Simulation
+            // ID can be empty, e.g. with POST requests
+            this.Id = id;
+
+            // Use the existing simulation fields if available, so that read-only values are not lost
+            // e.g. the state of partitioning, device creation, etc.
+            var result = new Simulation();
+            if (existingSimulation != null)
             {
-                ETag = this.ETag,
-                Id = this.Id,
-                Name = this.Name,
-                Description = this.Description,
-                // When unspecified, a simulation is enabled
-                Enabled = this.Enabled ?? true,
-                StartTime = DateHelper.ParseDateExpression(this.StartTime, now),
-                EndTime = DateHelper.ParseDateExpression(this.EndTime, now),
-                DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList()
-            };
+                result = existingSimulation;
+            }
+
+            result.ETag = this.ETag;
+            result.Id = this.Id;
+            result.Name = this.Name;
+            result.Description = this.Description;
+            result.StartTime = DateHelper.ParseDateExpression(this.StartTime, now);
+            result.EndTime = DateHelper.ParseDateExpression(this.EndTime, now);
+            result.DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList();
+
+            // Overwrite the value only if the request included the field, i.e. don't
+            // enable/disable the simulation if the user didn't explicitly ask to.
+            if (this.Enabled.HasValue)
+            {
+                result.Enabled = this.Enabled.Value;
+            }
 
             foreach (var hub in this.IotHubs)
             {
-                result.IotHubConnectionStrings.Add(SimulationIotHub.ToServiceModel(hub));
+                var connString = SimulationIotHub.ToServiceModel(hub);
+
+                if (!result.IotHubConnectionStrings.Contains(connString))
+                {
+                    result.IotHubConnectionStrings.Add(connString);
+                }
             }
 
             return result;
@@ -180,6 +200,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             const string END_TIME_BEFORE_START_TIME = "The simulation End Time must be after the Start Time";
             const string INVALID_DATE = "Invalid date format";
             const string CANNOT_RUN_IN_THE_PAST = "The simulation end date is in the past";
+            const string NO_IOTHUB_CONNSTRING = "The simulation doesn't contain any IoTHub connection string";
 
             // A simulation must contain at least one device model
             if (this.DeviceModels.Count < 1)
@@ -220,6 +241,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 throw new BadRequestException(INVALID_DATE, e);
             }
 
+            // A simulation contains at least one iothub connect string
+            if (this.IotHubs.Count == 0)
+            {
+                throw new BadRequestException(NO_IOTHUB_CONNSTRING);
+            }
+
             foreach (var iotHub in this.IotHubs)
             {
                 await connectionStringManager.ValidateConnectionStringAsync(iotHub.ConnectionString);
@@ -228,8 +255,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
         // Append additional Hub properties and Statistics 
         private async Task AppendHubPropertiesAndStatisticsAsync(
-            IServicesConfig servicesConfig, 
-            IDeploymentConfig deploymentConfig, 
+            IServicesConfig servicesConfig,
+            IDeploymentConfig deploymentConfig,
             IIotHubConnectionStringManager connectionStringManager,
             ISimulationRunner simulationRunner,
             IRateLimiting rateReporter)
@@ -244,8 +271,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 if (isHubPreprovisioned && isRunning)
                 {
                     iotHub.PreprovisionedIoTHubInUse = await this.IsPreprovisionedIoTHubInUseAsync(servicesConfig, connectionStringManager);
-                    var preprovisionedIoTHubMetricsUrl = await this.GetIoTHubMetricsUrlAsync(servicesConfig, deploymentConfig, connectionStringManager);
-                    iotHub.PreprovisionedIoTHubMetricsUrl = preprovisionedIoTHubMetricsUrl;
+                    iotHub.PreprovisionedIoTHubMetricsUrl = await this.GetIoTHubMetricsUrlAsync(servicesConfig, deploymentConfig, connectionStringManager);
                 }
             }
 
@@ -294,7 +320,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         }
 
         // If the simulation is running with the conn string in the config then return a URL to the metrics
-        private async Task <string> GetIoTHubMetricsUrlAsync(IServicesConfig servicesConfig, IDeploymentConfig deploymentConfig, IIotHubConnectionStringManager connectionStringManager)
+        private async Task<string> GetIoTHubMetricsUrlAsync(IServicesConfig servicesConfig, IDeploymentConfig deploymentConfig, IIotHubConnectionStringManager connectionStringManager)
         {
             var csInUse = (await connectionStringManager.GetConnectionStringAsync()).ToLowerInvariant().Trim();
             var csInConf = servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();

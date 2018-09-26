@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
@@ -13,6 +15,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Devices;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel;
+using SimulationStatistics = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.SimulationStatistics;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers
 {
@@ -73,6 +76,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromBody] SimulationApiModel simulationApiModel,
             [FromQuery(Name = "template")] string template = "")
         {
+            await simulationApiModel?.ValidateInputRequestAsync(this.log, this.connectionStringManager);
+
             if (simulationApiModel == null)
             {
                 if (string.IsNullOrEmpty(template))
@@ -84,12 +89,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 // Simulation can be created with `template=default` other than created with input data
                 simulationApiModel = new SimulationApiModel();
             }
-            else
-            {
-                await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringManager);
-            }
 
-            var simulation = await this.simulationsService.InsertAsync(simulationApiModel.ToServiceModel(), template);
+            var simulation = await this.simulationsService.InsertAsync(simulationApiModel.ToServiceModel(null), template);
             return await SimulationApiModel.FromServiceModelAsync(
                 simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
@@ -99,15 +100,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromBody] SimulationApiModel simulationApiModel,
             string id = "")
         {
+            await simulationApiModel?.ValidateInputRequestAsync(this.log, this.connectionStringManager);
+
             if (simulationApiModel == null)
             {
                 this.log.Warn("No data provided, request object is null");
                 throw new BadRequestException("No data provided, request object is empty.");
             }
 
-            await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringManager);
+            // Load the existing resource, so that internal properties can be copied
+            var existingSimulation = await this.GetExistingSimulationAsync(id);
 
-            var simulation = await this.simulationsService.UpsertAsync(simulationApiModel.ToServiceModel(id));
+            var simulation = await this.simulationsService.UpsertAsync(simulationApiModel.ToServiceModel(existingSimulation, id));
             return await SimulationApiModel.FromServiceModelAsync(
                 simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
@@ -122,7 +126,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data provided, request object is empty.");
             }
 
-            device.ValidateInputRequest(this.log);
+            device?.ValidateInputRequest(this.log);
 
             await this.simulationAgent.AddDeviceAsync(device.DeviceId, device.ModelId);
         }
@@ -157,11 +161,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data or invalid data provided");
             }
 
-            var patchServiceModel = patch.ToServiceModel(id);
-
+            SimulationPatch patchServiceModel = patch.ToServiceModel(id);
             if (patchServiceModel.Enabled == false)
             {
-                patchServiceModel.Statistics = new Services.Models.SimulationStatistics
+                patchServiceModel.Statistics = new SimulationStatistics
                 {
                     AverageMessagesPerSecond = this.rateReporter.GetThroughputForMessages(),
                     TotalMessagesSent = this.simulationRunner.TotalMessagesCount
@@ -177,6 +180,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         public async Task DeleteAsync(string id)
         {
             await this.simulationsService.DeleteAsync(id);
+        }
+
+        private async Task<Simulation> GetExistingSimulationAsync(string id)
+        {
+            try
+            {
+                return await this.simulationsService.GetAsync(id);
+            }
+            catch (ResourceNotFoundException)
+            {
+                return null;
+            }
         }
     }
 }

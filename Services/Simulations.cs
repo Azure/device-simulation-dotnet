@@ -8,6 +8,8 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Newtonsoft.Json;
 
@@ -51,29 +53,32 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
     public class Simulations : ISimulations
     {
-        private const string STORAGE_COLLECTION = "simulations";
         private const string DEFAULT_SIMULATION_ID = "1";
         private const string DEFAULT_TEMPLATE_NAME = "default";
         private const string DEVICES_COLLECTION = "SimulatedDevices";
         private const int DEVICES_PER_MODEL_IN_DEFAULT_TEMPLATE = 1;
 
         private readonly IDeviceModels deviceModels;
-        private readonly IStorageAdapterClient storage;
+        private readonly IStorageAdapterClient storageAdapterClient;
+        private readonly IStorageRecords simulationsStorage;
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly IDevices devices;
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
 
         public Simulations(
+            IServicesConfig config,
             IDeviceModels deviceModels,
-            IStorageAdapterClient storage,
+            IFactory factory,
+            IStorageAdapterClient storageAdapterClient,
             IIotHubConnectionStringManager connectionStringManager,
             IDevices devices,
             ILogger logger,
             IDiagnosticsLogger diagnosticsLogger)
         {
             this.deviceModels = deviceModels;
-            this.storage = storage;
+            this.storageAdapterClient = storageAdapterClient;
+            this.simulationsStorage = factory.Resolve<IStorageRecords>().Init(config.SimulationsStorage);
             this.connectionStringManager = connectionStringManager;
             this.devices = devices;
             this.log = logger;
@@ -85,13 +90,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<IList<Models.Simulation>> GetListAsync()
         {
-            var data = await this.storage.GetAllAsync(STORAGE_COLLECTION);
+            var items = await this.simulationsStorage.GetAllAsync();
             var result = new List<Models.Simulation>();
-            foreach (var item in data.Items)
+            foreach (var item in items)
             {
                 var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
                 simulation.ETag = item.ETag;
-                simulation.Id = item.Key;
+                simulation.Id = item.Id;
                 result.Add(simulation);
             }
 
@@ -104,13 +109,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<Models.Simulation> GetAsync(string id)
         {
-            var item = await this.storage.GetAsync(STORAGE_COLLECTION, id);
-
+            var item = await this.simulationsStorage.GetAsync(id);
             if (item == null) return null;
 
             var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
             simulation.ETag = item.ETag;
-            simulation.Id = item.Key;
+            simulation.Id = item.Id;
             return simulation;
         }
 
@@ -153,17 +157,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
             }
 
-            // TODO if write to storage adapter fails, the iothub connection string 
-            //      will still be stored to disk. Storing the encrypted string using
-            //      storage adapter would address this
-            //      https://github.com/Azure/device-simulation-dotnet/issues/129
-
-            var iotHubConnectionStrings = new List<string>(simulation.IotHubConnectionStrings);
-            simulation.IotHubConnectionStrings.Clear();
-            foreach (var iotHubConnectionString in iotHubConnectionStrings)
+            for (var index = 0; index < simulation.IotHubConnectionStrings.Count; index++)
             {
-                var connString = await this.connectionStringManager.RedactAndSaveAsync(iotHubConnectionString);
-                simulation.IotHubConnectionStrings.Add(connString);
+                var connString = await this.connectionStringManager.RedactAndSaveAsync(simulation.IotHubConnectionStrings[index]);
+
+                if (!simulation.IotHubConnectionStrings.Contains(connString))
+                {
+                    simulation.IotHubConnectionStrings[index] = connString;
+                }
             }
 
             // This value cannot be set by the user, we set it here and make sure it's "false"
@@ -183,7 +184,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 throw new InvalidInputException("Simulation ID is not specified.");
             }
 
-            var existingSimulation = await this.GetAsync(simulation.Id);
+            Models.Simulation existingSimulation = null;
+
+            try
+            {
+                existingSimulation = await this.GetAsync(simulation.Id);
+            }
+            catch (ResourceNotFoundException)
+            {
+                // Do nothing - this mean simulation does not exist in storage
+                // Therefore allow to create a new simulation
+                this.log.Info("Simulation not found in storage, hence proceeding to create new simulation");
+            }
+
             if (existingSimulation != null)
             {
                 this.log.Info("Modifying simulation");
@@ -203,9 +216,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
 
                 simulation.Created = existingSimulation.Created;
-
-                // This value cannot be set by the user, making sure we persist the existing state
-                simulation.PartitioningComplete = existingSimulation.PartitioningComplete;
             }
             else
             {
@@ -217,14 +227,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 simulation.PartitioningComplete = false;
             }
 
-            // TODO if write to storage adapter fails, the iothub connection string 
-            //      will still be stored to disk. Storing the encrypted string using
-            //      storage adapter would address this
-            //      https://github.com/Azure/device-simulation-dotnet/issues/129
             for (var index = 0; index < simulation.IotHubConnectionStrings.Count; index++)
             {
                 var connString = await this.connectionStringManager.RedactAndSaveAsync(simulation.IotHubConnectionStrings[index]);
-                simulation.IotHubConnectionStrings[index] = connString;
+
+                if (!simulation.IotHubConnectionStrings.Contains(connString))
+                {
+                    simulation.IotHubConnectionStrings[index] = connString;
+                }
             }
 
             return await this.SaveAsync(simulation, simulation.ETag);
@@ -235,10 +245,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task<Models.Simulation> MergeAsync(SimulationPatch patch)
         {
-            var item = await this.storage.GetAsync(STORAGE_COLLECTION, patch.Id);
+            if (string.IsNullOrEmpty(patch.Id))
+            {
+                this.log.Warn("Invalid simulation ID.", () => new { patch.Id });
+                throw new InvalidInputException("Invalid simulation ID.");
+            }
+
+            var item = await this.simulationsStorage.GetAsync(patch.Id);
             var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
             simulation.ETag = item.ETag;
-            simulation.Id = item.Key;
+            simulation.Id = item.Id;
 
             // Even when there's nothing to do, verify the ETag mismatch
             if (patch.ETag != simulation.ETag)
@@ -273,7 +289,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
             }
 
-            return await this.SaveAsync(simulation, patch.ETag);
+            item = await this.simulationsStorage.UpsertAsync(
+                new StorageRecord
+                {
+                    Id = simulation.Id,
+                    Data = JsonConvert.SerializeObject(simulation)
+                },
+                patch.ETag
+            );
+
+            simulation.ETag = item.ETag;
+
+            return simulation;
         }
 
         /// <summary>
@@ -285,8 +312,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var deviceIds = this.GetDeviceIds(await this.GetAsync(id));
             await this.devices.DeleteListAsync(deviceIds);
 
-            // Then delete the simulation from the storage
-            await this.storage.DeleteAsync(STORAGE_COLLECTION, id);
+            // Then delete the simulation from storage
+            await this.simulationsStorage.DeleteAsync(id);
         }
 
         public async Task<bool> TryToStartDevicesCreationAsync(string simulationId, IDevices devices)
@@ -343,7 +370,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public async Task AddDeviceAsync(string id)
         {
-            await this.storage.CreateAsync(DEVICES_COLLECTION, id, id);
+            await this.storageAdapterClient.CreateAsync(DEVICES_COLLECTION, id, id);
         }
 
         /// <summary>
@@ -414,23 +441,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 simulation.PartitioningComplete = false;
             }
 
-            var result = await this.storage.UpdateAsync(
-                STORAGE_COLLECTION,
-                simulation.Id,
-                JsonConvert.SerializeObject(simulation),
-                eTag);
+            var result = await this.simulationsStorage.UpsertAsync(
+                new StorageRecord
+                {
+                    Id = simulation.Id,
+                    Data = JsonConvert.SerializeObject(simulation)
+                },
+                eTag
+            );
+
+            // Use the new ETag provided by the storage
+            simulation.ETag = result.ETag;
+            simulation.Id = result.Id;
 
             this.log.Info("Simulation written to storage",
                 () => new
                 {
-                    simulation.Id, simulation.Enabled,
+                    simulation.Id,
+                    simulation.Enabled,
                     simulation.PartitioningComplete
                 });
-
-            simulation.Id = result.Key;
-
-            // Use the new ETag provided by the storage
-            simulation.ETag = result.ETag;
 
             return simulation;
         }
