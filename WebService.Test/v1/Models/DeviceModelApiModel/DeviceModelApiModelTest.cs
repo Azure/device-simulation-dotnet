@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
@@ -16,10 +17,12 @@ namespace WebService.Test.v1.Models.DeviceModelApiModel
     public class DeviceModelApiModelTest
     {
         private readonly Mock<ILogger> logger;
+        private readonly Mock<IDeviceModels> deviceModels;
 
         public DeviceModelApiModelTest()
         {
             this.logger = new Mock<ILogger>();
+            this.deviceModels = new Mock<IDeviceModels>();
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -57,10 +60,10 @@ namespace WebService.Test.v1.Models.DeviceModelApiModel
             var deviceModelApiModel = this.GetValidDeviceModelApiModel();
 
             // Act
-            var ex = Record.Exception(() => deviceModelApiModel.ValidateInputRequest(this.logger.Object));
+            var task = Record.ExceptionAsync(async () => await deviceModelApiModel.ValidateInputRequest(this.logger.Object, this.deviceModels.Object));
 
             // Assert
-            Assert.Null(ex);
+            Assert.Null(task.Exception);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -79,16 +82,16 @@ namespace WebService.Test.v1.Models.DeviceModelApiModel
                 return model;
             }
 
-            var deviceModelApiModel = this.GetInvalidDeviceModelApiModel(InvalidProtocol);
+            var deviceModelApiModelWithInvalidProtocol = this.GetInvalidDeviceModelApiModel(InvalidProtocol);
             var deviceModelApiModelWithEmptyProtocol = this.GetInvalidDeviceModelApiModel(EmptyProtocol);
 
-            // Act
-            var ex = Record.Exception(() => deviceModelApiModel.ValidateInputRequest(this.logger.Object));
-            var exception = Record.Exception(() => deviceModelApiModelWithEmptyProtocol.ValidateInputRequest(this.logger.Object));
-
-            // Assert
-            Assert.IsType<BadRequestException>(ex);
-            Assert.IsType<BadRequestException>(exception);
+            // Act & Assert
+            Assert.ThrowsAsync<BadRequestException>(
+                    async () => await deviceModelApiModelWithInvalidProtocol.ValidateInputRequest(this.logger.Object, this.deviceModels.Object))
+                .Wait(Constants.TEST_TIMEOUT);
+            Assert.ThrowsAsync<BadRequestException>(
+                    async () => await deviceModelApiModelWithEmptyProtocol.ValidateInputRequest(this.logger.Object, this.deviceModels.Object))
+                .Wait(Constants.TEST_TIMEOUT);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -103,11 +106,10 @@ namespace WebService.Test.v1.Models.DeviceModelApiModel
 
             var deviceModelApiModel = this.GetInvalidDeviceModelApiModel(InvalidTelemetry);
 
-            // Act
-            var ex = Record.Exception(() => deviceModelApiModel.ValidateInputRequest(this.logger.Object));
-
-            // Assert
-            Assert.IsType<BadRequestException>(ex);
+            // Act & Assert
+            Assert.ThrowsAsync<BadRequestException>(
+                    async () => await deviceModelApiModel.ValidateInputRequest(this.logger.Object, this.deviceModels.Object))
+                .Wait(Constants.TEST_TIMEOUT);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -122,11 +124,106 @@ namespace WebService.Test.v1.Models.DeviceModelApiModel
 
             var deviceModelApiModel = this.GetInvalidDeviceModelApiModel(InvaildSimulation);
 
+            // Act & Assert
+            Assert.ThrowsAsync<BadRequestException>(
+                    async () => await deviceModelApiModel.ValidateInputRequest(this.logger.Object, this.deviceModels.Object))
+                .Wait(Constants.TEST_TIMEOUT);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItThrowsBadRequestExceptionForEmptyName()
+        {
+            // Arrange
+            Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel NoName(Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel model)
+            {
+                model.Name = "";
+                return model;
+            }
+
+            var deviceModelApiModel = this.GetInvalidDeviceModelApiModel(NoName);
+
+            // Act & Assert
+            Assert.ThrowsAsync<BadRequestException>(
+                    async () => await deviceModelApiModel.ValidateInputRequest(this.logger.Object, this.deviceModels.Object))
+                .Wait(Constants.TEST_TIMEOUT);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItThrowsBadRequestExceptionForDuplicateNameWhenInsert()
+        {
+            // Arrange
+            const string EXISTING_NAME = "name";
+
+            Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel DupName(Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel model)
+            {
+                model.Name = EXISTING_NAME;
+                return model;
+            }
+
+            var deviceModelApiModel = this.GetInvalidDeviceModelApiModel(DupName);
+            this.deviceModels.Setup(x => x.GetListAsync())
+                .ReturnsAsync(new List<DeviceModel>
+                {
+                    new DeviceModel { Name = EXISTING_NAME }
+                });
+
+            // Act & Assert
+            Assert.ThrowsAsync<BadRequestException>(
+                    async () => await deviceModelApiModel.ValidateInputRequest(this.logger.Object, this.deviceModels.Object))
+                .Wait(Constants.TEST_TIMEOUT);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItThrowsBadRequestExceptionForDuplicateNameWhenUpsert()
+        {
+            // Arrange
+            const string NEW_NAME = "new name";
+            const string EXISTING_NAME = "name";
+
+            Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel DupName(Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel model)
+            {
+                model.Name = NEW_NAME;
+                return model;
+            }
+
+            var deviceModelApiModel = this.GetInvalidDeviceModelApiModel(DupName);
+            this.deviceModels.Setup(x => x.GetListAsync())
+                .ReturnsAsync(new List<DeviceModel>
+                {
+                    new DeviceModel { Name = EXISTING_NAME },
+                    new DeviceModel { Name = NEW_NAME }
+                });
+
+            // Act & Assert
+            Assert.ThrowsAsync<BadRequestException>(
+                    async () => await deviceModelApiModel.ValidateInputRequest(this.logger.Object, this.deviceModels.Object, true))
+                .Wait(Constants.TEST_TIMEOUT);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItAllowDuplicateNameForEditExistDeivceModel()
+        {
+            // Arrange
+            const string EXISTING_NAME = "name";
+
+            Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel DupName(Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel model)
+            {
+                model.Name = EXISTING_NAME;
+                return model;
+            }
+
+            var deviceModelApiModel = this.GetInvalidDeviceModelApiModel(DupName);
+            this.deviceModels.Setup(x => x.GetListAsync())
+                .ReturnsAsync(new List<DeviceModel>
+                {
+                    new DeviceModel { Name = EXISTING_NAME }
+                });
+
             // Act
-            var ex = Record.Exception(() => deviceModelApiModel.ValidateInputRequest(this.logger.Object));
+            var task = Record.ExceptionAsync(async () => await deviceModelApiModel.ValidateInputRequest(this.logger.Object, this.deviceModels.Object));
 
             // Assert
-            Assert.IsType<BadRequestException>(ex);
+            Assert.Null(task.Exception);
         }
 
         private Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel GetValidDeviceModelApiModel()
@@ -134,6 +231,7 @@ namespace WebService.Test.v1.Models.DeviceModelApiModel
             var deviceModelApiModel = new Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelApiModel.DeviceModelApiModel
             {
                 Id = "id",
+                Name = "name",
                 Type = "Custom",
                 ETag = "Etag_1",
                 Protocol = "AMQP",

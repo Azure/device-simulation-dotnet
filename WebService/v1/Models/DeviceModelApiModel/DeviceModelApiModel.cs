@@ -3,6 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
@@ -151,11 +153,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
             return result;
         }
 
-        public void ValidateInputRequest(ILogger log)
+        public async Task ValidateInputRequest(ILogger log, IDeviceModels deviceModelClient, bool edit = false)
         {
+            const string NO_NAME = "The device model doesn't contain a name";
+            const string NO_DUP_NAME = "The device model name already been used";
             const string NO_PROTOCOL = "The device model doesn't contain a protocol";
             const string ZERO_TELEMETRY = "The device model has zero telemetry";
             const string INVALID_TYPE = "The device model has an invalid type";
+
+            // Name is required and no duplicates
+            if (string.IsNullOrEmpty(this.Name))
+            {
+                throw new BadRequestException(NO_NAME);
+            }
+
+            var deviceModels = await deviceModelClient.GetListAsync();
+
+            var nameDupWhenCreate = !edit && deviceModels.Any(model => string.Equals(model.Name, this.Name, StringComparison.OrdinalIgnoreCase));
+            var nameDupWhenEdit = edit && deviceModels
+                                      .Where(model => model.Id != this.Id).ToList()
+                                      .Any(model => string.Equals(model.Name, this.Name, StringComparison.OrdinalIgnoreCase));
+
+            if (nameDupWhenCreate || nameDupWhenEdit)
+            {
+                throw new BadRequestException(NO_DUP_NAME);
+            }
 
             // We accept empty string, null and 'Custom' values
             if (!string.IsNullOrEmpty(this.Type)

@@ -165,6 +165,7 @@ namespace WebService.Test.v1.Controllers
             {
                 Id = id,
                 Protocol = "AMQP",
+                Name = "name",
                 ETag = "Etag",
                 Type = "Custom",
                 Telemetry = new List<DeviceModelTelemetry>
