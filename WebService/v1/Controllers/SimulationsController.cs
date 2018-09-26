@@ -105,6 +105,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromBody] MetricsRequestsApiModel requests,
             string id)
         {
+            // No validate needed for azure management API
             var payload = requests?.ToServiceModel();
 
             // Service will generate default query if payload is null.
