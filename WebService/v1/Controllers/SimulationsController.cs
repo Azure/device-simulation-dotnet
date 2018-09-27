@@ -28,6 +28,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private readonly IServicesConfig servicesConfig;
         private readonly IDeploymentConfig deploymentConfig;
         private readonly IIotHubConnectionStringManager connectionStringManager;
+        private readonly IIothubMetrics iothubMetrics;
         private readonly ISimulationAgent simulationAgent;
         private readonly ISimulationRunner simulationRunner;
         private readonly IRateLimiting rateReporter;
@@ -38,6 +39,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             IServicesConfig servicesConfig,
             IDeploymentConfig deploymentConfig,
             IIotHubConnectionStringManager connectionStringManager,
+            IIothubMetrics iothubMetrics,
             IPreprovisionedIotHub preprovisionedIotHub,
             ISimulationAgent simulationAgent,
             ISimulationRunner simulationRunner,
@@ -48,6 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             this.servicesConfig = servicesConfig;
             this.deploymentConfig = deploymentConfig;
             this.connectionStringManager = connectionStringManager;
+            this.iothubMetrics = iothubMetrics;
             this.simulationAgent = simulationAgent;
             this.simulationRunner = simulationRunner;
             this.rateReporter = rateReporter;
@@ -76,7 +79,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromBody] SimulationApiModel simulationApiModel,
             [FromQuery(Name = "template")] string template = "")
         {
-            if (simulationApiModel == null)
+            if (simulationApiModel != null)
+            {
+                await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringManager);
+            }
+            else
             {
                 if (string.IsNullOrEmpty(template))
                 {
@@ -87,14 +94,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 // Simulation can be created with `template=default` other than created with input data
                 simulationApiModel = new SimulationApiModel();
             }
-            else
-            {
-                await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringManager);
-            }
 
             var simulation = await this.simulationsService.InsertAsync(simulationApiModel.ToServiceModel(null), template);
             return SimulationApiModel.FromServiceModel(
                 simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
+        }
+
+        [HttpPost("{id}/metrics/iothub!search")]
+        public async Task<object> PostAsync(
+            [FromBody] MetricsRequestsApiModel requests,
+            string id)
+        {
+            // API payload validation is not required as we're simply relaying the request.
+            var payload = requests?.ToServiceModel();
+
+            // Service will generate default query if payload is null.
+            // See default query details in /Services/AzureManagementAdapter/AzureManagementAdapter.cs
+            return await this.iothubMetrics.GetIothubMetricsAsync(payload);
         }
 
         [HttpPut("{id}")]
