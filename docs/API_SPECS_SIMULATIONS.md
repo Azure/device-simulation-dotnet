@@ -689,3 +689,54 @@ Content-Type: application/json; charset=utf-8
   ]
 }
 ```
+
+## Get IotHub metrics for a simulation
+
+Get IotHub metrics from https://management.azure.com.
+
+More details: 
+1) https://docs.microsoft.com/en-us/azure/monitoring-and-diagnostics/monitoring-rest-api-walkthrough
+2) https://docs.microsoft.com/en-us/rest/api/monitor/metrics/list
+
+Request:
+```
+POST /v1/simulations/{id}/metrics/iothub!search
+Content-Type: application/json; charset=utf-8
+```
+optional body.
+```json
+{
+  "requests": [
+  	{
+	  "httpMethod": "GET",
+	  "relativeUrl":"/subscriptions/{subscription_id}/resourceGroups/{resourceGroup}/providers/Microsoft.Devices/IotHubs/{iothub_name}/providers/Microsoft.Insights/metrics?api-version=2016-06-01&$filter={filters}"
+	}
+  ]
+}
+```
+
+Response:
+```
+200 OK
+Content-Type: application/JSON
+```json
+{
+  "responses": [
+    {
+	  "content": {
+	    "value": [
+		  {
+		  	"data": [
+			  {
+			  	"timeStamp": "2018-09-20T17:50:00Z",
+				"total": 0
+			  },
+			  ...
+			]
+		  }
+		]
+	  }
+	}
+  ]
+}
+```
