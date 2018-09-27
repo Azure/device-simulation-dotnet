@@ -28,6 +28,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private readonly IServicesConfig servicesConfig;
         private readonly IDeploymentConfig deploymentConfig;
         private readonly IIotHubConnectionStringManager connectionStringManager;
+        private readonly IIothubMetrics iothubMetrics;
         private readonly ISimulationAgent simulationAgent;
         private readonly ISimulationRunner simulationRunner;
         private readonly IRateLimiting rateReporter;
@@ -38,6 +39,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             IServicesConfig servicesConfig,
             IDeploymentConfig deploymentConfig,
             IIotHubConnectionStringManager connectionStringManager,
+            IIothubMetrics iothubMetrics,
             IPreprovisionedIotHub preprovisionedIotHub,
             ISimulationAgent simulationAgent,
             ISimulationRunner simulationRunner,
@@ -48,6 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             this.servicesConfig = servicesConfig;
             this.deploymentConfig = deploymentConfig;
             this.connectionStringManager = connectionStringManager;
+            this.iothubMetrics = iothubMetrics;
             this.simulationAgent = simulationAgent;
             this.simulationRunner = simulationRunner;
             this.rateReporter = rateReporter;
@@ -76,9 +79,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromBody] SimulationApiModel simulationApiModel,
             [FromQuery(Name = "template")] string template = "")
         {
-            await simulationApiModel?.ValidateInputRequestAsync(this.log, this.connectionStringManager);
-
-            if (simulationApiModel == null)
+            if (simulationApiModel != null)
+            {
+                await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringManager);
+            }
+            else
             {
                 if (string.IsNullOrEmpty(template))
                 {
@@ -95,18 +100,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
 
+        [HttpPost("{id}/metrics/iothub!search")]
+        public async Task<object> PostAsync(
+            [FromBody] MetricsRequestsApiModel requests,
+            string id)
+        {
+            // API payload validation is not required as we're simply relaying the request.
+            var payload = requests?.ToServiceModel();
+
+            // Service will generate default query if payload is null.
+            // See default query details in /Services/AzureManagementAdapter/AzureManagementAdapter.cs
+            return await this.iothubMetrics.GetIothubMetricsAsync(payload);
+        }
+
         [HttpPut("{id}")]
         public async Task<SimulationApiModel> PutAsync(
             [FromBody] SimulationApiModel simulationApiModel,
             string id = "")
         {
-            await simulationApiModel?.ValidateInputRequestAsync(this.log, this.connectionStringManager);
-
             if (simulationApiModel == null)
             {
                 this.log.Warn("No data provided, request object is null");
                 throw new BadRequestException("No data provided, request object is empty.");
             }
+
+            await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringManager);
 
             // Load the existing resource, so that internal properties can be copied
             var existingSimulation = await this.GetExistingSimulationAsync(id);
@@ -126,7 +144,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data provided, request object is empty.");
             }
 
-            device?.ValidateInputRequest(this.log);
+            device.ValidateInputRequest(this.log);
 
             await this.simulationAgent.AddDeviceAsync(device.DeviceId, device.ModelId);
         }
