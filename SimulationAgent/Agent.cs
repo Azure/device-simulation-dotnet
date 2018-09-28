@@ -147,9 +147,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                 foreach (var sim in simulationList)
                 {
-                    sim.Id = Guid.NewGuid().ToString("N");
-                    sim.StartTime = DateTimeOffset.UtcNow;
-                    await this.simulations.UpsertAsync(sim);
+                    var existingSimulation = this.simulations.GetAsync(sim.Id);
+
+                    if (existingSimulation == null)
+                    {
+                        sim.StartTime = DateTimeOffset.UtcNow;
+                        await this.simulations.UpsertAsync(sim);
+                    }
                 }
             }
             catch (Exception ex)
