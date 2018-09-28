@@ -31,7 +31,6 @@ namespace SimulationAgent.Test
         private readonly Mock<IDeviceModels> deviceModels;
         private readonly Mock<IDeviceModelsGeneration> deviceModelsOverriding;
         private readonly Mock<IDevices> devices;
-        private readonly Mock<ISimulations> simulations;
         private readonly Mock<IFactory> factory;
         private readonly Mock<IDeviceStateActor> deviceStateActor;
         private readonly Mock<IDeviceConnectionActor> deviceConnectionActor;
@@ -49,7 +48,6 @@ namespace SimulationAgent.Test
             this.deviceModels = new Mock<IDeviceModels>();
             this.deviceModelsOverriding = new Mock<IDeviceModelsGeneration>();
             this.devices = new Mock<IDevices>();
-            this.simulations = new Mock<ISimulations>();
             this.factory = new Mock<IFactory>();
             this.deviceStateActor = new Mock<IDeviceStateActor>();
             this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
@@ -67,7 +65,6 @@ namespace SimulationAgent.Test
                 this.deviceModels.Object,
                 this.deviceModelsOverriding.Object,
                 this.devices.Object,
-                this.simulations.Object,
                 this.factory.Object);
         }
 
@@ -316,8 +313,6 @@ namespace SimulationAgent.Test
 
         private void SetupSimulationReadyToStart()
         {
-            this.SetupSimulations();
-
             this.SetUpDeviceModelsOverriding();
 
             this.SetupDevices();
@@ -392,15 +387,6 @@ namespace SimulationAgent.Test
                     It.IsAny<DeviceModel>(),
                     It.IsAny<DeviceModelOverride>()))
                 .Returns(deviceModel);
-        }
-
-        private void SetupSimulations()
-        {
-            var deviceIds = new List<string> { "01", "02" };
-
-            this.simulations
-                .Setup(x => x.GetDeviceIds(It.IsAny<Simulation>()))
-                .Returns(deviceIds);
         }
     }
 }

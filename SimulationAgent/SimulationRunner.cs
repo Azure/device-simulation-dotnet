@@ -62,9 +62,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Reference to the singleton used to access the devices
         private readonly IDevices devices;
 
-        // Service used to manage simulation details
-        private readonly ISimulations simulations;
-
         // DI factory used to instantiate actors
         private readonly IFactory factory;
 
@@ -120,7 +117,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             IDeviceModels deviceModels,
             IDeviceModelsGeneration deviceModelsOverriding,
             IDevices devices,
-            ISimulations simulations,
             IFactory factory)
         {
             this.connectionLoopSettings = new ConnectionLoopSettings(ratingConfig);
@@ -132,7 +128,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.deviceModels = deviceModels;
             this.deviceModelsOverriding = deviceModelsOverriding;
             this.devices = devices;
-            this.simulations = simulations;
             this.factory = factory;
 
             this.startLock = new { };

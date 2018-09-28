@@ -80,11 +80,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public const string SIMULATED_TAG_KEY = "IsSimulated";
         public const string SIMULATED_TAG_VALUE = "Y";
 
-        // The registry might be in an inconsistent state after several requests, this limit
-        // is used to recreate the registry manager instance every once in a while, while starting
-        // the simulation. When the simulation is running the registry is not used anymore.
-        private const uint REGISTRY_LIMIT_REQUESTS = 1000;
-
         // When using bulk operations, this is the max number of devices that the registry APIs allow
         private const int REGISTRY_MAX_BATCH_SIZE = 100;
 

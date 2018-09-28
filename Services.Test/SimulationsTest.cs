@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Azure.Amqp.Framing;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
@@ -28,7 +27,6 @@ namespace Services.Test
         /// <summary>The test logger</summary>
         private readonly ITestOutputHelper log;
 
-        private const string STORAGE_COLLECTION = "simulations";
         private const string SIMULATION_ID = "1";
 
         private readonly Mock<IServicesConfig> mockConfig;

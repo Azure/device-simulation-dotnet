@@ -1,15 +1,14 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using Moq;
-using System.Collections.Generic;
-using DeviceModel = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
-using Xunit.Abstractions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
-using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
-using Xunit;
-using Services.Test.helpers;
 using System;
+using System.Collections.Generic;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Moq;
+using Services.Test.helpers;
+using Xunit;
+using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
 
 namespace Services.Test
