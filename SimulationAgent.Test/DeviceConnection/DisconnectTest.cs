@@ -55,7 +55,7 @@ namespace SimulationAgent.Test.DeviceConnection
             this.target.SetupAsync(this.deviceConnectionActor.Object, DEVICE_ID, this.deviceModel)
                 .Wait(Constants.TEST_TIMEOUT);
             this.deviceConnectionActor.Setup(x => x.Client).Returns(this.deviceClient.Object);
-            
+
             // Act
             await this.target.RunAsync();
 
@@ -82,11 +82,12 @@ namespace SimulationAgent.Test.DeviceConnection
 
         private void SetupDeviceConnectionActor()
         {
-            this.deviceConnectionActor.Object.Setup(
-                DEVICE_ID,
-                this.deviceModel,
-                this.deviceStateActor.Object,
-                this.loopSettings.Object);
+            this.deviceConnectionActor.Object.SetupAsync(
+                    DEVICE_ID,
+                    this.deviceModel,
+                    this.deviceStateActor.Object,
+                    this.loopSettings.Object)
+                .Wait(Constants.TEST_TIMEOUT);
         }
     }
 }
