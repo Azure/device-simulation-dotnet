@@ -79,11 +79,12 @@ namespace SimulationAgent.Test.DeviceConnection
 
         private void SetupDeviceConnectionActor()
         {
-            this.deviceConnectionActor.Object.Setup(
-                DEVICE_ID,
-                this.deviceModel,
-                this.deviceStateActor.Object,
-                this.loopSettings.Object);
+            this.deviceConnectionActor.Object.SetupAsync(
+                    DEVICE_ID,
+                    this.deviceModel,
+                    this.deviceStateActor.Object,
+                    this.loopSettings.Object)
+                .Wait(Constants.TEST_TIMEOUT);
         }
     }
 }
