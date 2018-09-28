@@ -94,7 +94,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
                     () => new
                     {
                         currentProcessNodeId,
-                        lockMaxAgeSecs = this.masterLockMaxAgeSecs
+                        this.masterLockMaxAgeSecs
                     });
                 return acquired;
             }

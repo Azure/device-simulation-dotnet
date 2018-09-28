@@ -81,6 +81,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                     await this.DeletePartitionsAsync(activeSimulations);
                 }
 
+                // Sleep some seconds before checking for new simulations (by default 15 seconds)
                 this.thread.Sleep(this.checkIntervalMsecs);
             }
         }
@@ -117,6 +118,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
             {
                 this.log.Info("Checking if the device creation is complete...", () => new { SimulationId = simulation.Id });
 
+                // TODO: optimize, we can probably cache this instance
+                // e.g. to avoid fetching the conn string from storage
                 var deviceService = this.factory.Resolve<IDevices>();
                 await deviceService.InitAsync();
 
@@ -147,6 +150,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
             {
                 this.log.Debug("Starting devices creation", () => new { SimulationId = simulation.Id });
 
+                // TODO: optimize, we can probably cache this instance
+                // e.g. to avoid fetching the conn string from storage
                 var deviceService = this.factory.Resolve<IDevices>();
                 await deviceService.InitAsync();
 

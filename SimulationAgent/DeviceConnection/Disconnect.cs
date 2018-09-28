@@ -36,6 +36,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.context = context;
             this.deviceId = deviceId;
             this.deviceModel = deviceModel;
+
+            // TODO: to be removed once SimulationContext is introduced
             await this.devices.InitAsync();
         }
 

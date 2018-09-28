@@ -89,15 +89,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private const int REGISTRY_MAX_BATCH_SIZE = 100;
 
         private readonly IIotHubConnectionStringManager connectionStringManager;
+        private readonly IDeviceClientWrapper deviceClient;
+        private readonly IRegistryManager registry;
+
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
         private readonly IServicesConfig config;
-        private readonly IDeviceClientWrapper deviceClient;
         private readonly IInstance instance;
 
         private readonly bool twinReadsWritesEnabled;
         private string ioTHubHostName;
-        private IRegistryManager registry;
         private string connString;
         private string fixedDeviceKey;
 
@@ -381,7 +382,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var msg = "Failed to delete devices";
                 this.log.Error(msg, error);
-                this.diagnosticsLogger.LogServiceError(msg, error.Message); ;
+                this.diagnosticsLogger.LogServiceError(msg, error.Message);
                 throw;
             }
         }

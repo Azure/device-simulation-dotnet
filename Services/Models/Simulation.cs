@@ -14,20 +14,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         // A simulation is "active" if enabled and "scheduled"
         [JsonIgnore]
-        //public bool IsActiveNow => this.Enabled &&
-
-        //                           // Start time has not been set OR the StartTime value is earlier than UtcNow
-        //                           (!this.StartTime.HasValue || this.StartTime.Value.CompareTo(DateTimeOffset.UtcNow) <= 0) &&
-
-        //                           // EndTime has not been set OR the EndTime value is later than UtcNow
-        //                           (!this.EndTime.HasValue || this.EndTime.Value.CompareTo(DateTimeOffset.UtcNow) > 0);
         public bool IsActiveNow
         {
             get
             {
-                var leftTimeWindow = (!this.StartTime.HasValue || this.StartTime.Value.CompareTo(DateTimeOffset.UtcNow) <= 0);
-                var rightTimeWindow = (!this.EndTime.HasValue || this.EndTime.Value.CompareTo(DateTimeOffset.UtcNow) > 0);
-                return this.Enabled && leftTimeWindow && rightTimeWindow;
+                var now = DateTimeOffset.UtcNow;
+                var startedInThePast = !this.StartTime.HasValue || this.StartTime.Value.CompareTo(now) <= 0;
+                var endInTheFuture = !this.EndTime.HasValue || this.EndTime.Value.CompareTo(now) > 0;
+                return this.Enabled && startedInThePast && endInTheFuture;
             }
         }
 
@@ -39,7 +33,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         // A simulation should be running if it is active and devices have been created and partitioned
         [JsonIgnore]
-        public bool ShouldBeRunning => this.IsActiveNow && this.PartitioningComplete && this.DevicesCreationComplete;
+        public bool ShouldBeRunning => this.IsActiveNow
+                                       && this.PartitioningComplete
+                                       && this.DevicesCreationComplete;
 
         // When Simulation is written to storage, Id and Etag are not serialized as part of body
         // These are instead written in dedicated columns (key and eTag)

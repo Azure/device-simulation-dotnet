@@ -28,7 +28,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private const string CONNSTRING_REGEX_KEYNAME = "keyName";
         private const string CONNSTRING_REGEX_KEY = "key";
         private const string RECORD_ID = "custom_iothub_key";
-        private const int IOT_HUB_CONNECTION_STRING_TIMEOUT_SECS = 2;
 
         private readonly IServicesConfig config;
         private readonly ILogger log;
@@ -340,7 +339,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             catch (Exception e)
             {
                 var msg = "Unable to write connection string to storage.";
-                this.log.Error(msg, e );
+                this.log.Error(msg, e);
                 this.diagnosticsLogger.LogServiceError(msg, e.Message);
                 throw;
             }
