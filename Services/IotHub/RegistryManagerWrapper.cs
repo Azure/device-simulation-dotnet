@@ -60,12 +60,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         public void Init(string connString)
         {
-            // TODO: remove this workaround for the RegistryManagerWrapper being initialized multiple times.
-            if (this.instance.IsInitialized)
-            {
-                return;
-            }
-
             this.instance.InitOnce();
             this.registry = RegistryManager.CreateFromConnectionString(connString);
             this.instance.InitComplete();

@@ -104,9 +104,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Flags signaling whether the simulation is starting or stopping (to reduce blocked threads)
         private bool starting;
         private bool stopping;
-        
-        // Flag indicating whether the Devices service has been initialized
-        private bool devicesInitialized;
 
         // Flag signaling whether the simulation has started and is running (to avoid contentions)
         private bool running;
@@ -143,7 +140,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.starting = false;
             this.stopping = false;
             this.rateLimiting = rateLimiting;
-            this.devicesInitialized = false;
 
             this.deviceStateActors = new ConcurrentDictionary<string, IDeviceStateActor>();
             this.deviceConnectionActors = new ConcurrentDictionary<string, IDeviceConnectionActor>();
@@ -171,14 +167,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             this.log.Info("Starting simulation...", () => new { simulation.Id });
 
-            // TODO: updte comment if landing on not using a singleton
-            // Note: this is a singleton class, so we can call this once. This sets
-            // the active hub, e.g. in case the user provided a custom connection string.
-            if (!this.devicesInitialized)
-            {
-                await this.devices.InitAsync();
-                this.devicesInitialized = true;
-            }
+            // TODO: to be removed once SimulationContext is introduced
+            await this.devices.InitAsync();
 
             // Loop through all the device models used in the simulation
             var models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
