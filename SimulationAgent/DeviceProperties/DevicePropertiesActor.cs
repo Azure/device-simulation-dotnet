@@ -130,7 +130,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
         /// <summary>
         /// Invoke this method before calling Execute(), to initialize the actor
-        /// with details like the device id. Setup() should be called only once.
+        /// with details like the device id. SetupAsync() should be called only once.
         /// </summary>
         public void Setup(
             string deviceId,

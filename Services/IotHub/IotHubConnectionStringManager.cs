@@ -60,7 +60,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             // check if the pre-provisioned IoT Hub should be used
             if (this.IsPreprovisionedIotHub(customIotHub))
             {
-                this.log.Info("Using IotHub connection string stored in config.");
+                this.log.Info("Using the IotHub connection string specified in the config file.");
                 return this.config.IoTHubConnString;
             }
 

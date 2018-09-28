@@ -90,7 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         }
 
         /// <summary>
-        /// Setup custom rules overriding autowired ones, for example in cases
+        /// SetupAsync custom rules overriding autowired ones, for example in cases
         /// where an interface has multiple implementations, and cases where
         /// a singleton is preferred to new instances.
         /// </summary>
@@ -122,7 +122,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterType<Agent>().As<ISimulationAgent>().SingleInstance();
             builder.RegisterType<Simulations>().As<ISimulations>().SingleInstance();
             builder.RegisterType<DeviceModels>().As<IDeviceModels>().SingleInstance();
-            builder.RegisterType<Services.Devices>().As<IDevices>().SingleInstance();
+            //builder.RegisterType<Services.Devices>().As<IDevices>().SingleInstance();
             builder.RegisterType<RateLimiting>().As<IRateLimiting>().SingleInstance();
             builder.RegisterType<DiagnosticsLogger>().As<IDiagnosticsLogger>().SingleInstance();
 

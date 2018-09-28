@@ -14,9 +14,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         // A simulation is "active" if enabled and "scheduled"
         [JsonIgnore]
-        public bool IsActiveNow => this.Enabled &&
-                                   (!this.StartTime.HasValue || this.StartTime.Value.CompareTo(DateTimeOffset.UtcNow) <= 0) &&
-                                   (!this.EndTime.HasValue || this.EndTime.Value.CompareTo(DateTimeOffset.UtcNow) > 0);
+        //public bool IsActiveNow => this.Enabled &&
+
+        //                           // Start time has not been set OR the StartTime value is earlier than UtcNow
+        //                           (!this.StartTime.HasValue || this.StartTime.Value.CompareTo(DateTimeOffset.UtcNow) <= 0) &&
+
+        //                           // EndTime has not been set OR the EndTime value is later than UtcNow
+        //                           (!this.EndTime.HasValue || this.EndTime.Value.CompareTo(DateTimeOffset.UtcNow) > 0);
+        public bool IsActiveNow
+        {
+            get
+            {
+                var leftTimeWindow = (!this.StartTime.HasValue || this.StartTime.Value.CompareTo(DateTimeOffset.UtcNow) <= 0);
+                var rightTimeWindow = (!this.EndTime.HasValue || this.EndTime.Value.CompareTo(DateTimeOffset.UtcNow) > 0);
+                return this.Enabled && leftTimeWindow && rightTimeWindow;
+            }
+        }
 
         [JsonIgnore]
         public bool DeviceCreationRequired => this.IsActiveNow && !this.DevicesCreationComplete;

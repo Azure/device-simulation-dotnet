@@ -181,7 +181,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         /// <summary>
         /// Invoke this method before calling Execute(), to initialize the actor
         /// with details like the device model and message type to simulate.
-        /// Setup() should be called only once.
+        /// SetupAsync() should be called only once.
         /// </summary>
         public void Setup(
             string deviceId,
@@ -201,12 +201,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.deviceStateActor = deviceStateActor;
             this.loopSettings = loopSettings;
 
-            this.credentialsSetupLogic.Setup(this, this.deviceId, this.deviceModel);
-            this.fetchFromRegistryLogic.Setup(this, this.deviceId, this.deviceModel);
-            this.registerLogic.Setup(this, this.deviceId, this.deviceModel);
-            this.connectLogic.Setup(this, this.deviceId, this.deviceModel);
-            this.deregisterLogic.Setup(this, this.deviceId, this.deviceModel);
-            this.disconnectLogic.Setup(this, this.deviceId, this.deviceModel);
+            this.credentialsSetupLogic.SetupAsync(this, this.deviceId, this.deviceModel).Wait();
+            this.fetchFromRegistryLogic.SetupAsync(this, this.deviceId, this.deviceModel).Wait();
+            this.registerLogic.SetupAsync(this, this.deviceId, this.deviceModel).Wait();
+            this.connectLogic.SetupAsync(this, this.deviceId, this.deviceModel).Wait();
+            this.deregisterLogic.SetupAsync(this, this.deviceId, this.deviceModel).Wait();
+            this.disconnectLogic.SetupAsync(this, this.deviceId, this.deviceModel).Wait();
             this.actorLogger.Setup(deviceId, "Connection");
 
             this.status = ActorStatus.ReadyToStart;

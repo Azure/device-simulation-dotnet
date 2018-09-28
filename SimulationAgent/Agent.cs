@@ -75,11 +75,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     var simulationList = await this.simulations.GetListAsync();
 
                     // currently we support only 1 running simulation so the result should return only 1 item
-                    var runningSimulation = simulationList.Where(s => s.ShouldBeRunning).FirstOrDefault();
+                    var runningSimulation = simulationList.FirstOrDefault(s => s.ShouldBeRunning);
+                    if (runningSimulation == null)
+                    {
+                        this.log.Debug("No simulations found that should be running. Nothing to do.");
+                    }
 
                     this.log.Debug("Simulation loaded", () => new { runningSimulation });
 
-                    // if the simulation is removed from storage & we're running stop simulation.
+                    // if the simulation has been removed from storage & we're running, stop the simulation.
                     var id = this.simulation?.Id;
                     var prevSimulation = simulationList.FirstOrDefault(s => s.Id == id);
                     this.CheckForDeletedSimulation(prevSimulation);
@@ -183,7 +187,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.runner.Stop();
 
                 this.simulation = null;
-                this.log.Debug("No simulation found in storage...");
+                this.log.Debug("The current simulation is no longer in storage...");
             }
         }
 

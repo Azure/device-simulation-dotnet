@@ -127,6 +127,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // TODO: use the simulation object to decide which conn string to use
         public async Task InitAsync()
         {
+            this.instance.InitOnce();
+
             try
             {
                 // Retrieve connection string from file/storage

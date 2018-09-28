@@ -80,7 +80,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         /// with details like the device model and message type to simulate.
         /// If this method is not called before Start(), the application will
         /// throw an exception.
-        /// Setup() should be called only once, typically after the constructor.
+        /// SetupAsync() should be called only once, typically after the constructor.
         /// </summary>
         public void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices)
         {
