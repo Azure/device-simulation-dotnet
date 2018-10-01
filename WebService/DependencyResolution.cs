@@ -90,7 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         }
 
         /// <summary>
-        /// Setup custom rules overriding autowired ones, for example in cases
+        /// SetupAsync custom rules overriding autowired ones, for example in cases
         /// where an interface has multiple implementations, and cases where
         /// a singleton is preferred to new instances.
         /// </summary>

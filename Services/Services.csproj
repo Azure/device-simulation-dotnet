@@ -22,7 +22,28 @@
         <None Update="data\devicemodels\chiller-02.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="data\devicemodels\scripts\chiller-01-state.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\chiller-02-state.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
         <None Update="data\devicemodels\elevator-01.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\elevator-02.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\elevator-01-state.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\elevator-02-state.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\StartElevator-method.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\StopElevator-method.js">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Update="data\devicemodels\engine-01.json">
@@ -31,110 +52,89 @@
         <None Update="data\devicemodels\engine-02.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="data\devicemodels\scripts\engine-01-state.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\engine-02-state.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
         <None Update="data\devicemodels\prototype-01.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Update="data\devicemodels\prototype-02.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
-        <None Update="data\devicemodels\elevator-02.json">
+        <None Update="data\devicemodels\scripts\prototype-01-state.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\prototype-02-state.js">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Update="data\devicemodels\delivery-truck-01.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
-        <None Update="data\devicemodels\scripts\chiller-01-state.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\chiller-02-state.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\delivery-truck-01-state.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\delivery-truck-02-state.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\elevator-01-state.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\elevator-02-state.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\EmergencyValveRelease-method.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\EmptyTank-method.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\engine-01-state.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\engine-02-state.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\FillTank-method.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\FirmwareUpdate-method.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\IncreasePressure-method.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\prototype-01-state.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\prototype-02-state.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\Reboot-method.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\SetFuelLevel-method.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\SetTemperature-method.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\StartElevator-method.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\StartMovingDevice-method.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\StopElevator-method.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\StopMovingDevice-method.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\TempDecrease-method.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\TempIncrease-method.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\truck-01-state.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\scripts\truck-02-state.js">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="data\devicemodels\truck-01-protobuf.json">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
         <None Update="data\devicemodels\delivery-truck-02.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
-        <None Update="data\devicemodels\truck-02.json">
+        <None Update="data\devicemodels\scripts\delivery-truck-01-state.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\delivery-truck-02-state.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\truck-01-state.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\truck-02-state.js">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Update="data\devicemodels\truck-01.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="data\devicemodels\truck-01-protobuf.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\truck-02.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\EmergencyValveRelease-method.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\EmptyTank-method.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\FillTank-method.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\FirmwareUpdate-method.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\IncreasePressure-method.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\Reboot-method.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\SetFuelLevel-method.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\SetTemperature-method.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\StartMovingDevice-method.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\StopMovingDevice-method.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\TempDecrease-method.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\devicemodels\scripts\TempIncrease-method.js">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
         <None Update="data\iothub\README.md">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>
 </Project>

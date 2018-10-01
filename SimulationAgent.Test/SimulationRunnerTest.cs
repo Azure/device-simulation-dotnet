@@ -31,7 +31,6 @@ namespace SimulationAgent.Test
         private readonly Mock<IDeviceModels> deviceModels;
         private readonly Mock<IDeviceModelsGeneration> deviceModelsOverriding;
         private readonly Mock<IDevices> devices;
-        private readonly Mock<ISimulations> simulations;
         private readonly Mock<IFactory> factory;
         private readonly Mock<IDeviceStateActor> deviceStateActor;
         private readonly Mock<IDeviceConnectionActor> deviceConnectionActor;
@@ -49,7 +48,6 @@ namespace SimulationAgent.Test
             this.deviceModels = new Mock<IDeviceModels>();
             this.deviceModelsOverriding = new Mock<IDeviceModelsGeneration>();
             this.devices = new Mock<IDevices>();
-            this.simulations = new Mock<ISimulations>();
             this.factory = new Mock<IFactory>();
             this.deviceStateActor = new Mock<IDeviceStateActor>();
             this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
@@ -67,7 +65,6 @@ namespace SimulationAgent.Test
                 this.deviceModels.Object,
                 this.deviceModelsOverriding.Object,
                 this.devices.Object,
-                this.simulations.Object,
                 this.factory.Object);
         }
 
@@ -92,7 +89,7 @@ namespace SimulationAgent.Test
             this.SetupSimulationReadyToStart();
 
             // Act
-            this.target.Start(simulation);
+            this.target.StartAsync(simulation).CompleteOrTimeout();
             var result = this.target.ActiveDevicesCount;
 
             // Assert
@@ -125,7 +122,7 @@ namespace SimulationAgent.Test
                 .Returns(TOTAL_MESSAGES_PER_DEVICE_COUNT);
 
             // Act
-            this.target.Start(simulation);
+            this.target.StartAsync(simulation).CompleteOrTimeout();
             var result = this.target.TotalMessagesCount;
 
             // Assert
@@ -158,7 +155,7 @@ namespace SimulationAgent.Test
                 .Returns(FAILED_MESSAGES_PER_DEVICE_COUNT);
 
             // Act
-            this.target.Start(simulation);
+            this.target.StartAsync(simulation).CompleteOrTimeout();
             var result = this.target.FailedMessagesCount;
 
             // Assert
@@ -191,7 +188,7 @@ namespace SimulationAgent.Test
                 .Returns(FAILED_DEVICE_CONNECTIONS_COUNT);
 
             // Act
-            this.target.Start(simulation);
+            this.target.StartAsync(simulation).CompleteOrTimeout();
             var result = this.target.FailedDeviceConnectionsCount;
 
             // Assert
@@ -224,7 +221,7 @@ namespace SimulationAgent.Test
                 .Returns(FAILED_DEVICE_TWIN_UPDATES_COUNT);
 
             // Act
-            this.target.Start(simulation);
+            this.target.StartAsync(simulation).CompleteOrTimeout();
             var result = this.target.FailedDeviceTwinUpdatesCount;
 
             // Assert
@@ -267,7 +264,7 @@ namespace SimulationAgent.Test
                 .Returns(FAILED_MESSAGES_PER_DEVICE_COUNT);
 
             // Act
-            this.target.Start(simulation);
+            this.target.StartAsync(simulation).CompleteOrTimeout();
             var result = this.target.SimulationErrorsCount;
 
             // Assert
@@ -290,7 +287,7 @@ namespace SimulationAgent.Test
                 .ThrowsAsync(new AggregateException());
 
             // Act
-            var ex = Record.Exception(() => this.target.Start(simulation));
+            var ex = Record.Exception(() => this.target.StartAsync(simulation).CompleteOrTimeout().Wait());
 
             // Assert
             Assert.Null(ex);
@@ -316,8 +313,6 @@ namespace SimulationAgent.Test
 
         private void SetupSimulationReadyToStart()
         {
-            this.SetupSimulations();
-
             this.SetUpDeviceModelsOverriding();
 
             this.SetupDevices();
@@ -392,15 +387,6 @@ namespace SimulationAgent.Test
                     It.IsAny<DeviceModel>(),
                     It.IsAny<DeviceModelOverride>()))
                 .Returns(deviceModel);
-        }
-
-        private void SetupSimulations()
-        {
-            var deviceIds = new List<string> { "01", "02" };
-
-            this.simulations
-                .Setup(x => x.GetDeviceIds(It.IsAny<Simulation>()))
-                .Returns(deviceIds);
         }
     }
 }
