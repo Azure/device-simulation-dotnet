@@ -90,7 +90,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
                 }
 
                 var acquired = await this.mainStorage.TryToLockAsync(MASTER_NODE_KEY, currentProcessNodeId, this.GetType().FullName, this.masterLockMaxAgeSecs);
-                this.log.Debug(acquired ? "Master role acquired" : "Master role not acquired", () => new { currentProcessNodeId, lockMaxAgeSecs = this.masterLockMaxAgeSecs });
+                this.log.Debug(acquired ? "Master role acquired" : "Master role not acquired", 
+                    () => new
+                    {
+                        currentProcessNodeId,
+                        this.masterLockMaxAgeSecs
+                    });
                 return acquired;
             }
             catch (ConflictingResourceException)

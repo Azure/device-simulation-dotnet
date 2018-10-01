@@ -18,6 +18,11 @@ if [[ -z "$PCS_IOTHUB_CONNSTRING" && "$SECRETS_AVAILABLE" = "true" ]]; then
     exit 1
 fi
 
+if [[ -z "$PCS_AZURE_STORAGE_ACCOUNT" && "$SECRETS_AVAILABLE" = "true" ]]; then
+    echo "Error: the PCS_AZURE_STORAGE_ACCOUNT environment variable is not defined."
+    exit 1
+fi
+
 if [[ -z "$PCS_STORAGEADAPTER_WEBSERVICE_URL" ]]; then
     echo "Error: the PCS_STORAGEADAPTER_WEBSERVICE_URL environment variable is not defined."
     exit 1

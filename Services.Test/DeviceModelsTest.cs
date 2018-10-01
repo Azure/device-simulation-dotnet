@@ -9,7 +9,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Moq;
-using Newtonsoft.Json.Linq;
 using Services.Test.helpers;
 using Xunit;
 

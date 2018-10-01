@@ -135,7 +135,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         }
 
         // Map service model to API model
-        public static SimulationApiModel FromServiceModel(
+        public static async Task<SimulationApiModel> FromServiceModelAsync(
             Simulation value,
             IServicesConfig servicesConfig,
             IDeploymentConfig deploymentConfig,
@@ -188,7 +188,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             result.created = value.Created;
             result.modified = value.Modified;
 
-            result.AppendHubPropertiesAndStatistics(servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
+            await result.AppendHubPropertiesAndStatisticsAsync(servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
 
             return result;
         }
@@ -254,7 +254,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         }
 
         // Append additional Hub properties and Statistics 
-        private void AppendHubPropertiesAndStatistics(
+        private async Task AppendHubPropertiesAndStatisticsAsync(
             IServicesConfig servicesConfig,
             IDeploymentConfig deploymentConfig,
             IIotHubConnectionStringManager connectionStringManager,
@@ -270,8 +270,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
                 if (isHubPreprovisioned && isRunning)
                 {
-                    iotHub.PreprovisionedIoTHubInUse = this.IsPreprovisionedIoTHubInUse(servicesConfig, connectionStringManager);
-                    iotHub.PreprovisionedIoTHubMetricsUrl = this.GetIoTHubMetricsUrl(servicesConfig, deploymentConfig, connectionStringManager);
+                    iotHub.PreprovisionedIoTHubInUse = await this.IsPreprovisionedIoTHubInUseAsync(servicesConfig, connectionStringManager);
+                    iotHub.PreprovisionedIoTHubMetricsUrl = await this.GetIoTHubMetricsUrlAsync(servicesConfig, deploymentConfig, connectionStringManager);
                 }
             }
 
@@ -311,18 +311,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         }
 
         // Check whether the simulation is running with the conn string in the configuration
-        private bool IsPreprovisionedIoTHubInUse(IServicesConfig servicesConfig, IIotHubConnectionStringManager connectionStringManager)
+        private async Task<bool> IsPreprovisionedIoTHubInUseAsync(IServicesConfig servicesConfig, IIotHubConnectionStringManager connectionStringManager)
         {
-            var csInUse = connectionStringManager.GetIotHubConnectionString().ToLowerInvariant().Trim();
+            var csInUse = (await connectionStringManager.GetConnectionStringAsync()).ToLowerInvariant().Trim();
             var csInConf = servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
 
             return csInUse == csInConf;
         }
 
         // If the simulation is running with the conn string in the config then return a URL to the metrics
-        private string GetIoTHubMetricsUrl(IServicesConfig servicesConfig, IDeploymentConfig deploymentConfig, IIotHubConnectionStringManager connectionStringManager)
+        private async Task<string> GetIoTHubMetricsUrlAsync(IServicesConfig servicesConfig, IDeploymentConfig deploymentConfig, IIotHubConnectionStringManager connectionStringManager)
         {
-            var csInUse = connectionStringManager.GetIotHubConnectionString().ToLowerInvariant().Trim();
+            var csInUse = (await connectionStringManager.GetConnectionStringAsync()).ToLowerInvariant().Trim();
             var csInConf = servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
 
             // Return the URL only when the simulation is running with the configured conn string

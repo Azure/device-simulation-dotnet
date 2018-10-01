@@ -50,6 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string DEVICE_MODELS_SCRIPTS_FOLDER_KEY = APPLICATION_KEY + "device_models_scripts_folder";
         private const string IOTHUB_DATA_FOLDER_KEY = APPLICATION_KEY + "iothub_data_folder";
         private const string IOTHUB_CONNSTRING_KEY = APPLICATION_KEY + "iothub_connstring";
+        private const string IOTHUB_IMPORT_STORAGE_CONNSTRING_KEY = APPLICATION_KEY + "iothub_import_storage_account";
         private const string IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY = APPLICATION_KEY + "iothub_sdk_device_client_timeout";
         private const string TWIN_READ_WRITE_ENABLED_KEY = APPLICATION_KEY + "twin_read_write_enabled";
 
@@ -202,7 +203,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private static IServicesConfig GetServicesConfig(IConfigData configData)
         {
             var connstring = configData.GetString(IOTHUB_CONNSTRING_KEY);
-            if (connstring.ToLowerInvariant().Contains("azure iot hub"))
+            if (connstring.ToLowerInvariant().Contains("connection string"))
             {
                 // In order to connect to Azure IoT Hub, the service requires a connection
                 // string. The value can be found in the Azure Portal. For more information see
@@ -222,12 +223,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                                     "value in the 'appsettings.ini' configuration file.");
             }
 
+            var hubImportStorageAccount = configData.GetString(IOTHUB_IMPORT_STORAGE_CONNSTRING_KEY);
+            if (hubImportStorageAccount.ToLowerInvariant().Contains("connection string"))
+            {
+                throw new Exception("The service configuration is incomplete. " +
+                                    "Please provide your Azure Storage Account connection string. " +
+                                    "For more information, see the environment variables " +
+                                    "used in project properties and the 'iothub_connstring' " +
+                                    "value in the 'appsettings.ini' configuration file.");
+            }
+
             return new ServicesConfig
             {
                 DeviceModelsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_FOLDER_KEY)),
                 DeviceModelsScriptsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_SCRIPTS_FOLDER_KEY)),
                 IoTHubDataFolder = MapRelativePath(configData.GetString(IOTHUB_DATA_FOLDER_KEY)),
                 IoTHubConnString = connstring,
+                IoTHubImportStorageAccount = hubImportStorageAccount,
                 IoTHubSdkDeviceClientTimeout = configData.GetOptionalUInt(IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY),
                 StorageAdapterApiUrl = configData.GetString(STORAGE_ADAPTER_API_URL_KEY),
                 StorageAdapterApiTimeout = configData.GetInt(STORAGE_ADAPTER_API_TIMEOUT_KEY),

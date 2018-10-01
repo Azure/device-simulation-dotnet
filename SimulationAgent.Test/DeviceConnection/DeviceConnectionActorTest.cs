@@ -148,11 +148,12 @@ namespace SimulationAgent.Test.DeviceConnection
 
             this.SetupRateLimitingConfig();
 
-            this.target.Setup(
-                DEVICE_ID,
-                deviceModel,
-                this.deviceStateActor.Object,
-                this.loopSettings.Object);
+            this.target.SetupAsync(
+                    DEVICE_ID,
+                    deviceModel,
+                    this.deviceStateActor.Object,
+                    this.loopSettings.Object)
+                .Wait(Constants.TEST_TIMEOUT);
         }
 
         private void SetupRateLimitingConfig()

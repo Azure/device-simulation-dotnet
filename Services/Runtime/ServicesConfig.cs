@@ -11,6 +11,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         string DeviceModelsScriptsFolder { get; }
         string IoTHubDataFolder { get; }
         string IoTHubConnString { get; }
+        string IoTHubImportStorageAccount { get; set; }
         uint? IoTHubSdkDeviceClientTimeout { get; set; }
         string StorageAdapterApiUrl { get; }
         int StorageAdapterApiTimeout { get; }
@@ -62,6 +63,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         }
 
         public string IoTHubConnString { get; set; }
+
+        public string IoTHubImportStorageAccount { get; set; }
 
         public uint? IoTHubSdkDeviceClientTimeout { get; set; }
 

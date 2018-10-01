@@ -17,44 +17,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface ISimulations
     {
-        /// <summary>
-        /// Get list of simulations.
-        /// </summary>
+        // Get list of simulations.
         Task<IList<Models.Simulation>> GetListAsync();
 
-        /// <summary>
-        /// Get a simulation.
-        /// </summary>
+        // Get a simulation.
         Task<Models.Simulation> GetAsync(string id);
 
-        /// <summary>
-        /// Create a simulation.
-        /// </summary>
+        // Create a simulation.
         Task<Models.Simulation> InsertAsync(Models.Simulation simulation, string template = "");
 
-        /// <summary>
-        /// Create or Replace a simulation.
-        /// </summary>
+        // Create or Replace a simulation.
         Task<Models.Simulation> UpsertAsync(Models.Simulation simulation);
 
-        /// <summary>
-        /// Modify a simulation.
-        /// </summary>
+        // Modify a simulation.
         Task<Models.Simulation> MergeAsync(SimulationPatch patch);
 
-        /// <summary>
-        /// Add a device to simulation
-        /// </summary>
+        // Add a device to simulation
         Task AddDeviceAsync(string id);
 
-        /// <summary>
-        /// Delete a simulation and its devices.
-        /// </summary>
+        // Delete a simulation and its devices.
         Task DeleteAsync(string id);
 
-        /// <summary>
-        /// Get the ID of the devices in a simulation.
-        /// </summary>
+        // Try to start a job to create all the devices
+        Task<bool> TryToStartDevicesCreationAsync(string simulationId, IDevices devices);
+
+        // Change the simulation, setting the device creation complete
+        Task<bool> TryToSetDeviceCreationCompleteAsync(string simulationId);
+
+        // Get the ID of the devices in a simulation.
         IEnumerable<string> GetDeviceIds(Models.Simulation simulation);
 
         // Get the ID of the devices in a simulation, grouped by device model ID.
@@ -171,7 +161,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             for (var index = 0; index < simulation.IotHubConnectionStrings.Count; index++)
             {
-                var connString = await this.connectionStringManager.RedactAndStoreAsync(simulation.IotHubConnectionStrings[index]);
+                var connString = await this.connectionStringManager.RedactAndSaveAsync(simulation.IotHubConnectionStrings[index]);
 
                 if (!simulation.IotHubConnectionStrings.Contains(connString))
                 {
@@ -241,7 +231,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             for (var index = 0; index < simulation.IotHubConnectionStrings.Count; index++)
             {
-                var connString = await this.connectionStringManager.RedactAndStoreAsync(simulation.IotHubConnectionStrings[index]);
+                var connString = await this.connectionStringManager.RedactAndSaveAsync(simulation.IotHubConnectionStrings[index]);
 
                 if (!simulation.IotHubConnectionStrings.Contains(connString))
                 {
@@ -326,6 +316,58 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             // Then delete the simulation from storage
             await this.simulationsStorage.DeleteAsync(id);
+        }
+
+        public async Task<bool> TryToStartDevicesCreationAsync(string simulationId, IDevices devices)
+        {
+            // Fetch latest record
+            var simulation = await this.GetAsync(simulationId);
+
+            // Edit the record only if required
+            if (!simulation.DevicesCreationStarted)
+            {
+                try
+                {
+                    Dictionary<string, List<string>> deviceList = this.GetDeviceIdsByModel(simulation);
+                    var deviceIds = deviceList.SelectMany(x => x.Value);
+                    this.log.Info("Creating devices...", () => new { simulationId });
+
+                    simulation.DeviceCreationJobId = await devices.CreateListUsingJobsAsync(deviceIds);
+                    simulation.DevicesCreationStarted = true;
+
+                    this.log.Info("Device import job created", () => new { simulationId, simulation.DeviceCreationJobId });
+
+                    await this.SaveAsync(simulation, simulation.ETag);
+                }
+                catch (Exception e)
+                {
+                    this.log.Error("Failed to create device import job", e);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public async Task<bool> TryToSetDeviceCreationCompleteAsync(string simulationId)
+        {
+            var simulation = await this.GetAsync(simulationId);
+
+            // Edit the record only if required
+            if (simulation.DevicesCreationComplete) return true;
+
+            try
+            {
+                simulation.DevicesCreationComplete = true;
+                await this.SaveAsync(simulation, simulation.ETag);
+            }
+            catch (ConflictingResourceException e)
+            {
+                this.log.Warn("Update failed, another client modified the simulation record", e);
+                return false;
+            }
+
+            return true;
         }
 
         public async Task AddDeviceAsync(string id)

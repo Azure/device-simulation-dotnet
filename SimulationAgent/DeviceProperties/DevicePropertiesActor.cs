@@ -130,7 +130,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
         /// <summary>
         /// Invoke this method before calling Execute(), to initialize the actor
-        /// with details like the device id. Setup() should be called only once.
+        /// with details like the device id. SetupAsync() should be called only once.
         /// </summary>
         public void Setup(
             string deviceId,
@@ -165,7 +165,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             {
                 case ActorEvents.Started:
                     this.actorLogger.ActorStarted();
-                    this.status = ActorStatus.ReadyToTagDevice;
+                    
+                    /**
+                     * TODO: when a device is created after the initial bulk upload, the next state should be:
+                     *       ActorStatus.ReadyToTagDevice
+                     *       For the time being, assume all devices are created with bulk upload, which is
+                     *       where the IsSimulated tag is set.
+                     */
+                    // TEMP DISABLED: this.status = ActorStatus.ReadyToTagDevice;
+                    this.status = ActorStatus.WaitingForChanges;
                     break;
 
                 case ActorEvents.DeviceTagged:

@@ -38,8 +38,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             this.Items = new List<SimulationApiModel.SimulationApiModel>();
             foreach (var x in simulations)
             {
-                this.Items.Add(SimulationApiModel.SimulationApiModel.FromServiceModel(
-                    x, servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter));
+                this.Items.Add(
+                    SimulationApiModel.SimulationApiModel.FromServiceModelAsync(
+                        x,
+                        servicesConfig,
+                        deploymentConfig,
+                        connectionStringManager,
+                        simulationRunner,
+                        rateReporter).Result);
             }
         }
     }

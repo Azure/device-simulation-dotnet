@@ -47,15 +47,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         }
 
         /// <summary>
-        ///     Query Azure Managemet API for the IotHub metrics.
+        ///     Query Azure Management API for the IotHub metrics.
         ///     More details in following docs:
         ///     https://docs.microsoft.com/en-us/azure/monitoring-and-diagnostics/monitoring-rest-api-walkthrough
         ///     https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-metrics
         ///     https://docs.microsoft.com/en-us/rest/api/monitor/metrics/list
         /// </summary>
-        /// <param name="token"></param>
         /// <param name="requestList"></param>
-        /// <returns></returns>
         public async Task<MetricsResponseListModel> PostAsync(MetricsRequestListModel requestList)
         {
             if (this.AccessTokenIsNullOrEmpty())

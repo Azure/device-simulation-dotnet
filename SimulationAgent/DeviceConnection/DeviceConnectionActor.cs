@@ -21,7 +21,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         long FailedDeviceConnectionsCount { get; }
         long SimulationErrorsCount { get; }
         bool IsDeleted { get; }
-        void Setup(string deviceId, DeviceModel deviceModel, IDeviceStateActor deviceStateActor, ConnectionLoopSettings loopSettings);
+        Task SetupAsync(string deviceId, DeviceModel deviceModel, IDeviceStateActor deviceStateActor, ConnectionLoopSettings loopSettings);
         Task RunAsync();
         void HandleEvent(DeviceConnectionActor.ActorEvents e);
         void Stop();
@@ -181,9 +181,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         /// <summary>
         /// Invoke this method before calling Execute(), to initialize the actor
         /// with details like the device model and message type to simulate.
-        /// Setup() should be called only once.
+        /// SetupAsync() should be called only once.
         /// </summary>
-        public void Setup(
+        public async Task SetupAsync(
             string deviceId,
             DeviceModel deviceModel,
             IDeviceStateActor deviceStateActor,
@@ -201,12 +201,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.deviceStateActor = deviceStateActor;
             this.loopSettings = loopSettings;
 
-            this.credentialsSetupLogic.Setup(this, this.deviceId, this.deviceModel);
-            this.fetchFromRegistryLogic.Setup(this, this.deviceId, this.deviceModel);
-            this.registerLogic.Setup(this, this.deviceId, this.deviceModel);
-            this.connectLogic.Setup(this, this.deviceId, this.deviceModel);
-            this.deregisterLogic.Setup(this, this.deviceId, this.deviceModel);
-            this.disconnectLogic.Setup(this, this.deviceId, this.deviceModel);
+            await this.credentialsSetupLogic.SetupAsync(this, this.deviceId, this.deviceModel);
+            await this.fetchFromRegistryLogic.SetupAsync(this, this.deviceId, this.deviceModel);
+            await this.registerLogic.SetupAsync(this, this.deviceId, this.deviceModel);
+            await this.connectLogic.SetupAsync(this, this.deviceId, this.deviceModel);
+            await this.deregisterLogic.SetupAsync(this, this.deviceId, this.deviceModel);
+            await this.disconnectLogic.SetupAsync(this, this.deviceId, this.deviceModel);
             this.actorLogger.Setup(deviceId, "Connection");
 
             this.status = ActorStatus.ReadyToStart;
