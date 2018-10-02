@@ -59,16 +59,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         /// <returns></returns>
         public async Task<MetricsResponseListModel> PostAsync(MetricsRequestListModel requestList)
         {
-            if (this.AccessTokenIsNullOrEmpty())
-            {
-                await this.GetAadTokenAsync();
-            }
-
-            // Renew access token 10 minutes before it's expire time
-            if (this.AccessTokenExpireSoon())
-            {
-                this.GetAadTokenAsync();
-            }
+            await CreateOrUpdateAccessTokenAsync();
 
             if (requestList == null)
             {
@@ -92,16 +83,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
 
         public async Task CreateOrUpdateVmssAutoscaleSettingsAsync(int vmCount)
         {
-            if (this.AccessTokenIsNullOrEmpty())
-            {
-                await this.GetAadTokenAsync();
-            }
-
-            // Renew access token 10 minutes before it's expire time
-            if (this.AccessTokenExpireSoon())
-            {
-                this.GetAadTokenAsync();
-            }
+            await CreateOrUpdateAccessTokenAsync();
 
             var accessToken = $"Bearer {this.ReadSecureString(this.secureAccessToken)}";
 
@@ -114,6 +96,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
             this.log.Debug("Azure management response", () => new { response });
 
             this.ThrowIfError(response);
+        }
+
+        private async Task CreateOrUpdateAccessTokenAsync()
+        {
+            if (this.AccessTokenIsNullOrEmpty())
+            {
+                await this.GetAadTokenAsync();
+            }
+
+            // Renew access token 10 minutes before it's expire time
+            if (this.AccessTokenExpireSoon())
+            {
+                this.GetAadTokenAsync();
+            }
         }
 
         private bool AccessTokenIsNullOrEmpty()

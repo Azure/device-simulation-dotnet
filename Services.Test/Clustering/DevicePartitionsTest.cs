@@ -30,7 +30,6 @@ namespace Services.Test.Clustering
         private readonly Mock<IFactory> factory;
         private readonly Mock<ILogger> log;
         private readonly Mock<IStorageRecords> partitionsStorage;
-        private readonly Mock<IAzureManagementAdapterClient> azureManagementAdapterClient;
 
         public DevicePartitionsTest()
         {
@@ -40,7 +39,6 @@ namespace Services.Test.Clustering
             this.factory = new Mock<IFactory>();
             this.log = new Mock<ILogger>();
             this.partitionsStorage = new Mock<IStorageRecords>();
-            this.azureManagementAdapterClient = new Mock<IAzureManagementAdapterClient>();
 
             // Inject configuration settings with a collection name which is then used
             // to intercept the call to .Init()
@@ -223,8 +221,7 @@ namespace Services.Test.Clustering
                 this.clusteringConfig.Object,
                 this.simulations.Object,
                 this.factory.Object,
-                this.log.Object,
-                this.azureManagementAdapterClient.Object);
+                this.log.Object);
         }
 
         private void SetupAGenericSimulationWithSomeDevices(string simulationId, bool complete = false)
