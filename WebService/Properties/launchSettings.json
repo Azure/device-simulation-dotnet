@@ -7,6 +7,8 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "PCS_IOTHUB_CONNSTRING": "your Azure IoT Hub connection string",
+        "PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING": "your DocumentDb connection string",
+        "PCS_AZURE_STORAGE_ACCOUNT": "your Azure Storage Account connection string",
         "PCS_STORAGEADAPTER_WEBSERVICE_URL": "http://localhost:9022/v1",
         "PCS_LOG_LEVEL": "Debug",
         "PCS_AUTH_REQUIRED": "false",

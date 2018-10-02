@@ -72,16 +72,19 @@ namespace WebService.Test.v1.Controllers
                 .ReturnsAsync(simulation);
 
             // Act
-            var result = this.target.PostAsync(
-                SimulationApiModel.FromServiceModel(
+            var fromServiceModelTask = 
+                SimulationApiModel.FromServiceModelAsync(
                     simulation,
                     this.servicesConfig.Object,
                     this.deploymentConfig.Object,
                     this.connectionStringManager.Object,
                     this.simulationRunner.Object,
-                    this.rateReporter.Object
-                )
-            ).Result;
+                    this.rateReporter.Object);
+            fromServiceModelTask.Wait(Constants.TEST_TIMEOUT);
+
+            var postAsyncTask = this.target.PostAsync(fromServiceModelTask.Result);
+            postAsyncTask.Wait(Constants.TEST_TIMEOUT);
+            var result = postAsyncTask.Result;
 
             // Assert
             Assert.NotNull(result);
@@ -202,7 +205,7 @@ namespace WebService.Test.v1.Controllers
             // Act & Assert
             Assert.ThrowsAsync<BadRequestException>(
                     async () => await this.target.PostAsync(
-                        SimulationApiModel.FromServiceModel(
+                        await SimulationApiModel.FromServiceModelAsync(
                             simulation,
                             this.servicesConfig.Object,
                             this.deploymentConfig.Object,
@@ -251,15 +254,19 @@ namespace WebService.Test.v1.Controllers
                 .ReturnsAsync(simulation);
 
             // Act
-            var result = this.target.PutAsync(
-                SimulationApiModel.FromServiceModel(
+            var fromServiceModelTask =
+                SimulationApiModel.FromServiceModelAsync(
                     simulation,
                     this.servicesConfig.Object,
                     this.deploymentConfig.Object,
                     this.connectionStringManager.Object,
                     this.simulationRunner.Object,
                     this.rateReporter.Object
-                ),
+                );
+            fromServiceModelTask.Wait(Constants.TEST_TIMEOUT);
+
+            var result = this.target.PutAsync(
+                fromServiceModelTask.Result,
                 DEFAULT_SIMULATION_ID
             ).Result;
 

@@ -69,7 +69,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         public async Task<SimulationApiModel> GetAsync(string id)
         {
             var simulation = await this.simulationsService.GetAsync(id);
-            var simulationApiModel = SimulationApiModel.FromServiceModel(
+            var simulationApiModel = await SimulationApiModel.FromServiceModelAsync(
                 simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
             return simulationApiModel;
         }
@@ -96,7 +96,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             var simulation = await this.simulationsService.InsertAsync(simulationApiModel.ToServiceModel(null), template);
-            return SimulationApiModel.FromServiceModel(
+            return await SimulationApiModel.FromServiceModelAsync(
                 simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
 
@@ -130,7 +130,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             var existingSimulation = await this.GetExistingSimulationAsync(id);
 
             var simulation = await this.simulationsService.UpsertAsync(simulationApiModel.ToServiceModel(existingSimulation, id));
-            return SimulationApiModel.FromServiceModel(
+            return await SimulationApiModel.FromServiceModelAsync(
                 simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
 
@@ -190,7 +190,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             var simulation = await this.simulationsService.MergeAsync(patchServiceModel);
-            return SimulationApiModel.FromServiceModel(
+            return await SimulationApiModel.FromServiceModelAsync(
                 simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
         }
 

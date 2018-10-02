@@ -7,7 +7,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptio
     public class DeviceActorNotInitializedException : Exception
     {
         public DeviceActorNotInitializedException()
-            : base("DeviceActor object not initialized. Call 'Setup()' first.")
+            : base("DeviceActor object not initialized. Call 'SetupAsync()' first.")
         {
         }
     }

@@ -232,6 +232,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
 
             try
             {
+                this.log.Debug("Trying to obtain lock for record", () => new { ownerType });
+
                 // Note: this can throw ResourceNotFoundException
                 var record = (await this.GetAsync(id)).GetDocumentDbRecord();
 

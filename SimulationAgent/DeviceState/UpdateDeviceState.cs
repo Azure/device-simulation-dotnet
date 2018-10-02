@@ -35,7 +35,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         {
             if (this.setupDone)
             {
-                this.log.Error("Setup has already been invoked, are you sharing this instance with multiple devices?",
+                this.log.Error("SetupAsync has already been invoked, are you sharing this instance with multiple devices?",
                     () => new { this.deviceId });
                 throw new DeviceActorAlreadyInitializedException();
             }
