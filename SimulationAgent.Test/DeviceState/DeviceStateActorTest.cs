@@ -31,8 +31,7 @@ namespace SimulationAgent.Test.DeviceState
 
             this.target = new DeviceStateActor(
                 this.logger.Object,
-                this.updateDeviceStateLogic.Object,
-                this.mockInstance.Object);
+                this.updateDeviceStateLogic.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

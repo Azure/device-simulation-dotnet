@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Collections.Generic;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
+using System.Threading.Tasks;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
@@ -20,7 +20,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         long SimulationErrorsCount { get; }
         void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices);
 
-        // TODO: 'Setup' will be removed when the SimulationManager is hooked up
         void Init(
             ISimulationContext simulationContext,
             string deviceId,
@@ -47,20 +46,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
 
         private readonly ILogger log;
         private readonly UpdateDeviceState updateDeviceStateLogic;
-        private readonly IInstance instance;
-
         private string deviceId;
         private DeviceModel deviceModel;
         private long whenCanIUpdate;
         private int startDelayMsecs;
         private ActorStatus status;
         private long simulationErrorsCount;
-
-        /// <summary>
-        /// Contains all the simulation specific dependencies, e.g. hub, rating
-        /// limits, device registry, etc.
-        /// </summary>
-        private ISimulationContext simulationContext;
 
         /// <summary>
         /// The device is considered active when the state is being updated.
@@ -79,14 +70,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
 
         public DeviceStateActor(
             ILogger logger,
-            UpdateDeviceState updateDeviceStateLogic,
-            IInstance instance)
+            UpdateDeviceState updateDeviceStateLogic)
         {
             this.log = logger;
             this.updateDeviceStateLogic = updateDeviceStateLogic;
             this.status = ActorStatus.None;
             this.simulationErrorsCount = 0;
-            this.instance = instance;
         }
 
         /// <summary>
@@ -95,35 +84,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         public long SimulationErrorsCount => this.simulationErrorsCount;
 
         /// <summary>
-        /// Invoke this method before calling StartAsync(), to initialize the actor
+        /// Invoke this method before calling Start(), to initialize the actor
         /// with details like the device model and message type to simulate.
-        /// If this method is not called before StartAsync(), the application will
+        /// If this method is not called before Start(), the application will
         /// throw an exception.
-        /// </summary>
-        public void Init(
-            ISimulationContext simulationContext,
-            string deviceId,
-            DeviceModel deviceModel,
-            int deviceCounter)
-        {
-            this.instance.InitOnce();
-
-            this.simulationContext = simulationContext;
-            this.deviceModel = deviceModel;
-            this.deviceId = deviceId;
-
-            // Distribute actors start over 10 secs
-            this.startDelayMsecs = deviceCounter % 10000;
-
-            this.instance.InitComplete();
-        }
-
-        /// <summary>
-        /// Invoke this method before calling StartAsync(), to initialize the actor
-        /// with details like the device model and message type to simulate.
-        /// If this method is not called before StartAsync(), the application will
-        /// throw an exception.
-        /// Setup() should be called only once, typically after the constructor.
+        /// SetupAsync() should be called only once, typically after the constructor.
         /// </summary>
         public void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices)
         {
@@ -139,7 +104,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
 
             // Distributed start times over 1 or 10 secs
             var msecs = totalDevices < 50 ? 1000 : 10000;
-            this.startDelayMsecs = (int)(msecs * ((double)position / totalDevices));
+            this.startDelayMsecs = (int) (msecs * ((double) position / totalDevices));
+        }
+
+        public void Init(
+            ISimulationContext simulationContext,
+            string deviceId,
+            DeviceModel deviceModel,
+            int deviceCounter)
+        {
+            // TODO: will be implemented when SimulationManager is integrated
         }
 
         public void Run()
@@ -193,7 +167,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                     return;
 
                 case ActorStatus.Updating:
-                    this.whenCanIUpdate += (long)this.deviceModel.Simulation.Interval.TotalMilliseconds;
+                    this.whenCanIUpdate += (long) this.deviceModel.Simulation.Interval.TotalMilliseconds;
                     return;
             }
 

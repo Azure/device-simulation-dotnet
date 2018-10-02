@@ -1,15 +1,14 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System.IO;
+using System.Linq;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Moq;
 using Services.Test.helpers;
-using System;
-using System.IO;
-using System.Linq;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Xunit;
 
 namespace Services.Test

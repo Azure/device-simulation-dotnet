@@ -35,7 +35,7 @@ namespace Services.Test.IotHub
         {
             // Assert
             Assert.ThrowsAsync<InvalidIotHubConnectionStringFormatException>(
-                    async () => await this.target.RedactAndStoreAsync("foobar"))
+                    async () => await this.target.RedactAndSaveAsync("foobar"))
                 .Wait(Constants.TEST_TIMEOUT);
         }
     }

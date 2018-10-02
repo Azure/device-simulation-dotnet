@@ -80,8 +80,7 @@ namespace SimulationAgent.Test.DeviceConnection
                 this.registerLogic.Object,
                 this.connectLogic.Object,
                 this.deregisterLogic.Object,
-                this.disconnectLogic.Object,
-                this.mockInstance.Object);
+                this.disconnectLogic.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -152,11 +151,12 @@ namespace SimulationAgent.Test.DeviceConnection
 
             this.SetupRateLimitingConfig();
 
-            this.target.Setup(
-                DEVICE_ID,
-                deviceModel,
-                this.deviceStateActor.Object,
-                this.loopSettings.Object);
+            this.target.SetupAsync(
+                    DEVICE_ID,
+                    deviceModel,
+                    this.deviceStateActor.Object,
+                    this.loopSettings.Object)
+                .Wait(Constants.TEST_TIMEOUT);
         }
 
         private void SetupRateLimitingConfig()

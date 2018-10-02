@@ -158,12 +158,8 @@ namespace SimulationAgent.Test
         {
             // Arrange
             this.SetupPartitionsAndModels();
-
-            // Act
             // Create some partitions and actors
             this.target.AssignNewPartitionsAsync().Wait(Constants.TEST_TIMEOUT);
-
-            // Arrange
             this.SetupPartitionsAndModels();
             
             // Act

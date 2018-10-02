@@ -67,7 +67,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.ConnectionLoopSettings = new ConnectionLoopSettings(defaultRatingConfig);
             this.PropertiesLoopSettings = new PropertiesLoopSettings(defaultRatingConfig);
 
-            await this.Devices.InitAsync(simulation);
+            await this.Devices.InitAsync();
             
             this.instance.InitComplete();
         }

@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved. 
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,18 +9,15 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
     public interface ISimulationAgent
     {
-        Task StartAsync();
+        Task RunAsync();
+        Task AddDeviceAsync(string name, string modelId);
+        Task DeleteDevicesAsync(List<string> ids);
         void Stop();
     }
 
@@ -29,11 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     {
         private const int CHECK_INTERVAL_MSECS = 10000;
         private const int DIAGNOSTICS_POLLING_FREQUENCY_DAYS = 1;
-        
-        // How often (minimum) to log simulation statistics
-        private const int STATS_INTERVAL_MSECS = 15000;
 
-        private readonly IFactory factory;
         private readonly ILogger log;
         private readonly IDiagnosticsLogger logDiagnostics;
         private readonly ISimulations simulations;
@@ -41,23 +33,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private readonly IRateLimiting rateReporter;
         private readonly IDeviceModels deviceModels;
         private readonly IDevices devices;
-        private readonly ConcurrentDictionary<string, ISimulationManager> simulationManagers;
-
-        // List of all the actors managing the devices state, indexed by Simulation ID + Device ID (string concat)
-        private readonly ConcurrentDictionary<string, IDeviceStateActor> deviceStateActors;
-
-        // Contains all the actors responsible to connect the devices, indexed by Simulation ID + Device ID (string concat)
-        private readonly ConcurrentDictionary<string, IDeviceConnectionActor> deviceConnectionActors;
-
-        // Contains all the actors sending telemetry, indexed by Simulation ID + Device ID (string concat)
-        private readonly ConcurrentDictionary<string, IDeviceTelemetryActor> deviceTelemetryActors;
-
-        // Contains all the actors sending device property updates to Azure IoT Hub, indexed by Simulation ID + Device ID (string concat)
-        private readonly ConcurrentDictionary<string, IDevicePropertiesActor> devicePropertiesActors;
-
         private DateTimeOffset lastPolledTime;
+        private Simulation simulation;
         private bool running;
-        private long lastStatsTime;
 
         public Agent(
             ILogger logger,
@@ -66,8 +44,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             ISimulationRunner runner,
             IRateLimiting rateReporter,
             IDeviceModels deviceModels,
-            IDevices devices,
-            IFactory factory)
+            IDevices devices)
         {
             this.log = logger;
             this.logDiagnostics = diagnosticsLogger;
@@ -78,42 +55,65 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.devices = devices;
             this.running = true;
             this.lastPolledTime = DateTimeOffset.UtcNow;
-
-            this.simulationManagers = new ConcurrentDictionary<string, ISimulationManager>();
-            this.deviceStateActors = new ConcurrentDictionary<string, IDeviceStateActor>();
-            this.deviceConnectionActors = new ConcurrentDictionary<string, IDeviceConnectionActor>();
-            this.deviceTelemetryActors = new ConcurrentDictionary<string, IDeviceTelemetryActor>();
-            this.devicePropertiesActors = new ConcurrentDictionary<string, IDevicePropertiesActor>();
         }
 
         public async Task RunAsync()
         {
-            try
+            this.log.Info("Simulation Agent running");
+
+            // Keep running, checking if the simulation changes
+            while (this.running)
             {
-                // Keep running, checking if the simulation changes
-                while (this.running)
+                var oldSimulation = this.simulation;
+
+                this.SendSolutionHeartbeatAsync();
+
+                try
                 {
-                    this.log.Debug("Starting simulation agent loop",
-                        () => new { SimulationsCount = this.simulationManagers.Count });
+                    this.log.Debug("------ Checking for simulation changes ------");
 
-                    // Get list of active simulations. Active simulations are already partitioned.
-                    IList<Simulation> activeSimulations = (await this.simulations.GetListAsync())
-                        .Where(x => x.IsActiveNow).ToList();
-                    this.log.Debug("Active simulations loaded", () => new { activeSimulations.Count });
+                    var simulationList = await this.simulations.GetListAsync();
 
-                    // Create new simulation managers (if needed), and run them
-                    await this.CreateSimulationManagersAsync(activeSimulations);
-                    await this.RunSimulationManagersMaintenanceAsync();
+                    // currently we support only 1 running simulation so the result should return only 1 item
+                    var runningSimulation = simulationList.FirstOrDefault(s => s.ShouldBeRunning);
+                    if (runningSimulation == null)
+                    {
+                        this.log.Debug("No simulations found that should be running. Nothing to do.");
+                    }
 
-                    this.StopInactiveSimulations(activeSimulations);
+                    this.log.Debug("Simulation loaded", () => new { runningSimulation });
 
-                    Thread.Sleep(CHECK_INTERVAL_MSECS);
+                    // if the simulation has been removed from storage & we're running, stop the simulation.
+                    var id = this.simulation?.Id;
+                    var prevSimulation = simulationList.FirstOrDefault(s => s.Id == id);
+                    this.CheckForDeletedSimulation(prevSimulation);
+
+                    // if there's a new simulation and it's different from the current one
+                    // stop the current one from running & start the new one if it's enabled
+                    await this.CheckForChangedSimulationAsync(runningSimulation);
+
+                    // if there's no simulation running but there's one from storage start it
+                    await this.CheckForNewSimulationAsync(runningSimulation);
+
+                    // if the current simulation was asked to stop, stop it.
+                    await this.CheckForStopOrStartToSimulationAsync();
                 }
-            }
-            catch (Exception e)
-            {
-                this.log.Error("A critical error occurred in the simulation agent", e);
-                this.Stop();
+                catch (Exception e)
+                {
+                    this.log.Error("Failure reading and starting simulation from storage.", e);
+                    this.simulation = oldSimulation;
+                }
+
+                if (this.simulation != null && this.simulation.ShouldBeRunning)
+                {
+                    this.log.Debug("------ Current simulation being run ------");
+                    foreach (var model in this.simulation.DeviceModels)
+                    {
+                        this.log.Debug("Device model", () => new { model });
+                    }
+                }
+
+                Thread.Sleep(CHECK_INTERVAL_MSECS);
             }
         }
 
@@ -135,7 +135,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     if (this.running)
                     {
                         this.log.Info("Add device to running simulation");
-                        this.runner.AddDevice(deviceId, modelId);
+                        await this.runner.AddDeviceAsync(deviceId, modelId);
                     }
                     else
                     {
@@ -180,90 +180,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private async Task CreateSimulationManagersAsync(IEnumerable<Simulation> activeSimulations)
-        {
-            // Skip simulations not ready or already with a manager
-            var list = activeSimulations
-                .Where(x => x.ShouldBeRunning && !this.simulationManagers.ContainsKey(x.Id));
-
-            foreach (var simulation in list)
-            {
-                this.log.Info("Creating new simulation manager...", () => new { SimulationId = simulation.Id });
-
-                try
-                {
-                    var manager = this.factory.Resolve<ISimulationManager>();
-                    await manager.InitAsync(
-                        simulation,
-                        this.deviceStateActors,
-                        this.deviceConnectionActors,
-                        this.deviceTelemetryActors,
-                        this.devicePropertiesActors);
-
-                    this.simulationManagers[simulation.Id] = manager;
-
-                    this.log.Info("New simulation manager created", () => new { SimulationId = simulation.Id });
-                }
-                catch (Exception e)
-                {
-                    this.log.Error("Failed to create simulation manager, will retry", () => new { simulation.Id, e });
-                }
-            }
-        }
-
-        private async Task RunSimulationManagersMaintenanceAsync()
-        {
-            var printStats = false;
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            if (now - this.lastStatsTime > STATS_INTERVAL_MSECS)
-            {
-                printStats = true;
-                this.lastStatsTime = now;
-            }
-
-            // TODO: check if these can run in parallel
-            foreach (var manager in this.simulationManagers)
-            {
-                await TryToAsync(manager.Value.HoldAssignedPartitionsAsync(),
-                    e => this.log.Error("An unexpected error occurred while renewing partition locks", e));
-
-                await TryToAsync(manager.Value.AssignNewPartitionsAsync(),
-                    e => this.log.Error("An unexpected error occurred while assigning new partitions", e));
-
-                await TryToAsync(manager.Value.HandleAssignedPartitionChangesAsync(),
-                    e => this.log.Error("An unexpected error occurred while handling partition changes", e));
-
-                await TryToAsync(manager.Value.UpdateThrottlingLimitsAsync(),
-                    e => this.log.Error("An unexpected error occurred while updating the throttling limits", e));
-
-                if (printStats) manager.Value.PrintStats();
-            }
-
-            async Task TryToAsync(Task task, Action<Exception> onException)
-            {
-                try
-                {
-                    await task;
-                }
-                catch (Exception e)
-                {
-                    onException.Invoke(e);
-                }
-            }
-        }
-
-        private void CheckForDeletedSimulation(Services.Models.Simulation newSimulation)
+        private void CheckForDeletedSimulation(Simulation newSimulation)
         {
             if (newSimulation == null && this.simulation != null)
             {
                 this.runner.Stop();
 
                 this.simulation = null;
-                this.log.Debug("No simulation found in storage...");
+                this.log.Debug("The current simulation is no longer in storage...");
             }
         }
 
-        private async Task CheckForChangedSimulationAsync(Services.Models.Simulation newSimulation)
+        private async Task CheckForChangedSimulationAsync(Simulation newSimulation)
         {
             if (newSimulation != null && this.simulation != null &&
                 newSimulation.Modified != this.simulation.Modified)

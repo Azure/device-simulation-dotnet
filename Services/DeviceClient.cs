@@ -270,7 +270,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             var eventMessage = default(Message);
             string className = schema.ClassName;
-            Type type = System.Reflection.Assembly.GetExecutingAssembly().GetType(schema.ClassName, false);
+            Type type = Assembly.GetExecutingAssembly().GetType(schema.ClassName, false);
 
             if (type != null)
             {

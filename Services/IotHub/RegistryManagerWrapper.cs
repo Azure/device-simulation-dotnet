@@ -16,13 +16,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
      */
     public interface IRegistryManager
     {
-        void Init(string connectionString);
-
-        IRegistryManager CreateFromConnectionString(string connString);
+        void Init(string connString);
 
         Task<BulkRegistryOperationResult> AddDevices2Async(IEnumerable<Device> devices);
-
-        Task RemoveDeviceAsync(string deviceId);
 
         Task<BulkRegistryOperationResult> RemoveDevices2Async(IEnumerable<Device> devices, bool forceRemove);
 
@@ -32,11 +28,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         Task<Device> AddDeviceAsync(Device device);
 
+        Task RemoveDeviceAsync(string deviceId);
+
         Task<Device> GetDeviceAsync(string deviceId);
 
         Task UpdateTwinAsync(string deviceId, Twin twinPatch, string eTag);
 
-        Task<JobProperties> ImportDevicesAsync(String containerUri, string inputBlobName);
+        Task<JobProperties> ImportDevicesAsync(string containerUri, string inputBlobName);
 
         Task<JobProperties> GetJobAsync(string jobId);
 
@@ -51,6 +49,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
     public class RegistryManagerWrapper : IRegistryManager, IDisposable
     {
         private readonly IInstance instance;
+
         private RegistryManager registry;
 
         public RegistryManagerWrapper(IInstance instance)
@@ -59,23 +58,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             this.registry = null;
         }
 
-        public RegistryManagerWrapper(string connString)
-        {
-            this.registry = RegistryManager.CreateFromConnectionString(connString);
-        }
-
-        public void Init(string connectionString)
+        public void Init(string connString)
         {
             this.instance.InitOnce();
-            this.registry = RegistryManager.CreateFromConnectionString(connectionString);
+            this.registry = RegistryManager.CreateFromConnectionString(connString);
             this.instance.InitComplete();
         }
-
-        public IRegistryManager CreateFromConnectionString(string connString)
-        {
-            return new RegistryManagerWrapper(connString);
-        }
-
 
         public async Task<BulkRegistryOperationResult> AddDevices2Async(
             IEnumerable<Device> devices)
@@ -86,6 +74,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         public async Task RemoveDeviceAsync(string deviceId)
         {
+            this.instance.InitRequired();
             await this.registry.RemoveDeviceAsync(deviceId);
         }
 

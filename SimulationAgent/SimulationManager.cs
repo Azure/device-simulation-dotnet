@@ -202,11 +202,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         public Task HandleAssignedPartitionChangesAsync()
         {
-            // TODO
-            // Check for changes to the list of IDs in a partition?
-            // Check for removed partitions and remove actors?
-            // Check for lost/changed locks on a partition?
-            // New partitions will be picked up by AssignNewPartitionsAsync()
+            // TODO: Support changing the devices in a running simulation.
+            //       Remote Monitoring requires the ability to add devices to a running simulation. 
+            //       We currently don't support this, and will need to design this feature before
+            //       support is reinstated. 
             return Task.CompletedTask;
         }
 
