@@ -3,6 +3,8 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -39,6 +41,8 @@ namespace SimulationAgent.Test
         private readonly Mock<IDevicePropertiesActor> devicePropertiesActor;
         private readonly Mock<IRateLimiting> rateLimiting;
         private readonly SimulationRunner target;
+        private readonly Mock<IAzureManagementAdapterClient> azureManagementAdapter;
+        private readonly Mock<IClusteringConfig> clusteringConfig;
 
         public SimulationRunnerTest(ITestOutputHelper log)
         {
@@ -56,6 +60,8 @@ namespace SimulationAgent.Test
             this.deviceTelemetryActor = new Mock<IDeviceTelemetryActor>();
             this.devicePropertiesActor = new Mock<IDevicePropertiesActor>();
             this.rateLimiting = new Mock<IRateLimiting>();
+            this.clusteringConfig = new Mock<IClusteringConfig>();
+            this.azureManagementAdapter = new Mock<IAzureManagementAdapterClient>();
             this.ratingConfig.Setup(x => x.DeviceMessagesPerSecond).Returns(10);
 
             this.target = new SimulationRunner(
@@ -68,7 +74,9 @@ namespace SimulationAgent.Test
                 this.deviceModelsOverriding.Object,
                 this.devices.Object,
                 this.simulations.Object,
-                this.factory.Object);
+                this.factory.Object,
+                this.azureManagementAdapter.Object,
+                this.clusteringConfig.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

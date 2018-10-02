@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -124,7 +125,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string AZURE_SUBSCRIPTION_DOMAIN = DEPLOYMENT_KEY + "azure_subscription_domain";
         private const string AZURE_SUBSCRIPTION_ID = DEPLOYMENT_KEY + "azure_subscription_id";
         private const string AZURE_RESOURCE_GROUP = DEPLOYMENT_KEY + "azure_resource_group";
+        private const string AZURE_RESOURCE_GROUP_LOCATION = DEPLOYMENT_KEY + "azure_resource_group_location";
         private const string AZURE_IOTHUB_NAME = DEPLOYMENT_KEY + "azure_iothub_name";
+        private const string AZURE_VMSS_NAME = DEPLOYMENT_KEY + "azure_vmss_name";
+
 
         private const string AZURE_ACTIVE_DIRECTORY_KEY = APPLICATION_KEY + "AzureActiveDirectory:";
         private const string AAD_TENANT_ID = AZURE_ACTIVE_DIRECTORY_KEY + "tenant_id";
@@ -306,7 +310,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 AzureSubscriptionDomain = configData.GetString(AZURE_SUBSCRIPTION_DOMAIN, "undefined.onmicrosoft.com"),
                 AzureSubscriptionId = configData.GetString(AZURE_SUBSCRIPTION_ID, Guid.Empty.ToString()),
                 AzureResourceGroup = configData.GetString(AZURE_RESOURCE_GROUP, "undefined"),
+                AzureResourceGroupLocation = configData.GetString(AZURE_RESOURCE_GROUP_LOCATION, "undefined"),
                 AzureIothubName = configData.GetString(AZURE_IOTHUB_NAME, "undefined"),
+                AzureVmssName = configData.GetString(AZURE_VMSS_NAME, "undefined"),
                 AadTenantId = configData.GetString(AAD_TENANT_ID, "undefined"),
                 AadAppId = configData.GetString(AAD_APP_ID, "undefined"),
                 AadAppSecret = configData.GetString(AAD_APP_SECRET, "undefined"),

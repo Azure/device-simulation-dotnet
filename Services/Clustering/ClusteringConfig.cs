@@ -20,6 +20,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
 
         // Max number of devices in a partition
         int MaxPartitionSize { get; }
+
+        // Max number of devices simulated in a node
+        int MaxDevicesPerNode { get; }
     }
 
     public class ClusteringConfig : IClusteringConfig
@@ -36,14 +39,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         private const int MIN_MASTER_LOCK_DURATION_MSECS = 10000;
         private const int MAX_MASTER_LOCK_DURATION_MSECS = 300000;
 
+        private const int DEFAULT_MAX_DEVICES_PER_NODE = 20000;
+
+        private const int MIN_MAX_DEVICES_PER_NODE = 1;
+
         private const int DEFAULT_PARTITION_SIZE = 1000;
         private const int MIN_MAX_PARTITION_SIZE = 1;
         private const int MAX_MAX_PARTITION_SIZE = 10000;
+        private const int MAX_MAX_DEVICES_PER_NODE = 1000000;
 
         private int checkIntervalMsecs;
         private int nodeRecordMaxAgeMsecs;
         private int masterLockDurationMsecs;
         private int maxPartitionSize;
+        private int maxDevicesPerNode;
 
         public int CheckIntervalMsecs
         {
@@ -89,6 +98,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             }
         }
 
+        public int MaxDevicesPerNode
+        {
+            get => this.maxDevicesPerNode;
+            set
+            {
+                this.Validate("MaxDevicesPerNode", value, MIN_MAX_DEVICES_PER_NODE, MAX_MAX_DEVICES_PER_NODE);
+                this.maxDevicesPerNode = value;
+            }
+        }
+
         public ClusteringConfig()
         {
             // Initialize object with default values
@@ -96,6 +115,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             this.NodeRecordMaxAgeMsecs = DEFAULT_NODE_RECORD_MAX_AGE_MSECS;
             this.MasterLockDurationMsecs = DEFAULT_MASTER_LOCK_DURATION_MSECS;
             this.MaxPartitionSize = DEFAULT_PARTITION_SIZE;
+            this.MaxDevicesPerNode = DEFAULT_MAX_DEVICES_PER_NODE;
         }
 
         private void Validate(string name, int value, int min, int max)

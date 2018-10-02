@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -29,6 +30,7 @@ namespace Services.Test.Clustering
         private readonly Mock<IFactory> factory;
         private readonly Mock<ILogger> log;
         private readonly Mock<IStorageRecords> partitionsStorage;
+        private readonly Mock<IAzureManagementAdapterClient> azureManagementAdapterClient;
 
         public DevicePartitionsTest()
         {
@@ -38,6 +40,7 @@ namespace Services.Test.Clustering
             this.factory = new Mock<IFactory>();
             this.log = new Mock<ILogger>();
             this.partitionsStorage = new Mock<IStorageRecords>();
+            this.azureManagementAdapterClient = new Mock<IAzureManagementAdapterClient>();
 
             // Inject configuration settings with a collection name which is then used
             // to intercept the call to .Init()
@@ -220,7 +223,8 @@ namespace Services.Test.Clustering
                 this.clusteringConfig.Object,
                 this.simulations.Object,
                 this.factory.Object,
-                this.log.Object);
+                this.log.Object,
+                this.azureManagementAdapterClient.Object);
         }
 
         private void SetupAGenericSimulationWithSomeDevices(string simulationId, bool complete = false)

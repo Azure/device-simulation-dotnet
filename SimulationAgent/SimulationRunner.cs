@@ -8,6 +8,8 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -42,6 +44,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         // Allow 30 seconds to create the devices (1000 devices normally takes 2-3 seconds)
         private const int DEVICES_CREATION_TIMEOUT_SECS = 30;
+
+        // Allow time to make request adjust vmss autoscale settings
+        private const int VMSS_AUTOSCALE_SETTINGS_TIMEOUT_SECS = 5;
 
         // Application logger
         private readonly ILogger log;
@@ -112,6 +117,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Counter for simulation error
         private long simulationErrors;
 
+        // Azure management adapter
+        private readonly IAzureManagementAdapterClient azureManagementAdapter;
+
+        // Clustering config
+        private readonly IClusteringConfig clusteringConfig;
+
         public SimulationRunner(
             IRateLimitingConfig ratingConfig,
             IRateLimiting rateLimiting,
@@ -122,7 +133,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             IDeviceModelsGeneration deviceModelsOverriding,
             IDevices devices,
             ISimulations simulations,
-            IFactory factory)
+            IFactory factory,
+            IAzureManagementAdapterClient azureManagementAdapter,
+            IClusteringConfig clusteringConfig)
         {
             this.connectionLoopSettings = new ConnectionLoopSettings(ratingConfig);
             this.propertiesLoopSettings = new PropertiesLoopSettings(ratingConfig);
@@ -140,6 +153,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.running = false;
             this.starting = false;
             this.rateLimiting = rateLimiting;
+            this.clusteringConfig = clusteringConfig;
+            this.azureManagementAdapter = azureManagementAdapter;
 
             this.deviceStateActors = new ConcurrentDictionary<string, IDeviceStateActor>();
             this.deviceConnectionActors = new ConcurrentDictionary<string, IDeviceConnectionActor>();
@@ -164,6 +179,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             lock (this.startLock)
             {
                 if (this.running) return;
+
+                // Loop through all the device models used in the simulation
+                var models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
+
+                // Calculate the total number of devices
+                var total = models.Sum(model => model.Count);
+
+                // Send a request to update vmss auto scale settings to create vm instances
+                var vmCount = (int)Math.Ceiling((double)total / this.clusteringConfig.MaxDevicesPerNode);
+                this.azureManagementAdapter.CreateOrUpdateVmssAutoscaleSettingsAsync(vmCount)
+                    .Wait(TimeSpan.FromSeconds(VMSS_AUTOSCALE_SETTINGS_TIMEOUT_SECS));
 
                 // Use `starting` to exit as soon as possible, to minimize the number 
                 // of threads pending on the lock statement
@@ -196,12 +222,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     // Return and retry
                     return;
                 }
-
-                // Loop through all the device models used in the simulation
-                var models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
-
-                // Calculate the total number of devices
-                var total = models.Sum(model => model.Count);
 
                 foreach (var model in models)
                 {
@@ -294,6 +314,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                 // Reset rateLimiting counters
                 this.rateLimiting.ResetCounters();
+
+                // Reset vm count on vmss
+                this.azureManagementAdapter.CreateOrUpdateVmssAutoscaleSettingsAsync(1)
+                        .Wait(TimeSpan.FromSeconds(VMSS_AUTOSCALE_SETTINGS_TIMEOUT_SECS));
             }
         }
 
