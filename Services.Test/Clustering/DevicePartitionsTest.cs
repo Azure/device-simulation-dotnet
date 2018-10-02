@@ -3,7 +3,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
