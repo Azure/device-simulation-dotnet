@@ -80,8 +80,7 @@ namespace SimulationAgent.Test.DeviceConnection
                 this.registerLogic.Object,
                 this.connectLogic.Object,
                 this.deregisterLogic.Object,
-                this.disconnectLogic.Object,
-                this.mockInstance.Object);
+                this.disconnectLogic.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

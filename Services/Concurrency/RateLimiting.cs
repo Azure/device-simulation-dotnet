@@ -48,6 +48,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             this.log = log;
             this.clusterSize = 1;
             this.instance = instance;
+
+            // TODO: these initializations will be moved to Init when SimulationManager is
+            //       integrated.
+            this.connections = new PerSecondCounter(
+                config.ConnectionsPerSecond, "Device connections", this.log);
+
+            this.registryOperations = new PerMinuteCounter(
+                config.RegistryOperationsPerMinute, "Registry operations", this.log);
+
+            this.twinReads = new PerSecondCounter(
+                config.TwinReadsPerSecond, "Twin reads", this.log);
+
+            this.twinWrites = new PerSecondCounter(
+                config.TwinWritesPerSecond, "Twin writes", this.log);
+
+            this.messaging = new PerSecondCounter(
+                config.DeviceMessagesPerSecond, "Device msg/sec", this.log);
         }
 
         public void Init(IRateLimitingConfig config)
@@ -74,7 +91,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         public void ResetCounters()
         {
-            this.instance.InitRequired();
             this.connections.ResetCounter();
             this.registryOperations.ResetCounter();
             this.twinReads.ResetCounter();
@@ -84,8 +100,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         public void ChangeClusterSize(int count)
         {
-            this.instance.InitRequired();
-
             this.log.Info("Updating rating limits to the new cluster size",
                 () => new { previousSize = this.clusterSize, newSize = count });
 
@@ -99,32 +113,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         public long GetPauseForNextConnection()
         {
-            this.instance.InitRequired();
             return this.connections.GetPause();
         }
 
         public long GetPauseForNextRegistryOperation()
         {
-            this.instance.InitRequired();
             return this.registryOperations.GetPause();
         }
 
         public long GetPauseForNextTwinRead()
         {
-            this.instance.InitRequired();
             return this.twinReads.GetPause();
         }
 
         public long GetPauseForNextTwinWrite()
         {
-            this.instance.InitRequired();
             return this.twinWrites.GetPause();
         }
 
         public long GetPauseForNextMessage()
         {
-            this.instance.InitRequired();
-
             // TODO: consider daily quota
             // https://github.com/Azure/device-simulation-dotnet/issues/80
             return this.messaging.GetPause();
@@ -135,7 +143,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         /// </summary>
         public double GetThroughputForMessages()
         {
-            this.instance.InitRequired();
             return this.messaging.GetThroughputForMessages();
         }
     }
