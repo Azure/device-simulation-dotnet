@@ -76,10 +76,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                     // currently we support only 1 running simulation so the result should return only 1 item
                     var runningSimulation = simulationList.FirstOrDefault(s => s.ShouldBeRunning);
+                    if (runningSimulation == null)
+                    {
+                        this.log.Debug("No simulations found that should be running. Nothing to do.");
+                    }
 
                     this.log.Debug("Simulation loaded", () => new { runningSimulation });
 
-                    // if the simulation is removed from storage & we're running stop simulation.
+                    // if the simulation has been removed from storage & we're running, stop the simulation.
                     var id = this.simulation?.Id;
                     var prevSimulation = simulationList.FirstOrDefault(s => s.Id == id);
                     this.CheckForDeletedSimulation(prevSimulation);
@@ -131,7 +135,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     if (this.running)
                     {
                         this.log.Info("Add device to running simulation");
-                        this.runner.AddDevice(deviceId, modelId);
+                        await this.runner.AddDeviceAsync(deviceId, modelId);
                     }
                     else
                     {
@@ -176,18 +180,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private void CheckForDeletedSimulation(Services.Models.Simulation newSimulation)
+        private void CheckForDeletedSimulation(Simulation newSimulation)
         {
             if (newSimulation == null && this.simulation != null)
             {
                 this.runner.Stop();
 
                 this.simulation = null;
-                this.log.Debug("No simulation found in storage...");
+                this.log.Debug("The current simulation is no longer in storage...");
             }
         }
 
-        private async Task CheckForChangedSimulationAsync(Services.Models.Simulation newSimulation)
+        private async Task CheckForChangedSimulationAsync(Simulation newSimulation)
         {
             if (newSimulation != null && this.simulation != null &&
                 newSimulation.Modified != this.simulation.Modified)

@@ -40,11 +40,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             {
                 this.Items.Add(
                     SimulationApiModel.SimulationApiModel.FromServiceModelAsync(
-                        x, 
-                        servicesConfig, 
-                        deploymentConfig, 
-                        connectionStringManager, 
-                        simulationRunner, 
+                        x,
+                        servicesConfig,
+                        deploymentConfig,
+                        connectionStringManager,
+                        simulationRunner,
                         rateReporter).Result);
             }
         }

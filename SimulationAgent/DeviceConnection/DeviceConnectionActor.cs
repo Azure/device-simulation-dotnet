@@ -4,7 +4,6 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
@@ -21,22 +20,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         bool Connected { get; }
         long FailedDeviceConnectionsCount { get; }
         long SimulationErrorsCount { get; }
-
-        void Init(
-            ISimulationContext simulationContext,
-            string deviceId,
-            DeviceModel deviceModel,
-            IDeviceStateActor deviceStateActor,
-            ConnectionLoopSettings loopSettings);
-
         bool IsDeleted { get; }
-
-        void Setup(
-            string deviceId, 
-            DeviceModel deviceModel, 
-            IDeviceStateActor deviceStateActor, 
-            ConnectionLoopSettings loopSettings);
-
+        Task SetupAsync(string deviceId, DeviceModel deviceModel, IDeviceStateActor deviceStateActor, ConnectionLoopSettings loopSettings);
         Task RunAsync();
         void HandleEvent(DeviceConnectionActor.ActorEvents e);
         void Stop();
@@ -94,7 +79,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private readonly IDeviceConnectionLogic connectLogic;
         private readonly IDeviceConnectionLogic deregisterLogic;
         private readonly IDeviceConnectionLogic disconnectLogic;
-        private readonly IInstance instance;
 
         private ActorStatus status;
         private string deviceId;
@@ -104,12 +88,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private long failedDeviceConnectionsCount;
         private long failedRegistrationsCount;
         private long failedFetchCount;
-
-        /// <summary>
-        /// Contains all the simulation specific dependencies, e.g. hub, rating
-        /// limits, device registry, etc.
-        /// </summary>
-        private ISimulationContext simulationContext;
 
         /// <summary>
         /// Reference to the actor managing the device state, used
@@ -173,8 +151,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             Register registerLogic,
             Connect connectLogic,
             Deregister deregisterLogic,
-            Disconnect disconnectLogic,
-            IInstance instance)
+            Disconnect disconnectLogic)
         {
             this.log = logger;
             this.actorLogger = actorLogger;
@@ -186,7 +163,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.connectLogic = connectLogic;
             this.deregisterLogic = deregisterLogic;
             this.disconnectLogic = disconnectLogic;
-            this.instance = instance;
 
             this.Message = null;
             this.Client = null;
@@ -205,39 +181,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         /// <summary>
         /// Invoke this method before calling Execute(), to initialize the actor
         /// with details like the device model and message type to simulate.
+        /// SetupAsync() should be called only once.
         /// </summary>
-        public void Init(
-            ISimulationContext simulationContext,
-            string deviceId,
-            DeviceModel deviceModel,
-            IDeviceStateActor deviceStateActor,
-            ConnectionLoopSettings loopSettings)
-        {
-            this.instance.InitOnce();
-
-            this.simulationContext = simulationContext;
-            this.deviceModel = deviceModel;
-            this.deviceId = deviceId;
-            this.deviceStateActor = deviceStateActor;
-            this.loopSettings = loopSettings;
-
-            this.credentialsSetupLogic.Init(this, this.deviceId, this.deviceModel);
-            this.fetchFromRegistryLogic.Init(this, this.deviceId, this.deviceModel);
-            this.registerLogic.Init(this, this.deviceId, this.deviceModel);
-            this.connectLogic.Init(this, this.deviceId, this.deviceModel);
-            this.actorLogger.Init(deviceId, "Connection");
-
-            this.status = ActorStatus.ReadyToStart;
-
-            this.instance.InitComplete();
-        }
-
-        /// <summary>
-        /// Invoke this method before calling Execute(), to initialize the actor
-        /// with details like the device model and message type to simulate.
-        /// Setup() should be called only once.
-        /// </summary>
-        public void Setup(
+        public async Task SetupAsync(
             string deviceId,
             DeviceModel deviceModel,
             IDeviceStateActor deviceStateActor,
@@ -255,13 +201,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.deviceStateActor = deviceStateActor;
             this.loopSettings = loopSettings;
 
-            this.credentialsSetupLogic.Init(this, this.deviceId, this.deviceModel);
-            this.fetchFromRegistryLogic.Init(this, this.deviceId, this.deviceModel);
-            this.registerLogic.Init(this, this.deviceId, this.deviceModel);
-            this.connectLogic.Init(this, this.deviceId, this.deviceModel);
-            this.deregisterLogic.Init(this, this.deviceId, this.deviceModel);
-            this.disconnectLogic.Init(this, this.deviceId, this.deviceModel);
-            this.actorLogger.Init(deviceId, "Connection");
+            await this.credentialsSetupLogic.SetupAsync(this, this.deviceId, this.deviceModel);
+            await this.fetchFromRegistryLogic.SetupAsync(this, this.deviceId, this.deviceModel);
+            await this.registerLogic.SetupAsync(this, this.deviceId, this.deviceModel);
+            await this.connectLogic.SetupAsync(this, this.deviceId, this.deviceModel);
+            await this.deregisterLogic.SetupAsync(this, this.deviceId, this.deviceModel);
+            await this.disconnectLogic.SetupAsync(this, this.deviceId, this.deviceModel);
+            this.actorLogger.Setup(deviceId, "Connection");
 
             this.status = ActorStatus.ReadyToStart;
         }

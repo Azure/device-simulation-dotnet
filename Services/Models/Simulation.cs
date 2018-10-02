@@ -12,16 +12,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         private DateTimeOffset? endTime;
         private IList<string> iotHubConnectionStrings;
 
+        // A simulation is "active" if enabled and "scheduled"
         [JsonIgnore]
-        public bool IsActiveNow => this.Enabled &&
-                                   (!this.StartTime.HasValue || this.StartTime.Value.CompareTo(DateTimeOffset.UtcNow) <= 0) &&
-                                   (!this.EndTime.HasValue || this.EndTime.Value.CompareTo(DateTimeOffset.UtcNow) > 0);
+        public bool IsActiveNow
+        {
+            get
+            {
+                var now = DateTimeOffset.UtcNow;
+                var startedInThePast = !this.StartTime.HasValue || this.StartTime.Value.CompareTo(now) <= 0;
+                var endInTheFuture = !this.EndTime.HasValue || this.EndTime.Value.CompareTo(now) > 0;
+                return this.Enabled && startedInThePast && endInTheFuture;
+            }
+        }
+
+        [JsonIgnore]
+        public bool DeviceCreationRequired => this.IsActiveNow && !this.DevicesCreationComplete;
 
         [JsonIgnore]
         public bool PartitioningRequired => this.IsActiveNow && !this.PartitioningComplete;
 
+        // A simulation should be running if it is active and devices have been created and partitioned
         [JsonIgnore]
-        public bool ShouldBeRunning => this.IsActiveNow && this.PartitioningComplete;
+        public bool ShouldBeRunning => this.IsActiveNow
+                                       && this.PartitioningComplete
+                                       && this.DevicesCreationComplete;
 
         // When Simulation is written to storage, Id and Etag are not serialized as part of body
         // These are instead written in dedicated columns (key and eTag)
@@ -33,6 +47,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         [JsonProperty(Order = 10)]
         public bool Enabled { get; set; }
+
+        [JsonProperty(Order = 11)]
+        public bool DevicesCreationStarted { get; set; }
+
+        [JsonProperty(Order = 12)]
+        public bool DevicesCreationComplete { get; set; }
+
+        [JsonProperty(Order = 1000)]
+        public string DeviceCreationJobId { get; set; }
 
         [JsonProperty(Order = 20)]
         public string Name { get; set; }

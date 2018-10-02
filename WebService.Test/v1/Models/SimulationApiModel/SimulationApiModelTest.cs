@@ -44,12 +44,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
 
             // Act
             var result = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel.FromServiceModelAsync(
-                    simulation, 
-                    this.servicesConfig.Object, 
-                    this.deploymentConfig.Object, 
-                    this.connectionStringManager.Object, 
-                    this.simulationRunner.Object, 
-                    this.rateReporter.Object)
+                    simulation, this.servicesConfig.Object, this.deploymentConfig.Object, this.connectionStringManager.Object, this.simulationRunner.Object, this.rateReporter.Object)
                 .CompleteOrTimeout().Result;
 
             // Assert
