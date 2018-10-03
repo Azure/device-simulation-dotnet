@@ -34,6 +34,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             IDeviceConnectionActor deviceConnectionActor,
             PropertiesLoopSettings loopSettings);
 
+        bool HasWorkToDo();
         Task<string> RunAsync();
         void HandleEvent(DevicePropertiesActor.ActorEvents e);
         void Stop();
@@ -240,6 +241,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                 default:
                     throw new ArgumentOutOfRangeException(nameof(e), e, null);
             }
+        }
+
+        public bool HasWorkToDo()
+        {
+            switch (this.status)
+            {
+                case ActorStatus.ReadyToStart:
+                    return this.deviceConnectionActor.Connected;
+
+                case ActorStatus.WaitingForChanges:
+                    return this.DeviceProperties?.Changed ?? false;
+
+                case ActorStatus.ReadyToUpdate:
+                    return true;
+            }
+
+            return false;
         }
 
         // Run the next step and return a description about what happened

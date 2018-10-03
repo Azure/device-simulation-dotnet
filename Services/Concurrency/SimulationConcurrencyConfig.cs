@@ -62,7 +62,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         /// <summary>
         /// How many threads to use to send telemetry.
         /// A value too high (e.g. more than 10) can decrease the overall throughput due to context switching.
-        /// A value too low (e.g. less than 2) can decrease the overall throughput due to the time required to
+        /// A value too low (e.g. fewer than 2) can decrease the overall throughput due to the time required to
         /// loop through all the devices, when dealing we several thousands of devices.
         /// </summary>
         public int TelemetryThreads

@@ -30,6 +30,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             IDeviceStateActor deviceStateActor,
             ConnectionLoopSettings loopSettings);
 
+        bool HasWorkToDo();
+
         Task RunAsync();
         void HandleEvent(DeviceConnectionActor.ActorEvents e);
         void Stop();
@@ -254,6 +256,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             catch (Exception e)
             {
                 this.log.Warn("Error while deleting", () => new { e });
+            }
+        }
+
+        public bool HasWorkToDo()
+        {
+            switch (this.status)
+            {
+                case ActorStatus.None:
+                case ActorStatus.ReadyToStart:
+                case ActorStatus.ReadyToSetupCredentials:
+                case ActorStatus.ReadyToFetch:
+                case ActorStatus.PreparingCredentials:
+                case ActorStatus.Fetching:
+                case ActorStatus.ReadyToRegister:
+                case ActorStatus.Registering:
+                case ActorStatus.ReadyToConnect:
+                case ActorStatus.Connecting:
+                    return true;
+
+                case ActorStatus.Done:
+                case ActorStatus.Stopped:
+                    return false;
+
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 

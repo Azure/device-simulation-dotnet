@@ -4,12 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;
 using Newtonsoft.Json;
@@ -58,10 +56,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "DeviceModels")]
         public IList<SimulationDeviceModelRef> DeviceModels { get; set; }
 
-        // Note: read-only property, used only to report the simulation status
-        [JsonProperty(PropertyName = "Statistics")]
-        public SimulationStatistics Statistics { get; set; }
-
         // Note: read-only metadata
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
@@ -87,7 +81,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             this.EndTime = null;
             this.StoppedTime = null;
             this.DeviceModels = new List<SimulationDeviceModelRef>();
-            this.Statistics = new SimulationStatistics();
         }
 
         // Map API model to service model, keeping the original fields when needed
@@ -135,13 +128,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         }
 
         // Map service model to API model
-        public static async Task<SimulationApiModel> FromServiceModelAsync(
-            Simulation value,
-            IServicesConfig servicesConfig,
-            IDeploymentConfig deploymentConfig,
-            IIotHubConnectionStringManager connectionStringManager,
-            ISimulationRunner simulationRunner,
-            IRateLimiting rateReporter)
+        public static SimulationApiModel FromServiceModel(Simulation value)
         {
             if (value == null) return null;
 
@@ -159,6 +146,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 IotHubs = new List<SimulationIotHub>()
             };
 
+            // TODO: add comment about what is going on here
             foreach (var iotHubConnectionString in value.IotHubConnectionStrings)
             {
                 var iotHub = new SimulationIotHub { ConnectionString = iotHubConnectionString };
@@ -184,11 +172,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             }
 
             result.DeviceModels = SimulationDeviceModelRef.FromServiceModel(value.DeviceModels);
-            result.Statistics = SimulationStatistics.FromServiceModel(value.Statistics);
             result.created = value.Created;
             result.modified = value.Modified;
 
-            await result.AppendHubPropertiesAndStatisticsAsync(servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
+            // TODO: design a way to dispaly combined statistics for a distributed simulation
+            //await result.AppendHubPropertiesAndStatisticsAsync(servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
 
             return result;
         }
@@ -250,53 +238,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             foreach (var iotHub in this.IotHubs)
             {
                 await connectionStringManager.ValidateConnectionStringAsync(iotHub.ConnectionString);
-            }
-        }
-
-        // Append additional Hub properties and Statistics 
-        private async Task AppendHubPropertiesAndStatisticsAsync(
-            IServicesConfig servicesConfig,
-            IDeploymentConfig deploymentConfig,
-            IIotHubConnectionStringManager connectionStringManager,
-            ISimulationRunner simulationRunner,
-            IRateLimiting rateReporter)
-        {
-            var isRunning = this.Running == true;
-
-            foreach (var iotHub in this.IotHubs)
-            {
-                // Preprovisioned IoT hub status
-                var isHubPreprovisioned = this.IsHubConnectionStringConfigured(servicesConfig);
-
-                if (isHubPreprovisioned && isRunning)
-                {
-                    iotHub.PreprovisionedIoTHubInUse = await this.IsPreprovisionedIoTHubInUseAsync(servicesConfig, connectionStringManager);
-                    iotHub.PreprovisionedIoTHubMetricsUrl = await this.GetIoTHubMetricsUrlAsync(servicesConfig, deploymentConfig, connectionStringManager);
-                }
-            }
-
-            if (isRunning)
-            {
-                // Average messages per second frequency in the last minutes
-                this.Statistics.AverageMessagesPerSecond = rateReporter.GetThroughputForMessages();
-
-                // Total messages count
-                this.Statistics.TotalMessagesSent = simulationRunner.TotalMessagesCount;
-
-                // Active devices count
-                this.Statistics.ActiveDevicesCount = simulationRunner.ActiveDevicesCount;
-
-                // Failed telemetry messages count
-                this.Statistics.FailedMessagesCount = simulationRunner.FailedMessagesCount;
-
-                // Failed device connections count
-                this.Statistics.FailedDeviceConnectionsCount = simulationRunner.FailedDeviceConnectionsCount;
-
-                // Failed device connections count
-                this.Statistics.FailedDeviceTwinUpdatesCount = simulationRunner.FailedDeviceTwinUpdatesCount;
-
-                // Simulation errors count
-                this.Statistics.SimulationErrorsCount = simulationRunner.SimulationErrorsCount;
             }
         }
 

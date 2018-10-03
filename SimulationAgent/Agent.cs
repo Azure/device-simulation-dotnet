@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved. 
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -9,13 +10,19 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.SimulationThreads;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
     public interface ISimulationAgent
     {
-        Task RunAsync();
+        Task StartAsync();
         Task AddDeviceAsync(string name, string modelId);
         Task DeleteDevicesAsync(List<string> ids);
         void Stop();
@@ -23,190 +30,486 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
     public class Agent : ISimulationAgent
     {
-        private const int CHECK_INTERVAL_MSECS = 10000;
+        // Wait a few seconds after checking if there are new simulations
+        // or new devices, to avoid overloading the database with queries.
+        private const int PAUSE_AFTER_CHECK_MSECS = 20000;
+        private const int SHUTDOWN_WAIT_INTERVAL_MSECS = 1000;
+        private const int SHUTDOWN_WAIT_BEFORE_STOPPING_THREADS_MSECS = 3000;
         private const int DIAGNOSTICS_POLLING_FREQUENCY_DAYS = 1;
 
+        // How often (minimum) to log simulation statistics
+        private const int STATS_INTERVAL_MSECS = 15000;
+
+        private readonly ISimulationConcurrencyConfig simulationConcurrencyConfig;
         private readonly ILogger log;
         private readonly IDiagnosticsLogger logDiagnostics;
         private readonly ISimulations simulations;
-        private readonly ISimulationRunner runner;
-        private readonly IRateLimiting rateReporter;
-        private readonly IDeviceModels deviceModels;
-        private readonly IDevices devices;
+        private readonly IFactory factory;
         private DateTimeOffset lastPolledTime;
-        private Simulation simulation;
         private bool running;
 
+        // The thread responsible for updating devices/sensors state
+        private Thread devicesStateThread;
+        private IDeviceStateTask devicesStateTask;
+
+        // The thread responsible for connecting all the devices to Azure IoT Hub
+        private Thread devicesConnectionThread;
+        private IDeviceConnectionTask devicesConnectionTask;
+
+        // The thread responsible for sending device property updates to Azure IoT Hub
+        private Thread devicesPropertiesThread;
+        private IUpdatePropertiesTask devicesPropertiesTask;
+
+        // Array of threads used to send telemetry
+        private Thread[] devicesTelemetryThreads;
+        private List<IDeviceTelemetryTask> devicesTelemetryTasks;
+
+        private readonly ConcurrentDictionary<string, ISimulationManager> simulationManagers;
+
+        // List of all the actors managing the devices state, indexed by Simulation ID + Device ID (string concat)
+        private readonly ConcurrentDictionary<string, IDeviceStateActor> deviceStateActors;
+
+        // Contains all the actors responsible to connect the devices, indexed by Simulation ID + Device ID (string concat)
+        private readonly ConcurrentDictionary<string, IDeviceConnectionActor> deviceConnectionActors;
+
+        // Contains all the actors sending telemetry, indexed by Simulation ID + Device ID (string concat)
+        private readonly ConcurrentDictionary<string, IDeviceTelemetryActor> deviceTelemetryActors;
+
+        // Contains all the actors sending device property updates to Azure IoT Hub, indexed by Simulation ID + Device ID (string concat)
+        private readonly ConcurrentDictionary<string, IDevicePropertiesActor> devicePropertiesActors;
+
+        // Flag signaling whether the simulation is starting (to reduce blocked threads)
+        private bool startingOrStopping;
+
+        // Used to stop the threads
+        private CancellationTokenSource runningToken;
+        private long lastStatsTime;
+
         public Agent(
-            ILogger logger,
-            IDiagnosticsLogger diagnosticsLogger,
+            ISimulationConcurrencyConfig simulationConcurrencyConfig,
             ISimulations simulations,
-            ISimulationRunner runner,
-            IRateLimiting rateReporter,
-            IDeviceModels deviceModels,
-            IDevices devices)
+            IFactory factory,
+            ILogger logger,
+            IDiagnosticsLogger diagnosticsLogger)
         {
+            this.simulationConcurrencyConfig = simulationConcurrencyConfig;
+            this.simulations = simulations;
+            this.factory = factory;
             this.log = logger;
             this.logDiagnostics = diagnosticsLogger;
-            this.simulations = simulations;
-            this.runner = runner;
-            this.rateReporter = rateReporter;
-            this.deviceModels = deviceModels;
-            this.devices = devices;
-            this.running = true;
-            this.lastPolledTime = DateTimeOffset.UtcNow;
-        }
 
-        public async Task RunAsync()
-        {
-            this.log.Info("Simulation Agent running");
-
-            // Keep running, checking if the simulation changes
-            while (this.running)
-            {
-                var oldSimulation = this.simulation;
-
-                this.SendSolutionHeartbeatAsync();
-
-                try
-                {
-                    this.log.Debug("------ Checking for simulation changes ------");
-
-                    var simulationList = await this.simulations.GetListAsync();
-
-                    // currently we support only 1 running simulation so the result should return only 1 item
-                    var runningSimulation = simulationList.FirstOrDefault(s => s.ShouldBeRunning);
-                    if (runningSimulation == null)
-                    {
-                        this.log.Debug("No simulations found that should be running. Nothing to do.");
-                    }
-
-                    this.log.Debug("Simulation loaded", () => new { runningSimulation });
-
-                    // if the simulation has been removed from storage & we're running, stop the simulation.
-                    var id = this.simulation?.Id;
-                    var prevSimulation = simulationList.FirstOrDefault(s => s.Id == id);
-                    this.CheckForDeletedSimulation(prevSimulation);
-
-                    // if there's a new simulation and it's different from the current one
-                    // stop the current one from running & start the new one if it's enabled
-                    await this.CheckForChangedSimulationAsync(runningSimulation);
-
-                    // if there's no simulation running but there's one from storage start it
-                    await this.CheckForNewSimulationAsync(runningSimulation);
-
-                    // if the current simulation was asked to stop, stop it.
-                    await this.CheckForStopOrStartToSimulationAsync();
-                }
-                catch (Exception e)
-                {
-                    this.log.Error("Failure reading and starting simulation from storage.", e);
-                    this.simulation = oldSimulation;
-                }
-
-                if (this.simulation != null && this.simulation.ShouldBeRunning)
-                {
-                    this.log.Debug("------ Current simulation being run ------");
-                    foreach (var model in this.simulation.DeviceModels)
-                    {
-                        this.log.Debug("Device model", () => new { model });
-                    }
-                }
-
-                Thread.Sleep(CHECK_INTERVAL_MSECS);
-            }
-        }
-
-        public void Stop()
-        {
-            this.simulation = null;
+            this.startingOrStopping = false;
             this.running = false;
-            this.runner.Stop();
+            this.runningToken = new CancellationTokenSource();
+            this.lastPolledTime = DateTimeOffset.UtcNow;
+            this.lastStatsTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+            this.simulationManagers = new ConcurrentDictionary<string, ISimulationManager>();
+            this.deviceStateActors = new ConcurrentDictionary<string, IDeviceStateActor>();
+            this.deviceConnectionActors = new ConcurrentDictionary<string, IDeviceConnectionActor>();
+            this.deviceTelemetryActors = new ConcurrentDictionary<string, IDeviceTelemetryActor>();
+            this.devicePropertiesActors = new ConcurrentDictionary<string, IDevicePropertiesActor>();
         }
 
-        public async Task AddDeviceAsync(string deviceId, string modelId)
+        public Task StartAsync()
         {
-            if (this.simulation != null && this.IsDeviceModelIdValidAsync(modelId))
+            if (this.startingOrStopping || this.running)
             {
-                try
-                {
-                    await this.AddDeviceToSimulationRecordAsync(this.simulation, deviceId, modelId);
-
-                    if (this.running)
-                    {
-                        this.log.Info("Add device to running simulation");
-                        await this.runner.AddDeviceAsync(deviceId, modelId);
-                    }
-                    else
-                    {
-                        this.log.Info("Add device to IoT Hub");
-                        await this.simulations.AddDeviceAsync(deviceId);
-                    }
-                }
-                catch (Exception e)
-                {
-                    this.log.Debug("Error while adding new device", () => new { e });
-                    throw new Exception("Error while adding a new device");
-                }
+                this.log.Error("The simulation agent can be started only once");
+                return Task.CompletedTask;
             }
+
+            this.running = false;
+            this.startingOrStopping = true;
+            this.runningToken.Cancel();
+            this.runningToken = new CancellationTokenSource();
+
+            this.TryToStartThreads();
+
+            this.running = true;
+            this.startingOrStopping = false;
+
+            return this.RunAsync();
         }
 
-        public async Task DeleteDevicesAsync(List<string> ids)
+        private async Task RunAsync()
         {
-            this.log.Info("Update simulation");
-
             try
             {
-                if (this.simulation != null)
+                while (this.running)
                 {
-                    await this.DeleteDevicesFromSimulationRecordAsync(this.simulation, ids);
+                    this.SendSolutionHeartbeatAsync();
 
-                    if (this.running)
-                    {
-                        this.log.Info("Deleting devices from running simulation");
-                        this.runner.DeleteDevices(ids);
-                    }
-                    else
-                    {
-                        this.log.Info("Deleting devices from hub");
-                        await this.devices.DeleteListAsync(ids);
-                    }
+                    this.log.Debug("Starting simulation agent loop",
+                        () => new { SimulationsCount = this.simulationManagers.Count });
+
+                    // Get the list of active simulations. Active simulations are already partitioned.
+                    IList<Simulation> activeSimulations = (await this.simulations.GetListAsync())
+                        .Where(x => x.IsActiveNow).ToList();
+                    this.log.Debug("Active simulations loaded", () => new { activeSimulations.Count });
+
+                    await this.CreateSimulationManagersAsync(activeSimulations);
+                    await this.RunSimulationManagersMaintenanceAsync();
+                    this.StopInactiveSimulations(activeSimulations);
+
+                    Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
                 }
             }
             catch (Exception e)
             {
-                this.log.Debug("Error while deleting new device", () => new { e });
-                throw new Exception("Error while deleting a new device");
+                this.log.Error("A critical error occurred in the simulation agent", e);
+                this.Stop();
             }
         }
 
-        private void CheckForDeletedSimulation(Simulation newSimulation)
-        {
-            if (newSimulation == null && this.simulation != null)
-            {
-                this.runner.Stop();
+        //public async Task RunAsync()
+        //{
+        //    this.log.Info("Simulation Agent running");
 
-                this.simulation = null;
-                this.log.Debug("The current simulation is no longer in storage...");
-            }
+        //    // Keep running, checking if the simulation changes
+        //    while (this.running)
+        //    {
+        //        var oldSimulation = this.simulation;
+
+        //        this.SendSolutionHeartbeatAsync();
+
+        //        try
+        //        {
+        //            this.log.Debug("------ Checking for simulation changes ------");
+
+        //            var simulationList = await this.simulations.GetListAsync();
+
+        //            // currently we support only 1 running simulation so the result should return only 1 item
+        //            var runningSimulation = simulationList.FirstOrDefault(s => s.ShouldBeRunning);
+        //            if (runningSimulation == null)
+        //            {
+        //                this.log.Debug("No simulations found that should be running. Nothing to do.");
+        //            }
+
+        //            this.log.Debug("Simulation loaded", () => new { runningSimulation });
+
+        //            // if the simulation has been removed from storage & we're running, stop the simulation.
+        //            var id = this.simulation?.Id;
+        //            var prevSimulation = simulationList.FirstOrDefault(s => s.Id == id);
+        //            this.CheckForDeletedSimulation(prevSimulation);
+
+        //            // if there's a new simulation and it's different from the current one
+        //            // stop the current one from running & start the new one if it's enabled
+        //            await this.CheckForChangedSimulationAsync(runningSimulation);
+
+        //            // if there's no simulation running but there's one from storage start it
+        //            await this.CheckForNewSimulationAsync(runningSimulation);
+
+        //            // if the current simulation was asked to stop, stop it.
+        //            await this.CheckForStopOrStartToSimulationAsync();
+        //        }
+        //        catch (Exception e)
+        //        {
+        //            this.log.Error("Failure reading and starting simulation from storage.", e);
+        //            this.simulation = oldSimulation;
+        //        }
+
+        //        if (this.simulation != null && this.simulation.ShouldBeRunning)
+        //        {
+        //            this.log.Debug("------ Current simulation being run ------");
+        //            foreach (var model in this.simulation.DeviceModels)
+        //            {
+        //                this.log.Debug("Device model", () => new { model });
+        //            }
+        //        }
+
+        //        Thread.Sleep(CHECK_INTERVAL_MSECS);
+        //    }
+        //}
+
+        public void Stop()
+        {
+            // TODO: why is this needed?
+            while (this.startingOrStopping)
+                Thread.Sleep(SHUTDOWN_WAIT_INTERVAL_MSECS);
+
+            this.startingOrStopping = true;
+            this.log.Write("Stopping simulation agent...");
+
+            this.running = false;
+
+            // Signal threads to stop
+            this.runningToken.Cancel();
+            this.runningToken = new CancellationTokenSource();
+
+            // Allow some time to pass before trying to stop threads
+            Thread.Sleep(SHUTDOWN_WAIT_BEFORE_STOPPING_THREADS_MSECS);
+            this.TryToStopThreads();
         }
 
-        private async Task CheckForChangedSimulationAsync(Simulation newSimulation)
+        public async Task AddDeviceAsync(string deviceId, string modelId)
         {
-            if (newSimulation != null && this.simulation != null &&
-                newSimulation.Modified != this.simulation.Modified)
+            //if (this.simulation != null && this.IsDeviceModelIdValidAsync(modelId))
+            //{
+            //    try
+            //    {
+            //        await this.AddDeviceToSimulationRecordAsync(this.simulation, deviceId, modelId);
+
+            //        if (this.running)
+            //        {
+            //            this.log.Info("Add device to running simulation");
+            //            await this.runner.AddDeviceAsync(deviceId, modelId);
+            //        }
+            //        else
+            //        {
+            //            this.log.Info("Add device to IoT Hub");
+            //            await this.simulations.AddDeviceAsync(deviceId);
+            //        }
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        this.log.Debug("Error while adding new device", () => new { e });
+            //        throw new Exception("Error while adding a new device");
+            //    }
+            //}
+            return;
+        }
+
+        public async Task DeleteDevicesAsync(List<string> ids)
+        {
+            //this.log.Info("Update simulation");
+
+            //try
+            //{
+            //    if (this.simulation != null)
+            //    {
+            //        await this.DeleteDevicesFromSimulationRecordAsync(this.simulation, ids);
+
+            //        if (this.running)
+            //        {
+            //            this.log.Info("Deleting devices from running simulation");
+            //            this.runner.DeleteDevices(ids);
+            //        }
+            //        else
+            //        {
+            //            this.log.Info("Deleting devices from hub");
+            //            await this.devices.DeleteListAsync(ids);
+            //        }
+            //    }
+            //}
+            //catch (Exception e)
+            //{
+            //    this.log.Debug("Error while deleting new device", () => new { e });
+            //    throw new Exception("Error while deleting a new device");
+            //}
+            return;
+        }
+
+        private void StopInactiveSimulations(IList<Simulation> activeSimulations)
+        {
+            // Get a list of all managers that are not active in storage
+            var activeIds = activeSimulations.Select(simulation => simulation.Id).ToList();
+            var managersToStop = this.simulationManagers.Where(x => !activeIds.Contains(x.Key)).ToList();
+
+            foreach (var manager in managersToStop)
             {
-                this.log.Debug("The simulation has been modified, stopping the current " +
-                               "simulation and starting the new one if enabled");
-                this.runner.Stop();
-
-                this.simulation = newSimulation;
-
-                if (this.simulation.ShouldBeRunning)
+                manager.Value.TearDown();
+                if (!this.simulationManagers.TryRemove(manager.Key, out _))
                 {
-                    this.log.Debug("------ Starting simulation ------", () => new { this.simulation });
-                    await this.runner.StartAsync(this.simulation);
-                    this.log.Debug("------ Simulation started ------", () => new { this.simulation });
+                    this.log.Error("Unable to remove simulation manager from the list of managers",
+                        () => new { SimulationId = manager.Key });
+                }
+            }
+        }
+
+        private async Task CreateSimulationManagersAsync(IEnumerable<Simulation> activeSimulations)
+        {
+            // Skip simulations not ready or already with a manager
+            var activeSimulationlist = activeSimulations
+                .Where(x => x.ShouldBeRunning && !this.simulationManagers.ContainsKey(x.Id));
+
+            foreach (var simulation in activeSimulationlist)
+            {
+                try
+                {
+                    var manager = this.factory.Resolve<ISimulationManager>();
+                    await manager.InitAsync(
+                        simulation,
+                        this.deviceStateActors,
+                        this.deviceConnectionActors,
+                        this.deviceTelemetryActors,
+                        this.devicePropertiesActors);
+
+                    this.simulationManagers[simulation.Id] = manager;
+
+                    this.log.Info("New simulation manager created", () => new { SimulationId = simulation.Id });
+                }
+                catch (Exception e)
+                {
+                    this.log.Error("Failed to create simulation manager, will retry", () => new { simulation.Id, e });
+                }
+            }
+        }
+
+        private async Task RunSimulationManagersMaintenanceAsync()
+        {
+            var printStats = false;
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            if (now - this.lastStatsTime > STATS_INTERVAL_MSECS)
+            {
+                printStats = true;
+                this.lastStatsTime = now;
+            }
+
+            // TODO: determine if these can be run in parallel
+            foreach (var manager in this.simulationManagers)
+            {
+                await TryToAsync(manager.Value.HoldAssignedPartitionsAsync(),
+                    e => this.log.Error("An unexpected error occurred while renewing partition locks", e));
+
+                await TryToAsync(manager.Value.AssignNewPartitionsAsync(),
+                    e => this.log.Error("An unexpected error occurred while assigning new partitions", e));
+
+                await TryToAsync(manager.Value.HandleAssignedPartitionChangesAsync(),
+                    e => this.log.Error("An unexpected error occurred while handling partition changes", e));
+
+                await TryToAsync(manager.Value.UpdateThrottlingLimitsAsync(),
+                    e => this.log.Error("An unexpected error occurred while updating the throttling limits", e));
+
+                if (printStats) manager.Value.PrintStats();
+            }
+
+            async Task TryToAsync(Task task, Action<Exception> onException)
+            {
+                try
+                {
+                    await task;
+                }
+                catch (Exception e)
+                {
+                    onException.Invoke(e);
+                }
+            }
+        }
+
+        private void TryToStartThreads()
+        {
+            this.devicesStateTask = this.factory.Resolve<IDeviceStateTask>();
+            this.devicesStateThread = new Thread(
+                () => this.devicesStateTask.Run(this.deviceStateActors, this.runningToken.Token));
+
+            this.devicesConnectionTask = this.factory.Resolve<IDeviceConnectionTask>();
+            this.devicesConnectionThread = new Thread(
+                () => this.devicesConnectionTask.RunAsync(
+                    this.simulationManagers,
+                    this.deviceConnectionActors,
+                    this.runningToken.Token));
+
+            this.devicesPropertiesTask = this.factory.Resolve<IUpdatePropertiesTask>();
+            this.devicesPropertiesThread = new Thread(
+                () => this.devicesPropertiesTask.RunAsync(
+                    this.simulationManagers,
+                    this.devicePropertiesActors,
+                    this.runningToken.Token));
+
+            // State
+            try
+            {
+                this.devicesStateThread.Start();
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to start the device-state thread", e);
+                throw new Exception("Unable to start the device-state thread", e);
+            }
+
+            // Connection
+            try
+            {
+                this.devicesConnectionThread.Start();
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to start the device-connection thread", e);
+                throw new Exception("Unable to start the device-connection thread", e);
+            }
+
+            // Properties
+            try
+            {
+                this.devicesPropertiesThread.Start();
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to start the device-properties thread", e);
+                throw new Exception("Unable to start the device-properties thread", e);
+            }
+
+            // Telemetry
+            try
+            {
+                var count = this.simulationConcurrencyConfig.TelemetryThreads;
+
+                this.devicesTelemetryThreads = new Thread[count];
+                this.devicesTelemetryTasks = new List<IDeviceTelemetryTask>();
+                for (int i = 0; i < count; i++)
+                {
+                    var task = this.factory.Resolve<IDeviceTelemetryTask>();
+                    this.devicesTelemetryTasks.Add(task);
+
+                    this.devicesTelemetryThreads[i] = new Thread(
+                        () => task.RunAsync(this.deviceTelemetryActors, i + 1, count, this.runningToken.Token));
+                    this.devicesTelemetryThreads[i].Start();
+                }
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unable to start the device-telemetry threads", e);
+                throw new Exception("Unable to start the device-telemetry threads", e);
+            }
+        }
+
+        private void TryToStopThreads()
+        {
+            // State
+            try
+            {
+                this.devicesStateThread.Interrupt();
+            }
+            catch (Exception e)
+            {
+                this.log.Warn("Unable to stop the devices state thread in a clean way", e);
+            }
+
+            // Connection
+            try
+            {
+                this.devicesConnectionThread.Interrupt();
+            }
+            catch (Exception e)
+            {
+                this.log.Warn("Unable to stop the connections thread in a clean way", e);
+            }
+
+            // Properties
+            try
+            {
+                this.devicesPropertiesThread.Interrupt();
+            }
+            catch (Exception e)
+            {
+                this.log.Warn("Unable to stop the devices state thread in a clean way", e);
+            }
+
+            // Telemetry
+            this.devicesTelemetryTasks.Clear();
+            for (int i = 0; i < this.devicesTelemetryThreads.Length; i++)
+            {
+                try
+                {
+                    if (this.devicesTelemetryThreads[i] != null)
+                    {
+                        this.devicesTelemetryThreads[i].Interrupt();
+                    }
+                }
+                catch (Exception e)
+                {
+                    this.log.Warn("Unable to stop the telemetry thread in a clean way", () => new { threadNumber = i, e });
                 }
             }
         }
@@ -224,57 +527,41 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private async Task CheckForNewSimulationAsync(Simulation newSimulation)
-        {
-            if (newSimulation != null && this.simulation == null)
-            {
-                this.simulation = newSimulation;
-                if (this.simulation.ShouldBeRunning)
-                {
-                    this.log.Debug("------ Starting new simulation ------", () => new { this.simulation });
-                    this.logDiagnostics.LogServiceStart("Starting new simulation");
-                    await this.runner.StartAsync(this.simulation);
-                    this.log.Debug("------ New simulation started ------", () => new { this.simulation });
-                    this.logDiagnostics.LogServiceStart("New simulation started");
-                }
-            }
-        }
+        //private async Task CheckForStopOrStartToSimulationAsync()
+        //{
+        //    // stopped
+        //    if (this.simulation != null && this.simulation.Enabled && !this.simulation.ShouldBeRunning)
+        //    {
+        //        this.simulation.Statistics.AverageMessagesPerSecond = this.rateReporter.GetThroughputForMessages();
+        //        this.simulation.Statistics.TotalMessagesSent = this.runner.TotalMessagesCount;
 
-        private async Task CheckForStopOrStartToSimulationAsync()
-        {
-            // stopped
-            if (this.simulation != null && this.simulation.Enabled && !this.simulation.ShouldBeRunning)
-            {
-                this.simulation.Statistics.AverageMessagesPerSecond = this.rateReporter.GetThroughputForMessages();
-                this.simulation.Statistics.TotalMessagesSent = this.runner.TotalMessagesCount;
+        //        this.runner.Stop();
 
-                this.runner.Stop();
+        //        // Update simulation statistics in storage
+        //        await this.simulations.UpsertAsync(this.simulation);
+        //    }
 
-                // Update simulation statistics in storage
-                await this.simulations.UpsertAsync(this.simulation);
-            }
+        //    // started
+        //    if (this.simulation != null && this.simulation.ShouldBeRunning)
+        //    {
+        //        await this.runner.StartAsync(this.simulation);
+        //    }
+        //}
 
-            // started
-            if (this.simulation != null && this.simulation.ShouldBeRunning)
-            {
-                await this.runner.StartAsync(this.simulation);
-            }
-        }
+        //private bool IsDeviceModelIdValidAsync(string modelId)
+        //{
+        //    var models = this.deviceModels.GetListAsync().Result;
 
-        private bool IsDeviceModelIdValidAsync(string modelId)
-        {
-            var models = this.deviceModels.GetListAsync().Result;
+        //    foreach (var model in models)
+        //    {
+        //        if (modelId.Equals(model.Id, StringComparison.OrdinalIgnoreCase))
+        //        {
+        //            return true;
+        //        }
+        //    }
 
-            foreach (var model in models)
-            {
-                if (modelId.Equals(model.Id, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        //    return false;
+        //}
 
         // TODO: Move the method to Simulations.cs  e.g. this.simulations.AddDevicesAsync
         private async Task AddDeviceToSimulationRecordAsync(Simulation simulation, string deviceId, string modelId)
