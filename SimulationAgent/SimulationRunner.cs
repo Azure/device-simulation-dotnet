@@ -37,9 +37,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
     public class SimulationRunner : ISimulationRunner
     {
-        // Allow time to make request adjust vmss autoscale settings
-        private const int VMSS_AUTOSCALE_SETTINGS_TIMEOUT_SECS = 5;
-
         // Application logger
         private readonly ILogger log;
 
