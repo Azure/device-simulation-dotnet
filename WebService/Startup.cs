@@ -102,7 +102,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             this.partitioningAgent.StartAsync();
 
             this.simulationAgent = this.ApplicationContainer.Resolve<ISimulationAgent>();
-            this.simulationAgent.RunAsync();
+            this.simulationAgent.StartAsync();
         }
 
         private void StopAgents()
