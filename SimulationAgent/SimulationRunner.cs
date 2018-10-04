@@ -37,12 +37,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
     public class SimulationRunner : ISimulationRunner
     {
-        // Allow time to obtain the IoT Hub connection string from storage
-        private const int DEVICES_INIT_TIMEOUT_SECS = 5;
-
-        // Allow 30 seconds to create the devices (1000 devices normally takes 2-3 seconds)
-        private const int DEVICES_CREATION_TIMEOUT_SECS = 30;
-
         // Allow time to make request adjust vmss autoscale settings
         private const int VMSS_AUTOSCALE_SETTINGS_TIMEOUT_SECS = 5;
 
@@ -179,8 +173,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             // Send a request to update vmss auto scale settings to create vm instances
             var vmCount = (int)Math.Ceiling((double)total / this.clusteringConfig.MaxDevicesPerNode);
-            this.azureManagementAdapter.CreateOrUpdateVmssAutoscaleSettingsAsync(vmCount)
-                .Wait(TimeSpan.FromSeconds(VMSS_AUTOSCALE_SETTINGS_TIMEOUT_SECS));
+            await this.azureManagementAdapter.CreateOrUpdateVmssAutoscaleSettingsAsync(vmCount);
 
             // Use `starting` to exit as soon as possible, to minimize the number 
             // of threads pending on the lock statement

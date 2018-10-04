@@ -57,7 +57,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         /// <param name="requestList"></param>
         public async Task<MetricsResponseListModel> PostAsync(MetricsRequestListModel requestList)
         {
-            await CreateOrUpdateAccessTokenAsync();
+            await this.CreateOrUpdateAccessTokenAsync();
 
             if (requestList == null)
             {
@@ -81,7 +81,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
 
         public async Task CreateOrUpdateVmssAutoscaleSettingsAsync(int vmCount)
         {
-            await CreateOrUpdateAccessTokenAsync();
+            await this.CreateOrUpdateAccessTokenAsync();
 
             var accessToken = $"Bearer {this.ReadSecureString(this.secureAccessToken)}";
 
@@ -144,6 +144,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
             return request;
         }
 
+        /// <summary>
+        /// https://docs.microsoft.com/en-us/rest/api/monitor/autoscalesettings/createorupdate
+        /// </summary>
         private HttpRequest PrepareVmssAutoscaleSettingsRequest(string token, string vmCount)
         {
             var autoScaleSettingsName = "scalevmss";
