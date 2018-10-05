@@ -21,11 +21,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures
             if (list.Count < 2) return;
 
             var cursor = list.Count;
+
             while (cursor-- > 1)
             {
-                var rndpos = Rnd.Next(cursor + 1);
-                var value = list[rndpos];
-                list[rndpos] = list[cursor];
+                var randomPosition = Rnd.Next(cursor + 1);
+                var value = list[randomPosition];
+                list[randomPosition] = list[cursor];
                 list[cursor] = value;
             }
         }

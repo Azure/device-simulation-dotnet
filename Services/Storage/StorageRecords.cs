@@ -73,7 +73,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
 
             try
             {
-                this.log.Debug("Fetching record...", () => new {this.storageName, id});
+                this.log.Debug("Fetching record...", () => new { this.storageName, id });
                 var response = await this.docDb.ReadAsync(this.client, this.storageConfig, id);
                 this.log.Debug("Record fetched", () => new { this.storageName, id });
 
@@ -92,10 +92,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
             {
-                this.log.Debug("The resource requested doesn't exist.", () => new{this.storageName, id});
+                this.log.Debug("The resource requested doesn't exist.", () => new { this.storageName, id });
                 throw new ResourceNotFoundException($"The resource {id} doesn't exist.");
             }
         }
+
         public async Task<bool> ExistsAsync(string id)
         {
             await this.SetupStorageAsync();
@@ -119,6 +120,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
                 return false;
             }
         }
+
         public async Task<IEnumerable<StorageRecord>> GetAllAsync()
         {
             await this.SetupStorageAsync();
@@ -197,19 +199,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
 
             try
             {
-                this.log.Debug("Deleting resource", () => new {this.storageName, id});
+                this.log.Debug("Deleting resource", () => new { this.storageName, id });
                 await this.docDb.DeleteAsync(this.client, this.storageConfig, id);
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
             {
-                this.log.Debug("The resource requested doesn't exist, nothing to do.", () => new {this.storageName, id});
+                this.log.Debug("The resource requested doesn't exist, nothing to do.", () => new { this.storageName, id });
             }
         }
 
         public async Task DeleteMultiAsync(List<string> ids)
         {
             await this.SetupStorageAsync();
-            
+
             var tasks = new List<Task>();
             foreach (var id in ids)
             {

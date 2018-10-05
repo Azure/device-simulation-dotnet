@@ -92,9 +92,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         public async Task<IList<DevicesPartition>> GetUnassignedAsync(string simulationId)
         {
             var nodeId = this.clusterNodes.GetCurrentNodeId();
-
             this.log.Debug("Searching partitions not assigned to any node...", () => new { simulationId, nodeId });
-
             var partitions = await this.partitionsStorage.GetAllAsync();
 
             var result = partitions
@@ -120,7 +118,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         {
             await this.partitionsStorage.DeleteMultiAsync(partitionIds);
         }
-        
+
         // Lock the partition, so that the current node is the only one simulating its devices
         public async Task<bool> TryToAssignPartitionAsync(string partitionId)
         {
@@ -225,7 +223,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
 
         private async Task DeletePartitionsAsync(Models.Simulation sim, int deviceCount)
         {
-            int partitionCount = (int)Math.Ceiling(deviceCount / (double)this.maxPartitionSize);
+            int partitionCount = (int) Math.Ceiling(deviceCount / (double) this.maxPartitionSize);
             this.log.Debug("Deleting incomplete partitions",
                 () => new { SimulationId = sim.Id, this.maxPartitionSize, partitionCount });
             for (int i = 1; i <= partitionCount; i++)
