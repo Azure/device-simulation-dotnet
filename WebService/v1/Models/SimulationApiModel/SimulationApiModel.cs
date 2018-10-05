@@ -147,6 +147,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             };
 
             // TODO: add comment about what is going on here
+            // TODO: design a way to return combined statistics for a distributed simulation
             foreach (var iotHubConnectionString in value.IotHubConnectionStrings)
             {
                 var iotHub = new SimulationIotHub { ConnectionString = iotHubConnectionString };
@@ -174,9 +175,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             result.DeviceModels = SimulationDeviceModelRef.FromServiceModel(value.DeviceModels);
             result.created = value.Created;
             result.modified = value.Modified;
-
-            // TODO: design a way to dispaly combined statistics for a distributed simulation
-            //await result.AppendHubPropertiesAndStatisticsAsync(servicesConfig, deploymentConfig, connectionStringManager, simulationRunner, rateReporter);
 
             return result;
         }
