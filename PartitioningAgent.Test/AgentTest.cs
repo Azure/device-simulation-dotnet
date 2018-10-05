@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -28,6 +29,7 @@ namespace PartitioningAgent.Test
         private readonly Mock<IFactory> factory;
         private readonly Mock<ILogger> log;
         private readonly Mock<IDevices> devices;
+        private readonly Mock<IAzureManagementAdapterClient> azureManagementAdapterClient;
 
         public AgentTest()
         {
@@ -38,6 +40,7 @@ namespace PartitioningAgent.Test
             this.clusteringConfig = new Mock<IClusteringConfig>();
             this.factory = new Mock<IFactory>();
             this.log = new Mock<ILogger>();
+            this.azureManagementAdapterClient = new Mock<IAzureManagementAdapterClient>();
 
             this.clusteringConfig.SetupGet(x => x.CheckIntervalMsecs).Returns(5);
             this.thread.Setup(x => x.Sleep(It.IsAny<int>()))
@@ -54,7 +57,8 @@ namespace PartitioningAgent.Test
                 this.thread.Object,
                 this.clusteringConfig.Object,
                 this.factory.Object,
-                this.log.Object);
+                this.log.Object,
+                this.azureManagementAdapterClient.Object);
 
             this.devices = new Mock<IDevices>();
             this.factory.Setup(x => x.Resolve<IDevices>()).Returns(this.devices.Object);

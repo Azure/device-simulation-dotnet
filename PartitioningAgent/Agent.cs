@@ -1,9 +1,11 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -26,6 +28,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
         private readonly IThreadWrapper thread;
         private readonly IFactory factory;
         private readonly ILogger log;
+        private readonly IAzureManagementAdapterClient azureManagementAdapter;
+        private readonly IClusteringConfig clusteringConfig;
         private readonly int checkIntervalMsecs;
 
         private bool running;
@@ -37,7 +41,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
             IThreadWrapper thread,
             IClusteringConfig clusteringConfig,
             IFactory factory,
-            ILogger logger)
+            ILogger logger,
+            IAzureManagementAdapterClient azureManagementAdapter)
         {
             this.clusterNodes = clusterNodes;
             this.partitions = partitions;
@@ -45,6 +50,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
             this.thread = thread;
             this.factory = factory;
             this.log = logger;
+            this.azureManagementAdapter = azureManagementAdapter;
+            this.clusteringConfig = clusteringConfig;
             this.checkIntervalMsecs = clusteringConfig.CheckIntervalMsecs;
             this.running = false;
         }
@@ -73,6 +80,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
 
                     await this.clusterNodes.RemoveStaleNodesAsync();
 
+                    // Scale nodes in vmss
+                    await this.ScaleVmssNodes(activeSimulations);
+
                     // Create IoT Hub devices for all the active simulations
                     await this.CreateDevicesAsync(activeSimulations);
 
@@ -89,6 +99,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
         public void Stop()
         {
             this.running = false;
+        }
+
+        
+        private async Task ScaleVmssNodes(IList<Simulation> activeSimulations)
+        {
+            // Default node count is 1
+            var nodeCount = 1;
+
+            if (activeSimulations.Count > 0)
+            {
+                var models = new List<Simulation.DeviceModelRef>();
+
+                foreach (var simulation in activeSimulations)
+                {
+                    // Loop through all the device models used in the simulation
+                    models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
+                }
+
+                // Calculate the total number of devices
+                var totalDevices = models.Sum(model => model.Count);
+
+                // Calculate number of nodes required
+                nodeCount = (int)Math.Ceiling((double)totalDevices / this.clusteringConfig.MaxDevicesPerNode);
+            }
+
+            // Send a request to update vmss auto scale settings to create vm instances
+            // TODO: when devices are added or removed, the number of VMs might need an update
+            await this.azureManagementAdapter.CreateOrUpdateVmssAutoscaleSettingsAsync(nodeCount);
         }
 
         private async Task CreateDevicesAsync(IList<Simulation> activeSimulations)

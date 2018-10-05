@@ -98,15 +98,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
 
         private async Task CreateOrUpdateAccessTokenAsync()
         {
-            if (this.AccessTokenIsNullOrEmpty())
+            if (this.AccessTokenIsNullOrEmpty() || this.AccessTokenExpireSoon())
             {
                 await this.GetAadTokenAsync();
-            }
-
-            // Renew access token 10 minutes before it's expire time
-            if (this.AccessTokenExpireSoon())
-            {
-                this.GetAadTokenAsync();
             }
         }
 
@@ -129,10 +123,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
             request.SetUriFromString($"{this.config.AzureManagementAdapterApiUrl}/{path}");
             request.Options.EnsureSuccess = false;
             request.Options.Timeout = this.config.AzureManagementAdapterApiTimeout;
-            if (!this.config.AzureManagementAdapterApiUrl.ToLowerInvariant().StartsWith("https:"))
-            {
-                throw new InvalidConfigurationException("Azure Management API url must start with https");
-            }
 
             if (content != null)
             {
@@ -157,20 +147,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
             request.SetUriFromString($"{this.config.AzureManagementAdapterApiUrl}/{this.GetVmssAutoScaleSettingsUrl(autoScaleSettingsName)}");
             request.Options.EnsureSuccess = false;
             request.Options.Timeout = this.config.AzureManagementAdapterApiTimeout;
-            if (!this.config.AzureManagementAdapterApiUrl.ToLowerInvariant().StartsWith("https:"))
-            {
-                throw new InvalidConfigurationException("Azure Management API url must start with https");
-            }
-
+            
             var content = new AutoScaleSettingsCreateOrUpdateRequestModel();
             content.Location = this.deploymentConfig.AzureResourceGroupLocation;
             content.Properties = new Properties();
             content.Properties.Enabled = true;
             content.Properties.TargetResourceUri = this.GetVmssResourceUrl();
             content.Properties.Profiles = new List<Profile>();
-            content.Properties.Profiles.Add( new Profile { Name  = autoScaleSettingsName,
-                                                           Capacity = new Capacity{ Minimum = vmCount, Maximum = vmCount, Default = vmCount },
-                                                           Rules = new List<object>()});
+            content.Properties.Profiles.Add(new Profile {Name  = autoScaleSettingsName,
+                                                         Capacity = new Capacity{ Minimum = vmCount, Maximum = vmCount, Default = vmCount },
+                                                         Rules = new List<object>()});
 
             if (content != null)
             {

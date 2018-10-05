@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -129,8 +128,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string AZURE_RESOURCE_GROUP_LOCATION = DEPLOYMENT_KEY + "azure_resource_group_location";
         private const string AZURE_IOTHUB_NAME = DEPLOYMENT_KEY + "azure_iothub_name";
         private const string AZURE_VMSS_NAME = DEPLOYMENT_KEY + "azure_vmss_name";
-
-
+        
         private const string AZURE_ACTIVE_DIRECTORY_KEY = APPLICATION_KEY + "AzureActiveDirectory:";
         private const string AAD_TENANT_ID = AZURE_ACTIVE_DIRECTORY_KEY + "tenant_id";
         private const string AAD_APP_ID = AZURE_ACTIVE_DIRECTORY_KEY + "app_id";
@@ -237,6 +235,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                                     "value in the 'appsettings.ini' configuration file.");
             }
 
+            var azureManagementAdapterApiUrl = configData.GetString(AZURE_MANAGEMENT_ADAPTER_API_URL_KEY);
+            if (!azureManagementAdapterApiUrl.ToLowerInvariant().StartsWith("https:"))
+            {
+                throw new Exception("The service configuration is incomplete. " +
+                                    "Azure Management API url must start with https" +
+                                    "For more information, see the environment variables " +
+                                    "used in project properties and the 'webservice_url' " +
+                                    "value in the 'appsettings.ini' configuration file.");
+            }
+
             return new ServicesConfig
             {
                 DeviceModelsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_FOLDER_KEY)),
@@ -247,7 +255,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 IoTHubSdkDeviceClientTimeout = configData.GetOptionalUInt(IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY),
                 StorageAdapterApiUrl = configData.GetString(STORAGE_ADAPTER_API_URL_KEY),
                 StorageAdapterApiTimeout = configData.GetInt(STORAGE_ADAPTER_API_TIMEOUT_KEY),
-                AzureManagementAdapterApiUrl = configData.GetString(AZURE_MANAGEMENT_ADAPTER_API_URL_KEY),
+                AzureManagementAdapterApiUrl = azureManagementAdapterApiUrl,
                 AzureManagementAdapterApiTimeout = configData.GetInt(AZURE_MANAGEMENT_ADAPTER_API_TIMEOUT_KEY),
                 AzureManagementAdapterApiVersion = configData.GetString(AZURE_MANAGEMENT_ADAPTER_API_VERSION),
                 TwinReadWriteEnabled = configData.GetBool(TWIN_READ_WRITE_ENABLED_KEY, true),
@@ -317,14 +325,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
 
         private static IDeploymentConfig GetDeploymentConfig(IConfigData configData)
         {
+            var azureResourceGroupLocation = configData.GetString(AZURE_RESOURCE_GROUP_LOCATION);
+            if (!azureResourceGroupLocation.ToLowerInvariant().Contains("resource group location"))
+            {
+                throw new Exception("The service configuration is incomplete. " +
+                                    "Please provide your Azure resource group location. " +
+                                    "For more information, see the environment variables " +
+                                    "used in project properties and the 'azure_resource_group_location' " +
+                                    "value in the 'appsettings.ini' configuration file.");
+            }
+
+            var azureVmssName = configData.GetString(AZURE_VMSS_NAME);
+            if (!azureVmssName.ToLowerInvariant().Contains("scale set name"))
+            {
+                throw new Exception("The service configuration is incomplete. " +
+                                    "Please provide your Azure resource group location. " +
+                                    "For more information, see the environment variables " +
+                                    "used in project properties and the 'azure_vmss_name' " +
+                                    "value in the 'appsettings.ini' configuration file.");
+            }
+
             return new DeploymentConfig
             {
                 AzureSubscriptionDomain = configData.GetString(AZURE_SUBSCRIPTION_DOMAIN, "undefined.onmicrosoft.com"),
                 AzureSubscriptionId = configData.GetString(AZURE_SUBSCRIPTION_ID, Guid.Empty.ToString()),
                 AzureResourceGroup = configData.GetString(AZURE_RESOURCE_GROUP, "undefined"),
-                AzureResourceGroupLocation = configData.GetString(AZURE_RESOURCE_GROUP_LOCATION, "undefined"),
+                AzureResourceGroupLocation = azureResourceGroupLocation,
                 AzureIothubName = configData.GetString(AZURE_IOTHUB_NAME, "undefined"),
-                AzureVmssName = configData.GetString(AZURE_VMSS_NAME, "undefined"),
+                AzureVmssName = azureVmssName,
                 AadTenantId = configData.GetString(AAD_TENANT_ID, "undefined"),
                 AadAppId = configData.GetString(AAD_APP_ID, "undefined"),
                 AadAppSecret = configData.GetString(AAD_APP_SECRET, "undefined"),
