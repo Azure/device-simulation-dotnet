@@ -22,6 +22,7 @@ namespace Services.Test
         private readonly Mock<ILogger> logger;
         private readonly Mock<ICustomDeviceModels> customDeviceModels;
         private readonly Mock<IStockDeviceModels> stockDeviceModels;
+        private readonly Mock<IDeviceModelsGeneration> mockDeviceModelsGeneration;
 
         private readonly DeviceModels target;
 
@@ -31,9 +32,11 @@ namespace Services.Test
             this.logger = new Mock<ILogger>();
             this.customDeviceModels = new Mock<ICustomDeviceModels>();
             this.stockDeviceModels = new Mock<IStockDeviceModels>();
+            this.mockDeviceModelsGeneration = new Mock<IDeviceModelsGeneration>();
             this.target = new DeviceModels(
                 this.customDeviceModels.Object,
                 this.stockDeviceModels.Object,
+                this.mockDeviceModelsGeneration.Object,
                 this.logger.Object);
         }
 
