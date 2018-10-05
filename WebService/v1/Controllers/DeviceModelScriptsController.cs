@@ -22,7 +22,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
     [ExceptionsFilter]
     public class DeviceModelScriptsController : Controller
     {
-        private const string TEXT_JAVASCRIPT  = "text/javascript";
+        private const string TEXT_JAVASCRIPT = "text/javascript";
         private readonly ILogger log;
         private readonly IDeviceModelScripts simulationScriptService;
         private readonly IJavascriptInterpreter javascriptInterpreter;
