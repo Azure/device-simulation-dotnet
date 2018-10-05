@@ -2,10 +2,10 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState
 {
@@ -17,38 +17,37 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
     {
         private readonly IScriptInterpreter scriptInterpreter;
         private readonly ILogger log;
-        private bool setupDone;
+        private readonly IInstance instance;
         private string deviceId;
         private DeviceModel deviceModel;
-        private DeviceStateActor context;
+        private DeviceStateActor deviceStateActor;
 
         public UpdateDeviceState(
             IScriptInterpreter scriptInterpreter,
-            ILogger logger)
+            ILogger logger,
+            IInstance instance)
         {
             this.scriptInterpreter = scriptInterpreter;
             this.log = logger;
-            this.setupDone = false;
+            this.instance = instance;
         }
 
-        public void Setup(DeviceStateActor context, string deviceId, DeviceModel deviceModel)
+        public void Init(DeviceStateActor context, string deviceId, DeviceModel deviceModel)
         {
-            if (this.setupDone)
-            {
-                this.log.Error("SetupAsync has already been invoked, are you sharing this instance with multiple devices?",
-                    () => new { this.deviceId });
-                throw new DeviceActorAlreadyInitializedException();
-            }
+            this.instance.InitOnce();
 
-            this.setupDone = true;
             this.deviceId = deviceId;
             this.deviceModel = deviceModel;
-            this.context = context;
+            this.deviceStateActor = context;
+
+            this.instance.InitComplete();
         }
 
         public void Run()
         {
-            if ((bool) this.context.DeviceState.Get(DeviceStateActor.CALC_TELEMETRY))
+            this.instance.InitRequired();
+
+            if ((bool) this.deviceStateActor.DeviceState.Get(DeviceStateActor.CALC_TELEMETRY))
             {
                 this.log.Debug("Updating device telemetry data", () => new { this.deviceId });
 
@@ -61,7 +60,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
 
                 // Lock the state until all the simulation scripts are complete, so that for example
                 // telemetry cannot be sent in the middle of some script running
-                lock (this.context.DeviceState)
+                lock (this.deviceStateActor.DeviceState)
                 {
                     foreach (var script in this.deviceModel.Simulation.Scripts)
                     {
@@ -69,14 +68,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                         this.scriptInterpreter.Invoke(
                             script,
                             scriptContext,
-                            this.context.DeviceState,
-                            this.context.DeviceProperties);
+                            this.deviceStateActor.DeviceState,
+                            this.deviceStateActor.DeviceProperties);
                     }
 
                     // This is inside the lock to avoid exceptions like "Collection was modified"
                     // which could be caused by a method call changing the state.
                     this.log.Debug("New device telemetry data calculated",
-                        () => new { this.deviceId, deviceState = this.context.DeviceState });
+                        () => new { this.deviceId, deviceState = this.deviceStateActor.DeviceState });
                 }
             }
             else

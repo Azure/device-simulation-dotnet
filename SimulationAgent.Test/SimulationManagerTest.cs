@@ -1,10 +1,9 @@
-﻿using System;
+﻿// Copyright (c) Microsoft. All rights reserved.
+
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Azure.Amqp.Serialization;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
@@ -161,7 +160,7 @@ namespace SimulationAgent.Test
             // Create some partitions and actors
             this.target.AssignNewPartitionsAsync().Wait(Constants.TEST_TIMEOUT);
             this.SetupPartitionsAndModels();
-            
+
             // Act
             // Try to create more partitions and actors. No more should be created
             // as we should be at the max number of devices for a node.

@@ -64,6 +64,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private Thread[] devicesTelemetryThreads;
         private List<IDeviceTelemetryTask> devicesTelemetryTasks;
 
+        // List of simulation managers, one for each simulation
         private readonly ConcurrentDictionary<string, ISimulationManager> simulationManagers;
 
         // List of all the actors managing the devices state, indexed by Simulation ID + Device ID (string concat)
@@ -132,6 +133,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             return this.RunAsync();
         }
 
+        public void Stop()
+        {
+            // TODO: why is this needed?
+            while (this.startingOrStopping)
+                Thread.Sleep(SHUTDOWN_WAIT_INTERVAL_MSECS);
+
+            this.startingOrStopping = true;
+            this.log.Write("Stopping simulation agent...");
+
+            this.running = false;
+
+            // Signal threads to stop
+            this.runningToken.Cancel();
+            this.runningToken = new CancellationTokenSource();
+
+            // Allow some time to pass before trying to stop threads
+            Thread.Sleep(SHUTDOWN_WAIT_BEFORE_STOPPING_THREADS_MSECS);
+            this.TryToStopThreads();
+        }
+
         private async Task RunAsync()
         {
             try
@@ -162,141 +183,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        //public async Task RunAsync()
-        //{
-        //    this.log.Info("Simulation Agent running");
-
-        //    // Keep running, checking if the simulation changes
-        //    while (this.running)
-        //    {
-        //        var oldSimulation = this.simulation;
-
-        //        this.SendSolutionHeartbeatAsync();
-
-        //        try
-        //        {
-        //            this.log.Debug("------ Checking for simulation changes ------");
-
-        //            var simulationList = await this.simulations.GetListAsync();
-
-        //            // currently we support only 1 running simulation so the result should return only 1 item
-        //            var runningSimulation = simulationList.FirstOrDefault(s => s.ShouldBeRunning);
-        //            if (runningSimulation == null)
-        //            {
-        //                this.log.Debug("No simulations found that should be running. Nothing to do.");
-        //            }
-
-        //            this.log.Debug("Simulation loaded", () => new { runningSimulation });
-
-        //            // if the simulation has been removed from storage & we're running, stop the simulation.
-        //            var id = this.simulation?.Id;
-        //            var prevSimulation = simulationList.FirstOrDefault(s => s.Id == id);
-        //            this.CheckForDeletedSimulation(prevSimulation);
-
-        //            // if there's a new simulation and it's different from the current one
-        //            // stop the current one from running & start the new one if it's enabled
-        //            await this.CheckForChangedSimulationAsync(runningSimulation);
-
-        //            // if there's no simulation running but there's one from storage start it
-        //            await this.CheckForNewSimulationAsync(runningSimulation);
-
-        //            // if the current simulation was asked to stop, stop it.
-        //            await this.CheckForStopOrStartToSimulationAsync();
-        //        }
-        //        catch (Exception e)
-        //        {
-        //            this.log.Error("Failure reading and starting simulation from storage.", e);
-        //            this.simulation = oldSimulation;
-        //        }
-
-        //        if (this.simulation != null && this.simulation.ShouldBeRunning)
-        //        {
-        //            this.log.Debug("------ Current simulation being run ------");
-        //            foreach (var model in this.simulation.DeviceModels)
-        //            {
-        //                this.log.Debug("Device model", () => new { model });
-        //            }
-        //        }
-
-        //        Thread.Sleep(CHECK_INTERVAL_MSECS);
-        //    }
-        //}
-
-        public void Stop()
-        {
-            // TODO: why is this needed?
-            while (this.startingOrStopping)
-                Thread.Sleep(SHUTDOWN_WAIT_INTERVAL_MSECS);
-
-            this.startingOrStopping = true;
-            this.log.Write("Stopping simulation agent...");
-
-            this.running = false;
-
-            // Signal threads to stop
-            this.runningToken.Cancel();
-            this.runningToken = new CancellationTokenSource();
-
-            // Allow some time to pass before trying to stop threads
-            Thread.Sleep(SHUTDOWN_WAIT_BEFORE_STOPPING_THREADS_MSECS);
-            this.TryToStopThreads();
-        }
-
+        // TODO: Implement support for adding devices to a running simulation.
+        //       This functionality is needed for Remote Monitoring, but the
+        //       initial implementation of large-scale device simulation
+        //       does not support this because we do not have a design for
+        //       how to modify existing partitions at runtime. Implementation
+        //       of this feature is pending a design for this.
         public async Task AddDeviceAsync(string deviceId, string modelId)
         {
-            //if (this.simulation != null && this.IsDeviceModelIdValidAsync(modelId))
-            //{
-            //    try
-            //    {
-            //        await this.AddDeviceToSimulationRecordAsync(this.simulation, deviceId, modelId);
-
-            //        if (this.running)
-            //        {
-            //            this.log.Info("Add device to running simulation");
-            //            await this.runner.AddDeviceAsync(deviceId, modelId);
-            //        }
-            //        else
-            //        {
-            //            this.log.Info("Add device to IoT Hub");
-            //            await this.simulations.AddDeviceAsync(deviceId);
-            //        }
-            //    }
-            //    catch (Exception e)
-            //    {
-            //        this.log.Debug("Error while adding new device", () => new { e });
-            //        throw new Exception("Error while adding a new device");
-            //    }
-            //}
             return;
         }
 
+        // TODO: Implement support for removing devices from a running simulation.
+        //       This functionality is needed for Remote Monitoring, but the
+        //       initial implementation of large-scale device simulation
+        //       does not support this because we do not have a design for
+        //       how to modify existing partitions at runtime. Implementation
+        //       of this feature is pending a design for this.
         public async Task DeleteDevicesAsync(List<string> ids)
         {
-            //this.log.Info("Update simulation");
-
-            //try
-            //{
-            //    if (this.simulation != null)
-            //    {
-            //        await this.DeleteDevicesFromSimulationRecordAsync(this.simulation, ids);
-
-            //        if (this.running)
-            //        {
-            //            this.log.Info("Deleting devices from running simulation");
-            //            this.runner.DeleteDevices(ids);
-            //        }
-            //        else
-            //        {
-            //            this.log.Info("Deleting devices from hub");
-            //            await this.devices.DeleteListAsync(ids);
-            //        }
-            //    }
-            //}
-            //catch (Exception e)
-            //{
-            //    this.log.Debug("Error while deleting new device", () => new { e });
-            //    throw new Exception("Error while deleting a new device");
-            //}
             return;
         }
 
@@ -526,42 +431,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.logDiagnostics.LogServiceHeartbeat();
             }
         }
-
-        //private async Task CheckForStopOrStartToSimulationAsync()
-        //{
-        //    // stopped
-        //    if (this.simulation != null && this.simulation.Enabled && !this.simulation.ShouldBeRunning)
-        //    {
-        //        this.simulation.Statistics.AverageMessagesPerSecond = this.rateReporter.GetThroughputForMessages();
-        //        this.simulation.Statistics.TotalMessagesSent = this.runner.TotalMessagesCount;
-
-        //        this.runner.Stop();
-
-        //        // Update simulation statistics in storage
-        //        await this.simulations.UpsertAsync(this.simulation);
-        //    }
-
-        //    // started
-        //    if (this.simulation != null && this.simulation.ShouldBeRunning)
-        //    {
-        //        await this.runner.StartAsync(this.simulation);
-        //    }
-        //}
-
-        //private bool IsDeviceModelIdValidAsync(string modelId)
-        //{
-        //    var models = this.deviceModels.GetListAsync().Result;
-
-        //    foreach (var model in models)
-        //    {
-        //        if (modelId.Equals(model.Id, StringComparison.OrdinalIgnoreCase))
-        //        {
-        //            return true;
-        //        }
-        //    }
-
-        //    return false;
-        //}
 
         // TODO: Move the method to Simulations.cs  e.g. this.simulations.AddDevicesAsync
         private async Task AddDeviceToSimulationRecordAsync(Simulation simulation, string deviceId, string modelId)

@@ -35,18 +35,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             ConcurrentDictionary<string, IDeviceStateActor> deviceStateActors,
             CancellationToken runningToken)
         {
-            while (!runningToken.IsCancellationRequested)
+            do
             {
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                foreach (var device in deviceStateActors)
+                foreach (var deviceStateActor in deviceStateActors)
                 {
-                    device.Value.Run();
+                    deviceStateActor.Value.Run();
                 }
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                 this.log.Debug("Device state loop completed", () => new { durationMsecs });
                 this.SlowDownIfTooFast(durationMsecs, this.simulationConcurrencyConfig.MinDeviceStateLoopDuration);
-            }
+            } while (!runningToken.IsCancellationRequested);
         }
 
         private void SlowDownIfTooFast(long duration, int min)

@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System.Threading.Tasks;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 
@@ -12,30 +12,33 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
     /// </summary>
     public class CredentialsSetup : IDeviceConnectionLogic
     {
-        private readonly IDevices devices;
         private readonly ILogger log;
+        private readonly IInstance instance;
         private string deviceId;
         private IDeviceConnectionActor context;
 
-        public CredentialsSetup(IDevices devices, ILogger logger)
+        public CredentialsSetup(ILogger logger, IInstance instance)
         {
             this.log = logger;
-            this.devices = devices;
+            this.instance = instance;
         }
 
-        public async Task SetupAsync(IDeviceConnectionActor context, string deviceId, DeviceModel deviceModel)
+        public void Init(IDeviceConnectionActor actor, string deviceId, DeviceModel deviceModel)
         {
-            this.context = context;
+            this.instance.InitOnce();
+
+            this.context = actor;
             this.deviceId = deviceId;
 
-            // TODO: to be removed once SimulationContext is introduced
-            await this.devices.InitAsync();
+            this.instance.InitComplete();
         }
 
         public Task RunAsync()
         {
+            this.instance.InitRequired();
+
             this.log.Debug("Configuring device credentials...", () => new { this.deviceId });
-            this.context.Device = this.devices.GetWithKnownCredentials(this.deviceId);
+            this.context.Device = this.context.SimulationContext.Devices.GetWithKnownCredentials(this.deviceId);
             this.context.HandleEvent(DeviceConnectionActor.ActorEvents.CredentialsSetupCompleted);
             return Task.CompletedTask;
         }

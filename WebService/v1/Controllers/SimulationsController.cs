@@ -171,6 +171,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             SimulationPatch patchServiceModel = patch.ToServiceModel(id);
+            if (patchServiceModel.Enabled == false)
+            {
+                // TODO: add distributed statistics
+                patchServiceModel.Statistics = new SimulationStatistics();
+            }
+
             var simulation = await this.simulationsService.MergeAsync(patchServiceModel);
             return SimulationApiModel.FromServiceModel(simulation);
         }

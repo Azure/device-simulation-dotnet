@@ -176,13 +176,13 @@ namespace SimulationAgent.Test.DeviceProperties
             return new DeviceConnectionActor(
                 this.logger.Object,
                 this.actorsLogger.Object,
-                this.rateLimiting.Object,
                 this.credentialSetup.Object,
                 fetchLogic.Object,
                 registerLogic.Object,
                 connectLogic.Object,
                 deregisterLogic.Object,
-                disconnectLogic.Object);
+                disconnectLogic.Object,
+                this.mockInstance.Object);
         }
     }
 }

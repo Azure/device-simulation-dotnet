@@ -4,9 +4,11 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Moq;
@@ -28,6 +30,7 @@ namespace SimulationAgent.Test.DeviceConnection
         private readonly Mock<IDeviceConnectionActor> deviceConnectionActor;
         private readonly Mock<IRateLimitingConfig> rateLimitingConfig;
         private readonly Mock<ConnectionLoopSettings> loopSettings;
+        private readonly Mock<IInstance> mockInstance;
 
         private readonly DeviceModel deviceModel;
         private readonly Disconnect target;
@@ -42,9 +45,13 @@ namespace SimulationAgent.Test.DeviceConnection
             this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
             this.deviceClient = new Mock<IDeviceClient>();
             this.loopSettings = new Mock<ConnectionLoopSettings>(this.rateLimitingConfig.Object);
+            this.mockInstance = new Mock<IInstance>();
             this.deviceModel = new DeviceModel { Id = DEVICE_ID };
 
-            this.target = new Disconnect(this.devices.Object, this.scriptInterpreter.Object, this.logger.Object);
+            this.target = new Disconnect(
+                this.scriptInterpreter.Object, 
+                this.logger.Object,
+                this.mockInstance.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -52,9 +59,7 @@ namespace SimulationAgent.Test.DeviceConnection
         {
             // Arrange
             this.SetupDeviceConnectionActor();
-            this.target.SetupAsync(this.deviceConnectionActor.Object, DEVICE_ID, this.deviceModel)
-                .Wait(Constants.TEST_TIMEOUT);
-            this.deviceConnectionActor.Setup(x => x.Client).Returns(this.deviceClient.Object);
+            this.target.Init(this.deviceConnectionActor.Object, DEVICE_ID, this.deviceModel);
 
             // Act
             await this.target.RunAsync();
@@ -69,8 +74,7 @@ namespace SimulationAgent.Test.DeviceConnection
         {
             // Arrange
             this.SetupDeviceConnectionActor();
-            this.target.SetupAsync(this.deviceConnectionActor.Object, DEVICE_ID, this.deviceModel)
-                .Wait(Constants.TEST_TIMEOUT);
+            this.target.Init(this.deviceConnectionActor.Object, DEVICE_ID, this.deviceModel);
             this.deviceConnectionActor.Setup(x => x.Client).Throws<Exception>();
 
             // Act
@@ -82,12 +86,14 @@ namespace SimulationAgent.Test.DeviceConnection
 
         private void SetupDeviceConnectionActor()
         {
-            this.deviceConnectionActor.Object.SetupAsync(
-                    DEVICE_ID,
-                    this.deviceModel,
-                    this.deviceStateActor.Object,
-                    this.loopSettings.Object)
-                .Wait(Constants.TEST_TIMEOUT);
+            // Setup the SimulationContext
+            var testSimulation = new Simulation();
+            var mockSimulationContext = new Mock<ISimulationContext>();
+            mockSimulationContext.Object.InitAsync(testSimulation).Wait(Constants.TEST_TIMEOUT);
+            mockSimulationContext.SetupGet(x => x.Devices).Returns(this.devices.Object);
+
+            this.deviceConnectionActor.SetupGet(x => x.SimulationContext).Returns(mockSimulationContext.Object);
+            this.deviceConnectionActor.Setup(x => x.Client).Returns(this.deviceClient.Object);
         }
     }
 }
