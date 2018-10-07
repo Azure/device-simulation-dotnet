@@ -92,9 +92,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         public async Task<IList<DevicesPartition>> GetUnassignedAsync(string simulationId)
         {
             var nodeId = this.clusterNodes.GetCurrentNodeId();
-
             this.log.Debug("Searching partitions not assigned to any node...", () => new { simulationId, nodeId });
-
             var partitions = await this.partitionsStorage.GetAllAsync();
 
             var result = partitions

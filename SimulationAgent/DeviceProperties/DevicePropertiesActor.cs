@@ -21,11 +21,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         long FailedTwinUpdatesCount { get; }
         long SimulationErrorsCount { get; }
 
-        void Setup(
-            string deviceId,
-            IDeviceStateActor deviceStateActor,
-            IDeviceConnectionActor deviceConnectionActor,
-            PropertiesLoopSettings loopSettings);
 
         void Init(
             ISimulationContext simulationContext,

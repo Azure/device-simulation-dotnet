@@ -197,6 +197,7 @@ namespace SimulationAgent.Test
                 { MODEL1, new List<string> { DEVICE1, DEVICE2 } },
                 { MODEL2, new List<string> { DEVICE3 } }
             };
+
             partitions.Add(new DevicesPartition { Id = "1", SimulationId = SIM_ID, DeviceIdsByModel = deviceIdsByModel });
             partitions.Add(new DevicesPartition { Id = "2", SimulationId = SIM_ID, DeviceIdsByModel = deviceIdsByModel });
             partitions.Add(new DevicesPartition { Id = "3", SimulationId = SIM_ID, DeviceIdsByModel = deviceIdsByModel });
@@ -220,7 +221,7 @@ namespace SimulationAgent.Test
                         {
                             new DeviceModel.DeviceModelMessage
                             {
-                                Interval = TimeSpan.FromSeconds(RndInt()),
+                                Interval = TimeSpan.FromSeconds(RandomInt()),
                             }
                         }
                     }
@@ -254,7 +255,7 @@ namespace SimulationAgent.Test
             Assert.Empty(this.devicePropertiesActors);
         }
 
-        private static long RndInt()
+        private static long RandomInt()
         {
             return Guid.NewGuid().ToByteArray().First();
         }

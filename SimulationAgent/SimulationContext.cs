@@ -18,6 +18,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         Task InitAsync(Simulation simulation);
 
+        // TODO: address removed connection-loop optimization
         // Invoked by SimulationManager.NewConnectionLoop()
         //   DeviceConnectionTask.RunAsync()
         //      -> SimulationManager.NewConnectionLoop()
@@ -60,7 +61,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         public async Task InitAsync(Simulation simulation)
         {
             this.instance.InitOnce();
-            
+
             // TODO: init using the simulation settings, not the defaults
             var defaultRatingConfig = this.factory.Resolve<IRateLimitingConfig>();
             this.RateLimiting.Init(defaultRatingConfig);
@@ -68,7 +69,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.PropertiesLoopSettings = new PropertiesLoopSettings(defaultRatingConfig);
 
             await this.Devices.InitAsync();
-            
+
             this.instance.InitComplete();
         }
 

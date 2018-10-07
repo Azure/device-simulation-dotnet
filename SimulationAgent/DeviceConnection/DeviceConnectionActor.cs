@@ -23,8 +23,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         long SimulationErrorsCount { get; }
         bool IsDeleted { get; }
 
-        //Task SetupAsync(string deviceId, DeviceModel deviceModel, IDeviceStateActor deviceStateActor, ConnectionLoopSettings loopSettings);
-
         void Init(
             ISimulationContext simulationContext,
             string deviceId,

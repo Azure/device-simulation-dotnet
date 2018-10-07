@@ -68,6 +68,7 @@ namespace SimulationAgent.Test.DeviceConnection
             this.deviceStateActor = new Mock<IDeviceStateActor>();
             this.loopSettings = new Mock<ConnectionLoopSettings>(
                 this.rateLimitingConfig.Object);
+            this.mockInstance = new Mock<IInstance>();
 
             this.rateLimitingConfig.Setup(x => x.DeviceMessagesPerSecond).Returns(10);
             this.mockRateLimiting = new Mock<IRateLimiting>();
