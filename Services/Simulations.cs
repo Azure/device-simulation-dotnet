@@ -388,7 +388,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 for (var i = 0; i < model.Count; i++)
                 {
-                    deviceIds.Add(this.devices.GenerateId(model.Id, i));
+                    deviceIds.Add(this.GenerateId(simulation.Id, model.Id, i));
                 }
             }
 

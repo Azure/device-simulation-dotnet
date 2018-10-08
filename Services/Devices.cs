@@ -59,11 +59,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task DeleteListAsync(IEnumerable<string> deviceIds);
 
         /// <summary>
-        /// Generate a device Id
-        /// </summary>
-        string GenerateId(string deviceModelId, int position);
-
-        /// <summary>
         /// Create a list of devices using bulk import via storage account
         /// </summary>
         Task<string> CreateListUsingJobsAsync(IEnumerable<string> deviceIds);
@@ -394,14 +389,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.diagnosticsLogger.LogServiceError(msg, error.Message);
                 throw;
             }
-        }
-
-        /// <summary>
-        /// Generate a device Id
-        /// </summary>
-        public string GenerateId(string deviceModelId, int position)
-        {
-            return deviceModelId + "." + position;
         }
 
         // Create a list of devices using bulk import via storage account
