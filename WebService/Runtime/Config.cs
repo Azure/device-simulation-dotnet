@@ -325,34 +325,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
 
         private static IDeploymentConfig GetDeploymentConfig(IConfigData configData)
         {
-            var azureResourceGroupLocation = configData.GetString(AZURE_RESOURCE_GROUP_LOCATION);
-            if (!azureResourceGroupLocation.ToLowerInvariant().Contains("resource group location"))
-            {
-                throw new Exception("The service configuration is incomplete. " +
-                                    "Please provide your Azure resource group location. " +
-                                    "For more information, see the environment variables " +
-                                    "used in project properties and the 'azure_resource_group_location' " +
-                                    "value in the 'appsettings.ini' configuration file.");
-            }
-
-            var azureVmssName = configData.GetString(AZURE_VMSS_NAME);
-            if (!azureVmssName.ToLowerInvariant().Contains("scale set name"))
-            {
-                throw new Exception("The service configuration is incomplete. " +
-                                    "Please provide your Azure resource group location. " +
-                                    "For more information, see the environment variables " +
-                                    "used in project properties and the 'azure_vmss_name' " +
-                                    "value in the 'appsettings.ini' configuration file.");
-            }
-
             return new DeploymentConfig
             {
                 AzureSubscriptionDomain = configData.GetString(AZURE_SUBSCRIPTION_DOMAIN, "undefined.onmicrosoft.com"),
                 AzureSubscriptionId = configData.GetString(AZURE_SUBSCRIPTION_ID, Guid.Empty.ToString()),
                 AzureResourceGroup = configData.GetString(AZURE_RESOURCE_GROUP, "undefined"),
-                AzureResourceGroupLocation = azureResourceGroupLocation,
+                AzureResourceGroupLocation = configData.GetString(AZURE_RESOURCE_GROUP_LOCATION, "undefined"),
                 AzureIothubName = configData.GetString(AZURE_IOTHUB_NAME, "undefined"),
-                AzureVmssName = azureVmssName,
+                AzureVmssName = configData.GetString(AZURE_VMSS_NAME, "undefined"),
                 AadTenantId = configData.GetString(AAD_TENANT_ID, "undefined"),
                 AadAppId = configData.GetString(AAD_APP_ID, "undefined"),
                 AadAppSecret = configData.GetString(AAD_APP_SECRET, "undefined"),

@@ -31,6 +31,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
         private readonly IAzureManagementAdapterClient azureManagementAdapter;
         private readonly IClusteringConfig clusteringConfig;
         private readonly int checkIntervalMsecs;
+        private int currentNodeCount;
 
         private bool running;
 
@@ -54,6 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
             this.clusteringConfig = clusteringConfig;
             this.checkIntervalMsecs = clusteringConfig.CheckIntervalMsecs;
             this.running = false;
+            this.currentNodeCount = 1;
         }
 
         public async Task StartAsync()
@@ -100,8 +102,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
         {
             this.running = false;
         }
-
-        
+                
         private async Task ScaleVmssNodes(IList<Simulation> activeSimulations)
         {
             // Default node count is 1
@@ -124,9 +125,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                 nodeCount = (int)Math.Ceiling((double)totalDevices / this.clusteringConfig.MaxDevicesPerNode);
             }
 
-            // Send a request to update vmss auto scale settings to create vm instances
-            // TODO: when devices are added or removed, the number of VMs might need an update
-            await this.azureManagementAdapter.CreateOrUpdateVmssAutoscaleSettingsAsync(nodeCount);
+            if (this.currentNodeCount != nodeCount)
+            {
+                // Send a request to update vmss auto scale settings to create vm instances
+                // TODO: when devices are added or removed, the number of VMs might need an update
+                await this.azureManagementAdapter.CreateOrUpdateVmssAutoscaleSettingsAsync(nodeCount);
+
+                this.currentNodeCount = nodeCount;
+            }
         }
 
         private async Task CreateDevicesAsync(IList<Simulation> activeSimulations)
