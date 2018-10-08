@@ -75,8 +75,8 @@ namespace SimulationAgent.Test.DeviceState
 
             this.target.Init(
                 mockSimulationContext.Object,
-                DEVICE_ID, 
-                deviceModel, 
+                DEVICE_ID,
+                deviceModel,
                 postion);
         }
     }

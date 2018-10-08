@@ -51,8 +51,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             try
             {
                 this.deviceConnectionActor.Client = this.deviceConnectionActor.SimulationContext.Devices.GetClient(
-                    this.deviceConnectionActor.Device, 
-                    this.deviceModel.Protocol, 
+                    this.deviceConnectionActor.Device,
+                    this.deviceModel.Protocol,
                     this.scriptInterpreter);
 
                 var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();

@@ -126,7 +126,7 @@ namespace SimulationAgent.Test.DeviceConnection
 
             // Act
             this.target.HandleEvent(deviceDeregistered);
-            
+
             // Assert
             Assert.True(this.target.IsDeleted);
         }

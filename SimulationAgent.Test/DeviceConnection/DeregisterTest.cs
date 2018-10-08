@@ -55,7 +55,7 @@ namespace SimulationAgent.Test.DeviceConnection
             // Arrange
             this.SetupDeviceConnectionActor();
             this.target.Init(this.mockDeviceConnectionActor.Object, DEVICE_ID, this.deviceModel);
-            
+
             // Act
             await this.target.RunAsync();
 

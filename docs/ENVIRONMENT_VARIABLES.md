@@ -15,7 +15,7 @@ in the different contexts.
 * `PCS_STORAGEADAPTER_WEBSERVICE_URL` [mandatory]: the URL where the storage
   adapter service is available, e.g. `http://127.0.0.1:9022/v1`.
 * `PCS_AZURE_STORAGE_ACCOUNT` [mandatory]: contains the full connection string
-required to connect to a Azure Storage Account instance.
+required to connect to an Azure Storage Account instance.
 
 ## Optional settings
 

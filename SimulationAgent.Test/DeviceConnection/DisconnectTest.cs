@@ -49,7 +49,7 @@ namespace SimulationAgent.Test.DeviceConnection
             this.deviceModel = new DeviceModel { Id = DEVICE_ID };
 
             this.target = new Disconnect(
-                this.scriptInterpreter.Object, 
+                this.scriptInterpreter.Object,
                 this.logger.Object,
                 this.mockInstance.Object);
         }

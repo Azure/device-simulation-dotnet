@@ -77,7 +77,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             // Avoid sleeping for only one millisecond
             if (duration >= min || min - duration <= 1) return;
 
-            var pauseMsecs = min - (int)duration;
+            var pauseMsecs = min - (int) duration;
             this.log.Debug("Pausing device-connection thread", () => new { pauseMsecs });
             Thread.Sleep(pauseMsecs);
         }

@@ -21,7 +21,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         long FailedTwinUpdatesCount { get; }
         long SimulationErrorsCount { get; }
 
-
         void Init(
             ISimulationContext simulationContext,
             string deviceId,
@@ -197,7 +196,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             {
                 case ActorEvents.Started:
                     this.actorLogger.ActorStarted();
-                    
+
                     /**
                      * TODO: when a device is created after the initial bulk upload, the next state should be:
                      *       ActorStatus.ReadyToTagDevice

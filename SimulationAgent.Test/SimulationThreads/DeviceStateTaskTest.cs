@@ -31,7 +31,7 @@ namespace SimulationAgent.Test.SimulationThreads
             this.mockLogger = new Mock<ILogger>();
 
             this.target = new DeviceStateTask(
-                this.mockSimulationConcurrencyConfig.Object, 
+                this.mockSimulationConcurrencyConfig.Object,
                 this.mockLogger.Object);
         }
 
@@ -42,7 +42,7 @@ namespace SimulationAgent.Test.SimulationThreads
             // build a list of mock device state actors
             this.BuildMockDeviceStateActors(
                 this.mockDeviceStateActors,
-                this.mockDeviceStateActorObjects, 
+                this.mockDeviceStateActorObjects,
                 NUM_ACTORS);
 
             // Request cancellation so that the target will only loop once
@@ -69,7 +69,7 @@ namespace SimulationAgent.Test.SimulationThreads
          */
         private void BuildMockDeviceStateActors(
             ConcurrentDictionary<string, Mock<IDeviceStateActor>> mockDictionary,
-            ConcurrentDictionary<string, IDeviceStateActor> objectDictionary, 
+            ConcurrentDictionary<string, IDeviceStateActor> objectDictionary,
             int count)
         {
             mockDictionary.Clear();
