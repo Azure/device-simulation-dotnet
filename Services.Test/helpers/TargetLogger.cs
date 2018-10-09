@@ -23,6 +23,9 @@ namespace Services.Test.helpers
         public bool DebugIsEnabled { get; }
         public bool InfoIsEnabled { get; }
 
+        // The following 5 methods allow to log a message, capturing the location where the log is generated
+        // Use "Write()" to write the message regardless of the log level, e.g. at startup
+
         public void Write(string message, string callerName = "", string filePath = "", int lineNumber = 0)
         {
             this.testLogger.WriteLine(Time() + "Target Write: " + message);
@@ -48,6 +51,42 @@ namespace Services.Test.helpers
             this.testLogger.WriteLine(Time() + "Target Error: " + message);
         }
 
+        // The following 5 methods allow to log data, without a message, capturing the location
+        // where the log is generated. Use "Write()" to write the message regardless of the log level, e.g. at startup
+
+        public void Write(Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            var message = Serialization.Serialize(data.Invoke());
+            this.testLogger.WriteLine(Time() + "Target Write: " + message);
+        }
+
+        public void Debug(Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            var message = Serialization.Serialize(data.Invoke());
+            this.testLogger.WriteLine(Time() + "Target Debug: " + message);
+        }
+
+        public void Info(Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            var message = Serialization.Serialize(data.Invoke());
+            this.testLogger.WriteLine(Time() + "Target Info: " + message);
+        }
+
+        public void Warn(Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            var message = Serialization.Serialize(data.Invoke());
+            this.testLogger.WriteLine(Time() + "Target Warn: " + message);
+        }
+
+        public void Error(Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+            var message = Serialization.Serialize(data.Invoke());
+            this.testLogger.WriteLine(Time() + "Target Error: " + message);
+        }
+
+        // The following 5 methods allow to log a message and some data, capturing the location where the log is generated
+        // Use "Write()" to write the message regardless of the log level, e.g. at startup
+
         public void Write(string message, Func<object> data, string callerName = "", string filePath = "", int lineNumber = 0)
         {
             this.testLogger.WriteLine(Time() + "Target Write: " + message);
@@ -72,6 +111,10 @@ namespace Services.Test.helpers
         {
             this.testLogger.WriteLine(Time() + "Target Error: " + message);
         }
+
+        // The following 5 methods allow to log a message and an exception, capturing the location where the log is generated
+        // Use the methods with <Func<object> data> to pass more data than just the exception
+        // Use "Write()" to write the message regardless of the log level, e.g. at startup
 
         public void Write(string message, Exception e, string callerName = "", string filePath = "", int lineNumber = 0)
         {

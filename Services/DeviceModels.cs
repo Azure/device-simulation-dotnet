@@ -24,6 +24,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task<DeviceModel> GetAsync(string id);
 
         /// <summary>
+        /// Get a device model and apply the overrides from the given simulation.
+        /// </summary>
+        Task<DeviceModel> GetWithOverrideAsync(string id, Models.Simulation simulation);
+
+        /// <summary>
         /// Create a device model.
         /// </summary>
         Task<DeviceModel> InsertAsync(DeviceModel deviceModel);
@@ -54,19 +59,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // ID used for custom device models, where the list of sensors is provided by the user
         public const string CUSTOM_DEVICE_MODEL_ID = "custom";
 
+        private const string REPORTED_PREFIX = "Properties.Reported.";
+
         private readonly ILogger log;
         private readonly ICustomDeviceModels customDeviceModels;
         private readonly IStockDeviceModels stockDeviceModels;
-        private const string REPORTED_PREFIX = "Properties.Reported.";
+        private readonly IDeviceModelsGeneration deviceModelsOverriding;
 
         public DeviceModels(
             ICustomDeviceModels customDeviceModels,
             IStockDeviceModels stockDeviceModels,
+            IDeviceModelsGeneration deviceModelsOverriding,
             ILogger logger)
         {
-            this.log = logger;
             this.stockDeviceModels = stockDeviceModels;
             this.customDeviceModels = customDeviceModels;
+            this.deviceModelsOverriding = deviceModelsOverriding;
+            this.log = logger;
         }
 
         /// <summary>
@@ -96,6 +105,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log.Warn("Device model not found", () => new { id });
 
             throw new ResourceNotFoundException();
+        }
+
+        /// <summary>
+        /// Get a device model and apply the overrides from the given simulation.
+        /// </summary>
+        public async Task<DeviceModel> GetWithOverrideAsync(string id, Models.Simulation simulation)
+        {
+            var modelDef = new DeviceModel();
+
+            var equals = new Func<string, string, bool>(
+                (x, y) => string.Equals(x, y, StringComparison.InvariantCultureIgnoreCase));
+
+            if (equals(id, CUSTOM_DEVICE_MODEL_ID))
+            {
+                modelDef.Id = CUSTOM_DEVICE_MODEL_ID;
+                modelDef.Name = CUSTOM_DEVICE_MODEL_ID;
+                modelDef.Description = "Simulated device with custom list of sensors";
+            }
+            else
+            {
+                modelDef = await this.GetAsync(id);
+            }
+
+            Models.Simulation.DeviceModelOverride overrides = simulation.DeviceModels
+                .Where(x => equals(x.Id, id))
+                .Select(x => x.Override).FirstOrDefault();
+
+            return this.deviceModelsOverriding.Generate(modelDef, overrides);
         }
 
         /// <summary>

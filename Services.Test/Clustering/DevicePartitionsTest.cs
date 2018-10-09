@@ -29,6 +29,7 @@ namespace Services.Test.Clustering
         private readonly Mock<IFactory> factory;
         private readonly Mock<ILogger> log;
         private readonly Mock<IStorageRecords> partitionsStorage;
+        private readonly Mock<IClusterNodes> mockClusterNodes;
 
         public DevicePartitionsTest()
         {
@@ -38,13 +39,14 @@ namespace Services.Test.Clustering
             this.factory = new Mock<IFactory>();
             this.log = new Mock<ILogger>();
             this.partitionsStorage = new Mock<IStorageRecords>();
+            this.mockClusterNodes = new Mock<IClusterNodes>();
 
             // Inject configuration settings with a collection name which is then used
-            // to intercept the call to .Init()
+            // to intercept the call to .InitAsync()
             this.config.SetupGet(x => x.PartitionsStorage)
                 .Returns(new StorageConfig { DocumentDbCollection = PARTITIONS });
 
-            // Intercept the call to IStorageRecords.Init() and return the right storage mock
+            // Intercept the call to IStorageRecords.InitAsync() and return the right storage mock
             var storageMockFactory = new Mock<IStorageRecords>();
             storageMockFactory
                 .Setup(x => x.Init(It.Is<StorageConfig>(c => c.DocumentDbCollection == PARTITIONS)))
@@ -219,6 +221,7 @@ namespace Services.Test.Clustering
                 this.config.Object,
                 this.clusteringConfig.Object,
                 this.simulations.Object,
+                this.mockClusterNodes.Object,
                 this.factory.Object,
                 this.log.Object);
         }

@@ -224,7 +224,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
             catch (Exception e)
             {
-                var message = "The IoT Hub connection string doesn't allow to read the device registry. " +
+                var message = "The IoT Hub connection string does not have read permissions to the device registry. " +
                               "Check that the policy for the key allows `Registry Read/Write` " +
                               "and `Service Connect` permissions.";
                 this.log.Error(message, e);

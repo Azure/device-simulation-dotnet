@@ -56,8 +56,8 @@ namespace Services.Test.Storage
 
             this.target = new StorageRecords(
                 this.mockDocumentDbWrapper.Object,
-                this.mockInstance.Object,
-                this.mockLogger.Object);
+                this.mockLogger.Object,
+                this.mockInstance.Object);
 
             this.storageConfig = new StorageConfig();
             this.target.Init(this.storageConfig);

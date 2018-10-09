@@ -1,11 +1,13 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
     public interface IRateLimiting
     {
+        int ClusterSize { get; }
         long GetPauseForNextConnection();
         long GetPauseForNextRegistryOperation();
         long GetPauseForNextTwinRead();
@@ -13,49 +15,78 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         long GetPauseForNextMessage();
         double GetThroughputForMessages();
         void ResetCounters();
+        void ChangeClusterSize(int currentCount);
+        void Init(IRateLimitingConfig rateLimitingConfig);
     }
 
     public class RateLimiting : IRateLimiting
     {
-        // Use separate objects to reduce internal contentions in the lock statement
+        private readonly ILogger log;
+        private readonly IInstance instance;
 
-        private readonly PerSecondCounter connections;
-        private readonly PerMinuteCounter registryOperations;
-        private readonly PerSecondCounter twinReads;
-        private readonly PerSecondCounter twinWrites;
-        private readonly PerSecondCounter messaging;
+        // Cluster size, used to calculate the rate for each node
+        private int clusterSize;
+
+        // Use separate objects to reduce internal contentions in the lock statement
+        private PerSecondCounter connections;
+        private PerMinuteCounter registryOperations;
+        private PerSecondCounter twinReads;
+        private PerSecondCounter twinWrites;
+        private PerSecondCounter messaging;
 
         // TODO: https://github.com/Azure/device-simulation-dotnet/issues/80
         //private readonly PerDayCounter messagingDaily;
+        public int ClusterSize => this.clusterSize;
 
+        // Note: this class should be used only via the simulation context
+        // to ensure that concurrent simulations don't share data
         public RateLimiting(
             IRateLimitingConfig config,
-            ILogger log)
+            ILogger log,
+            IInstance instance)
         {
+            this.log = log;
+            this.clusterSize = 1;
+            this.instance = instance;
+
+            // TODO: these initializations will be moved to Init when SimulationManager is
+            //       integrated.
             this.connections = new PerSecondCounter(
-                config.ConnectionsPerSecond, "Device connections", log);
+                config.ConnectionsPerSecond, "Device connections", this.log);
 
             this.registryOperations = new PerMinuteCounter(
-                config.RegistryOperationsPerMinute, "Registry operations", log);
+                config.RegistryOperationsPerMinute, "Registry operations", this.log);
 
             this.twinReads = new PerSecondCounter(
-                config.TwinReadsPerSecond, "Twin reads", log);
+                config.TwinReadsPerSecond, "Twin reads", this.log);
 
             this.twinWrites = new PerSecondCounter(
-                config.TwinWritesPerSecond, "Twin writes", log);
+                config.TwinWritesPerSecond, "Twin writes", this.log);
 
             this.messaging = new PerSecondCounter(
-                config.DeviceMessagesPerSecond, "Device msg/sec", log);
+                config.DeviceMessagesPerSecond, "Device msg/sec", this.log);
+        }
 
-            //this.messagingDaily = new PerDayCounter(
-            //    config.DeviceMessagesPerDay, "Device msg/day", log);
+        public void Init(IRateLimitingConfig config)
+        {
+            this.instance.InitOnce();
 
-            // The class should be a singleton, if this appears more than once
-            // something is not setup correctly and the rating won't work.
-            // TODO: enforce the single instance, compatibly with the use of
-            //       Parallel.For in the simulation runner.
-            //       https://github.com/Azure/device-simulation-dotnet/issues/79
-            log.Info("Rate limiting started. This message should appear only once in the logs.");
+            this.connections = new PerSecondCounter(
+                config.ConnectionsPerSecond, "Device connections", this.log);
+
+            this.registryOperations = new PerMinuteCounter(
+                config.RegistryOperationsPerMinute, "Registry operations", this.log);
+
+            this.twinReads = new PerSecondCounter(
+                config.TwinReadsPerSecond, "Twin reads", this.log);
+
+            this.twinWrites = new PerSecondCounter(
+                config.TwinWritesPerSecond, "Twin writes", this.log);
+
+            this.messaging = new PerSecondCounter(
+                config.DeviceMessagesPerSecond, "Device msg/sec", this.log);
+
+            this.instance.InitComplete();
         }
 
         public void ResetCounters()
@@ -65,6 +96,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             this.twinReads.ResetCounter();
             this.twinWrites.ResetCounter();
             this.messaging.ResetCounter();
+        }
+
+        public void ChangeClusterSize(int count)
+        {
+            this.log.Info("Updating rating limits to the new cluster size",
+                () => new { previousSize = this.clusterSize, newSize = count });
+
+            this.clusterSize = count;
+            this.connections.ChangeConcurrencyFactor(count);
+            this.registryOperations.ChangeConcurrencyFactor(count);
+            this.twinReads.ChangeConcurrencyFactor(count);
+            this.twinWrites.ChangeConcurrencyFactor(count);
+            this.messaging.ChangeConcurrencyFactor(count);
         }
 
         public long GetPauseForNextConnection()
@@ -97,6 +141,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         /// <summary>
         /// Get message throughput (messages per second)
         /// </summary>
-        public double GetThroughputForMessages() => System.Math.Ceiling(this.messaging.GetThroughputForMessages() * 100) / 100;
+        public double GetThroughputForMessages()
+        {
+            return this.messaging.GetThroughputForMessages();
+        }
     }
 }
