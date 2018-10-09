@@ -82,7 +82,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
 
                     await this.clusterNodes.RemoveStaleNodesAsync();
 
-                    // Scale nodes in vmss
+                    // Scale nodes in Vmss
                     await this.ScaleVmssNodes(activeSimulations);
 
                     // Create IoT Hub devices for all the active simulations
