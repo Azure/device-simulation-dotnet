@@ -8,6 +8,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
     public static class ConfigFile
     {
         public const string DEFAULT = "appsettings.ini";
+        private const string DEV_ENV_VAR = "PCS_DEV_APPSETTINGS";
 
         // If the system has a "PCS_DEV_APPSETTINGS" environment variable, and the
         // value references an existing file, then the app will use this file to pull in settings,
@@ -19,7 +20,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         {
             try
             {
-                string devConfigFile = Environment.GetEnvironmentVariable("PCS_DEV_APPSETTINGS");
+                string devConfigFile = Environment.GetEnvironmentVariable(DEV_ENV_VAR);
                 if (!string.IsNullOrEmpty(devConfigFile) && File.Exists(devConfigFile))
                 {
                     return devConfigFile;
