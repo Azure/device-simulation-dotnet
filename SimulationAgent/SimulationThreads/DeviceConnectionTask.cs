@@ -22,15 +22,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     public class DeviceConnectionTask : IDeviceConnectionTask
     {
         // Global settings, not affected by hub SKU or simulation settings
-        private readonly ISimulationConcurrencyConfig appConcurrencyConfig;
+        private readonly ISimulationConcurrencyConfig simulationConcurrencyConfig;
 
         private readonly ILogger log;
 
         public DeviceConnectionTask(
-            ISimulationConcurrencyConfig appConcurrencyConfig,
+            ISimulationConcurrencyConfig simulationConcurrencyConfig,
             ILogger logger)
         {
-            this.appConcurrencyConfig = appConcurrencyConfig;
+            this.simulationConcurrencyConfig = simulationConcurrencyConfig;
             this.log = logger;
         }
 
@@ -40,11 +40,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             CancellationToken runningToken)
         {
             // Once N devices are attempting to connect, wait until they are done
-            var pendingTasksLimit = this.appConcurrencyConfig.MaxPendingConnections;
+            var pendingTasksLimit = this.simulationConcurrencyConfig.MaxPendingConnections;
             var tasks = new List<Task>();
 
             while (!runningToken.IsCancellationRequested)
             {
+                // TODO: resetting counters every few seconds seems to be a bug - to be revisited
+                // Was this introduced to react to the changing number of nodes?
+                foreach (var manager in simulationManagers)
+                {
+                    manager.Value.NewConnectionLoop();
+                }
+
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 foreach (var device in deviceConnectionActors)
                 {
@@ -68,7 +75,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                 this.log.Debug("Device-state loop completed", () => new { durationMsecs });
-                this.SlowDownIfTooFast(durationMsecs, this.appConcurrencyConfig.MinDeviceConnectionLoopDuration);
+                this.SlowDownIfTooFast(durationMsecs, this.simulationConcurrencyConfig.MinDeviceConnectionLoopDuration);
             }
         }
 

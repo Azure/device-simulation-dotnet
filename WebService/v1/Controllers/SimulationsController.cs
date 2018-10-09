@@ -127,7 +127,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
         [HttpPut("{id}/Devices!create")]
         public async Task PutAsync(
-            [FromBody] CreateActionApiModel device)
+            [FromBody] CreateActionApiModel device,
+            string id = "")
         {
             if (device == null)
             {
@@ -137,7 +138,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
             device.ValidateInputRequest(this.log);
 
-            await this.simulationAgent.AddDeviceAsync(device.DeviceId, device.ModelId);
+            await this.simulationAgent.AddDeviceAsync(id, device.DeviceId, device.ModelId);
         }
 
         [HttpPut("{id}/Devices!batchDelete")]

@@ -50,8 +50,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         void TearDown();
 
         // // Executed by DeviceConnectionTask.RunAsync
-        // void NewConnectionLoop();
-        //
+        void NewConnectionLoop();
+        
         // // Executed by UpdatePropertiesTask.RunAsync
         // void NewPropertiesLoop();
     }
@@ -276,6 +276,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
 
             return false;
+        }
+
+        public void NewConnectionLoop()
+        {
+            this.simulationContext.ConnectionLoopSettings.NewLoop();
         }
 
         private void DeleteAllStateActors()

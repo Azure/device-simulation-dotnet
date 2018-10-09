@@ -72,7 +72,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 var pos = 0;
                 foreach (var telemetry in deviceTelemetryActors)
                 {
-                    // Work only on a subset of all devices
+                    // Only send telemetry for devices *other* than the ones in 
+                    // the chunk for the current thread, for example:
+                    // 
+                    //    Count = 20000
+                    //    chunkSize = 6667
+                    //    threadPosition = 2
+                    //
+                    //    threadPosition 1:     0,  6667 <- send
+                    //    threadPosition 2:  6667, 13334 <- skip
+                    //    threadPosition 3: 13334, 20000 <- send
                     if (!(pos >= firstDevice && pos < lastDevice))
                     {
                         tasks.Add(telemetry.Value.RunAsync());

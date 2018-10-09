@@ -23,7 +23,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     public interface ISimulationAgent
     {
         Task StartAsync();
-        Task AddDeviceAsync(string name, string modelId);
+        Task AddDeviceAsync(string simulationId, string name, string modelId);
         Task DeleteDevicesAsync(List<string> ids);
         void Stop();
     }
@@ -189,7 +189,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         //       does not support this because we do not have a design for
         //       how to modify existing partitions at runtime. Implementation
         //       of this feature is pending a design for this.
-        public async Task AddDeviceAsync(string deviceId, string modelId)
+        public async Task AddDeviceAsync(string simulationid, string deviceId, string modelId)
         {
             return;
         }
