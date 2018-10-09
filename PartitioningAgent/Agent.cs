@@ -67,14 +67,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                 if (isMaster)
                 {
                     // Reload all simulations to have fresh status and discover new simulations
-                    IList<Simulation> activeSimulations = (await this.simulations.GetListAsync())
+                    IList<Simulation> simulations = (await this.simulations.GetListAsync());
+
+                    IList<Simulation> activeSimulations = simulations
                         .Where(x => x.IsActiveNow).ToList();
                     this.log.Debug("Active simulations loaded", () => new { activeSimulations.Count });
 
+                    IList<Simulation> deletionRequiredSimulations = simulations
+                        .Where(x => x.DeviceDeletionRequired).ToList();
+                    this.log.Debug("InActive simulations loaded", () => new { deletionRequiredSimulations.Count });
+
                     await this.clusterNodes.RemoveStaleNodesAsync();
 
-                    // Create IoT Hub devices for all the active simulations
+                    // Create IoTHub devices for all the active simulations
                     await this.CreateDevicesAsync(activeSimulations);
+
+                    // Delete IoTHub devices for inactive simulations
+                    await this.DeleteDevicesAsync(deletionRequiredSimulations);
 
                     // Create and delete partitions
                     await this.CreatePartitionsAsync(activeSimulations);
@@ -89,6 +98,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
         public void Stop()
         {
             this.running = false;
+        }
+
+        private async Task DeleteDevicesAsync(IList<Simulation> deletionRequiredSimulations)
+        {
+            if (deletionRequiredSimulations.Count == 0) return;
+
+            foreach (var simulation in deletionRequiredSimulations)
+            {
+                await this.DeleteIoTHubDevicesAsync(simulation);
+            }
         }
 
         private async Task CreateDevicesAsync(IList<Simulation> activeSimulations)
@@ -106,6 +125,63 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
             foreach (var simulation in simulationsWithDevicesToCreate)
             {
                 await this.CreateIoTHubDevicesAsync(simulation);
+            }
+        }
+
+        private async Task DeleteIoTHubDevicesAsync(Simulation simulation)
+        {
+            var deletionFailed = false;
+
+            // Check if the device creation is complete
+            if (simulation.DevicesDeletionStarted)
+            {
+                this.log.Info("Checking if the device deletion is complete...", () => new { SimulationId = simulation.Id });
+
+                // TODO: optimize, we can probably cache this instance
+                // e.g. to avoid fetching the conn string from storage
+                var deviceService = this.factory.Resolve<IDevices>();
+                await deviceService.InitAsync();
+
+                if (await deviceService.IsJobCompleteAsync(simulation.DeviceDeletionJobId, () => { deletionFailed = true; }))
+                {
+                    this.log.Info("All devices have been deleted, updating the simulation record", () => new { SimulationId = simulation.Id });
+
+                    if (await this.simulations.TryToSetDeviceDeletionCompleteAsync(simulation.Id))
+                    {
+                        this.log.Debug("Simulation record updated");
+                    }
+                    else
+                    {
+                        this.log.Warn("Failed to update the simulation record, will retry later");
+                    }
+                }
+                else
+                {
+                    this.log.Info(deletionFailed
+                            ? "Device deletion failed. Will retry."
+                            : "Device deletion is still in progress",
+                        () => new { SimulationId = simulation.Id });
+                }
+            }
+
+            // Start the job to import the devices
+            if ((!simulation.DevicesDeletionStarted && !simulation.DevicesDeletionComplete) || deletionFailed)
+            {
+                this.log.Debug("Starting devices creation", () => new { SimulationId = simulation.Id });
+
+                // TODO: optimize, we can probably cache this instance
+                // e.g. to avoid fetching the conn string from storage
+                var deviceService = this.factory.Resolve<IDevices>();
+                await deviceService.InitAsync();
+
+                if (await this.simulations.TryToStartDevicesDeletionAsync(simulation.Id, deviceService))
+                {
+                    this.log.Info("Device deletion started");
+                }
+                else
+                {
+                    this.log.Warn("Failed to start device deletion, will retry later");
+                }
             }
         }
 
