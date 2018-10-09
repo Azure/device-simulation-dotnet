@@ -50,7 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
         /// <summary>
         /// Autowire interfaces to classes from all the assemblies, to avoid
-        /// manual configuration. Note that auto-wiring works only for interfaces
+        /// manual configuration. Note that autowiring works only for interfaces
         /// with just one implementation.
         /// @see http://autofac.readthedocs.io/en/latest/register/scanning.html
         /// </summary>
