@@ -30,7 +30,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
 
     public class ClusteringConfig : IClusteringConfig
     {
-        private const int DEFAULT_CHECK_INTERVAL_MSECS = 15000;
+        private const int DEFAULT_CHECK_INTERVAL_MSECS = 10000;
         private const int MIN_CHECK_INTERVAL_MSECS = 1000;
         private const int MAX_CHECK_INTERVAL_MSECS = 300000;
 

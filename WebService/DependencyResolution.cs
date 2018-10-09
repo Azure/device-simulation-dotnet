@@ -50,7 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
         /// <summary>
         /// Autowire interfaces to classes from all the assemblies, to avoid
-        /// manual configuration. Note that autowiring works only for interfaces
+        /// manual configuration. Note that auto-wiring works only for interfaces
         /// with just one implementation.
         /// @see http://autofac.readthedocs.io/en/latest/register/scanning.html
         /// </summary>
@@ -59,15 +59,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             var assembly = Assembly.GetEntryAssembly();
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
 
-            // Auto-wire Services.DLL
+            // Autowire Services.DLL
             assembly = typeof(IServicesConfig).GetTypeInfo().Assembly;
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
 
-            // Auto-wire SimulationAgent.DLL
+            // Autowire SimulationAgent.DLL
             assembly = typeof(ISimulationAgent).GetTypeInfo().Assembly;
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
 
-            // Auto-wire PartitioningAgent.DLL
+            // Autowire PartitioningAgent.DLL
             assembly = typeof(IPartitioningAgent).GetTypeInfo().Assembly;
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
         }

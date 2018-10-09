@@ -87,7 +87,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
                         "The key to lock the master role doesn't exist yet, will create",
                         () => new { currentProcessNodeId, MASTER_NODE_KEY });
 
-                    var record = new StorageRecord { Id = MASTER_NODE_KEY, Data = currentProcessNodeId };
+                    var record = new StorageRecord { Id = MASTER_NODE_KEY, Data = "Record locked by the master node" };
                     await this.mainStorage.CreateAsync(record);
                 }
 
