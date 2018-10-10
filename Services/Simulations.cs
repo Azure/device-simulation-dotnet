@@ -388,7 +388,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 for (var i = 0; i < model.Count; i++)
                 {
-                    deviceIds.Add(this.devices.GenerateId(model.Id, i));
+                    deviceIds.Add(this.devices.GenerateId(simulation.Id, model.Id, i));
                 }
             }
 
@@ -409,7 +409,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var deviceIds = new List<string>();
                 for (var i = 1; i <= model.Count; i++)
                 {
-                    deviceIds.Add(this.GenerateId(simulation.Id, model.Id, i));
+                    deviceIds.Add(this.devices.GenerateId(simulation.Id, model.Id, i));
                     deviceCount++;
                 }
 
@@ -465,12 +465,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 });
 
             return simulation;
-        }
-
-        // Generate a device Id
-        private string GenerateId(string simulationId, string deviceModelId, int position)
-        {
-            return simulationId + "." + deviceModelId + "." + position;
         }
     }
 }

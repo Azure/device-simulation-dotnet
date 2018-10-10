@@ -36,7 +36,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
-                .AddIniFile("appsettings.ini", optional: false, reloadOnChange: true);
+                .AddIniFile(ConfigFile.DEFAULT, optional: false, reloadOnChange: true);
+
+            if (ConfigFile.GetDevOnlyConfigFile() != null)
+            {
+                builder.AddIniFile(ConfigFile.GetDevOnlyConfigFile(), optional: true, reloadOnChange: true);
+            }
+
             this.Configuration = builder.Build();
         }
 
