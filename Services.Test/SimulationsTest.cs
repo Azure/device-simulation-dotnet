@@ -324,7 +324,7 @@ namespace Services.Test
         {
             // Arrange
             this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
-                .ReturnsAsync((StorageRecord)null);
+                .ReturnsAsync((StorageRecord) null);
             var sim = new SimulationModel
             {
                 Id = "1",
@@ -445,6 +445,11 @@ namespace Services.Test
                     new SimulationModel.DeviceModelRef { Id = modelId2, Count = 2 }
                 }
             };
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 1)).Returns($"{simulationId}.{modelId1}.1");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 2)).Returns($"{simulationId}.{modelId1}.2");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 3)).Returns($"{simulationId}.{modelId1}.3");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId2, 1)).Returns($"{simulationId}.{modelId2}.1");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId2, 2)).Returns($"{simulationId}.{modelId2}.2");
 
             // Act
             Dictionary<string, List<string>> result = this.target.GetDeviceIdsByModel(sim);
@@ -452,6 +457,9 @@ namespace Services.Test
             // Assert
             Assert.True(result.ContainsKey(modelId1));
             Assert.True(result.ContainsKey(modelId2));
+            this.devices.Verify(
+                x => x.GenerateId(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()),
+                Times.Exactly(sim.DeviceModels[0].Count + sim.DeviceModels[1].Count));
 
             Assert.Contains($"{simulationId}.{modelId1}.1", result[modelId1]);
             Assert.Contains($"{simulationId}.{modelId1}.2", result[modelId1]);
@@ -514,6 +522,11 @@ namespace Services.Test
                     }
                 }
             };
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 1)).Returns($"{simulationId}.{modelId1}.1");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 2)).Returns($"{simulationId}.{modelId1}.2");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 3)).Returns($"{simulationId}.{modelId1}.3");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId2, 1)).Returns($"{simulationId}.{modelId2}.1");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId2, 2)).Returns($"{simulationId}.{modelId2}.2");
 
             // Act
             Dictionary<string, List<string>> result = this.target.GetDeviceIdsByModel(sim);

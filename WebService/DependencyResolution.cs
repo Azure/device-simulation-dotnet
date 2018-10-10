@@ -59,15 +59,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             var assembly = Assembly.GetEntryAssembly();
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
 
-            // Auto-wire Services.DLL
+            // Autowire Services.DLL
             assembly = typeof(IServicesConfig).GetTypeInfo().Assembly;
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
 
-            // Auto-wire SimulationAgent.DLL
+            // Autowire SimulationAgent.DLL
             assembly = typeof(ISimulationAgent).GetTypeInfo().Assembly;
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
 
-            // Auto-wire PartitioningAgent.DLL
+            // Autowire PartitioningAgent.DLL
             assembly = typeof(IPartitioningAgent).GetTypeInfo().Assembly;
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
         }
@@ -81,7 +81,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             // More info about configuration at
             // https://docs.microsoft.com/aspnet/core/fundamentals/configuration
             var configurationBuilder = new ConfigurationBuilder();
-            configurationBuilder.AddIniFile("appsettings.ini", optional: true, reloadOnChange: false);
+            configurationBuilder
+                .AddIniFile(ConfigFile.DEFAULT, optional: false, reloadOnChange: false);
+
+            if (ConfigFile.GetDevOnlyConfigFile() != null)
+            {
+                configurationBuilder.AddIniFile(ConfigFile.GetDevOnlyConfigFile(), optional: true, reloadOnChange: true);
+            }
 
             // Parse file and ensure the file is parsed only once
             configuration = configurationBuilder.Build();

@@ -63,7 +63,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         [JsonProperty(Order = 30)]
         public string Description { get; set; }
 
-        [JsonProperty(Order = 40)]
+        [JsonProperty(Order = 13)]
         public bool PartitioningComplete { get; set; }
 
         [JsonProperty(Order = 50)]
