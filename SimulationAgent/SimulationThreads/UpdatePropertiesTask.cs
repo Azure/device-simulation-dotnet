@@ -48,10 +48,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             while (!runningToken.IsCancellationRequested)
             {
                 // TODO: resetting counters every few seconds seems to be a bug - to be revisited
-                // foreach (var manager in simulationManagers)
-                // {
-                //     manager.Value.NewPropertiesLoop();
-                // }
+                foreach (var manager in simulationManagers)
+                {
+                    manager.Value.NewPropertiesLoop();
+                }
 
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 foreach (var device in devicePropertiesActors)

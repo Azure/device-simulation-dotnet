@@ -49,11 +49,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Stop all the actors and delete them - executed by Agent.StopInactiveSimulations
         void TearDown();
 
-        // // Executed by DeviceConnectionTask.RunAsync
+        // Executed by DeviceConnectionTask.RunAsync
         void NewConnectionLoop();
-        
-        // // Executed by UpdatePropertiesTask.RunAsync
-        // void NewPropertiesLoop();
+
+        // Executed by UpdatePropertiesTask.RunAsync
+        void NewPropertiesLoop();
     }
 
     public class SimulationManager : ISimulationManager
@@ -281,6 +281,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         public void NewConnectionLoop()
         {
             this.simulationContext.ConnectionLoopSettings.NewLoop();
+        }
+
+        public void NewPropertiesLoop()
+        {
+            this.simulationContext.PropertiesLoopSettings.NewLoop();
         }
 
         private void DeleteAllStateActors()

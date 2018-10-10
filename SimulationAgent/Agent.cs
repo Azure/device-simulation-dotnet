@@ -135,7 +135,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         public void Stop()
         {
-            // TODO: why is this needed?
             while (this.startingOrStopping)
                 Thread.Sleep(SHUTDOWN_WAIT_INTERVAL_MSECS);
 

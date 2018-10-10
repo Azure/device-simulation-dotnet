@@ -196,6 +196,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
             this.instance.InitComplete();
         }
+
         public void Stop()
         {
             this.status = ActorStatus.Stopped;

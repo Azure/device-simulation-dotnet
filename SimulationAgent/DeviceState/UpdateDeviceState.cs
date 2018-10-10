@@ -64,7 +64,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                 {
                     foreach (var script in this.deviceModel.Simulation.Scripts)
                     {
-                        // call Invoke() which to update the internal device state
+                        // call Invoke() to update the internal device state
                         this.scriptInterpreter.Invoke(
                             script,
                             scriptContext,
