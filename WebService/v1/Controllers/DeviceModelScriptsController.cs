@@ -58,7 +58,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data provided.");
             }
 
-            if (file.ContentType != TEXT_JAVASCRIPT)
+            if (file.ContentType != TEXT_JAVASCRIPT && !file.FileName.EndsWith(".js"))
             {
                 this.log.Warn("Wrong content type provided", () => new { file.ContentType });
                 throw new BadRequestException("Wrong content type provided.");
@@ -93,7 +93,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data provided.");
             }
 
-            if (file.ContentType != TEXT_JAVASCRIPT)
+            if (file.ContentType != TEXT_JAVASCRIPT && !file.FileName.EndsWith(".js"))
             {
                 this.log.Warn("Wrong content type provided", () => new { file.ContentType });
                 throw new BadRequestException("Wrong content type provided.");
