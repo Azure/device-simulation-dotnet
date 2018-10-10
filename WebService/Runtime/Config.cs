@@ -50,7 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string DEVICE_MODELS_SCRIPTS_FOLDER_KEY = APPLICATION_KEY + "device_models_scripts_folder";
         private const string IOTHUB_DATA_FOLDER_KEY = APPLICATION_KEY + "iothub_data_folder";
         private const string IOTHUB_CONNSTRING_KEY = APPLICATION_KEY + "iothub_connstring";
-        private const string IOTHUB_IMPORT_STORAGE_CONNSTRING_KEY = APPLICATION_KEY + "iothub_import_storage_account";
+        private const string IOTHUB_IMPORT_STORAGE_CONNSTRING_KEY = APPLICATION_KEY + "iothub_import_storage_account_connstring";
         private const string IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY = APPLICATION_KEY + "iothub_sdk_device_client_timeout";
         private const string TWIN_READ_WRITE_ENABLED_KEY = APPLICATION_KEY + "twin_read_write_enabled";
 

@@ -95,6 +95,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PartitioningAgent", "Partit
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PartitioningAgent.Test", "PartitioningAgent.Test\PartitioningAgent.Test.csproj", "{E1351585-2B99-44EA-8474-09C091652FE4}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "development", "development", "{D97D0D98-A424-4FBA-9E18-FE4EEC538893}"
+ProjectSection(SolutionItems) = preProject
+	scripts\development\postman_collection.json = scripts\development\postman_collection.json
+EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -145,6 +150,7 @@ Global
 		{4C88469C-C551-435D-AE2C-36C58EE686A5} = {2B58D756-04D5-427F-9161-E1B45D35682A}
 		{39EA50D7-B4CD-41C4-85EA-E53E89E9BC98} = {DEF8CFF7-B332-4BA3-AB0B-8F7AC3275054}
 		{0680130C-7156-4118-BE65-4734BA92638B} = {71787873-D1A0-4D9E-BC84-942E0FB3841E}
+		{D97D0D98-A424-4FBA-9E18-FE4EEC538893} = {71787873-D1A0-4D9E-BC84-942E0FB3841E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {25EBA0C1-8A8C-4116-948B-626F1638B7DA}
