@@ -38,8 +38,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "Enabled")]
         public bool? Enabled { get; set; }
 
-        [JsonProperty(PropertyName = "DevicesCleanUpRequired")]
-        public bool? DevicesCleanUpRequired { get; set; }
+        [JsonProperty(PropertyName = "DevicesCleanUpRequiredByUser")]
+        public bool? DevicesCleanUpRequiredByUser { get; set; }
 
         // Note: read-only property, used only to report the simulation status
         [JsonProperty(PropertyName = "Running")]
@@ -89,7 +89,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             // When unspecified, a simulation is enabled
             this.Enabled = true;
             this.Running = false;
-            this.DevicesCleanUpRequired = false;
+            this.DevicesCleanUpRequiredByUser = false;
             this.ActiveNow = false;
             this.IotHubs = new List<SimulationIotHub>();
             this.StartTime = null;
@@ -132,9 +132,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
             // Overwrite the value only if the request included the field, i.e. don't
             // delete all devices if the user didn't explicitly ask to.
-            if (this.DevicesCleanUpRequired.HasValue)
+            if (this.DevicesCleanUpRequiredByUser.HasValue)
             {
-                result.DevicesCleanUpRequired = this.DevicesCleanUpRequired.Value;
+                result.DevicesCleanUpRequiredByUser = this.DevicesCleanUpRequiredByUser.Value;
             }
 
             foreach (var hub in this.IotHubs)
@@ -170,7 +170,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Enabled = value.Enabled,
                 Running = value.ShouldBeRunning,
                 ActiveNow = value.IsActiveNow,
-                DevicesCleanUpRequired = value.DevicesCleanUpRequired,
+                DevicesCleanUpRequiredByUser = value.DevicesCleanUpRequiredByUser,
                 StartTime = value.StartTime.ToString(),
                 EndTime = value.EndTime.ToString(),
                 StoppedTime = value.StoppedTime.ToString(),

@@ -31,7 +31,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         [JsonIgnore]
         public bool DeviceDeletionRequired => !this.IsActiveNow
                                               && this.DevicesCreationComplete
-                                              && this.DevicesCleanUpRequired;
+                                              && this.DevicesCleanUpRequiredByUser;
 
         [JsonIgnore]
         public bool PartitioningRequired => this.IsActiveNow && !this.PartitioningComplete;
@@ -60,7 +60,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public bool DevicesCreationComplete { get; set; }
 
         [JsonProperty(Order = 13)]
-        public bool DevicesCleanUpRequired { get; set; }
+        public bool DevicesCleanUpRequiredByUser { get; set; }
 
         [JsonProperty(Order = 14)]
         public bool DevicesDeletionStarted { get; set; }

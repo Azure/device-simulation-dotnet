@@ -132,7 +132,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
         {
             var deletionFailed = false;
 
-            // Check if the device creation is complete
+            // Check if the device deletion is complete
             if (simulation.DevicesDeletionStarted)
             {
                 this.log.Info("Checking if the device deletion is complete...", () => new { SimulationId = simulation.Id });
@@ -164,7 +164,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                 }
             }
 
-            // Start the job to import the devices
+            // Start the job to delete the devices
             if ((!simulation.DevicesDeletionStarted && !simulation.DevicesDeletionComplete) || deletionFailed)
             {
                 this.log.Debug("Starting devices creation", () => new { SimulationId = simulation.Id });
