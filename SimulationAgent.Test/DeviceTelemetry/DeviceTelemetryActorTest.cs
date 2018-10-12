@@ -5,6 +5,8 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
@@ -25,6 +27,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
         private readonly Mock<IDeviceStateActor> deviceStateActor;
         private readonly Mock<IDeviceConnectionActor> deviceConnectionActor;
         private readonly Mock<IDevices> devices;
+        private readonly Mock<IFactory> mockFactory;
         private readonly Mock<IInstance> mockInstance;
         private readonly DeviceTelemetryActor target;
 
@@ -36,6 +39,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
             this.rateLimiting = new Mock<IRateLimiting>();
             this.devices = new Mock<IDevices>();
             this.sendTelemetryLogic = new Mock<SendTelemetry>(this.logger.Object);
+            this.mockFactory = new Mock<IFactory>();
             this.mockInstance = new Mock<IInstance>();
             this.deviceStateActor = new Mock<IDeviceStateActor>();
             this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
@@ -45,7 +49,6 @@ namespace SimulationAgent.Test.DeviceTelemetry
             this.target = new DeviceTelemetryActor(
                 this.logger.Object,
                 this.actorLogger.Object,
-                this.rateLimiting.Object,
                 this.sendTelemetryLogic.Object,
                 this.mockInstance.Object);
         }
@@ -125,7 +128,14 @@ namespace SimulationAgent.Test.DeviceTelemetry
             var message = new DeviceModel.DeviceModelMessage();
             this.deviceConnectionActor.SetupGet(x => x.Connected).Returns(true);
 
-            this.target.Setup(
+            var simulationContext = new SimulationContext(
+                this.devices.Object,
+                this.rateLimiting.Object,
+                this.mockFactory.Object,
+                this.mockInstance.Object);
+
+            this.target.Init(
+                simulationContext,
                 DEVICE_ID,
                 deviceModel,
                 message,

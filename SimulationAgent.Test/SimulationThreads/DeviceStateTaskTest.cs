@@ -63,7 +63,7 @@ namespace SimulationAgent.Test.SimulationThreads
         /*
          * Because the target accepts a collection of IDeviceStateActor type, when we pass
          * this dictionary to the target, we will not be able to reference the mocks later
-         * (because we're passing a collection of typed objects, not the mock). This method
+         * (because we're passing a collection of typed objects, not the mocks). This method
          * will generate two collections: one of mocks and one of objects. The second one will
          * be passed to the target, and later, the first one will be used to validate usage.
          */

@@ -158,7 +158,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             {
                 while (this.running)
                 {
-                    this.SendSolutionHeartbeatAsync();
+                    this.SendSolutionHeartbeat();
 
                     this.log.Debug("Starting simulation agent loop",
                         () => new { SimulationsCount = this.simulationManagers.Count });
@@ -418,7 +418,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private void SendSolutionHeartbeatAsync()
+        private void SendSolutionHeartbeat()
         {
             DateTimeOffset now = DateTimeOffset.UtcNow;
             TimeSpan duration = now - this.lastPolledTime;

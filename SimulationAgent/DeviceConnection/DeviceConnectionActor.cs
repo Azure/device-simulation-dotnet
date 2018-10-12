@@ -345,18 +345,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             switch (e)
             {
                 case ActorEvents.Started:
-                    //if (this.loopSettings.SchedulableFetches <= 0)
-                    //    return;
-                    //this.loopSettings.SchedulableFetches--;
+                    if (this.loopSettings.SchedulableFetches <= 0)
+                        return;
+                    this.loopSettings.SchedulableFetches--;
 
                     this.actorLogger.ActorStarted();
                     this.ScheduleCredentialsSetup();
                     break;
 
                 case ActorEvents.FetchFailed:
-                    //if (this.loopSettings.SchedulableFetches <= 0)
-                    //    return;
-                    //this.loopSettings.SchedulableFetches--;
+                    if (this.loopSettings.SchedulableFetches <= 0)
+                        return;
+                    this.loopSettings.SchedulableFetches--;
 
                     this.failedFetchCount++;
                     this.actorLogger.DeviceFetchFailed();
@@ -364,9 +364,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     break;
 
                 case ActorEvents.DeviceNotFound:
-                    //if (this.loopSettings.SchedulableRegistrations <= 0)
-                    //    return;
-                    //this.loopSettings.SchedulableRegistrations--;
+                    if (this.loopSettings.SchedulableRegistrations <= 0)
+                        return;
+                    this.loopSettings.SchedulableRegistrations--;
 
                     this.actorLogger.DeviceNotFound();
                     this.ScheduleRegistration();
@@ -378,9 +378,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     break;
 
                 case ActorEvents.RegistrationFailed:
-                    //if (this.loopSettings.SchedulableRegistrations <= 0)
-                    //    return;
-                    //this.loopSettings.SchedulableRegistrations--;
+                    if (this.loopSettings.SchedulableRegistrations <= 0)
+                        return;
+                    this.loopSettings.SchedulableRegistrations--;
 
                     this.failedRegistrationsCount++;
                     this.actorLogger.DeviceRegistrationFailed();

@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
@@ -36,40 +35,44 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             this.log = logger;
         }
 
+        /**
+         * Examples:
+         *    threadCount = 3
+         *
+         *    Count = 20000
+         *    chunkSize = 6667
+         *    threadPosition 1:     0,  6667
+         *    threadPosition 2:  6667, 13334
+         *    threadPosition 3: 13334, 20000
+         *
+         *    Count = 11
+         *    chunkSize = 4
+         *    threadPosition 1: 0,  4
+         *    threadPosition 2: 4,  8
+         *    threadPosition 3: 8, 11
+         */
         public async Task RunAsync(
             ConcurrentDictionary<string, IDeviceTelemetryActor> deviceTelemetryActors,
             int threadPosition,
             int threadCount,
             CancellationToken runningToken)
         {
-            /**
-             * Examples:
-             *    threadCount = 3
-             *
-             *    Count = 20000
-             *    chunkSize = 6667
-             *    threadPosition 1:     0,  6667
-             *    threadPosition 2:  6667, 13334
-             *    threadPosition 3: 13334, 20000
-             *
-             *    Count = 11
-             *    chunkSize = 4
-             *    threadPosition 1: 0,  4
-             *    threadPosition 2: 4,  8
-             *    threadPosition 3: 8, 11
-             */
-            int chunkSize = (int) Math.Ceiling(deviceTelemetryActors.Count / (double) threadCount);
-            var firstDevice = chunkSize * (threadPosition - 1);
-            var lastDevice = Math.Min(chunkSize * threadPosition, deviceTelemetryActors.Count);
-
             // Once N devices are attempting to send telemetry, wait until they are done
             var pendingTaskLimit = this.simulationConcurrencyConfig.MaxPendingTelemetry;
             var tasks = new List<Task>();
 
             while (!runningToken.IsCancellationRequested)
             {
+                // Calculate the first and last actor, which define a range of actors that each thread
+                // should *not* send telemetry for. As the number of actors could change at runtime,
+                // as different simulations are started, we'll re-calculate these values on each
+                // time through this loop.
+                int chunkSize = (int) Math.Ceiling(deviceTelemetryActors.Count / (double) threadCount);
+                var firstActor = chunkSize * (threadPosition - 1);
+                var lastActor = Math.Min(chunkSize * threadPosition, deviceTelemetryActors.Count);
+
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                var pos = 0;
+                var index = 0;
                 foreach (var telemetry in deviceTelemetryActors)
                 {
                     // Only send telemetry for devices *other* than the ones in 
@@ -77,12 +80,40 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     // 
                     //    Count = 20000
                     //    chunkSize = 6667
-                    //    threadPosition = 2
                     //
-                    //    threadPosition 1:     0,  6667 <- send
-                    //    threadPosition 2:  6667, 13334 <- skip
-                    //    threadPosition 3: 13334, 20000 <- send
-                    if (!(pos >= firstDevice && pos < lastDevice))
+                    //    threadPosition 1:     0,  6667
+                    //    threadPosition 2:  6667, 13334
+                    //    threadPosition 3: 13334, 20000
+                    //
+                    //    threadPosition == 1
+                    //
+                    //    firstActor   lastActor
+                    //    |            |
+                    //    v            v
+                    //    +------------+-------------------------+
+                    //    | don't send |    send    |    send    | 
+                    //    +------------+-------------------------+
+                    //
+                    //
+                    //    threadPosition == 2
+                    //
+                    //                 firstActor   lastActor
+                    //                 |            |
+                    //                 v            v
+                    //    +------------+-------------------------+
+                    //    |    send    | don't send |    send    | 
+                    //    +------------+-------------------------+
+                    //
+                    //
+                    //    threadPosition == 3
+                    //
+                    //                              firstActor   lastActor
+                    //                              |            |
+                    //                              v            v
+                    //    +------------+-------------------------+
+                    //    | don't send | don't send |    send    | 
+                    //    +------------+-------------------------+
+                    if (!(index >= firstActor && index < lastActor))
                     {
                         tasks.Add(telemetry.Value.RunAsync());
                         if (tasks.Count < pendingTaskLimit) continue;
@@ -91,7 +122,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                         tasks.Clear();
                     }
 
-                    pos++;
+                    index++;
                 }
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
