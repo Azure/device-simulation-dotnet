@@ -26,7 +26,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             this.log = logger;
         }
 
-        public void Setup(IDeviceTelemetryActor context, string deviceId, DeviceModel deviceModel)
+        public void Init(IDeviceTelemetryActor context, string deviceId, DeviceModel deviceModel)
         {
             this.context = context;
             this.deviceId = deviceId;

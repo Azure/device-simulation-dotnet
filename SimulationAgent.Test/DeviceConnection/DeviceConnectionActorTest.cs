@@ -2,6 +2,7 @@
 
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
@@ -31,6 +32,7 @@ namespace SimulationAgent.Test.DeviceConnection
         private readonly Mock<IDeviceStateActor> deviceStateActor;
         private readonly Mock<IStorageAdapterClient> storageAdapterClient;
         private readonly Mock<ConnectionLoopSettings> loopSettings;
+        private readonly Mock<IInstance> mockInstance;
         private readonly DeviceConnectionActor target;
 
         public DeviceConnectionActorTest()
@@ -65,6 +67,7 @@ namespace SimulationAgent.Test.DeviceConnection
             this.deviceStateActor = new Mock<IDeviceStateActor>();
             this.loopSettings = new Mock<ConnectionLoopSettings>(
                 this.rateLimitingConfig.Object);
+            this.mockInstance = new Mock<IInstance>();
 
             this.rateLimitingConfig.Setup(x => x.DeviceMessagesPerSecond).Returns(10);
 
@@ -148,11 +151,12 @@ namespace SimulationAgent.Test.DeviceConnection
 
             this.SetupRateLimitingConfig();
 
-            this.target.Setup(
-                DEVICE_ID,
-                deviceModel,
-                this.deviceStateActor.Object,
-                this.loopSettings.Object);
+            this.target.SetupAsync(
+                    DEVICE_ID,
+                    deviceModel,
+                    this.deviceStateActor.Object,
+                    this.loopSettings.Object)
+                .Wait(Constants.TEST_TIMEOUT);
         }
 
         private void SetupRateLimitingConfig()

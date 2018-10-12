@@ -8,6 +8,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         string AzureSubscriptionId { get; }
         string AzureResourceGroup { get; }
         string AzureIothubName { get; }
+        string AadTenantId { get; }
+        string AadAppId { get; }
+        string AadAppSecret { get; }
+        string AadTokenUrl { get; }
     }
 
     public class DeploymentConfig : IDeploymentConfig
@@ -16,5 +20,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         public string AzureSubscriptionId { get; set; }
         public string AzureResourceGroup { get; set; }
         public string AzureIothubName { get; set; }
+        public string AadTenantId { get; set; }
+        public string AadAppId { get; set; }
+        public string AadAppSecret { get; set; }
+        public string AadTokenUrl { get; set; }
     }
 }

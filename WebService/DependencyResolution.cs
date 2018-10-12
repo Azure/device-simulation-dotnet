@@ -3,7 +3,9 @@
 using System.Reflection;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
@@ -15,6 +17,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTeleme
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Agent = Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Agent;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 {
@@ -56,12 +59,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             var assembly = Assembly.GetEntryAssembly();
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
 
-            // Auto-wire Services.DLL
+            // Autowire Services.DLL
             assembly = typeof(IServicesConfig).GetTypeInfo().Assembly;
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
 
-            // Auto-wire SimulationAgent.DLL
+            // Autowire SimulationAgent.DLL
             assembly = typeof(ISimulationAgent).GetTypeInfo().Assembly;
+            builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
+
+            // Autowire PartitioningAgent.DLL
+            assembly = typeof(IPartitioningAgent).GetTypeInfo().Assembly;
             builder.RegisterAssemblyTypes(assembly).AsImplementedInterfaces();
         }
 
@@ -74,7 +81,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             // More info about configuration at
             // https://docs.microsoft.com/aspnet/core/fundamentals/configuration
             var configurationBuilder = new ConfigurationBuilder();
-            configurationBuilder.AddIniFile("appsettings.ini", optional: true, reloadOnChange: false);
+            configurationBuilder
+                .AddIniFile(ConfigFile.DEFAULT, optional: false, reloadOnChange: false);
+
+            if (ConfigFile.GetDevOnlyConfigFile() != null)
+            {
+                configurationBuilder.AddIniFile(ConfigFile.GetDevOnlyConfigFile(), optional: true, reloadOnChange: true);
+            }
 
             // Parse file and ensure the file is parsed only once
             configuration = configurationBuilder.Build();
@@ -83,7 +96,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         }
 
         /// <summary>
-        /// Setup custom rules overriding autowired ones, for example in cases
+        /// SetupAsync custom rules overriding autowired ones, for example in cases
         /// where an interface has multiple implementations, and cases where
         /// a singleton is preferred to new instances.
         /// </summary>
@@ -98,6 +111,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterInstance(config.ServicesConfig).As<IServicesConfig>().SingleInstance();
             builder.RegisterInstance(config.RateLimitingConfig).As<IRateLimitingConfig>().SingleInstance();
             builder.RegisterInstance(config.DeploymentConfig).As<IDeploymentConfig>().SingleInstance();
+            builder.RegisterInstance(config.SimulationConcurrencyConfig).As<ISimulationConcurrencyConfig>().SingleInstance();
+            builder.RegisterInstance(config.ClusteringConfig).As<IClusteringConfig>().SingleInstance();
 
             // Instantiate only one logger
             var logger = new Logger(Uptime.ProcessId, config.LoggingConfig);
@@ -115,6 +130,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterType<DeviceModels>().As<IDeviceModels>().SingleInstance();
             builder.RegisterType<Services.Devices>().As<IDevices>().SingleInstance();
             builder.RegisterType<RateLimiting>().As<IRateLimiting>().SingleInstance();
+            builder.RegisterType<DiagnosticsLogger>().As<IDiagnosticsLogger>().SingleInstance();
 
             // The simulation runner contains the service counters, which are read and
             // written by multiple parts of the application, so we need to make sure 

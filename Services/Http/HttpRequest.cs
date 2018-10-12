@@ -34,6 +34,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http
 
         IHttpRequest SetContent(StringContent stringContent);
 
+        IHttpRequest SetContent(FormUrlEncodedContent content);
+
         IHttpRequest SetContent<T>(T sourceObject);
 
         IHttpRequest SetContent<T>(T sourceObject, Encoding encoding);
@@ -123,6 +125,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http
         {
             this.requestContent.Content = stringContent;
             this.ContentType = stringContent.Headers.ContentType;
+            return this;
+        }
+
+        public IHttpRequest SetContent(FormUrlEncodedContent content)
+        {
+            this.requestContent.Content = content;
+            this.ContentType = content.Headers.ContentType;
             return this;
         }
 

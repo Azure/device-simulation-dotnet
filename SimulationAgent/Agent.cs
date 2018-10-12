@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
@@ -23,28 +24,37 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     public class Agent : ISimulationAgent
     {
         private const int CHECK_INTERVAL_MSECS = 10000;
+        private const int DIAGNOSTICS_POLLING_FREQUENCY_DAYS = 1;
 
         private readonly ILogger log;
+        private readonly IDiagnosticsLogger logDiagnostics;
         private readonly ISimulations simulations;
         private readonly ISimulationRunner runner;
+        private readonly IRateLimiting rateReporter;
         private readonly IDeviceModels deviceModels;
-        private Services.Models.Simulation simulation;
         private readonly IDevices devices;
+        private DateTimeOffset lastPolledTime;
+        private Simulation simulation;
         private bool running;
 
         public Agent(
             ILogger logger,
+            IDiagnosticsLogger diagnosticsLogger,
             ISimulations simulations,
             ISimulationRunner runner,
+            IRateLimiting rateReporter,
             IDeviceModels deviceModels,
             IDevices devices)
         {
             this.log = logger;
+            this.logDiagnostics = diagnosticsLogger;
             this.simulations = simulations;
             this.runner = runner;
+            this.rateReporter = rateReporter;
             this.deviceModels = deviceModels;
             this.devices = devices;
             this.running = true;
+            this.lastPolledTime = DateTimeOffset.UtcNow;
         }
 
         public async Task RunAsync()
@@ -55,21 +65,38 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             while (this.running)
             {
                 var oldSimulation = this.simulation;
+
+                this.SendSolutionHeartbeatAsync();
+
                 try
                 {
                     this.log.Debug("------ Checking for simulation changes ------");
 
-                    var newSimulation = (await this.simulations.GetListAsync()).FirstOrDefault();
-                    this.log.Debug("Simulation loaded", () => new { newSimulation });
+                    var simulationList = await this.simulations.GetListAsync();
 
-                    // if the simulation is removed from storage & we're running stop simulation.
-                    this.CheckForDeletedSimulation(newSimulation);
+                    // currently we support only 1 running simulation so the result should return only 1 item
+                    var runningSimulation = simulationList.FirstOrDefault(s => s.ShouldBeRunning);
+                    if (runningSimulation == null)
+                    {
+                        this.log.Debug("No simulations found that should be running. Nothing to do.");
+                    }
+
+                    this.log.Debug("Simulation loaded", () => new { runningSimulation });
+
+                    // if the simulation has been removed from storage & we're running, stop the simulation.
+                    var id = this.simulation?.Id;
+                    var prevSimulation = simulationList.FirstOrDefault(s => s.Id == id);
+                    this.CheckForDeletedSimulation(prevSimulation);
+
+                    // if there's a new simulation and it's different from the current one
+                    // stop the current one from running & start the new one if it's enabled
+                    await this.CheckForChangedSimulationAsync(runningSimulation);
 
                     // if there's no simulation running but there's one from storage start it
-                    this.CheckForNewSimulation(newSimulation);
+                    await this.CheckForNewSimulationAsync(runningSimulation);
 
                     // if the current simulation was asked to stop, stop it.
-                    this.CheckForStopOrStartToSimulation();
+                    await this.CheckForStopOrStartToSimulationAsync();
                 }
                 catch (Exception e)
                 {
@@ -77,7 +104,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.simulation = oldSimulation;
                 }
 
-                if (this.simulation != null && this.simulation.ShouldBeRunning())
+                if (this.simulation != null && this.simulation.ShouldBeRunning)
                 {
                     this.log.Debug("------ Current simulation being run ------");
                     foreach (var model in this.simulation.DeviceModels)
@@ -108,7 +135,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     if (this.running)
                     {
                         this.log.Info("Add device to running simulation");
-                        await this.runner.AddDeviceAsync(deviceId, modelId);
+                        await this.runner.AddDeviceAsync(this.simulation.Id, deviceId, modelId);
                     }
                     else
                     {
@@ -137,7 +164,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     if (this.running)
                     {
                         this.log.Info("Deleting devices from running simulation");
-                        await this.runner.DeleteDevicesAsync(ids);
+                        this.runner.DeleteDevices(ids);
                     }
                     else
                     {
@@ -153,17 +180,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private void CheckForDeletedSimulation(Services.Models.Simulation newSimulation)
+        private void CheckForDeletedSimulation(Simulation newSimulation)
         {
             if (newSimulation == null && this.simulation != null)
             {
                 this.runner.Stop();
+
                 this.simulation = null;
-                this.log.Debug("No simulation found in storage...");
+                this.log.Debug("The current simulation is no longer in storage...");
             }
         }
 
-        private void CheckForChangedSimulation(Services.Models.Simulation newSimulation)
+        private async Task CheckForChangedSimulationAsync(Simulation newSimulation)
         {
             if (newSimulation != null && this.simulation != null &&
                 newSimulation.Modified != this.simulation.Modified)
@@ -174,41 +202,62 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                 this.simulation = newSimulation;
 
-                if (this.simulation.ShouldBeRunning())
+                if (this.simulation.ShouldBeRunning)
                 {
                     this.log.Debug("------ Starting simulation ------", () => new { this.simulation });
-                    this.runner.Start(this.simulation);
+                    await this.runner.StartAsync(this.simulation);
                     this.log.Debug("------ Simulation started ------", () => new { this.simulation });
                 }
             }
         }
 
-        private void CheckForNewSimulation(Services.Models.Simulation newSimulation)
+        private void SendSolutionHeartbeatAsync()
+        {
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+            TimeSpan duration = now - this.lastPolledTime;
+
+            // Send heartbeat every 24 hours
+            if (duration.Days >= DIAGNOSTICS_POLLING_FREQUENCY_DAYS)
+            {
+                this.lastPolledTime = now;
+                this.logDiagnostics.LogServiceHeartbeat();
+            }
+        }
+
+        private async Task CheckForNewSimulationAsync(Simulation newSimulation)
         {
             if (newSimulation != null && this.simulation == null)
             {
                 this.simulation = newSimulation;
-                if (this.simulation.ShouldBeRunning())
+                if (this.simulation.ShouldBeRunning)
                 {
                     this.log.Debug("------ Starting new simulation ------", () => new { this.simulation });
-                    this.runner.Start(this.simulation);
+                    this.logDiagnostics.LogServiceStart("Starting new simulation");
+                    await this.runner.StartAsync(this.simulation);
                     this.log.Debug("------ New simulation started ------", () => new { this.simulation });
+                    this.logDiagnostics.LogServiceStart("New simulation started");
                 }
             }
         }
 
-        private void CheckForStopOrStartToSimulation()
+        private async Task CheckForStopOrStartToSimulationAsync()
         {
             // stopped
-            if (this.simulation != null && !this.simulation.ShouldBeRunning())
+            if (this.simulation != null && this.simulation.Enabled && !this.simulation.ShouldBeRunning)
             {
+                this.simulation.Statistics.AverageMessagesPerSecond = this.rateReporter.GetThroughputForMessages();
+                this.simulation.Statistics.TotalMessagesSent = this.runner.TotalMessagesCount;
+
                 this.runner.Stop();
+
+                // Update simulation statistics in storage
+                await this.simulations.UpsertAsync(this.simulation);
             }
 
             // started
-            if (this.simulation != null && this.simulation.ShouldBeRunning())
+            if (this.simulation != null && this.simulation.ShouldBeRunning)
             {
-                this.runner.Start(this.simulation);
+                await this.runner.StartAsync(this.simulation);
             }
         }
 

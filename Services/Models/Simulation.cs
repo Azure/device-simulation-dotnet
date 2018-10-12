@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
@@ -11,50 +10,122 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
     {
         private DateTimeOffset? startTime;
         private DateTimeOffset? endTime;
-        private string iotHubConnectionString;
+        private IList<string> iotHubConnectionStrings;
 
+        // A simulation is "active" if enabled and "scheduled"
+        [JsonIgnore]
+        public bool IsActiveNow
+        {
+            get
+            {
+                var now = DateTimeOffset.UtcNow;
+                var startedInThePast = !this.StartTime.HasValue || this.StartTime.Value.CompareTo(now) <= 0;
+                var endInTheFuture = !this.EndTime.HasValue || this.EndTime.Value.CompareTo(now) > 0;
+                return this.Enabled && startedInThePast && endInTheFuture;
+            }
+        }
+
+        [JsonIgnore]
+        public bool DeviceCreationRequired => this.IsActiveNow && !this.DevicesCreationComplete;
+
+        [JsonIgnore]
+        public bool PartitioningRequired => this.IsActiveNow && !this.PartitioningComplete;
+
+        // A simulation should be running if it is active and devices have been created and partitioned
+        [JsonIgnore]
+        public bool ShouldBeRunning => this.IsActiveNow
+                                       && this.PartitioningComplete
+                                       && this.DevicesCreationComplete;
+
+        // When Simulation is written to storage, Id and Etag are not serialized as part of body
+        // These are instead written in dedicated columns (key and eTag)
         [JsonIgnore]
         public string ETag { get; set; }
 
         [JsonIgnore]
         public string Id { get; set; }
 
+        [JsonProperty(Order = 10)]
         public bool Enabled { get; set; }
+
+        [JsonProperty(Order = 11)]
+        public bool DevicesCreationStarted { get; set; }
+
+        [JsonProperty(Order = 12)]
+        public bool DevicesCreationComplete { get; set; }
+
+        [JsonProperty(Order = 1000)]
+        public string DeviceCreationJobId { get; set; }
+
+        [JsonProperty(Order = 20)]
+        public string Name { get; set; }
+
+        [JsonProperty(Order = 30)]
+        public string Description { get; set; }
+
+        [JsonProperty(Order = 13)]
+        public bool PartitioningComplete { get; set; }
+
+        [JsonProperty(Order = 50)]
         public IList<DeviceModelRef> DeviceModels { get; set; }
-        public DateTimeOffset Created { get; set; }
-        public DateTimeOffset Modified { get; set; }
+
+        [JsonProperty(Order = 60)]
+        public StatisticsRef Statistics { get; set; }
+
+        [JsonProperty(Order = 70)]
         public IList<CustomDeviceRef> CustomDevices { get; set; }
 
+        [JsonProperty(Order = 80)]
+        public IList<string> IotHubConnectionStrings
+        {
+            get => this.iotHubConnectionStrings;
+            set => this.iotHubConnectionStrings = value ?? new List<string>();
+        }
+
+        // StartTime is the time when Simulation was started
+        [JsonProperty(Order = 90)]
         public DateTimeOffset? StartTime
         {
             get => this.startTime;
             set => this.startTime = value ?? DateTimeOffset.MinValue;
         }
 
+        // EndTime is the time when Simulation ended after running for scheduled duration
+        [JsonProperty(Order = 100)]
         public DateTimeOffset? EndTime
         {
             get => this.endTime;
             set => this.endTime = value ?? DateTimeOffset.MaxValue;
         }
 
-        public string IotHubConnectionString
-        {
-            get => this.iotHubConnectionString;
-            set => this.iotHubConnectionString = value ?? ServicesConfig.USE_DEFAULT_IOTHUB;
-        }
+        // StoppedTime is the time when Simulation was explicitly stopped by user
+        [JsonProperty(Order = 100)]
+        public DateTimeOffset? StoppedTime { get; set; }
+
+        [JsonProperty(Order = 120)]
+        public DateTimeOffset Created { get; set; }
+
+        [JsonProperty(Order = 130)]
+        public DateTimeOffset Modified { get; set; }
 
         public Simulation()
         {
             // When unspecified, a simulation is enabled
             this.Enabled = true;
 
+            // By default, a new simulation requires partitioning
+            this.PartitioningComplete = false;
+
+            // by default, use environment variable
+            this.IotHubConnectionStrings = new List<string>();
+
+            // By default, run forever
             this.StartTime = DateTimeOffset.MinValue;
             this.EndTime = DateTimeOffset.MaxValue;
 
-            // by default, use environment variable
-            this.IotHubConnectionString = ServicesConfig.USE_DEFAULT_IOTHUB;
             this.DeviceModels = new List<DeviceModelRef>();
             this.CustomDevices = new List<CustomDeviceRef>();
+            this.Statistics = new StatisticsRef();
         }
 
         public class DeviceModelRef
@@ -68,6 +139,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         {
             public string DeviceId { get; set; }
             public DeviceModelRef DeviceModel { get; set; }
+        }
+
+        public class StatisticsRef
+        {
+            public long TotalMessagesSent { get; set; }
+            public double AverageMessagesPerSecond { get; set; }
         }
 
         public class DeviceModelOverride
@@ -176,15 +253,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
                 this.Format = null;
                 this.Fields = null;
             }
-        }
-
-        public bool ShouldBeRunning()
-        {
-            var now = DateTimeOffset.UtcNow;
-
-            return this.Enabled
-                   && (!this.StartTime.HasValue || this.StartTime.Value.CompareTo(now) <= 0)
-                   && (!this.EndTime.HasValue || this.EndTime.Value.CompareTo(now) > 0);
         }
     }
 }

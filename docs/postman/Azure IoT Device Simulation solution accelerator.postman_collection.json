@@ -1,0 +1,370 @@
+{
+	"info": {
+		"_postman_id": "19d9f4c9-abc1-4c04-b96f-399fa7dd101f",
+		"name": "Azure IoT Device Simulation solution accelerator",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get current simulation",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "b9995e40-f3d4-46ef-a59c-faa55762e969",
+						"type": "text/javascript",
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"postman.setEnvironmentVariable(\"ETag\", jsonData.ETag.replace(/\"/g, \"\\\\\\\"\"));"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"Etag\": \"8602d62c271760\",\r\n  \"Enabled\": false\r\n}"
+				},
+				"url": {
+					"raw": "http://127.0.0.1:9003/v1/simulations/1",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "9003",
+					"path": [
+						"v1",
+						"simulations",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create default simulation",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "133696de-be66-4cd2-bbc5-0c2740770b8d",
+						"type": "text/javascript",
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"postman.setEnvironmentVariable(\"ETag\", jsonData.ETag.replace(/\"/g, \"\\\\\\\"\"));"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json; charset=utf-8"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://127.0.0.1:9003/v1/simulations?template=default",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "9003",
+					"path": [
+						"v1",
+						"simulations"
+					],
+					"query": [
+						{
+							"key": "template",
+							"value": "default"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get status",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://127.0.0.1:9003/v1/status",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "9003",
+					"path": [
+						"v1",
+						"status"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get list of device models",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://127.0.0.1:9003/v1/devicemodels",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "9003",
+					"path": [
+						"v1",
+						"devicemodels"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Start simulation",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "5439883d-103c-4aa0-8973-f09a10eb2bd1",
+						"type": "text/javascript",
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"postman.setEnvironmentVariable(\"ETag\", jsonData.ETag.replace(/\"/g, \"\\\\\\\"\"));"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"Etag\": \"{{ETag}}\",\r\n  \"Enabled\": true\r\n}"
+				},
+				"url": {
+					"raw": "http://127.0.0.1:9003/v1/simulations/1",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "9003",
+					"path": [
+						"v1",
+						"simulations",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Stop simulation",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "01cfbca0-fb42-43b9-a1b9-28c347f40dd8",
+						"type": "text/javascript",
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"postman.setEnvironmentVariable(\"ETag\", jsonData.ETag.replace(/\"/g, \"\\\\\\\"\"));"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json; charset=utf-8"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"Etag\": \"{{ETag}}\",\r\n  \"Enabled\": false\r\n}"
+				},
+				"url": {
+					"raw": "http://127.0.0.1:9003/v1/simulations/1",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "9003",
+					"path": [
+						"v1",
+						"simulations",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create lightbulb simulation",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "de6d0728-92ba-422f-adbc-f26faca67a0f",
+						"type": "text/javascript",
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"postman.setEnvironmentVariable(\"ETag\", jsonData.ETag.replace(/\"/g, \"\\\\\\\"\"));"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json; charset=utf-8"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"ETag\": \"{{ETag}}\",\r\n\t\"Name\": \"Lightbulb Test Simulation\",\r\n\t\"Description\": \"\",\r\n\t\"Enabled\": true,\r\n    \"IoTHubs\": [\r\n        {\r\n            \"ConnectionString\": \"default\"\r\n        }\r\n    ],\r\n    \"StartTime\": \"NOW\",\r\n    \"DeviceModels\": [\r\n\t\t{\r\n\t\t\t\"Id\": \"lightbulb-01\",\r\n\t\t\t\"Count\": 2\r\n\t\t}\r\n\t]\r\n}"
+				},
+				"url": {
+					"raw": "http://127.0.0.1:9003/v1/simulations/1",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "9003",
+					"path": [
+						"v1",
+						"simulations",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create modified chiller simulation",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "de6d0728-92ba-422f-adbc-f26faca67a0f",
+						"type": "text/javascript",
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"postman.setEnvironmentVariable(\"ETag\", jsonData.ETag.replace(/\"/g, \"\\\\\\\"\"));"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json; charset=utf-8"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"ETag\": \"{{ETag}}\",\r\n\t\"Name\": \"Modified Chiller Test Simulation\",\r\n\t\"Description\": \"\",\r\n\t\"Enabled\": true,\r\n    \"IoTHubs\": [\r\n        {\r\n            \"ConnectionString\": \"default\"\r\n        }\r\n    ],\r\n    \"StartTime\": \"NOW\",\r\n    \"DeviceModels\": [\r\n\t\t{\r\n\t\t  \"Id\": \"chiller-01\",\r\n\t\t  \"Count\": 4\r\n\t\t}\r\n\t]\r\n}"
+				},
+				"url": {
+					"raw": "http://127.0.0.1:9003/v1/simulations/1",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "9003",
+					"path": [
+						"v1",
+						"simulations",
+						"1"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "ae772bbd-29f7-4685-931d-210de7c37ae6",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "a1d8c733-fca5-4c4b-ad2a-753cd2564057",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

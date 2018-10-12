@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Newtonsoft.Json;
@@ -21,7 +20,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
             this.ModelId = null;
         }
 
-        public async Task ValidateInputRequest(ILogger log)
+        public void ValidateInputRequest(ILogger log)
         {
             const string INVALID_DEVICE_NAME = "Device name is invalid";
             const string INVALID_DEVICE_MODEL_ID = "Device model id is invalid";

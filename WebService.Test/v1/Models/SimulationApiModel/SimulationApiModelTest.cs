@@ -3,9 +3,12 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel;
 using Moq;
@@ -18,11 +21,19 @@ namespace WebService.Test.v1.Models.SimulationApiModel
     {
         private readonly Mock<ILogger> logger;
         private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
+        private readonly Mock<IServicesConfig> servicesConfig;
+        private readonly Mock<IDeploymentConfig> deploymentConfig;
+        private readonly Mock<ISimulationRunner> simulationRunner;
+        private readonly Mock<IRateLimiting> rateReporter;
 
         public SimulationApiModelTest()
         {
             this.logger = new Mock<ILogger>();
             this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
+            this.servicesConfig = new Mock<IServicesConfig>();
+            this.deploymentConfig = new Mock<IDeploymentConfig>();
+            this.simulationRunner = new Mock<ISimulationRunner>();
+            this.rateReporter = new Mock<IRateLimiting>();
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -32,7 +43,9 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             var simulation = this.GetSimulationModel();
 
             // Act
-            var result = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel.FromServiceModel(simulation);
+            var result = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel.FromServiceModelAsync(
+                    simulation, this.servicesConfig.Object, this.deploymentConfig.Object, this.connectionStringManager.Object, this.simulationRunner.Object, this.rateReporter.Object)
+                .CompleteOrTimeout().Result;
 
             // Assert
             Assert.IsType<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel>(result);
@@ -46,10 +59,39 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             var simulationApiModel = this.GetSimulationApiModel();
 
             // Act
-            var result = simulationApiModel.ToServiceModel(simulationApiModel.Id);
+            var result = simulationApiModel.ToServiceModel(null, simulationApiModel.Id);
 
             // Assert
             Assert.IsType<Simulation>(result);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItKeepsInternalReadonlyProperties()
+        {
+            // Arrange
+            var simulationApiModel = this.GetSimulationApiModel();
+
+            var existingSimulation1 = new Simulation
+            {
+                PartitioningComplete = true,
+                StoppedTime = DateTimeOffset.UtcNow.AddHours(-10)
+            };
+
+            var existingSimulation2 = new Simulation
+            {
+                PartitioningComplete = false,
+                StoppedTime = DateTimeOffset.UtcNow.AddHours(-20)
+            };
+
+            // Act
+            var result1 = simulationApiModel.ToServiceModel(existingSimulation1, simulationApiModel.Id);
+            var result2 = simulationApiModel.ToServiceModel(existingSimulation2, simulationApiModel.Id);
+
+            // Assert
+            Assert.True(result1.PartitioningComplete);
+            Assert.False(result2.PartitioningComplete);
+            Assert.Equal(existingSimulation1.StoppedTime, result1.StoppedTime);
+            Assert.Equal(existingSimulation2.StoppedTime, result2.StoppedTime);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -60,7 +102,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             this.SetupConnectionStringManager();
 
             // Act
-            var task = Record.ExceptionAsync(async () => await simulationApiModel.ValidateInputRequest(this.logger.Object, this.connectionStringManager.Object));
+            var task = Record.ExceptionAsync(async () => await simulationApiModel.ValidateInputRequestAsync(this.logger.Object, this.connectionStringManager.Object));
 
             // Assert
             Assert.Null(task.Exception);
@@ -81,7 +123,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
 
             // Assert
             Assert.ThrowsAsync<BadRequestException>(
-                    async () => await simulationApiModel.ValidateInputRequest(this.logger.Object, this.connectionStringManager.Object))
+                    async () => await simulationApiModel.ValidateInputRequestAsync(this.logger.Object, this.connectionStringManager.Object))
                 .Wait(Constants.TEST_TIMEOUT);
         }
 
@@ -100,7 +142,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
 
             // Assert
             Assert.ThrowsAsync<BadRequestException>(
-                    async () => await simulationApiModel.ValidateInputRequest(this.logger.Object, this.connectionStringManager.Object))
+                    async () => await simulationApiModel.ValidateInputRequestAsync(this.logger.Object, this.connectionStringManager.Object))
                 .Wait(Constants.TEST_TIMEOUT);
         }
 
@@ -120,7 +162,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
 
             // Assert
             Assert.ThrowsAsync<BadRequestException>(
-                    async () => await simulationApiModel.ValidateInputRequest(this.logger.Object, this.connectionStringManager.Object))
+                    async () => await simulationApiModel.ValidateInputRequestAsync(this.logger.Object, this.connectionStringManager.Object))
                 .Wait(Constants.TEST_TIMEOUT);
         }
 
@@ -154,7 +196,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
                         Count = 1
                     }
                 },
-                IotHub = new SimulationIotHub("HostName=[hubname];SharedAccessKeyName=[iothubowner];SharedAccessKey=[valid key]")
+                IotHubs = new List<SimulationIotHub> { new SimulationIotHub("HostName=[hubname];SharedAccessKeyName=[iothubowner];SharedAccessKey=[valid key]") }
             };
 
             return simulationApiModel;
