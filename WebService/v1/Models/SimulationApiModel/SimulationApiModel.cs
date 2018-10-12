@@ -38,9 +38,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "Enabled")]
         public bool? Enabled { get; set; }
 
+        [JsonProperty(PropertyName = "DevicesCleanUpRequiredByUser")]
+        public bool? DevicesCleanUpRequiredByUser { get; set; }
+
         // Note: read-only property, used only to report the simulation status
         [JsonProperty(PropertyName = "Running")]
         public bool? Running { get; set; }
+
+        // Note: read-only property, used only to report the simulation status
+        [JsonProperty(PropertyName = "ActiveNow")]
+        public bool? ActiveNow { get; set; }
 
         [JsonProperty(PropertyName = "IoTHubs")]
         public IList<SimulationIotHub> IotHubs { get; set; }
@@ -82,6 +89,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             // When unspecified, a simulation is enabled
             this.Enabled = true;
             this.Running = false;
+            this.DevicesCleanUpRequiredByUser = false;
+            this.ActiveNow = false;
             this.IotHubs = new List<SimulationIotHub>();
             this.StartTime = null;
             this.EndTime = null;
@@ -121,6 +130,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 result.Enabled = this.Enabled.Value;
             }
 
+            // Overwrite the value only if the request included the field, i.e. don't
+            // delete all devices if the user didn't explicitly ask to.
+            if (this.DevicesCleanUpRequiredByUser.HasValue)
+            {
+                result.DevicesCleanUpRequiredByUser = this.DevicesCleanUpRequiredByUser.Value;
+            }
+
             foreach (var hub in this.IotHubs)
             {
                 var connString = SimulationIotHub.ToServiceModel(hub);
@@ -153,6 +169,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Description = value.Description,
                 Enabled = value.Enabled,
                 Running = value.ShouldBeRunning,
+                ActiveNow = value.IsActiveNow,
+                DevicesCleanUpRequiredByUser = value.DevicesCleanUpRequiredByUser,
                 StartTime = value.StartTime.ToString(),
                 EndTime = value.EndTime.ToString(),
                 StoppedTime = value.StoppedTime.ToString(),
@@ -261,21 +279,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             ISimulationRunner simulationRunner,
             IRateLimiting rateReporter)
         {
-            var isRunning = this.Running == true;
-
             foreach (var iotHub in this.IotHubs)
             {
                 // Preprovisioned IoT hub status
                 var isHubPreprovisioned = this.IsHubConnectionStringConfigured(servicesConfig);
 
-                if (isHubPreprovisioned && isRunning)
+                if (isHubPreprovisioned && this.Running.Value)
                 {
                     iotHub.PreprovisionedIoTHubInUse = await this.IsPreprovisionedIoTHubInUseAsync(servicesConfig, connectionStringManager);
                     iotHub.PreprovisionedIoTHubMetricsUrl = await this.GetIoTHubMetricsUrlAsync(servicesConfig, deploymentConfig, connectionStringManager);
                 }
             }
 
-            if (isRunning)
+            if (this.Running.Value)
             {
                 // Average messages per second frequency in the last minutes
                 this.Statistics.AverageMessagesPerSecond = rateReporter.GetThroughputForMessages();
