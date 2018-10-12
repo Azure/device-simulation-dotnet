@@ -50,7 +50,8 @@ namespace SimulationAgent.Test.DeviceConnection
         {
             // Arrange
             this.SetupDeviceConnectionActor();
-            this.target.Setup(this.deviceConnectionActor.Object, DEVICE_ID, this.deviceModel);
+            this.target.SetupAsync(this.deviceConnectionActor.Object, DEVICE_ID, this.deviceModel)
+                .Wait(Constants.TEST_TIMEOUT);
             
             // Act
             await this.target.RunAsync();
@@ -65,7 +66,8 @@ namespace SimulationAgent.Test.DeviceConnection
         {
             // Arrange
             this.SetupDeviceConnectionActor();
-            this.target.Setup(this.deviceConnectionActor.Object, DEVICE_ID, this.deviceModel);
+            this.target.SetupAsync(this.deviceConnectionActor.Object, DEVICE_ID, this.deviceModel)
+                .Wait(Constants.TEST_TIMEOUT);
             this.devices.Setup(x => x.DeleteAsync(It.IsAny<string>())).Throws<Exception>();
 
             // Act
@@ -77,11 +79,12 @@ namespace SimulationAgent.Test.DeviceConnection
 
         private void SetupDeviceConnectionActor()
         {
-            this.deviceConnectionActor.Object.Setup(
-                DEVICE_ID,
-                this.deviceModel,
-                this.deviceStateActor.Object,
-                this.loopSettings.Object);
+            this.deviceConnectionActor.Object.SetupAsync(
+                    DEVICE_ID,
+                    this.deviceModel,
+                    this.deviceStateActor.Object,
+                    this.loopSettings.Object)
+                .Wait(Constants.TEST_TIMEOUT);
         }
     }
 }

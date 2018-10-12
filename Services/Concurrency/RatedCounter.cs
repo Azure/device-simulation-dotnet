@@ -50,9 +50,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         // Milliseconds in the time unit (e.g. 1 minute, 1 second, etc.)
         private readonly double timeUnitLength;
 
+        // Counter rate
+        private readonly int rate;
+
         // The max frequency to enforce, e.g. the maximum number
         // of events allowed within a minute, a second, etc.
-        private readonly int eventsPerTimeUnit;
+        private int eventsPerTimeUnit;
 
         // A description used for diagnostics logs
         private readonly string name;
@@ -82,13 +85,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 throw new InvalidConfigurationException(msg);
             }
 
+            this.rate = rate;
             this.name = name;
-            this.eventsPerTimeUnit = rate;
+            this.eventsPerTimeUnit = this.rate;
             this.timeUnitLength = timeUnitLength;
 
             this.timestamps = new Queue<long>();
 
-            this.log.Debug("New counter", () => new { name, rate, timeUnitLength });
+            this.log.Debug("New counter", () => new { name, this.rate, timeUnitLength });
         }
 
         public long GetPause()
@@ -141,9 +145,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 }
             }
 
-            // The caller is send too many events, if this happens you
+            // The caller is sending too many events. If this happens, you
             // should consider redesigning the simulation logic to run
-            // slower, rather than relying purely on the counter
+            // slower, rather than relying purely on the counter.
             if (pauseMsecs > 60000)
             {
                 this.log.Debug("Pausing for more than a minute",
@@ -205,6 +209,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             {
                 this.timestamps.Clear();
             }
+        }
+
+        public void ChangeConcurrencyFactor(int factor)
+        {
+            factor = Math.Max(1, factor);
+            this.eventsPerTimeUnit = Convert.ToInt32(Math.Round(this.rate / (double) factor));
         }
 
         private void LogThroughput()

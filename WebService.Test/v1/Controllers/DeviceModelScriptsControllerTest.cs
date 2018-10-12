@@ -176,6 +176,9 @@ namespace WebService.Test.v1.Controllers
         {
             // Arrange
             var fileMock = new Mock<IFormFile>();
+            const string FILE_NAME = "test.docx";
+
+            fileMock.Setup(x => x.FileName).Returns(FILE_NAME);
 
             // Act & Assert
             Assert.Throws<BadRequestException>(() =>  this.target.Validate(fileMock.Object));
@@ -184,7 +187,7 @@ namespace WebService.Test.v1.Controllers
         private IFormFile SetupFileMock()
         {
             var fileMock = new Mock<IFormFile>();
-            const string CONTENT_TYPE = "application/javascript";
+            const string CONTENT_TYPE = "text/javascript";
             const string CONTENT = "awesome javascript";
             const string FILENAME = "test.js";
             var ms = new MemoryStream(Encoding.UTF8.GetBytes(CONTENT));

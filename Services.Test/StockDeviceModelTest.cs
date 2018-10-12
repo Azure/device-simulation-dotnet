@@ -1,15 +1,14 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System.IO;
+using System.Linq;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Moq;
 using Services.Test.helpers;
-using System;
-using System.IO;
-using System.Linq;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Xunit;
 
 namespace Services.Test
@@ -17,6 +16,7 @@ namespace Services.Test
     public class StockDeviceModelTest
     {
         private readonly Mock<ILogger> logger;
+        private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
         private readonly Mock<IServicesConfig> config;
         private readonly StockDeviceModels target;
 
@@ -24,10 +24,12 @@ namespace Services.Test
         {
             this.logger = new Mock<ILogger>();
             this.config = new Mock<IServicesConfig>();
+            this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
 
             this.target = new StockDeviceModels(
                 this.config.Object,
-                this.logger.Object);
+                this.logger.Object,
+                this.diagnosticsLogger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -36,7 +38,7 @@ namespace Services.Test
             // Arrange
             this.config.Setup(x => x.DeviceModelsFolder).Returns("./data/devicemodels/");
             // Note, based on current setup, simulation service has 10 stock models available.
-            const int STOCK_MODEL_COUNT = 11;
+            const int STOCK_MODEL_COUNT = 13;
 
             // Act
             var result = this.target.GetList();

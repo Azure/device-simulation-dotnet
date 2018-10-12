@@ -53,7 +53,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.SetupPropertiesActorProperties();
             this.SetupPropertiesActorStateOffline();
             this.SetupPropertiesChangedToTrue();
-            this.target.Setup(this.devicePropertiesActor.Object, DEVICE_ID);
+            this.target.Init(this.devicePropertiesActor.Object, DEVICE_ID);
 
             // Act
             this.target.RunAsync().Wait(Constants.TEST_TIMEOUT);
@@ -71,7 +71,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.SetupPropertiesActorStateOnline();
             this.SetupPropertiesChangedToTrue();
             this.SetupClient();
-            this.target.Setup(this.devicePropertiesActor.Object, DEVICE_ID);
+            this.target.Init(this.devicePropertiesActor.Object, DEVICE_ID);
 
             // Act
             this.target.RunAsync().Wait(Constants.TEST_TIMEOUT);

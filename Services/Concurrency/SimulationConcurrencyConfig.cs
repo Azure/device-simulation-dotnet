@@ -4,7 +4,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
-    public interface IConcurrencyConfig
+    public interface ISimulationConcurrencyConfig
     {
         int TelemetryThreads { get; }
         int MaxPendingConnections { get; }
@@ -14,9 +14,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         int MinDeviceConnectionLoopDuration { get; }
         int MinDeviceTelemetryLoopDuration { get; }
         int MinDevicePropertiesLoopDuration { get; }
+        int MaxPendingTasks { get; }
     }
 
-    public class ConcurrencyConfig : IConcurrencyConfig
+    public class SimulationConcurrencyConfig : ISimulationConcurrencyConfig
     {
         private const int DEFAULT_TELEMETRY_THREADS = 4;
         private const int DEFAULT_MAX_PENDING_CONNECTIONS = 200;
@@ -26,6 +27,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         private const int DEFAULT_MIN_DEVICE_CONNECTION_LOOP_DURATION = 1000;
         private const int DEFAULT_MIN_DEVICE_TELEMETRY_LOOP_DURATION = 500;
         private const int DEFAULT_MIN_DEVICE_PROPERTIES_LOOP_DURATION = 2000;
+        private const int DEFAULT_MAX_PENDING_TASKS = 25;
 
         private const int MAX_TELEMETRY_THREADS = 20;
         private const int MAX_MAX_PENDING_CONNECTIONS = 1000;
@@ -41,8 +43,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         private int minDeviceConnectionLoopDuration;
         private int minDeviceTelemetryLoopDuration;
         private int minDevicePropertiesLoopDuration;
+        private int maxPendingTasks;
 
-        public ConcurrencyConfig()
+        public SimulationConcurrencyConfig()
         {
             // Initialize object with default values
             this.TelemetryThreads = DEFAULT_TELEMETRY_THREADS;
@@ -53,6 +56,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             this.MinDeviceConnectionLoopDuration = DEFAULT_MIN_DEVICE_CONNECTION_LOOP_DURATION;
             this.MinDeviceTelemetryLoopDuration = DEFAULT_MIN_DEVICE_TELEMETRY_LOOP_DURATION;
             this.MinDevicePropertiesLoopDuration = DEFAULT_MIN_DEVICE_PROPERTIES_LOOP_DURATION;
+            this.MaxPendingTasks = DEFAULT_MAX_PENDING_TASKS;
         }
 
         /// <summary>
@@ -140,7 +144,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         }
 
         /// <summary>
-        /// # When simulating behavior for all the devices in a thread, slow down if the lopp through
+        /// # When simulating behavior for all the devices in a thread, slow down if the loop through
         /// all the devices takes less than N msecs. This is also the minimum time between two
         /// state changes for the same device.
         /// </summary>
@@ -161,7 +165,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         }
 
         /// <summary>
-        /// When connecting the devices, slow down if the lopp through all the devices takes less
+        /// When connecting the devices, slow down if the loop through all the devices takes less
         /// than N msecs.
         /// </summary>
         public int MinDeviceConnectionLoopDuration
@@ -181,7 +185,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         }
 
         /// <summary>
-        /// When sending telemetry for all the devices in a thread, slow down if the lopp through
+        /// When sending telemetry for all the devices in a thread, slow down if the loop through
         /// all the devices takes less than N msecs. This is also the minimum time between two
         /// messages from the same device.
         /// </summary>
@@ -202,7 +206,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         }
 
         /// <summary>
-        /// When writing device twins for all the devices in a thread, slow down if the lopp through
+        /// When writing device twins for all the devices in a thread, slow down if the loop through
         /// all the devices takes less than N msecs.
         /// </summary>
         public int MinDevicePropertiesLoopDuration
@@ -219,6 +223,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
                 this.minDevicePropertiesLoopDuration = value;
             }
+        }
+
+        /// <summary>
+        /// The maximum number of pending tasks on a thread.
+        /// </summary>
+        public int MaxPendingTasks
+        {
+            get => this.maxPendingTasks;
+            set => this.maxPendingTasks = value;
         }
     }
 }

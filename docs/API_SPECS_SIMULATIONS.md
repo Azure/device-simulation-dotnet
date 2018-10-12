@@ -8,9 +8,8 @@ The service supports only one simulation, with ID "1".
 ### Creation with POST
 
 When invoking the API using the POST HTTP method, the service will always
-attempt to create a new simulation. Since the service allows
-to create only one simulation, retrying the request will result in errors
-after the first request has been successfully completed.
+attempt to create a new simulation. The service allows
+to create multiple simulation but there can only be one running simulation.
 
 ```
 POST /v1/simulations
@@ -156,13 +155,16 @@ To switch back to the default Azure IoT Hub stored in the configuration file,
 use the value "default" as the connection string.
 
 ```
-PUT /v1/simulations/1
+PUT /v1/simulations/<id>
 
 {
+  "Name": <name>,
   "Enabled": <true|false>,
-  "IotHub": {
+  "IotHub": [
+    {
       "ConnectionString": "<valid iothub connection string | default>"
-  }
+    }
+  ]
   "DeviceModels": [
     {
       "Id": "<model ID>",
@@ -205,6 +207,8 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
+  "Name": "Sample Simulation",
+  "Description": "This is a sample simulation",
   "Enabled": true,
   "StartTime": "NOW",
   "EndTime": "NOW+P7D",
@@ -229,6 +233,7 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
+  "Name": "Sample Simulation",
   "Enabled": true,
   "DeviceModels": [
     {
@@ -256,6 +261,7 @@ Content-Type: application/json; charset=utf-8
 {
   "ETag": "cec0722b205740",
   "Id": "1",
+  "Name": "Sample Simulation",
   "Enabled": true,
   "DeviceModels": [
     {
@@ -452,7 +458,7 @@ Content-Type: application/json; charset=utf-8
 }
 ```
 
-## Get details of the running simulation, including device models
+## Get details of the simulation, including device models and statistics
 
 Request:
 ```
@@ -466,34 +472,63 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-  "ETag": "cec0722b205740",
+  "ETag": "969ee1fb277640",
   "Id": "1",
-  "Enabled": true,
-  "StartTime": "2019-02-03T14:00:00",
-  "EndTime": "2019-02-04T00:00:00",
-  "DeviceModels": [
-    {
-      "Id": "truck-01",
-      "Count": 3
-    },
-    {
-      "Id": "truck-02",
-      "Count": 1
-    },
-    {
-      "Id": "elevator-01",
-      "Count": 10
-    }
+  "Name": "Sample Simulation",
+  "Description": "This is a sample simulation",
+  "Enabled": false,
+  "Running": false,
+  "IoTHubs": [
+      {
+          "ConnectionString": "default",
+          "PreprovisionedIoTHubInUse": false,
+          "PreprovisionedIoTHubMetricsUrl": "https://portal.azure.com/..."
+      }
   ],
+  "StartTime": "2018-08-31T00:30:00+00:00",
+  "EndTime": "2018-09-01T00:40:00+00:00",
+  "StoppedTime": "2018-08-31T00:35:00+00:00",
+  "DeviceModels": [
+      {
+          "Id": "truck-02",
+          "Count": 2
+      },
+      {
+          "Id": "elevator-02",
+          "Count": 4
+      }
+  ],
+  "Statistics": {
+      "TotalMessagesSent": 60,
+      "AverageMessagesPerSecond": 6.43,
+      "FailedMessagesCount": 0,
+      "ActiveDevicesCount": 0,
+      "FailedDeviceConnectionsCount": 0,
+      "FailedDeviceTwinUpdatesCount": 0,
+      "SimulationErrorsCount": 0
+  },
   "$metadata": {
-    "$type": "Simulation;1",
-    "$uri": "/v1/simulations/1",
-    "$version": "1",
-    "$created": "2017-05-31T00:47:18+00:00",
-    "$modified": "2017-05-31T00:47:18+00:00"
+      "$type": "Simulation;1",
+      "$uri": "/v1/simulations/1",
+      "$created": "2018-08-31T00:30:00+00:00",
+      "$modified": "2018-08-31T00:35:00+00:00"
   }
 }
 ```
+
+There are some read-only properties in the api response. 
+* `Running` is a calculated property, reporting whether the simulation is
+  currently running.
+* `StoppedTime` is the time when the simulation was manually
+  stopped before it's scheduled `EndTime`. 
+* `PreprovisionedIoTHubInUse`: whether the simulation ran or is running
+  using the Azure IoT Hub created during the solution deployment.
+* 'PreprovisionedIoTHubMetricsUrl': the url to navigate to the IoT Hub
+  metrics page. 
+* `Statistics` is a set of read only properties providing counters
+  at a given time. When the simulation is stopped, the current values
+  for `TotalMessagesSent` and `AverageMessagesPerSecond` are retrieved from
+  storage. 
 
 ## Start simulation
 
@@ -651,6 +686,57 @@ Content-Type: application/json; charset=utf-8
     "truck-01.0",
     "truck-01.1",
     ...
+  ]
+}
+```
+
+## Get IotHub metrics for a simulation
+
+Get IotHub metrics from https://management.azure.com.
+
+More details: 
+1) https://docs.microsoft.com/en-us/azure/monitoring-and-diagnostics/monitoring-rest-api-walkthrough
+2) https://docs.microsoft.com/en-us/rest/api/monitor/metrics/list
+
+Request:
+```
+POST /v1/simulations/{id}/metrics/iothub!search
+Content-Type: application/json; charset=utf-8
+```
+optional body.
+```json
+{
+  "requests": [
+  	{
+	  "httpMethod": "GET",
+	  "relativeUrl":"/subscriptions/{subscription_id}/resourceGroups/{resourceGroup}/providers/Microsoft.Devices/IotHubs/{iothub_name}/providers/Microsoft.Insights/metrics?api-version=2016-06-01&$filter={filters}"
+	}
+  ]
+}
+```
+
+Response:
+```
+200 OK
+Content-Type: application/JSON
+```json
+{
+  "responses": [
+    {
+	  "content": {
+	    "value": [
+		  {
+		  	"data": [
+			  {
+			  	"timeStamp": "2018-09-20T17:50:00Z",
+				"total": 0
+			  },
+			  ...
+			]
+		  }
+		]
+	  }
+	}
   ]
 }
 ```

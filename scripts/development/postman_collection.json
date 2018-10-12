@@ -1,0 +1,89 @@
+{
+	"info": {
+		"_postman_id": "4a75fbb6-cc7c-46a8-83d1-25f86dbd18db",
+		"name": "Azure IoT Simulation",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Service status",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:9003/v1/status",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "9003",
+					"path": [
+						"v1",
+						"status"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add device to simulation",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:9003/v1/simulations/1/Devices!create",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "9003",
+					"path": [
+						"v1",
+						"simulations",
+						"1",
+						"Devices!create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch simulation details",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:9003/v1/simulations/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "9003",
+					"path": [
+						"v1",
+						"simulations",
+						"1"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

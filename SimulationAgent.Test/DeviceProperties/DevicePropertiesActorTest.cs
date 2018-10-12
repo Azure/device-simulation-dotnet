@@ -3,6 +3,7 @@
 using System;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
@@ -32,6 +33,7 @@ namespace SimulationAgent.Test.DeviceProperties
         private readonly Mock<IDeviceConnectionActor> deviceConnectionActor;
         private readonly Mock<IDeviceStateActor> deviceStateActor;
         private readonly Mock<PropertiesLoopSettings> loopSettings;
+        private readonly Mock<IInstance> mockInstance;
 
         private const string DEVICE_ID = "01";
         private const int TWIN_WRITES_PER_SECOND = 10;
@@ -52,6 +54,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.updatePropertiesLogic = new Mock<UpdateReportedProperties>(this.logger.Object);
             this.deviceTagLogic = new Mock<SetDeviceTag>(this.devices.Object, this.logger.Object);
             this.storageAdapterClient = new Mock<IStorageAdapterClient>();
+            this.mockInstance = new Mock<IInstance>();
 
             this.CreateNewDevicePropertiesActor();
         }
@@ -69,7 +72,6 @@ namespace SimulationAgent.Test.DeviceProperties
             Assert.Throws<DeviceActorAlreadyInitializedException>(
                 () => this.SetupDevicePropertiesActor());
         }
-
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void Handle_Event_Should_Throw_When_Out_Of_Range()
@@ -133,7 +135,8 @@ namespace SimulationAgent.Test.DeviceProperties
                 this.actorsLogger.Object,
                 this.rateLimiting.Object,
                 this.updatePropertiesLogic.Object,
-                this.deviceTagLogic.Object);
+                this.deviceTagLogic.Object,
+                this.mockInstance.Object);
         }
 
         private void SetupDevicePropertiesActor()

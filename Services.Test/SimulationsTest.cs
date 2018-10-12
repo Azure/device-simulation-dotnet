@@ -2,11 +2,16 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Azure.Documents;
+using Microsoft.Azure.Documents.Client;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.DocumentDb;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Moq;
 using Newtonsoft.Json;
@@ -22,14 +27,20 @@ namespace Services.Test
         /// <summary>The test logger</summary>
         private readonly ITestOutputHelper log;
 
-        private const string STORAGE_COLLECTION = "simulations";
         private const string SIMULATION_ID = "1";
 
+        private readonly Mock<IServicesConfig> mockConfig;
         private readonly Mock<IDeviceModels> deviceModels;
-        private readonly Mock<IStorageAdapterClient> storage;
+        private readonly Mock<IFactory> mockFactory;
+        private readonly Mock<IStorageAdapterClient> mockStorageAdapterClient;
+        private readonly Mock<IStorageRecords> mockStorageRecords;
         private readonly Mock<IDevices> devices;
         private readonly Mock<ILogger> logger;
+        private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
         private readonly Mock<IIotHubConnectionStringManager> connStringManager;
+        private readonly Mock<IDocumentDbWrapper> mockDocumentDbWrapper;
+        private readonly Mock<IDocumentClient> mockDocumentClient;
+        private readonly Mock<IResourceResponse<Document>> mockStorageDocument;
         private readonly Simulations target;
         private readonly List<DeviceModel> models;
 
@@ -37,9 +48,27 @@ namespace Services.Test
         {
             this.log = log;
 
+            this.mockConfig = new Mock<IServicesConfig>();
             this.deviceModels = new Mock<IDeviceModels>();
-            this.storage = new Mock<IStorageAdapterClient>();
+            this.mockStorageRecords = new Mock<IStorageRecords>();
+            this.mockStorageRecords.Setup(x => x.Init(It.IsAny<StorageConfig>())).Returns(this.mockStorageRecords.Object);
+
+            // Multiple tests require the passed-in StorageRecord object to be returned from storage
+            this.mockStorageRecords.Setup(
+                    x => x.UpsertAsync(
+                        It.IsAny<StorageRecord>(),
+                        It.IsAny<string>()))
+                .ReturnsAsync((StorageRecord storageRecord, string eTag) => storageRecord);
+            this.mockDocumentDbWrapper = new Mock<IDocumentDbWrapper>();
+            this.mockDocumentClient = new Mock<IDocumentClient>();
+            this.mockStorageDocument = new Mock<IResourceResponse<Document>>();
+            this.mockStorageAdapterClient = new Mock<IStorageAdapterClient>();
+
+            this.mockFactory = new Mock<IFactory>();
+            this.mockFactory.Setup(x => x.Resolve<IStorageRecords>()).Returns(this.mockStorageRecords.Object);
+
             this.logger = new Mock<ILogger>();
+            this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
             this.devices = new Mock<IDevices>();
             this.connStringManager = new Mock<IIotHubConnectionStringManager>();
             this.models = new List<DeviceModel>
@@ -50,7 +79,15 @@ namespace Services.Test
                 new DeviceModel { Id = "AA" }
             };
 
-            this.target = new Simulations(this.deviceModels.Object, this.storage.Object, this.connStringManager.Object, this.devices.Object, this.logger.Object);
+            this.target = new Simulations(
+                this.mockConfig.Object,
+                this.deviceModels.Object,
+                this.mockFactory.Object,
+                this.mockStorageAdapterClient.Object,
+                this.connStringManager.Object,
+                this.devices.Object,
+                this.logger.Object,
+                this.diagnosticsLogger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -72,12 +109,14 @@ namespace Services.Test
             // Arrange
             this.ThereAreNoSimulationsInTheStorage();
             this.ThereAreSomeDeviceModels();
+            this.StorageReturnsSimulationRecordOnCreate();
 
             // Act
             SimulationModel result = this.target.InsertAsync(new SimulationModel(), "default").Result;
 
             // Assert
-            Assert.Equal(result.Created, result.Modified);
+            Assert.False(result.PartitioningComplete);
+            Assert.True(Math.Abs(result.Modified.ToUnixTimeSeconds() - result.Created.ToUnixTimeSeconds()) < 10);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -87,11 +126,21 @@ namespace Services.Test
             const int DEFAULT_DEVICE_COUNT = 1;
             this.ThereAreNoSimulationsInTheStorage();
             this.ThereAreSomeDeviceModels();
+            var simulation = new SimulationModel();
+            this.StorageReturnsSimulationRecordOnCreate(simulation);
+
+            // Return the StorageRecord object that will be passed to StorageRecords
+            this.mockStorageRecords.Setup(
+                    x => x.UpsertAsync(
+                        It.IsAny<StorageRecord>(),
+                        It.IsAny<string>()))
+                .ReturnsAsync((StorageRecord storageRecord, string eTag) => storageRecord);
 
             // Act
-            SimulationModel result = this.target.InsertAsync(new SimulationModel(), "default").Result;
+            SimulationModel result = this.target.InsertAsync(simulation, "default").Result;
 
             // Assert
+            Assert.False(result.PartitioningComplete);
             Assert.Equal(this.models.Count, result.DeviceModels.Count);
             for (var i = 0; i < this.models.Count; i++)
             {
@@ -106,6 +155,7 @@ namespace Services.Test
             // Arrange
             this.ThereAreNoSimulationsInTheStorage();
             this.ThereAreSomeDeviceModels();
+            this.StorageReturnsSimulationRecordOnCreate();
 
             // Act
             SimulationModel result = this.target.InsertAsync(new SimulationModel(), "default").Result;
@@ -123,6 +173,7 @@ namespace Services.Test
 
             // Act
             var simulation = new SimulationModel { Id = "123" };
+            this.StorageReturnsSimulationRecordOnCreate(simulation);
             SimulationModel result = this.target.InsertAsync(simulation, "default").Result;
 
             // Assert
@@ -139,71 +190,38 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void CreatingMultipleSimulationsIsNotAllowed()
-        {
-            // Arrange
-            this.ThereAreSomeDeviceModels();
-            this.ThereIsAnEnabledSimulationInTheStorage();
-            var s = new SimulationModel { Id = Guid.NewGuid().ToString(), Enabled = false };
-
-            // Act + Assert
-            // This fails because only 1 solution can be created
-            Assert.ThrowsAsync<ConflictingResourceException>(async () => await this.target.InsertAsync(s))
-                .Wait(Constants.TEST_TIMEOUT);
-            // This fails because only "1" can be used as a simulation ID
-            Assert.ThrowsAsync<InvalidInputException>(async () => await this.target.UpsertAsync(s))
-                .Wait(Constants.TEST_TIMEOUT);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void CreatedSimulationsAreStored()
         {
             // Arrange
             this.ThereAreSomeDeviceModels();
             this.ThereAreNoSimulationsInTheStorage();
+            var simulation = new SimulationModel { Id = Guid.NewGuid().ToString(), Enabled = false };
+            this.StorageReturnsSimulationRecordOnCreate(simulation);
 
             // Act
-            var simulation = new SimulationModel { Id = Guid.NewGuid().ToString(), Enabled = false };
             this.target.InsertAsync(simulation, "default").Wait();
 
             // Assert
-            this.storage.Verify(
-                x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.IsAny<string>(), "*"));
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void SimulationsCanBeUpserted()
-        {
-            // Arrange
-            this.ThereAreSomeDeviceModels();
-            this.ThereAreNoSimulationsInTheStorage();
-            // Arrange the simulation data returned by the storage adapter
-            var updatedValue = new ValueApiModel { ETag = "newETag" };
-            this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(updatedValue);
-
-            // Act
-            var simulation = new SimulationModel
-            {
-                Id = SIMULATION_ID,
-                Enabled = false,
-                ETag = "oldETag"
-            };
-            this.target.UpsertAsync(simulation).Wait();
-
-            // Assert
-            this.storage.Verify(
-                x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.IsAny<string>(), "oldETag"));
-            Assert.Equal("newETag", simulation.ETag);
+            this.mockStorageRecords.Verify(
+                x => x.UpsertAsync(It.IsAny<StorageRecord>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void UpsertRequiresIdWhileInsertDoesNot()
         {
             // Arrange
-            var s1 = new SimulationModel();
-            var s2 = new SimulationModel();
+            var s1 = new SimulationModel() { Name = "Test Simulation 1" };
+            var s2 = new SimulationModel() { Name = "Test Simulation 2" };
             this.ThereAreNoSimulationsInTheStorage();
+            this.StorageReturnsSimulationRecordOnCreate(s1);
+            var s2StorageRecord = new StorageRecord
+            {
+                Id = s2.Id,
+                Data = JsonConvert.SerializeObject(s2),
+            };
+
+            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>()))
+                .ReturnsAsync(s2StorageRecord);
 
             // Act - No exception occurs
             this.target.InsertAsync(s1).Wait(Constants.TEST_TIMEOUT);
@@ -214,100 +232,473 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void UpsertUsesOptimisticConcurrency()
+        public void UpsertWillFailWhenETagsDoNotMatch()
         {
             // Arrange
-            const string ETAG1 = "001";
-            const string ETAG2 = "002";
+            const string ETAG1 = "ETag 001";
+            const string ETAG2 = "ETag 002";
 
-            // Initial simulation 
-            var simulation1 = new SimulationModel { Id = SIMULATION_ID, ETag = ETAG1 };
-            var storageRecord1 = new ValueApiModel
-            {
-                Key = SIMULATION_ID,
-                Data = JsonConvert.SerializeObject(simulation1),
-                ETag = simulation1.ETag
-            };
-            var storageList1 = new ValueListApiModel();
-            storageList1.Items.Add(storageRecord1);
-
-            // Simulation after update
-            var simulation2 = new SimulationModel { Id = SIMULATION_ID, ETag = ETAG2 };
-            var storageRecord2 = new ValueApiModel
-            {
-                Key = SIMULATION_ID,
-                Data = JsonConvert.SerializeObject(simulation2),
-                ETag = simulation2.ETag
-            };
-            var storageList2 = new ValueListApiModel();
-            storageList2.Items.Add(storageRecord2);
-
-            // Initial setup - the ETag matches
-            this.storage.Setup(x => x.GetAllAsync(STORAGE_COLLECTION)).ReturnsAsync(storageList1);
-            this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(storageRecord2);
-
-            // Act - No exception because ETag matches
-            // Note: the call to UpsertAsync modifies the object, don't reuse the variable later
-            this.target.UpsertAsync(simulation1).Wait(Constants.TEST_TIMEOUT);
-
-            // Arrange - the ETag won't match
-            this.storage.Setup(x => x.GetAllAsync(STORAGE_COLLECTION)).ReturnsAsync(storageList2);
-
-            // Act + Assert
-            var simulationOutOfDate = new SimulationModel { Id = SIMULATION_ID, ETag = ETAG1 };
-            Assert.ThrowsAsync<ResourceOutOfDateException>(
-                    async () => await this.target.UpsertAsync(simulationOutOfDate))
-                .Wait(Constants.TEST_TIMEOUT);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ThereAreNoNullPropertiesInTheDeviceModel()
-        {
-            // Arrange
-            this.ThereAreSomeDeviceModels();
-            this.ThereAreNoSimulationsInTheStorage();
-
-            // Arrange the simulation data returned by the storage adapter
-            var simulation = new SimulationModel
+            // Mock simulation that will be returned from storage
+            var updatedSimulation = new SimulationModel { Id = SIMULATION_ID, Name = "Test Simulation 2", ETag = ETAG2 };
+            var updatedStorageRecord = new StorageRecord
             {
                 Id = SIMULATION_ID,
-                ETag = "ETag0",
-                Enabled = true
+                Data = JsonConvert.SerializeObject(updatedSimulation),
             };
-            var updatedValue = new ValueApiModel
+
+            // Create a mock DocumentDB Document object that will contain a
+            // different ETag than the one we're trying to use to upsert
+            var document = new Document();
+            document.Id = "foo";
+            document.SetPropertyValue("_etag", ETAG2);
+            document.SetPropertyValue("Data", JsonConvert.SerializeObject(updatedSimulation));
+            var mockStorageRecord = StorageRecord.FromDocumentDb(document);
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(mockStorageRecord);
+
+            // Initial simulation 
+            var initialSimulation = new SimulationModel { Id = SIMULATION_ID, Name = "Test Simulation 1", ETag = ETAG1 };
+            var initialStorageRecord = new StorageRecord
             {
-                Key = SIMULATION_ID,
-                Data = JsonConvert.SerializeObject(simulation),
-                ETag = simulation.ETag
+                Id = SIMULATION_ID,
+                Data = JsonConvert.SerializeObject(initialSimulation),
             };
-            this.storage.Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(updatedValue);
+
+            // Act + Assert
+            Assert.ThrowsAsync<ResourceOutOfDateException>(
+                    async () => await this.target.UpsertAsync(initialSimulation))
+                .Wait(Constants.TEST_TIMEOUT);
+        }
+
+        [Fact]
+        public void UpsertWillSucceedWhenETagsMatch()
+        {
+            // Arrange
+            const string ETAG1 = "ETag 001";
+            const string ETAG2 = "ETag 002";
+
+            // Mock simulation that will be returned from storage
+            var existingSimulation = new SimulationModel { Id = SIMULATION_ID, Name = "Test Simulation 2", ETag = ETAG1 };
+            var updatedStorageRecord = new StorageRecord
+            {
+                Id = SIMULATION_ID,
+                Data = JsonConvert.SerializeObject(existingSimulation),
+            };
+
+            // Create a mock DocumentDB Document object that will contain the
+            // same ETag value as the one we're trying to use to upsert with.
+            var document = new Document();
+            document.Id = "foo";
+            document.SetPropertyValue("_etag", ETAG1);
+            document.SetPropertyValue("Data", JsonConvert.SerializeObject(existingSimulation));
+            var mockStorageRecord = StorageRecord.FromDocumentDb(document);
+
+            // Initial simulation 
+            var initialSimulation = new SimulationModel { Id = SIMULATION_ID, Name = "Test Simulation 1", ETag = ETAG1 };
+            var initialStorageRecord = new StorageRecord
+            {
+                Id = SIMULATION_ID,
+                Data = JsonConvert.SerializeObject(initialSimulation),
+            };
+
+            // Create a second document that will be returned after the upsert,
+            // which will contain an updated ETag
+            var upsertResultDocument = new Document();
+            upsertResultDocument.Id = "bar";
+            upsertResultDocument.SetPropertyValue("_etag", ETAG2);
+            upsertResultDocument.SetPropertyValue("Data", JsonConvert.SerializeObject(initialSimulation));
+            var upsertResultStorageRecord = StorageRecord.FromDocumentDb(upsertResultDocument);
+
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(mockStorageRecord);
+            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>(), It.IsAny<string>())).ReturnsAsync(upsertResultStorageRecord);
 
             // Act
-            this.target.UpsertAsync(simulation).Wait(Constants.TEST_TIMEOUT);
+            var returnedSimulationTask = this.target.UpsertAsync(initialSimulation);
+            returnedSimulationTask.Wait(Constants.TEST_TIMEOUT);
 
             // Assert
-            this.storage.Verify(x => x.UpdateAsync(
-                STORAGE_COLLECTION,
-                SIMULATION_ID,
-                It.Is<string>(s => !s.Contains("null")),
-                "ETag0"));
+            Assert.Matches(ETAG2, returnedSimulationTask.Result.ETag);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void CreatingMultipleSimulationsViaUpsertIsNotAllowed()
+        public void ItCreatesNewSimulationsWithPartitioningStateNotComplete()
         {
             // Arrange
-            this.ThereAreSomeDeviceModels();
-            this.ThereIsAnEnabledSimulationInTheStorage();
-            var s = new SimulationModel { Id = Guid.NewGuid().ToString(), Enabled = false };
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync((StorageRecord) null);
+            var sim = new SimulationModel
+            {
+                Id = "1",
+                Enabled = true,
+                PartitioningComplete = true
+            };
+            var record = new ValueApiModel
+            {
+                Key = "1",
+                Data = JsonConvert.SerializeObject(sim),
+            };
 
-            // Act + Assert
-            // Note: the exception is 'InvalidInputException' because only id='1' is allowed. This will
-            // change in future when multiple simulation will be allowed.
-            Assert.ThrowsAsync<InvalidInputException>(async () => await this.target.UpsertAsync(s))
-                .Wait(Constants.TEST_TIMEOUT);
+            // Create a DocumentDB Document that will be used to create a StorageRecord object
+            var document = new Document();
+            document.Id = "foo";
+            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            var storageRecord = StorageRecord.FromDocumentDb(document);
+
+            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>()))
+                .ReturnsAsync(storageRecord);
+
+            // Act
+            SimulationModel result = this.target.UpsertAsync(sim).CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.False(result.PartitioningComplete);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItTriggersPartitionsDeletionWhenASimulationIsDisabled()
+        {
+            // Arrange
+            var sim = new SimulationModel
+            {
+                Id = "1",
+                Enabled = true,
+                PartitioningComplete = true,
+                ETag = "*"
+            };
+            var record = new ValueApiModel
+            {
+                Key = "1",
+                Data = JsonConvert.SerializeObject(sim)
+            };
+
+            // Create a DocumentDB Document that will be used to create a StorageRecord object
+            var document = new Document();
+            document.Id = "foo";
+            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            document.SetPropertyValue("ETag", "*");
+            var storageRecord = StorageRecord.FromDocumentDb(document);
+
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync(storageRecord);
+            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>(), It.IsAny<string>()))
+                .ReturnsAsync(storageRecord);
+
+            // Act
+            var update = new SimulationModel
+            {
+                Id = sim.Id,
+                Enabled = false,
+                PartitioningComplete = true,
+                ETag = "*"
+            };
+            var result = this.target.UpsertAsync(update).CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.False(result.Enabled);
+            Assert.False(result.PartitioningComplete);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItGenerateDevicesIdGroupedByModel()
+        {
+            // Arrange
+            var sim = new SimulationModel
+            {
+                Id = "1",
+                Enabled = true,
+                PartitioningComplete = true,
+                DeviceModels = new List<SimulationModel.DeviceModelRef>
+                {
+                    new SimulationModel.DeviceModelRef { Id = "modelA", Count = 5 },
+                    new SimulationModel.DeviceModelRef { Id = "modelB", Count = 2 },
+                    new SimulationModel.DeviceModelRef { Id = "modelC", Count = 4 }
+                }
+            };
+
+            // Act
+            Dictionary<string, List<string>> result = this.target.GetDeviceIdsByModel(sim);
+
+            // Assert
+            Assert.Equal(3, result.Count);
+            Assert.True(result.ContainsKey("modelA"));
+            Assert.True(result.ContainsKey("modelB"));
+            Assert.True(result.ContainsKey("modelC"));
+            Assert.Equal(5, result["modelA"].Count);
+            Assert.Equal(2, result["modelB"].Count);
+            Assert.Equal(4, result["modelC"].Count);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItGeneratesDeviceIdsFollowingAKnownFormat()
+        {
+            // Arrange
+            var simulationId = Guid.NewGuid().ToString();
+            var modelId1 = Guid.NewGuid().ToString();
+            var modelId2 = Guid.NewGuid().ToString();
+            var sim = new SimulationModel
+            {
+                Id = simulationId,
+                Enabled = true,
+                PartitioningComplete = true,
+                DeviceModels = new List<SimulationModel.DeviceModelRef>
+                {
+                    new SimulationModel.DeviceModelRef { Id = modelId1, Count = 3 },
+                    new SimulationModel.DeviceModelRef { Id = modelId2, Count = 2 }
+                }
+            };
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 1)).Returns($"{simulationId}.{modelId1}.1");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 2)).Returns($"{simulationId}.{modelId1}.2");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 3)).Returns($"{simulationId}.{modelId1}.3");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId2, 1)).Returns($"{simulationId}.{modelId2}.1");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId2, 2)).Returns($"{simulationId}.{modelId2}.2");
+
+            // Act
+            Dictionary<string, List<string>> result = this.target.GetDeviceIdsByModel(sim);
+
+            // Assert
+            Assert.True(result.ContainsKey(modelId1));
+            Assert.True(result.ContainsKey(modelId2));
+            this.devices.Verify(
+                x => x.GenerateId(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()),
+                Times.Exactly(sim.DeviceModels[0].Count + sim.DeviceModels[1].Count));
+
+            Assert.Contains($"{simulationId}.{modelId1}.1", result[modelId1]);
+            Assert.Contains($"{simulationId}.{modelId1}.2", result[modelId1]);
+            Assert.Contains($"{simulationId}.{modelId1}.3", result[modelId1]);
+
+            Assert.Contains($"{simulationId}.{modelId2}.1", result[modelId2]);
+            Assert.Contains($"{simulationId}.{modelId2}.2", result[modelId2]);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItIncludesCustomDevicesWhenGeneratingTheListOfDevices()
+        {
+            // Arrange
+            var simulationId = Guid.NewGuid().ToString();
+            var modelId1 = Guid.NewGuid().ToString();
+            var modelId2 = Guid.NewGuid().ToString();
+            var modelId3 = Guid.NewGuid().ToString();
+            var modelId4 = Guid.NewGuid().ToString();
+            var custom1 = Guid.NewGuid().ToString();
+            var custom2 = Guid.NewGuid().ToString();
+            var custom3 = Guid.NewGuid().ToString();
+            var custom4 = Guid.NewGuid().ToString();
+            var custom5 = Guid.NewGuid().ToString();
+            var sim = new SimulationModel
+            {
+                Id = simulationId,
+                Enabled = true,
+                PartitioningComplete = true,
+                DeviceModels = new List<SimulationModel.DeviceModelRef>
+                {
+                    new SimulationModel.DeviceModelRef { Id = modelId1, Count = 3 },
+                    new SimulationModel.DeviceModelRef { Id = modelId2, Count = 2 }
+                },
+                CustomDevices = new List<SimulationModel.CustomDeviceRef>
+                {
+                    new SimulationModel.CustomDeviceRef
+                    {
+                        DeviceId = custom1,
+                        DeviceModel = new SimulationModel.DeviceModelRef { Id = modelId1 }
+                    },
+                    new SimulationModel.CustomDeviceRef
+                    {
+                        DeviceId = custom2,
+                        DeviceModel = new SimulationModel.DeviceModelRef { Id = modelId1 }
+                    },
+                    new SimulationModel.CustomDeviceRef
+                    {
+                        DeviceId = custom3,
+                        DeviceModel = new SimulationModel.DeviceModelRef { Id = modelId3 }
+                    },
+                    new SimulationModel.CustomDeviceRef
+                    {
+                        DeviceId = custom4,
+                        DeviceModel = new SimulationModel.DeviceModelRef { Id = modelId3 }
+                    },
+                    new SimulationModel.CustomDeviceRef
+                    {
+                        DeviceId = custom5,
+                        DeviceModel = new SimulationModel.DeviceModelRef { Id = modelId4 }
+                    }
+                }
+            };
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 1)).Returns($"{simulationId}.{modelId1}.1");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 2)).Returns($"{simulationId}.{modelId1}.2");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 3)).Returns($"{simulationId}.{modelId1}.3");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId2, 1)).Returns($"{simulationId}.{modelId2}.1");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId2, 2)).Returns($"{simulationId}.{modelId2}.2");
+
+            // Act
+            Dictionary<string, List<string>> result = this.target.GetDeviceIdsByModel(sim);
+
+            // Assert
+            Assert.Equal(4, result.Count);
+            Assert.True(result.ContainsKey(modelId1));
+            Assert.True(result.ContainsKey(modelId2));
+            Assert.True(result.ContainsKey(modelId3));
+            Assert.True(result.ContainsKey(modelId4));
+
+            Assert.Equal(5, result[modelId1].Count);
+            Assert.Equal(2, result[modelId2].Count);
+            Assert.Equal(2, result[modelId3].Count);
+            Assert.Single(result[modelId4]);
+
+            Assert.Contains($"{simulationId}.{modelId1}.1", result[modelId1]);
+            Assert.Contains($"{simulationId}.{modelId1}.2", result[modelId1]);
+            Assert.Contains($"{simulationId}.{modelId1}.3", result[modelId1]);
+
+            Assert.Contains($"{simulationId}.{modelId2}.1", result[modelId2]);
+            Assert.Contains($"{simulationId}.{modelId2}.2", result[modelId2]);
+
+            Assert.Contains(custom1, result[modelId1]);
+            Assert.Contains(custom2, result[modelId1]);
+            Assert.Contains(custom3, result[modelId3]);
+            Assert.Contains(custom4, result[modelId3]);
+            Assert.Contains(custom5, result[modelId4]);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItStartsTheDeviceCreationUsingJobs()
+        {
+            // Arrange
+            var eTagValue = "*";
+            var sim = new SimulationModel
+            {
+                Id = "1",
+                Enabled = true,
+                PartitioningComplete = true,
+                ETag = eTagValue
+            };
+
+            // Create a DocumentDB Document that will be used to create a StorageRecord object
+            var document = new Document();
+            document.Id = "foo";
+            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            document.SetPropertyValue("ETag", eTagValue);
+            var storageRecord = StorageRecord.FromDocumentDb(document);
+
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync(storageRecord);
+
+            // Act
+            var result = this.target.TryToStartDevicesCreationAsync(sim.Id, this.devices.Object)
+                .CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.True(result);
+            this.devices.Verify(x => x.CreateListUsingJobsAsync(It.IsAny<IEnumerable<string>>()), Times.Once);
+            this.mockStorageRecords.Verify(
+                x => x.UpsertAsync(
+                    It.Is<StorageRecord>(
+                        sr => JsonConvert.DeserializeObject<SimulationModel>(sr.Data).DevicesCreationStarted),
+                    It.IsAny<string>()), Times.Once());
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItStartsTheDeviceCreationOnlyIfNotStarted()
+        {
+            // Arrange
+            var simulationId = Guid.NewGuid().ToString();
+            var sim = new SimulationModel
+            {
+                Id = simulationId, Enabled = true, DevicesCreationStarted = true,
+                DeviceModels = new List<SimulationModel.DeviceModelRef>
+                {
+                    new SimulationModel.DeviceModelRef { Id = "some", Count = 3 }
+                }
+            };
+
+            // Create a DocumentDB Document that will be used to create a StorageRecord object
+            var document = new Document();
+            document.Id = "foo";
+            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            document.SetPropertyValue("ETag", "*");
+            var storageRecord = StorageRecord.FromDocumentDb(document);
+
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync(storageRecord);
+
+            // Act
+            var result = this.target.TryToStartDevicesCreationAsync(simulationId, this.devices.Object)
+                .CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.True(result);
+            this.devices.Verify(x => x.CreateListUsingJobsAsync(It.IsAny<IEnumerable<string>>()), Times.Never);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReportsIfTheDeviceCreationStartFails()
+        {
+            // Arrange
+            var simulationId = Guid.NewGuid().ToString();
+            var sim = new SimulationModel
+            {
+                Id = simulationId, Enabled = true, DevicesCreationStarted = false,
+                DeviceModels = new List<SimulationModel.DeviceModelRef>
+                {
+                    new SimulationModel.DeviceModelRef { Id = "some", Count = 3 }
+                }
+            };
+
+            // Create a DocumentDB Document that will be used to create a StorageRecord object
+            var document = new Document();
+            document.Id = "foo";
+            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            document.SetPropertyValue("ETag", "*");
+            var storageRecord = StorageRecord.FromDocumentDb(document);
+
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync(storageRecord);
+            this.devices.Setup(x => x.CreateListUsingJobsAsync(It.IsAny<IEnumerable<string>>()))
+                .Throws<SomeException>();
+
+            // Act
+            var result = this.target.TryToStartDevicesCreationAsync(simulationId, this.devices.Object)
+                .CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.False(result);
+            this.devices.Verify(x => x.CreateListUsingJobsAsync(It.IsAny<IEnumerable<string>>()), Times.Once);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItChangesTheSimulationStatusWhenTheDeviceCreationIsComplete()
+        {
+            // Arrange
+            var simulationId = Guid.NewGuid().ToString();
+            var sim = new SimulationModel
+            {
+                Id = simulationId,
+                Enabled = true,
+                DevicesCreationStarted = false,
+                DeviceModels = new List<SimulationModel.DeviceModelRef>
+                {
+                    new SimulationModel.DeviceModelRef { Id = "some", Count = 3 }
+                }
+            };
+
+            // Create a DocumentDB Document that will be used to create a StorageRecord object
+            var document = new Document();
+            document.Id = "foo";
+            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            document.SetPropertyValue("ETag", "*");
+            var storageRecord = StorageRecord.FromDocumentDb(document);
+
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync(storageRecord);
+
+            // Act
+            var result = this.target.TryToSetDeviceCreationCompleteAsync(simulationId)
+                .CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.True(result);
+            this.mockStorageRecords.Verify(
+                x => x.UpsertAsync(
+                    It.Is<StorageRecord>(
+                        sr => JsonConvert.DeserializeObject<SimulationModel>(sr.Data).DevicesCreationComplete),
+                    It.IsAny<string>()), Times.Once());
         }
 
         private void ThereAreSomeDeviceModels()
@@ -318,33 +709,27 @@ namespace Services.Test
 
         private void ThereAreNoSimulationsInTheStorage()
         {
-            this.storage.Setup(x => x.GetAllAsync(STORAGE_COLLECTION)).ReturnsAsync(new ValueListApiModel());
-            // In case the test inserts a record, return a valid storage object
-            this.storage.Setup(x => x.UpdateAsync(STORAGE_COLLECTION, SIMULATION_ID, It.IsAny<string>(), "*"))
-                .ReturnsAsync(new ValueApiModel { Key = SIMULATION_ID, Data = "{}", ETag = "someETag" });
+            this.mockStorageRecords.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<StorageRecord>());
+
+            // In case the test inserts a record, return a valid StorageRecord object
+            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>()))
+                .ReturnsAsync(new StorageRecord() { Id = SIMULATION_ID, Data = "{}" });
         }
 
-        private void ThereIsAnEnabledSimulationInTheStorage()
+        private void StorageReturnsSimulationRecordOnCreate(SimulationModel simulation = null)
         {
-            var simulation = new SimulationModel
+            if (simulation == null)
             {
-                Id = SIMULATION_ID,
-                Created = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
-                Modified = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
-                ETag = "ETag0",
-                Enabled = true
-            };
+                simulation = new SimulationModel { Id = Guid.NewGuid().ToString(), Enabled = false };
+            }
 
-            var list = new ValueListApiModel();
-            var value = new ValueApiModel
+            var simulationRecord = new StorageRecord
             {
-                Key = SIMULATION_ID,
+                Id = simulation.Id,
                 Data = JsonConvert.SerializeObject(simulation),
-                ETag = simulation.ETag
             };
-            list.Items.Add(value);
-
-            this.storage.Setup(x => x.GetAllAsync(STORAGE_COLLECTION)).ReturnsAsync(list);
+            this.mockStorageRecords.Setup(x => x.CreateAsync(It.IsAny<StorageRecord>()))
+                .ReturnsAsync(simulationRecord);
         }
     }
 }

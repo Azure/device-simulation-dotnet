@@ -14,15 +14,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "ConnectionString")]
         public string ConnectionString { get; set; }
 
+        [JsonProperty(PropertyName = "PreprovisionedIoTHubInUse")]
+        public bool PreprovisionedIoTHubInUse { get; set; }
+
+        [JsonProperty(PropertyName = "PreprovisionedIoTHubMetricsUrl")]
+        public string PreprovisionedIoTHubMetricsUrl { get; set; }
+
         // Default constructor used by web service requests
         public SimulationIotHub()
         {
             this.ConnectionString = USE_DEFAULT_IOTHUB;
+            this.PreprovisionedIoTHubInUse = false;
+            this.PreprovisionedIoTHubMetricsUrl = null;
         }
 
-        public SimulationIotHub(string connectionString) : this()
+        public SimulationIotHub(
+            string connectionString,
+            bool preprovisionedIoTHubInUse = false, 
+            string preprovisionedIoTHubMetricsUrl = null) : this()
         {
             this.ConnectionString = connectionString;
+            this.PreprovisionedIoTHubInUse = preprovisionedIoTHubInUse;
+            this.PreprovisionedIoTHubMetricsUrl = preprovisionedIoTHubMetricsUrl;
         }
 
         // Map API model to service model
@@ -36,8 +49,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         private static bool IsDefaultHub(string connectionString)
         {
             return
-                connectionString == null ||
-                connectionString == string.Empty ||
+                string.IsNullOrEmpty(connectionString) ||
                 string.Equals(
                     connectionString.Trim(),
                     USE_DEFAULT_IOTHUB,

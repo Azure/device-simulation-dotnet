@@ -4,6 +4,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
@@ -21,6 +22,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         long SimulationErrorsCount { get; }
 
         void Setup(
+            string deviceId,
+            IDeviceStateActor deviceStateActor,
+            IDeviceConnectionActor deviceConnectionActor,
+            PropertiesLoopSettings loopSettings);
+
+        void Init(
+            ISimulationContext simulationContext,
             string deviceId,
             IDeviceStateActor deviceStateActor,
             IDeviceConnectionActor deviceConnectionActor,
@@ -64,12 +72,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         private readonly IRateLimiting rateLimiting;
         private readonly IDevicePropertiesLogic updatePropertiesLogic;
         private readonly IDevicePropertiesLogic deviceSetDeviceTagLogic;
+        private readonly IInstance instance;
 
         private ActorStatus status;
         private string deviceId;
         private long whenToRun;
         private PropertiesLoopSettings loopSettings;
         private long failedTwinUpdatesCount;
+        private ISimulationContext simulationContext;
 
         /// <summary>
         /// Reference to the actor managing the device state, used
@@ -112,13 +122,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             IActorsLogger actorLogger,
             IRateLimiting rateLimiting,
             UpdateReportedProperties updatePropertiesLogic,
-            SetDeviceTag deviceSetDeviceTagLogic)
+            SetDeviceTag deviceSetDeviceTagLogic,
+            IInstance instance)
         {
             this.log = logger;
             this.actorLogger = actorLogger;
             this.rateLimiting = rateLimiting;
             this.updatePropertiesLogic = updatePropertiesLogic;
             this.deviceSetDeviceTagLogic = deviceSetDeviceTagLogic;
+            this.instance = instance;
 
             this.status = ActorStatus.None;
             this.deviceId = null;
@@ -130,7 +142,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
         /// <summary>
         /// Invoke this method before calling Execute(), to initialize the actor
-        /// with details like the device id. Setup() should be called only once.
+        /// with details like the device id. SetupAsync() should be called only once.
         /// </summary>
         public void Setup(
             string deviceId,
@@ -150,13 +162,35 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             this.deviceConnectionActor = deviceConnectionActor;
             this.loopSettings = loopSettings;
 
-            this.updatePropertiesLogic.Setup(this, this.deviceId);
-            this.deviceSetDeviceTagLogic.Setup(this, this.deviceId);
-
-            this.updatePropertiesLogic.Setup(this, this.deviceId);
-            this.actorLogger.Setup(deviceId, "Properties");
+            this.updatePropertiesLogic.Init(this, this.deviceId);
+            this.deviceSetDeviceTagLogic.Init(this, this.deviceId);
+            this.actorLogger.Init(deviceId, "Properties");
 
             this.status = ActorStatus.ReadyToStart;
+        }
+
+        /// <summary>
+        /// Invoke this method before calling Execute(), to initialize the actor
+        /// with details like the device id.
+        /// </summary>
+        public void Init(
+            ISimulationContext simulationContext,
+            string deviceId,
+            IDeviceStateActor deviceStateActor,
+            IDeviceConnectionActor deviceConnectionActor,
+            PropertiesLoopSettings loopSettings)
+        {
+            this.instance.InitOnce();
+
+            this.simulationContext = simulationContext;
+            this.deviceId = deviceId;
+            this.deviceStateActor = deviceStateActor;
+            this.deviceConnectionActor = deviceConnectionActor;
+            this.updatePropertiesLogic.Init(this, this.deviceId);
+            this.actorLogger.Init(deviceId, "Properties");
+            this.status = ActorStatus.ReadyToStart;
+
+            this.instance.InitComplete();
         }
 
         public void HandleEvent(ActorEvents e)
@@ -165,7 +199,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             {
                 case ActorEvents.Started:
                     this.actorLogger.ActorStarted();
-                    this.status = ActorStatus.ReadyToTagDevice;
+                    
+                    /**
+                     * TODO: when a device is created after the initial bulk upload, the next state should be:
+                     *       ActorStatus.ReadyToTagDevice
+                     *       For the time being, assume all devices are created with bulk upload, which is
+                     *       where the IsSimulated tag is set.
+                     */
+                    // TEMP DISABLED: this.status = ActorStatus.ReadyToTagDevice;
+                    this.status = ActorStatus.WaitingForChanges;
                     break;
 
                 case ActorEvents.DeviceTagged:
@@ -245,7 +287,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
         private void SchedulePropertiesUpdate(bool isRetry = false)
         {
-            // considering the throttling settings, when can the properties can be updated
+            // considering the throttling settings, when can the properties be updated
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var pauseMsec = this.rateLimiting.GetPauseForNextTwinWrite();
             this.whenToRun = now + pauseMsec;
