@@ -1,9 +1,10 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using SimulationAgent.Test.helpers;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Threading.Tasks;
+using SimulationAgent.Test.helpers;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
@@ -15,8 +16,9 @@ namespace SimulationAgent.Test.SimulationThreads
 {
     public class DeviceTelemetryTaskTest
     {
-        private static int DEVICE_COUNT = 100;
+        private static int ACTOR_COUNT = 100;
         private static int TELEMETRY_THREAD_COUNT = 3;
+        private static int MAX_PENDING_TELEMETRY_TASKS = 10;
 
         private readonly ConcurrentDictionary<string, Mock<IDeviceTelemetryActor>> deviceTelemetryActorMocks;
         private readonly ConcurrentDictionary<string, IDeviceTelemetryActor> deviceTelemetryActorObjects;
@@ -25,7 +27,11 @@ namespace SimulationAgent.Test.SimulationThreads
 
         public DeviceTelemetryTaskTest()
         {
+            this.deviceTelemetryActorMocks = new ConcurrentDictionary<string, Mock<IDeviceTelemetryActor>>();
+            this.deviceTelemetryActorObjects = new ConcurrentDictionary<string, IDeviceTelemetryActor>();
+
             Mock<ISimulationConcurrencyConfig> mockSimulationConcurrencyConfig = new Mock<ISimulationConcurrencyConfig>();
+            mockSimulationConcurrencyConfig.SetupGet(x => x.MaxPendingTelemetry).Returns(MAX_PENDING_TELEMETRY_TASKS);
             Mock<ILogger> mockLogger = new Mock<ILogger>();
 
             this.target = new DeviceTelemetryTask(
@@ -42,15 +48,12 @@ namespace SimulationAgent.Test.SimulationThreads
             this.BuildMockDeviceActors(
                 this.deviceTelemetryActorMocks,
                 this.deviceTelemetryActorObjects,
-                DEVICE_COUNT,
+                ACTOR_COUNT,
                 cancellationToken);
 
-            // The target will send device telemetry for all devices outside of a window defined
-            // by 'firstActor' and 'lastActor'. Here we're setting up the expected values of these
-            // indices. 
-            int chunkSize = (int)Math.Ceiling((double)DEVICE_COUNT / (double)TELEMETRY_THREAD_COUNT);
-            var firstActor = chunkSize * (threadPosition - 1);
-            var lastActor = Math.Min(chunkSize * threadPosition, DEVICE_COUNT);
+            // Determine the chunk size so that we'll know how many actors should have been called in
+            // one loop of the target's main thread (the expected count is the total number - chunk size).
+            int chunkSize = (int)Math.Ceiling((double)ACTOR_COUNT / (double)TELEMETRY_THREAD_COUNT);
 
             // Act
             // The cancellation token will be triggered through a callback,
@@ -64,6 +67,21 @@ namespace SimulationAgent.Test.SimulationThreads
 
             // Assert
             // Verify that RunAsync was called on the expected actors
+            var countOfActorCalls = 0;
+            foreach (var actor in this.deviceTelemetryActorMocks)
+            {
+                try
+                {
+                    actor.Value.Verify(x => x.RunAsync(), Times.Once);
+                    countOfActorCalls++;
+                }
+                catch (MockException e){}
+            }
+
+            // Compare the number of actors that were called to the number of
+            // actors that we expect to be called.
+            var expectedActorCallCount = ACTOR_COUNT - chunkSize;
+            Assert.Equal(expectedActorCallCount, countOfActorCalls);
         }
 
         /*
@@ -87,9 +105,9 @@ namespace SimulationAgent.Test.SimulationThreads
                 var deviceName = $"device_{i}";
                 var mockActor = new Mock<IDeviceTelemetryActor>();
 
-                // Cancel the token so that the main loop of the target will stop
-                // after the first iteration
-                mockActor.Setup(x => x.RunAsync())
+                // Use a callback to cancel the token so that the main loop of
+                // the target will stop after the first iteration.
+                mockActor.Setup(x => x.RunAsync()).Returns(Task.CompletedTask)
                     .Callback(() =>
                     {
                         cancellationToken.Cancel();

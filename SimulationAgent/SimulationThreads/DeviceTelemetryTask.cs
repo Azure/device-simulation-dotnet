@@ -72,7 +72,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 var lastActor = Math.Min(chunkSize * threadPosition, deviceTelemetryActors.Count);
 
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                var index = 0;
+                var index = -1;
                 foreach (var telemetry in deviceTelemetryActors)
                 {
                     // Only send telemetry for devices *other* than the ones in 
@@ -111,18 +111,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     //                              |            |
                     //                              v            v
                     //    +------------+-------------------------+
-                    //    | don't send | don't send |    send    | 
+                    //    |    send    |    send    | don't send | 
                     //    +------------+-------------------------+
+                    index++;
                     if (!(index >= firstActor && index < lastActor))
                     {
                         tasks.Add(telemetry.Value.RunAsync());
-                        if (tasks.Count < pendingTaskLimit) continue;
+
+                        if (tasks.Count < pendingTaskLimit)
+                            continue;
 
                         await Task.WhenAll(tasks);
                         tasks.Clear();
                     }
-
-                    index++;
                 }
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
