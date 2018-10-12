@@ -30,7 +30,7 @@ configurations:
       - "**/Views/**"
       - "**/wwwroot/**"
       - "!**/*.{sln,csproj,sh}"
-      command:  ["sh", "/src/WebService/azds_entrypoint.sh"]
+      command:  ["nohup", "sh", "/src/WebService/azds_entrypoint.sh", "&"]
       iterate:
         processesToKill: [dotnet, vsdbg]
         buildCommands:
