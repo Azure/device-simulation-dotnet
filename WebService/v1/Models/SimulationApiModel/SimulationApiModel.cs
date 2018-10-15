@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Helpers;
 using Newtonsoft.Json;
@@ -36,9 +35,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "Enabled")]
         public bool? Enabled { get; set; }
 
+        [JsonProperty(PropertyName = "DevicesCleanUpRequestedByUser")]
+        public bool? DevicesCleanUpRequestedByUser { get; set; }
+
         // Note: read-only property, used only to report the simulation status
         [JsonProperty(PropertyName = "Running")]
         public bool? Running { get; set; }
+
+        // Note: read-only property, used only to report the simulation status
+        [JsonProperty(PropertyName = "ActiveNow")]
+        public bool? ActiveNow { get; set; }
 
         [JsonProperty(PropertyName = "IoTHubs")]
         public IList<SimulationIotHub> IotHubs { get; set; }
@@ -76,6 +82,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             // When unspecified, a simulation is enabled
             this.Enabled = true;
             this.Running = false;
+            this.DevicesCleanUpRequestedByUser = false;
+            this.ActiveNow = false;
             this.IotHubs = new List<SimulationIotHub>();
             this.StartTime = null;
             this.EndTime = null;
@@ -114,6 +122,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 result.Enabled = this.Enabled.Value;
             }
 
+            // Overwrite the value only if the request included the field, i.e. don't
+            // delete all devices if the user didn't explicitly ask to.
+            if (this.DevicesCleanUpRequestedByUser.HasValue)
+            {
+                result.DevicesCleanUpRequiredByUser = this.DevicesCleanUpRequestedByUser.Value;
+            }
+
             foreach (var hub in this.IotHubs)
             {
                 var connString = SimulationIotHub.ToServiceModel(hub);
@@ -140,14 +155,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Description = value.Description,
                 Enabled = value.Enabled,
                 Running = value.ShouldBeRunning,
+                ActiveNow = value.IsActiveNow,
+                DevicesCleanUpRequestedByUser = value.DevicesCleanUpRequiredByUser,
                 StartTime = value.StartTime.ToString(),
                 EndTime = value.EndTime.ToString(),
                 StoppedTime = value.StoppedTime.ToString(),
                 IotHubs = new List<SimulationIotHub>()
             };
 
-            // TODO: add comment about what is going on here
-            // TODO: design a way to return combined statistics for a distributed simulation
             foreach (var iotHubConnectionString in value.IotHubConnectionStrings)
             {
                 var iotHub = new SimulationIotHub { ConnectionString = iotHubConnectionString };
@@ -237,40 +252,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             {
                 await connectionStringManager.ValidateConnectionStringAsync(iotHub.ConnectionString);
             }
-        }
-
-        // Check whether the configuration contains a connection string
-        private bool IsHubConnectionStringConfigured(IServicesConfig servicesConfig)
-        {
-            var cs = servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
-            return (!string.IsNullOrEmpty(cs)
-                    && cs.Contains("hostname=")
-                    && cs.Contains("sharedaccesskeyname=")
-                    && cs.Contains("sharedaccesskey="));
-        }
-
-        // Check whether the simulation is running with the conn string in the configuration
-        private async Task<bool> IsPreprovisionedIoTHubInUseAsync(IServicesConfig servicesConfig, IIotHubConnectionStringManager connectionStringManager)
-        {
-            var csInUse = (await connectionStringManager.GetConnectionStringAsync()).ToLowerInvariant().Trim();
-            var csInConf = servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
-
-            return csInUse == csInConf;
-        }
-
-        // If the simulation is running with the conn string in the config then return a URL to the metrics
-        private async Task<string> GetIoTHubMetricsUrlAsync(IServicesConfig servicesConfig, IDeploymentConfig deploymentConfig, IIotHubConnectionStringManager connectionStringManager)
-        {
-            var csInUse = (await connectionStringManager.GetConnectionStringAsync()).ToLowerInvariant().Trim();
-            var csInConf = servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
-
-            // Return the URL only when the simulation is running with the configured conn string
-            if (csInUse != csInConf) return string.Empty;
-
-            return $"https://portal.azure.com/{deploymentConfig.AzureSubscriptionDomain}" +
-                   $"#resource/subscriptions/{deploymentConfig.AzureSubscriptionId}" +
-                   $"/resourceGroups/{deploymentConfig.AzureResourceGroup}" +
-                   $"/providers/Microsoft.Devices/IotHubs/{deploymentConfig.AzureIothubName}/Metrics";
         }
     }
 }
