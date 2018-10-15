@@ -84,7 +84,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
 
             this.ThrowIfError(response);
 
-            return JsonConvert.DeserializeObject<MetricsResponseListModel>(response.Content);
+            var metricsResponseList = JsonConvert.DeserializeObject<MetricsResponseListModel>(response.Content);
+
+            foreach (var responseModel in metricsResponseList.Responses)
+            {
+                if (responseModel.Content.Error != null)
+                {
+                    throw new ExternalDependencyException(responseModel.Content.Error.Message);
+                }
+            }
+
+            return metricsResponseList;
         }
 
         private bool AccessTokenIsNullOrEmpty()
