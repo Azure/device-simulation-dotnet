@@ -242,6 +242,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.simulationManagers[simulation.Id] = manager;
 
                     this.log.Info("New simulation manager created", () => new { SimulationId = simulation.Id });
+                    this.logDiagnostics.LogServiceStart("Creating new simulation manager.");
                 }
                 catch (Exception e)
                 {
@@ -318,7 +319,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to start the device-state thread", e);
+                var msg = "Unable to start the device-state thread";
+                this.log.Error(msg, e);
+                this.logDiagnostics.LogServiceError(msg, e);
                 throw new Exception("Unable to start the device-state thread", e);
             }
 
@@ -329,7 +332,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to start the device-connection thread", e);
+                var msg = "Unable to start the device-connection thread";
+                this.log.Error(msg, e);
+                this.logDiagnostics.LogServiceError(msg, e);
                 throw new Exception("Unable to start the device-connection thread", e);
             }
 
@@ -340,7 +345,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to start the device-properties thread", e);
+                var msg = "Unable to start the device-properties thread";
+                this.log.Error(msg, e);
+                this.logDiagnostics.LogServiceError(msg, e);
                 throw new Exception("Unable to start the device-properties thread", e);
             }
 
@@ -363,7 +370,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to start the device-telemetry threads", e);
+                var msg = "Unable to start the device-telemetry threads";
+                this.log.Error(msg, e);
+                this.logDiagnostics.LogServiceError(msg, e);
                 throw new Exception("Unable to start the device-telemetry threads", e);
             }
         }

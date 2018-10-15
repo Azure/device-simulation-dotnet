@@ -14,6 +14,9 @@ in the different contexts.
   is required.
 * `PCS_STORAGEADAPTER_WEBSERVICE_URL` [mandatory]: the URL where the storage
   adapter service is available, e.g. `http://127.0.0.1:9022/v1`.
+* `PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING` [mandatory]: contains the full 
+connection string required to connect to an Azure DocumentDB storage account
+instance.
 * `PCS_AZURE_STORAGE_ACCOUNT` [mandatory]: contains the full connection string
 required to connect to an Azure Storage Account instance.
 
