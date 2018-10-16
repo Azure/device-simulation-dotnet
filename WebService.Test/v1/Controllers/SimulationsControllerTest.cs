@@ -33,6 +33,7 @@ namespace WebService.Test.v1.Controllers
             this.simulationAgent = new Mock<ISimulationAgent>();
             this.simulationRunner = new Mock<ISimulationRunner>();
             this.rateReporter = new Mock<IRateLimiting>();
+            this.simulationStatistics = new Mock<ISimulationStatistics>();
             this.log = new Mock<ILogger>();
 
             this.target = new SimulationsController(
@@ -45,7 +46,8 @@ namespace WebService.Test.v1.Controllers
                 this.simulationAgent.Object,
                 this.simulationRunner.Object,
                 this.rateReporter.Object,
-                this.log.Object);
+                this.log.Object,
+                this.simulationStatistics.Object);
         }
 
         private readonly Mock<ISimulations> simulationsService;
@@ -58,6 +60,7 @@ namespace WebService.Test.v1.Controllers
         private readonly Mock<ISimulationRunner> simulationRunner;
         private readonly Mock<IRateLimiting> rateReporter;
         private readonly Mock<ILogger> log;
+        private readonly Mock<ISimulationStatistics> simulationStatistics;
         private readonly SimulationsController target;
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

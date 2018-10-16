@@ -17,6 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
     {
         IStorageRecords Init(StorageConfig config);
         Task<StorageRecord> GetAsync(string id);
+        Task<IEnumerable<StorageRecord>> GetAsync(string sqlCondition, SqlParameter[] parameters);
         Task<bool> ExistsAsync(string id);
         Task<IEnumerable<StorageRecord>> GetAllAsync();
         Task<StorageRecord> CreateAsync(StorageRecord input);
@@ -127,6 +128,33 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
             try
             {
                 var query = this.docDb.CreateQuery<DocumentDbRecord>(this.client, this.storageConfig).ToList();
+
+                IEnumerable<StorageRecord> storageRecords = query.Select(StorageRecord.FromDocumentDbRecord).ToList();
+
+                // Delete expired records
+                foreach (var record in storageRecords)
+                    if (record.IsExpired())
+                    {
+                        this.log.Debug("Deleting expired resource", () => new { this.storageName, record.Id, record.ETag });
+                        await this.TryToDeleteExpiredRecord(record.Id);
+                    }
+
+                return storageRecords.Where(x => !x.IsExpired());
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unexpected error while retrieving the list of resources", () => new { this.storageName, e });
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<StorageRecord>> GetAsync(string sqlCondition, SqlParameter[] parameters)
+        {
+            await this.SetupStorageAsync();
+
+            try
+            {
+                var query = this.docDb.CreateQuery<DocumentDbRecord>(this.client, this.storageConfig, sqlCondition, parameters).ToList();
 
                 IEnumerable<StorageRecord> storageRecords = query.Select(StorageRecord.FromDocumentDbRecord).ToList();
 

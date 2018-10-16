@@ -278,11 +278,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             if (patch.Enabled == false)
             {
                 simulation.StoppedTime = simulation.Modified;
-                simulation.Statistics = new Models.Simulation.StatisticsRef
-                {
-                    AverageMessagesPerSecond = patch.Statistics.AverageMessagesPerSecond,
-                    TotalMessagesSent = patch.Statistics.TotalMessagesSent
-                };
 
                 // When a simulation is disabled, its partitions are deleted - this triggers the deletion
                 if (!simulation.Enabled)

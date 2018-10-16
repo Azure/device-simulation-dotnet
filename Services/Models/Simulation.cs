@@ -70,7 +70,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public IList<DeviceModelRef> DeviceModels { get; set; }
 
         [JsonProperty(Order = 60)]
-        public StatisticsRef Statistics { get; set; }
+        public SimulationStatisticsModel Statistics { get; set; }
 
         [JsonProperty(Order = 70)]
         public IList<CustomDeviceRef> CustomDevices { get; set; }
@@ -125,7 +125,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
             this.DeviceModels = new List<DeviceModelRef>();
             this.CustomDevices = new List<CustomDeviceRef>();
-            this.Statistics = new StatisticsRef();
         }
 
         public class DeviceModelRef
@@ -139,12 +138,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         {
             public string DeviceId { get; set; }
             public DeviceModelRef DeviceModel { get; set; }
-        }
-
-        public class StatisticsRef
-        {
-            public long TotalMessagesSent { get; set; }
-            public double AverageMessagesPerSecond { get; set; }
         }
 
         public class DeviceModelOverride

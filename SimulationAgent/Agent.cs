@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 
@@ -33,6 +34,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private readonly IRateLimiting rateReporter;
         private readonly IDeviceModels deviceModels;
         private readonly IDevices devices;
+        private readonly ISimulationStatistics simulationStatistics;
         private DateTimeOffset lastPolledTime;
         private Simulation simulation;
         private bool running;
@@ -44,7 +46,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             ISimulationRunner runner,
             IRateLimiting rateReporter,
             IDeviceModels deviceModels,
-            IDevices devices)
+            IDevices devices,
+            ISimulationStatistics simulationStatistics)
         {
             this.log = logger;
             this.logDiagnostics = diagnosticsLogger;
@@ -53,6 +56,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.rateReporter = rateReporter;
             this.deviceModels = deviceModels;
             this.devices = devices;
+            this.simulationStatistics = simulationStatistics;
             this.running = true;
             this.lastPolledTime = DateTimeOffset.UtcNow;
         }
@@ -82,6 +86,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     }
 
                     this.log.Debug("Simulation loaded", () => new { runningSimulation });
+
+                    this.SaveSimulationStatisticsAsync();
 
                     // if the simulation has been removed from storage & we're running, stop the simulation.
                     var id = this.simulation?.Id;
@@ -224,6 +230,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
+        private void SaveSimulationStatisticsAsync()
+        {
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+            TimeSpan duration = now - this.lastPolledTime;
+
+            // Save simulation statistics every 30 seconds
+            if (duration.Seconds >= 30)
+            {
+                this.lastPolledTime = now;
+                this.simulationStatistics.CreateOrUpdateAsync(this.simulation.Id, new SimulationStatisticsModel
+                   {  TotalMessagesSent = this.runner.TotalMessagesCount,
+                      FailedMessagesCount = this.runner.FailedMessagesCount,
+                      FailedDeviceConnectionsCount = this.runner.FailedDeviceConnectionsCount,
+                      FailedDeviceTwinUpdatesCount = this.runner.FailedDeviceTwinUpdatesCount,
+                      SimulationErrorsCount = this.runner.SimulationErrorsCount
+                   });
+            }
+        }
+
         private async Task CheckForNewSimulationAsync(Simulation newSimulation)
         {
             if (newSimulation != null && this.simulation == null)
@@ -245,9 +270,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // stopped
             if (this.simulation != null && this.simulation.Enabled && !this.simulation.ShouldBeRunning)
             {
-                this.simulation.Statistics.AverageMessagesPerSecond = this.rateReporter.GetThroughputForMessages();
-                this.simulation.Statistics.TotalMessagesSent = this.runner.TotalMessagesCount;
-
                 this.runner.Stop();
 
                 // Update simulation statistics in storage

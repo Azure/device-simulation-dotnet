@@ -32,6 +32,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private readonly ISimulationAgent simulationAgent;
         private readonly ISimulationRunner simulationRunner;
         private readonly IRateLimiting rateReporter;
+        private readonly ISimulationStatistics simulationStatistics;
         private readonly ILogger log;
 
         public SimulationsController(
@@ -44,7 +45,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             ISimulationAgent simulationAgent,
             ISimulationRunner simulationRunner,
             IRateLimiting rateReporter,
-            ILogger logger)
+            ILogger logger,
+            ISimulationStatistics simulationStatistics)
         {
             this.simulationsService = simulationsService;
             this.servicesConfig = servicesConfig;
@@ -55,6 +57,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             this.simulationRunner = simulationRunner;
             this.rateReporter = rateReporter;
             this.log = logger;
+            this.simulationStatistics = simulationStatistics;
         }
 
         [HttpGet]
@@ -69,8 +72,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         public async Task<SimulationApiModel> GetAsync(string id)
         {
             var simulation = await this.simulationsService.GetAsync(id);
+            var stats = await this.simulationStatistics.GetSimulationStatisticsAsync(id);
             var simulationApiModel = await SimulationApiModel.FromServiceModelAsync(
-                simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
+                simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter, stats);
             return simulationApiModel;
         }
 

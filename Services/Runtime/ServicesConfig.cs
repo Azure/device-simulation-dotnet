@@ -24,6 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         StorageConfig SimulationsStorage { get; set; }
         StorageConfig DevicesStorage { get; set; }
         StorageConfig PartitionsStorage { get; set; }
+        StorageConfig StatisticsStorage { get; set; }
         string DiagnosticsEndpointUrl { get; }
     }
 
@@ -91,6 +92,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         public StorageConfig DevicesStorage { get; set; }
 
         public StorageConfig PartitionsStorage { get; set; }
+
+        public StorageConfig StatisticsStorage { get; set; }
 
         private string NormalizePath(string path)
         {
