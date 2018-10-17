@@ -141,7 +141,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     if (this.running)
                     {
                         this.log.Info("Add device to running simulation");
-                        await this.runner.AddDeviceAsync(deviceId, modelId);
+                        await this.runner.AddDeviceAsync(this.simulation.Id, deviceId, modelId);
                     }
                     else
                     {

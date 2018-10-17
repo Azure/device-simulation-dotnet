@@ -202,13 +202,13 @@ namespace Services.Test.Clustering
         private void SetupStorageMocks()
         {
             // Inject configuration settings with a collection name which is then used
-            // to intercept the call to .Init()
+            // to intercept the call to .InitAsync()
             this.config.SetupGet(x => x.NodesStorage)
                 .Returns(new StorageConfig { DocumentDbCollection = NODES });
             this.config.SetupGet(x => x.MainStorage)
                 .Returns(new StorageConfig { DocumentDbCollection = MAIN });
 
-            // Intercept the call to .Init() and return the right mock depending on the collection name
+            // Intercept the call to .InitAsync() and return the right mock depending on the collection name
             var storageMockFactory = new Mock<IStorageRecords>();
             storageMockFactory
                 .Setup(x => x.Init(It.Is<StorageConfig>(c => c.DocumentDbCollection == MAIN)))
