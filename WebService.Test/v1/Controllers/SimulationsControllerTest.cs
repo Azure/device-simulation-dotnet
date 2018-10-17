@@ -22,40 +22,31 @@ namespace WebService.Test.v1.Controllers
 {
     public class SimulationsControllerTest
     {
-        public SimulationsControllerTest()
-        {
-            this.simulationsService = new Mock<ISimulations>();
-            this.servicesConfig = new Mock<IServicesConfig>();
-            this.deploymentConfig = new Mock<IDeploymentConfig>();
-            this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
-            this.iothubMetrics = new Mock<IIothubMetrics>();
-            this.preprovisionedIotHub = new Mock<IPreprovisionedIotHub>();
-            this.simulationAgent = new Mock<ISimulationAgent>();
-            this.rateReporter = new Mock<IRateLimiting>();
-            this.log = new Mock<ILogger>();
-
-            this.target = new SimulationsController(
-                this.simulationsService.Object,
-                this.servicesConfig.Object,
-                this.deploymentConfig.Object,
-                this.connectionStringManager.Object,
-                this.iothubMetrics.Object,
-                this.preprovisionedIotHub.Object,
-                this.simulationAgent.Object,
-                this.rateReporter.Object,
-                this.log.Object);
-        }
-
         private readonly Mock<ISimulations> simulationsService;
-        private readonly Mock<IServicesConfig> servicesConfig;
-        private readonly Mock<IDeploymentConfig> deploymentConfig;
         private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
         private readonly Mock<IIothubMetrics> iothubMetrics;
         private readonly Mock<IPreprovisionedIotHub> preprovisionedIotHub;
         private readonly Mock<ISimulationAgent> simulationAgent;
-        private readonly Mock<IRateLimiting> rateReporter;
         private readonly Mock<ILogger> log;
         private readonly SimulationsController target;
+
+        public SimulationsControllerTest()
+        {
+            this.simulationsService = new Mock<ISimulations>();
+            this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
+            this.iothubMetrics = new Mock<IIothubMetrics>();
+            this.preprovisionedIotHub = new Mock<IPreprovisionedIotHub>();
+            this.simulationAgent = new Mock<ISimulationAgent>();
+            this.log = new Mock<ILogger>();
+
+            this.target = new SimulationsController(
+                this.simulationsService.Object,
+                this.connectionStringManager.Object,
+                this.iothubMetrics.Object,
+                this.preprovisionedIotHub.Object,
+                this.simulationAgent.Object,
+                this.log.Object);
+        }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItCreatesSimulationWithValidInput()

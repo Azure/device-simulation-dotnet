@@ -32,13 +32,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
         public SimulationsController(
             ISimulations simulationsService,
-            IServicesConfig servicesConfig,
-            IDeploymentConfig deploymentConfig,
             IIotHubConnectionStringManager connectionStringManager,
             IIothubMetrics iothubMetrics,
             IPreprovisionedIotHub preprovisionedIotHub,
             ISimulationAgent simulationAgent,
-            IRateLimiting rateReporter,
             ILogger logger)
         {
             this.simulationsService = simulationsService;
