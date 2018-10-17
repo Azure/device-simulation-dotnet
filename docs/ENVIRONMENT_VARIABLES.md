@@ -9,16 +9,16 @@ in the different contexts.
 
 ## Mandatory settings
 
-* `PCS_IOTHUB_CONNSTRING` [mandatory]: contains the full connection string
+* `PCS_IOTHUB_CONNSTRING` [required]: contains the full connection string
   required to connect devices and send telemetry. The value, even if empty,
   is required.
-* `PCS_STORAGEADAPTER_WEBSERVICE_URL` [mandatory]: the URL where the storage
+* `PCS_STORAGEADAPTER_WEBSERVICE_URL` [required]: the URL where the storage
   adapter service is available, e.g. `http://127.0.0.1:9022/v1`.
-* `PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING` [mandatory]: contains the full 
-connection string required to connect to an Azure DocumentDB storage account
-instance.
-* `PCS_AZURE_STORAGE_ACCOUNT` [mandatory]: contains the full connection string
-required to connect to an Azure Storage Account instance.
+* `PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING` [required]: contains the full 
+  connection string required to connect to an Azure DocumentDB storage account
+  instance.
+* `PCS_AZURE_STORAGE_ACCOUNT` [required]: contains the full connection string
+  required to connect to an Azure Storage Account instance.
 
 ## Optional settings
 
@@ -43,19 +43,19 @@ required to connect to an Azure Storage Account instance.
   a hub. The value is used to create a URL taking to the IoT Hub metrics in
   the Azure portal.
 * `PCS_SUBSCRIPTION_ID` [optional, default empty]: # Azure subscription
-   where the Azure IoT Hub is deployed, e.g. "mytest.onmicrosoft.com". The
-   value is optional because the service can be deployed without a hub.
-   The info is used to create a URL taking to the IoT Hub metrics in the
-   Azure portal.
+  where the Azure IoT Hub is deployed, e.g. "mytest.onmicrosoft.com". The
+  value is optional because the service can be deployed without a hub.
+  The info is used to create a URL taking to the IoT Hub metrics in the
+  Azure portal.
 * `PCS_RESOURCE_GROUP` [optional, default empty]: # Azure resource group
-   where the Azure IoT Hub is deployed, e.g. "abcd1234-5678-1234-abcd-abcd5678abcd".
-   The value is optional because the service can be deployed without a hub.
-   The info is used to create a URL taking to the IoT Hub metrics in the
-   Azure portal.
+  where the Azure IoT Hub is deployed, e.g. "abcd1234-5678-1234-abcd-abcd5678abcd".
+  The value is optional because the service can be deployed without a hub.
+  The info is used to create a URL taking to the IoT Hub metrics in the
+  Azure portal.
 * `PCS_IOHUB_NAME` [optional, default empty]: # IoT Hub name, e.g. "mytest3507e89".
-   The value is optional because the service can be deployed without a hub.
-   The info is used to create a URL taking to the IoT Hub metrics in the
-   Azure portal.
+  The value is optional because the service can be deployed without a hub.
+  The info is used to create a URL taking to the IoT Hub metrics in the
+  Azure portal.
 
 # How to define Environment Variables
 
@@ -65,7 +65,12 @@ Environment variables can be set globally via the Control Panel. From the
 Start menu search "environment variables" and open the first result
 ("Edit the system environment variables"). In the Advanced tab, click the
 "Environment Variables" button to open the window where you can add/edit
-variables.
+variables. 
+
+NOTE: After changing environment variables, be sure to restart the 
+process that is launching the device simulation process. For example, if 
+you're running device simulation from Visual Studio, restart Visual Studio
+after making any modifications to environment variables. 
 
 ### Environment variables in Linux and MacOS
 

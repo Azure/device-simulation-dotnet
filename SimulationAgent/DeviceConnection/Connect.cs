@@ -21,7 +21,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private readonly IInstance instance;
         private string deviceId;
         private DeviceModel deviceModel;
-        private IDeviceConnectionActor deviceConnectionActor;
+        private IDeviceConnectionActor deviceContext;
+        private ISimulationContext simulationContext;
 
         public Connect(
             IScriptInterpreter scriptInterpreter,
@@ -33,11 +34,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.instance = instance;
         }
 
-        public void Init(IDeviceConnectionActor actor, string deviceId, DeviceModel deviceModel)
+        public void Init(IDeviceConnectionActor context, string deviceId, DeviceModel deviceModel)
         {
             this.instance.InitOnce();
 
-            this.deviceConnectionActor = actor;
+            this.deviceContext = context;
+            this.simulationContext = context.SimulationContext;
             this.deviceId = deviceId;
             this.deviceModel = deviceModel;
 
@@ -53,40 +55,40 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
             try
             {
-                this.deviceConnectionActor.Client = this.deviceConnectionActor.SimulationContext.Devices.GetClient(
-                    this.deviceConnectionActor.Device,
+                this.deviceContext.Client = this.simulationContext.Devices.GetClient(
+                    this.deviceContext.Device,
                     this.deviceModel.Protocol,
                     this.scriptInterpreter);
 
-                await this.deviceConnectionActor.Client.ConnectAsync();
-                await this.deviceConnectionActor.Client.RegisterMethodsForDeviceAsync(
+                await this.deviceContext.Client.ConnectAsync();
+                await this.deviceContext.Client.RegisterMethodsForDeviceAsync(
                     this.deviceModel.CloudToDeviceMethods,
-                    this.deviceConnectionActor.DeviceState,
-                    this.deviceConnectionActor.DeviceProperties);
+                    this.deviceContext.DeviceState,
+                    this.deviceContext.DeviceProperties);
 
-                await this.deviceConnectionActor.Client.RegisterDesiredPropertiesUpdateAsync(this.deviceConnectionActor.DeviceProperties);
+                await this.deviceContext.Client.RegisterDesiredPropertiesUpdateAsync(this.deviceContext.DeviceProperties);
 
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Debug("Device connected", () => new { timeSpentMsecs, this.deviceId });
-                this.deviceConnectionActor.HandleEvent(DeviceConnectionActor.ActorEvents.Connected);
+                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.Connected);
             }
             catch (DeviceAuthFailedException e)
             {
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Error("Invalid connection credentials", () => new { timeSpentMsecs, this.deviceId, e });
-                this.deviceConnectionActor.HandleEvent(DeviceConnectionActor.ActorEvents.AuthFailed);
+                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.AuthFailed);
             }
             catch (DeviceNotFoundException e)
             {
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Error("Device not found", () => new { timeSpentMsecs, this.deviceId, e });
-                this.deviceConnectionActor.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceNotFound);
+                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceNotFound);
             }
             catch (Exception e)
             {
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Error("Connection error", () => new { timeSpentMsecs, this.deviceId, e });
-                this.deviceConnectionActor.HandleEvent(DeviceConnectionActor.ActorEvents.ConnectionFailed);
+                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.ConnectionFailed);
             }
         }
     }

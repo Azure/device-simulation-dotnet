@@ -25,7 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             DeviceModel deviceModel,
             DeviceModel.DeviceModelMessage message,
             IDeviceStateActor deviceStateActor,
-            IDeviceConnectionActor deviceConnectionActor);
+            IDeviceConnectionActor context);
 
         Task RunAsync();
         void HandleEvent(DeviceTelemetryActor.ActorEvents e);
@@ -77,7 +77,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         /// <summary>
         /// Reference to the actor managing the device connection
         /// </summary>
-        private IDeviceConnectionActor deviceConnectionActor;
+        private IDeviceConnectionActor deviceContext;
 
         /// <summary>
         /// The telemetry message managed by this actor
@@ -92,7 +92,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         /// <summary>
         /// Azure IoT Hub client created by the connection actor
         /// </summary>
-        public IDeviceClient Client => this.deviceConnectionActor.Client;
+        public IDeviceClient Client => this.deviceContext.Client;
 
         /// <summary>
         /// Total messages count created by the connection actor
@@ -135,7 +135,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             DeviceModel deviceModel,
             DeviceModel.DeviceModelMessage message,
             IDeviceStateActor deviceStateActor,
-            IDeviceConnectionActor deviceConnectionActor)
+            IDeviceConnectionActor context)
         {
             this.instance.InitOnce();
 
@@ -144,7 +144,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             this.Message = message;
             this.deviceId = deviceId;
             this.deviceStateActor = deviceStateActor;
-            this.deviceConnectionActor = deviceConnectionActor;
+            this.deviceContext = context;
 
             this.sendTelemetryLogic.Init(this, this.deviceId, this.deviceModel);
             this.actorLogger.Init(deviceId, "Telemetry");
@@ -172,14 +172,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             switch (this.status)
             {
                 case ActorStatus.ReadyToStart:
-                    if (!this.deviceConnectionActor.Connected) return;
+                    if (!this.deviceContext.Connected) return;
 
                     this.whenToRun = 0;
                     this.HandleEvent(ActorEvents.Started);
                     break;
 
                 case ActorStatus.ReadyToSend:
-                    if (!this.deviceConnectionActor.Connected) return;
+                    if (!this.deviceContext.Connected) return;
 
                     this.status = ActorStatus.Sending;
                     this.actorLogger.SendingTelemetry();
@@ -209,7 +209,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                 case ActorEvents.TelemetryClientBroken:
                     this.failedMessagesCount++;
                     this.actorLogger.TelemetryFailed();
-                    this.deviceConnectionActor.HandleEvent(DeviceConnectionActor.ActorEvents.TelemetryClientBroken);
+                    this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.TelemetryClientBroken);
                     this.Reset();
                     break;
 

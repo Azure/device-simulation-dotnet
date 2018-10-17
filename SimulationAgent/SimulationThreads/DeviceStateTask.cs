@@ -21,13 +21,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private readonly ILogger log;
 
         // Global settings, not affected by IoT Hub SKU or simulation settings
-        private readonly ISimulationConcurrencyConfig simulationConcurrencyConfig;
+        private readonly IAppConcurrencyConfig appConcurrencyConfig;
 
         public DeviceStateTask(
-            ISimulationConcurrencyConfig simulationConcurrencyConfig,
+            IAppConcurrencyConfig appConcurrencyConfig,
             ILogger logger)
         {
-            this.simulationConcurrencyConfig = simulationConcurrencyConfig;
+            this.appConcurrencyConfig = appConcurrencyConfig;
             this.log = logger;
         }
 
@@ -45,7 +45,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                 this.log.Debug("Device state loop completed", () => new { durationMsecs });
-                this.SlowDownIfTooFast(durationMsecs, this.simulationConcurrencyConfig.MinDeviceStateLoopDuration);
+                this.SlowDownIfTooFast(durationMsecs, this.appConcurrencyConfig.MinDeviceStateLoopDuration);
             } while (!runningToken.IsCancellationRequested);
         }
 

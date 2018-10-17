@@ -242,6 +242,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var device = new Azure.Devices.Device(deviceId);
                 device = await this.registry.AddDeviceAsync(device);
 
+                // Use the same credentials as are used when we create a 
+                // device with bulk import.
+                device.Authentication = new AuthenticationMechanism
+                {
+                    Type = AuthenticationType.Sas,
+                    SymmetricKey = new SymmetricKey
+                    {
+                        PrimaryKey = this.fixedDeviceKey,
+                        SecondaryKey = this.fixedDeviceKey
+                    }
+                };
+
                 return new Device(device, this.ioTHubHostName);
             }
             catch (Exception e)

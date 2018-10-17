@@ -16,7 +16,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProper
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.SimulationThreads;
-using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
@@ -33,19 +32,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Wait a few seconds after checking if there are new simulations
         // or new devices, to avoid overloading the database with queries.
         private const int PAUSE_AFTER_CHECK_MSECS = 20000;
+
+        // Momentary pause to wait while stopping the agaent
         private const int SHUTDOWN_WAIT_INTERVAL_MSECS = 1000;
+
+        // Allow some time to pass before trying to stop threads, when
+        // stopping the agent.
         private const int SHUTDOWN_WAIT_BEFORE_STOPPING_THREADS_MSECS = 3000;
+
+        // The number of days to wait between sending a diagnostics heartbeat
         private const int DIAGNOSTICS_POLLING_FREQUENCY_DAYS = 1;
 
         // How often (minimum) to log simulation statistics
         private const int STATS_INTERVAL_MSECS = 15000;
 
-        private readonly ISimulationConcurrencyConfig simulationConcurrencyConfig;
+        // Global thread settings, not specific to any simulation
+        private readonly IAppConcurrencyConfig appConcurrencyConfig;
+
         private readonly ILogger log;
         private readonly IDiagnosticsLogger logDiagnostics;
         private readonly ISimulations simulations;
         private readonly IFactory factory;
         private DateTimeOffset lastPolledTime;
+
+        // Flag signaling whether the agent has started and is running (to avoid contentions)
         private bool running;
 
         // The thread responsible for updating devices/sensors state
@@ -87,13 +97,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private long lastStatsTime;
 
         public Agent(
-            ISimulationConcurrencyConfig simulationConcurrencyConfig,
+            IAppConcurrencyConfig appConcurrencyConfig,
             ISimulations simulations,
             IFactory factory,
             ILogger logger,
             IDiagnosticsLogger diagnosticsLogger)
         {
-            this.simulationConcurrencyConfig = simulationConcurrencyConfig;
+            this.appConcurrencyConfig = appConcurrencyConfig;
             this.simulations = simulations;
             this.factory = factory;
             this.log = logger;
@@ -206,7 +216,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         private void StopInactiveSimulations(IList<Simulation> activeSimulations)
         {
-            // Get a list of all managers that are not active in storage
+            // Get a list of all simulations that are not active in storage.
             var activeIds = activeSimulations.Select(simulation => simulation.Id).ToList();
             var managersToStop = this.simulationManagers.Where(x => !activeIds.Contains(x.Key)).ToList();
 
@@ -241,8 +251,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                     this.simulationManagers[simulation.Id] = manager;
 
-                    this.log.Info("New simulation manager created", () => new { SimulationId = simulation.Id });
-                    this.logDiagnostics.LogServiceStart("Creating new simulation manager.");
+                    var msg = "New simulation manager created";
+                    this.log.Info(msg, () => new { SimulationId = simulation.Id });
+                    this.logDiagnostics.LogServiceStart(msg);
                 }
                 catch (Exception e)
                 {
@@ -354,7 +365,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // Telemetry
             try
             {
-                var count = this.simulationConcurrencyConfig.TelemetryThreads;
+                var count = this.appConcurrencyConfig.TelemetryThreads;
 
                 this.devicesTelemetryThreads = new Thread[count];
                 this.devicesTelemetryTasks = new List<IDeviceTelemetryTask>();
@@ -433,90 +444,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             TimeSpan duration = now - this.lastPolledTime;
 
             // Send heartbeat every 24 hours
+            // TODO: move this check to the diagnostics class.
             if (duration.Days >= DIAGNOSTICS_POLLING_FREQUENCY_DAYS)
             {
                 this.lastPolledTime = now;
                 this.logDiagnostics.LogServiceHeartbeat();
-            }
-        }
-
-        // TODO: Move the method to Simulations.cs  e.g. this.simulations.AddDevicesAsync
-        private async Task AddDeviceToSimulationRecordAsync(Simulation simulation, string deviceId, string modelId)
-        {
-            DeviceModelRef deviceModel = new DeviceModelRef();
-            deviceModel.Id = modelId;
-            CustomDeviceRef customDevice = new CustomDeviceRef();
-            customDevice.DeviceModel = deviceModel;
-            customDevice.DeviceId = deviceId;
-
-            try
-            {
-                if (!simulation.CustomDevices.ToList().Contains(customDevice))
-                {
-                    this.log.Info("Update simulation record");
-                    simulation.CustomDevices.Add(customDevice);
-                    await this.simulations.UpsertAsync(simulation);
-                }
-                else
-                {
-                    this.log.Debug("Device already exists in simulation record");
-                }
-            }
-            catch (Exception e)
-            {
-                this.log.Error("Error while adding new device to simulation record", () => new { e });
-                throw new Exception("Error while adding a new device to simulation record");
-            }
-        }
-
-        // TODO: Move the method to Simulations.cs e.g. this.simulations.RemoveDevicesAsync
-        private async Task DeleteDevicesFromSimulationRecordAsync(Simulation simulation, List<string> ids)
-        {
-            bool shouldUpdateSimulation = false;
-
-            foreach (var id in ids.ToList())
-            {
-                var deviceRemoved = false;
-
-                // Try to remove device from custom devices list
-                foreach (var model in simulation.CustomDevices.ToList())
-                {
-                    if (id.Equals(model.DeviceId))
-                    {
-                        this.log.Info("Remove device from custom device list", () => new { id });
-                        simulation.CustomDevices.Remove(model);
-                        shouldUpdateSimulation = true;
-                        deviceRemoved = true;
-                        break;
-                    }
-                }
-
-                if (!deviceRemoved)
-                {
-                    // Try to remove device from device models list. Update device model count.
-                    foreach (var model in simulation.DeviceModels.ToList())
-                    {
-                        string parsedModelId = id.Substring(0, id.LastIndexOf(('.')));
-                        if (parsedModelId.Equals(model.Id))
-                        {
-                            this.log.Info("Decrement device model count", () => new { id, parsedModelId });
-                            model.Count--;
-                            if (model.Count <= 0)
-                            {
-                                this.log.Info("Remove device from device model list", () => new { id });
-                                simulation.DeviceModels.Remove(model);
-                            }
-
-                            shouldUpdateSimulation = true;
-                        }
-                    }
-                }
-            }
-
-            if (shouldUpdateSimulation)
-            {
-                this.log.Info("Update simulation record in storage");
-                await this.simulations.UpsertAsync(simulation);
             }
         }
     }

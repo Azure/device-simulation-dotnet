@@ -25,7 +25,7 @@ namespace SimulationAgent.Test.DeviceProperties
         private readonly Mock<IRateLimitingConfig> rateLimitingConfig;
         private readonly Mock<IDevicePropertiesActor> devicePropertiesActor;
         private readonly Mock<IDeviceStateActor> deviceStateActor;
-        private readonly Mock<IDeviceConnectionActor> deviceConnectionActor;
+        private readonly Mock<IDeviceConnectionActor> mockDeviceContext;
         private readonly Mock<ISmartDictionary> properties;
         private readonly Mock<IDeviceClient> client;
         private readonly Mock<PropertiesLoopSettings> loopSettings;
@@ -38,7 +38,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.rateLimitingConfig = new Mock<IRateLimitingConfig>();
             this.devicePropertiesActor = new Mock<IDevicePropertiesActor>();
             this.deviceStateActor = new Mock<IDeviceStateActor>();
-            this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
+            this.mockDeviceContext = new Mock<IDeviceConnectionActor>();
             this.properties = new Mock<ISmartDictionary>();
             this.client = new Mock<IDeviceClient>();
             this.loopSettings = new Mock<PropertiesLoopSettings>(
@@ -92,7 +92,7 @@ namespace SimulationAgent.Test.DeviceProperties
                 mockSimulationContext.Object,
                 DEVICE_ID,
                 this.deviceStateActor.Object,
-                this.deviceConnectionActor.Object,
+                this.mockDeviceContext.Object,
                 this.loopSettings.Object);
         }
 

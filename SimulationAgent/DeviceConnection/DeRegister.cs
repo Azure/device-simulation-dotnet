@@ -16,7 +16,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private readonly ILogger log;
         private readonly IInstance instance;
         private string deviceId;
-        private IDeviceConnectionActor deviceConnectionActor;
+        private IDeviceConnectionActor deviceContext;
+        private ISimulationContext simulationContext;
 
         public Deregister(ILogger logger, IInstance instance)
         {
@@ -24,11 +25,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.instance = instance;
         }
 
-        public void Init(IDeviceConnectionActor actor, string deviceId, DeviceModel deviceModel)
+        public void Init(IDeviceConnectionActor context, string deviceId, DeviceModel deviceModel)
         {
             this.instance.InitOnce();
 
-            this.deviceConnectionActor = actor;
+            this.deviceContext = context;
+            this.simulationContext = context.SimulationContext;
             this.deviceId = deviceId;
 
             this.instance.InitComplete();
@@ -43,17 +45,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             try
             {
                 var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                await this.deviceConnectionActor.SimulationContext.Devices.DeleteAsync(this.deviceId);
+                await this.simulationContext.Devices.DeleteAsync(this.deviceId);
 
                 var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
                 this.log.Debug("Device deregistered", () => new { this.deviceId, timeSpent });
 
-                this.deviceConnectionActor.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceDeregistered);
+                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceDeregistered);
             }
             catch (Exception e)
             {
                 this.log.Error("Error while registering the device", () => new { this.deviceId, e });
-                this.deviceConnectionActor.HandleEvent(DeviceConnectionActor.ActorEvents.DeregisterationFailed);
+                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DeregisterationFailed);
             }
         }
     }

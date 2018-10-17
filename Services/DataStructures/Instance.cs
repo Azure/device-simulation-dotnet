@@ -15,16 +15,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures
         void InitComplete();
 
         // Fail with exception if the instance has already been initialized
-        void InitOnce([CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0);
+        void InitOnce(
+            [CallerMemberName] string callerName = "", 
+            [CallerFilePath] string filePath = "", 
+            [CallerLineNumber] int lineNumber = 0);
 
         // Fail with exception if the instance has not been initialized
-        void InitRequired([CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0);
+        void InitRequired(
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int lineNumber = 0);
     }
 
     /// <summary>

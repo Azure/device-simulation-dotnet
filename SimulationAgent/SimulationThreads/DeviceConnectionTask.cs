@@ -22,15 +22,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     public class DeviceConnectionTask : IDeviceConnectionTask
     {
         // Global settings, not affected by hub SKU or simulation settings
-        private readonly ISimulationConcurrencyConfig simulationConcurrencyConfig;
+        private readonly IAppConcurrencyConfig appConcurrencyConfig;
 
         private readonly ILogger log;
 
         public DeviceConnectionTask(
-            ISimulationConcurrencyConfig simulationConcurrencyConfig,
+            IAppConcurrencyConfig appConcurrencyConfig,
             ILogger logger)
         {
-            this.simulationConcurrencyConfig = simulationConcurrencyConfig;
+            this.appConcurrencyConfig = appConcurrencyConfig;
             this.log = logger;
         }
 
@@ -40,7 +40,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             CancellationToken runningToken)
         {
             // Once N devices are attempting to connect, wait until they are done
-            var pendingTasksLimit = this.simulationConcurrencyConfig.MaxPendingConnections;
+            var pendingTasksLimit = this.appConcurrencyConfig.MaxPendingConnections;
             var tasks = new List<Task>();
 
             while (!runningToken.IsCancellationRequested)
@@ -75,7 +75,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                 this.log.Debug("Device-state loop completed", () => new { durationMsecs });
-                this.SlowDownIfTooFast(durationMsecs, this.simulationConcurrencyConfig.MinDeviceConnectionLoopDuration);
+                this.SlowDownIfTooFast(durationMsecs, this.appConcurrencyConfig.MinDeviceConnectionLoopDuration);
             }
         }
 

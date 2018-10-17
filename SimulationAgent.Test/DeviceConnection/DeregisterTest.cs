@@ -26,7 +26,7 @@ namespace SimulationAgent.Test.DeviceConnection
         private Mock<IDevices> devices;
         private readonly Mock<IScriptInterpreter> scriptInterpreter;
         private readonly Mock<IDeviceStateActor> deviceStateActor;
-        private readonly Mock<IDeviceConnectionActor> mockDeviceConnectionActor;
+        private readonly Mock<IDeviceConnectionActor> mockDeviceContext;
         private readonly Mock<IRateLimitingConfig> rateLimitingConfig;
         private readonly Mock<ConnectionLoopSettings> loopSettings;
         private readonly Mock<IInstance> mockInstance;
@@ -41,7 +41,7 @@ namespace SimulationAgent.Test.DeviceConnection
             this.scriptInterpreter = new Mock<IScriptInterpreter>();
             this.rateLimitingConfig = new Mock<IRateLimitingConfig>();
             this.deviceStateActor = new Mock<IDeviceStateActor>();
-            this.mockDeviceConnectionActor = new Mock<IDeviceConnectionActor>();
+            this.mockDeviceContext = new Mock<IDeviceConnectionActor>();
             this.loopSettings = new Mock<ConnectionLoopSettings>(this.rateLimitingConfig.Object);
             this.mockInstance = new Mock<IInstance>();
             this.deviceModel = new DeviceModel { Id = DEVICE_ID };
@@ -54,14 +54,14 @@ namespace SimulationAgent.Test.DeviceConnection
         {
             // Arrange
             this.SetupDeviceConnectionActor();
-            this.target.Init(this.mockDeviceConnectionActor.Object, DEVICE_ID, this.deviceModel);
+            this.target.Init(this.mockDeviceContext.Object, DEVICE_ID, this.deviceModel);
 
             // Act
             await this.target.RunAsync();
 
             // Assert
             this.devices.Verify(m => m.DeleteAsync(DEVICE_ID));
-            this.mockDeviceConnectionActor.Verify(x => x.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceDeregistered));
+            this.mockDeviceContext.Verify(x => x.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceDeregistered));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -69,14 +69,14 @@ namespace SimulationAgent.Test.DeviceConnection
         {
             // Arrange
             this.SetupDeviceConnectionActor();
-            this.target.Init(this.mockDeviceConnectionActor.Object, DEVICE_ID, this.deviceModel);
+            this.target.Init(this.mockDeviceContext.Object, DEVICE_ID, this.deviceModel);
             this.devices.Setup(x => x.DeleteAsync(It.IsAny<string>())).Throws<Exception>();
 
             // Act
             await this.target.RunAsync();
 
             // Assert
-            this.mockDeviceConnectionActor.Verify(x => x.HandleEvent(DeviceConnectionActor.ActorEvents.DeregisterationFailed));
+            this.mockDeviceContext.Verify(x => x.HandleEvent(DeviceConnectionActor.ActorEvents.DeregisterationFailed));
         }
 
         private void SetupDeviceConnectionActor()
@@ -86,7 +86,7 @@ namespace SimulationAgent.Test.DeviceConnection
             mockSimulationContext.SetupGet(x => x.Devices).Returns(this.devices.Object);
             mockSimulationContext.Object.InitAsync(testSimulation).Wait(Constants.TEST_TIMEOUT);
 
-            this.mockDeviceConnectionActor.SetupGet(x => x.SimulationContext).Returns(mockSimulationContext.Object);
+            this.mockDeviceContext.SetupGet(x => x.SimulationContext).Returns(mockSimulationContext.Object);
         }
     }
 }

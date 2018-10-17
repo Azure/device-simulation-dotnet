@@ -22,16 +22,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     public class UpdatePropertiesTask : IUpdatePropertiesTask
     {
         // Global settings, not affected by hub SKU or simulation settings
-        private readonly ISimulationConcurrencyConfig appConcurrencyConfig;
+        private readonly IAppConcurrencyConfig appConcurrencyConfig;
 
         private readonly ILogger log;
 
         public UpdatePropertiesTask(
-            //IRateLimitingConfig ratingConfig,
-            ISimulationConcurrencyConfig appConcurrencyConfig,
+            IAppConcurrencyConfig appConcurrencyConfig,
             ILogger logger)
         {
-            //this.propertiesLoopSettings = new PropertiesLoopSettings(ratingConfig);
             this.appConcurrencyConfig = appConcurrencyConfig;
             this.log = logger;
         }

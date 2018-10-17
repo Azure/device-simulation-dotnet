@@ -16,7 +16,7 @@ namespace SimulationAgent.Test.SimulationThreads
         private const int NUM_ACTORS = 9;
 
         private Mock<ILogger> mockLogger;
-        private Mock<ISimulationConcurrencyConfig> mockSimulationConcurrencyConfig;
+        private Mock<IAppConcurrencyConfig> mockAppConcurrencyConfig;
         private ConcurrentDictionary<string, Mock<IDeviceStateActor>> mockDeviceStateActors;
         private ConcurrentDictionary<string, IDeviceStateActor> mockDeviceStateActorObjects;
 
@@ -27,11 +27,11 @@ namespace SimulationAgent.Test.SimulationThreads
             this.mockDeviceStateActors = new ConcurrentDictionary<string, Mock<IDeviceStateActor>>();
             this.mockDeviceStateActorObjects = new ConcurrentDictionary<string, IDeviceStateActor>();
 
-            this.mockSimulationConcurrencyConfig = new Mock<ISimulationConcurrencyConfig>();
+            this.mockAppConcurrencyConfig = new Mock<IAppConcurrencyConfig>();
             this.mockLogger = new Mock<ILogger>();
 
             this.target = new DeviceStateTask(
-                this.mockSimulationConcurrencyConfig.Object,
+                this.mockAppConcurrencyConfig.Object,
                 this.mockLogger.Object);
         }
 

@@ -16,7 +16,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         bool IsDeviceActive { get; }
 
         void Init(
-            ISimulationContext context,
+            ISimulationContext simulationContext,
             string deviceId,
             DeviceModel deviceModel,
             int deviceCounter);
@@ -26,19 +26,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
 
     public class DeviceStateActor : IDeviceStateActor
     {
-        public enum ActorStatus
+        private enum ActorStatus
         {
             None,
             Updating
         }
 
-        public ISmartDictionary DeviceState { get; set; }
-        public ISmartDictionary DeviceProperties { get; set; }
-
-        public const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
-        public const string SUPPORTED_METHODS_KEY = "SupportedMethods";
-        public const string TELEMETRY_KEY = "Telemetry";
-        public const int DEVICE_ACTOR_START_DISTRIBUTION_WINDOW_MSECS = 10000;
+        private const string SUPPORTED_METHODS_KEY = "SupportedMethods";
+        private const string TELEMETRY_KEY = "Telemetry";
+        private const int START_DISTRIBUTION_WINDOW_MSECS = 10000;
 
         private readonly UpdateDeviceState updateDeviceStateLogic;
         private readonly ILogger log;
@@ -46,11 +42,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
 
         private string deviceId;
         private DeviceModel deviceModel;
+        private long simulationErrorsCount;
         private long whenCanIUpdate;
         private int startDelayMsecs;
         private ActorStatus status;
-        private long simulationErrorsCount;
         private ISimulationContext simulationContext;
+
+        public ISmartDictionary DeviceState { get; set; }
+        public ISmartDictionary DeviceProperties { get; set; }
+
+        public const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
 
         /// <summary>
         /// The device is considered active when the state is being updated.
@@ -92,19 +93,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         /// Init() should be called only once, typically after the constructor.
         /// </summary>
         public void Init(
-            ISimulationContext context,
+            ISimulationContext simulationContext,
             string deviceId,
             DeviceModel deviceModel,
             int deviceCounter)
         {
             this.instance.InitOnce();
 
-            this.simulationContext = context;
+            this.simulationContext = simulationContext;
             this.deviceModel = deviceModel;
             this.deviceId = deviceId;
 
             // Distribute actors start over 10 secs
-            this.startDelayMsecs = deviceCounter % DEVICE_ACTOR_START_DISTRIBUTION_WINDOW_MSECS;
+            this.startDelayMsecs = deviceCounter % START_DISTRIBUTION_WINDOW_MSECS;
 
             this.instance.InitComplete();
         }

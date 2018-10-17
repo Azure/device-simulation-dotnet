@@ -7,7 +7,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 {
     public interface IDeviceConnectionLogic
     {
-        void Init(IDeviceConnectionActor actor, string deviceId, DeviceModel deviceModel);
+        void Init(IDeviceConnectionActor context, string deviceId, DeviceModel deviceModel);
         Task RunAsync();
     }
 }

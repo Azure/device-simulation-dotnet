@@ -25,12 +25,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private const int MAX_DELETE_DEVICES = 100;
 
         private readonly ISimulations simulationsService;
-        private readonly IServicesConfig servicesConfig;
-        private readonly IDeploymentConfig deploymentConfig;
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly IIothubMetrics iothubMetrics;
         private readonly ISimulationAgent simulationAgent;
-        private readonly IRateLimiting rateReporter;
         private readonly ILogger log;
 
         public SimulationsController(
@@ -45,12 +42,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             ILogger logger)
         {
             this.simulationsService = simulationsService;
-            this.servicesConfig = servicesConfig;
-            this.deploymentConfig = deploymentConfig;
             this.connectionStringManager = connectionStringManager;
             this.iothubMetrics = iothubMetrics;
             this.simulationAgent = simulationAgent;
-            this.rateReporter = rateReporter;
             this.log = logger;
         }
 
@@ -160,6 +154,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             await this.simulationAgent.DeleteDevicesAsync(devices.DeviceIds);
         }
 
+        // TODO: save statistics to storage during patch
         [HttpPatch("{id}")]
         public async Task<SimulationApiModel> PatchAsync(
             string id,

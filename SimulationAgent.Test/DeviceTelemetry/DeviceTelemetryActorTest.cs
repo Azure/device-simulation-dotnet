@@ -25,7 +25,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
         private readonly Mock<IRateLimiting> rateLimiting;
         private readonly Mock<SendTelemetry> sendTelemetryLogic;
         private readonly Mock<IDeviceStateActor> deviceStateActor;
-        private readonly Mock<IDeviceConnectionActor> deviceConnectionActor;
+        private readonly Mock<IDeviceConnectionActor> mockDeviceContext;
         private readonly Mock<IDevices> devices;
         private readonly Mock<IFactory> mockFactory;
         private readonly Mock<IInstance> mockInstance;
@@ -42,7 +42,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
             this.mockFactory = new Mock<IFactory>();
             this.mockInstance = new Mock<IInstance>();
             this.deviceStateActor = new Mock<IDeviceStateActor>();
-            this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
+            this.mockDeviceContext = new Mock<IDeviceConnectionActor>();
 
             this.rateLimitingConfig.Setup(x => x.DeviceMessagesPerSecond).Returns(10);
 
@@ -126,7 +126,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
             string DEVICE_ID = "01";
             var deviceModel = new DeviceModel { Id = DEVICE_ID };
             var message = new DeviceModel.DeviceModelMessage();
-            this.deviceConnectionActor.SetupGet(x => x.Connected).Returns(true);
+            this.mockDeviceContext.SetupGet(x => x.Connected).Returns(true);
 
             var simulationContext = new SimulationContext(
                 this.devices.Object,
@@ -140,7 +140,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
                 deviceModel,
                 message,
                 this.deviceStateActor.Object,
-                this.deviceConnectionActor.Object);
+                this.mockDeviceContext.Object);
         }
     }
 }

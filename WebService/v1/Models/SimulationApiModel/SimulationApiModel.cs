@@ -35,8 +35,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "Enabled")]
         public bool? Enabled { get; set; }
 
-        [JsonProperty(PropertyName = "DevicesCleanUpRequestedByUser")]
-        public bool? DevicesCleanUpRequestedByUser { get; set; }
+        [JsonProperty(PropertyName = "DeleteDevicesWhenSimulationEnds")]
+        public bool? DeleteDevicesWhenSimulationEnds { get; set; }
 
         // Note: read-only property, used only to report the simulation status
         [JsonProperty(PropertyName = "Running")]
@@ -82,7 +82,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             // When unspecified, a simulation is enabled
             this.Enabled = true;
             this.Running = false;
-            this.DevicesCleanUpRequestedByUser = false;
+            this.DeleteDevicesWhenSimulationEnds = false;
             this.ActiveNow = false;
             this.IotHubs = new List<SimulationIotHub>();
             this.StartTime = null;
@@ -124,9 +124,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
             // Overwrite the value only if the request included the field, i.e. don't
             // delete all devices if the user didn't explicitly ask to.
-            if (this.DevicesCleanUpRequestedByUser.HasValue)
+            if (this.DeleteDevicesWhenSimulationEnds.HasValue)
             {
-                result.DevicesCleanUpRequiredByUser = this.DevicesCleanUpRequestedByUser.Value;
+                result.DeleteDevicesWhenSimulationEnds = this.DeleteDevicesWhenSimulationEnds.Value;
             }
 
             foreach (var hub in this.IotHubs)
@@ -156,7 +156,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Enabled = value.Enabled,
                 Running = value.ShouldBeRunning,
                 ActiveNow = value.IsActiveNow,
-                DevicesCleanUpRequestedByUser = value.DevicesCleanUpRequiredByUser,
+                DeleteDevicesWhenSimulationEnds = value.DeleteDevicesWhenSimulationEnds,
                 StartTime = value.StartTime.ToString(),
                 EndTime = value.EndTime.ToString(),
                 StoppedTime = value.StoppedTime.ToString(),

@@ -467,13 +467,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.deviceStateActors.AddOrUpdate(dictKey, deviceStateActor, (k, v) => deviceStateActor);
 
             // Create one connection actor for each device
-            var deviceConnectionActor = this.factory.Resolve<IDeviceConnectionActor>();
-            deviceConnectionActor.Init(this.simulationContext, deviceId, deviceModel, deviceStateActor, this.simulationContext.ConnectionLoopSettings);
-            this.deviceConnectionActors.AddOrUpdate(dictKey, deviceConnectionActor, (k, v) => deviceConnectionActor);
+            var deviceContext = this.factory.Resolve<IDeviceConnectionActor>();
+            deviceContext.Init(this.simulationContext, deviceId, deviceModel, deviceStateActor, this.simulationContext.ConnectionLoopSettings);
+            this.deviceConnectionActors.AddOrUpdate(dictKey, deviceContext, (k, v) => deviceContext);
 
             // Create one device properties actor for each device
             var devicePropertiesActor = this.factory.Resolve<IDevicePropertiesActor>();
-            devicePropertiesActor.Init(this.simulationContext, deviceId, deviceStateActor, deviceConnectionActor, this.simulationContext.PropertiesLoopSettings);
+            devicePropertiesActor.Init(this.simulationContext, deviceId, deviceStateActor, deviceContext, this.simulationContext.PropertiesLoopSettings);
             this.devicePropertiesActors.AddOrUpdate(dictKey, devicePropertiesActor, (k, v) => devicePropertiesActor);
 
             // Create one telemetry actor for each telemetry message to be sent
@@ -489,7 +489,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 }
 
                 var deviceTelemetryActor = this.factory.Resolve<IDeviceTelemetryActor>();
-                deviceTelemetryActor.Init(this.simulationContext, deviceId, deviceModel, message, deviceStateActor, deviceConnectionActor);
+                deviceTelemetryActor.Init(this.simulationContext, deviceId, deviceModel, message, deviceStateActor, deviceContext);
 
                 var actorKey = this.GetTelemetryDictKey(dictKey, (i++).ToString());
                 this.deviceTelemetryActors.AddOrUpdate(actorKey, deviceTelemetryActor, (k, v) => deviceTelemetryActor);

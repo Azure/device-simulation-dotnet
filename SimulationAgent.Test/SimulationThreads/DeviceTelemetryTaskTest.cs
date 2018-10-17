@@ -30,7 +30,7 @@ namespace SimulationAgent.Test.SimulationThreads
             this.deviceTelemetryActorMocks = new ConcurrentDictionary<string, Mock<IDeviceTelemetryActor>>();
             this.deviceTelemetryActorObjects = new ConcurrentDictionary<string, IDeviceTelemetryActor>();
 
-            Mock<ISimulationConcurrencyConfig> mockSimulationConcurrencyConfig = new Mock<ISimulationConcurrencyConfig>();
+            Mock<IAppConcurrencyConfig> mockSimulationConcurrencyConfig = new Mock<IAppConcurrencyConfig>();
             mockSimulationConcurrencyConfig.SetupGet(x => x.MaxPendingTelemetry).Returns(MAX_PENDING_TELEMETRY_TASKS);
             Mock<ILogger> mockLogger = new Mock<ILogger>();
 
@@ -60,7 +60,7 @@ namespace SimulationAgent.Test.SimulationThreads
             // so that the main loop in the target will only run once.
             var targetTask = this.target.RunAsync(
                 this.deviceTelemetryActorObjects,
-                1,
+                threadPosition,
                 TELEMETRY_THREAD_COUNT,
                 cancellationToken.Token);
             targetTask.Wait(Constants.TEST_TIMEOUT);
@@ -80,7 +80,7 @@ namespace SimulationAgent.Test.SimulationThreads
 
             // Compare the number of actors that were called to the number of
             // actors that we expect to be called.
-            var expectedActorCallCount = ACTOR_COUNT - chunkSize;
+            var expectedActorCallCount = chunkSize;
             Assert.Equal(expectedActorCallCount, countOfActorCalls);
         }
 

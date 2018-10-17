@@ -19,7 +19,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private readonly IInstance instance;
         private string deviceId;
         private DeviceModel deviceModel;
-        private IDeviceConnectionActor deviceConnectionActor;
+        private IDeviceConnectionActor deviceContext;
+        private ISimulationContext simulationContext;
 
         public Disconnect(
             IScriptInterpreter scriptInterpreter,
@@ -31,11 +32,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.instance = instance;
         }
 
-        public void Init(IDeviceConnectionActor actor, string deviceId, DeviceModel deviceModel)
+        public void Init(IDeviceConnectionActor context, string deviceId, DeviceModel deviceModel)
         {
             this.instance.InitOnce();
 
-            this.deviceConnectionActor = actor;
+            this.deviceContext = context;
+            this.simulationContext = context.SimulationContext;
             this.deviceId = deviceId;
             this.deviceModel = deviceModel;
 
@@ -50,22 +52,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
             try
             {
-                this.deviceConnectionActor.Client = this.deviceConnectionActor.SimulationContext.Devices.GetClient(
-                    this.deviceConnectionActor.Device,
+                this.deviceContext.Client = this.simulationContext.Devices.GetClient(
+                    this.deviceContext.Device,
                     this.deviceModel.Protocol,
                     this.scriptInterpreter);
 
                 var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                await this.deviceConnectionActor.Client.DisconnectAsync();
+                await this.deviceContext.Client.DisconnectAsync();
 
                 var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
                 this.log.Debug("Device disconnected", () => new { this.deviceId, timeSpent });
-                this.deviceConnectionActor.HandleEvent(DeviceConnectionActor.ActorEvents.Disconnected);
+                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.Disconnected);
             }
             catch (Exception e)
             {
                 this.log.Error("Error disconnecting device", () => new { this.deviceId, e });
-                this.deviceConnectionActor.HandleEvent(DeviceConnectionActor.ActorEvents.DisconnectionFailed);
+                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DisconnectionFailed);
             }
         }
     }

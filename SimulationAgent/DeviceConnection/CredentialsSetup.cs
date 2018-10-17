@@ -15,7 +15,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private readonly ILogger log;
         private readonly IInstance instance;
         private string deviceId;
-        private IDeviceConnectionActor context;
+        private IDeviceConnectionActor deviceContext;
+        private ISimulationContext simulationContext;
 
         public CredentialsSetup(ILogger logger, IInstance instance)
         {
@@ -23,11 +24,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.instance = instance;
         }
 
-        public void Init(IDeviceConnectionActor actor, string deviceId, DeviceModel deviceModel)
+        public void Init(IDeviceConnectionActor context, string deviceId, DeviceModel deviceModel)
         {
             this.instance.InitOnce();
 
-            this.context = actor;
+            this.deviceContext = context;
+            this.simulationContext = context.SimulationContext;
             this.deviceId = deviceId;
 
             this.instance.InitComplete();
@@ -38,8 +40,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.instance.InitRequired();
 
             this.log.Debug("Configuring device credentials...", () => new { this.deviceId });
-            this.context.Device = this.context.SimulationContext.Devices.GetWithKnownCredentials(this.deviceId);
-            this.context.HandleEvent(DeviceConnectionActor.ActorEvents.CredentialsSetupCompleted);
+            this.deviceContext.Device = this.simulationContext.Devices.GetWithKnownCredentials(this.deviceId);
+            this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.CredentialsSetupCompleted);
             return Task.CompletedTask;
         }
     }

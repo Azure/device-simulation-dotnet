@@ -4,7 +4,8 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
-    public interface ISimulationConcurrencyConfig
+    // Global settings, not affected by hub SKU or simulation settings
+    public interface IAppConcurrencyConfig
     {
         int TelemetryThreads { get; }
         int MaxPendingConnections { get; }
@@ -17,7 +18,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         int MaxPendingTasks { get; }
     }
 
-    public class SimulationConcurrencyConfig : ISimulationConcurrencyConfig
+    // Global settings, not affected by hub SKU or simulation settings
+    public class AppConcurrencyConfig : IAppConcurrencyConfig
     {
         private const int DEFAULT_TELEMETRY_THREADS = 4;
         private const int DEFAULT_MAX_PENDING_CONNECTIONS = 200;
@@ -45,7 +47,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         private int minDevicePropertiesLoopDuration;
         private int maxPendingTasks;
 
-        public SimulationConcurrencyConfig()
+        public AppConcurrencyConfig()
         {
             // Initialize object with default values
             this.TelemetryThreads = DEFAULT_TELEMETRY_THREADS;

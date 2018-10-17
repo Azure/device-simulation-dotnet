@@ -25,13 +25,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         private readonly ILogger log;
 
         // Global settings, not affected by hub SKU or simulation settings
-        private readonly ISimulationConcurrencyConfig simulationConcurrencyConfig;
+        private readonly IAppConcurrencyConfig appConcurrencyConfig;
 
         public DeviceTelemetryTask(
-            ISimulationConcurrencyConfig simulationConcurrencyConfig,
+            IAppConcurrencyConfig appConcurrencyConfig,
             ILogger logger)
         {
-            this.simulationConcurrencyConfig = simulationConcurrencyConfig;
+            this.appConcurrencyConfig = appConcurrencyConfig;
             this.log = logger;
         }
 
@@ -58,7 +58,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             CancellationToken runningToken)
         {
             // Once N devices are attempting to send telemetry, wait until they are done
-            var pendingTaskLimit = this.simulationConcurrencyConfig.MaxPendingTelemetry;
+            var pendingTaskLimit = this.appConcurrencyConfig.MaxPendingTelemetry;
             var tasks = new List<Task>();
 
             while (!runningToken.IsCancellationRequested)
@@ -91,7 +91,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     //    |            |
                     //    v            v
                     //    +------------+-------------------------+
-                    //    | don't send |    send    |    send    | 
+                    //    |    send    | don't send | don't send | 
                     //    +------------+-------------------------+
                     //
                     //
@@ -101,7 +101,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     //                 |            |
                     //                 v            v
                     //    +------------+-------------------------+
-                    //    |    send    | don't send |    send    | 
+                    //    | don't send |    send    | don't send | 
                     //    +------------+-------------------------+
                     //
                     //
@@ -111,10 +111,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     //                              |            |
                     //                              v            v
                     //    +------------+-------------------------+
-                    //    |    send    |    send    | don't send | 
+                    //    | don't send | don't send |    send    | 
                     //    +------------+-------------------------+
                     index++;
-                    if (!(index >= firstActor && index < lastActor))
+                    if (index >= firstActor && index < lastActor)
                     {
                         tasks.Add(telemetry.Value.RunAsync());
 
@@ -128,7 +128,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                 this.log.Debug("Telemetry loop completed", () => new { durationMsecs });
-                this.SlowDownIfTooFast(durationMsecs, this.simulationConcurrencyConfig.MinDeviceTelemetryLoopDuration);
+                this.SlowDownIfTooFast(durationMsecs, this.appConcurrencyConfig.MinDeviceTelemetryLoopDuration);
             }
 
             // If there are pending tasks...

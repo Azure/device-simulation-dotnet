@@ -40,7 +40,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
     public class DeviceConnectionActor : IDeviceConnectionActor
     {
-        public enum ActorStatus
+        private enum ActorStatus
         {
             None,
             ReadyToStart,
@@ -203,7 +203,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         /// <summary>
         /// Invoke this method before calling Execute(), to initialize the actor
         /// with details like the device model and message type to simulate.
-        /// SetupAsync() should be called only once.
+        /// Init() should be called only once.
         /// </summary>
         public void Init(
             ISimulationContext simulationContext,
@@ -532,6 +532,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private void ScheduleDisconnection()
         {
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+            // TODO: should disconnection impact rate limiting?
             var pauseMsec = this.simulationContext.RateLimiting.GetPauseForNextConnection();
             this.whenToRun = now + pauseMsec;
             this.status = ActorStatus.ReadyToDisconnect;
