@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Threading.Tasks;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
@@ -17,6 +19,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         bool IsDeviceActive { get; }
         long SimulationErrorsCount { get; }
         void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices);
+
+        void Init(
+            ISimulationContext simulationContext,
+            string deviceId,
+            DeviceModel deviceModel,
+            int deviceCounter);
+
         void Run();
     }
 
@@ -98,6 +107,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
             this.startDelayMsecs = (int) (msecs * ((double) position / totalDevices));
         }
 
+        public void Init(
+            ISimulationContext simulationContext,
+            string deviceId,
+            DeviceModel deviceModel,
+            int deviceCounter)
+        {
+            // TODO: will be implemented when SimulationManager is integrated
+        }
+
         public void Run()
         {
             try
@@ -162,7 +180,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         private ISmartDictionary GetInitialProperties(DeviceModel model)
         {
             var properties = new SmartDictionary();
-            
+
             if (model.Properties == null || this.deviceModel.CloudToDeviceMethods == null) return properties;
 
             // Add telemetry property

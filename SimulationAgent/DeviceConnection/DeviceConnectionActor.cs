@@ -22,6 +22,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         long SimulationErrorsCount { get; }
         bool IsDeleted { get; }
         Task SetupAsync(string deviceId, DeviceModel deviceModel, IDeviceStateActor deviceStateActor, ConnectionLoopSettings loopSettings);
+
+        void Init(
+            ISimulationContext simulationContext,
+            string deviceId,
+            DeviceModel deviceModel,
+            IDeviceStateActor deviceStateActor,
+            ConnectionLoopSettings loopSettings);
+
         Task RunAsync();
         void HandleEvent(DeviceConnectionActor.ActorEvents e);
         void Stop();
@@ -207,9 +215,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             await this.connectLogic.SetupAsync(this, this.deviceId, this.deviceModel);
             await this.deregisterLogic.SetupAsync(this, this.deviceId, this.deviceModel);
             await this.disconnectLogic.SetupAsync(this, this.deviceId, this.deviceModel);
-            this.actorLogger.Setup(deviceId, "Connection");
+            this.actorLogger.Init(deviceId, "Connection");
 
             this.status = ActorStatus.ReadyToStart;
+        }
+
+        public void Init(
+            ISimulationContext simulationContext,
+            string deviceId,
+            DeviceModel deviceModel,
+            IDeviceStateActor deviceStateActor,
+            ConnectionLoopSettings loopSettings)
+        {
+            // TODO: will be implemented when SimulationManager is integrated.
         }
 
         public void Stop()

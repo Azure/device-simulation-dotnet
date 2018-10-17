@@ -44,7 +44,7 @@ namespace SimulationAgent.Test.DeviceProperties
         {
             // Arrange
             this.SetupPropertiesActor();
-            this.target.Setup(this.devicePropertiesActor.Object, DEVICE_ID);
+            this.target.Init(this.devicePropertiesActor.Object, DEVICE_ID);
 
             // Act
             this.target.RunAsync().Wait();

@@ -23,7 +23,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     {
         Task StartAsync(Simulation simulation);
         void Stop();
-        Task AddDeviceAsync(string deviceId, string modelId);
+        Task AddDeviceAsync(string simulationId, string deviceId, string modelId);
         void DeleteDevices(List<string> ids);
         long ActiveDevicesCount { get; }
         long TotalMessagesCount { get; }
@@ -180,9 +180,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     // Load device model and merge with overrides
                     var deviceModel = this.GetDeviceModel(model.Id, model.Override);
 
-                    for (var i = 0; i < model.Count; i++)
+                    for (var i = 1; i <= model.Count; i++)
                     {
-                        await this.CreateActorsForDeviceAsync(deviceModel, i, total);
+                        await this.CreateActorsForDeviceAsync(simulation.Id, deviceModel, i, total);
                     }
                 }
                 catch (ResourceNotFoundException)
@@ -203,7 +203,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             foreach (var customDevice in simulation.CustomDevices)
             {
-                await this.AddCustomDeviceAsync(customDevice.DeviceId, customDevice.DeviceModel.Id);
+                await this.AddCustomDeviceAsync(simulation.Id, customDevice.DeviceId, customDevice.DeviceModel.Id);
             }
 
             // Use `running` to avoid starting the simulation more than once
@@ -266,9 +266,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        public async Task AddDeviceAsync(string deviceId, string modelId)
+        public async Task AddDeviceAsync(string simulationId, string deviceId, string modelId)
         {
-            await this.AddCustomDeviceAsync(deviceId, modelId);
+            await this.AddCustomDeviceAsync(simulationId, deviceId, modelId);
         }
 
         /// <summary>
@@ -503,9 +503,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
          * one actor to manage the connection to the hub, and one actor for each
          * telemetry message to send.
          */
-        private async Task CreateActorsForDeviceAsync(DeviceModel deviceModel, int position, int total, string deviceId = null)
+        private async Task CreateActorsForDeviceAsync(string simulationId, DeviceModel deviceModel, int position, int total, string deviceId = null)
         {
-            var id = deviceId ?? this.devices.GenerateId(deviceModel.Id, position);
+            var id = deviceId ?? this.devices.GenerateId(simulationId, deviceModel.Id, position);
             var key = deviceId ?? deviceModel.Id + "#" + position;
 
             this.log.Debug("Creating device actors...",
@@ -705,10 +705,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             Interlocked.Increment(ref this.simulationErrors);
         }
 
-        private async Task AddCustomDeviceAsync(string deviceId, string modelId)
+        private async Task AddCustomDeviceAsync(string simulationId, string deviceId, string modelId)
         {
             DeviceModel model = this.GetDeviceModel(modelId, null);
-            await this.CreateActorsForDeviceAsync(model, 0, 1, deviceId);
+            await this.CreateActorsForDeviceAsync(simulationId, model, 0, 1, deviceId);
         }
     }
 }
