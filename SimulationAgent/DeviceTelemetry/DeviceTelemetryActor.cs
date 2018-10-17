@@ -4,6 +4,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
@@ -21,6 +22,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         long FailedMessagesCount { get; }
 
         void Setup(
+            string deviceId,
+            DeviceModel deviceModel,
+            DeviceModel.DeviceModelMessage message,
+            IDeviceStateActor deviceStateActor,
+            IDeviceConnectionActor deviceConnectionActor);
+
+        void Init(
+            ISimulationContext simulationContext,
             string deviceId,
             DeviceModel deviceModel,
             DeviceModel.DeviceModelMessage message,
@@ -59,9 +68,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         private readonly IActorsLogger actorLogger;
         private readonly IRateLimiting rateLimiting;
         private readonly IDeviceTelemetryLogic sendTelemetryLogic;
+        private readonly IInstance instance;
 
         private ActorStatus status;
         private string deviceId;
+        private ISimulationContext simulationContext;
         private DeviceModel deviceModel;
         private long whenToRun;
         private long totalMessagesCount;
@@ -107,12 +118,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             ILogger logger,
             IActorsLogger actorLogger,
             IRateLimiting rateLimiting,
-            SendTelemetry sendTelemetryLogic)
+            SendTelemetry sendTelemetryLogic,
+            IInstance instance)
         {
             this.log = logger;
             this.actorLogger = actorLogger;
             this.rateLimiting = rateLimiting;
             this.sendTelemetryLogic = sendTelemetryLogic;
+            this.instance = instance;
 
             this.Message = null;
 
@@ -149,12 +162,40 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             this.deviceStateActor = deviceStateActor;
             this.deviceConnectionActor = deviceConnectionActor;
 
-            this.sendTelemetryLogic.Setup(this, this.deviceId, this.deviceModel);
-            this.actorLogger.Setup(deviceId, "Telemetry");
+            this.sendTelemetryLogic.Init(this, this.deviceId, this.deviceModel);
+            this.actorLogger.Init(deviceId, "Telemetry");
 
             this.status = ActorStatus.ReadyToStart;
         }
 
+        /// <summary>
+        /// Invoke this method before calling Execute(), to initialize the actor
+        /// with details like the device model and message type to simulate.
+        /// </summary>
+        public void Init(
+            ISimulationContext simulationContext,
+            string deviceId,
+            DeviceModel deviceModel,
+            DeviceModel.DeviceModelMessage message,
+            IDeviceStateActor deviceStateActor,
+            IDeviceConnectionActor deviceConnectionActor)
+        {
+            this.instance.InitOnce();
+
+            this.simulationContext = simulationContext;
+            this.deviceModel = deviceModel;
+            this.Message = message;
+            this.deviceId = deviceId;
+            this.deviceStateActor = deviceStateActor;
+            this.deviceConnectionActor = deviceConnectionActor;
+
+            this.sendTelemetryLogic.Init(this, this.deviceId, this.deviceModel);
+            this.actorLogger.Init(deviceId, "Telemetry");
+
+            this.status = ActorStatus.ReadyToStart;
+
+            this.instance.InitComplete();
+        }
         public void Stop()
         {
             this.status = ActorStatus.Stopped;

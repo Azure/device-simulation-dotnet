@@ -44,6 +44,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Change the simulation, setting the device creation complete
         Task<bool> TryToSetDeviceCreationCompleteAsync(string simulationId);
 
+        // Try to start a job to delete all the devices
+        Task<bool> TryToStartDevicesDeletionAsync(string simulationId, IDevices devices);
+
+        // Change the simulation, setting the device deletion complete
+        Task<bool> TryToSetDeviceDeletionCompleteAsync(string simulationId);
+
         // Get the ID of the devices in a simulation.
         IEnumerable<string> GetDeviceIds(Models.Simulation simulation);
 
@@ -330,13 +336,43 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     simulation.DeviceCreationJobId = await devices.CreateListUsingJobsAsync(deviceIds);
                     simulation.DevicesCreationStarted = true;
 
-                    this.log.Info("Device import job created", () => new { simulationId, simulation.DeviceCreationJobId });
+                    this.log.Info("Device import job created for bulk creation", () => new { simulationId, simulation.DeviceCreationJobId });
 
                     await this.SaveAsync(simulation, simulation.ETag);
                 }
                 catch (Exception e)
                 {
-                    this.log.Error("Failed to create device import job", e);
+                    this.log.Error("Failed to create device bulk creation job", e);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public async Task<bool> TryToStartDevicesDeletionAsync(string simulationId, IDevices devices)
+        {
+            // Fetch latest record
+            var simulation = await this.GetAsync(simulationId);
+
+            if (!simulation.DevicesDeletionStarted)
+            {
+                try
+                {
+                    Dictionary<string, List<string>> deviceList = this.GetDeviceIdsByModel(simulation);
+                    var deviceIds = deviceList.SelectMany(x => x.Value);
+                    this.log.Info("Deleting devices...", () => new { simulationId });
+
+                    simulation.DeviceDeletionJobId = await devices.DeleteListUsingJobsAsync(deviceIds);
+                    simulation.DevicesDeletionStarted = true;
+
+                    this.log.Info("Device import job created for bulk deletion", () => new { simulationId, simulation.DeviceCreationJobId });
+
+                    await this.SaveAsync(simulation, simulation.ETag);
+                }
+                catch (Exception e)
+                {
+                    this.log.Error("Failed to create device bulk deletion job", e);
                     return false;
                 }
             }
@@ -351,9 +387,32 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             // Edit the record only if required
             if (simulation.DevicesCreationComplete) return true;
 
+            simulation.DevicesCreationComplete = true;
+
+            return await this.TryToUpdateSimulation(simulation);
+        }
+
+        public async Task<bool> TryToSetDeviceDeletionCompleteAsync(string simulationId)
+        {
+            var simulation = await this.GetAsync(simulationId);
+
+            // Edit the record only if required
+            if (simulation.DevicesDeletionComplete) return true;
+
+            simulation.DevicesDeletionComplete = true;
+
+            // Reset device creation state
+            simulation.DevicesCreationComplete = false;
+            simulation.DeviceCreationJobId = null;
+            simulation.DevicesCreationStarted = false;
+
+            return await this.TryToUpdateSimulation(simulation);
+        }
+
+        private async Task<bool> TryToUpdateSimulation(Models.Simulation simulation)
+        {
             try
             {
-                simulation.DevicesCreationComplete = true;
                 await this.SaveAsync(simulation, simulation.ETag);
             }
             catch (ConflictingResourceException e)
@@ -383,7 +442,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 for (var i = 0; i < model.Count; i++)
                 {
-                    deviceIds.Add(this.devices.GenerateId(model.Id, i));
+                    deviceIds.Add(this.devices.GenerateId(simulation.Id, model.Id, i));
                 }
             }
 
@@ -404,7 +463,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var deviceIds = new List<string>();
                 for (var i = 1; i <= model.Count; i++)
                 {
-                    deviceIds.Add(this.GenerateId(simulation.Id, model.Id, i));
+                    deviceIds.Add(this.devices.GenerateId(simulation.Id, model.Id, i));
                     deviceCount++;
                 }
 
@@ -460,12 +519,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 });
 
             return simulation;
-        }
-
-        // Generate a device Id
-        private string GenerateId(string simulationId, string deviceModelId, int position)
-        {
-            return simulationId + "." + deviceModelId + "." + position;
         }
     }
 }

@@ -133,7 +133,6 @@ namespace WebService.Test.v1.Controllers
         public void ItInvokesMetricsServiceOnceWhenQueryIotHubMetrics()
         {
             // Arrange
-            const string AUTH_TOKEN = "token";
             const string ID = "1";
 
             // Act

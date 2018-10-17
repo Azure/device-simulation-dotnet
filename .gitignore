@@ -2,6 +2,10 @@
 
 ### Custom
 
+appsettings.local.ini
+appsettings.development.ini
+appsettings.dev.ini
+appsettings.tmp.ini
 _dev/
 *.crt
 *._gistcs

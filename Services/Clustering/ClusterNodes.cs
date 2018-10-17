@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -15,6 +16,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         Task KeepAliveNodeAsync();
         Task<bool> SelfElectToMasterNodeAsync();
         Task RemoveStaleNodesAsync();
+        Task<SortedSet<string>> GetSortedIdListAsync();
     }
 
     public class ClusterNodes : IClusterNodes
@@ -85,7 +87,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
                         "The key to lock the master role doesn't exist yet, will create",
                         () => new { currentProcessNodeId, MASTER_NODE_KEY });
 
-                    var record = new StorageRecord { Id = MASTER_NODE_KEY, Data = currentProcessNodeId };
+                    var record = new StorageRecord { Id = MASTER_NODE_KEY, Data = "Record locked by the master node" };
                     await this.mainStorage.CreateAsync(record);
                 }
 
@@ -126,6 +128,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             {
                 this.log.Error("Unexpected error while purging expired nodes", e);
             }
+        }
+
+        public async Task<SortedSet<string>> GetSortedIdListAsync()
+        {
+            var nodeRecords = await this.clusterNodesStorage.GetAllAsync();
+            var result = new SortedSet<string>();
+            foreach (var nodeRecord in nodeRecords)
+            {
+                result.Add(nodeRecord.Id);
+            }
+
+            return result;
         }
 
         // Insert a node in the list of nodes

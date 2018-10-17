@@ -324,7 +324,7 @@ namespace Services.Test
         {
             // Arrange
             this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
-                .ReturnsAsync((StorageRecord)null);
+                .ReturnsAsync((StorageRecord) null);
             var sim = new SimulationModel
             {
                 Id = "1",
@@ -445,6 +445,11 @@ namespace Services.Test
                     new SimulationModel.DeviceModelRef { Id = modelId2, Count = 2 }
                 }
             };
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 1)).Returns($"{simulationId}.{modelId1}.1");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 2)).Returns($"{simulationId}.{modelId1}.2");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 3)).Returns($"{simulationId}.{modelId1}.3");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId2, 1)).Returns($"{simulationId}.{modelId2}.1");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId2, 2)).Returns($"{simulationId}.{modelId2}.2");
 
             // Act
             Dictionary<string, List<string>> result = this.target.GetDeviceIdsByModel(sim);
@@ -452,6 +457,9 @@ namespace Services.Test
             // Assert
             Assert.True(result.ContainsKey(modelId1));
             Assert.True(result.ContainsKey(modelId2));
+            this.devices.Verify(
+                x => x.GenerateId(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()),
+                Times.Exactly(sim.DeviceModels[0].Count + sim.DeviceModels[1].Count));
 
             Assert.Contains($"{simulationId}.{modelId1}.1", result[modelId1]);
             Assert.Contains($"{simulationId}.{modelId1}.2", result[modelId1]);
@@ -514,6 +522,11 @@ namespace Services.Test
                     }
                 }
             };
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 1)).Returns($"{simulationId}.{modelId1}.1");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 2)).Returns($"{simulationId}.{modelId1}.2");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 3)).Returns($"{simulationId}.{modelId1}.3");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId2, 1)).Returns($"{simulationId}.{modelId2}.1");
+            this.devices.Setup(x => x.GenerateId(simulationId, modelId2, 2)).Returns($"{simulationId}.{modelId2}.2");
 
             // Act
             Dictionary<string, List<string>> result = this.target.GetDeviceIdsByModel(sim);
@@ -686,6 +699,115 @@ namespace Services.Test
                     It.Is<StorageRecord>(
                         sr => JsonConvert.DeserializeObject<SimulationModel>(sr.Data).DevicesCreationComplete),
                     It.IsAny<string>()), Times.Once());
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItStartsTheDeviceDeletionOnlyIfNotStarted()
+        {
+            // Arrange
+            var simulationId = Guid.NewGuid().ToString();
+            var sim = new SimulationModel
+            {
+                Id = simulationId,
+                Enabled = true,
+                DevicesDeletionStarted = true,
+                DeviceModels = new List<SimulationModel.DeviceModelRef>
+                {
+                    new SimulationModel.DeviceModelRef { Id = "some", Count = 3 }
+                }
+            };
+
+            // Create a DocumentDB Document that will be used to create a StorageRecord object
+            var document = new Document();
+            document.Id = "foo";
+            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            document.SetPropertyValue("ETag", "*");
+            var storageRecord = StorageRecord.FromDocumentDb(document);
+
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync(storageRecord);
+
+            // Act
+            var result = this.target.TryToStartDevicesDeletionAsync(simulationId, this.devices.Object)
+                .CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.True(result);
+            this.devices.Verify(x => x.DeleteListUsingJobsAsync(It.IsAny<IEnumerable<string>>()), Times.Never);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItStartsTheDeviceBulkDeletionUsingJobs()
+        {
+            // Arrange
+            var eTagValue = "*";
+            var sim = new SimulationModel
+            {
+                Id = "1",
+                Enabled = true,
+                PartitioningComplete = true,
+                ETag = eTagValue
+            };
+
+            // Create a DocumentDB Document that will be used to create a StorageRecord object
+            var document = new Document();
+            document.Id = "foo";
+            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            document.SetPropertyValue("ETag", eTagValue);
+            var storageRecord = StorageRecord.FromDocumentDb(document);
+
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync(storageRecord);
+
+            // Act
+            var result = this.target.TryToStartDevicesDeletionAsync(sim.Id, this.devices.Object)
+                .CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.True(result);
+            this.devices.Verify(x => x.DeleteListUsingJobsAsync(It.IsAny<IEnumerable<string>>()), Times.Once);
+            this.mockStorageRecords.Verify(
+                x => x.UpsertAsync(
+                    It.Is<StorageRecord>(
+                        sr => JsonConvert.DeserializeObject<SimulationModel>(sr.Data).DevicesDeletionStarted),
+                    It.IsAny<string>()), Times.Once());
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReportsIfTheDeviceDeletionStartFails()
+        {
+            // Arrange
+            var simulationId = Guid.NewGuid().ToString();
+            var sim = new SimulationModel
+            {
+                Id = simulationId,
+                Enabled = true,
+                DevicesCreationStarted = false,
+                DeviceModels = new List<SimulationModel.DeviceModelRef>
+                {
+                    new SimulationModel.DeviceModelRef { Id = "some", Count = 3 }
+                }
+            };
+
+            // Create a DocumentDB Document that will be used to create a StorageRecord object
+            var document = new Document();
+            document.Id = "foo";
+            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            document.SetPropertyValue("ETag", "*");
+            var storageRecord = StorageRecord.FromDocumentDb(document);
+
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync(storageRecord);
+            this.devices.Setup(x => x.DeleteListUsingJobsAsync(It.IsAny<IEnumerable<string>>()))
+                .Throws<SomeException>();
+
+            // Act
+            var result = this.target.TryToStartDevicesDeletionAsync(simulationId, this.devices.Object)
+                .CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.False(result);
+            this.devices.Verify(x => x.DeleteListUsingJobsAsync(It.IsAny<IEnumerable<string>>()), Times.Once);
         }
 
         private void ThereAreSomeDeviceModels()

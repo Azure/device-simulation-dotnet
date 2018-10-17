@@ -2,6 +2,7 @@
 
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
@@ -24,6 +25,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
         private readonly Mock<IDeviceStateActor> deviceStateActor;
         private readonly Mock<IDeviceConnectionActor> deviceConnectionActor;
         private readonly Mock<IDevices> devices;
+        private readonly Mock<IInstance> mockInstance;
         private readonly DeviceTelemetryActor target;
 
         public DeviceTelemetryActorTest(ITestOutputHelper log)
@@ -34,7 +36,7 @@ namespace SimulationAgent.Test.DeviceTelemetry
             this.rateLimiting = new Mock<IRateLimiting>();
             this.devices = new Mock<IDevices>();
             this.sendTelemetryLogic = new Mock<SendTelemetry>(this.logger.Object);
-
+            this.mockInstance = new Mock<IInstance>();
             this.deviceStateActor = new Mock<IDeviceStateActor>();
             this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
 
@@ -44,7 +46,8 @@ namespace SimulationAgent.Test.DeviceTelemetry
                 this.logger.Object,
                 this.actorLogger.Object,
                 this.rateLimiting.Object,
-                this.sendTelemetryLogic.Object);
+                this.sendTelemetryLogic.Object,
+                this.mockInstance.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
