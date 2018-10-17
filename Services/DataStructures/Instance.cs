@@ -54,10 +54,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures
         }
 
         // Fail with exception if the instance has already been initialized
-        public void InitOnce([CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0)
+        public void InitOnce(
+            [CallerMemberName] string callerName = "", 
+            [CallerFilePath] string filePath = "", 
+            [CallerLineNumber] int lineNumber = 0)
         {
             if (!this.IsInitialized) return;
 
@@ -66,10 +66,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures
         }
 
         // Fail with exception if the instance has not been initialized
-        public void InitRequired([CallerMemberName]
-            string callerName = "", [CallerFilePath]
-            string filePath = "", [CallerLineNumber]
-            int lineNumber = 0)
+        public void InitRequired(
+            [CallerMemberName] string callerName = "", 
+            [CallerFilePath] string filePath = "", 
+            [CallerLineNumber] int lineNumber = 0)
         {
             if (this.IsInitialized) return;
 

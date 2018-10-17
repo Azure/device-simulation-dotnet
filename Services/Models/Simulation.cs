@@ -143,6 +143,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.DeviceModels = new List<DeviceModelRef>();
             this.CustomDevices = new List<CustomDeviceRef>();
             this.Statistics = new StatisticsRef();
+
+            // By default, do not delete IoT Hub devices when the
+            // simulation ends
+            this.DeleteDevicesWhenSimulationEnds = false;
         }
 
         public class DeviceModelRef

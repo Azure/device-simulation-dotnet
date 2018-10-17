@@ -33,7 +33,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // or new devices, to avoid overloading the database with queries.
         private const int PAUSE_AFTER_CHECK_MSECS = 20000;
 
-        // Momentary pause to wait while stopping the agaent
+        // Momentary pause to wait while stopping the agent
         private const int SHUTDOWN_WAIT_INTERVAL_MSECS = 1000;
 
         // Allow some time to pass before trying to stop threads, when
