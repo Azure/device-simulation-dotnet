@@ -17,19 +17,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         PropertiesLoopSettings PropertiesLoopSettings { get; }
 
         Task InitAsync(Simulation simulation);
-
-        // TODO: address removed connection-loop optimization
-        // Invoked by SimulationManager.NewConnectionLoop()
-        //   DeviceConnectionTask.RunAsync()
-        //      -> SimulationManager.NewConnectionLoop()
-        //         -> ISimulationContext.NewConnectionLoop()
-        //void NewConnectionLoop();
-
-        // Invoked by SimulationManager.NewPropertiesLoop()
-        //   UpdatePropertiesTask.RunAsync()
-        //      -> SimulationManager.NewPropertiesLoop()
-        //         -> ISimulationContext.NewPropertiesLoop()
-        //void NewPropertiesLoop();
     }
 
     /// <summary>
@@ -72,27 +59,5 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             this.instance.InitComplete();
         }
-
-        // TODO: fix usage, resetting the counter this way looks like a bug
-        // Invoked by SimulationManager.NewConnectionLoop()
-        //   DeviceConnectionTask.RunAsync()
-        //      -> SimulationManager.NewConnectionLoop()
-        //         -> ISimulationContext.NewConnectionLoop()
-        // public void NewConnectionLoop()
-        // {
-        //     this.instance.InitRequired();
-        //     this.ConnectionLoopSettings.NewLoop();
-        // }
-
-        // TODO: fix usage, resetting the counter this way looks like a bug
-        // Invoked by SimulationManager.NewPropertiesLoop()
-        //   UpdatePropertiesTask.RunAsync()
-        //      -> SimulationManager.NewPropertiesLoop()
-        //         -> ISimulationContext.NewPropertiesLoop()
-        // public void NewPropertiesLoop()
-        // {
-        //     this.instance.InitRequired();
-        //     this.PropertiesLoopSettings.NewLoop();
-        // }
     }
 }

@@ -28,24 +28,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 
         /// <summary>Map a service model to the corresponding API model</summary>	
         public SimulationListApiModel(
-            IEnumerable<Services.Models.Simulation> simulations,
-            IServicesConfig servicesConfig,
-            IDeploymentConfig deploymentConfig,
-            IIotHubConnectionStringManager connectionStringManager,
-            ISimulationRunner simulationRunner,
-            IRateLimiting rateReporter)
+            IEnumerable<Services.Models.Simulation> simulations)
         {
             this.Items = new List<SimulationApiModel.SimulationApiModel>();
             foreach (var x in simulations)
             {
                 this.Items.Add(
-                    SimulationApiModel.SimulationApiModel.FromServiceModelAsync(
-                        x,
-                        servicesConfig,
-                        deploymentConfig,
-                        connectionStringManager,
-                        simulationRunner,
-                        rateReporter).Result);
+                    SimulationApiModel.SimulationApiModel.FromServiceModel(x));
             }
         }
     }

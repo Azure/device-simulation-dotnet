@@ -465,7 +465,7 @@ namespace PartitioningAgent.Test
                     StartTime = DateTimeOffset.UtcNow.AddHours(-1),
                     EndTime = DateTimeOffset.UtcNow.AddHours(+1),
                     DevicesCreationComplete = false,
-                    DevicesCleanUpRequiredByUser = true
+                    DeleteDevicesWhenSimulationEnds = true
                 },
                 // Is running
                 new Simulation
@@ -475,7 +475,7 @@ namespace PartitioningAgent.Test
                     StartTime = DateTimeOffset.UtcNow.AddHours(-1),
                     EndTime = DateTimeOffset.UtcNow.AddHours(1),
                     DevicesCreationComplete = true,
-                    DevicesCleanUpRequiredByUser = true
+                    DeleteDevicesWhenSimulationEnds = true
                 },
                 // Device cleanup not required
                 new Simulation
@@ -485,7 +485,7 @@ namespace PartitioningAgent.Test
                     StartTime = DateTimeOffset.UtcNow.AddHours(-1),
                     EndTime = DateTimeOffset.UtcNow.AddHours(+1),
                     DevicesCreationComplete = true,
-                    DevicesCleanUpRequiredByUser = false
+                    DeleteDevicesWhenSimulationEnds = false
                 },
                 // Device creation not complete
                 new Simulation
@@ -496,7 +496,7 @@ namespace PartitioningAgent.Test
                     EndTime = DateTimeOffset.UtcNow.AddHours(-1),
                     DevicesCreationStarted = true,
                     DevicesCreationComplete = false,
-                    DevicesCleanUpRequiredByUser = true
+                    DeleteDevicesWhenSimulationEnds = true
                 }
             });
 
@@ -523,7 +523,7 @@ namespace PartitioningAgent.Test
                     StartTime = DateTimeOffset.UtcNow.AddHours(-2),
                     EndTime = DateTimeOffset.UtcNow.AddHours(-1),
                     DevicesCreationComplete = true,
-                    DevicesCleanUpRequiredByUser = true
+                    DeleteDevicesWhenSimulationEnds = true
                 }
             });
 
@@ -564,7 +564,7 @@ namespace PartitioningAgent.Test
                 StartTime = DateTimeOffset.UtcNow.AddHours(-2),
                 EndTime = DateTimeOffset.UtcNow.AddHours(-1),
                 DevicesCreationComplete = true,
-                DevicesCleanUpRequiredByUser = true,
+                DeleteDevicesWhenSimulationEnds = true,
                 DevicesDeletionStarted = true,
                 DevicesDeletionComplete = false,
                 DeviceCreationJobId = jobId
@@ -599,7 +599,7 @@ namespace PartitioningAgent.Test
                 StartTime = DateTimeOffset.UtcNow.AddHours(-2),
                 EndTime = DateTimeOffset.UtcNow.AddHours(-1),
                 DevicesCreationComplete = true,
-                DevicesCleanUpRequiredByUser = true,
+                DeleteDevicesWhenSimulationEnds = true,
                 DevicesDeletionStarted = true,
                 DevicesDeletionComplete = false,
                 DeviceDeletionJobId = jobId
