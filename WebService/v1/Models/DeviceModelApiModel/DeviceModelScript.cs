@@ -109,7 +109,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
             }
         }
         Min/Max might not be needed by future scripts.
-        TODO: the actural function (E.g: 'math.random.withinrange') should provide a validation method.
+        TODO: the actual function (E.g: 'math.random.withinrange') should provide a validation method.
         */
         private void ValidateInternalScriptParams(ILogger log)
         {
