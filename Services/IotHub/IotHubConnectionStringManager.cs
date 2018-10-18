@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,14 +9,15 @@ using Microsoft.Azure.Devices.Common;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 {
     // retrieves Iot Hub connection secret from storage
     public interface IIotHubConnectionStringManager
     {
-        string GetIotHubConnectionString();
-        Task<string> RedactAndStoreAsync(string connectionString);
+        Task<string> GetConnectionStringAsync();
+        Task<string> RedactAndSaveAsync(string connectionString);
         Task ValidateConnectionStringAsync(string connectionString);
     }
 
@@ -27,60 +27,60 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private const string CONNSTRING_REGEX_HOSTNAME = "hostName";
         private const string CONNSTRING_REGEX_KEYNAME = "keyName";
         private const string CONNSTRING_REGEX_KEY = "key";
-        private const string CONNSTRING_FILE_NAME = "custom_iothub_key.txt";
+        private const string RECORD_ID = "custom_iothub_key";
 
-        private readonly string connStringFilePath;
-            
         private readonly IServicesConfig config;
         private readonly ILogger log;
+        private readonly IDiagnosticsLogger diagnosticsLogger;
+        private readonly IStorageRecords mainStorage;
 
         public IotHubConnectionStringManager(
             IServicesConfig config,
+            IFactory factory,
+            IDiagnosticsLogger diagnosticsLogger,
             ILogger logger)
         {
             this.config = config;
-            this.connStringFilePath = config.IoTHubDataFolder + CONNSTRING_FILE_NAME;
+            this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
             this.log = logger;
+            this.diagnosticsLogger = diagnosticsLogger;
         }
 
         /// <summary>
         /// Checks storage for which connection string to use.
-        /// If value is null or file doesn't exist, return the
-        /// value stored in the configuration file. Otherwise
-        /// returns value in local storage.
+        /// If record exists and is not empty return it, otherwise
+        /// return the value stored in service configuration file.
         /// </summary>
         /// <returns>Full connection string including secret</returns>
-        public string GetIotHubConnectionString()
+        public async Task<string> GetConnectionStringAsync()
         {
-            // read connection string file from webservice
-            string customIotHub = this.ReadFromFile();
+            string customIotHub = await this.ReadConnectionStringFromStorageAsync();
 
-            // check if default hub should be used
-            if (this.IsDefaultHub(customIotHub))
+            // check if the pre-provisioned IoT Hub should be used
+            if (this.IsPreprovisionedIotHub(customIotHub))
             {
-                this.log.Info("Using IotHub connection string stored in config.", () => { });
+                this.log.Info("Using the IotHub connection string specified in the config file.");
                 return this.config.IoTHubConnString;
             }
 
-            this.log.Debug("Using IoTHub provided by the client.", () => new { });
+            this.log.Debug("Using IoTHub provided by the client.");
             return customIotHub;
         }
 
         /// <summary>
         /// Validates that the IoTHub Connection String is valid, stores the full
-        /// string with key in a local file, then removes the sensitive key data and
+        /// string with key in storage, then removes the sensitive key data and
         /// returns the IoTHub Connection String with an empty string for the SharedAccessKey
         /// 
-        /// TODO Encryption for key & storage in documentDb instead of file
-        ///      https://github.com/Azure/device-simulation-dotnet/issues/129
+        /// TODO: use KeyVault https://github.com/Azure/device-simulation-dotnet/issues/129
         /// </summary>
         /// <returns>Redacted connection string (i.e. without SharedAccessKey)</returns>
-        public async Task<string> RedactAndStoreAsync(string connectionString)
+        public async Task<string> RedactAndSaveAsync(string connectionString)
         {
             // check if environment variable should be used
-            if (this.IsDefaultHub(connectionString))
+            if (this.IsPreprovisionedIotHub(connectionString))
             {
-                await this.UseDefaultIotHubAsync();
+                await this.UsePreprovisionedIotHubAsync();
                 return ServicesConfig.USE_DEFAULT_IOTHUB;
             }
 
@@ -88,28 +88,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             await this.ValidateConnectionStringAsync(connectionString);
 
             // find key
-            var key = this.GetKeyFromConnString(connectionString);
+            var key = this.GetSecretKeyFromConnString(connectionString);
 
             // if key is null, the string has been redacted,
             // check if hub is in storage
             if (key.IsNullOrWhiteSpace())
             {
-                if (this.ConnectionStringIsStored(connectionString))
-                {
-                    return connectionString;
-                }
-                else
+                if (!await this.ConnectionStringIsStoredAsync(connectionString))
                 {
                     string message = "Could not connect to IotHub with the connection " +
                                      "string provided. Check that the key is valid and " +
                                      "that the hub exists.";
-                    this.log.Debug(message, () => { });
+                    this.log.Debug(message);
                     throw new IotHubConnectionException(message);
                 }
+
+                return connectionString;
             }
 
-            // store full connection string with key in local file
-            this.WriteToFile(connectionString);
+            await this.WriteConnectionStringToStorageAsync(connectionString);
 
             // redact key from connection string and return
             return connectionString.Replace(key, "");
@@ -123,8 +120,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// </summary>
         public async Task ValidateConnectionStringAsync(string connectionString)
         {
-            // valid if default IotHub
-            if (this.IsDefaultHub(connectionString))
+            // The connection string is valid if it's the pre-provisioned IoT Hub
+            if (this.IsPreprovisionedIotHub(connectionString))
             {
                 return;
             }
@@ -136,40 +133,73 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             if (!match.Success)
             {
                 var message = "Invalid connection string format for IoTHub. " +
-                    "The correct format is: HostName=[hubname];SharedAccessKeyName=" +
-                    "[iothubowner or service];SharedAccessKey=[null or valid key]";
-                this.log.Error(message, () => { });
+                              "The correct format is: HostName=[hubname];SharedAccessKeyName=" +
+                              "[iothubowner or service];SharedAccessKey=[null or valid key]";
+                this.log.Error(message);
+                this.diagnosticsLogger.LogServiceError(message);
                 throw new InvalidIotHubConnectionStringFormatException(message);
             }
 
             // if a key is provided, check if IoTHub is valid
             if (!match.Groups[CONNSTRING_REGEX_KEY].Value.IsNullOrWhiteSpace())
             {
-                this.ValidateExistingIotHub(connectionString);
-                await this.ValidateReadPermissionsAsync(connectionString);
-                await this.ValidateWritePermissionsAsync(connectionString);
+                this.ValidateConnectionString(connectionString);
+                await this.TestIoTHubReadPermissionsAsync(connectionString);
+                await this.TestIoTHubWritePermissionsAsync(connectionString);
             }
 
-            this.log.Debug("IotHub connection string provided is valid.", () => { });
+            this.log.Debug("IotHub connection string provided is valid.");
         }
 
         /// <summary>
-        /// Checks if string is intended to be the default IotHub.
-        /// Default hub is used if provided string is null, empty, or default.
+        /// Checks if the connection string is intended to be the pre-provisioned IoT Hub.
         /// </summary>
-        private bool IsDefaultHub(string connectionString)
+        private bool IsPreprovisionedIotHub(string connectionString)
         {
             return
                 connectionString == null ||
-                connectionString == string.Empty ||
-                string.Equals(
-                    connectionString.Trim(),
-                    ServicesConfig.USE_DEFAULT_IOTHUB,
-                    StringComparison.OrdinalIgnoreCase);
+                connectionString.Trim() == string.Empty ||
+                string.Equals(connectionString.Trim(), ServicesConfig.USE_DEFAULT_IOTHUB, StringComparison.InvariantCultureIgnoreCase);
         }
 
-        /// <summary> Throws if unable to create a registry manager with a valid IotHub. </summary>
-        private void ValidateExistingIotHub(string connectionString)
+        /// <summary>
+        /// If simulation uses the pre-provisioned IoT Hub for the service,
+        /// then remove stored sensitive hub information that is no longer needed
+        /// </summary>
+        private async Task UsePreprovisionedIotHubAsync()
+        {
+            // Check if pre-provisioned IoT Hub connection string
+            try
+            {
+                this.ValidateConnectionString(this.config.IoTHubConnString);
+                await this.TestIoTHubReadPermissionsAsync(this.config.IoTHubConnString);
+                await this.TestIoTHubWritePermissionsAsync(this.config.IoTHubConnString);
+            }
+            catch (Exception e)
+            {
+                var msg = "Unable to use pre-provisioned IoT Hub. Check that the " +
+                          "pre-provisioned hub exists and has the correct permissions.";
+                this.log.Error(msg, e);
+                this.diagnosticsLogger.LogServiceError(msg, e.Message);
+                throw new IotHubConnectionException(msg, e);
+            }
+
+            try
+            {
+                // If the pre-provisioned hub is being used, then delete the custom connection string from storage 
+                await this.mainStorage.DeleteAsync(RECORD_ID);
+            }
+            catch (Exception e)
+            {
+                var msg = "Unable to delete connection string";
+                this.log.Error(msg, e);
+                this.diagnosticsLogger.LogServiceError(msg, new { e.Message });
+                throw;
+            }
+        }
+
+        // Throws if unable to create a registry manager with the given connection string
+        private void ValidateConnectionString(string connectionString)
         {
             try
             {
@@ -177,15 +207,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
             catch (Exception e)
             {
-                string message = "Could not connect to IotHub with the connection " +
-                                 "string provided. Check that the key is valid and " +
-                                 "that the hub exists.";
-                this.log.Error(message, () => new { e });
+                var message = "The IoT Hub connection string provided is not valid";
+                this.log.Error(message, e);
+                this.diagnosticsLogger.LogServiceError(message, e.Message);
                 throw new IotHubConnectionException(message, e);
             }
         }
 
-        private async Task ValidateReadPermissionsAsync(string connectionString)
+        private async Task TestIoTHubReadPermissionsAsync(string connectionString)
         {
             var registryManager = RegistryManager.CreateFromConnectionString(connectionString);
 
@@ -195,16 +224,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
             catch (Exception e)
             {
-                string message = "Could not read devices with the Iot Hub connection " +
-                                 "string provided. Check that the policy for the key allows " +
-                                 "`Registry Read/Write` and `Service Connect` permissions.";
-                this.log.Error(message, () => new { e });
+                var message = "The IoT Hub connection string does not have read permissions to the device registry. " +
+                              "Check that the policy for the key allows `Registry Read/Write` " +
+                              "and `Service Connect` permissions.";
+                this.log.Error(message, e);
+                this.diagnosticsLogger.LogServiceError(message, e.Message);
                 throw new IotHubConnectionException(message, e);
             }
-
         }
 
-        private async Task ValidateWritePermissionsAsync(string connectionString)
+        private async Task TestIoTHubWritePermissionsAsync(string connectionString)
         {
             var registryManager = RegistryManager.CreateFromConnectionString(connectionString);
 
@@ -218,10 +247,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
             catch (Exception e)
             {
-                string message = "Could not create devices with the Iot Hub connection " +
-                                 "string provided. Check that the policy for the key allows " +
-                                 "`Registry Read/Write` and `Service Connect` permissions.";
-                this.log.Error(message, () => new { e });
+                var message = "The IoT Hub connection string doesn't allow to create devices. " +
+                              "Check that the policy for the key allows `Registry Read/Write` " +
+                              "and `Service Connect` permissions.";
+                this.log.Error(message, e);
+                this.diagnosticsLogger.LogServiceError(message, e.Message);
                 throw new IotHubConnectionException(message, e);
             }
 
@@ -238,61 +268,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 }
                 catch (Exception e)
                 {
-                    string message = "Could not delete test device from IotHub. Attempt " +
-                                      deleteRetryCount + 1 + " of " + MAX_DELETE_RETRY;
+                    var message = "Could not delete test device from IotHub. Attempt " +
+                                  deleteRetryCount + 1 + " of " + MAX_DELETE_RETRY;
                     this.log.Error(message, () => new { testDeviceId, e });
+                    this.diagnosticsLogger.LogServiceError(message, new { testDeviceId, e.Message });
                     throw new IotHubConnectionException(message, e);
                 }
 
                 response = await registryManager.GetDeviceAsync(testDeviceId);
 
                 deleteRetryCount++;
-
             } while (response != null && deleteRetryCount < MAX_DELETE_RETRY);
 
             if (response != null)
             {
-                string message = "Could not delete test device from IotHub.";
+                var message = "Could not delete test device from IotHub.";
                 this.log.Error(message, () => new { testDeviceId });
+                this.diagnosticsLogger.LogServiceError(message, new { testDeviceId });
                 throw new IotHubConnectionException(message);
             }
         }
 
-        /// <summary>
-        /// If simulation uses the pre-provisioned IoT Hub for the service,
-        /// then remove sensitive hub information that is no longer needed
-        /// </summary>
-        private async Task UseDefaultIotHubAsync()
-        {
-            // check if default hub is valid
-            try
-            {
-                this.ValidateExistingIotHub(this.config.IoTHubConnString);
-                await this.ValidateReadPermissionsAsync(this.config.IoTHubConnString);
-                await this.ValidateWritePermissionsAsync(this.config.IoTHubConnString);
-            }
-            catch (Exception e)
-            {
-                string msg = "Unable to use default IoT Hub. Check that the " +
-                    "pre-provisioned hub exists and has the correct permissions.";
-                this.log.Error(msg, () => new { e });
-                throw new IotHubConnectionException(msg, e);
-            }
-
-            try
-            {
-                // delete custom IoT Hub string if default hub is being used
-                File.Delete(this.connStringFilePath);
-            }
-            catch (Exception e)
-            {
-                this.log.Error("Unable to delete connection string file.",
-                    () => new { this.connStringFilePath, e });
-                throw;
-            }
-        }
-
-        private string GetKeyFromConnString(string connectionString)
+        private string GetSecretKeyFromConnString(string connectionString)
         {
             var match = Regex.Match(connectionString, CONNSTRING_REGEX);
 
@@ -304,13 +301,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// Returns true if the key for the redacted string is in storage.
         /// Returns false if the key for the redacted string is not in storage.
         /// </summary>
-        private bool ConnectionStringIsStored(string connectionString)
+        private async Task<bool> ConnectionStringIsStoredAsync(string connectionString)
         {
-            // get stored string from file
-            var storedHubString = this.ReadFromFile();
+            // get stored string from storage
+            var storedHubString = await this.ReadConnectionStringFromStorageAsync();
 
-            if (connectionString.IsNullOrWhiteSpace() ||
-                storedHubString.IsNullOrWhiteSpace())
+            if (connectionString.IsNullOrWhiteSpace() || storedHubString.IsNullOrWhiteSpace())
             {
                 return false;
             }
@@ -325,53 +321,56 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             var storedHubHostName = storedHubMatch.Groups[CONNSTRING_REGEX_HOSTNAME].Value;
             var storedHubKeyName = storedHubMatch.Groups[CONNSTRING_REGEX_KEYNAME].Value;
 
-            return userHubHostName == storedHubHostName &&
-                   userHubKeyName == storedHubKeyName;
+            return userHubHostName == storedHubHostName && userHubKeyName == storedHubKeyName;
         }
 
-        private void WriteToFile(string connectionString)
+        private async Task WriteConnectionStringToStorageAsync(string connectionString)
         {
-            this.log.Debug("Write IotHub connection string to file.",
-                () => new { this.connStringFilePath });
+            this.log.Debug("Writing Iot Hub connection string to storage");
 
             try
             {
-                File.WriteAllText(this.connStringFilePath, connectionString);
+                await this.mainStorage.UpsertAsync(new StorageRecord
+                {
+                    Id = RECORD_ID,
+                    Data = connectionString
+                });
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to write connection string to file.",
-                    () => new { this.connStringFilePath, e });
+                var msg = "Unable to write connection string to storage.";
+                this.log.Error(msg, e);
+                this.diagnosticsLogger.LogServiceError(msg, e.Message);
                 throw;
             }
         }
 
         /// <summary>
-        /// Retrieves connection string from local storage.
-        /// Returns null if file doesn't exist.
+        /// Retrieves connection string from storage.
+        /// Returns null if record doesn't exist.
         /// </summary>
-        private string ReadFromFile()
+        private async Task<string> ReadConnectionStringFromStorageAsync()
         {
-            this.log.Debug("Check for IotHub connection string from file.",
-                () => new { this.connStringFilePath });
-            if (File.Exists(this.connStringFilePath))
-            {
-                try
-                {
-                    // remove special characters and return string
-                    return Regex.Replace(File.ReadAllText(this.connStringFilePath), @"[\r\n\t ]+", "");
-                }
-                catch (Exception e)
-                {
-                    this.log.Error("Unable to read connection string from file.",
-                        () => new { this.connStringFilePath, e });
-                    return null;
-                }
-            }
+            this.log.Debug("Check for Iot Hub connection string from storage.");
 
-            this.log.Debug("IotHub connection string file not present.",
-                () => new { this.connStringFilePath });
-            return null;
+            try
+            {
+                // TODO: store into the simulation record, each simulation has a hub
+                var record = await this.mainStorage.GetAsync(RECORD_ID);
+                return record.Data;
+            }
+            catch (ResourceNotFoundException)
+            {
+                this.log.Debug("Iot Hub connection string record not present.");
+                return null;
+            }
+            catch (Exception e)
+            {
+                var message = "Unable to read connection string";
+                this.log.Error(message, e);
+                this.diagnosticsLogger.LogServiceError(message, new { e.Message });
+                return null;
+            }
         }
     }
 }

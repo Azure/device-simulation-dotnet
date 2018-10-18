@@ -2,14 +2,19 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 {
     public class Script
     {
+        public string Id { get; set; }
         public string Type { get; set; }
         public string Path { get; set; }
 
@@ -19,30 +24,42 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         public Script()
         {
-            this.Type = "javascript";
+            this.Type = ScriptInterpreter.JAVASCRIPT_SCRIPT;
             this.Path = "scripts" + System.IO.Path.DirectorySeparatorChar;
             this.Params = null;
+            this.Id = null;
         }
     }
 
     public class DeviceModel
     {
+        // Note: Storage records' payload don't contain the ETag.
+        //       ETag is defined by the storage engine, e.g. with a dedicated field.
+        [JsonIgnore]
+        public string ETag { get; set; }
+
         public string Id { get; set; }
         public string Version { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        public DeviceModelType Type { get; set; }
         public IoTHubProtocol Protocol { get; set; }
+
         public StateSimulation Simulation { get; set; }
         public Dictionary<string, object> Properties { get; set; }
         public IList<DeviceModelMessage> Telemetry { get; set; }
         public IDictionary<string, Script> CloudToDeviceMethods { get; set; }
+        public DateTimeOffset Created { get; set; }
+        public DateTimeOffset Modified { get; set; }
 
         public DeviceModel()
         {
+            this.ETag = string.Empty;
             this.Id = string.Empty;
             this.Version = "0.0.0";
             this.Name = string.Empty;
             this.Description = string.Empty;
+            this.Type = DeviceModelType.Custom;
             this.Protocol = IoTHubProtocol.AMQP;
             this.Simulation = new StateSimulation();
             this.Properties = new Dictionary<string, object>();
@@ -85,6 +102,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
                 var schema = new JObject
                 {
                     ["Name"] = t.MessageSchema.Name,
+                    ["ClassName"] = t.MessageSchema.ClassName,
                     ["Format"] = t.MessageSchema.Format.ToString(),
                     ["Fields"] = fields
                 };
@@ -133,33 +151,74 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public class DeviceModelMessageSchema
         {
             public string Name { get; set; }
+
+            public string ClassName { get; set; }
+
             public DeviceModelMessageSchemaFormat Format { get; set; }
+
             public IDictionary<string, DeviceModelMessageSchemaType> Fields { get; set; }
 
             public DeviceModelMessageSchema()
             {
                 this.Name = string.Empty;
+                this.ClassName = string.Empty;
                 this.Format = DeviceModelMessageSchemaFormat.JSON;
                 this.Fields = new Dictionary<string, DeviceModelMessageSchemaType>();
             }
         }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public enum DeviceModelMessageSchemaFormat
         {
+            [EnumMember(Value = "Binary")]
             Binary = 0,
+
+            [EnumMember(Value = "Text")]
             Text = 10,
-            JSON = 20
+
+            [EnumMember(Value = "JSON")]
+            JSON = 20,
+
+            [EnumMember(Value = "Protobuf")]
+            Protobuf = 30
         }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public enum DeviceModelMessageSchemaType
         {
+            [EnumMember(Value = "Object")]
             Object = 0,
+
+            [EnumMember(Value = "Binary")]
             Binary = 10,
+
+            [EnumMember(Value = "Text")]
             Text = 20,
+
+            [EnumMember(Value = "Boolean")]
             Boolean = 30,
+
+            [EnumMember(Value = "Integer")]
             Integer = 40,
+
+            [EnumMember(Value = "Double")]
             Double = 50,
+
+            [EnumMember(Value = "DateTime")]
             DateTime = 60
+        }
+
+        [JsonConverter(typeof(StringEnumConverter))]
+        public enum DeviceModelType
+        {
+            [EnumMember(Value = "Undefined")]
+            Undefined = 0,
+
+            [EnumMember(Value = "Stock")]
+            Stock = 10,
+
+            [EnumMember(Value = "Custom")]
+            Custom = 20
         }
     }
 }

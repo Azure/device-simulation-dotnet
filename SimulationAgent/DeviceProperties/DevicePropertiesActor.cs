@@ -1,13 +1,14 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties
 {
@@ -19,13 +20,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         long FailedTwinUpdatesCount { get; }
         long SimulationErrorsCount { get; }
 
-        void Setup(
+        void Init(
+            ISimulationContext simulationContext,
             string deviceId,
             IDeviceStateActor deviceStateActor,
-            IDeviceConnectionActor deviceConnectionActor,
+            IDeviceConnectionActor context,
             PropertiesLoopSettings loopSettings);
 
-        string Run();
+        bool HasWorkToDo();
+        Task<string> RunAsync();
         void HandleEvent(DevicePropertiesActor.ActorEvents e);
         void Stop();
     }
@@ -63,12 +66,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         private readonly IRateLimiting rateLimiting;
         private readonly IDevicePropertiesLogic updatePropertiesLogic;
         private readonly IDevicePropertiesLogic deviceSetDeviceTagLogic;
+        private readonly IInstance instance;
 
         private ActorStatus status;
         private string deviceId;
         private long whenToRun;
         private PropertiesLoopSettings loopSettings;
         private long failedTwinUpdatesCount;
+        private ISimulationContext simulationContext;
 
         /// <summary>
         /// Reference to the actor managing the device state, used
@@ -79,7 +84,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         /// <summary>
         /// Reference to the actor managing the device connection
         /// </summary>
-        private IDeviceConnectionActor deviceConnectionActor;
+        private IDeviceConnectionActor deviceContext;
 
         /// <summary>
         /// Device properties maintained by the device state actor
@@ -94,7 +99,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         /// <summary>
         /// Azure IoT Hub client
         /// </summary>
-        public IDeviceClient Client => this.deviceConnectionActor.Client;
+        public IDeviceClient Client => this.deviceContext.Client;
 
         /// <summary>
         /// Failed device twin updates counter
@@ -111,51 +116,47 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             IActorsLogger actorLogger,
             IRateLimiting rateLimiting,
             UpdateReportedProperties updatePropertiesLogic,
-            SetDeviceTag deviceSetDeviceTagLogic)
+            SetDeviceTag deviceSetDeviceTagLogic,
+            IInstance instance)
         {
             this.log = logger;
             this.actorLogger = actorLogger;
             this.rateLimiting = rateLimiting;
             this.updatePropertiesLogic = updatePropertiesLogic;
             this.deviceSetDeviceTagLogic = deviceSetDeviceTagLogic;
+            this.instance = instance;
 
             this.status = ActorStatus.None;
             this.deviceId = null;
             this.deviceStateActor = null;
-            this.deviceConnectionActor = null;
+            this.deviceContext = null;
 
             this.failedTwinUpdatesCount = 0;
         }
 
         /// <summary>
         /// Invoke this method before calling Execute(), to initialize the actor
-        /// with details like the device id. Setup() should be called only once.
+        /// with details like the device id.
         /// </summary>
-        public void Setup(
+        public void Init(
+            ISimulationContext simulationContext,
             string deviceId,
             IDeviceStateActor deviceStateActor,
-            IDeviceConnectionActor deviceConnectionActor,
+            IDeviceConnectionActor context,
             PropertiesLoopSettings loopSettings)
         {
-            if (this.status != ActorStatus.None)
-            {
-                this.log.Error("The actor is already initialized",
-                    () => new { CurrentDeviceId = this.deviceId });
-                throw new DeviceActorAlreadyInitializedException();
-            }
+            this.instance.InitOnce();
 
+            this.simulationContext = simulationContext;
             this.deviceId = deviceId;
             this.deviceStateActor = deviceStateActor;
-            this.deviceConnectionActor = deviceConnectionActor;
+            this.deviceContext = context;
+            this.updatePropertiesLogic.Init(this, this.deviceId);
+            this.actorLogger.Init(deviceId, "Properties");
+            this.status = ActorStatus.ReadyToStart;
             this.loopSettings = loopSettings;
 
-            this.updatePropertiesLogic.Setup(this, this.deviceId);
-            this.deviceSetDeviceTagLogic.Setup(this, this.deviceId);
-
-            this.updatePropertiesLogic.Setup(this, this.deviceId);
-            this.actorLogger.Setup(deviceId, "Properties");
-
-            this.status = ActorStatus.ReadyToStart;
+            this.instance.InitComplete();
         }
 
         public void HandleEvent(ActorEvents e)
@@ -164,7 +165,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             {
                 case ActorEvents.Started:
                     this.actorLogger.ActorStarted();
-                    this.status = ActorStatus.ReadyToTagDevice;
+
+                    /**
+                     * TODO: Devices should be tagged when created through bulk import.
+                     *       Remove tagging logic.
+                     */
+                    // TEMP DISABLED: this.status = ActorStatus.ReadyToTagDevice;
+                    this.status = ActorStatus.WaitingForChanges;
                     break;
 
                 case ActorEvents.DeviceTagged:
@@ -197,8 +204,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             }
         }
 
+        public bool HasWorkToDo()
+        {
+            switch (this.status)
+            {
+                case ActorStatus.ReadyToStart:
+                    return this.deviceContext.Connected;
+
+                case ActorStatus.WaitingForChanges:
+                    return this.DeviceProperties?.Changed ?? false;
+
+                case ActorStatus.ReadyToUpdate:
+                    return true;
+            }
+
+            return false;
+        }
+
         // Run the next step and return a description about what happened
-        public string Run()
+        public async Task<string> RunAsync()
         {
             this.log.Debug(this.status.ToString(), () => new { this.deviceId });
 
@@ -208,7 +232,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             switch (this.status)
             {
                 case ActorStatus.ReadyToStart:
-                    if (!this.deviceConnectionActor.Connected) return "device not connected yet";
+                    if (!this.deviceContext.Connected) return "device not connected yet";
                     this.whenToRun = 0;
                     this.HandleEvent(ActorEvents.Started);
                     return "started";
@@ -216,18 +240,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                 case ActorStatus.ReadyToTagDevice:
                     this.status = ActorStatus.TaggingDevice;
                     this.actorLogger.TaggingDevice();
-                    this.deviceSetDeviceTagLogic.Run();
+                    await this.deviceSetDeviceTagLogic.RunAsync();
                     return "device tag scheduled";
 
                 case ActorStatus.WaitingForChanges:
-                    if (!this.DeviceProperties.Changed) return "no properties to update";
+                    if (!(this.DeviceProperties?.Changed ?? false)) return "no properties to update";
                     this.SchedulePropertiesUpdate();
                     return "properties update scheduled";
 
                 case ActorStatus.ReadyToUpdate:
                     this.status = ActorStatus.Updating;
                     this.actorLogger.UpdatingDeviceProperties();
-                    this.updatePropertiesLogic.Run();
+                    await this.updatePropertiesLogic.RunAsync();
                     return "updated properties";
             }
 
@@ -244,7 +268,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
         private void SchedulePropertiesUpdate(bool isRetry = false)
         {
-            // considering the throttling settings, when can the properties can be updated
+            // considering the throttling settings, when can the properties be updated
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var pauseMsec = this.rateLimiting.GetPauseForNextTwinWrite();
             this.whenToRun = now + pauseMsec;

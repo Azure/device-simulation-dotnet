@@ -2,25 +2,31 @@
 
 using System;
 using System.IO;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 {
     public interface IActorsLogger
     {
-        void Setup(string deviceId, string actorName);
+        void Init(string deviceId, string actorName);
         void ActorStarted();
         void ActorStopped();
-
+        void CredentialsSetupScheduled(long time);
         void FetchScheduled(long time);
+        void PreparingDeviceCredentials();
         void FetchingDevice();
+        void DeviceCredentialsReady();
         void DeviceFetched();
         void DeviceNotFound();
         void DeviceFetchFailed();
-
         void RegistrationScheduled(long time);
         void RegisteringDevice();
         void DeviceRegistered();
         void DeviceRegistrationFailed();
+        void DeregistrationScheduled(long time);
+        void DeregisteringDevice();
+        void DeviceDeregistered();
+        void DeviceDeregistrationFailed();
 
         void DeviceTaggingScheduled(long time);
         void TaggingDevice();
@@ -30,6 +36,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         void DeviceConnectionScheduled(long time);
         void ConnectingDevice();
         void DeviceConnected();
+
+        void DeviceDisconnectionFailed();
+        void DeviceDisconnectionScheduled(long time);
+        void DisconnectingDevice();
+        void DeviceDisconnected();
+
+        void DeviceConnectionAuthFailed();
         void DeviceConnectionFailed();
 
         void TelemetryScheduled(long time);
@@ -48,6 +61,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         private const string DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.fff";
 
         private readonly ILogger log;
+        private readonly IInstance instance;
         private readonly string path;
         private readonly bool enabledInConfig;
         private bool enabled;
@@ -60,16 +74,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         private string connectionsLogFile;
         private string telemetryLogFile;
 
-        public ActorsLogger(ILoggingConfig config, ILogger logger)
+        public ActorsLogger(
+            ILoggingConfig config,
+            ILogger logger,
+            IInstance instance)
         {
             this.enabled = false;
             this.enabledInConfig = config.ExtraDiagnostics;
             this.path = config.ExtraDiagnosticsPath.Trim();
             this.log = logger;
+            this.instance = instance;
         }
 
-        public void Setup(string deviceId, string actorName)
+        public void Init(string deviceId, string actorName)
         {
+            this.instance.InitOnce();
+
             this.deviceId = deviceId;
             this.actorName = actorName;
 
@@ -82,6 +102,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
             this.enabled = this.enabledInConfig && !string.IsNullOrEmpty(this.path);
 
+            this.instance.InitComplete();
+
             if (!this.enabled) return;
 
             try
@@ -91,7 +113,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to write to " + this.path, () => new { e });
+                this.log.Error("Unable to write to " + this.path, e);
                 this.enabled = false;
             }
         }
@@ -125,6 +147,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
             this.Log("Fetching device");
             this.LogRegistry("Fetching device");
+        }
+
+        public void CredentialsSetupScheduled(long time)
+        {
+            if (!this.enabled) return;
+
+            var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
+            this.Log("Credentials setup scheduled at: " + msg);
+            this.LogRegistry("Credentials setup scheduled at: " + msg);
+        }
+
+        public void PreparingDeviceCredentials()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Preparing device credentials");
+            this.LogRegistry("Preparing device credentials");
+        }
+
+        public void DeviceCredentialsReady()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Device credentials ready");
+            this.LogRegistry("Device credentials ready");
         }
 
         public void DeviceFetched()
@@ -182,6 +229,39 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
             this.Log("Device registration FAILED");
             this.LogRegistry("Registration FAILED");
+        }
+
+        public void DeregistrationScheduled(long time)
+        {
+            if (!this.enabled) return;
+
+            var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
+            this.Log("Device deregistration scheduled at: " + msg);
+            this.LogRegistry("Deregistration scheduled at: " + msg);
+        }
+
+        public void DeregisteringDevice()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Deregistering device");
+            this.LogRegistry("Deregistering");
+        }
+
+        public void DeviceDeregistered()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Device deregistered");
+            this.LogRegistry("Deregistered");
+        }
+
+        public void DeviceDeregistrationFailed()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Device deregistration FAILED");
+            this.LogRegistry("Deregistration FAILED");
         }
 
         public void DeviceTaggingScheduled(long time)
@@ -242,11 +322,52 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.LogConnection("Connected");
         }
 
+        public void DeviceConnectionAuthFailed()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Device auth failed");
+            this.LogConnection("Device auth failed");
+        }
+
         public void DeviceConnectionFailed()
         {
             if (!this.enabled) return;
 
             this.Log("Connection FAILED");
+            this.LogConnection("FAILED");
+        }
+
+        public void DeviceDisconnectionScheduled(long time)
+        {
+            if (!this.enabled) return;
+
+            var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
+            this.Log("Device disconnection scheduled at: " + msg);
+            this.LogConnection("Disconnection scheduled at: " + msg);
+        }
+
+        public void DisconnectingDevice()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Disconnecting device");
+            this.LogConnection("Disconnecting");
+        }
+
+        public void DeviceDisconnected()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Device disconnected");
+            this.LogConnection("Disconnected");
+        }
+
+        public void DeviceDisconnectionFailed()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Disconnection FAILED");
             this.LogConnection("FAILED");
         }
 

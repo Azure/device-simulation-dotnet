@@ -19,6 +19,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
         Task<ValueListApiModel> GetAllAsync(string collectionId);
         Task<ValueApiModel> GetAsync(string collectionId, string key);
         Task<ValueApiModel> CreateAsync(string collectionId, string value);
+        Task<ValueApiModel> CreateAsync(string collectionId, string key, string value);
         Task<ValueApiModel> UpdateAsync(string collectionId, string key, string value, string eTag);
         Task DeleteAsync(string collectionId, string key);
     }
@@ -32,18 +33,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
 
         private readonly IHttpClient httpClient;
         private readonly ILogger log;
+        private readonly IDiagnosticsLogger diagnosticsLogger;
         private readonly string serviceUri;
         private readonly int timeout;
 
         public StorageAdapterClient(
             IHttpClient httpClient,
             IServicesConfig config,
-            ILogger logger)
+            ILogger logger,
+            IDiagnosticsLogger diagnosticsLogger)
         {
             this.httpClient = httpClient;
             this.log = logger;
             this.serviceUri = config.StorageAdapterApiUrl;
             this.timeout = config.StorageAdapterApiTimeout;
+            this.diagnosticsLogger = diagnosticsLogger;
         }
 
         public async Task<Tuple<bool, string>> PingAsync()
@@ -67,7 +71,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
             }
             catch (Exception e)
             {
-                this.log.Error("Storage adapter check failed", () => new { e });
+                var msg= "Storage adapter check failed";
+                this.log.Error(msg, e);
+                this.diagnosticsLogger.LogServiceError(msg, e.Message);
                 message = e.Message;
             }
 
@@ -99,6 +105,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
             var response = await this.httpClient.PostAsync(
                 this.PrepareRequest($"collections/{collectionId}/values",
                     new ValueApiModel { Data = value }));
+
+            this.log.Debug("Storage response", () => new { response });
+
+            this.ThrowIfError(response, collectionId, "");
+
+            return JsonConvert.DeserializeObject<ValueApiModel>(response.Content);
+        }
+
+        public async Task<ValueApiModel> CreateAsync(string collectionId, string key, string value)
+        {
+            var response = await this.httpClient.PostAsync(
+                this.PrepareRequest($"collections/{collectionId}/values",
+                    new ValueApiModel
+                    {
+                        Key = key,
+                        Data = value
+                    }));
 
             this.log.Debug("Storage response", () => new { response });
 

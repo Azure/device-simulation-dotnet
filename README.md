@@ -4,6 +4,7 @@
 
 Device Simulation Overview
 ==========================
+[![Deploy to Azure](http://azuredeploy.net/deploybutton.png)](https://www.azureiotsolutions.com/Accelerators#solutions/types/DS)
 
 This service allows management of a pool of simulated devices. The service
 helps test the end-to-end flow of IoT applications. The service simulates
@@ -62,8 +63,8 @@ How to use the microservice
 ## Running the service locally, e.g. for development tasks
 
 The service can be started from any C# IDE and from the command line.
-The only difference you might notice, is how environment variables
-are configured. See the documentation below for more information.
+The only difference you might notice is how environment variables
+are configured. See the [Configuration and Environment variables](#configuration-and-environment-variables) documentation below for more information.
 
 1. [Install .NET Core 2.x][dotnet-install]
 1. Install any recent edition of Visual Studio (Windows/MacOS) or Visual
@@ -73,7 +74,7 @@ are configured. See the documentation below for more information.
    up and running the Storage Adapter microservice, which should be listening
    at http://127.0.0.1:9022
 1. Open the solution in Visual Studio or VS Code
-1. Define the following environment variable:
+1. Define the following environment variables. See [Configuration and Environment variables](#configuration-and-environment-variables) for detailed information for setting these for your enviroment.
    * `PCS_IOTHUB_CONNSTRING` = {your Azure IoT Hub connection string}
 1. Start the WebService project (e.g. press F5)
 1. Test if the service is running, opening http://127.0.0.1:9003/v1/status
@@ -149,7 +150,7 @@ there are several ways to manage environment variables.
 1. If you're using Visual Studio or Visual Studio for Mac, the environment
    variables are loaded from the project settings. Right click on WebService,
    and select Options/Properties, and find the section with the list of env
-   vars.
+   vars. See [WebService/Properties/launchSettings.json](WebService/Properties/launchSettings.json).
 1. Visual Studio Code loads the environment variables from
    [.vscode/launch.json](.vscode/launch.json)
 1. When running the service **with Docker** or **from the command line**, the

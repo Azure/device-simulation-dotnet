@@ -21,7 +21,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters
     /// When including the stack trace, split the text in multiple lines
     /// for an easier parsing.
     ///
-    /// @see https://docs.microsoft.com/en-us/aspnet/core/mvc/controllers/filters
+    /// @see https://docs.microsoft.com/aspnet/core/mvc/controllers/filters
     /// </summary>
     public class ExceptionsFilterAttribute : ExceptionFilterAttribute
     {
@@ -41,12 +41,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters
                      || context.Exception is Services.Exceptions.InvalidIotHubConnectionStringFormatException
                      || context.Exception is WebService.v1.Exceptions.InvalidIotHubConnectionStringFormatException
                      || context.Exception is IotHubConnectionException)
-        {
+            {
                 context.Result = this.GetResponse(HttpStatusCode.BadRequest, context.Exception);
             }
             else if (context.Exception is InvalidConfigurationException)
             {
                 context.Result = this.GetResponse(HttpStatusCode.InternalServerError, context.Exception);
+            }
+            else if (context.Exception is UnauthorizedAccessException)
+            {
+                context.Result = this.GetResponse(HttpStatusCode.Forbidden, context.Exception);
             }
             else if (context.Exception != null)
             {
@@ -93,7 +97,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters
                     e = e.InnerException;
                     error["InnerExceptionMessage"] = e.Message;
                     error["InnerExceptionType"] = e.GetType().FullName;
-                    error["InnerExceptionStackTrace"] = e.StackTrace.Split(new[] { "\n" }, StringSplitOptions.None);
+                    error["InnerExceptionStackTrace"] = e.StackTrace?.Split(new[] { "\n" }, StringSplitOptions.None);
                 }
             }
 

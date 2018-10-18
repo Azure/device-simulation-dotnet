@@ -1,8 +1,10 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Moq;
 using SimulationAgent.Test.helpers;
@@ -13,29 +15,33 @@ namespace SimulationAgent.Test.DeviceState
 {
     public class DeviceStateActorTest
     {
-        private readonly Mock<ILogger> logger;
-        private readonly Mock<IScriptInterpreter> scriptInterpreter;
-        private readonly Mock<UpdateDeviceState> updateDeviceStateLogic;
+        private readonly Mock<ILogger> mockLogger;
+        private readonly Mock<IScriptInterpreter> mockScriptInterpreter;
+        private readonly Mock<UpdateDeviceState> mockUpdateDeviceStateLogic;
+        private readonly Mock<IInstance> mockInstance;
         private readonly DeviceStateActor target;
 
         public DeviceStateActorTest(ITestOutputHelper log)
         {
-            this.logger = new Mock<ILogger>();
-            this.scriptInterpreter = new Mock<IScriptInterpreter>();
-            this.updateDeviceStateLogic = new Mock<UpdateDeviceState>(
-                this.scriptInterpreter.Object,
-                this.logger.Object);
+            this.mockLogger = new Mock<ILogger>();
+            this.mockScriptInterpreter = new Mock<IScriptInterpreter>();
+            this.mockInstance = new Mock<IInstance>();
+            this.mockUpdateDeviceStateLogic = new Mock<UpdateDeviceState>(
+                this.mockScriptInterpreter.Object,
+                this.mockLogger.Object,
+                this.mockInstance.Object);
 
             this.target = new DeviceStateActor(
-                this.logger.Object,
-                this.updateDeviceStateLogic.Object);
+                this.mockUpdateDeviceStateLogic.Object,
+                this.mockLogger.Object,
+                this.mockInstance.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ReportInactiveStatusBeforeRun()
         {
             // Arrange
-            SetupDeviceStateActor();
+            this.SetupDeviceStateActor();
 
             // Act
             var result = this.target.IsDeviceActive;
@@ -48,7 +54,7 @@ namespace SimulationAgent.Test.DeviceState
         public void ReportActiveStatusAfterRun()
         {
             // Arrange
-            SetupDeviceStateActor();
+            this.SetupDeviceStateActor();
 
             // Act
             this.target.Run();
@@ -64,8 +70,14 @@ namespace SimulationAgent.Test.DeviceState
             int postion = 1;
             int total = 10;
             var deviceModel = new DeviceModel { Id = DEVICE_ID };
-           
-            this.target.Setup(DEVICE_ID, deviceModel, postion, total);
+
+            var mockSimulationContext = new Mock<ISimulationContext>();
+
+            this.target.Init(
+                mockSimulationContext.Object,
+                DEVICE_ID,
+                deviceModel,
+                postion);
         }
     }
 }

@@ -1,28 +1,24 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using Moq;
-using System.Collections.Generic;
-using DeviceModel = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
-using Xunit.Abstractions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
-using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
-using Xunit;
-using Services.Test.helpers;
 using System;
+using System.Collections.Generic;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Moq;
+using Services.Test.helpers;
+using Xunit;
+using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
 
 namespace Services.Test
 {
     public class DeviceModelsGenerationTest
     {
-        /// <summary>The test logger</summary>
-        private readonly ITestOutputHelper log;
+        private readonly Mock<ILogger> logger;
+        private readonly DeviceModelsGeneration target;
 
-        private Mock<ILogger> logger;
-        private DeviceModelsGeneration target;
-
-        public DeviceModelsGenerationTest(ITestOutputHelper log)
+        public DeviceModelsGenerationTest()
         {
             this.logger = new Mock<ILogger>();
             this.target = new DeviceModelsGeneration(this.logger.Object);
@@ -36,15 +32,15 @@ namespace Services.Test
             {
                 Telemetry = new List<DeviceModelMessage>
                 {
-                    new DeviceModelMessage()
+                    new DeviceModelMessage
                     {
                         Interval = TimeSpan.Zero,
                         MessageTemplate = string.Empty,
-                        MessageSchema = new DeviceModelMessageSchema()
+                        MessageSchema = new DeviceModelMessageSchema
                         {
                             Name = "sensor-01",
                             Format = DeviceModelMessageSchemaFormat.JSON,
-                            Fields = new Dictionary<string, DeviceModelMessageSchemaType>()
+                            Fields = new Dictionary<string, DeviceModelMessageSchemaType>
                             {
                                 { "temp", new DeviceModelMessageSchemaType() }
                             }

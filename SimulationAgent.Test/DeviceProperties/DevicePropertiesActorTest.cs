@@ -3,12 +3,15 @@
 using System;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using Moq;
 using SimulationAgent.Test.helpers;
 using Xunit;
@@ -21,17 +24,21 @@ namespace SimulationAgent.Test.DeviceProperties
     {
         private readonly Mock<ILogger> logger;
         private readonly Mock<IActorsLogger> actorsLogger;
+        private readonly Mock<CredentialsSetup> credentialSetup;
         private readonly Mock<IRateLimiting> rateLimiting;
         private readonly Mock<IRateLimitingConfig> rateLimitingConfig;
         private readonly Mock<IDevices> devices;
+        private readonly Mock<IStorageAdapterClient> storageAdapterClient;
         private readonly Mock<UpdateReportedProperties> updatePropertiesLogic;
         private readonly Mock<SetDeviceTag> deviceTagLogic;
-        private readonly Mock<IDeviceConnectionActor> deviceConnectionActor;
+        private readonly Mock<IDeviceConnectionActor> mockDeviceContext;
         private readonly Mock<IDeviceStateActor> deviceStateActor;
         private readonly Mock<PropertiesLoopSettings> loopSettings;
+        private readonly Mock<IInstance> mockInstance;
 
         private const string DEVICE_ID = "01";
         private const int TWIN_WRITES_PER_SECOND = 10;
+        private bool isInstanceInitialized;
 
         private DevicePropertiesActor target;
 
@@ -40,19 +47,23 @@ namespace SimulationAgent.Test.DeviceProperties
             this.logger = new Mock<ILogger>();
             this.actorsLogger = new Mock<IActorsLogger>();
             this.rateLimiting = new Mock<IRateLimiting>();
+            this.credentialSetup = new Mock<CredentialsSetup>();
             this.rateLimitingConfig = new Mock<IRateLimitingConfig>();
-            this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
+            this.mockDeviceContext = new Mock<IDeviceConnectionActor>();
             this.deviceStateActor = new Mock<IDeviceStateActor>();
             this.devices = new Mock<IDevices>();
             this.loopSettings = new Mock<PropertiesLoopSettings>(this.rateLimitingConfig.Object);
             this.updatePropertiesLogic = new Mock<UpdateReportedProperties>(this.logger.Object);
-            this.deviceTagLogic = new Mock<SetDeviceTag>(devices.Object, this.logger.Object);
+            this.deviceTagLogic = new Mock<SetDeviceTag>(this.devices.Object, this.logger.Object);
+            this.storageAdapterClient = new Mock<IStorageAdapterClient>();
+            this.mockInstance = new Mock<IInstance>();
+            this.isInstanceInitialized = false;
 
             this.CreateNewDevicePropertiesActor();
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void Setup_Called_Twice_Should_Throw_Already_Initialized_Exception()
+        public void Init_Called_Twice_Should_Throw_Already_Initialized_Exception()
         {
             // Arrange
             this.CreateNewDevicePropertiesActor();
@@ -61,10 +72,9 @@ namespace SimulationAgent.Test.DeviceProperties
             this.SetupDevicePropertiesActor();
 
             // Assert
-            Assert.Throws<DeviceActorAlreadyInitializedException>(
+            Assert.Throws<ApplicationException>(
                 () => this.SetupDevicePropertiesActor());
         }
-
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void Handle_Event_Should_Throw_When_Out_Of_Range()
@@ -82,7 +92,7 @@ namespace SimulationAgent.Test.DeviceProperties
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void Should_Return_CountOfFailedTwinUpdates_When_TwinUpdateFails()
+        public void It_Should_Return_CountOfFailedTwinUpdates_When_TwinUpdateFails()
         {
             // Arrange
             const int FAILED_DEVICE_TWIN_UPDATES_COUNT = 3;
@@ -123,19 +133,43 @@ namespace SimulationAgent.Test.DeviceProperties
 
         private void CreateNewDevicePropertiesActor()
         {
+            // Set up the mock Instance to throw an exception if
+            // the instance is initialized more than once.
+            this.isInstanceInitialized = false;
+            this.mockInstance.Setup(
+                    x => x.InitOnce(
+                        It.IsAny<string>(),
+                        It.IsAny<string>(),
+                        It.IsAny<int>()))
+                .Callback(() =>
+                {
+                    if (this.isInstanceInitialized)
+                        throw new ApplicationException("Multiple initializations attempted.");
+                    this.isInstanceInitialized = true;
+                });
+
             this.target = new DevicePropertiesActor(
                 this.logger.Object,
                 this.actorsLogger.Object,
                 this.rateLimiting.Object,
                 this.updatePropertiesLogic.Object,
-                this.deviceTagLogic.Object);
+                this.deviceTagLogic.Object,
+                this.mockInstance.Object);
         }
 
         private void SetupDevicePropertiesActor()
         {
-            this.target.Setup(DEVICE_ID,
+            // Setup a SimulationContext object
+            var testSimulation = new Simulation();
+            var mockSimulationContext = new Mock<ISimulationContext>();
+            mockSimulationContext.Object.InitAsync(testSimulation).Wait(Constants.TEST_TIMEOUT);
+            mockSimulationContext.SetupGet(x => x.Devices).Returns(this.devices.Object);
+
+            this.target.Init(
+                mockSimulationContext.Object,
+                DEVICE_ID,
                 this.deviceStateActor.Object,
-                this.deviceConnectionActor.Object,
+                this.mockDeviceContext.Object,
                 this.loopSettings.Object);
         }
 
@@ -147,7 +181,7 @@ namespace SimulationAgent.Test.DeviceProperties
         private DeviceConnectionActor GetDeviceConnectionActor()
         {
             Mock<IScriptInterpreter> scriptInterpreter = new Mock<IScriptInterpreter>();
-            Mock<Fetch> fetchLogic = new Mock<Fetch>(
+            Mock<FetchFromRegistry> fetchLogic = new Mock<FetchFromRegistry>(
                 this.devices.Object,
                 this.logger.Object);
             Mock<Register> registerLogic = new Mock<Register>(
@@ -157,13 +191,24 @@ namespace SimulationAgent.Test.DeviceProperties
                 this.devices.Object,
                 scriptInterpreter.Object,
                 this.logger.Object);
+            Mock<Deregister> deregisterLogic = new Mock<Deregister>(
+                this.devices.Object,
+                this.logger.Object);
+            Mock<Disconnect> disconnectLogic = new Mock<Disconnect>(
+                this.devices.Object,
+                scriptInterpreter.Object,
+                this.logger.Object);
+
             return new DeviceConnectionActor(
                 this.logger.Object,
                 this.actorsLogger.Object,
-                this.rateLimiting.Object,
+                this.credentialSetup.Object,
                 fetchLogic.Object,
                 registerLogic.Object,
-                connectLogic.Object);
+                connectLogic.Object,
+                deregisterLogic.Object,
+                disconnectLogic.Object,
+                this.mockInstance.Object);
         }
     }
 }

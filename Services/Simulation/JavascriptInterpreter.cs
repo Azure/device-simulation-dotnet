@@ -13,17 +13,17 @@ using Jint.Runtime.Descriptors;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
 {
     public interface IJavascriptInterpreter
     {
         void Invoke(
-            string filename,
+            Script script,
             Dictionary<string, object> context,
             ISmartDictionary state,
             ISmartDictionary properties);
+        string Validate(Stream stream);
     }
 
     public class JavascriptInterpreter : IJavascriptInterpreter
@@ -32,6 +32,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         private readonly string folder;
         private ISmartDictionary deviceState;
         private ISmartDictionary deviceProperties;
+        private readonly IDeviceModelScripts simulationScripts;
 
         // The following are static to improve overall performance
         // TODO make the class a singleton - https://github.com/Azure/device-simulation-dotnet/issues/45
@@ -40,9 +41,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         private static readonly Dictionary<string, Program> programs = new Dictionary<string, Program>();
 
         public JavascriptInterpreter(
+            IDeviceModelScripts simulationScripts,
             IServicesConfig config,
             ILogger logger)
         {
+            this.simulationScripts = simulationScripts;
             this.folder = config.DeviceModelsScriptsFolder;
             this.log = logger;
         }
@@ -53,7 +56,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         /// Modifies the internal device state with the latest values.
         /// </summary>
         public void Invoke(
-            string filename,
+            Script script,
             Dictionary<string, object> context,
             ISmartDictionary state,
             ISmartDictionary properties)
@@ -79,33 +82,62 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             try
             {
                 Program program;
+                bool isInStorage = string.Equals(script.Path.Trim(),
+                    DeviceModelScript.DeviceModelScriptPath.Storage.ToString(),
+                    StringComparison.OrdinalIgnoreCase);
+                string filename = isInStorage ? script.Id : script.Path;
+
                 if (programs.ContainsKey(filename))
                 {
                     program = programs[filename];
                 }
                 else
                 {
-                    var sourceCode = this.LoadScript(filename);
+                    // TODO: refactor the code to avoid blocking
+                    //       https://github.com/Azure/device-simulation-dotnet/issues/240 
+                    var task = this.LoadScriptAsync(filename, isInStorage);
+                    task.Wait(TimeSpan.FromSeconds(30));
+                    var sourceCode = task.Result;
 
-                    this.log.Info("Compiling script source code", () => new { filename });
+                    this.log.Debug("Compiling script source code", () => new { filename });
                     program = parser.Parse(sourceCode);
                     programs.Add(filename, program);
                 }
-
                 this.log.Debug("Executing JS function", () => new { filename });
 
                 engine.Execute(program).Invoke(
                     "main",
                     context,
                     this.deviceState.GetAll(),
-                    this.deviceProperties.GetAll());
+                    this.deviceProperties.GetAll(),
+                    script.Params);
 
                 this.log.Debug("JS function success", () => new { filename, this.deviceState });
             }
             catch (Exception e)
             {
-                this.log.Error("JS function failure", () => new { e.Message, e.GetType().FullName });
+                this.log.Error("JS function failure", e);
             }
+        }
+
+        /// <summary>
+        /// Reading a stream and try to parse it as javasript.
+        /// </summary>
+        public string Validate(Stream stream)
+        {
+            var parser = new JavaScriptParser();
+            var reader = new StreamReader(stream);
+            var rawScript = reader.ReadToEnd();
+            try
+            {
+                parser.Parse(rawScript);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return rawScript;
         }
 
         /// <summary>
@@ -154,23 +186,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             }
             catch (Exception e)
             {
-                this.log.Error("JsValue parsing failure",
-                    () => new { e.Message, e.GetType().FullName });
+                this.log.Error("JsValue parsing failure", e);
 
                 return new Dictionary<string, object>();
             }
         }
 
-        private string LoadScript(string filename)
+        private async Task<string> LoadScriptAsync(string filename, bool isInStorage)
         {
-            var filePath = this.folder + filename;
-            if (!File.Exists(filePath))
+            if (isInStorage)
             {
-                this.log.Error("Javascript file not found", () => new { filePath });
-                throw new FileNotFoundException($"File {filePath} not found.");
+                var script = await this.simulationScripts.GetAsync(filename);
+                return script.Content;
             }
+            else
+            {
+                var filePath = this.folder + filename;
+                if (!File.Exists(filePath))
+                {
+                    this.log.Error("Javascript file not found", () => new { filePath });
+                    throw new FileNotFoundException($"File {filePath} not found.");
+                }
 
-            return File.ReadAllText(filePath);
+                return File.ReadAllText(filePath);
+            }
         }
 
         private void JsLog(object data)

@@ -46,7 +46,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (state == null) return;
 
-            this.log.Info("Overriding initial state of the device", () => new
+            this.log.Debug("Overriding initial state of the device", () => new
             {
                 Original = result.Simulation.InitialState,
                 NewValue = state
@@ -61,7 +61,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             if (interval == null || result.Simulation.Interval.ToString("c") == interval.Value.ToString("c"))
                 return;
 
-            this.log.Info("Overriding device state simulation frequency",
+            this.log.Debug("Overriding device state simulation frequency",
                 () => new
                 {
                     Original = result.Simulation.Interval.ToString("c"),
@@ -73,7 +73,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         // Reduce or Increase the number of scripts, if required by the override information
         private void UpdateDeviceModelSimulationScriptsCount(
-            IList<Models.Simulation.DeviceModelSimulationScriptOverride> scripts, DeviceModel result)
+            IList<Models.Simulation.DeviceModelScriptOverride> scripts, DeviceModel result)
         {
             if (scripts == null || scripts.Count == 0) return;
 
@@ -82,8 +82,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             if (originalCount < newCount)
             {
-                this.log.Info("The list of scripts is longer than the original model, " +
-                              "the extra scripts will be added to the model",
+                this.log.Debug("The list of scripts is longer than the original model, " +
+                               "the extra scripts will be added to the model",
                     () => new { originalCount, newCount });
 
                 for (int i = 0; i < newCount - originalCount; i++)
@@ -113,7 +113,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var newCount = telemetry.Count;
             var originalCount = result.Telemetry.Count;
 
-            this.log.Info("The lenght of the telemetry list is different from the original model, adding/removing the extra telemetry",
+            this.log.Debug("The length of the telemetry list is different from the original model, adding/removing the extra telemetry",
                 () => new { originalCount, newCount });
 
             if (originalCount < newCount)
@@ -133,11 +133,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         // Redefine the scripts used to generate the device state
         private void SetSimulationScripts(
-            IList<Models.Simulation.DeviceModelSimulationScriptOverride> scripts, DeviceModel result)
+            IList<Models.Simulation.DeviceModelScriptOverride> scripts, DeviceModel result)
         {
             if (scripts == null || scripts.Count == 0) return;
 
-            this.log.Info("Overriding device state simulation scripts",
+            this.log.Debug("Overriding device state simulation scripts",
                 () => new
                 {
                     Original = result.Simulation.Scripts,
@@ -174,7 +174,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 if (t.Interval != null
                     && t.Interval.Value.ToString("c") != result.Telemetry[i].Interval.ToString("c"))
                 {
-                    this.log.Info("Changing telemetry frequency",
+                    this.log.Debug("Changing telemetry frequency",
                         () => new
                         {
                             originalFrequency = result.Telemetry[i].Interval.ToString("c"),
@@ -187,7 +187,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 if (!string.IsNullOrEmpty(t.MessageTemplate)
                     && t.MessageTemplate != result.Telemetry[i].MessageTemplate)
                 {
-                    this.log.Info("Changing telemetry message template",
+                    this.log.Debug("Changing telemetry message template",
                         () => new
                         {
                             originalTemplate = result.Telemetry[i].MessageTemplate,
@@ -202,7 +202,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     if (!string.IsNullOrEmpty(t.MessageSchema.Name)
                         && t.MessageSchema.Name != result.Telemetry[i].MessageSchema.Name)
                     {
-                        this.log.Info("Changing telemetry message schema name",
+                        this.log.Debug("Changing telemetry message schema name",
                             () => new
                             {
                                 originalName = result.Telemetry[i].MessageSchema.Name,
@@ -212,10 +212,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         result.Telemetry[i].MessageSchema.Name = t.MessageSchema.Name;
                     }
 
+                    if (!string.IsNullOrEmpty(t.MessageSchema.ClassName)
+                        && t.MessageSchema.ClassName != result.Telemetry[i].MessageSchema.ClassName)
+                    {
+                        this.log.Info("Changing telemetry message schema class name",
+                            () => new
+                            {
+                                originalClassName = result.Telemetry[i].MessageSchema.ClassName,
+                                newClassName = t.MessageSchema.ClassName
+                            });
+
+                        result.Telemetry[i].MessageSchema.ClassName = t.MessageSchema.ClassName;
+                    }
+
                     if (t.MessageSchema.Format != null
                         && t.MessageSchema.Format != result.Telemetry[i].MessageSchema.Format)
                     {
-                        this.log.Info("Changing telemetry message schema format",
+                        this.log.Debug("Changing telemetry message schema format",
                             () => new
                             {
                                 originalFormat = result.Telemetry[i].MessageSchema.Format,
@@ -227,7 +240,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                     if (t.MessageSchema.Fields != null)
                     {
-                        this.log.Info("Changing telemetry message schema fields",
+                        this.log.Debug("Changing telemetry message schema fields",
                             () => new
                             {
                                 originalFields = result.Telemetry[i].MessageSchema.Fields,

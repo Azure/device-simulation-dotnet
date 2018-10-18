@@ -2,7 +2,7 @@
 
 using System;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
 {
     public class TelemetrySendTimeoutException : Exception
     {

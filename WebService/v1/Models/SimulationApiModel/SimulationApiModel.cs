@@ -17,7 +17,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
     {
         private const string DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:sszzz";
 
-        private long version;
         private DateTimeOffset created;
         private DateTimeOffset modified;
 
@@ -27,27 +26,48 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "Id")]
         public string Id { get; set; }
 
+        [JsonProperty(PropertyName = "Name")]
+        public string Name { get; set; }
+
+        [JsonProperty(PropertyName = "Description")]
+        public string Description { get; set; }
+
         [JsonProperty(PropertyName = "Enabled")]
         public bool? Enabled { get; set; }
 
-        [JsonProperty(PropertyName = "IoTHub")]
-        public SimulationIotHub IotHub { get; set; }
+        [JsonProperty(PropertyName = "DeleteDevicesWhenSimulationEnds")]
+        public bool? DeleteDevicesWhenSimulationEnds { get; set; }
 
-        [JsonProperty(PropertyName = "StartTime", NullValueHandling = NullValueHandling.Ignore)]
+        // Note: read-only property, used only to report the simulation status
+        [JsonProperty(PropertyName = "Running")]
+        public bool? Running { get; set; }
+
+        // Note: read-only property, used only to report the simulation status
+        [JsonProperty(PropertyName = "ActiveNow")]
+        public bool? ActiveNow { get; set; }
+
+        [JsonProperty(PropertyName = "IoTHubs")]
+        public IList<SimulationIotHub> IotHubs { get; set; }
+
+        [JsonProperty(PropertyName = "StartTime")]
         public string StartTime { get; set; }
 
-        [JsonProperty(PropertyName = "EndTime", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(PropertyName = "EndTime")]
         public string EndTime { get; set; }
+
+        // Note: read-only property, used only to report the simulation status
+        [JsonProperty(PropertyName = "StoppedTime")]
+        public string StoppedTime { get; set; }
 
         [JsonProperty(PropertyName = "DeviceModels")]
         public IList<SimulationDeviceModelRef> DeviceModels { get; set; }
 
+        // Note: read-only metadata
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
         {
             { "$type", "Simulation;" + Version.NUMBER },
             { "$uri", "/" + Version.PATH + "/simulations/" + this.Id },
-            { "$version", this.version.ToString() },
             { "$created", this.created.ToString(DATE_FORMAT) },
             { "$modified", this.modified.ToString(DATE_FORMAT) }
         };
@@ -56,33 +76,68 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         public SimulationApiModel()
         {
             this.Id = string.Empty;
+            this.Name = string.Empty;
+            this.Description = string.Empty;
 
             // When unspecified, a simulation is enabled
             this.Enabled = true;
-            this.IotHub = null;
+            this.Running = false;
+            this.DeleteDevicesWhenSimulationEnds = false;
+            this.ActiveNow = false;
+            this.IotHubs = new List<SimulationIotHub>();
             this.StartTime = null;
             this.EndTime = null;
+            this.StoppedTime = null;
             this.DeviceModels = new List<SimulationDeviceModelRef>();
         }
 
-        // Map API model to service model
-        public Simulation ToServiceModel(string id = "")
+        // Map API model to service model, keeping the original fields when needed
+        public Simulation ToServiceModel(Simulation existingSimulation, string id = "")
         {
-            this.Id = id;
-
             var now = DateTimeOffset.UtcNow;
 
-            var result = new Simulation
+            // ID can be empty, e.g. with POST requests
+            this.Id = id;
+
+            // Use the existing simulation fields if available, so that read-only values are not lost
+            // e.g. the state of partitioning, device creation, etc.
+            var result = new Simulation();
+            if (existingSimulation != null)
             {
-                ETag = this.ETag,
-                Id = this.Id,
-                // When unspecified, a simulation is enabled
-                Enabled = this.Enabled ?? true,
-                StartTime = DateHelper.ParseDateExpression(this.StartTime, now),
-                EndTime = DateHelper.ParseDateExpression(this.EndTime, now),
-                IotHubConnectionString = SimulationIotHub.ToServiceModel(this.IotHub),
-                DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList()
-            };
+                result = existingSimulation;
+            }
+
+            result.ETag = this.ETag;
+            result.Id = this.Id;
+            result.Name = this.Name;
+            result.Description = this.Description;
+            result.StartTime = DateHelper.ParseDateExpression(this.StartTime, now);
+            result.EndTime = DateHelper.ParseDateExpression(this.EndTime, now);
+            result.DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList();
+
+            // Overwrite the value only if the request included the field, i.e. don't
+            // enable/disable the simulation if the user didn't explicitly ask to.
+            if (this.Enabled.HasValue)
+            {
+                result.Enabled = this.Enabled.Value;
+            }
+
+            // Overwrite the value only if the request included the field, i.e. don't
+            // delete all devices if the user didn't explicitly ask to.
+            if (this.DeleteDevicesWhenSimulationEnds.HasValue)
+            {
+                result.DeleteDevicesWhenSimulationEnds = this.DeleteDevicesWhenSimulationEnds.Value;
+            }
+
+            foreach (var hub in this.IotHubs)
+            {
+                var connString = SimulationIotHub.ToServiceModel(hub);
+
+                if (!result.IotHubConnectionStrings.Contains(connString))
+                {
+                    result.IotHubConnectionStrings.Add(connString);
+                }
+            }
 
             return result;
         }
@@ -96,9 +151,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             {
                 ETag = value.ETag,
                 Id = value.Id,
+                Name = value.Name,
+                Description = value.Description,
                 Enabled = value.Enabled,
-                IotHub = new SimulationIotHub(value.IotHubConnectionString)
+                Running = value.ShouldBeRunning,
+                ActiveNow = value.IsActiveNow,
+                DeleteDevicesWhenSimulationEnds = value.DeleteDevicesWhenSimulationEnds,
+                StartTime = value.StartTime.ToString(),
+                EndTime = value.EndTime.ToString(),
+                StoppedTime = value.StoppedTime.ToString(),
+                IotHubs = new List<SimulationIotHub>()
             };
+
+            foreach (var iotHubConnectionString in value.IotHubConnectionStrings)
+            {
+                var iotHub = new SimulationIotHub { ConnectionString = iotHubConnectionString };
+                result.IotHubs.Add(iotHub);
+            }
 
             // Ignore the date if the simulation doesn't have a start time
             if (value.StartTime.HasValue && !value.StartTime.Value.Equals(DateTimeOffset.MinValue))
@@ -112,21 +181,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 result.EndTime = value.EndTime?.ToString(DATE_FORMAT);
             }
 
+            // Ignore the date if the simulation doesn't have an end time
+            if (value.StoppedTime.HasValue && !value.StoppedTime.Value.Equals(DateTimeOffset.MaxValue))
+            {
+                result.StoppedTime = value.StoppedTime?.ToString(DATE_FORMAT);
+            }
+
             result.DeviceModels = SimulationDeviceModelRef.FromServiceModel(value.DeviceModels);
-            result.version = value.Version;
             result.created = value.Created;
             result.modified = value.Modified;
 
             return result;
         }
 
-        public async Task ValidateInputRequest(ILogger log, IIotHubConnectionStringManager connectionStringManager)
+        public async Task ValidateInputRequestAsync(ILogger log, IIotHubConnectionStringManager connectionStringManager)
         {
             const string NO_DEVICE_MODEL = "The simulation doesn't contain any device model";
             const string ZERO_DEVICES = "The simulation has zero devices";
             const string END_TIME_BEFORE_START_TIME = "The simulation End Time must be after the Start Time";
             const string INVALID_DATE = "Invalid date format";
             const string CANNOT_RUN_IN_THE_PAST = "The simulation end date is in the past";
+            const string NO_IOTHUB_CONNSTRING = "The simulation doesn't contain any IoTHub connection string";
 
             // A simulation must contain at least one device model
             if (this.DeviceModels.Count < 1)
@@ -147,7 +222,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 var now = DateTimeOffset.UtcNow;
                 var startTime = DateHelper.ParseDateExpression(this.StartTime, now);
                 var endTime = DateHelper.ParseDateExpression(this.EndTime, now);
-
                 // The start time must be before the end time
                 if (startTime.HasValue && endTime.HasValue && startTime.Value.Ticks >= endTime.Value.Ticks)
                 {
@@ -168,7 +242,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 throw new BadRequestException(INVALID_DATE, e);
             }
 
-            await connectionStringManager.ValidateConnectionStringAsync(this.IotHub.ConnectionString);
+            // A simulation contains at least one iothub connect string
+            if (this.IotHubs.Count == 0)
+            {
+                throw new BadRequestException(NO_IOTHUB_CONNSTRING);
+            }
+
+            foreach (var iotHub in this.IotHubs)
+            {
+                await connectionStringManager.ValidateConnectionStringAsync(iotHub.ConnectionString);
+            }
         }
     }
 }

@@ -25,7 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         // If this list is shorter than the original definition, elements in excess are removed
         // i.e. to keep all the original scripts, there must be an entry for each of them
         [JsonProperty(PropertyName = "Scripts", NullValueHandling = NullValueHandling.Ignore)]
-        public IList<DeviceModelSimulationScriptOverride> Scripts { get; set; }
+        public IList<DeviceModeScriptOverride> Scripts { get; set; }
 
         // Default constructor used by web service requests
         public DeviceModelSimulationOverride()
@@ -68,7 +68,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             {
                 InitialState = value.InitialState,
                 Interval = value.Interval?.ToString("c"),
-                Scripts = DeviceModelSimulationScriptOverride.FromServiceModel(value.Scripts)
+                Scripts = DeviceModeScriptOverride.FromServiceModel(value.Scripts)
             };
         }
 

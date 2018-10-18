@@ -58,35 +58,35 @@ function main(context, previousState, previousProperties) {
     // Reboot - devices goes offline and comes online after 20 seconds
     log("Executing 'FirmwareUpdate' JavaScript method; Firmware version passed:" + context.Firmware);
 
-    var DevicePropertyKey = "FirmwareUpdateStatus";
-    var FirmwareKey = "Firmware";
+    var devicePropertyKey = "FirmwareUpdateStatus";
+    var firmwareKey = "Firmware";
 
     // update the status to offline & firmware updating
     state.online = false;
     state.CalculateRandomizedTelemetry = false;
     var status = "Command received, updating firmware version to ";
     status = status.concat(context.Firmware);
-    updateProperty(DevicePropertyKey, status);
+    updateProperty(devicePropertyKey, status);
     sleep(5000);
 
     log("Image Downloading...");
     status = "Image Downloading...";
-    updateProperty(DevicePropertyKey, status);
+    updateProperty(devicePropertyKey, status);
     sleep(7500);
 
     log("Executing firmware update simulation function, firmware version passed:" + context.Firmware);
     status = "Downloaded, applying firmware...";
-    updateProperty(DevicePropertyKey, status);
+    updateProperty(devicePropertyKey, status);
     sleep(5000);
 
     status = "Rebooting...";
-    updateProperty(DevicePropertyKey, status);
+    updateProperty(devicePropertyKey, status);
     sleep(5000);
 
     status = "Firmware Updated.";
-    updateProperty(DevicePropertyKey, status);
+    updateProperty(devicePropertyKey, status);
     properties.Firmware = context.Firmware;
-    updateProperty(FirmwareKey, context.Firmware);
+    updateProperty(firmwareKey, context.Firmware);
     sleep(7500);
 
     state.CalculateRandomizedTelemetry = true;
