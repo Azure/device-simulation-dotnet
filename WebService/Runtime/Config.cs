@@ -242,7 +242,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             if (!azureManagementAdapterApiUrl.ToLowerInvariant().StartsWith("https:"))
             {
                 throw new Exception("The service configuration is incomplete. " +
-                                    "Azure Management API url must start with https" +
+                                    "Azure Management API url must start with https. " +
                                     "For more information, see the environment variables " +
                                     "used in project properties and the 'webservice_url' " +
                                     "value in the 'appsettings.ini' configuration file.");

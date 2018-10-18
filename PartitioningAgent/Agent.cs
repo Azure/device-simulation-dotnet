@@ -120,15 +120,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
             if (activeSimulations.Count > 0)
             {
                 var models = new List<Simulation.DeviceModelRef>();
+                var customDevices = 0;
 
                 foreach (var simulation in activeSimulations)
                 {
                     // Loop through all the device models used in the simulation
                     models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
+
+                    // Count total custom devices
+                    customDevices += simulation.CustomDevices.Count;
                 }
 
                 // Calculate the total number of devices
-                var totalDevices = models.Sum(model => model.Count);
+                var totalDevices = models.Sum(model => model.Count) + customDevices;
 
                 // Calculate number of nodes required
                 nodeCount = (int)Math.Ceiling((double)totalDevices / this.clusteringConfig.MaxDevicesPerNode);

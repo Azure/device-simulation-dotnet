@@ -93,6 +93,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
 
             this.log.Debug("Azure management response", () => new { response });
 
+            // TODO: Exception handling for specific exceptions like not enough cores left in subscription.
             this.ThrowIfError(response);
         }
 
@@ -154,9 +155,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
             content.Properties.Enabled = true;
             content.Properties.TargetResourceUri = this.GetVmssResourceUrl();
             content.Properties.Profiles = new List<Profile>();
-            content.Properties.Profiles.Add(new Profile {Name  = autoScaleSettingsName,
-                                                         Capacity = new Capacity{ Minimum = vmCount, Maximum = vmCount, Default = vmCount },
-                                                         Rules = new List<object>()});
+            content.Properties.Profiles.Add(new Profile { Name  = autoScaleSettingsName,
+                                                          Capacity = new Capacity{ Minimum = vmCount, Maximum = vmCount, Default = vmCount },
+                                                          Rules = new List<object>() });
 
             if (content != null)
             {

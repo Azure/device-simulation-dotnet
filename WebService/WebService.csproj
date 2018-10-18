@@ -12,6 +12,8 @@
             <Variable name="ASPNETCORE_ENVIRONMENT" value="Development"/>
             <Variable name="PCS_IOTHUB_CONNSTRING" value="your Azure IoT Hub connection string"/>
             <Variable name="PCS_STORAGEADAPTER_WEBSERVICE_URL" value="http://localhost:9022/v1"/>
+	    <Variable name="PCS_RESOURCE_GROUP_LOCATION" value="your Azure resource group location"/>
+	    <Variable name="PCS_VMSS_NAME" value="your vm scale set name"/>
             <Variable name="PCS_LOG_LEVEL" value="Debug"/>
             <Variable name="PCS_AUTH_REQUIRED" value="false"/>
             <Variable name="PCS_AUTH_ISSUER" value=""/>
