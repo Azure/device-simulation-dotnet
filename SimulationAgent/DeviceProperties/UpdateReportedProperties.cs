@@ -44,7 +44,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                     // Device could be rebooting, updating firmware, etc.
                     this.log.Debug("The device state says the device is online", () => new { this.deviceId });
 
-                    // Update the device twin with the current device properites state
+                    // Update the device twin with the current device properties state
                     await this.context.Client.UpdatePropertiesAsync(this.context.DeviceProperties);
                     var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                     this.log.Debug("Device property updates delivered", () => new { timeSpentMsecs, this.deviceId, properties });
