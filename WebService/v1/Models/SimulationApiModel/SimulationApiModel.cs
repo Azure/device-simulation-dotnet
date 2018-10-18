@@ -157,7 +157,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Running = value.ShouldBeRunning,
                 ActiveNow = value.IsActiveNow,
                 DeleteDevicesWhenSimulationEnds = value.DeleteDevicesWhenSimulationEnds,
-                DevicesCleanUpRequiredByUser = value.DevicesCleanUpRequiredByUser,
                 StartTime = value.StartTime?.ToString(DATE_FORMAT),
                 EndTime = value.EndTime?.ToString(DATE_FORMAT),
                 StoppedTime = value.StoppedTime?.ToString(DATE_FORMAT),
