@@ -105,6 +105,46 @@ namespace Services.Test.Storage
         }
 
         [Fact]
+        public void ItReturnsStorageRecordForGivenSqlCondition()
+        {
+            // Arrange
+            var expectedId = "1";
+            string sqlCondition = " CONTAINS(ROOT.id, @id)";
+            SqlParameter[] sqlParameters = new[] { new SqlParameter { Name = "@id", Value = expectedId } };
+
+            // Arrange
+            // Create a collection of test StorageRecords
+            var documentDbRecords = new List<DocumentDbRecord>();
+            documentDbRecords.Add(
+                new DocumentDbRecord
+                {
+                    Id = "1",
+                    ExpirationUtcMsecs = Now + testOffsetMs
+                });
+            documentDbRecords.Add(
+                new DocumentDbRecord
+                {
+                    Id = "2",
+                    ExpirationUtcMsecs = Now + testOffsetMs
+                });
+
+            // Have the mock DocumentDbWrapper return the test records
+            this.mockDocumentDbWrapper.Setup(
+                x => x.CreateQuery<DocumentDbRecord>(It.IsAny<IDocumentClient>(), It.IsAny<StorageConfig>(), sqlCondition, sqlParameters)
+            ).Returns(
+                documentDbRecords.AsQueryable().Where(x => x.Id == expectedId)
+            );
+            
+            // Act
+            var recordsTask = this.target.GetAsync(sqlCondition, sqlParameters);
+            recordsTask.Wait(testTimeout);
+
+            // Assert
+            Assert.Equal(1, recordsTask.Result.Count());
+            Assert.Equal(expectedId, recordsTask.Result.ElementAt(0).Id);
+        }
+
+        [Fact]
         public void ItVerifiesThatARecordExists()
         {
             // Arrange

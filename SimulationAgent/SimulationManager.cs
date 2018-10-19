@@ -238,13 +238,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             try
             {
-                await this.simulationStatistics.CreateOrUpdateAsync(simulation.Id, new SimulationStatisticsModel
+                var simulationModel = new SimulationStatisticsModel
                 {
                     TotalMessagesSent = this.deviceTelemetryActors.Where(a => a.Key.StartsWith(simulation.Id)).Sum(a => a.Value.TotalMessagesCount),
                     FailedMessagesCount = this.deviceTelemetryActors.Where(a => a.Key.StartsWith(simulation.Id)).Sum(a => a.Value.FailedMessagesCount),
                     FailedDeviceConnectionsCount = this.deviceConnectionActors.Where(a => a.Key.StartsWith(simulation.Id)).Sum(a => a.Value.FailedDeviceConnectionsCount),
                     FailedDeviceTwinUpdatesCount = this.devicePropertiesActors.Where(a => a.Key.StartsWith(simulation.Id)).Sum(a => a.Value.FailedTwinUpdatesCount),
-                });
+                };
+
+                await this.simulationStatistics.CreateOrUpdateAsync(simulation.Id, simulationModel);
             }
             catch (Exception e)
             {

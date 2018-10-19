@@ -258,6 +258,48 @@ namespace SimulationAgent.Test
             Assert.Empty(this.devicePropertiesActors);
         }
 
+        [Fact]
+        void ItCalculatesStatsAndInvokesCreateOrUpdateStatistics()
+        {
+            // Arrange
+            var expectedTotalMessageCount = 200;
+            var expectedFailedMessagesCount = 2;
+            var expectedFailedDeviceConnectionsCount = 6;
+            var expectedFailedTwinUpdatesCount = 10;
+
+            var statisticsModel = new SimulationStatisticsModel
+            {
+                TotalMessagesSent = expectedTotalMessageCount,
+                FailedMessagesCount = expectedFailedMessagesCount,
+                FailedDeviceConnectionsCount = expectedFailedDeviceConnectionsCount,
+                FailedDeviceTwinUpdatesCount = expectedFailedTwinUpdatesCount
+            };
+
+            var mockDeviceConnectionActor = new Mock<IDeviceConnectionActor>();
+            var mockDevicePropertiesActor = new Mock<IDevicePropertiesActor>();
+            var mockDeviceTelemetryActor = new Mock<IDeviceTelemetryActor>();
+
+            for (int i = 0; i < 2; i++)
+            {
+                var deviceName = SIM_ID + $"_{i}";
+                mockDeviceTelemetryActor.Setup(x => x.TotalMessagesCount).Returns(100);
+                mockDeviceTelemetryActor.Setup(x => x.FailedMessagesCount).Returns(1);
+                this.deviceTelemetryActors.TryAdd(deviceName, mockDeviceTelemetryActor.Object);
+
+                mockDeviceConnectionActor.Setup(x => x.FailedDeviceConnectionsCount).Returns(3);
+                this.mockDeviceContext.TryAdd(deviceName, mockDeviceConnectionActor.Object);
+
+                mockDevicePropertiesActor.Setup(x => x.FailedTwinUpdatesCount).Returns(5);
+                this.devicePropertiesActors.TryAdd(deviceName, mockDevicePropertiesActor.Object);
+            }
+
+            // Act
+            this.target.SaveStatisticsAsync().Wait();
+
+            // Assert
+            this.mockSimulationStatistics.Verify(x => x.CreateOrUpdateAsync(SIM_ID, It.IsAny<SimulationStatisticsModel>()), Times.Once);
+        }
+
         private static long RandomInt()
         {
             return Guid.NewGuid().ToByteArray().First();
