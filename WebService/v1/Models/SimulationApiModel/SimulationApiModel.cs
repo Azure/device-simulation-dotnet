@@ -163,9 +163,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Running = value.ShouldBeRunning,
                 ActiveNow = value.IsActiveNow,
                 DeleteDevicesWhenSimulationEnds = value.DeleteDevicesWhenSimulationEnds,
-                StartTime = value.StartTime.ToString(),
-                EndTime = value.EndTime.ToString(),
-                StoppedTime = value.StoppedTime.ToString(),
+                StartTime = value.StartTime?.ToString(DATE_FORMAT),
+                EndTime = value.EndTime?.ToString(DATE_FORMAT),
+                StoppedTime = value.StoppedTime?.ToString(DATE_FORMAT),
                 IotHubs = new List<SimulationIotHub>()
             };
 
