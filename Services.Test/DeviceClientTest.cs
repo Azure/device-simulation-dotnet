@@ -41,7 +41,7 @@ namespace Services.Test
             this.target.ConnectAsync().Wait(Constants.TEST_TIMEOUT);
 
             // Assert
-            this.client.Verify(x=>x.OpenAsync(), Times.Once);
+            this.client.Verify(x => x.OpenAsync(), Times.Once);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -49,10 +49,22 @@ namespace Services.Test
         {
             // Arrange
             this.client.Setup(x => x.OpenAsync()).Throws(new UnauthorizedException(""));
-            
+
             // Act + Assert
             Assert.ThrowsAsync<DeviceAuthFailedException>(
                 async () => await this.target.ConnectAsync()).Wait(Constants.TEST_TIMEOUT);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItDisposesTheClientOnDisconnection()
+        {
+            // Arrange
+
+            // Act
+            this.target.DisconnectAsync().CompleteOrTimeout();
+
+            // Assert
+            this.client.Verify(x => x.Dispose(), Times.Once);
         }
     }
 }
