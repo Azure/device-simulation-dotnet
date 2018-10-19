@@ -58,8 +58,6 @@ namespace Services.Test
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItDisposesTheClientOnDisconnection()
         {
-            // Arrange
-
             // Act
             this.target.DisconnectAsync().CompleteOrTimeout();
 
