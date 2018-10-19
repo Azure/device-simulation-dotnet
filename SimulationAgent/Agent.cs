@@ -45,7 +45,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private const int DIAGNOSTICS_POLLING_FREQUENCY_DAYS = 1;
 
         // How often (minimum) to log simulation statistics
-        private const int STATS_INTERVAL_MSECS = 1500;
+        private const int STATS_INTERVAL_MSECS = 15000;
 
         // How often (minimum) to save simulation statistics to storage
         private const int STATS_INTERVAL_SECS = 30;
