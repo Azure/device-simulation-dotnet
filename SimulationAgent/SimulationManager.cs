@@ -16,6 +16,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnec
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
@@ -42,6 +43,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Check if the cluster size has changed and act accordingly
         Task UpdateThrottlingLimitsAsync();
 
+        Task SaveStatisticsAsync();
+
         void PrintStats();
 
         // === END - Executed by Agent.RunAsync
@@ -49,11 +52,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Stop all the actors and delete them - executed by Agent.StopInactiveSimulations
         void TearDown();
 
-        // // Executed by DeviceConnectionTask.RunAsync
-        // void NewConnectionLoop();
-        //
-        // // Executed by UpdatePropertiesTask.RunAsync
-        // void NewPropertiesLoop();
+        // Executed by DeviceConnectionTask.RunAsync
+        void NewConnectionLoop();
+
+        // Executed by UpdatePropertiesTask.RunAsync
+        void NewPropertiesLoop();
     }
 
     public class SimulationManager : ISimulationManager
@@ -67,6 +70,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private readonly IClusterNodes clusterNodes;
         private readonly IDeviceModels deviceModels;
         private readonly IFactory factory;
+        private readonly ISimulationStatistics simulationStatistics;
         private readonly ILogger log;
         private readonly IInstance instance;
         private readonly int maxDevicePerNode;
@@ -93,12 +97,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             IFactory factory,
             IClusteringConfig clusteringConfig,
             ILogger logger,
-            IInstance instance)
+            IInstance instance,
+            ISimulationStatistics simulationStatistics)
         {
             this.simulationContext = simulationContext;
             this.devicePartitions = devicePartitions;
             this.clusterNodes = clusterNodes;
             this.deviceModels = deviceModels;
+            this.simulationStatistics = simulationStatistics;
             this.factory = factory;
             this.log = logger;
             this.instance = instance;
@@ -228,6 +234,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 });
         }
 
+        public async Task SaveStatisticsAsync()
+        {
+            try
+            {
+                await this.simulationStatistics.CreateOrUpdateAsync(simulation.Id, new SimulationStatisticsModel
+                {
+                    TotalMessagesSent = this.deviceTelemetryActors.Where(a => a.Key.StartsWith(simulation.Id)).Sum(a => a.Value.TotalMessagesCount),
+                    FailedMessagesCount = this.deviceTelemetryActors.Where(a => a.Key.StartsWith(simulation.Id)).Sum(a => a.Value.FailedMessagesCount),
+                    FailedDeviceConnectionsCount = this.deviceConnectionActors.Where(a => a.Key.StartsWith(simulation.Id)).Sum(a => a.Value.FailedDeviceConnectionsCount),
+                    FailedDeviceTwinUpdatesCount = this.devicePropertiesActors.Where(a => a.Key.StartsWith(simulation.Id)).Sum(a => a.Value.FailedTwinUpdatesCount),
+                });
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Error saving simulation statistics", () => new { simulation.Id, e });
+            }
+        }
+
         // Stop all the actors and delete them
         public void TearDown()
         {
@@ -276,6 +300,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
 
             return false;
+        }
+
+        public void NewConnectionLoop()
+        {
+            this.simulationContext.ConnectionLoopSettings.NewLoop();
+        }
+
+        public void NewPropertiesLoop()
+        {
+            this.simulationContext.PropertiesLoopSettings.NewLoop();
         }
 
         private void DeleteAllStateActors()
@@ -457,13 +491,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.deviceStateActors.AddOrUpdate(dictKey, deviceStateActor, (k, v) => deviceStateActor);
 
             // Create one connection actor for each device
-            var deviceConnectionActor = this.factory.Resolve<IDeviceConnectionActor>();
-            deviceConnectionActor.Init(this.simulationContext, deviceId, deviceModel, deviceStateActor, this.simulationContext.ConnectionLoopSettings);
-            this.deviceConnectionActors.AddOrUpdate(dictKey, deviceConnectionActor, (k, v) => deviceConnectionActor);
+            var deviceContext = this.factory.Resolve<IDeviceConnectionActor>();
+            deviceContext.Init(this.simulationContext, deviceId, deviceModel, deviceStateActor, this.simulationContext.ConnectionLoopSettings);
+            this.deviceConnectionActors.AddOrUpdate(dictKey, deviceContext, (k, v) => deviceContext);
 
             // Create one device properties actor for each device
             var devicePropertiesActor = this.factory.Resolve<IDevicePropertiesActor>();
-            devicePropertiesActor.Init(this.simulationContext, deviceId, deviceStateActor, deviceConnectionActor, this.simulationContext.PropertiesLoopSettings);
+            devicePropertiesActor.Init(this.simulationContext, deviceId, deviceStateActor, deviceContext, this.simulationContext.PropertiesLoopSettings);
             this.devicePropertiesActors.AddOrUpdate(dictKey, devicePropertiesActor, (k, v) => devicePropertiesActor);
 
             // Create one telemetry actor for each telemetry message to be sent
@@ -479,7 +513,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 }
 
                 var deviceTelemetryActor = this.factory.Resolve<IDeviceTelemetryActor>();
-                deviceTelemetryActor.Init(this.simulationContext, deviceId, deviceModel, message, deviceStateActor, deviceConnectionActor);
+                deviceTelemetryActor.Init(this.simulationContext, deviceId, deviceModel, message, deviceStateActor, deviceContext);
 
                 var actorKey = this.GetTelemetryDictKey(dictKey, (i++).ToString());
                 this.deviceTelemetryActors.AddOrUpdate(actorKey, deviceTelemetryActor, (k, v) => deviceTelemetryActor);

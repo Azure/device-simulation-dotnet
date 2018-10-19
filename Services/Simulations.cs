@@ -336,13 +336,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     simulation.DeviceCreationJobId = await devices.CreateListUsingJobsAsync(deviceIds);
                     simulation.DevicesCreationStarted = true;
 
-                    this.log.Info("Device import job created for bulk creation", () => new { simulationId, simulation.DeviceCreationJobId });
+                    this.log.Info("Import job created for bulk device creation", () => new { simulationId, simulation.DeviceCreationJobId });
 
                     await this.SaveAsync(simulation, simulation.ETag);
                 }
                 catch (Exception e)
                 {
-                    this.log.Error("Failed to create device bulk creation job", e);
+                    this.log.Error("Failed to create bulk-device-creation job", e);
                     return false;
                 }
             }
@@ -366,13 +366,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     simulation.DeviceDeletionJobId = await devices.DeleteListUsingJobsAsync(deviceIds);
                     simulation.DevicesDeletionStarted = true;
 
-                    this.log.Info("Device import job created for bulk deletion", () => new { simulationId, simulation.DeviceCreationJobId });
+                    this.log.Info("Import job created for bulk device deletion", () => new { simulationId, simulation.DeviceCreationJobId });
 
                     await this.SaveAsync(simulation, simulation.ETag);
                 }
                 catch (Exception e)
                 {
-                    this.log.Error("Failed to create device bulk deletion job", e);
+                    this.log.Error("Failed to create bulk-device-deletion job", e);
                     return false;
                 }
             }

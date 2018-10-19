@@ -35,7 +35,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         IDeploymentConfig DeploymentConfig { get; }
 
         // Simulation multi-threading settings
-        ISimulationConcurrencyConfig SimulationConcurrencyConfig { get; }
+        IAppConcurrencyConfig AppConcurrencyConfig { get; }
 
         // Clustering and partitioning settings
         IClusteringConfig ClusteringConfig { get; }
@@ -77,7 +77,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string CLUSTERING_CHECK_INTERVAL_KEY = CLUSTERING_KEY + "check_interval";
         private const string CLUSTERING_NODE_RECORD_MAX_AGE_KEY = CLUSTERING_KEY + "node_record_max_age";
         private const string CLUSTERING_MASTER_LOCK_MAX_AGE_KEY = CLUSTERING_KEY + "master_lock_duration";
+        private const string CLUSTERING_PARTITION_LOCK_DURATION_KEY = CLUSTERING_KEY + "partition_lock_duration";
         private const string CLUSTERING_MAX_PARTITION_SIZE_KEY = CLUSTERING_KEY + "max_partition_size";
+        private const string CLUSTERING_MAX_DEVICES_PER_NODE_KEY = CLUSTERING_KEY + "max_devices_per_node";
 
         private const string STORAGE_ADAPTER_KEY = "StorageAdapterService:";
         private const string STORAGE_ADAPTER_API_URL_KEY = STORAGE_ADAPTER_KEY + "webservice_url";
@@ -141,7 +143,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         public IServicesConfig ServicesConfig { get; }
         public IRateLimitingConfig RateLimitingConfig { get; set; }
         public IDeploymentConfig DeploymentConfig { get; set; }
-        public ISimulationConcurrencyConfig SimulationConcurrencyConfig { get; set; }
+        public IAppConcurrencyConfig AppConcurrencyConfig { get; set; }
         public IClusteringConfig ClusteringConfig { get; }
 
         public Config(IConfigData configData)
@@ -152,7 +154,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             this.ClientAuthConfig = GetClientAuthConfig(configData);
             this.RateLimitingConfig = GetRateLimitingConfig(configData);
             this.DeploymentConfig = GetDeploymentConfig(configData);
-            this.SimulationConcurrencyConfig = GetConcurrencyConfig(configData);
+            this.AppConcurrencyConfig = GetConcurrencyConfig(configData);
             this.ClusteringConfig = GetClusteringConfig(configData);
         }
 
@@ -328,10 +330,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             };
         }
 
-        private static ISimulationConcurrencyConfig GetConcurrencyConfig(IConfigData configData)
+        private static IAppConcurrencyConfig GetConcurrencyConfig(IConfigData configData)
         {
-            var defaults = new SimulationConcurrencyConfig();
-            return new SimulationConcurrencyConfig
+            var defaults = new AppConcurrencyConfig();
+            return new AppConcurrencyConfig
             {
                 TelemetryThreads = configData.GetInt(CONCURRENCY_TELEMETRY_THREADS_KEY, defaults.TelemetryThreads),
                 MaxPendingConnections = configData.GetInt(CONCURRENCY_MAX_PENDING_CONNECTIONS_KEY, defaults.MaxPendingConnections),
@@ -353,7 +355,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 CheckIntervalMsecs = configData.GetInt(CLUSTERING_CHECK_INTERVAL_KEY, defaults.CheckIntervalMsecs),
                 NodeRecordMaxAgeMsecs = configData.GetInt(CLUSTERING_NODE_RECORD_MAX_AGE_KEY, defaults.NodeRecordMaxAgeMsecs),
                 MasterLockDurationMsecs = configData.GetInt(CLUSTERING_MASTER_LOCK_MAX_AGE_KEY, defaults.MasterLockDurationMsecs),
-                MaxPartitionSize = configData.GetInt(CLUSTERING_MAX_PARTITION_SIZE_KEY, defaults.MaxPartitionSize)
+                PartitionLockDurationMsecs = configData.GetInt(CLUSTERING_PARTITION_LOCK_DURATION_KEY, defaults.PartitionLockDurationMsecs),
+                MaxPartitionSize = configData.GetInt(CLUSTERING_MAX_PARTITION_SIZE_KEY, defaults.MaxPartitionSize),
+                MaxDevicesPerNode = configData.GetInt(CLUSTERING_MAX_DEVICES_PER_NODE_KEY, defaults.MaxDevicesPerNode)
             };
         }
 

@@ -128,21 +128,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // TODO: use the simulation object to decide which conn string to use
         public async Task InitAsync()
         {
-            // Until SimulationContext is merged, this class is a singleton and we want
-            // to avoid multiple initializations to run.
-            // Later, with SimulationContext, the instance will be cached and this code won't be needed.
-            // InitOnce() is temporarily disabled until the SimulationContext is merged in.
-            // Note: when removing this workaround, Autofac config should be changed to not
-            // be a singleton (see DependencyResolution.cs).
-            bool TODO_FIX_ME = true;
-            if (TODO_FIX_ME)
-            {
-                if (this.instance.IsInitialized) return;
-            }
-            else
-            {
-                this.instance.InitOnce();
-            }
+            this.instance.InitOnce();
 
             try
             {
@@ -253,7 +239,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 this.log.Debug("Creating device", () => new { deviceId });
 
-                var device = new Azure.Devices.Device(deviceId);
+                var device = this.PrepareDeviceObject(deviceId, this.fixedDeviceKey);
                 device = await this.registry.AddDeviceAsync(device);
 
                 return new Device(device, this.ioTHubHostName);

@@ -7,11 +7,10 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 using Newtonsoft.Json;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
 {
     public interface ISimulationStatistics
     {
@@ -54,7 +53,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             statistics.FailedDeviceConnectionsCount = simRecords.Sum(a => a.Statistics.FailedDeviceConnectionsCount);
             statistics.FailedDeviceTwinUpdatesCount = simRecords.Sum(a => a.Statistics.FailedDeviceTwinUpdatesCount);
             statistics.FailedMessagesCount = simRecords.Sum(a => a.Statistics.FailedMessagesCount);
-            statistics.SimulationErrorsCount = simRecords.Sum(a => a.Statistics.SimulationErrorsCount);
 
             return statistics;
         }

@@ -28,7 +28,6 @@ namespace WebService.Test.v1.Controllers
         private readonly Mock<ILogger> logger;
         private readonly Mock<IServicesConfig> servicesConfig;
         private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
-        private readonly Mock<ISimulationRunner> simulationRunner;
         private readonly Mock<IRateLimiting> rateReporter;
         private readonly StatusController target;
 
@@ -40,7 +39,6 @@ namespace WebService.Test.v1.Controllers
             this.logger = new Mock<ILogger>();
             this.servicesConfig = new Mock<IServicesConfig>();
             this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
-            this.simulationRunner = new Mock<ISimulationRunner>();
             this.rateReporter = new Mock<IRateLimiting>();
 
             this.target = new StatusController(

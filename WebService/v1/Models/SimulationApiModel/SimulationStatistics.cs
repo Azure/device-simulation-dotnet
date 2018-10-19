@@ -56,7 +56,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 TotalMessagesSent = statistics.TotalMessagesSent,
                 FailedDeviceConnectionsCount = statistics.FailedDeviceConnectionsCount,
                 FailedMessagesCount = statistics.FailedMessagesCount,
-                SimulationErrorsCount = statistics.SimulationErrorsCount,
                 FailedDeviceTwinUpdatesCount = statistics.FailedDeviceTwinUpdatesCount,
             };
         }

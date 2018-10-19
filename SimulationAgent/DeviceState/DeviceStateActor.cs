@@ -1,11 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Threading.Tasks;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Exceptions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -15,10 +13,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
     {
         ISmartDictionary DeviceState { get; }
         ISmartDictionary DeviceProperties { get; }
-        string DeviceId { get; }
         bool IsDeviceActive { get; }
-        long SimulationErrorsCount { get; }
-        void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices);
 
         void Init(
             ISimulationContext simulationContext,
@@ -31,27 +26,32 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
 
     public class DeviceStateActor : IDeviceStateActor
     {
-        public enum ActorStatus
+        private enum ActorStatus
         {
             None,
             Updating
         }
 
+        private const string SUPPORTED_METHODS_KEY = "SupportedMethods";
+        private const string TELEMETRY_KEY = "Telemetry";
+        private const int START_DISTRIBUTION_WINDOW_MSECS = 10000;
+
+        private readonly UpdateDeviceState updateDeviceStateLogic;
+        private readonly ILogger log;
+        private readonly IInstance instance;
+
+        private string deviceId;
+        private DeviceModel deviceModel;
+        private long simulationErrorsCount;
+        private long whenCanIUpdate;
+        private int startDelayMsecs;
+        private ActorStatus status;
+        private ISimulationContext simulationContext;
+
         public ISmartDictionary DeviceState { get; set; }
         public ISmartDictionary DeviceProperties { get; set; }
 
         public const string CALC_TELEMETRY = "CalculateRandomizedTelemetry";
-        public const string SUPPORTED_METHODS_KEY = "SupportedMethods";
-        public const string TELEMETRY_KEY = "Telemetry";
-
-        private readonly ILogger log;
-        private readonly UpdateDeviceState updateDeviceStateLogic;
-        private string deviceId;
-        private DeviceModel deviceModel;
-        private long whenCanIUpdate;
-        private int startDelayMsecs;
-        private ActorStatus status;
-        private long simulationErrorsCount;
 
         /// <summary>
         /// The device is considered active when the state is being updated.
@@ -69,11 +69,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         public string DeviceId => this.deviceId;
 
         public DeviceStateActor(
+            UpdateDeviceState updateDeviceStateLogic,
             ILogger logger,
-            UpdateDeviceState updateDeviceStateLogic)
+            IInstance instance)
         {
-            this.log = logger;
             this.updateDeviceStateLogic = updateDeviceStateLogic;
+            this.log = logger;
+            this.instance = instance;
             this.status = ActorStatus.None;
             this.simulationErrorsCount = 0;
         }
@@ -85,46 +87,40 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
 
         /// <summary>
         /// Invoke this method before calling Start(), to initialize the actor
-        /// with details like the device model and message type to simulate.
-        /// If this method is not called before Start(), the application will
+        /// with details such as the device model and message type to simulate.
+        /// If this method is not called before Run(), the application will
         /// throw an exception.
-        /// SetupAsync() should be called only once, typically after the constructor.
+        /// Init() should be called only once, typically after the constructor.
         /// </summary>
-        public void Setup(string deviceId, DeviceModel deviceModel, int position, int totalDevices)
-        {
-            if (this.status != ActorStatus.None)
-            {
-                this.log.Error("The actor is already initialized",
-                    () => new { CurrentDeviceId = this.deviceId, NewDeviceModelId = deviceModel.Id });
-                throw new DeviceActorAlreadyInitializedException();
-            }
-
-            this.deviceModel = deviceModel;
-            this.deviceId = deviceId;
-
-            // Distributed start times over 1 or 10 secs
-            var msecs = totalDevices < 50 ? 1000 : 10000;
-            this.startDelayMsecs = (int) (msecs * ((double) position / totalDevices));
-        }
-
         public void Init(
             ISimulationContext simulationContext,
             string deviceId,
             DeviceModel deviceModel,
             int deviceCounter)
         {
-            // TODO: will be implemented when SimulationManager is integrated
+            this.instance.InitOnce();
+
+            this.simulationContext = simulationContext;
+            this.deviceModel = deviceModel;
+            this.deviceId = deviceId;
+
+            // Distribute actors start over 10 secs
+            this.startDelayMsecs = deviceCounter % START_DISTRIBUTION_WINDOW_MSECS;
+
+            this.instance.InitComplete();
         }
 
         public void Run()
         {
+            this.instance.InitRequired();
+
             try
             {
                 switch (this.status)
                 {
                     // Prepare the dependencies
                     case ActorStatus.None:
-                        this.updateDeviceStateLogic.Setup(this, this.deviceId, this.deviceModel);
+                        this.updateDeviceStateLogic.Init(this, this.deviceId, this.deviceModel);
                         this.DeviceState = this.GetInitialState(this.deviceModel);
                         this.DeviceProperties = this.GetInitialProperties(this.deviceModel);
                         this.log.Debug("Initial device state", () => new { this.deviceId, this.DeviceState, this.DeviceProperties });

@@ -9,6 +9,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
@@ -22,46 +23,34 @@ namespace WebService.Test.v1.Controllers
 {
     public class SimulationsControllerTest
     {
-        public SimulationsControllerTest()
-        {
-            this.simulationsService = new Mock<ISimulations>();
-            this.servicesConfig = new Mock<IServicesConfig>();
-            this.deploymentConfig = new Mock<IDeploymentConfig>();
-            this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
-            this.iothubMetrics = new Mock<IIothubMetrics>();
-            this.preprovisionedIotHub = new Mock<IPreprovisionedIotHub>();
-            this.simulationAgent = new Mock<ISimulationAgent>();
-            this.simulationRunner = new Mock<ISimulationRunner>();
-            this.rateReporter = new Mock<IRateLimiting>();
-            this.simulationStatistics = new Mock<ISimulationStatistics>();
-            this.log = new Mock<ILogger>();
-
-            this.target = new SimulationsController(
-                this.simulationsService.Object,
-                this.servicesConfig.Object,
-                this.deploymentConfig.Object,
-                this.connectionStringManager.Object,
-                this.iothubMetrics.Object,
-                this.preprovisionedIotHub.Object,
-                this.simulationAgent.Object,
-                this.simulationRunner.Object,
-                this.rateReporter.Object,
-                this.log.Object,
-                this.simulationStatistics.Object);
-        }
-
         private readonly Mock<ISimulations> simulationsService;
-        private readonly Mock<IServicesConfig> servicesConfig;
-        private readonly Mock<IDeploymentConfig> deploymentConfig;
         private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
         private readonly Mock<IIothubMetrics> iothubMetrics;
         private readonly Mock<IPreprovisionedIotHub> preprovisionedIotHub;
         private readonly Mock<ISimulationAgent> simulationAgent;
-        private readonly Mock<ISimulationRunner> simulationRunner;
-        private readonly Mock<IRateLimiting> rateReporter;
         private readonly Mock<ILogger> log;
         private readonly Mock<ISimulationStatistics> simulationStatistics;
         private readonly SimulationsController target;
+
+        public SimulationsControllerTest()
+        {
+            this.simulationsService = new Mock<ISimulations>();
+            this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
+            this.iothubMetrics = new Mock<IIothubMetrics>();
+            this.preprovisionedIotHub = new Mock<IPreprovisionedIotHub>();
+            this.simulationAgent = new Mock<ISimulationAgent>();
+            this.log = new Mock<ILogger>();
+            this.simulationStatistics = new Mock<ISimulationStatistics>();
+
+            this.target = new SimulationsController(
+                this.simulationsService.Object,
+                this.connectionStringManager.Object,
+                this.iothubMetrics.Object,
+                this.preprovisionedIotHub.Object,
+                this.simulationAgent.Object,
+                this.log.Object,
+                this.simulationStatistics.Object);
+        }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItCreatesSimulationWithValidInput()
@@ -75,17 +64,9 @@ namespace WebService.Test.v1.Controllers
                 .ReturnsAsync(simulation);
 
             // Act
-            var fromServiceModelTask = 
-                SimulationApiModel.FromServiceModelAsync(
-                    simulation,
-                    this.servicesConfig.Object,
-                    this.deploymentConfig.Object,
-                    this.connectionStringManager.Object,
-                    this.simulationRunner.Object,
-                    this.rateReporter.Object);
-            fromServiceModelTask.Wait(Constants.TEST_TIMEOUT);
+            var simulationApiModel = SimulationApiModel.FromServiceModel(simulation);
 
-            var postAsyncTask = this.target.PostAsync(fromServiceModelTask.Result);
+            var postAsyncTask = this.target.PostAsync(simulationApiModel);
             postAsyncTask.Wait(Constants.TEST_TIMEOUT);
             var result = postAsyncTask.Result;
 
@@ -207,14 +188,7 @@ namespace WebService.Test.v1.Controllers
             // Act & Assert
             Assert.ThrowsAsync<BadRequestException>(
                     async () => await this.target.PostAsync(
-                        await SimulationApiModel.FromServiceModelAsync(
-                            simulation,
-                            this.servicesConfig.Object,
-                            this.deploymentConfig.Object,
-                            this.connectionStringManager.Object,
-                            this.simulationRunner.Object,
-                            this.rateReporter.Object
-                        )
+                        SimulationApiModel.FromServiceModel(simulation)
                     )
                 )
                 .Wait(Constants.TEST_TIMEOUT);
@@ -256,19 +230,12 @@ namespace WebService.Test.v1.Controllers
                 .ReturnsAsync(simulation);
 
             // Act
-            var fromServiceModelTask =
-                SimulationApiModel.FromServiceModelAsync(
-                    simulation,
-                    this.servicesConfig.Object,
-                    this.deploymentConfig.Object,
-                    this.connectionStringManager.Object,
-                    this.simulationRunner.Object,
-                    this.rateReporter.Object
-                );
-            fromServiceModelTask.Wait(Constants.TEST_TIMEOUT);
+            var simulationApiModel =
+                SimulationApiModel.FromServiceModel(
+                    simulation);
 
             var result = this.target.PutAsync(
-                fromServiceModelTask.Result,
+                simulationApiModel,
                 DEFAULT_SIMULATION_ID
             ).Result;
 
