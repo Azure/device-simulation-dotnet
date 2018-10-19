@@ -2,15 +2,15 @@
 
 using System;
 using System.IO;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 {
     public interface IActorsLogger
     {
-        void Setup(string deviceId, string actorName);
+        void Init(string deviceId, string actorName);
         void ActorStarted();
         void ActorStopped();
-
         void CredentialsSetupScheduled(long time);
         void FetchScheduled(long time);
         void PreparingDeviceCredentials();
@@ -19,12 +19,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         void DeviceFetched();
         void DeviceNotFound();
         void DeviceFetchFailed();
-
         void RegistrationScheduled(long time);
         void RegisteringDevice();
         void DeviceRegistered();
         void DeviceRegistrationFailed();
-
         void DeregistrationScheduled(long time);
         void DeregisteringDevice();
         void DeviceDeregistered();
@@ -63,6 +61,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         private const string DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.fff";
 
         private readonly ILogger log;
+        private readonly IInstance instance;
         private readonly string path;
         private readonly bool enabledInConfig;
         private bool enabled;
@@ -75,16 +74,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         private string connectionsLogFile;
         private string telemetryLogFile;
 
-        public ActorsLogger(ILoggingConfig config, ILogger logger)
+        public ActorsLogger(
+            ILoggingConfig config,
+            ILogger logger,
+            IInstance instance)
         {
             this.enabled = false;
             this.enabledInConfig = config.ExtraDiagnostics;
             this.path = config.ExtraDiagnosticsPath.Trim();
             this.log = logger;
+            this.instance = instance;
         }
 
-        public void Setup(string deviceId, string actorName)
+        public void Init(string deviceId, string actorName)
         {
+            this.instance.InitOnce();
+
             this.deviceId = deviceId;
             this.actorName = actorName;
 
@@ -96,6 +101,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.telemetryLogFile = this.path + Path.DirectorySeparatorChar + "telemetry.log";
 
             this.enabled = this.enabledInConfig && !string.IsNullOrEmpty(this.path);
+
+            this.instance.InitComplete();
 
             if (!this.enabled) return;
 
@@ -363,7 +370,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.Log("Disconnection FAILED");
             this.LogConnection("FAILED");
         }
-        
+
         public void TelemetryScheduled(long time)
         {
             if (!this.enabled) return;

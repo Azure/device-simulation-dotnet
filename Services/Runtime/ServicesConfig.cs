@@ -9,11 +9,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
     {
         string DeviceModelsFolder { get; }
         string DeviceModelsScriptsFolder { get; }
-        string IoTHubDataFolder { get; }
         string IoTHubConnString { get; }
+        string IoTHubImportStorageAccount { get; set; }
         uint? IoTHubSdkDeviceClientTimeout { get; set; }
         string StorageAdapterApiUrl { get; }
         int StorageAdapterApiTimeout { get; }
+        string AzureManagementAdapterApiUrl { get; }
+        int AzureManagementAdapterApiTimeout { get; }
+        string AzureManagementAdapterApiVersion { get; }
         bool TwinReadWriteEnabled { get; }
         StorageConfig MainStorage { get; }
         StorageConfig NodesStorage { get; set; }
@@ -52,19 +55,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             set { this.dtbf = this.NormalizePath(value); }
         }
 
-        public string IoTHubDataFolder
-        {
-            get { return this.ihf; }
-            set { this.ihf = this.NormalizePath(value); }
-        }
-
         public string IoTHubConnString { get; set; }
+
+        public string IoTHubImportStorageAccount { get; set; }
 
         public uint? IoTHubSdkDeviceClientTimeout { get; set; }
 
         public string StorageAdapterApiUrl { get; set; }
 
         public int StorageAdapterApiTimeout { get; set; }
+
+        public string AzureManagementAdapterApiUrl { get; set; }
+
+        public int AzureManagementAdapterApiTimeout { get; set; }
+
+        public string AzureManagementAdapterApiVersion { get; set; }
 
         public string DiagnosticsEndpointUrl { get; set; }
 

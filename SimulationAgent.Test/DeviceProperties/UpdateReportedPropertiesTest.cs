@@ -6,6 +6,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
@@ -24,7 +25,7 @@ namespace SimulationAgent.Test.DeviceProperties
         private readonly Mock<IRateLimitingConfig> rateLimitingConfig;
         private readonly Mock<IDevicePropertiesActor> devicePropertiesActor;
         private readonly Mock<IDeviceStateActor> deviceStateActor;
-        private readonly Mock<IDeviceConnectionActor> deviceConnectionActor;
+        private readonly Mock<IDeviceConnectionActor> mockDeviceContext;
         private readonly Mock<ISmartDictionary> properties;
         private readonly Mock<IDeviceClient> client;
         private readonly Mock<PropertiesLoopSettings> loopSettings;
@@ -37,7 +38,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.rateLimitingConfig = new Mock<IRateLimitingConfig>();
             this.devicePropertiesActor = new Mock<IDevicePropertiesActor>();
             this.deviceStateActor = new Mock<IDeviceStateActor>();
-            this.deviceConnectionActor = new Mock<IDeviceConnectionActor>();
+            this.mockDeviceContext = new Mock<IDeviceConnectionActor>();
             this.properties = new Mock<ISmartDictionary>();
             this.client = new Mock<IDeviceClient>();
             this.loopSettings = new Mock<PropertiesLoopSettings>(
@@ -53,7 +54,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.SetupPropertiesActorProperties();
             this.SetupPropertiesActorStateOffline();
             this.SetupPropertiesChangedToTrue();
-            this.target.Setup(this.devicePropertiesActor.Object, DEVICE_ID);
+            this.target.Init(this.devicePropertiesActor.Object, DEVICE_ID);
 
             // Act
             this.target.RunAsync().Wait(Constants.TEST_TIMEOUT);
@@ -71,7 +72,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.SetupPropertiesActorStateOnline();
             this.SetupPropertiesChangedToTrue();
             this.SetupClient();
-            this.target.Setup(this.devicePropertiesActor.Object, DEVICE_ID);
+            this.target.Init(this.devicePropertiesActor.Object, DEVICE_ID);
 
             // Act
             this.target.RunAsync().Wait(Constants.TEST_TIMEOUT);
@@ -82,10 +83,16 @@ namespace SimulationAgent.Test.DeviceProperties
 
         private void SetupPropertiesActor()
         {
-            this.devicePropertiesActor.Object.Setup(
+            // Setup a SimulationContext object
+            var testSimulation = new Simulation();
+            var mockSimulationContext = new Mock<ISimulationContext>();
+            mockSimulationContext.Object.InitAsync(testSimulation).Wait(Constants.TEST_TIMEOUT);
+
+            this.devicePropertiesActor.Object.Init(
+                mockSimulationContext.Object,
                 DEVICE_ID,
                 this.deviceStateActor.Object,
-                this.deviceConnectionActor.Object,
+                this.mockDeviceContext.Object,
                 this.loopSettings.Object);
         }
 

@@ -36,7 +36,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
-                .AddIniFile("appsettings.ini", optional: false, reloadOnChange: true);
+                .AddIniFile(ConfigFile.DEFAULT, optional: false, reloadOnChange: true);
+
+            if (ConfigFile.GetDevOnlyConfigFile() != null)
+            {
+                builder.AddIniFile(ConfigFile.GetDevOnlyConfigFile(), optional: true, reloadOnChange: true);
+            }
+
             this.Configuration = builder.Build();
         }
 
@@ -52,7 +58,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             services.AddMvc().AddControllersAsServices();
 
             // Prepare DI container
-            this.ApplicationContainer = DependencyResolution.Setup(services);
+            this.ApplicationContainer = DependencyResolution.Init(services);
 
             // Print some useful information at bootstrap time
             this.PrintBootstrapInfo(this.ApplicationContainer);
@@ -102,7 +108,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             this.partitioningAgent.StartAsync();
 
             this.simulationAgent = this.ApplicationContainer.Resolve<ISimulationAgent>();
-            this.simulationAgent.RunAsync();
+            this.simulationAgent.StartAsync();
         }
 
         private void StopAgents()
@@ -130,14 +136,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             log.Write("Messages per second:       " + config.RateLimitingConfig.DeviceMessagesPerSecond);
             log.Write("Messages per day:          " + config.RateLimitingConfig.DeviceMessagesPerDay);
 
-            log.Write("Number of telemetry threads:      " + config.SimulationConcurrencyConfig.TelemetryThreads);
-            log.Write("Max pending connections:          " + config.SimulationConcurrencyConfig.MaxPendingConnections);
-            log.Write("Max pending telemetry messages:   " + config.SimulationConcurrencyConfig.MaxPendingTelemetry);
-            log.Write("Max pending twin writes:          " + config.SimulationConcurrencyConfig.MaxPendingTwinWrites);
-            log.Write("Min duration of state loop:       " + config.SimulationConcurrencyConfig.MinDeviceStateLoopDuration);
-            log.Write("Min duration of connection loop:  " + config.SimulationConcurrencyConfig.MinDeviceConnectionLoopDuration);
-            log.Write("Min duration of telemetry loop:   " + config.SimulationConcurrencyConfig.MinDeviceTelemetryLoopDuration);
-            log.Write("Min duration of twin write loop:  " + config.SimulationConcurrencyConfig.MinDevicePropertiesLoopDuration);
+            log.Write("Number of telemetry threads:      " + config.AppConcurrencyConfig.TelemetryThreads);
+            log.Write("Max pending connections:          " + config.AppConcurrencyConfig.MaxPendingConnections);
+            log.Write("Max pending telemetry messages:   " + config.AppConcurrencyConfig.MaxPendingTelemetry);
+            log.Write("Max pending twin writes:          " + config.AppConcurrencyConfig.MaxPendingTwinWrites);
+            log.Write("Min duration of state loop:       " + config.AppConcurrencyConfig.MinDeviceStateLoopDuration);
+            log.Write("Min duration of connection loop:  " + config.AppConcurrencyConfig.MinDeviceConnectionLoopDuration);
+            log.Write("Min duration of telemetry loop:   " + config.AppConcurrencyConfig.MinDeviceTelemetryLoopDuration);
+            log.Write("Min duration of twin write loop:  " + config.AppConcurrencyConfig.MinDevicePropertiesLoopDuration);
 
             log.Write("Max devices per partition:        " + config.ClusteringConfig.MaxPartitionSize);
         }

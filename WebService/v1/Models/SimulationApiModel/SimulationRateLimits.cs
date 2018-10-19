@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using Jint.Parser.Ast;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel
@@ -22,6 +24,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "DeviceMessagesPerSecond")]
         public int DeviceMessagesPerSecond { get; set; }
 
+        [JsonProperty(PropertyName = "DeviceMessagesPerDay")]
+        public long DeviceMessagesPerDay { get; set; }
+
         // Default constructor used by web service requests
         public SimulationRateLimits()
         {
@@ -30,41 +35,41 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             this.TwinReadsPerSecond = 0;
             this.TwinWritesPerSecond = 0;
             this.DeviceMessagesPerSecond = 0;
+            this.DeviceMessagesPerDay = 0;
         }
 
         // Map API model to service model
-        public static SimulationRateLimits FromServiceModel(
-            Services.Models.Simulation.SimulationRateLimits simulationRateLimits,
-            IRateLimiting rateReporter)
+        public static SimulationRateLimits FromServiceModel(Services.Models.Simulation.SimulationRateLimits simulationRateLimits)
         {
-            var defaultRatingLimits = rateReporter.GetRateLimits();
-
-            var connectionsPerSecond = simulationRateLimits?.ConnectionsPerSecond > 0 ? simulationRateLimits.ConnectionsPerSecond : defaultRatingLimits.ConnectionsPerSecond;
-            var registryOperationsPerMinute = simulationRateLimits?.RegistryOperationsPerMinute > 0 ? simulationRateLimits.RegistryOperationsPerMinute : defaultRatingLimits.RegistryOperationsPerMinute;
-            var twinReadsPerSecond = simulationRateLimits?.TwinReadsPerSecond > 0 ? simulationRateLimits.TwinReadsPerSecond : defaultRatingLimits.TwinReadsPerSecond;
-            var twinWritesPerSecond = simulationRateLimits?.TwinWritesPerSecond > 0 ? simulationRateLimits.TwinWritesPerSecond : defaultRatingLimits.TwinWritesPerSecond;
-            var deviceMessagesPerSecond = simulationRateLimits?.DeviceMessagesPerSecond > 0 ? simulationRateLimits.DeviceMessagesPerSecond : defaultRatingLimits.DeviceMessagesPerSecond;
-
             return new SimulationRateLimits
+            {
+                ConnectionsPerSecond = simulationRateLimits.ConnectionsPerSecond,
+                RegistryOperationsPerMinute = simulationRateLimits.RegistryOperationsPerMinute,
+                TwinReadsPerSecond = simulationRateLimits.TwinReadsPerSecond,
+                TwinWritesPerSecond = simulationRateLimits.TwinWritesPerSecond,
+                DeviceMessagesPerSecond = simulationRateLimits.DeviceMessagesPerSecond,
+                DeviceMessagesPerDay = simulationRateLimits.DeviceMessagesPerDay
+            };
+        }
+
+        // Map API model to service model
+        public Services.Models.Simulation.SimulationRateLimits ToServiceModel(IRateLimitingConfig defaultRateLimits)
+        {
+            var connectionsPerSecond = this.ConnectionsPerSecond > 0 ? this.ConnectionsPerSecond : defaultRateLimits.ConnectionsPerSecond;
+            var registryOperationsPerMinute = this.RegistryOperationsPerMinute > 0 ? this.RegistryOperationsPerMinute : defaultRateLimits.RegistryOperationsPerMinute;
+            var twinReadsPerSecond = this.TwinReadsPerSecond > 0 ? this.TwinReadsPerSecond : defaultRateLimits.TwinReadsPerSecond;
+            var twinWritesPerSecond = this.TwinWritesPerSecond > 0 ? this.TwinWritesPerSecond : defaultRateLimits.TwinWritesPerSecond;
+            var deviceMessagesPerSecond = this.DeviceMessagesPerSecond > 0 ? this.DeviceMessagesPerSecond : defaultRateLimits.DeviceMessagesPerSecond;
+            var deviceMessagesPerDay = this.DeviceMessagesPerDay > 0 ? this.DeviceMessagesPerDay : defaultRateLimits.DeviceMessagesPerDay;
+
+            return new Services.Models.Simulation.SimulationRateLimits
             {
                 ConnectionsPerSecond = connectionsPerSecond,
                 RegistryOperationsPerMinute = registryOperationsPerMinute,
                 TwinReadsPerSecond = twinReadsPerSecond,
                 TwinWritesPerSecond = twinWritesPerSecond,
-                DeviceMessagesPerSecond = deviceMessagesPerSecond
-            };
-        }
-
-        // Map API model to service model
-        public Services.Models.Simulation.SimulationRateLimits ToServiceModel()
-        {
-            return new Services.Models.Simulation.SimulationRateLimits
-            {
-                ConnectionsPerSecond = this.ConnectionsPerSecond,
-                RegistryOperationsPerMinute = this.RegistryOperationsPerMinute,
-                TwinReadsPerSecond = this.TwinReadsPerSecond,
-                TwinWritesPerSecond = this.TwinWritesPerSecond,
-                DeviceMessagesPerSecond = this.DeviceMessagesPerSecond
+                DeviceMessagesPerSecond = deviceMessagesPerSecond,
+                DeviceMessagesPerDay = deviceMessagesPerDay
             };
         }
     }

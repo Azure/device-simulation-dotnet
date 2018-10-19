@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
@@ -13,16 +12,35 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         private DateTimeOffset? endTime;
         private IList<string> iotHubConnectionStrings;
 
+        // A simulation is "active" if enabled and "scheduled"
         [JsonIgnore]
-        public bool IsActiveNow => this.Enabled &&
-                                   (!this.StartTime.HasValue || this.StartTime.Value.CompareTo(DateTimeOffset.UtcNow) <= 0) &&
-                                   (!this.EndTime.HasValue || this.EndTime.Value.CompareTo(DateTimeOffset.UtcNow) > 0);
+        public bool IsActiveNow
+        {
+            get
+            {
+                var now = DateTimeOffset.UtcNow;
+                var startedInThePast = !this.StartTime.HasValue || this.StartTime.Value.CompareTo(now) <= 0;
+                var endInTheFuture = !this.EndTime.HasValue || this.EndTime.Value.CompareTo(now) > 0;
+                return this.Enabled && startedInThePast && endInTheFuture;
+            }
+        }
+
+        [JsonIgnore]
+        public bool DeviceCreationRequired => this.IsActiveNow && !this.DevicesCreationComplete;
+
+        [JsonIgnore]
+        public bool DeviceDeletionRequired => !this.IsActiveNow
+                                              && this.DevicesCreationComplete
+                                              && this.DeleteDevicesWhenSimulationEnds;
 
         [JsonIgnore]
         public bool PartitioningRequired => this.IsActiveNow && !this.PartitioningComplete;
 
+        // A simulation should be running if it is active and devices have been created and partitioned
         [JsonIgnore]
-        public bool ShouldBeRunning => this.IsActiveNow && this.PartitioningComplete;
+        public bool ShouldBeRunning => this.IsActiveNow
+                                       && this.PartitioningComplete
+                                       && this.DevicesCreationComplete;
 
         // When Simulation is written to storage, Id and Etag are not serialized as part of body
         // These are instead written in dedicated columns (key and eTag)
@@ -35,13 +53,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         [JsonProperty(Order = 10)]
         public bool Enabled { get; set; }
 
+        [JsonProperty(Order = 11)]
+        public bool DevicesCreationStarted { get; set; }
+
+        [JsonProperty(Order = 12)]
+        public bool DevicesCreationComplete { get; set; }
+
+        [JsonProperty(Order = 13)]
+        public bool DeleteDevicesWhenSimulationEnds { get; set; }
+
+        [JsonProperty(Order = 14)]
+        public bool DevicesDeletionStarted { get; set; }
+
+        [JsonProperty(Order = 15)]
+        public bool DevicesDeletionComplete { get; set; }
+
+        [JsonProperty(Order = 1000)]
+        public string DeviceCreationJobId { get; set; }
+
+        [JsonProperty(Order = 1001)]
+        public string DeviceDeletionJobId { get; set; }
+
         [JsonProperty(Order = 20)]
         public string Name { get; set; }
 
         [JsonProperty(Order = 30)]
         public string Description { get; set; }
 
-        [JsonProperty(Order = 40)]
+        [JsonProperty(Order = 13)]
         public bool PartitioningComplete { get; set; }
 
         [JsonProperty(Order = 50)]
@@ -60,7 +99,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public IList<string> IotHubConnectionStrings
         {
             get => this.iotHubConnectionStrings;
-            set => this.iotHubConnectionStrings = value ?? new List<string> { ServicesConfig.USE_DEFAULT_IOTHUB };
+            set => this.iotHubConnectionStrings = value ?? new List<string>();
         }
 
         // StartTime is the time when Simulation was started
@@ -98,7 +137,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.PartitioningComplete = false;
 
             // by default, use environment variable
-            this.IotHubConnectionStrings = new List<string> { ServicesConfig.USE_DEFAULT_IOTHUB };
+            this.IotHubConnectionStrings = new List<string>();
 
             // By default, run forever
             this.StartTime = DateTimeOffset.MinValue;
@@ -108,6 +147,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.CustomDevices = new List<CustomDeviceRef>();
             this.Statistics = new StatisticsRef();
             this.RateLimits = new SimulationRateLimits();
+
+            // By default, do not delete IoT Hub devices when the
+            // simulation ends
+            this.DeleteDevicesWhenSimulationEnds = false;
         }
 
         public class DeviceModelRef
@@ -136,6 +179,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             public int TwinReadsPerSecond { get; set; }
             public int TwinWritesPerSecond { get; set; }
             public int DeviceMessagesPerSecond { get; set; }
+            public long DeviceMessagesPerDay { get; set; }
         }
 
         public class DeviceModelOverride

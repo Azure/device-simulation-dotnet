@@ -15,6 +15,8 @@
                 // For additonal optional settings, refer to comments in appsettings.ini
                 "PCS_IOTHUB_CONNSTRING": "your Azure IoT Hub connection string",
                 "PCS_STORAGEADAPTER_WEBSERVICE_URL": "http://localhost:9022/v1",
+                "PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING": "your DocumentDb connection string",
+                "PCS_AZURE_STORAGE_ACCOUNT": "your Azure Storage Account connection string",
 
                 // Optional environment variables used in appsettings.ini
                 // For additonal optional settings, refer to comments in appsettings.ini
