@@ -144,6 +144,28 @@ namespace WebService.Test.v1.Models.SimulationApiModel
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItSetsSimulationStatisticsFromServiceModel()
+        {
+            // Arrange
+            var simulation = this.GetSimulationModel();
+            var statistics = new SimulationStatisticsModel { TotalMessagesSent = 100, FailedDeviceConnectionsCount = 1, FailedDeviceTwinUpdatesCount = 2, FailedMessagesCount = 3  };
+
+            // Act
+            var result = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel.FromServiceModel(
+                simulation, 
+                statistics);
+
+            // Assert
+            Assert.IsType<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel>(result);
+            Assert.Equal(simulation.Id, result.Id);
+            Assert.NotNull(result.Statistics);
+            Assert.Equal(statistics.TotalMessagesSent, result.Statistics.TotalMessagesSent);
+            Assert.Equal(statistics.FailedDeviceConnectionsCount, result.Statistics.FailedDeviceConnectionsCount);
+            Assert.Equal(statistics.FailedDeviceTwinUpdatesCount, result.Statistics.FailedDeviceTwinUpdatesCount);
+            Assert.Equal(statistics.FailedMessagesCount, result.Statistics.FailedMessagesCount);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItThrowsBadRequestExceptionForInvalidTimes()
         {
             // Arrange

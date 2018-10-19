@@ -31,10 +31,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "FailedDeviceTwinUpdatesCount")]
         public long FailedDeviceTwinUpdatesCount { get; set; }
 
-        // Total number of simulation errors
-        [JsonProperty(PropertyName = "SimulationErrorsCount")]
-        public long SimulationErrorsCount { get; set; }
-
         // Default constructor used by web service requests
         public SimulationStatistics()
         {
@@ -43,7 +39,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             this.FailedMessagesCount = 0;
             this.FailedDeviceConnectionsCount = 0;
             this.FailedDeviceTwinUpdatesCount = 0;
-            this.SimulationErrorsCount = 0;
         }
 
         // Map API model to service model

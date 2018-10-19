@@ -180,6 +180,27 @@ namespace WebService.Test.v1.Controllers
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItInvokesGetSimulationStatisticsOnceOnGetAsync()
+        {
+            // Arrange
+            const string ID = "1";
+            var simulation = this.GetSimulationById(ID);
+
+            this.simulationsService
+                .Setup(x => x.GetAsync(ID))
+                .ReturnsAsync(simulation);
+
+            // Act
+            var result = this.target.GetAsync(ID).Result;
+
+            // Assert
+            this.simulationStatistics
+                .Verify(x => x.GetSimulationStatisticsAsync(
+                    ID
+                ), Times.Once);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItThrowsExceptionWhenCreateASimulationWithInValidInput()
         {
             // Arrange
