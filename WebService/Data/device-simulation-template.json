@@ -13,23 +13,23 @@
       }
     ]
   },
-    {
-      "Id": "2",
-      "Name": "Sample Multiple Devices",
-      "ETag": "*",
-      "Enabled": false,
-      "IotHubConnectionStrings": [
-          "default"
-        ],
-      "DeviceModels": [
-          {
-            "Id": "chiller-01",
-            "Count": 50
-          },
-          {
-            "Id": "elevator-01",
-            "Count": 10
-          }
-        ]
-    }
-  ]
+  {
+    "Id": "2",
+    "Name": "Sample Multiple Devices",
+    "ETag": "*",
+    "Enabled": false,
+    "IotHubConnectionStrings": [
+      "default"
+    ],
+    "DeviceModels": [
+      {
+        "Id": "chiller-01",
+        "Count": 50
+      },
+      {
+        "Id": "elevator-01",
+        "Count": 10
+      }
+    ]
+  }
+]

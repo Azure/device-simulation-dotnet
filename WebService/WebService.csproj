@@ -44,9 +44,9 @@
         <ProjectReference Include="..\SimulationAgent\SimulationAgent.csproj" />
     </ItemGroup>
     <ItemGroup>
-      <None Include="Data\device-simulation-template.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+      <Content Update="Data\device-simulation-template.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
     <ProjectExtensions>
         <MonoDevelop>
