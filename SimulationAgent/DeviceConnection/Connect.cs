@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
@@ -53,14 +54,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.log.Debug("Connecting...", () => new { this.deviceId });
             var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
+            StringBuilder sb = new StringBuilder();
+            var msg = string.Empty;
+
             try
             {
+                msg = $"Connecting, {this.deviceId}, {this.deviceContext.Connected}, {start}, {0}";
+                sb.Append(msg + "\n");
+
                 this.deviceContext.Client = this.simulationContext.Devices.GetClient(
                     this.deviceContext.Device,
                     this.deviceModel.Protocol,
                     this.scriptInterpreter);
 
                 await this.deviceContext.Client.ConnectAsync();
+
+                var responseTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var timeSpentMsecs = responseTime - start;
+                msg = $"Connected, {this.deviceId}, {this.deviceContext.Connected}, {responseTime}, {timeSpentMsecs}";
+                sb.Append(msg + "\n");
+
                 await this.deviceContext.Client.RegisterMethodsForDeviceAsync(
                     this.deviceModel.CloudToDeviceMethods,
                     this.deviceContext.DeviceState,
@@ -68,27 +81,61 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
                 await this.deviceContext.Client.RegisterDesiredPropertiesUpdateAsync(this.deviceContext.DeviceProperties);
 
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                responseTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                timeSpentMsecs = responseTime - start;
                 this.log.Debug("Device connected", () => new { timeSpentMsecs, this.deviceId });
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.Connected);
+
+                msg = $"PropsUpdated, {this.deviceId}, {this.deviceContext.Connected}, {responseTime}, {timeSpentMsecs}";
+                sb.Append(msg + "\n");
             }
             catch (DeviceAuthFailedException e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                var responseTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var timeSpentMsecs = responseTime - start;
                 this.log.Error("Invalid connection credentials", () => new { timeSpentMsecs, this.deviceId, e });
+                msg = $"DeviceAuthFailedException, {this.deviceId}, {this.deviceContext.Connected}, {responseTime}, {timeSpentMsecs}";
+                sb.Append(msg + "\n");
+
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.AuthFailed);
             }
             catch (DeviceNotFoundException e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                var responseTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var timeSpentMsecs = responseTime - start;
                 this.log.Error("Device not found", () => new { timeSpentMsecs, this.deviceId, e });
+                msg = $"DeviceNotFoundException, {this.deviceId}, {this.deviceContext.Connected}, {responseTime}, {timeSpentMsecs}";
+                sb.Append(msg + "\n");
+
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceNotFound);
             }
             catch (Exception e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                var responseTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var timeSpentMsecs = responseTime - start;
                 this.log.Error("Connection error", () => new { timeSpentMsecs, this.deviceId, e });
+                msg = $"Exception + {e.Message}, {this.deviceId}, {this.deviceContext.Connected}, {responseTime}, {timeSpentMsecs}";
+                sb.Append(msg + "\n");
+
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.ConnectionFailed);
+            }
+
+            try
+            {
+                var filePath = "/tmp/share/device-connection-log.csv";
+                this.log.LogToFile(filePath, sb.ToString());
+            }
+            catch
+            {
+                try
+                {
+                    var filePath = "/tmp/share/device-connection-log-1.csv";
+                    this.log.LogToFile(filePath, sb.ToString());
+                }
+                catch (Exception ex)
+                {
+                    this.log.Write("Failed to log to file" + ex.Message);
+                }
             }
         }
     }
