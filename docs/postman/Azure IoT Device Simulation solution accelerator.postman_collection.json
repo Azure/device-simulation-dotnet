@@ -1,12 +1,11 @@
 {
 	"info": {
-		"_postman_id": "7c0d1715-9f1e-4b0f-838e-9c494ed23325",
+		"_postman_id": "19d9f4c9-abc1-4c04-b96f-399fa7dd101f",
 		"name": "Azure IoT Device Simulation solution accelerator",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"_postman_id": "1b0e63c6-1aaf-4e27-9f01-451509039c5d",
 			"name": "Get current simulation",
 			"event": [
 				{
@@ -48,7 +47,6 @@
 			"response": []
 		},
 		{
-			"_postman_id": "a10c6736-5bb1-47cf-a839-442d52820b99",
 			"name": "Create default simulation",
 			"event": [
 				{
@@ -103,7 +101,6 @@
 			"response": []
 		},
 		{
-			"_postman_id": "c222aaa5-6af9-4e02-b0f7-8fd747a8feb1",
 			"name": "Get status",
 			"request": {
 				"method": "GET",
@@ -131,7 +128,6 @@
 			"response": []
 		},
 		{
-			"_postman_id": "a606a1d3-c275-433d-b49c-cc5512b82db8",
 			"name": "Get list of device models",
 			"request": {
 				"method": "GET",
@@ -159,7 +155,6 @@
 			"response": []
 		},
 		{
-			"_postman_id": "c559fcf5-7e80-4774-ae22-e0940eae198d",
 			"name": "Start simulation",
 			"event": [
 				{
@@ -206,7 +201,6 @@
 			"response": []
 		},
 		{
-			"_postman_id": "1279dd9e-b5e0-416b-81a4-1df8683c21fd",
 			"name": "Stop simulation",
 			"event": [
 				{
@@ -253,7 +247,6 @@
 			"response": []
 		},
 		{
-			"_postman_id": "44319140-d78e-49f5-b9f8-498be94f3279",
 			"name": "Create lightbulb simulation",
 			"event": [
 				{
@@ -281,7 +274,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n  \"ETag\": \"{{ETag}}\",\r\n  \"Enabled\": true,\r\n  \"DeviceModels\": [\r\n    {\r\n      \"Id\": \"lightbulb-01\",\r\n      \"Count\": 2\r\n    }\r\n  ]\r\n}"
+					"raw": "{\r\n\t\"ETag\": \"{{ETag}}\",\r\n\t\"Name\": \"Lightbulb Test Simulation\",\r\n\t\"Description\": \"\",\r\n\t\"Enabled\": true,\r\n    \"IoTHubs\": [\r\n        {\r\n            \"ConnectionString\": \"default\"\r\n        }\r\n    ],\r\n    \"StartTime\": \"NOW\",\r\n    \"DeviceModels\": [\r\n\t\t{\r\n\t\t\t\"Id\": \"lightbulb-01\",\r\n\t\t\t\"Count\": 2\r\n\t\t}\r\n\t]\r\n}"
 				},
 				"url": {
 					"raw": "http://127.0.0.1:9003/v1/simulations/1",
@@ -303,7 +296,6 @@
 			"response": []
 		},
 		{
-			"_postman_id": "b25414fb-9f8e-4b8f-abd3-110948a9e78d",
 			"name": "Create modified chiller simulation",
 			"event": [
 				{
@@ -331,7 +323,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n  \"ETag\": \"{{ETag}}\",\r\n  \"Enabled\": true,\r\n  \"DeviceModels\": [\r\n    {\r\n      \"Id\": \"chiller-01\",\r\n      \"Count\": 4\r\n    }\r\n  ]\r\n}"
+					"raw": "{\r\n\t\"ETag\": \"{{ETag}}\",\r\n\t\"Name\": \"Modified Chiller Test Simulation\",\r\n\t\"Description\": \"\",\r\n\t\"Enabled\": true,\r\n    \"IoTHubs\": [\r\n        {\r\n            \"ConnectionString\": \"default\"\r\n        }\r\n    ],\r\n    \"StartTime\": \"NOW\",\r\n    \"DeviceModels\": [\r\n\t\t{\r\n\t\t  \"Id\": \"chiller-01\",\r\n\t\t  \"Count\": 4\r\n\t\t}\r\n\t]\r\n}"
 				},
 				"url": {
 					"raw": "http://127.0.0.1:9003/v1/simulations/1",

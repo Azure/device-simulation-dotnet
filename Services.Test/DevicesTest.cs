@@ -4,6 +4,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
@@ -39,19 +40,22 @@ namespace Services.Test
             this.logger = new Mock<ILogger>();
             this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
 
+            IInstance instance = new Instance(this.logger.Object);
+
             this.target = new Devices(
                 this.config.Object,
                 this.connectionStringManager.Object,
                 this.registry.Object,
                 this.deviceClient.Object,
                 this.logger.Object,
-                this.diagnosticsLogger.Object);
+                this.diagnosticsLogger.Object,
+                instance);
 
             this.connectionStringManager
-                .Setup(x => x.GetIotHubConnectionString())
-                .Returns("HostName=iothub-AAAA.azure-devices.net;SharedAccessKeyName=AAAA;SharedAccessKey=AAAA");
+                .Setup(x => x.GetConnectionStringAsync())
+                .ReturnsAsync("HostName=iothub-AAAA.azure-devices.net;SharedAccessKeyName=AAAA;SharedAccessKey=AAAA");
 
-            this.target.Init();
+            this.target.InitAsync().Wait(Constants.TEST_TIMEOUT);
         }
 
         /** 

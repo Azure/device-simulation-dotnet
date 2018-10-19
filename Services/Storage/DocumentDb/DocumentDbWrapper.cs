@@ -3,7 +3,6 @@
 using System;
 using System.Linq;
 using System.Net;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
@@ -153,7 +152,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             var client = new DocumentClient(docDbEndpoint, docDbKey);
 
             await this.CreateDatabaseIfNotExistsAsync(client, docDbOptions, cfg.DocumentDbDatabase);
-            await this.EnsureCollectionExistsAsync(client, docDbOptions, cfg.DocumentDbDatabase, cfg.DocumentDbCollection);
+            await this.CreateCollectionIfNotExistsAsync(client, docDbOptions, cfg.DocumentDbDatabase, cfg.DocumentDbCollection);
 
             return client;
         }
@@ -166,6 +165,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             try
             {
                 var uri = "/dbs/" + db;
+                this.log.Info("Checking if the database exists", () => new { uri });
                 await client.ReadDatabaseAsync(uri, options);
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
@@ -199,7 +199,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             }
         }
 
-        private async Task EnsureCollectionExistsAsync(
+        private async Task CreateCollectionIfNotExistsAsync(
             IDocumentClient client,
             RequestOptions options,
             string dbName,
@@ -208,11 +208,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             try
             {
                 var uri = $"/dbs/{dbName}/colls/{collName}";
+                this.log.Info("Checking if the collection exists", () => new { dbName, collName });
                 await client.ReadDocumentCollectionAsync(uri, options);
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
             {
-                await this.CreateCollectionIfNotExistsAsync(client, dbName, collName, options);
+                await this.CreateCollectionAsync(client, dbName, collName, options);
             }
             catch (Exception e)
             {
@@ -221,7 +222,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             }
         }
 
-        private async Task CreateCollectionIfNotExistsAsync(
+        private async Task CreateCollectionAsync(
             IDocumentClient client,
             string dbName,
             string collName,

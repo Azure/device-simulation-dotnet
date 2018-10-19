@@ -72,5 +72,84 @@ namespace Services.Test.Models
             Assert.True(activeAndNotPartitioned.PartitioningRequired);
             Assert.False(notActiveAndNotPartitioned.PartitioningRequired);
         }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReportsIfItShouldBeRunning()
+        {
+            // Arrange
+            var shouldBeRunning = new SimulationModel
+            {
+                Enabled = true,
+                StartTime = DateTimeOffset.UtcNow.AddHours(-2),
+                EndTime = DateTimeOffset.UtcNow.AddHours(+1),
+                PartitioningComplete = true,
+                DevicesCreationComplete = true
+            };
+            var notRunningPartitioningIncomplete = new SimulationModel
+            {
+                Enabled = true,
+                StartTime = DateTimeOffset.UtcNow.AddHours(-2),
+                EndTime = DateTimeOffset.UtcNow.AddHours(+1),
+                PartitioningComplete = false,
+                DevicesCreationComplete = true
+            };
+            var notRunningCreationIncomplete = new SimulationModel
+            {
+                Enabled = true,
+                StartTime = DateTimeOffset.UtcNow.AddHours(-2),
+                EndTime = DateTimeOffset.UtcNow.AddHours(+1),
+                PartitioningComplete = true,
+                DevicesCreationComplete = false
+            };
+            var notRunningNotActive = new SimulationModel
+            {
+                Enabled = true,
+                StartTime = DateTimeOffset.UtcNow.AddHours(-2),
+                EndTime = DateTimeOffset.UtcNow.AddHours(-1),
+                PartitioningComplete = true,
+                DevicesCreationComplete = true
+            };
+
+            // Assert
+            Assert.True(shouldBeRunning.ShouldBeRunning);
+            Assert.False(notRunningPartitioningIncomplete.ShouldBeRunning);
+            Assert.False(notRunningCreationIncomplete.ShouldBeRunning);
+            Assert.False(notRunningNotActive.ShouldBeRunning);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReportsIfDevicesShouldBeCreated()
+        {
+            // Arrange
+            var shouldCreate1 = new SimulationModel
+            {
+                Enabled = true,
+                StartTime = DateTimeOffset.UtcNow.AddHours(-2),
+                EndTime = DateTimeOffset.UtcNow.AddHours(+1),
+                PartitioningComplete = true,
+                DevicesCreationComplete = false
+            };
+            var shouldCreate2 = new SimulationModel
+            {
+                Enabled = true,
+                StartTime = DateTimeOffset.UtcNow.AddHours(-2),
+                EndTime = DateTimeOffset.UtcNow.AddHours(+1),
+                PartitioningComplete = false,
+                DevicesCreationComplete = false
+            };
+            var shouldNotCreateNotActive = new SimulationModel
+            {
+                Enabled = true,
+                StartTime = DateTimeOffset.UtcNow.AddHours(-2),
+                EndTime = DateTimeOffset.UtcNow.AddHours(-1),
+                PartitioningComplete = true,
+                DevicesCreationComplete = false
+            };
+
+            // Assert
+            Assert.True(shouldCreate1.DeviceCreationRequired);
+            Assert.True(shouldCreate2.DeviceCreationRequired);
+            Assert.False(shouldNotCreateNotActive.DeviceCreationRequired);
+        }
     }
 }

@@ -9,11 +9,9 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.DocumentDb;
 using Moq;
@@ -58,8 +56,8 @@ namespace Services.Test.Storage
 
             this.target = new StorageRecords(
                 this.mockDocumentDbWrapper.Object,
-                this.mockInstance.Object,
-                this.mockLogger.Object);
+                this.mockLogger.Object,
+                this.mockInstance.Object);
 
             this.storageConfig = new StorageConfig();
             this.target.Init(this.storageConfig);

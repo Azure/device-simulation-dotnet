@@ -7,7 +7,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 {
     public interface IDeviceTelemetryLogic
     {
-        void Setup(IDeviceTelemetryActor deviceTelemetryActor, string deviceId, DeviceModel deviceModel);
+        void Init(IDeviceTelemetryActor deviceTelemetryActor, string deviceId, DeviceModel deviceModel);
         Task RunAsync();
     }
 }

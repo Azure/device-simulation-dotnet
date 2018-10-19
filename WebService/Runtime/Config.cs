@@ -20,7 +20,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         // Web service listening port
         int Port { get; }
 
-        string SolutionType { get; }
+        string SeedTemplate { get; }
 
         ILoggingConfig LoggingConfig { get; }
 
@@ -37,7 +37,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         IDeploymentConfig DeploymentConfig { get; }
 
         // Simulation multi-threading settings
-        ISimulationConcurrencyConfig SimulationConcurrencyConfig { get; }
+        IAppConcurrencyConfig AppConcurrencyConfig { get; }
 
         // Clustering and partitioning settings
         IClusteringConfig ClusteringConfig { get; }
@@ -47,12 +47,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
     {
         private const string APPLICATION_KEY = "DeviceSimulationService:";
 
-        private const string SOLUTION_TYPE_KEY = APPLICATION_KEY + "solution_type";
+        private const string SEED_TEMPLATE_KEY = APPLICATION_KEY + "seed_template";
         private const string PORT_KEY = APPLICATION_KEY + "webservice_port";
         private const string DEVICE_MODELS_FOLDER_KEY = APPLICATION_KEY + "device_models_folder";
         private const string DEVICE_MODELS_SCRIPTS_FOLDER_KEY = APPLICATION_KEY + "device_models_scripts_folder";
         private const string IOTHUB_DATA_FOLDER_KEY = APPLICATION_KEY + "iothub_data_folder";
         private const string IOTHUB_CONNSTRING_KEY = APPLICATION_KEY + "iothub_connstring";
+        private const string IOTHUB_IMPORT_STORAGE_CONNSTRING_KEY = APPLICATION_KEY + "iothub_import_storage_account_connstring";
         private const string IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY = APPLICATION_KEY + "iothub_sdk_device_client_timeout";
         private const string TWIN_READ_WRITE_ENABLED_KEY = APPLICATION_KEY + "twin_read_write_enabled";
 
@@ -73,16 +74,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string CONCURRENCY_MIN_DEVICE_STATE_LOOP_DURATION_KEY = CONCURRENCY_KEY + "min_device_state_loop_duration";
         private const string CONCURRENCY_MIN_DEVICE_CONNECTION_LOOP_DURATION_KEY = CONCURRENCY_KEY + "min_device_connection_loop_duration";
         private const string CONCURRENCY_MIN_DEVICE_PROPERTIES_LOOP_DURATION_KEY = CONCURRENCY_KEY + "min_device_properties_loop_duration";
+        private const string CONCURRENCY_MAX_PENDING_TASKS = CONCURRENCY_KEY + "max_pending_tasks";
 
         private const string CLUSTERING_KEY = APPLICATION_KEY + "Clustering:";
         private const string CLUSTERING_CHECK_INTERVAL_KEY = CLUSTERING_KEY + "check_interval";
         private const string CLUSTERING_NODE_RECORD_MAX_AGE_KEY = CLUSTERING_KEY + "node_record_max_age";
         private const string CLUSTERING_MASTER_LOCK_MAX_AGE_KEY = CLUSTERING_KEY + "master_lock_duration";
+        private const string CLUSTERING_PARTITION_LOCK_DURATION_KEY = CLUSTERING_KEY + "partition_lock_duration";
         private const string CLUSTERING_MAX_PARTITION_SIZE_KEY = CLUSTERING_KEY + "max_partition_size";
+        private const string CLUSTERING_MAX_DEVICES_PER_NODE_KEY = CLUSTERING_KEY + "max_devices_per_node";
 
         private const string STORAGE_ADAPTER_KEY = "StorageAdapterService:";
         private const string STORAGE_ADAPTER_API_URL_KEY = STORAGE_ADAPTER_KEY + "webservice_url";
         private const string STORAGE_ADAPTER_API_TIMEOUT_KEY = STORAGE_ADAPTER_KEY + "webservice_timeout";
+
+        private const string AZURE_MANAGEMENT_ADAPTER_KEY = "AzureManagementService:";
+        private const string AZURE_MANAGEMENT_ADAPTER_API_URL_KEY = AZURE_MANAGEMENT_ADAPTER_KEY + "webservice_url";
+        private const string AZURE_MANAGEMENT_ADAPTER_API_TIMEOUT_KEY = AZURE_MANAGEMENT_ADAPTER_KEY + "webservice_timeout";
+        private const string AZURE_MANAGEMENT_ADAPTER_API_VERSION = AZURE_MANAGEMENT_ADAPTER_KEY + "api_version";
 
         private const string MAIN_STORAGE_KEY = APPLICATION_KEY + "Storage:Main:";
         private const string NODES_STORAGE_KEY = APPLICATION_KEY + "Storage:Nodes:";
@@ -124,26 +133,32 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string AZURE_RESOURCE_GROUP = DEPLOYMENT_KEY + "azure_resource_group";
         private const string AZURE_IOTHUB_NAME = DEPLOYMENT_KEY + "azure_iothub_name";
 
+        private const string AZURE_ACTIVE_DIRECTORY_KEY = APPLICATION_KEY + "AzureActiveDirectory:";
+        private const string AAD_TENANT_ID = AZURE_ACTIVE_DIRECTORY_KEY + "tenant_id";
+        private const string AAD_APP_ID = AZURE_ACTIVE_DIRECTORY_KEY + "app_id";
+        private const string AAD_APP_SECRET = AZURE_ACTIVE_DIRECTORY_KEY + "app_secret";
+        private const string AAD_ACCESS_TOKEN_URL = AZURE_ACTIVE_DIRECTORY_KEY + "access_token_url";
+
         public int Port { get; }
-        public string SolutionType { get; }
+        public string SeedTemplate { get; }
         public ILoggingConfig LoggingConfig { get; set; }
         public IClientAuthConfig ClientAuthConfig { get; }
         public IServicesConfig ServicesConfig { get; }
         public IRateLimitingConfig RateLimitingConfig { get; set; }
         public IDeploymentConfig DeploymentConfig { get; set; }
-        public ISimulationConcurrencyConfig SimulationConcurrencyConfig { get; set; }
+        public IAppConcurrencyConfig AppConcurrencyConfig { get; set; }
         public IClusteringConfig ClusteringConfig { get; }
 
         public Config(IConfigData configData)
         {
             this.Port = configData.GetInt(PORT_KEY);
-            this.SolutionType = configData.GetString(SOLUTION_TYPE_KEY);
+            this.SeedTemplate = configData.GetString(SEED_TEMPLATE_KEY);
             this.LoggingConfig = GetLogConfig(configData);
             this.ServicesConfig = GetServicesConfig(configData);
             this.ClientAuthConfig = GetClientAuthConfig(configData);
             this.RateLimitingConfig = GetRateLimitingConfig(configData);
             this.DeploymentConfig = GetDeploymentConfig(configData);
-            this.SimulationConcurrencyConfig = GetConcurrencyConfig(configData);
+            this.AppConcurrencyConfig = GetConcurrencyConfig(configData);
             this.ClusteringConfig = GetClusteringConfig(configData);
         }
 
@@ -196,7 +211,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private static IServicesConfig GetServicesConfig(IConfigData configData)
         {
             var connstring = configData.GetString(IOTHUB_CONNSTRING_KEY);
-            if (connstring.ToLowerInvariant().Contains("azure iot hub"))
+            if (connstring.ToLowerInvariant().Contains("connection string"))
             {
                 // In order to connect to Azure IoT Hub, the service requires a connection
                 // string. The value can be found in the Azure Portal. For more information see
@@ -216,15 +231,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                                     "value in the 'appsettings.ini' configuration file.");
             }
 
+            var hubImportStorageAccount = configData.GetString(IOTHUB_IMPORT_STORAGE_CONNSTRING_KEY);
+            if (hubImportStorageAccount.ToLowerInvariant().Contains("connection string"))
+            {
+                throw new Exception("The service configuration is incomplete. " +
+                                    "Please provide your Azure Storage Account connection string. " +
+                                    "For more information, see the environment variables " +
+                                    "used in project properties and the 'iothub_connstring' " +
+                                    "value in the 'appsettings.ini' configuration file.");
+            }
+
             return new ServicesConfig
             {
                 DeviceModelsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_FOLDER_KEY)),
                 DeviceModelsScriptsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_SCRIPTS_FOLDER_KEY)),
-                IoTHubDataFolder = MapRelativePath(configData.GetString(IOTHUB_DATA_FOLDER_KEY)),
                 IoTHubConnString = connstring,
+                IoTHubImportStorageAccount = hubImportStorageAccount,
                 IoTHubSdkDeviceClientTimeout = configData.GetOptionalUInt(IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY),
                 StorageAdapterApiUrl = configData.GetString(STORAGE_ADAPTER_API_URL_KEY),
                 StorageAdapterApiTimeout = configData.GetInt(STORAGE_ADAPTER_API_TIMEOUT_KEY),
+                AzureManagementAdapterApiUrl = configData.GetString(AZURE_MANAGEMENT_ADAPTER_API_URL_KEY),
+                AzureManagementAdapterApiTimeout = configData.GetInt(AZURE_MANAGEMENT_ADAPTER_API_TIMEOUT_KEY),
+                AzureManagementAdapterApiVersion = configData.GetString(AZURE_MANAGEMENT_ADAPTER_API_VERSION),
                 TwinReadWriteEnabled = configData.GetBool(TWIN_READ_WRITE_ENABLED_KEY, true),
                 MainStorage = GetStorageConfig(configData, MAIN_STORAGE_KEY),
                 NodesStorage = GetStorageConfig(configData, NODES_STORAGE_KEY),
@@ -297,14 +325,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 AzureSubscriptionDomain = configData.GetString(AZURE_SUBSCRIPTION_DOMAIN, "undefined.onmicrosoft.com"),
                 AzureSubscriptionId = configData.GetString(AZURE_SUBSCRIPTION_ID, Guid.Empty.ToString()),
                 AzureResourceGroup = configData.GetString(AZURE_RESOURCE_GROUP, "undefined"),
-                AzureIothubName = configData.GetString(AZURE_IOTHUB_NAME, "undefined")
+                AzureIothubName = configData.GetString(AZURE_IOTHUB_NAME, "undefined"),
+                AadTenantId = configData.GetString(AAD_TENANT_ID, "undefined"),
+                AadAppId = configData.GetString(AAD_APP_ID, "undefined"),
+                AadAppSecret = configData.GetString(AAD_APP_SECRET, "undefined"),
+                AadTokenUrl = configData.GetString(AAD_ACCESS_TOKEN_URL, "undefinedd")
             };
         }
 
-        private static ISimulationConcurrencyConfig GetConcurrencyConfig(IConfigData configData)
+        private static IAppConcurrencyConfig GetConcurrencyConfig(IConfigData configData)
         {
-            var defaults = new SimulationConcurrencyConfig();
-            return new SimulationConcurrencyConfig
+            var defaults = new AppConcurrencyConfig();
+            return new AppConcurrencyConfig
             {
                 TelemetryThreads = configData.GetInt(CONCURRENCY_TELEMETRY_THREADS_KEY, defaults.TelemetryThreads),
                 MaxPendingConnections = configData.GetInt(CONCURRENCY_MAX_PENDING_CONNECTIONS_KEY, defaults.MaxPendingConnections),
@@ -313,7 +345,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 MinDeviceStateLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_STATE_LOOP_DURATION_KEY, defaults.MinDeviceStateLoopDuration),
                 MinDeviceConnectionLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_CONNECTION_LOOP_DURATION_KEY, defaults.MinDeviceConnectionLoopDuration),
                 MinDeviceTelemetryLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_TELEMETRY_LOOP_DURATION_KEY, defaults.MinDeviceTelemetryLoopDuration),
-                MinDevicePropertiesLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_PROPERTIES_LOOP_DURATION_KEY, defaults.MinDevicePropertiesLoopDuration)
+                MinDevicePropertiesLoopDuration = configData.GetInt(CONCURRENCY_MIN_DEVICE_PROPERTIES_LOOP_DURATION_KEY, defaults.MinDevicePropertiesLoopDuration),
+                MaxPendingTasks = configData.GetInt(CONCURRENCY_MAX_PENDING_TASKS, defaults.MaxPendingTasks)
             };
         }
 
@@ -325,7 +358,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 CheckIntervalMsecs = configData.GetInt(CLUSTERING_CHECK_INTERVAL_KEY, defaults.CheckIntervalMsecs),
                 NodeRecordMaxAgeMsecs = configData.GetInt(CLUSTERING_NODE_RECORD_MAX_AGE_KEY, defaults.NodeRecordMaxAgeMsecs),
                 MasterLockDurationMsecs = configData.GetInt(CLUSTERING_MASTER_LOCK_MAX_AGE_KEY, defaults.MasterLockDurationMsecs),
-                MaxPartitionSize = configData.GetInt(CLUSTERING_MAX_PARTITION_SIZE_KEY, defaults.MaxPartitionSize)
+                PartitionLockDurationMsecs = configData.GetInt(CLUSTERING_PARTITION_LOCK_DURATION_KEY, defaults.PartitionLockDurationMsecs),
+                MaxPartitionSize = configData.GetInt(CLUSTERING_MAX_PARTITION_SIZE_KEY, defaults.MaxPartitionSize),
+                MaxDevicesPerNode = configData.GetInt(CLUSTERING_MAX_DEVICES_PER_NODE_KEY, defaults.MaxDevicesPerNode)
             };
         }
 

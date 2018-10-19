@@ -25,32 +25,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private const int MAX_DELETE_DEVICES = 100;
 
         private readonly ISimulations simulationsService;
-        private readonly IServicesConfig servicesConfig;
-        private readonly IDeploymentConfig deploymentConfig;
         private readonly IIotHubConnectionStringManager connectionStringManager;
+        private readonly IIothubMetrics iothubMetrics;
         private readonly ISimulationAgent simulationAgent;
-        private readonly ISimulationRunner simulationRunner;
-        private readonly IRateLimiting rateReporter;
         private readonly ILogger log;
 
         public SimulationsController(
             ISimulations simulationsService,
-            IServicesConfig servicesConfig,
-            IDeploymentConfig deploymentConfig,
             IIotHubConnectionStringManager connectionStringManager,
+            IIothubMetrics iothubMetrics,
             IPreprovisionedIotHub preprovisionedIotHub,
             ISimulationAgent simulationAgent,
-            ISimulationRunner simulationRunner,
-            IRateLimiting rateReporter,
             ILogger logger)
         {
             this.simulationsService = simulationsService;
-            this.servicesConfig = servicesConfig;
-            this.deploymentConfig = deploymentConfig;
             this.connectionStringManager = connectionStringManager;
+            this.iothubMetrics = iothubMetrics;
             this.simulationAgent = simulationAgent;
-            this.simulationRunner = simulationRunner;
-            this.rateReporter = rateReporter;
             this.log = logger;
         }
 
@@ -58,17 +49,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         public async Task<SimulationListApiModel> GetAsync()
         {
             var simulationList = await this.simulationsService.GetListAsync();
-            return new SimulationListApiModel(
-                simulationList, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
+            return new SimulationListApiModel(await this.simulationsService.GetListAsync());
         }
 
         [HttpGet("{id}")]
         public async Task<SimulationApiModel> GetAsync(string id)
         {
-            var simulation = await this.simulationsService.GetAsync(id);
-            var simulationApiModel = SimulationApiModel.FromServiceModel(
-                simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
-            return simulationApiModel;
+            return SimulationApiModel.FromServiceModel(await this.simulationsService.GetAsync(id));
         }
 
         [HttpPost]
@@ -76,7 +63,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             [FromBody] SimulationApiModel simulationApiModel,
             [FromQuery(Name = "template")] string template = "")
         {
-            if (simulationApiModel == null)
+            if (simulationApiModel != null)
+            {
+                await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringManager);
+            }
+            else
             {
                 if (string.IsNullOrEmpty(template))
                 {
@@ -87,14 +78,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 // Simulation can be created with `template=default` other than created with input data
                 simulationApiModel = new SimulationApiModel();
             }
-            else
-            {
-                await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringManager);
-            }
 
             var simulation = await this.simulationsService.InsertAsync(simulationApiModel.ToServiceModel(null), template);
-            return SimulationApiModel.FromServiceModel(
-                simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
+            return SimulationApiModel.FromServiceModel(simulation);
+        }
+
+        [HttpPost("{id}/metrics/iothub!search")]
+        public async Task<object> PostAsync(
+            [FromBody] MetricsRequestsApiModel requests,
+            string id)
+        {
+            // API payload validation is not required as we're simply relaying the request.
+            var payload = requests?.ToServiceModel();
+
+            // Service will generate default query if payload is null.
+            // See default query details in /Services/AzureManagementAdapter/AzureManagementAdapter.cs
+            return await this.iothubMetrics.GetIothubMetricsAsync(payload);
         }
 
         [HttpPut("{id}")]
@@ -114,13 +113,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             var existingSimulation = await this.GetExistingSimulationAsync(id);
 
             var simulation = await this.simulationsService.UpsertAsync(simulationApiModel.ToServiceModel(existingSimulation, id));
-            return SimulationApiModel.FromServiceModel(
-                simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
+            return SimulationApiModel.FromServiceModel(simulation);
         }
 
         [HttpPut("{id}/Devices!create")]
         public async Task PutAsync(
-            [FromBody] CreateActionApiModel device)
+            [FromBody] CreateActionApiModel device,
+            string id = "")
         {
             if (device == null)
             {
@@ -130,7 +129,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
             device.ValidateInputRequest(this.log);
 
-            await this.simulationAgent.AddDeviceAsync(device.DeviceId, device.ModelId);
+            await this.simulationAgent.AddDeviceAsync(id, device.DeviceId, device.ModelId);
         }
 
         [HttpPut("{id}/Devices!batchDelete")]
@@ -152,6 +151,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             await this.simulationAgent.DeleteDevicesAsync(devices.DeviceIds);
         }
 
+        // TODO: save statistics to storage during patch
         [HttpPatch("{id}")]
         public async Task<SimulationApiModel> PatchAsync(
             string id,
@@ -166,16 +166,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             SimulationPatch patchServiceModel = patch.ToServiceModel(id);
             if (patchServiceModel.Enabled == false)
             {
-                patchServiceModel.Statistics = new SimulationStatistics
-                {
-                    AverageMessagesPerSecond = this.rateReporter.GetThroughputForMessages(),
-                    TotalMessagesSent = this.simulationRunner.TotalMessagesCount
-                };
+                // TODO: add distributed statistics
+                patchServiceModel.Statistics = new SimulationStatistics();
             }
 
             var simulation = await this.simulationsService.MergeAsync(patchServiceModel);
-            return SimulationApiModel.FromServiceModel(
-                simulation, this.servicesConfig, this.deploymentConfig, this.connectionStringManager, this.simulationRunner, this.rateReporter);
+            return SimulationApiModel.FromServiceModel(simulation);
         }
 
         [HttpDelete("{id}")]

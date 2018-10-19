@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -33,20 +34,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
         private readonly ILogger log;
         private readonly IInstance instance;
         private readonly IDocumentDbWrapper docDb;
-
         private StorageConfig storageConfig;
+
         private IDocumentClient client;
-        private string storageName;
         private bool disposedValue;
+        private string storageName;
 
         public StorageRecords(
             IDocumentDbWrapper docDb,
-            IInstance instance,
-            ILogger logger)
+            ILogger logger,
+            IInstance instance)
         {
-            this.docDb = docDb;
             this.log = logger;
             this.instance = instance;
+            this.docDb = docDb;
             this.disposedValue = false;
             this.storageConfig = null;
             this.client = null;
@@ -132,11 +133,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
 
                 // Delete expired records
                 foreach (var record in storageRecords)
+                {
                     if (record.IsExpired())
                     {
                         this.log.Debug("Deleting expired resource", () => new { this.storageName, record.Id, record.ETag });
                         await this.TryToDeleteExpiredRecord(record.Id);
                     }
+                }
 
                 return storageRecords.Where(x => !x.IsExpired());
             }
@@ -232,6 +235,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
 
             try
             {
+                this.log.Debug("Trying to obtain lock for record", () => new { ownerType });
+
                 // Note: this can throw ResourceNotFoundException
                 var record = (await this.GetAsync(id)).GetDocumentDbRecord();
 
@@ -325,7 +330,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
 
         private void Dispose(bool disposing)
         {
-            if (!this.disposedValue && disposing) (this.client as IDisposable)?.Dispose();
+            if (!this.disposedValue && disposing)
+            {
+                (this.client as IDisposable)?.Dispose();
+            }
 
             this.disposedValue = true;
         }

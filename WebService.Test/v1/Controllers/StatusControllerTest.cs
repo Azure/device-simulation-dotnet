@@ -28,7 +28,6 @@ namespace WebService.Test.v1.Controllers
         private readonly Mock<ILogger> logger;
         private readonly Mock<IServicesConfig> servicesConfig;
         private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
-        private readonly Mock<ISimulationRunner> simulationRunner;
         private readonly Mock<IRateLimiting> rateReporter;
         private readonly StatusController target;
 
@@ -40,7 +39,6 @@ namespace WebService.Test.v1.Controllers
             this.logger = new Mock<ILogger>();
             this.servicesConfig = new Mock<IServicesConfig>();
             this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
-            this.simulationRunner = new Mock<ISimulationRunner>();
             this.rateReporter = new Mock<IRateLimiting>();
 
             this.target = new StatusController(
@@ -58,7 +56,7 @@ namespace WebService.Test.v1.Controllers
             this.SetupSimulationForRunner();
 
             // Act
-            var result = this.target.GetAsync().Result;
+            var result = this.target.GetAsync().CompleteOrTimeout().Result;
 
             // Assert
             Assert.Equal("true", result.Properties["SimulationRunning"]);
@@ -72,7 +70,7 @@ namespace WebService.Test.v1.Controllers
             this.SetupPreprovisionedIoTHub();
 
             // Act
-            var result = this.target.GetAsync().Result;
+            var result = this.target.GetAsync().CompleteOrTimeout().Result;
 
             // Assert
             Assert.Equal("true", result.Properties["PreprovisionedIoTHub"]);
@@ -88,7 +86,8 @@ namespace WebService.Test.v1.Controllers
                 Modified = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(10)),
                 ETag = "ETag0",
                 Enabled = true,
-                PartitioningComplete = true
+                PartitioningComplete = true,
+                DevicesCreationComplete = true
             };
 
             var simulations = new List<SimulationModel>
@@ -110,8 +109,8 @@ namespace WebService.Test.v1.Controllers
                 .Returns(IOTHUB_CONNECTION_STRING);
 
             this.connectionStringManager
-                .Setup(x => x.GetIotHubConnectionString())
-                .Returns(IOTHUB_CONNECTION_STRING);
+                .Setup(x => x.GetConnectionStringAsync())
+                .ReturnsAsync(IOTHUB_CONNECTION_STRING);
         }
     }
 }
