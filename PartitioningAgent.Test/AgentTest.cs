@@ -15,6 +15,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Moq;
 using PartitioningAgent.Test.helpers;
 using Xunit;
+using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 
 namespace PartitioningAgent.Test
 {
@@ -612,6 +613,56 @@ namespace PartitioningAgent.Test
             // Assert
             deviceService.Verify(x => x.IsJobCompleteAsync(jobId, It.IsAny<Action>()), Times.Once);
             this.simulations.Verify(x => x.TryToSetDeviceDeletionCompleteAsync(simulation.Id), Times.Once);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItCalculatesRequiredNodes()
+        {
+            // Arrange
+            int expectedNodeCount = 9;
+            this.AfterStartRunOnlyOneLoop();
+
+            var deviceModels = new List<DeviceModelRef>
+            {
+                new DeviceModelRef { Id = "d1", Count = 50 },
+                new DeviceModelRef { Id = "d2", Count = 150 },
+                new DeviceModelRef { Id = "d3", Count = 200 },
+            };
+
+            var customDevices = new List<CustomDeviceRef>
+            {
+                new CustomDeviceRef { DeviceId = "1", DeviceModel = new DeviceModelRef { Id = "d1" } },
+                new CustomDeviceRef { DeviceId = "2", DeviceModel = new DeviceModelRef { Id = "d1" } },
+                new CustomDeviceRef { DeviceId = "3", DeviceModel = new DeviceModelRef { Id = "d2" } },
+                new CustomDeviceRef { DeviceId = "4", DeviceModel = new DeviceModelRef { Id = "d3" } },
+                new CustomDeviceRef { DeviceId = "5", DeviceModel = new DeviceModelRef { Id = "d3" } }
+            };
+
+            this.simulations.Setup(x => x.GetListAsync()).ReturnsAsync(new List<Simulation>
+            {
+                new Simulation
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Enabled = true,
+                    StartTime = DateTimeOffset.UtcNow.AddHours(-2),
+                    EndTime = DateTimeOffset.UtcNow.AddHours(1),
+                    DevicesCreationComplete = true,
+                    DeleteDevicesWhenSimulationEnds = true,
+                    DeviceModels = deviceModels,
+                    CustomDevices = customDevices 
+                }
+            });
+
+            this.clusteringConfig.Setup(x => x.MaxDevicesPerNode).Returns(50);
+
+            // Arrange
+            this.TheCurrentNodeIsMaster();
+
+            // Act
+            this.target.StartAsync().CompleteOrTimeout();
+
+            // Assert
+            this.azureManagementAdapterClient.Verify(x => x.CreateOrUpdateVmssAutoscaleSettingsAsync(It.Is<int>(a => a.Equals(expectedNodeCount))));
         }
 
         // Helper used to ensure that a task reaches an expected state

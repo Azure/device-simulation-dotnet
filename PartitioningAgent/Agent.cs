@@ -22,6 +22,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
 
     public class Agent : IPartitioningAgent
     {
+        private const int DEFAULT_NODE_COUNT = 1;
         private readonly IClusterNodes clusterNodes;
         private readonly IDevicePartitions partitions;
         private readonly ISimulations simulations;
@@ -55,7 +56,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
             this.clusteringConfig = clusteringConfig;
             this.checkIntervalMsecs = clusteringConfig.CheckIntervalMsecs;
             this.running = false;
-            this.currentNodeCount = 1;
+            this.currentNodeCount = DEFAULT_NODE_COUNT;
         }
 
         public async Task StartAsync()
@@ -115,7 +116,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
         private async Task ScaleVmssNodes(IList<Simulation> activeSimulations)
         {
             // Default node count is 1
-            var nodeCount = 1;
+            var nodeCount = DEFAULT_NODE_COUNT;
+            var maxDevicesPerNode = this.clusteringConfig.MaxDevicesPerNode;
 
             if (activeSimulations.Count > 0)
             {
@@ -135,7 +137,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                 var totalDevices = models.Sum(model => model.Count) + customDevices;
 
                 // Calculate number of nodes required
-                nodeCount = (int)Math.Ceiling((double)totalDevices / this.clusteringConfig.MaxDevicesPerNode);
+                nodeCount = maxDevicesPerNode > 0 ? (int)Math.Ceiling((double)totalDevices / maxDevicesPerNode) : 0;
             }
 
             if (this.currentNodeCount != nodeCount)
