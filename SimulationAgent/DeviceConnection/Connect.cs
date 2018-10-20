@@ -55,6 +55,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
             try
             {
+                // Ensure pending task are stopped
+                this.deviceContext.DisposeClient();
+
                 this.deviceContext.Client = this.simulationContext.Devices.GetClient(
                     this.deviceContext.Device,
                     this.deviceModel.Protocol,

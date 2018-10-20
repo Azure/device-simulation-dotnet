@@ -36,6 +36,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         void HandleEvent(DeviceConnectionActor.ActorEvents e);
         void Stop();
         void Delete();
+        void DisposeClient();
     }
 
     public class DeviceConnectionActor : IDeviceConnectionActor
@@ -258,6 +259,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             {
                 this.log.Warn("Error while deleting", () => new { e });
             }
+        }
+
+        public void DisposeClient()
+        {
+            if (this.Client == null) return;
+
+            this.Client.DisposeInternalClient();
+            this.Client = null;
         }
 
         public bool HasWorkToDo()
