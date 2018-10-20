@@ -137,7 +137,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                 var totalDevices = models.Sum(model => model.Count) + customDevices;
 
                 // Calculate number of nodes required
-                nodeCount = maxDevicesPerNode > 0 ? (int)Math.Ceiling((double)totalDevices / maxDevicesPerNode) : 0;
+                nodeCount = maxDevicesPerNode > 0 ? (int)Math.Ceiling((double)totalDevices / maxDevicesPerNode) : DEFAULT_NODE_COUNT;
             }
 
             if (this.currentNodeCount != nodeCount)
