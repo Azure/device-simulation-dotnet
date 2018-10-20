@@ -163,11 +163,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
 
                 // Delete expired records
                 foreach (var record in storageRecords)
+                {
                     if (record.IsExpired())
                     {
                         this.log.Debug("Deleting expired resource", () => new { this.storageName, record.Id, record.ETag });
                         await this.TryToDeleteExpiredRecord(record.Id);
                     }
+                }
 
                 return storageRecords.Where(x => !x.IsExpired());
             }

@@ -62,20 +62,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             var nodeId = this.clusterNodes.GetCurrentNodeId();
             var statisticsRecordId = this.GetStatisticsRecordId(simulationId, nodeId);
 
-            var stats = new SimulationStatisticsRecord
+            var statisticsRecord = new SimulationStatisticsRecord
             {
                 NodeId = nodeId,
                 SimulationId = simulationId,
                 Statistics = statistics
             };
 
-            var statsRecord = new StorageRecord
+            var statisticsStorageRecord = new StorageRecord
             {
                 Id = statisticsRecordId,
-                Data = JsonConvert.SerializeObject(stats)
+                Data = JsonConvert.SerializeObject(statisticsRecord)
             };
 
-            await this.simulationStatisticsStorage.CreateAsync(statsRecord);
+            await this.simulationStatisticsStorage.CreateAsync(statisticsStorageRecord);
         }
 
         private string GetStatisticsRecordId(string simId, string nodeId)

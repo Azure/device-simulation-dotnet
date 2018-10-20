@@ -297,7 +297,11 @@ namespace SimulationAgent.Test
             this.target.SaveStatisticsAsync().Wait();
 
             // Assert
-            this.mockSimulationStatistics.Verify(x => x.CreateOrUpdateAsync(SIM_ID, It.IsAny<SimulationStatisticsModel>()), Times.Once);
+            this.mockSimulationStatistics.Verify(x => x.CreateOrUpdateAsync(SIM_ID, It.Is<SimulationStatisticsModel>(
+                a => a.TotalMessagesSent == statisticsModel.TotalMessagesSent &&
+                a.FailedMessagesCount == statisticsModel.FailedMessagesCount &&
+                a.FailedDeviceConnectionsCount == statisticsModel.FailedDeviceConnectionsCount &&
+                a.FailedDeviceTwinUpdatesCount == statisticsModel.FailedDeviceTwinUpdatesCount)));
         }
 
         private static long RandomInt()
