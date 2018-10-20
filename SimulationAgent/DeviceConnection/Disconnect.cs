@@ -53,7 +53,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             try
             {
                 await this.deviceContext.Client.DisconnectAsync();
-                
+
                 this.log.Debug("Device disconnected", () => new { this.deviceId });
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.Disconnected);
             }
