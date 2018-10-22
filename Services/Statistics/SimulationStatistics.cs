@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
@@ -18,7 +19,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
         Task CreateOrUpdateAsync(string simulationId, SimulationStatisticsModel statistics);
     }
 
-    public class SimulationStatisticsAgent : ISimulationStatistics
+    public class SimulationStatistics : ISimulationStatistics
     {
         private readonly IStorageRecords simulationStatisticsStorage;
         private readonly IClusterNodes clusterNodes;
@@ -26,7 +27,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
         private readonly IServicesConfig config;
         private readonly ILogger log;
 
-        public SimulationStatisticsAgent(IServicesConfig config,
+        public SimulationStatistics(IServicesConfig config,
             IClusterNodes clusterNodes,
             ISimulations simulations,
             IFactory factory,
@@ -41,19 +42,32 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
 
         public async Task<SimulationStatisticsModel> GetSimulationStatisticsAsync(string simulationId)
         {
+            if (string.IsNullOrEmpty(simulationId))
+            {
+                this.log.Error("Simulation Id cannot be null or empty");
+                return null;
+            }
+
             string sqlCondition = " CONTAINS(ROOT.id, @simulationId)";
             SqlParameter[] sqlParameters = new[] { new SqlParameter { Name = "@simulationId", Value = simulationId } };
-
-            var simRecords = (await this.simulationStatisticsStorage.GetAsync(sqlCondition, sqlParameters))
-                .Select(p => JsonConvert.DeserializeObject<SimulationStatisticsRecord>(p.Data))
-                .ToList();
-
             SimulationStatisticsModel statistics = new SimulationStatisticsModel();
-            statistics.TotalMessagesSent = simRecords.Sum(a => a.Statistics.TotalMessagesSent);
-            statistics.FailedDeviceConnectionsCount = simRecords.Sum(a => a.Statistics.FailedDeviceConnectionsCount);
-            statistics.FailedDeviceTwinUpdatesCount = simRecords.Sum(a => a.Statistics.FailedDeviceTwinUpdatesCount);
-            statistics.FailedMessagesCount = simRecords.Sum(a => a.Statistics.FailedMessagesCount);
 
+            try
+            {
+                var simRecords = (await this.simulationStatisticsStorage.GetAsync(sqlCondition, sqlParameters))
+                    .Select(p => JsonConvert.DeserializeObject<SimulationStatisticsRecord>(p.Data))
+                    .ToList();
+
+                statistics.TotalMessagesSent = simRecords.Sum(a => a.Statistics.TotalMessagesSent);
+                statistics.FailedDeviceConnectionsCount = simRecords.Sum(a => a.Statistics.FailedDeviceConnectionsCount);
+                statistics.FailedDeviceTwinUpdatesCount = simRecords.Sum(a => a.Statistics.FailedDeviceTwinUpdatesCount);
+                statistics.FailedMessagesCount = simRecords.Sum(a => a.Statistics.FailedMessagesCount);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Error on getting statistics records", e);
+            }
+            
             return statistics;
         }
         
@@ -75,7 +89,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
                 Data = JsonConvert.SerializeObject(statisticsRecord)
             };
 
-            await this.simulationStatisticsStorage.CreateAsync(statisticsStorageRecord);
+            try
+            {
+                await this.simulationStatisticsStorage.CreateAsync(statisticsStorageRecord);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Error on saving statistics records", e);
+            }
         }
 
         private string GetStatisticsRecordId(string simId, string nodeId)

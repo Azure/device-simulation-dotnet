@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
 using System.Collections.Generic;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
@@ -17,9 +16,9 @@ using Xunit;
 
 namespace Services.Test.Statistics
 {
-    public class SimulationStatisticsAgentTest
+    public class SimulationStatisticsTest
     {
-        private readonly SimulationStatisticsAgent target;
+        private readonly Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics.SimulationStatistics target;
         private readonly Mock<IClusterNodes> clusterNodes;
         private readonly Mock<ISimulations> simulations;
         private readonly Mock<ILogger> log;
@@ -27,7 +26,7 @@ namespace Services.Test.Statistics
         private readonly Mock<IServicesConfig> config;
         private readonly Mock<IStorageRecords> simulationStatisticsStorage;
         
-        public SimulationStatisticsAgentTest()
+        public SimulationStatisticsTest()
         {
             var STATISTICS = "statistics";
             this.clusterNodes = new Mock<IClusterNodes>();
@@ -44,7 +43,7 @@ namespace Services.Test.Statistics
                 .Returns(this.simulationStatisticsStorage.Object);
             this.factory.Setup(x => x.Resolve<IStorageRecords>()).Returns(this.simulationStatisticsStorage.Object);
 
-            this.target = new SimulationStatisticsAgent(
+            this.target = new Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics.SimulationStatistics(
                 this.config.Object,
                 this.clusterNodes.Object,
                 this.simulations.Object,
