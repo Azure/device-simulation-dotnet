@@ -52,19 +52,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
             try
             {
-                // TODO: we should already have a client in the device context. If
-                //       we call GetClient here, we might be getting a new client 
-                //       which will be in a default state.
-                this.deviceContext.Client = this.simulationContext.Devices.GetClient(
-                    this.deviceContext.Device,
-                    this.deviceModel.Protocol,
-                    this.scriptInterpreter);
-
-                var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 await this.deviceContext.Client.DisconnectAsync();
 
-                var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
-                this.log.Debug("Device disconnected", () => new { this.deviceId, timeSpent });
+                this.log.Debug("Device disconnected", () => new { this.deviceId });
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.Disconnected);
             }
             catch (Exception e)
