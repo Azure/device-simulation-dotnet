@@ -24,6 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         string DeviceId { get; }
         Task ConnectAsync();
         Task DisconnectAsync();
+        void DisposeInternalClient();
         Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema);
         Task RegisterMethodsForDeviceAsync(IDictionary<string, Script> methods, ISmartDictionary deviceState, ISmartDictionary deviceProperties);
         Task RegisterDesiredPropertiesUpdateAsync(ISmartDictionary deviceProperties);
@@ -84,7 +85,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 {
                     // Note: this exception might not occur with HTTP
                     // TODO: test for HTTP
-                    
+
                     this.log.Error("Device connection auth failed", () => new { this.deviceId, this.protocol, e });
                     throw new DeviceAuthFailedException(e);
                 }
@@ -102,7 +103,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             if (this.client != null)
             {
                 await this.client.CloseAsync();
+                this.DisposeInternalClient();
+            }
+        }
+
+        public void DisposeInternalClient()
+        {
+            try
+            {
+                // Note: this is important to ensure that any pending task inside the SDK is stopped
                 this.client.Dispose();
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Something went wrong while disposing the device client",
+                    () => new { this.deviceId, this.protocol, e });
             }
         }
 
@@ -155,7 +170,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     reportedProperties
                 });
             }
-            catch (KeyNotFoundException e){
+            catch (KeyNotFoundException e)
+            {
                 // This exception sometimes occurs when calling UpdateReportedPropertiesAsync.
                 // Still unknown why, apparently an issue with the internal AMQP library
                 // used by IoT SDK. We need to collect extra information to report the issue.

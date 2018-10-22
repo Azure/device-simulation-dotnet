@@ -77,6 +77,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         public void Dispose()
         {
+            // For AMQP clients in particular, disposing ensures that internal pending tasks are stopped
             this.internalClient?.Dispose();
         }
 
