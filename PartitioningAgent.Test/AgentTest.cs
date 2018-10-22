@@ -664,14 +664,15 @@ namespace PartitioningAgent.Test
             // Verify request to update autoscale settings is made when node count changes
             this.azureManagementAdapterClient.Verify(x => x.CreateOrUpdateVmssAutoscaleSettingsAsync(It.Is<int>(a => a.Equals(expectedNodeCount))));
 
-            // Act
+            // Arrange
             this.azureManagementAdapterClient.Invocations.Clear();
+            
+            // Act
             this.target.StartAsync().CompleteOrTimeout();
 
             // Assert
-            // Verify request to update autoscale settings is made when node count does not change
+            // Verify request to update autoscale settings is not made when node count does not change
             this.azureManagementAdapterClient.Verify(x => x.CreateOrUpdateVmssAutoscaleSettingsAsync(It.IsAny<int>()), Times.Never);
-
         }
 
         // Helper used to ensure that a task reaches an expected state
