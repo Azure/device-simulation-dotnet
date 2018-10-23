@@ -52,7 +52,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.instance.InitRequired();
 
             this.log.Debug("Connecting...", () => new { this.deviceId });
-            var st = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var st = DateTimeOffset.UtcNow;
             var start = st.ToUnixTimeMilliseconds();
 
             StringBuilder sb = new StringBuilder();
