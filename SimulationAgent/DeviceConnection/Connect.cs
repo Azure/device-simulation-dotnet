@@ -52,7 +52,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.instance.InitRequired();
 
             this.log.Debug("Connecting...", () => new { this.deviceId });
-            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var st = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var start = st.ToUnixTimeMilliseconds();
 
             StringBuilder sb = new StringBuilder();
             var msg = string.Empty;
@@ -62,7 +63,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 // Ensure pending task are stopped
                 this.deviceContext.DisposeClient();
 
-                msg = $"Connecting, {this.deviceId}, {this.deviceContext.Connected}, {start}, {0}";
+                msg = $"Connecting, {this.deviceId}, {this.deviceContext.Connected}, {st}, {0}";
                 sb.Append(msg + "\n");
 
                 this.deviceContext.Client = this.simulationContext.Devices.GetClient(
