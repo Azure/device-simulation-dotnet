@@ -72,9 +72,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
                 await this.deviceContext.Client.ConnectAsync();
 
-                var responseTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var resTime = DateTimeOffset.UtcNow;
+                var responseTime = resTime.ToUnixTimeMilliseconds();
                 var timeSpentMsecs = responseTime - start;
-                msg = $"Connected, {this.deviceId}, {this.deviceContext.Connected}, {responseTime}, {timeSpentMsecs}";
+                msg = $"Connected, {this.deviceId}, {this.deviceContext.Connected}, {resTime}, {timeSpentMsecs}";
                 sb.Append(msg + "\n");
 
                 await this.deviceContext.Client.RegisterMethodsForDeviceAsync(
@@ -84,40 +85,44 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
                 await this.deviceContext.Client.RegisterDesiredPropertiesUpdateAsync(this.deviceContext.DeviceProperties);
 
-                responseTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                resTime = DateTimeOffset.UtcNow;
+                responseTime = resTime.ToUnixTimeMilliseconds();
                 timeSpentMsecs = responseTime - start;
                 this.log.Debug("Device connected", () => new { timeSpentMsecs, this.deviceId });
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.Connected);
 
-                msg = $"PropsUpdated, {this.deviceId}, {this.deviceContext.Connected}, {responseTime}, {timeSpentMsecs}";
+                msg = $"PropsUpdated, {this.deviceId}, {this.deviceContext.Connected}, {resTime}, {timeSpentMsecs}";
                 sb.Append(msg + "\n");
             }
             catch (DeviceAuthFailedException e)
             {
-                var responseTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var resTime = DateTimeOffset.UtcNow;
+                var responseTime = resTime.ToUnixTimeMilliseconds();
                 var timeSpentMsecs = responseTime - start;
                 this.log.Error("Invalid connection credentials", () => new { timeSpentMsecs, this.deviceId, e });
-                msg = $"DeviceAuthFailedException, {this.deviceId}, {this.deviceContext.Connected}, {responseTime}, {timeSpentMsecs}";
+                msg = $"DeviceAuthFailedException, {this.deviceId}, {this.deviceContext.Connected}, {resTime}, {timeSpentMsecs}";
                 sb.Append(msg + "\n");
 
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.AuthFailed);
             }
             catch (DeviceNotFoundException e)
             {
-                var responseTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var resTime = DateTimeOffset.UtcNow;
+                var responseTime = resTime.ToUnixTimeMilliseconds();
                 var timeSpentMsecs = responseTime - start;
                 this.log.Error("Device not found", () => new { timeSpentMsecs, this.deviceId, e });
-                msg = $"DeviceNotFoundException, {this.deviceId}, {this.deviceContext.Connected}, {responseTime}, {timeSpentMsecs}";
+                msg = $"DeviceNotFoundException, {this.deviceId}, {this.deviceContext.Connected}, {resTime}, {timeSpentMsecs}";
                 sb.Append(msg + "\n");
 
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceNotFound);
             }
             catch (Exception e)
             {
-                var responseTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var resTime = DateTimeOffset.UtcNow;
+                var responseTime = resTime.ToUnixTimeMilliseconds();
                 var timeSpentMsecs = responseTime - start;
                 this.log.Error("Connection error", () => new { timeSpentMsecs, this.deviceId, e });
-                msg = $"Exception + {e.Message}, {this.deviceId}, {this.deviceContext.Connected}, {responseTime}, {timeSpentMsecs}";
+                msg = $"ConnectionException + {e.Message}, {this.deviceId}, {this.deviceContext.Connected}, {resTime}, {timeSpentMsecs}";
                 sb.Append(msg + "\n");
 
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.ConnectionFailed);
