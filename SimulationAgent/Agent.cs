@@ -166,6 +166,44 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.TryToStopThreads();
         }
 
+        // This creates sample simulations that will be shown on simulation dashboard by default
+        public async Task SeedAsync(string templateName)
+        {
+            string content;
+            var fileName = templateName + ".json";
+            var root = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            var file = Path.Combine(root, "data", fileName);
+            if (File.Exists(file))
+            {
+                content = File.ReadAllText(file);
+            }
+            else
+            {
+                this.log.Debug("Template not found for setting sample simulations");
+                return;
+            }
+
+            try
+            {
+                var simulationList = JsonConvert.DeserializeObject<List<Simulation>>(content);
+
+                foreach (var simulation in simulationList)
+                {
+                    var existingSimulation = this.simulations.GetAsync(simulation.Id);
+
+                    if (existingSimulation == null)
+                    {
+                        simulation.StartTime = DateTimeOffset.UtcNow;
+                        await this.simulations.UpsertAsync(simulation);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                this.log.Error("Failed to create sample simulation", ex);
+            }
+        }
+
         private async Task RunAsync()
         {
             try
@@ -193,44 +231,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             {
                 this.log.Error("A critical error occurred in the simulation agent", e);
                 this.Stop();
-            }
-        }
-
-        // This creates sample simulations that will be shown on simulation dashboard by default
-        public async Task SeedAsync(string templateName)
-        {
-            string content;
-            var fileName = templateName + ".json";
-            var root = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            var file = Path.Combine(root, "Data", fileName);
-            if (File.Exists(file))
-            {
-                content = File.ReadAllText(file);
-            }
-            else
-            {
-                this.log.Debug("Template not found for setting sample simulations");
-                return;
-            }
-
-            try
-            {
-                var simulationList = JsonConvert.DeserializeObject<List<Simulation>>(content);
-
-                foreach (var sim in simulationList)
-                {
-                    var existingSimulation = this.simulations.GetAsync(sim.Id);
-
-                    if (existingSimulation == null)
-                    {
-                        sim.StartTime = DateTimeOffset.UtcNow;
-                        await this.simulations.UpsertAsync(sim);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                this.log.Error("Failed to create sample simulation", ex);
             }
         }
 
