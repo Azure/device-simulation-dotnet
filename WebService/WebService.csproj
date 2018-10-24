@@ -14,6 +14,8 @@
             <Variable name="PCS_STORAGEADAPTER_WEBSERVICE_URL" value="http://localhost:9022/v1" />
             <Variable name="PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING" value="your DocumentDb connection string" />
             <Variable name="PCS_AZURE_STORAGE_ACCOUNT" value="your Azure Storage Account connection string" />
+            <Variable name="PCS_RESOURCE_GROUP_LOCATION" value="your Azure resource group location"/>
+            <Variable name="PCS_VMSS_NAME" value="your vm scale set name"/>
             <Variable name="PCS_LOG_LEVEL" value="Debug" />
             <Variable name="PCS_AUTH_REQUIRED" value="false" />
             <Variable name="PCS_AUTH_ISSUER" value="" />
