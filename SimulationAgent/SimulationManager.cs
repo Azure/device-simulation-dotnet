@@ -49,11 +49,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Stop all the actors and delete them - executed by Agent.StopInactiveSimulations
         void TearDown();
 
-        // // Executed by DeviceConnectionTask.RunAsync
-        // void NewConnectionLoop();
-        //
-        // // Executed by UpdatePropertiesTask.RunAsync
-        // void NewPropertiesLoop();
+        // Executed by DeviceConnectionTask.RunAsync
+        void NewConnectionLoop();
+
+        // Executed by UpdatePropertiesTask.RunAsync
+        void NewPropertiesLoop();
     }
 
     public class SimulationManager : ISimulationManager
@@ -278,6 +278,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             return false;
         }
 
+        public void NewConnectionLoop()
+        {
+            this.simulationContext.ConnectionLoopSettings.NewLoop();
+        }
+
+        public void NewPropertiesLoop()
+        {
+            this.simulationContext.PropertiesLoopSettings.NewLoop();
+        }
+
         private void DeleteAllStateActors()
         {
             var prefix = this.GetDictKey(string.Empty);
@@ -457,13 +467,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.deviceStateActors.AddOrUpdate(dictKey, deviceStateActor, (k, v) => deviceStateActor);
 
             // Create one connection actor for each device
-            var deviceConnectionActor = this.factory.Resolve<IDeviceConnectionActor>();
-            deviceConnectionActor.Init(this.simulationContext, deviceId, deviceModel, deviceStateActor, this.simulationContext.ConnectionLoopSettings);
-            this.deviceConnectionActors.AddOrUpdate(dictKey, deviceConnectionActor, (k, v) => deviceConnectionActor);
+            var deviceContext = this.factory.Resolve<IDeviceConnectionActor>();
+            deviceContext.Init(this.simulationContext, deviceId, deviceModel, deviceStateActor, this.simulationContext.ConnectionLoopSettings);
+            this.deviceConnectionActors.AddOrUpdate(dictKey, deviceContext, (k, v) => deviceContext);
 
             // Create one device properties actor for each device
             var devicePropertiesActor = this.factory.Resolve<IDevicePropertiesActor>();
-            devicePropertiesActor.Init(this.simulationContext, deviceId, deviceStateActor, deviceConnectionActor, this.simulationContext.PropertiesLoopSettings);
+            devicePropertiesActor.Init(this.simulationContext, deviceId, deviceStateActor, deviceContext, this.simulationContext.PropertiesLoopSettings);
             this.devicePropertiesActors.AddOrUpdate(dictKey, devicePropertiesActor, (k, v) => devicePropertiesActor);
 
             // Create one telemetry actor for each telemetry message to be sent
@@ -479,7 +489,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 }
 
                 var deviceTelemetryActor = this.factory.Resolve<IDeviceTelemetryActor>();
-                deviceTelemetryActor.Init(this.simulationContext, deviceId, deviceModel, message, deviceStateActor, deviceConnectionActor);
+                deviceTelemetryActor.Init(this.simulationContext, deviceId, deviceModel, message, deviceStateActor, deviceContext);
 
                 var actorKey = this.GetTelemetryDictKey(dictKey, (i++).ToString());
                 this.deviceTelemetryActors.AddOrUpdate(actorKey, deviceTelemetryActor, (k, v) => deviceTelemetryActor);

@@ -48,23 +48,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             this.log = log;
             this.clusterSize = 1;
             this.instance = instance;
-
-            // TODO: these initializations will be moved to Init when SimulationManager is
-            //       integrated.
-            this.connections = new PerSecondCounter(
-                config.ConnectionsPerSecond, "Device connections", this.log);
-
-            this.registryOperations = new PerMinuteCounter(
-                config.RegistryOperationsPerMinute, "Registry operations", this.log);
-
-            this.twinReads = new PerSecondCounter(
-                config.TwinReadsPerSecond, "Twin reads", this.log);
-
-            this.twinWrites = new PerSecondCounter(
-                config.TwinWritesPerSecond, "Twin writes", this.log);
-
-            this.messaging = new PerSecondCounter(
-                config.DeviceMessagesPerSecond, "Device msg/sec", this.log);
         }
 
         public void Init(IRateLimitingConfig config)

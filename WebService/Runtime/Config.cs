@@ -35,7 +35,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         IDeploymentConfig DeploymentConfig { get; }
 
         // Simulation multi-threading settings
-        ISimulationConcurrencyConfig SimulationConcurrencyConfig { get; }
+        IAppConcurrencyConfig AppConcurrencyConfig { get; }
 
         // Clustering and partitioning settings
         IClusteringConfig ClusteringConfig { get; }
@@ -77,7 +77,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string CLUSTERING_CHECK_INTERVAL_KEY = CLUSTERING_KEY + "check_interval";
         private const string CLUSTERING_NODE_RECORD_MAX_AGE_KEY = CLUSTERING_KEY + "node_record_max_age";
         private const string CLUSTERING_MASTER_LOCK_MAX_AGE_KEY = CLUSTERING_KEY + "master_lock_duration";
+        private const string CLUSTERING_PARTITION_LOCK_DURATION_KEY = CLUSTERING_KEY + "partition_lock_duration";
         private const string CLUSTERING_MAX_PARTITION_SIZE_KEY = CLUSTERING_KEY + "max_partition_size";
+        private const string CLUSTERING_MAX_DEVICES_PER_NODE_KEY = CLUSTERING_KEY + "max_devices_per_node";
 
         private const string STORAGE_ADAPTER_KEY = "StorageAdapterService:";
         private const string STORAGE_ADAPTER_API_URL_KEY = STORAGE_ADAPTER_KEY + "webservice_url";
@@ -126,8 +128,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string AZURE_SUBSCRIPTION_DOMAIN = DEPLOYMENT_KEY + "azure_subscription_domain";
         private const string AZURE_SUBSCRIPTION_ID = DEPLOYMENT_KEY + "azure_subscription_id";
         private const string AZURE_RESOURCE_GROUP = DEPLOYMENT_KEY + "azure_resource_group";
+        private const string AZURE_RESOURCE_GROUP_LOCATION = DEPLOYMENT_KEY + "azure_resource_group_location";
         private const string AZURE_IOTHUB_NAME = DEPLOYMENT_KEY + "azure_iothub_name";
-
+        private const string AZURE_VMSS_NAME = DEPLOYMENT_KEY + "azure_vmss_name";
+        
         private const string AZURE_ACTIVE_DIRECTORY_KEY = APPLICATION_KEY + "AzureActiveDirectory:";
         private const string AAD_TENANT_ID = AZURE_ACTIVE_DIRECTORY_KEY + "tenant_id";
         private const string AAD_APP_ID = AZURE_ACTIVE_DIRECTORY_KEY + "app_id";
@@ -140,7 +144,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         public IServicesConfig ServicesConfig { get; }
         public IRateLimitingConfig RateLimitingConfig { get; set; }
         public IDeploymentConfig DeploymentConfig { get; set; }
-        public ISimulationConcurrencyConfig SimulationConcurrencyConfig { get; set; }
+        public IAppConcurrencyConfig AppConcurrencyConfig { get; set; }
         public IClusteringConfig ClusteringConfig { get; }
 
         public Config(IConfigData configData)
@@ -151,7 +155,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             this.ClientAuthConfig = GetClientAuthConfig(configData);
             this.RateLimitingConfig = GetRateLimitingConfig(configData);
             this.DeploymentConfig = GetDeploymentConfig(configData);
-            this.SimulationConcurrencyConfig = GetConcurrencyConfig(configData);
+            this.AppConcurrencyConfig = GetConcurrencyConfig(configData);
             this.ClusteringConfig = GetClusteringConfig(configData);
         }
 
@@ -234,6 +238,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                                     "value in the 'appsettings.ini' configuration file.");
             }
 
+            var azureManagementAdapterApiUrl = configData.GetString(AZURE_MANAGEMENT_ADAPTER_API_URL_KEY);
+            if (!azureManagementAdapterApiUrl.ToLowerInvariant().StartsWith("https:"))
+            {
+                throw new Exception("The service configuration is incomplete. " +
+                                    "Azure Management API url must start with https. " +
+                                    "For more information, see the environment variables " +
+                                    "used in project properties and the 'webservice_url' " +
+                                    "value in the 'appsettings.ini' configuration file.");
+            }
+
             return new ServicesConfig
             {
                 DeviceModelsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_FOLDER_KEY)),
@@ -243,7 +257,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 IoTHubSdkDeviceClientTimeout = configData.GetOptionalUInt(IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY),
                 StorageAdapterApiUrl = configData.GetString(STORAGE_ADAPTER_API_URL_KEY),
                 StorageAdapterApiTimeout = configData.GetInt(STORAGE_ADAPTER_API_TIMEOUT_KEY),
-                AzureManagementAdapterApiUrl = configData.GetString(AZURE_MANAGEMENT_ADAPTER_API_URL_KEY),
+                AzureManagementAdapterApiUrl = azureManagementAdapterApiUrl,
                 AzureManagementAdapterApiTimeout = configData.GetInt(AZURE_MANAGEMENT_ADAPTER_API_TIMEOUT_KEY),
                 AzureManagementAdapterApiVersion = configData.GetString(AZURE_MANAGEMENT_ADAPTER_API_VERSION),
                 TwinReadWriteEnabled = configData.GetBool(TWIN_READ_WRITE_ENABLED_KEY, true),
@@ -318,7 +332,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 AzureSubscriptionDomain = configData.GetString(AZURE_SUBSCRIPTION_DOMAIN, "undefined.onmicrosoft.com"),
                 AzureSubscriptionId = configData.GetString(AZURE_SUBSCRIPTION_ID, Guid.Empty.ToString()),
                 AzureResourceGroup = configData.GetString(AZURE_RESOURCE_GROUP, "undefined"),
+                AzureResourceGroupLocation = configData.GetString(AZURE_RESOURCE_GROUP_LOCATION, "undefined"),
                 AzureIothubName = configData.GetString(AZURE_IOTHUB_NAME, "undefined"),
+                AzureVmssName = configData.GetString(AZURE_VMSS_NAME, "undefined"),
                 AadTenantId = configData.GetString(AAD_TENANT_ID, "undefined"),
                 AadAppId = configData.GetString(AAD_APP_ID, "undefined"),
                 AadAppSecret = configData.GetString(AAD_APP_SECRET, "undefined"),
@@ -326,10 +342,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             };
         }
 
-        private static ISimulationConcurrencyConfig GetConcurrencyConfig(IConfigData configData)
+        private static IAppConcurrencyConfig GetConcurrencyConfig(IConfigData configData)
         {
-            var defaults = new SimulationConcurrencyConfig();
-            return new SimulationConcurrencyConfig
+            var defaults = new AppConcurrencyConfig();
+            return new AppConcurrencyConfig
             {
                 TelemetryThreads = configData.GetInt(CONCURRENCY_TELEMETRY_THREADS_KEY, defaults.TelemetryThreads),
                 MaxPendingConnections = configData.GetInt(CONCURRENCY_MAX_PENDING_CONNECTIONS_KEY, defaults.MaxPendingConnections),
@@ -351,7 +367,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 CheckIntervalMsecs = configData.GetInt(CLUSTERING_CHECK_INTERVAL_KEY, defaults.CheckIntervalMsecs),
                 NodeRecordMaxAgeMsecs = configData.GetInt(CLUSTERING_NODE_RECORD_MAX_AGE_KEY, defaults.NodeRecordMaxAgeMsecs),
                 MasterLockDurationMsecs = configData.GetInt(CLUSTERING_MASTER_LOCK_MAX_AGE_KEY, defaults.MasterLockDurationMsecs),
-                MaxPartitionSize = configData.GetInt(CLUSTERING_MAX_PARTITION_SIZE_KEY, defaults.MaxPartitionSize)
+                PartitionLockDurationMsecs = configData.GetInt(CLUSTERING_PARTITION_LOCK_DURATION_KEY, defaults.PartitionLockDurationMsecs),
+                MaxPartitionSize = configData.GetInt(CLUSTERING_MAX_PARTITION_SIZE_KEY, defaults.MaxPartitionSize),
+                MaxDevicesPerNode = configData.GetInt(CLUSTERING_MAX_DEVICES_PER_NODE_KEY, defaults.MaxDevicesPerNode)
             };
         }
 

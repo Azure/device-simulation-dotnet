@@ -29,6 +29,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public bool DeviceCreationRequired => this.IsActiveNow && !this.DevicesCreationComplete;
 
         [JsonIgnore]
+        public bool DeviceDeletionRequired => !this.IsActiveNow
+                                              && this.DevicesCreationComplete
+                                              && this.DeleteDevicesWhenSimulationEnds;
+
+        [JsonIgnore]
         public bool PartitioningRequired => this.IsActiveNow && !this.PartitioningComplete;
 
         // A simulation should be running if it is active and devices have been created and partitioned
@@ -54,8 +59,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         [JsonProperty(Order = 12)]
         public bool DevicesCreationComplete { get; set; }
 
+        [JsonProperty(Order = 13)]
+        public bool DeleteDevicesWhenSimulationEnds { get; set; }
+
+        [JsonProperty(Order = 14)]
+        public bool DevicesDeletionStarted { get; set; }
+
+        [JsonProperty(Order = 15)]
+        public bool DevicesDeletionComplete { get; set; }
+
         [JsonProperty(Order = 1000)]
         public string DeviceCreationJobId { get; set; }
+
+        [JsonProperty(Order = 1001)]
+        public string DeviceDeletionJobId { get; set; }
 
         [JsonProperty(Order = 20)]
         public string Name { get; set; }
@@ -126,6 +143,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.DeviceModels = new List<DeviceModelRef>();
             this.CustomDevices = new List<CustomDeviceRef>();
             this.Statistics = new StatisticsRef();
+
+            // By default, do not delete IoT Hub devices when the
+            // simulation ends
+            this.DeleteDevicesWhenSimulationEnds = false;
         }
 
         public class DeviceModelRef

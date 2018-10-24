@@ -72,6 +72,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// Check if an IoT Hub job is complete, executing an action if the job failed
         /// </summary>
         Task<bool> IsJobCompleteAsync(string jobId, Action recreateJobSignal);
+
+        /// <summary>
+        /// Delete a list of devices using bulk import via storage account
+        /// </summary>
+        Task<string> DeleteListUsingJobsAsync(IEnumerable<string> deviceIds);
     }
 
     public class Devices : IDevices
@@ -123,21 +128,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // TODO: use the simulation object to decide which conn string to use
         public async Task InitAsync()
         {
-            // Until SimulationContext is merged, this class is a singleton and we want
-            // to avoid multiple initializations to run.
-            // Later, with SimulationContext, the instance will be cached and this code won't be needed.
-            // InitOnce() is temporarily disabled until the SimulationContext is merged in.
-            // Note: when removing this workaround, Autofac config should be changed to not
-            // be a singleton (see DependencyResolution.cs).
-            bool TODO_FIX_ME = true;
-            if (TODO_FIX_ME)
-            {
-                if (this.instance.IsInitialized) return;
-            }
-            else
-            {
-                this.instance.InitOnce();
-            }
+            this.instance.InitOnce();
 
             try
             {
@@ -248,7 +239,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 this.log.Debug("Creating device", () => new { deviceId });
 
-                var device = new Azure.Devices.Device(deviceId);
+                var device = this.PrepareDeviceObject(deviceId, this.fixedDeviceKey);
                 device = await this.registry.AddDeviceAsync(device);
 
                 return new Device(device, this.ioTHubHostName);
@@ -442,7 +433,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Failed to create blob file required for the device import job", e);
+                this.log.Error("Failed to create blob file required for the device bulk creation job", e);
                 throw new ExternalDependencyException("Failed to create blob file", e);
             }
 
@@ -451,9 +442,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             try
             {
                 var sasToken = this.GetSasTokenForImportExport();
-                this.log.Info("Creating job to import devices");
+                this.log.Info("Creating job to import devices for bulk creation");
                 job = await this.registry.ImportDevicesAsync(blob.Container.StorageUri.PrimaryUri.AbsoluteUri + sasToken, blob.Name);
-                this.log.Info("Job to import devices created");
+                this.log.Info("Job to import devices created for bulk creation");
             }
             catch (JobQuotaExceededException e)
             {
@@ -462,8 +453,62 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Failed to create device import job", e);
-                throw new ExternalDependencyException("Failed to create device import job", e);
+                this.log.Error("Failed to create device import job for bulk creation", e);
+                throw new ExternalDependencyException("Failed to create device import job for bulk creation", e);
+            }
+
+            return job.JobId;
+        }
+
+        // Delete a list of devices using bulk import via storage account
+        public async Task<string> DeleteListUsingJobsAsync(IEnumerable<string> deviceIds)
+        {
+            this.instance.InitRequired();
+
+            this.log.Info("Starting bulk device deletion");
+
+            // List of devices
+            var serializedDevices = new List<string>();
+            foreach (var deviceId in deviceIds)
+            {
+                var device = new ExportImportDevice
+                {
+                    Id = deviceId,
+                    ImportMode = ImportMode.Delete
+                };
+
+                serializedDevices.Add(JsonConvert.SerializeObject(device));
+            }
+
+            CloudBlockBlob blob;
+            try
+            {
+                blob = await this.WriteDevicesToBlobAsync(serializedDevices);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Failed to create blob file required for the device bulk deletion job", e);
+                throw new ExternalDependencyException("Failed to create blob file", e);
+            }
+
+            // Create import job
+            JobProperties job;
+            try
+            {
+                var sasToken = this.GetSasTokenForImportExport();
+                this.log.Info("Creating job to import devices for bulk deletion");
+                job = await this.registry.ImportDevicesAsync(blob.Container.StorageUri.PrimaryUri.AbsoluteUri + sasToken, blob.Name);
+                this.log.Info("Job to import devices created for bulk deletion");
+            }
+            catch (JobQuotaExceededException e)
+            {
+                this.log.Error("Job quota exceeded, retry later", e);
+                throw new ExternalDependencyException("Job quota exceeded, retry later", e);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Failed to create device import job for bulk deletion", e);
+                throw new ExternalDependencyException("Failed to create device import job for bulk deletion", e);
             }
 
             return job.JobId;

@@ -42,11 +42,10 @@ namespace SimulationAgent.Test
         private readonly Mock<IClusteringConfig> mockClusteringConfig;
         private readonly Mock<ILogger> mockLogger;
         private readonly Mock<IInstance> mockInstance;
-
-        private ConcurrentDictionary<string, IDeviceStateActor> deviceStateActors;
-        private ConcurrentDictionary<string, IDeviceConnectionActor> deviceConnectionActors;
-        private ConcurrentDictionary<string, IDeviceTelemetryActor> deviceTelemetryActors;
-        private ConcurrentDictionary<string, IDevicePropertiesActor> devicePropertiesActors;
+        private readonly ConcurrentDictionary<string, IDeviceStateActor> deviceStateActors;
+        private readonly ConcurrentDictionary<string, IDeviceConnectionActor> mockDeviceContext;
+        private readonly ConcurrentDictionary<string, IDeviceTelemetryActor> deviceTelemetryActors;
+        private readonly ConcurrentDictionary<string, IDevicePropertiesActor> devicePropertiesActors;
 
         private SimulationManager target;
 
@@ -75,14 +74,14 @@ namespace SimulationAgent.Test
             // Initialize the target
             var simulation = new Simulation { Id = SIM_ID, PartitioningComplete = false };
             this.deviceStateActors = new ConcurrentDictionary<string, IDeviceStateActor>();
-            this.deviceConnectionActors = new ConcurrentDictionary<string, IDeviceConnectionActor>();
+            this.mockDeviceContext = new ConcurrentDictionary<string, IDeviceConnectionActor>();
             this.deviceTelemetryActors = new ConcurrentDictionary<string, IDeviceTelemetryActor>();
             this.devicePropertiesActors = new ConcurrentDictionary<string, IDevicePropertiesActor>();
 
             this.target.InitAsync(
                 simulation,
                 this.deviceStateActors,
-                this.deviceConnectionActors,
+                this.mockDeviceContext,
                 this.deviceTelemetryActors,
                 this.devicePropertiesActors).Wait(Constants.TEST_TIMEOUT);
         }
@@ -145,7 +144,7 @@ namespace SimulationAgent.Test
 
             // Assert
             Assert.Equal(EXPECTED_ACTOR_COUNT, this.deviceStateActors.Count);
-            Assert.Equal(EXPECTED_ACTOR_COUNT, this.deviceConnectionActors.Count);
+            Assert.Equal(EXPECTED_ACTOR_COUNT, this.mockDeviceContext.Count);
             Assert.Equal(EXPECTED_ACTOR_COUNT, this.devicePropertiesActors.Count);
             Assert.Equal(EXPECTED_ACTOR_COUNT, this.deviceTelemetryActors.Count);
 
@@ -250,7 +249,7 @@ namespace SimulationAgent.Test
 
             // Assert
             Assert.Empty(this.deviceStateActors);
-            Assert.Empty(this.deviceConnectionActors);
+            Assert.Empty(this.mockDeviceContext);
             Assert.Empty(this.deviceTelemetryActors);
             Assert.Empty(this.devicePropertiesActors);
         }

@@ -1,9 +1,11 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -20,13 +22,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
 
     public class Agent : IPartitioningAgent
     {
+        private const int DEFAULT_NODE_COUNT = 1;
         private readonly IClusterNodes clusterNodes;
         private readonly IDevicePartitions partitions;
         private readonly ISimulations simulations;
         private readonly IThreadWrapper thread;
         private readonly IFactory factory;
         private readonly ILogger log;
+        private readonly IAzureManagementAdapterClient azureManagementAdapter;
+        private readonly IClusteringConfig clusteringConfig;
         private readonly int checkIntervalMsecs;
+        private int currentNodeCount;
 
         private bool running;
 
@@ -37,7 +43,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
             IThreadWrapper thread,
             IClusteringConfig clusteringConfig,
             IFactory factory,
-            ILogger logger)
+            ILogger logger,
+            IAzureManagementAdapterClient azureManagementAdapter)
         {
             this.clusterNodes = clusterNodes;
             this.partitions = partitions;
@@ -45,8 +52,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
             this.thread = thread;
             this.factory = factory;
             this.log = logger;
+            this.azureManagementAdapter = azureManagementAdapter;
+            this.clusteringConfig = clusteringConfig;
             this.checkIntervalMsecs = clusteringConfig.CheckIntervalMsecs;
             this.running = false;
+            this.currentNodeCount = DEFAULT_NODE_COUNT;
         }
 
         public async Task StartAsync()
@@ -67,14 +77,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                 if (isMaster)
                 {
                     // Reload all simulations to have fresh status and discover new simulations
-                    IList<Simulation> activeSimulations = (await this.simulations.GetListAsync())
+                    IList<Simulation> simulations = (await this.simulations.GetListAsync());
+
+                    IList<Simulation> activeSimulations = simulations
                         .Where(x => x.IsActiveNow).ToList();
                     this.log.Debug("Active simulations loaded", () => new { activeSimulations.Count });
 
+                    IList<Simulation> deletionRequiredSimulations = simulations
+                        .Where(x => x.DeviceDeletionRequired).ToList();
+                    this.log.Debug("InActive simulations loaded", () => new { deletionRequiredSimulations.Count });
+
                     await this.clusterNodes.RemoveStaleNodesAsync();
 
-                    // Create IoT Hub devices for all the active simulations
+                    // Scale nodes in Vmss
+                    await this.ScaleVmssNodes(activeSimulations);
+
+                    // Create IoTHub devices for all the active simulations
                     await this.CreateDevicesAsync(activeSimulations);
+
+                    // Delete IoTHub devices for inactive simulations
+                    await this.DeleteDevicesAsync(deletionRequiredSimulations);
 
                     // Create and delete partitions
                     await this.CreatePartitionsAsync(activeSimulations);
@@ -89,6 +111,53 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
         public void Stop()
         {
             this.running = false;
+        }
+                
+        private async Task ScaleVmssNodes(IList<Simulation> activeSimulations)
+        {
+            // Default node count is 1
+            var nodeCount = DEFAULT_NODE_COUNT;
+            var maxDevicesPerNode = this.clusteringConfig.MaxDevicesPerNode;
+
+            if (activeSimulations.Count > 0)
+            {
+                var models = new List<Simulation.DeviceModelRef>();
+                var customDevices = 0;
+
+                foreach (var simulation in activeSimulations)
+                {
+                    // Loop through all the device models used in the simulation
+                    models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
+
+                    // Count total custom devices
+                    customDevices += simulation.CustomDevices.Count;
+                }
+
+                // Calculate the total number of devices
+                var totalDevices = models.Sum(model => model.Count) + customDevices;
+
+                // Calculate number of nodes required
+                nodeCount = maxDevicesPerNode > 0 ? (int)Math.Ceiling((double)totalDevices / maxDevicesPerNode) : DEFAULT_NODE_COUNT;
+            }
+
+            if (this.currentNodeCount != nodeCount)
+            {
+                // Send a request to update vmss auto scale settings to create vm instances
+                // TODO: when devices are added or removed, the number of VMs might need an update
+                await this.azureManagementAdapter.CreateOrUpdateVmssAutoscaleSettingsAsync(nodeCount);
+
+                this.currentNodeCount = nodeCount;
+            }
+        }
+
+        private async Task DeleteDevicesAsync(IList<Simulation> deletionRequiredSimulations)
+        {
+            if (deletionRequiredSimulations.Count == 0) return;
+
+            foreach (var simulation in deletionRequiredSimulations)
+            {
+                await this.DeleteIoTHubDevicesAsync(simulation);
+            }
         }
 
         private async Task CreateDevicesAsync(IList<Simulation> activeSimulations)
@@ -106,6 +175,63 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
             foreach (var simulation in simulationsWithDevicesToCreate)
             {
                 await this.CreateIoTHubDevicesAsync(simulation);
+            }
+        }
+
+        private async Task DeleteIoTHubDevicesAsync(Simulation simulation)
+        {
+            var deletionFailed = false;
+
+            // Check if the device deletion is complete
+            if (simulation.DevicesDeletionStarted)
+            {
+                this.log.Info("Checking if the device deletion is complete...", () => new { SimulationId = simulation.Id });
+
+                // TODO: optimize, we can probably cache this instance
+                // e.g. to avoid fetching the conn string from storage
+                var deviceService = this.factory.Resolve<IDevices>();
+                await deviceService.InitAsync();
+
+                if (await deviceService.IsJobCompleteAsync(simulation.DeviceDeletionJobId, () => { deletionFailed = true; }))
+                {
+                    this.log.Info("All devices have been deleted, updating the simulation record", () => new { SimulationId = simulation.Id });
+
+                    if (await this.simulations.TryToSetDeviceDeletionCompleteAsync(simulation.Id))
+                    {
+                        this.log.Debug("Simulation record updated");
+                    }
+                    else
+                    {
+                        this.log.Warn("Failed to update the simulation record, will retry later");
+                    }
+                }
+                else
+                {
+                    this.log.Info(deletionFailed
+                            ? "Device deletion failed. Will retry."
+                            : "Device deletion is still in progress",
+                        () => new { SimulationId = simulation.Id });
+                }
+            }
+
+            // Start the job to delete the devices
+            if ((!simulation.DevicesDeletionStarted && !simulation.DevicesDeletionComplete) || deletionFailed)
+            {
+                this.log.Debug("Starting devices creation", () => new { SimulationId = simulation.Id });
+
+                // TODO: optimize, we can probably cache this instance
+                // e.g. to avoid fetching the conn string from storage
+                var deviceService = this.factory.Resolve<IDevices>();
+                await deviceService.InitAsync();
+
+                if (await this.simulations.TryToStartDevicesDeletionAsync(simulation.Id, deviceService))
+                {
+                    this.log.Info("Device deletion started");
+                }
+                else
+                {
+                    this.log.Warn("Failed to start device deletion, will retry later");
+                }
             }
         }
 

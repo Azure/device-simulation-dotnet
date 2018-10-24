@@ -4,7 +4,8 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
-    public interface ISimulationConcurrencyConfig
+    // Global settings, not affected by hub SKU or simulation settings
+    public interface IAppConcurrencyConfig
     {
         int TelemetryThreads { get; }
         int MaxPendingConnections { get; }
@@ -17,7 +18,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         int MaxPendingTasks { get; }
     }
 
-    public class SimulationConcurrencyConfig : ISimulationConcurrencyConfig
+    // Global settings, not affected by hub SKU or simulation settings
+    public class AppConcurrencyConfig : IAppConcurrencyConfig
     {
         private const int DEFAULT_TELEMETRY_THREADS = 4;
         private const int DEFAULT_MAX_PENDING_CONNECTIONS = 200;
@@ -45,7 +47,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         private int minDevicePropertiesLoopDuration;
         private int maxPendingTasks;
 
-        public SimulationConcurrencyConfig()
+        public AppConcurrencyConfig()
         {
             // Initialize object with default values
             this.TelemetryThreads = DEFAULT_TELEMETRY_THREADS;
@@ -62,7 +64,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         /// <summary>
         /// How many threads to use to send telemetry.
         /// A value too high (e.g. more than 10) can decrease the overall throughput due to context switching.
-        /// A value too low (e.g. less than 2) can decrease the overall throughput due to the time required to
+        /// A value too low (e.g. fewer than 2) can decrease the overall throughput due to the time required to
         /// loop through all the devices, when dealing we several thousands of devices.
         /// </summary>
         public int TelemetryThreads

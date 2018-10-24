@@ -3,6 +3,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
@@ -18,24 +19,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     {
         private readonly ILogger log;
         private readonly string connectionString;
+        private readonly IInstance instance;
 
         private string ioTHubHostName;
         private RegistryManager registry;
-        private bool setupDone;
 
         public PreprovisionedIotHub(
             IServicesConfig config,
-            ILogger logger)
+            ILogger logger,
+            IInstance instance)
         {
             this.log = logger;
             this.connectionString = config.IoTHubConnString;
-            this.setupDone = false;
+            this.instance = instance;
         }
 
         // Ping the registry to see if the connection is healthy
         public async Task<Tuple<bool, string>> PingRegistryAsync()
         {
-            this.SetupHub();
+            await this.InitAsync();
 
             try
             {
@@ -52,17 +54,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // This call can throw an exception, which is fine when the exception happens during a method
         // call. We cannot allow the exception to occur in the constructor though, because it
         // would break DI.
-        private void SetupHub()
+        private async Task InitAsync()
         {
-            if (this.setupDone) return;
+            if (this.instance.IsInitialized) return;
 
             this.registry = RegistryManager.CreateFromConnectionString(this.connectionString);
-            this.registry.OpenAsync();
+            await this.registry.OpenAsync();
 
             this.ioTHubHostName = IotHubConnectionStringBuilder.Create(this.connectionString).HostName;
             this.log.Info("Selected active IoT Hub for preprovisioned hub status check", () => new { this.ioTHubHostName });
 
-            this.setupDone = true;
+            this.instance.InitComplete();
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -14,6 +15,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Moq;
 using PartitioningAgent.Test.helpers;
 using Xunit;
+using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 
 namespace PartitioningAgent.Test
 {
@@ -28,6 +30,7 @@ namespace PartitioningAgent.Test
         private readonly Mock<IFactory> factory;
         private readonly Mock<ILogger> log;
         private readonly Mock<IDevices> devices;
+        private readonly Mock<IAzureManagementAdapterClient> azureManagementAdapterClient;
 
         public AgentTest()
         {
@@ -38,6 +41,7 @@ namespace PartitioningAgent.Test
             this.clusteringConfig = new Mock<IClusteringConfig>();
             this.factory = new Mock<IFactory>();
             this.log = new Mock<ILogger>();
+            this.azureManagementAdapterClient = new Mock<IAzureManagementAdapterClient>();
 
             this.clusteringConfig.SetupGet(x => x.CheckIntervalMsecs).Returns(5);
             this.thread.Setup(x => x.Sleep(It.IsAny<int>()))
@@ -54,7 +58,8 @@ namespace PartitioningAgent.Test
                 this.thread.Object,
                 this.clusteringConfig.Object,
                 this.factory.Object,
-                this.log.Object);
+                this.log.Object,
+                this.azureManagementAdapterClient.Object);
 
             this.devices = new Mock<IDevices>();
             this.factory.Setup(x => x.Resolve<IDevices>()).Returns(this.devices.Object);
@@ -379,7 +384,7 @@ namespace PartitioningAgent.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItChangesTheSimulationStateWhenTheSimulationIsComplete()
+        public void ItChangesTheSimulationStateWhenTheBulkCreationJobIsComplete()
         {
             // Arrange
             this.AfterStartRunOnlyOneLoop();
@@ -441,6 +446,233 @@ namespace PartitioningAgent.Test
             deviceService.Verify(x => x.IsJobCompleteAsync(simulation.DeviceCreationJobId, It.IsAny<Action>()), Times.Once);
             this.simulations.Verify(x => x.TryToSetDeviceCreationCompleteAsync(It.IsAny<string>()), Times.Never);
             this.simulations.Verify(x => x.TryToStartDevicesCreationAsync(simulation.Id, It.IsAny<IDevices>()), Times.Once);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItDeletesDevicesOnlyIfNeeded()
+        {
+            // Arrange
+            this.AfterStartRunOnlyOneLoop();
+            this.TheCurrentNodeIsMaster();
+
+            // Arrange - List of simulations with devices to create
+            this.simulations.Setup(x => x.GetListAsync()).ReturnsAsync(new List<Simulation>
+            {
+                // Is active
+                new Simulation
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Enabled = true,
+                    StartTime = DateTimeOffset.UtcNow.AddHours(-1),
+                    EndTime = DateTimeOffset.UtcNow.AddHours(+1),
+                    DevicesCreationComplete = false,
+                    DeleteDevicesWhenSimulationEnds = true
+                },
+                // Is running
+                new Simulation
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Enabled = true,
+                    StartTime = DateTimeOffset.UtcNow.AddHours(-1),
+                    EndTime = DateTimeOffset.UtcNow.AddHours(1),
+                    DevicesCreationComplete = true,
+                    DeleteDevicesWhenSimulationEnds = true
+                },
+                // Device cleanup not required
+                new Simulation
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Enabled = true,
+                    StartTime = DateTimeOffset.UtcNow.AddHours(-1),
+                    EndTime = DateTimeOffset.UtcNow.AddHours(+1),
+                    DevicesCreationComplete = true,
+                    DeleteDevicesWhenSimulationEnds = false
+                },
+                // Device creation not complete
+                new Simulation
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Enabled = true,
+                    StartTime = DateTimeOffset.UtcNow.AddHours(-2),
+                    EndTime = DateTimeOffset.UtcNow.AddHours(-1),
+                    DevicesCreationStarted = true,
+                    DevicesCreationComplete = false,
+                    DeleteDevicesWhenSimulationEnds = true
+                }
+            });
+
+            // Act
+            this.target.StartAsync().CompleteOrTimeout();
+
+            // Assert
+            this.simulations.Verify(x => x.TryToStartDevicesDeletionAsync(It.IsAny<string>(), It.IsAny<IDevices>()), Times.Never);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItDeletesDevicesOnlyIfItIsAMaster()
+        {
+            // Arrange
+            this.AfterStartRunOnlyOneLoop();
+
+            // Arrange - List of simulations with devices to create
+            this.simulations.Setup(x => x.GetListAsync()).ReturnsAsync(new List<Simulation>
+            {
+                new Simulation
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Enabled = true,
+                    StartTime = DateTimeOffset.UtcNow.AddHours(-2),
+                    EndTime = DateTimeOffset.UtcNow.AddHours(-1),
+                    DevicesCreationComplete = true,
+                    DeleteDevicesWhenSimulationEnds = true
+                }
+            });
+
+            // Arrange
+            this.TheCurrentNodeIsNotMaster();
+
+            // Act
+            this.target.StartAsync().CompleteOrTimeout();
+
+            // Assert
+            this.simulations.Verify(x => x.TryToStartDevicesDeletionAsync(It.IsAny<string>(), It.IsAny<IDevices>()), Times.Never);
+
+            // Arrange
+            this.TheCurrentNodeIsMaster();
+
+            // Act
+            this.target.StartAsync().CompleteOrTimeout();
+
+            // Assert
+            this.simulations.Verify(x => x.TryToStartDevicesDeletionAsync(It.IsAny<string>(), It.IsAny<IDevices>()), Times.Once);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItChecksIfDeviceDeletionIsCompleteWhenItAlreadyStarted()
+        {
+            // Arrange
+            this.AfterStartRunOnlyOneLoop();
+            this.TheCurrentNodeIsMaster();
+
+            var jobId = Guid.NewGuid().ToString();
+            var deviceService = new Mock<IDevices>();
+            deviceService.Setup(x => x.IsJobCompleteAsync(jobId, It.IsAny<Action>())).ReturnsAsync(false);
+            this.factory.Setup(x => x.Resolve<IDevices>()).Returns(deviceService.Object);
+            var simulation = new Simulation
+            {
+                Id = Guid.NewGuid().ToString(),
+                Enabled = true,
+                StartTime = DateTimeOffset.UtcNow.AddHours(-2),
+                EndTime = DateTimeOffset.UtcNow.AddHours(-1),
+                DevicesCreationComplete = true,
+                DeleteDevicesWhenSimulationEnds = true,
+                DevicesDeletionStarted = true,
+                DevicesDeletionComplete = false,
+                DeviceCreationJobId = jobId
+            };
+            this.simulations.Setup(x => x.GetListAsync()).ReturnsAsync(new List<Simulation> { simulation });
+
+            // Act
+            this.target.StartAsync().CompleteOrTimeout();
+
+            // Assert
+            this.simulations.Verify(x => x.TryToStartDevicesDeletionAsync(It.IsAny<string>(), It.IsAny<IDevices>()), Times.Never);
+            deviceService.Verify(x => x.InitAsync(), Times.Once);
+            deviceService.Verify(x => x.IsJobCompleteAsync(simulation.DeviceDeletionJobId, It.IsAny<Action>()), Times.Once);
+            this.simulations.Verify(x => x.TryToSetDeviceDeletionCompleteAsync(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItChangesTheSimulationStateWhenTheBulkDeletionJobIsComplete()
+        {
+            // Arrange
+            this.AfterStartRunOnlyOneLoop();
+            this.TheCurrentNodeIsMaster();
+
+            var jobId = Guid.NewGuid().ToString();
+            var deviceService = new Mock<IDevices>();
+            deviceService.Setup(x => x.IsJobCompleteAsync(jobId, It.IsAny<Action>())).ReturnsAsync(true);
+            this.factory.Setup(x => x.Resolve<IDevices>()).Returns(deviceService.Object);
+            var simulation = new Simulation
+            {
+                Id = Guid.NewGuid().ToString(),
+                Enabled = true,
+                StartTime = DateTimeOffset.UtcNow.AddHours(-2),
+                EndTime = DateTimeOffset.UtcNow.AddHours(-1),
+                DevicesCreationComplete = true,
+                DeleteDevicesWhenSimulationEnds = true,
+                DevicesDeletionStarted = true,
+                DevicesDeletionComplete = false,
+                DeviceDeletionJobId = jobId
+            };
+            this.simulations.Setup(x => x.GetListAsync()).ReturnsAsync(new List<Simulation> { simulation });
+
+            // Act
+            this.target.StartAsync().CompleteOrTimeout();
+
+            // Assert
+            deviceService.Verify(x => x.IsJobCompleteAsync(jobId, It.IsAny<Action>()), Times.Once);
+            this.simulations.Verify(x => x.TryToSetDeviceDeletionCompleteAsync(simulation.Id), Times.Once);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItCalculatesRequiredNodes()
+        {
+            // Arrange
+            int expectedNodeCount = 9;
+            this.AfterStartRunOnlyOneLoop();
+
+            var deviceModels = new List<DeviceModelRef>
+            {
+                new DeviceModelRef { Id = "d1", Count = 50 },
+                new DeviceModelRef { Id = "d2", Count = 150 },
+                new DeviceModelRef { Id = "d3", Count = 200 },
+            };
+
+            var customDevices = new List<CustomDeviceRef>
+            {
+                new CustomDeviceRef { DeviceId = "1", DeviceModel = new DeviceModelRef { Id = "d1" } },
+                new CustomDeviceRef { DeviceId = "2", DeviceModel = new DeviceModelRef { Id = "d1" } },
+                new CustomDeviceRef { DeviceId = "3", DeviceModel = new DeviceModelRef { Id = "d2" } },
+                new CustomDeviceRef { DeviceId = "4", DeviceModel = new DeviceModelRef { Id = "d3" } },
+                new CustomDeviceRef { DeviceId = "5", DeviceModel = new DeviceModelRef { Id = "d3" } }
+            };
+
+            this.simulations.Setup(x => x.GetListAsync()).ReturnsAsync(new List<Simulation>
+            {
+                new Simulation
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Enabled = true,
+                    StartTime = DateTimeOffset.UtcNow.AddHours(-2),
+                    EndTime = DateTimeOffset.UtcNow.AddHours(1),
+                    DevicesCreationComplete = true,
+                    DeleteDevicesWhenSimulationEnds = true,
+                    DeviceModels = deviceModels,
+                    CustomDevices = customDevices 
+                }
+            });
+
+            this.clusteringConfig.Setup(x => x.MaxDevicesPerNode).Returns(50);
+
+            this.TheCurrentNodeIsMaster();
+
+            // Act
+            this.target.StartAsync().CompleteOrTimeout();
+
+            // Assert
+            // Verify request to update autoscale settings is made when node count changes
+            this.azureManagementAdapterClient.Verify(x => x.CreateOrUpdateVmssAutoscaleSettingsAsync(It.Is<int>(a => a.Equals(expectedNodeCount))));
+
+            // Arrange
+            this.azureManagementAdapterClient.Invocations.Clear();
+            
+            // Act
+            this.target.StartAsync().CompleteOrTimeout();
+
+            // Assert
+            // Verify request to update autoscale settings is not made when node count does not change
+            this.azureManagementAdapterClient.Verify(x => x.CreateOrUpdateVmssAutoscaleSettingsAsync(It.IsAny<int>()), Times.Never);
         }
 
         // Helper used to ensure that a task reaches an expected state

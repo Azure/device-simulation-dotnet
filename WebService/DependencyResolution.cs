@@ -27,14 +27,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         /// Autofac configuration. Find more information here:
         /// @see http://docs.autofac.org/en/latest/integration/aspnetcore.html
         /// </summary>
-        public static IContainer Setup(IServiceCollection services)
+        public static IContainer Init(IServiceCollection services)
         {
             var builder = new ContainerBuilder();
 
             builder.Populate(services);
 
             AutowireAssemblies(builder);
-
             SetupCustomRules(builder);
 
             var container = builder.Build();
@@ -111,7 +110,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterInstance(config.ServicesConfig).As<IServicesConfig>().SingleInstance();
             builder.RegisterInstance(config.RateLimitingConfig).As<IRateLimitingConfig>().SingleInstance();
             builder.RegisterInstance(config.DeploymentConfig).As<IDeploymentConfig>().SingleInstance();
-            builder.RegisterInstance(config.SimulationConcurrencyConfig).As<ISimulationConcurrencyConfig>().SingleInstance();
+            builder.RegisterInstance(config.AppConcurrencyConfig).As<IAppConcurrencyConfig>().SingleInstance();
             builder.RegisterInstance(config.ClusteringConfig).As<IClusteringConfig>().SingleInstance();
 
             // Instantiate only one logger
@@ -128,14 +127,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterType<Agent>().As<ISimulationAgent>().SingleInstance();
             builder.RegisterType<Simulations>().As<ISimulations>().SingleInstance();
             builder.RegisterType<DeviceModels>().As<IDeviceModels>().SingleInstance();
-            builder.RegisterType<Services.Devices>().As<IDevices>().SingleInstance();
-            builder.RegisterType<RateLimiting>().As<IRateLimiting>().SingleInstance();
             builder.RegisterType<DiagnosticsLogger>().As<IDiagnosticsLogger>().SingleInstance();
-
-            // The simulation runner contains the service counters, which are read and
-            // written by multiple parts of the application, so we need to make sure 
-            // there is only one instance storing that information.
-            builder.RegisterType<SimulationRunner>().As<ISimulationRunner>().SingleInstance();
 
             // Registrations required by Autofac, these classes implement the same interface
             builder.RegisterType<Connect>().As<Connect>();

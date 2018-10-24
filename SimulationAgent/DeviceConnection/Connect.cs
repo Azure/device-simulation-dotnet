@@ -3,7 +3,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -16,67 +16,82 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
     /// </summary>
     public class Connect : IDeviceConnectionLogic
     {
-        private readonly IDevices devices;
         private readonly IScriptInterpreter scriptInterpreter;
         private readonly ILogger log;
+        private readonly IInstance instance;
         private string deviceId;
         private DeviceModel deviceModel;
-        private IDeviceConnectionActor context;
+        private IDeviceConnectionActor deviceContext;
+        private ISimulationContext simulationContext;
 
         public Connect(
-            IDevices devices,
             IScriptInterpreter scriptInterpreter,
-            ILogger logger)
+            ILogger logger,
+            IInstance instance)
         {
-            this.log = logger;
             this.scriptInterpreter = scriptInterpreter;
-            this.devices = devices;
+            this.log = logger;
+            this.instance = instance;
         }
 
-        public async Task SetupAsync(IDeviceConnectionActor context, string deviceId, DeviceModel deviceModel)
+        public void Init(IDeviceConnectionActor context, string deviceId, DeviceModel deviceModel)
         {
-            this.context = context;
+            this.instance.InitOnce();
+
+            this.deviceContext = context;
+            this.simulationContext = context.SimulationContext;
             this.deviceId = deviceId;
             this.deviceModel = deviceModel;
 
-            // TODO: to be removed once SimulationContext is introduced
-            await this.devices.InitAsync();
+            this.instance.InitComplete();
         }
 
         public async Task RunAsync()
         {
+            this.instance.InitRequired();
+
             this.log.Debug("Connecting...", () => new { this.deviceId });
             var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             try
             {
-                this.context.Client = this.devices.GetClient(this.context.Device, this.deviceModel.Protocol, this.scriptInterpreter);
+                // Ensure pending task are stopped
+                this.deviceContext.DisposeClient();
 
-                await this.context.Client.ConnectAsync();
-                await this.context.Client.RegisterMethodsForDeviceAsync(this.deviceModel.CloudToDeviceMethods, this.context.DeviceState, this.context.DeviceProperties);
-                await this.context.Client.RegisterDesiredPropertiesUpdateAsync(this.context.DeviceProperties);
+                this.deviceContext.Client = this.simulationContext.Devices.GetClient(
+                    this.deviceContext.Device,
+                    this.deviceModel.Protocol,
+                    this.scriptInterpreter);
+
+                await this.deviceContext.Client.ConnectAsync();
+                await this.deviceContext.Client.RegisterMethodsForDeviceAsync(
+                    this.deviceModel.CloudToDeviceMethods,
+                    this.deviceContext.DeviceState,
+                    this.deviceContext.DeviceProperties);
+
+                await this.deviceContext.Client.RegisterDesiredPropertiesUpdateAsync(this.deviceContext.DeviceProperties);
 
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Debug("Device connected", () => new { timeSpentMsecs, this.deviceId });
-                this.context.HandleEvent(DeviceConnectionActor.ActorEvents.Connected);
+                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.Connected);
             }
             catch (DeviceAuthFailedException e)
             {
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Error("Invalid connection credentials", () => new { timeSpentMsecs, this.deviceId, e });
-                this.context.HandleEvent(DeviceConnectionActor.ActorEvents.AuthFailed);
+                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.AuthFailed);
             }
             catch (DeviceNotFoundException e)
             {
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Error("Device not found", () => new { timeSpentMsecs, this.deviceId, e });
-                this.context.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceNotFound);
+                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceNotFound);
             }
             catch (Exception e)
             {
                 var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                 this.log.Error("Connection error", () => new { timeSpentMsecs, this.deviceId, e });
-                this.context.HandleEvent(DeviceConnectionActor.ActorEvents.ConnectionFailed);
+                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.ConnectionFailed);
             }
         }
     }

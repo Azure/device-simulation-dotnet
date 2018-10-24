@@ -222,10 +222,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
                 tasks.Clear();
             }
 
-            if (tasks.Count > 0)
-            {
-                await Task.WhenAll(tasks);
-            }
+            if (tasks.Count > 0) await Task.WhenAll(tasks);
         }
 
         public async Task<bool> TryToLockAsync(
