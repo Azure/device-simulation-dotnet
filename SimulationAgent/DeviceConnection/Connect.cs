@@ -61,7 +61,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             try
             {
                 // Ensure pending task are stopped
-                this.deviceContext.DisposeClient();
+                // this.deviceContext.DisposeClient();
 
                 msg = $"Connecting, {this.deviceId}, {this.deviceContext.Connected}, {st}, {0}";
                 sb.Append(msg + "\n");
