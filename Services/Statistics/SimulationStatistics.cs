@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
@@ -17,24 +18,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
     {
         Task<SimulationStatisticsModel> GetSimulationStatisticsAsync(string simulationId);
         Task CreateOrUpdateAsync(string simulationId, SimulationStatisticsModel statistics);
+        Task DeleteSimulationStatisticsAsync(string simulationId);
     }
 
     public class SimulationStatistics : ISimulationStatistics
     {
         private readonly IStorageRecords simulationStatisticsStorage;
         private readonly IClusterNodes clusterNodes;
-        private readonly ISimulations simulations;
         private readonly IServicesConfig config;
         private readonly ILogger log;
 
         public SimulationStatistics(IServicesConfig config,
             IClusterNodes clusterNodes,
-            ISimulations simulations,
             IFactory factory,
             ILogger logger)
         {
             this.clusterNodes = clusterNodes;
-            this.simulations = simulations;
             this.config = config;
             this.log = logger;
             this.simulationStatisticsStorage = factory.Resolve<IStorageRecords>().Init(config.StatisticsStorage);
@@ -54,14 +53,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
 
             try
             {
-                var simRecords = (await this.simulationStatisticsStorage.GetAsync(sqlCondition, sqlParameters))
+                var simulationRecords = (await this.simulationStatisticsStorage.GetAsync(sqlCondition, sqlParameters))
                     .Select(p => JsonConvert.DeserializeObject<SimulationStatisticsRecord>(p.Data))
                     .ToList();
-
-                statistics.TotalMessagesSent = simRecords.Sum(a => a.Statistics.TotalMessagesSent);
-                statistics.FailedDeviceConnectionsCount = simRecords.Sum(a => a.Statistics.FailedDeviceConnectionsCount);
-                statistics.FailedDeviceTwinUpdatesCount = simRecords.Sum(a => a.Statistics.FailedDeviceTwinUpdatesCount);
-                statistics.FailedMessagesCount = simRecords.Sum(a => a.Statistics.FailedMessagesCount);
+                 
+                foreach (var record in simulationRecords)
+                {
+                    statistics.TotalMessagesSent += record.Statistics.TotalMessagesSent;
+                    statistics.FailedDeviceConnections += record.Statistics.FailedDeviceConnections;
+                    statistics.FailedDevicePropertiesUpdates += record.Statistics.FailedDevicePropertiesUpdates;
+                    statistics.FailedMessages += record.Statistics.FailedMessages;
+                }
             }
             catch (Exception e)
             {
@@ -91,11 +93,46 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
 
             try
             {
+                this.log.Debug("Creating statistics record", () => new { statisticsStorageRecord });
                 await this.simulationStatisticsStorage.CreateAsync(statisticsStorageRecord);
             }
             catch (Exception e)
             {
                 this.log.Error("Error on saving statistics records", e);
+            }
+        }
+
+        public async Task DeleteSimulationStatisticsAsync(string simulationId)
+        {
+            if (string.IsNullOrEmpty(simulationId))
+            {
+                this.log.Error("Simulation Id cannot be null or empty");
+                return;
+            }
+
+            string sqlCondition = " CONTAINS(ROOT.id, @simulationId)";
+            SqlParameter[] sqlParameters = new[] { new SqlParameter { Name = "@simulationId", Value = simulationId } };
+            SimulationStatisticsModel statistics = new SimulationStatisticsModel();
+
+            try
+            {
+                var statisticsRecordsIds = (await this.simulationStatisticsStorage.GetAsync(sqlCondition, sqlParameters))
+                    .Select(p => p.Id)
+                    .ToList();
+
+                if (statisticsRecordsIds.Count > 0)
+                {
+                    this.log.Debug("Deleting statistics records", () => new { statisticsRecordsIds });
+                    await this.simulationStatisticsStorage.DeleteMultiAsync(statisticsRecordsIds);
+                }
+                else
+                {
+                    this.log.Debug("No records to delete.");
+                }
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Error on getting statistics records", e);
             }
         }
 

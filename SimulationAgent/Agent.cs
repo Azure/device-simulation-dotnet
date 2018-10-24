@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
@@ -44,11 +43,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // The number of days to wait between sending a diagnostics heartbeat
         private const int DIAGNOSTICS_POLLING_FREQUENCY_DAYS = 1;
 
-        // How often (minimum) to log simulation statistics
-        private const int STATS_INTERVAL_MSECS = 15000;
+        // How often (minimum) to print simulation statistics
+        private const int PRINT_STATS_INTERVAL_MSECS = 15000;
 
         // How often (minimum) to save simulation statistics to storage
-        private const int STATS_INTERVAL_SECS = 30;
+        private const int SAVE_STATS_INTERVAL_SECS = 30;
 
         // Global thread settings, not specific to any simulation
         private readonly IAppConcurrencyConfig appConcurrencyConfig;
@@ -182,10 +181,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                         .Where(x => x.IsActiveNow).ToList();
                     this.log.Debug("Active simulations loaded", () => new { activeSimulations.Count });
 
-                    await this.SaveSimulationStatisticsAsync(activeSimulations);
                     await this.CreateSimulationManagersAsync(activeSimulations);
+                    await this.SaveSimulationStatisticsAsync(activeSimulations);
                     await this.RunSimulationManagersMaintenanceAsync();
-                    this.StopInactiveSimulations(activeSimulations);
+                    this.StopInactiveSimulationsAsync(activeSimulations);
 
                     Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
                 }
@@ -219,7 +218,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             return;
         }
 
-        private void StopInactiveSimulations(IList<Simulation> activeSimulations)
+        private async Task StopInactiveSimulationsAsync(IList<Simulation> activeSimulations)
         {
             // Get a list of all simulations that are not active in storage.
             var activeIds = activeSimulations.Select(simulation => simulation.Id).ToList();
@@ -227,7 +226,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             foreach (var manager in managersToStop)
             {
-                manager.Value.SaveStatisticsAsync();
+                await manager.Value.SaveStatisticsAsync();
                 manager.Value.TearDown();
                 if (!this.simulationManagers.TryRemove(manager.Key, out _))
                 {
@@ -245,9 +244,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 TimeSpan duration = now - this.lastPolledTime;
 
                 // Save simulation statistics at specified interval
-                if (duration.Seconds >= STATS_INTERVAL_SECS)
+                if (duration.Seconds >= SAVE_STATS_INTERVAL_SECS)
                 {
-                    this.simulationManagers[simulation.Id].SaveStatisticsAsync();
+                    await this.simulationManagers[simulation.Id].SaveStatisticsAsync();
 
                     this.lastPolledTime = now;
                 }
@@ -289,7 +288,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             var printStats = false;
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            if (now - this.lastStatsTime > STATS_INTERVAL_MSECS)
+            if (now - this.lastStatsTime > PRINT_STATS_INTERVAL_MSECS)
             {
                 printStats = true;
                 this.lastStatsTime = now;

@@ -3,12 +3,10 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
@@ -28,7 +26,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly IIothubMetrics iothubMetrics;
         private readonly ISimulationAgent simulationAgent;
-        private readonly ISimulationStatistics simulationStatistics;
+        
         private readonly ILogger log;
 
         public SimulationsController(
@@ -37,15 +35,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             IIothubMetrics iothubMetrics,
             IPreprovisionedIotHub preprovisionedIotHub,
             ISimulationAgent simulationAgent,
-            ILogger logger,
-            ISimulationStatistics simulationStatistics)
+            ILogger logger)
         {
             this.simulationsService = simulationsService;
             this.connectionStringManager = connectionStringManager;
             this.iothubMetrics = iothubMetrics;
             this.simulationAgent = simulationAgent;
             this.log = logger;
-            this.simulationStatistics = simulationStatistics;
         }
 
         [HttpGet]
@@ -58,10 +54,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         [HttpGet("{id}")]
         public async Task<SimulationApiModel> GetAsync(string id)
         {
-            var simulation = await this.simulationsService.GetAsync(id);
-            var stats = await this.simulationStatistics.GetSimulationStatisticsAsync(id);
-            var simulationApiModel = SimulationApiModel.FromServiceModel(simulation, stats);
-            return simulationApiModel;
+            var simulation = await this.simulationsService.GetWithStatisticsAsync(id);
+            return SimulationApiModel.FromServiceModel(simulation);
         }
 
         [HttpPost]

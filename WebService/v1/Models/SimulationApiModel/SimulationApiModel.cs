@@ -148,8 +148,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
         // Map service model to API model
         public static SimulationApiModel FromServiceModel(
-            Simulation value,
-            SimulationStatisticsModel statistics = null)
+            Simulation value)
         {
             if (value == null) return null;
 
@@ -163,9 +162,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Running = value.ShouldBeRunning,
                 ActiveNow = value.IsActiveNow,
                 DeleteDevicesWhenSimulationEnds = value.DeleteDevicesWhenSimulationEnds,
-                StartTime = value.StartTime?.ToString(DATE_FORMAT),
-                EndTime = value.EndTime?.ToString(DATE_FORMAT),
-                StoppedTime = value.StoppedTime?.ToString(DATE_FORMAT),
                 IotHubs = new List<SimulationIotHub>()
             };
 
@@ -194,14 +190,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             }
 
             result.DeviceModels = SimulationDeviceModelRef.FromServiceModel(value.DeviceModels);
-            result.Statistics = SimulationStatistics.FromServiceModel(statistics);
-
-            if (result.Statistics != null)
-            {
-                DateTimeOffset now = DateTimeOffset.UtcNow;
-                TimeSpan duration = value.IsActiveNow ? now - value.StartTime.Value : value.StoppedTime.Value - value.StartTime.Value;
-                result.Statistics.AverageMessagesPerSecond = result.Statistics.TotalMessagesSent / duration.Seconds;
-            }
+            result.Statistics = getSimulationStatistics(value);
 
             result.created = value.Created;
             result.modified = value.Modified;
@@ -267,6 +256,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             {
                 await connectionStringManager.ValidateConnectionStringAsync(iotHub.ConnectionString);
             }
+        }
+
+        private static SimulationStatistics getSimulationStatistics(Simulation simulation)
+        {
+            var statistics = SimulationStatistics.FromServiceModel(simulation.Statistics);
+
+            if (statistics != null)
+            {
+                DateTimeOffset now = DateTimeOffset.UtcNow;
+                TimeSpan duration = simulation.IsActiveNow ? now.Subtract(simulation.ActualStartTime.Value) : simulation.StoppedTime.Value.Subtract(simulation.ActualStartTime.Value);
+                statistics.AverageMessagesPerSecond = (double) statistics.TotalMessagesSent / duration.TotalSeconds;
+            }
+
+            return statistics;
         }
     }
 }

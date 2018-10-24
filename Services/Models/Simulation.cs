@@ -9,6 +9,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
     public class Simulation
     {
         private DateTimeOffset? startTime;
+        private DateTimeOffset? actualStartTime;
         private DateTimeOffset? endTime;
         private IList<string> iotHubConnectionStrings;
 
@@ -125,6 +126,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         [JsonProperty(Order = 130)]
         public DateTimeOffset Modified { get; set; }
 
+        // ActualStartTime is the time when Simulation was started
+        [JsonProperty(Order = 140)]
+        public DateTimeOffset? ActualStartTime
+        {
+            get => this.actualStartTime;
+            set => this.actualStartTime = value ?? DateTimeOffset.MinValue;
+        }
+
         public Simulation()
         {
             // When unspecified, a simulation is enabled
@@ -138,6 +147,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
             // By default, run forever
             this.StartTime = DateTimeOffset.MinValue;
+            this.ActualStartTime = DateTimeOffset.MinValue;
             this.EndTime = DateTimeOffset.MaxValue;
 
             this.DeviceModels = new List<DeviceModelRef>();

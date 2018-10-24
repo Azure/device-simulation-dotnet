@@ -73,6 +73,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private readonly ISimulationStatistics simulationStatistics;
         private readonly ILogger log;
         private readonly IInstance instance;
+        private readonly ISimulations simulations;
         private readonly int maxDevicePerNode;
 
         // Data shared with other simulations
@@ -98,7 +99,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             IClusteringConfig clusteringConfig,
             ILogger logger,
             IInstance instance,
-            ISimulationStatistics simulationStatistics)
+            ISimulationStatistics simulationStatistics,
+            ISimulations simulations)
         {
             this.simulationContext = simulationContext;
             this.devicePartitions = devicePartitions;
@@ -109,6 +111,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.log = logger;
             this.instance = instance;
             this.maxDevicePerNode = clusteringConfig.MaxDevicesPerNode;
+            this.simulations = simulations;
 
             this.assignedPartitions = new ConcurrentDictionary<string, DevicesPartition>();
             this.nodeCount = 1;
@@ -126,7 +129,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             this.simulation = simulation;
             await this.simulationContext.InitAsync(simulation);
-
+            
             this.deviceStateActors = deviceStateActors;
             this.deviceConnectionActors = deviceConnectionActors;
             this.deviceTelemetryActors = deviceTelemetryActors;
@@ -238,12 +241,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             try
             {
+                var telemetryActors = this.deviceTelemetryActors ?? this.deviceTelemetryActors.Where(a => a.Key.StartsWith(simulation.Id));
                 var simulationModel = new SimulationStatisticsModel
                 {
-                    TotalMessagesSent = this.deviceTelemetryActors.Where(a => a.Key.StartsWith(simulation.Id)).Sum(a => a.Value.TotalMessagesCount),
-                    FailedMessagesCount = this.deviceTelemetryActors.Where(a => a.Key.StartsWith(simulation.Id)).Sum(a => a.Value.FailedMessagesCount),
-                    FailedDeviceConnectionsCount = this.deviceConnectionActors.Where(a => a.Key.StartsWith(simulation.Id)).Sum(a => a.Value.FailedDeviceConnectionsCount),
-                    FailedDeviceTwinUpdatesCount = this.devicePropertiesActors.Where(a => a.Key.StartsWith(simulation.Id)).Sum(a => a.Value.FailedTwinUpdatesCount),
+                    TotalMessagesSent = telemetryActors != null ? telemetryActors.Sum(a => a.Value.TotalMessagesCount) : 0,
+                    FailedMessages = telemetryActors != null ? telemetryActors.Sum(a => a.Value.FailedMessagesCount) : 0,
+                    FailedDeviceConnections = this.deviceConnectionActors != null ? this.deviceConnectionActors.Where(a => a.Key.StartsWith(simulation.Id)).Sum(a => a.Value.FailedDeviceConnectionsCount) : 0,
+                    FailedDevicePropertiesUpdates = this.devicePropertiesActors != null ? this.devicePropertiesActors.Where(a => a.Key.StartsWith(simulation.Id)).Sum(a => a.Value.FailedTwinUpdatesCount) : 0,
                 };
 
                 await this.simulationStatistics.CreateOrUpdateAsync(simulation.Id, simulationModel);
@@ -466,6 +470,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.CreateActorsForDevice(deviceId, deviceModel, this.deviceCount);
                     this.deviceCount++;
                     count++;
+
+                    // Set ActualStartTime if required
+                    if (!this.simulation.ActualStartTime.Value.Equals(DateTimeOffset.MinValue))
+                    {
+                        this.simulation.ActualStartTime = DateTimeOffset.UtcNow;
+                        await this.simulations.TryToUpdateSimulation(simulation);
+                    }
                 }
             }
 

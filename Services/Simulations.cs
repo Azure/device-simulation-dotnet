@@ -9,6 +9,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Newtonsoft.Json;
@@ -22,6 +23,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         // Get a simulation.
         Task<Models.Simulation> GetAsync(string id);
+
+        // Get a simulation with statistics.
+        Task<Models.Simulation> GetWithStatisticsAsync(string id);
 
         // Create a simulation.
         Task<Models.Simulation> InsertAsync(Models.Simulation simulation, string template = "");
@@ -50,6 +54,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Change the simulation, setting the device deletion complete
         Task<bool> TryToSetDeviceDeletionCompleteAsync(string simulationId);
 
+        Task<bool> TryToUpdateSimulation(Models.Simulation simulation);
+
         // Get the ID of the devices in a simulation.
         IEnumerable<string> GetDeviceIds(Models.Simulation simulation);
 
@@ -68,6 +74,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IStorageAdapterClient storageAdapterClient;
         private readonly IStorageRecords simulationsStorage;
         private readonly IIotHubConnectionStringManager connectionStringManager;
+        private readonly ISimulationStatistics simulationStatistics;
         private readonly IDevices devices;
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
@@ -80,7 +87,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IIotHubConnectionStringManager connectionStringManager,
             IDevices devices,
             ILogger logger,
-            IDiagnosticsLogger diagnosticsLogger)
+            IDiagnosticsLogger diagnosticsLogger,
+            ISimulationStatistics simulationStatistics)
         {
             this.deviceModels = deviceModels;
             this.storageAdapterClient = storageAdapterClient;
@@ -89,6 +97,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.devices = devices;
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
+            this.simulationStatistics = simulationStatistics;
         }
 
         /// <summary>
@@ -121,6 +130,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
             simulation.ETag = item.ETag;
             simulation.Id = item.Id;
+            return simulation;
+        }
+
+        public async Task<Models.Simulation> GetWithStatisticsAsync(string id)
+        {
+            var simulation = await this.GetAsync(id);
+
+            if (simulation == null) return null;
+
+            simulation.Statistics = await this.simulationStatistics.GetSimulationStatisticsAsync(id);
             return simulation;
         }
 
@@ -292,6 +311,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
             }
 
+            if (simulation.Enabled)
+            {
+                // Reset ActualStartTime
+                simulation.ActualStartTime = DateTimeOffset.MinValue;
+
+                // Delete statistics records on simulation start
+                await this.simulationStatistics.DeleteSimulationStatisticsAsync(simulation.Id);
+            }
+
             item = await this.simulationsStorage.UpsertAsync(
                 new StorageRecord
                 {
@@ -409,7 +437,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return await this.TryToUpdateSimulation(simulation);
         }
 
-        private async Task<bool> TryToUpdateSimulation(Models.Simulation simulation)
+        public async Task<bool> TryToUpdateSimulation(Models.Simulation simulation)
         {
             try
             {

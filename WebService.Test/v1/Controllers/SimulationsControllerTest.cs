@@ -7,7 +7,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdap
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
@@ -27,7 +26,6 @@ namespace WebService.Test.v1.Controllers
         private readonly Mock<IPreprovisionedIotHub> preprovisionedIotHub;
         private readonly Mock<ISimulationAgent> simulationAgent;
         private readonly Mock<ILogger> log;
-        private readonly Mock<ISimulationStatistics> simulationStatistics;
         private readonly SimulationsController target;
 
         public SimulationsControllerTest()
@@ -38,16 +36,14 @@ namespace WebService.Test.v1.Controllers
             this.preprovisionedIotHub = new Mock<IPreprovisionedIotHub>();
             this.simulationAgent = new Mock<ISimulationAgent>();
             this.log = new Mock<ILogger>();
-            this.simulationStatistics = new Mock<ISimulationStatistics>();
-
+            
             this.target = new SimulationsController(
                 this.simulationsService.Object,
                 this.connectionStringManager.Object,
                 this.iothubMetrics.Object,
                 this.preprovisionedIotHub.Object,
                 this.simulationAgent.Object,
-                this.log.Object,
-                this.simulationStatistics.Object);
+                this.log.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -135,7 +131,7 @@ namespace WebService.Test.v1.Controllers
             var simulation = this.GetSimulationById(ID);
 
             // Act
-            var result = this.target.GetAsync(ID).Result;
+            var result = this.target.GetAsync(ID).CompleteOrTimeout().Result;
 
             // Assert
             Assert.Null(result);
@@ -152,7 +148,7 @@ namespace WebService.Test.v1.Controllers
                 .ReturnsAsync(simulations);
 
             // Act
-            var result = this.target.GetAsync().Result;
+            var result = this.target.GetAsync().CompleteOrTimeout().Result;
 
             // Assert
             Assert.Equal(simulations.Count, result.Items.Count);
@@ -166,36 +162,15 @@ namespace WebService.Test.v1.Controllers
             var simulation = this.GetSimulationById(ID);
 
             this.simulationsService
-                .Setup(x => x.GetAsync(ID))
+                .Setup(x => x.GetWithStatisticsAsync(ID))
                 .ReturnsAsync(simulation);
 
             // Act
-            var result = this.target.GetAsync(ID).Result;
+            var result = this.target.GetAsync(ID).CompleteOrTimeout().Result;
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal(simulation.Id, result.Id);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItInvokesGetSimulationStatisticsOnceOnGetAsync()
-        {
-            // Arrange
-            const string ID = "1";
-            var simulation = this.GetSimulationById(ID);
-
-            this.simulationsService
-                .Setup(x => x.GetAsync(ID))
-                .ReturnsAsync(simulation);
-
-            // Act
-            var result = this.target.GetAsync(ID).Result;
-
-            // Assert
-            this.simulationStatistics
-                .Verify(x => x.GetSimulationStatisticsAsync(
-                    ID
-                ), Times.Once);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
