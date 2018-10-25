@@ -57,7 +57,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
 
                 foreach (var record in simulationRecords)
                 {
-
                     statistics.TotalMessagesSent += record.Statistics.TotalMessagesSent;
                     statistics.FailedDeviceConnections += record.Statistics.FailedDeviceConnections;
                     statistics.FailedDevicePropertiesUpdates += record.Statistics.FailedDevicePropertiesUpdates;
