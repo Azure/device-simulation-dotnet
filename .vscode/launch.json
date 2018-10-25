@@ -17,6 +17,8 @@
                 "PCS_STORAGEADAPTER_WEBSERVICE_URL": "http://localhost:9022/v1",
                 "PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING": "your DocumentDb connection string",
                 "PCS_AZURE_STORAGE_ACCOUNT": "your Azure Storage Account connection string",
+                "PCS_RESOURCE_GROUP_LOCATION": "your Azure resource group location",
+                "PCS_VMSS_NAME": "your vm scale set name",
 
                 // Optional environment variables used in appsettings.ini
                 // For additonal optional settings, refer to comments in appsettings.ini

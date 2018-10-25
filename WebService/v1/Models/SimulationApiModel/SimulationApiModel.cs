@@ -46,6 +46,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "ActiveNow")]
         public bool? ActiveNow { get; set; }
 
+        // Note: read-only property, used only to report the simulation status
+        [JsonProperty(PropertyName = "DevicesDeletionComplete")]
+        public bool? DevicesDeletionComplete { get; set; }
+
         [JsonProperty(PropertyName = "IoTHubs")]
         public IList<SimulationIotHub> IotHubs { get; set; }
 
@@ -88,6 +92,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             this.Running = false;
             this.DeleteDevicesWhenSimulationEnds = false;
             this.ActiveNow = false;
+            this.DevicesDeletionComplete = false;
             this.IotHubs = new List<SimulationIotHub>();
             this.StartTime = null;
             this.EndTime = null;
@@ -161,6 +166,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Enabled = value.Enabled,
                 Running = value.ShouldBeRunning,
                 ActiveNow = value.IsActiveNow,
+                DevicesDeletionComplete = value.DevicesDeletionComplete,
                 DeleteDevicesWhenSimulationEnds = value.DeleteDevicesWhenSimulationEnds,
                 IotHubs = new List<SimulationIotHub>()
             };
