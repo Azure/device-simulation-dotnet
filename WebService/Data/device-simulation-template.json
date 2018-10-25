@@ -1,6 +1,5 @@
 ﻿[
   {
-    "Id": "1",
     "Name": "Sample Simple Simulation",
     "Enabled": false,
     "IotHubConnectionStrings": [
@@ -14,9 +13,7 @@
     ]
   },
   {
-    "Id": "2",
     "Name": "Sample Multiple Devices",
-    "ETag": "*",
     "Enabled": false,
     "IotHubConnectionStrings": [
       "default"

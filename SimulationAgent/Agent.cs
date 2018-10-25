@@ -186,9 +186,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             try
             {
                 var simulationList = JsonConvert.DeserializeObject<List<Simulation>>(content);
+                if (simulationList == null || simulationList.Count == 0) return;
 
-                foreach (var simulation in simulationList)
+                for (int index = 0; index < simulationList.Count; index++)
                 {
+                    var simulation = simulationList[index];
+                    simulation.Id = index.ToString();
                     var existingSimulation = this.simulations.GetAsync(simulation.Id);
 
                     if (existingSimulation == null)
