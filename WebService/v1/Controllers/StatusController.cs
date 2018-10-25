@@ -62,18 +62,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
             // Check access to Storage Adapter
             var storageAdapterStatus = await this.storageAdapterClient.PingAsync();
-            if (!storageAdapterStatus.Item1)
+            if (storageAdapterStatus != null)
             {
-                statusIsOk = false;
-                var message = "Unable to connect to Storage Adapter service";
-                errors.Add(message);
-                ioTHubStatusModel.Message = message;
-                ioTHubStatusModel.IsConnected = false;
-            }
-            else
-            {
-                ioTHubStatusModel.Message = storageAdapterStatus.Item2;
-                ioTHubStatusModel.IsConnected = true;
+                if (!storageAdapterStatus.Item1)
+                {
+                    statusIsOk = false;
+                    var message = "Unable to connect to Storage Adapter service";
+                    errors.Add(message);
+                    storageAdapterStatusModel.Message = message;
+                    storageAdapterStatusModel.IsConnected = false;
+                }
+                else
+                {
+                    storageAdapterStatusModel.Message = storageAdapterStatus.Item2;
+                    storageAdapterStatusModel.IsConnected = true;
+                }
             }
 
             // Preprovisioned IoT hub status
@@ -82,18 +85,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             if (isHubPreprovisioned)
             {
                 var preprovisionedHubStatus = await this.CheckAzureIoTHubStatusAsync(errors);
-                if (!preprovisionedHubStatus.Item1)
+                if (preprovisionedHubStatus != null)
                 {
-                    statusIsOk = false;
-                    var message = "Unable to connect to IoTHUb";
-                    errors.Add(message);
-                    storageAdapterStatusModel.Message = message;
-                    storageAdapterStatusModel.IsConnected = false;
-                }
-                else
-                {
-                    storageAdapterStatusModel.Message = preprovisionedHubStatus.Item2;
-                    storageAdapterStatusModel.IsConnected = true;
+                    if (!preprovisionedHubStatus.Item1)
+                    {
+                        statusIsOk = false;
+                        var message = "Unable to connect to IoTHUb";
+                        errors.Add(message);
+                        ioTHubStatusModel.Message = message;
+                        ioTHubStatusModel.IsConnected = false;
+                    }
+                    else
+                    {
+                        ioTHubStatusModel.Message = preprovisionedHubStatus.Item2;
+                        ioTHubStatusModel.IsConnected = true;
+                    }
                 }
             }
 
@@ -147,27 +153,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             return simulationRunning;
-        }
-
-        // Check the storage dependency status
-        private async Task<Tuple<bool, string>> CheckStorageStatusAsync(ICollection<string> errors)
-        {
-            Tuple<bool, string> result;
-            try
-            {
-                result = await this.storageAdapterClient.PingAsync();
-                if (!result.Item1)
-                {
-                    errors.Add("Unable to use Storage");
-                }
-            }
-            catch (Exception e)
-            {
-                result = new Tuple<bool, string>(false, "Storage check failed");
-                this.log.Error("Storage ping failed", e);
-            }
-
-            return result;
         }
 
         // Check IoT Hub dependency status
