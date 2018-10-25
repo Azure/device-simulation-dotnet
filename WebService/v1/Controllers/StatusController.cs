@@ -120,7 +120,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                     ? JSON_TRUE
                     : JSON_FALSE);
 
-            result.Dependencies.Add("Storage", storageAdapterStatusModel);
+            result.Dependencies.Add("Storage Adapter", storageAdapterStatusModel);
             if (isHubPreprovisioned)
             {
                 result.Dependencies.Add(PREPROVISIONED_IOTHUB_KEY, ioTHubStatusModel);
