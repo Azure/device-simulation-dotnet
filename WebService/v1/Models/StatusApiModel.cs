@@ -18,6 +18,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         [JsonProperty(PropertyName = "Status", Order = 20)]
         public string Status { get; set; }
 
+        [JsonProperty(PropertyName = "IsConnected", Order = 25)]
+        public bool IsConnected { get; set; }
+
         [JsonProperty(PropertyName = "CurrentTime", Order = 30)]
         public string CurrentTime => DateTimeOffset.UtcNow.ToString(DATE_FORMAT);
 
@@ -41,7 +44,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 
         /// <summary>A property bag with details about the internal dependencies</summary>
         [JsonProperty(PropertyName = "Dependencies", Order = 80)]
-        public Dictionary<string, string> Dependencies = new Dictionary<string, string>();
+        public Dictionary<string, StatusModel> Dependencies = new Dictionary<string, StatusModel>();
 
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public Dictionary<string, string> Metadata = new Dictionary<string, string>
@@ -50,8 +53,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             { "$uri", "/" + Version.PATH + "/status" }
         };
 
-        public void SetStatus(bool isOk, string msg)
+        public StatusApiModel(bool isOk, string msg)
         {
+            this.IsConnected = isOk ? true : false;
             this.Status = isOk ? "OK" : "ERROR";
             if (!string.IsNullOrEmpty(msg))
             {
