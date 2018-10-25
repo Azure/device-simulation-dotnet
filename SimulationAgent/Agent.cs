@@ -184,7 +184,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     await this.CreateSimulationManagersAsync(activeSimulations);
                     await this.SaveSimulationStatisticsAsync(activeSimulations);
                     await this.RunSimulationManagersMaintenanceAsync();
-                    this.StopInactiveSimulationsAsync(activeSimulations);
+                    await this.StopInactiveSimulationsAsync(activeSimulations);
 
                     Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
                 }

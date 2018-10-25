@@ -129,7 +129,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             this.simulation = simulation;
             await this.simulationContext.InitAsync(simulation);
-            
+
             this.deviceStateActors = deviceStateActors;
             this.deviceConnectionActors = deviceConnectionActors;
             this.deviceTelemetryActors = deviceTelemetryActors;
@@ -472,10 +472,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     count++;
 
                     // Set ActualStartTime if required
-                    if (!this.simulation.ActualStartTime.Value.Equals(DateTimeOffset.MinValue))
+                    if (!this.simulation.ActualStartTime.HasValue)
                     {
                         this.simulation.ActualStartTime = DateTimeOffset.UtcNow;
-                        await this.simulations.TryToUpdateSimulation(simulation);
+                        await this.simulations.UpsertAsync(simulation);
                     }
                 }
             }

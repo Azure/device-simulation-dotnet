@@ -26,7 +26,7 @@ namespace Services.Test.Statistics
         private readonly Mock<IServicesConfig> config;
         private readonly Mock<IStorageRecords> simulationStatisticsStorage;
         private List<StorageRecord> storageRecords;
-                
+        
         public SimulationStatisticsTest()
         {
             var STATISTICS = "statistics";
@@ -90,7 +90,7 @@ namespace Services.Test.Statistics
             };
 
             this.simulationStatisticsStorage
-                .Setup(x => x.GetAsync(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
+                .Setup(x => x.GetAllAsync())
                 .ReturnsAsync(this.storageRecords);
 
             // Act
@@ -148,7 +148,7 @@ namespace Services.Test.Statistics
             List<string> expectedIds = new List<string>(new string[] { $"{SIM_Id}__{NODE_IDS[0]}", $"{SIM_Id}__{NODE_IDS[1]}" });
 
             this.simulationStatisticsStorage
-                .Setup(x => x.GetAsync(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
+                .Setup(x => x.GetAllAsync())
                 .ReturnsAsync(this.storageRecords);
 
             // Act

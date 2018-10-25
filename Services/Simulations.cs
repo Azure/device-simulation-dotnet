@@ -54,8 +54,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Change the simulation, setting the device deletion complete
         Task<bool> TryToSetDeviceDeletionCompleteAsync(string simulationId);
 
-        Task<bool> TryToUpdateSimulation(Models.Simulation simulation);
-
         // Get the ID of the devices in a simulation.
         IEnumerable<string> GetDeviceIds(Models.Simulation simulation);
 
@@ -314,7 +312,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             if (simulation.Enabled)
             {
                 // Reset ActualStartTime
-                simulation.ActualStartTime = DateTimeOffset.MinValue;
+                simulation.ActualStartTime = null;
 
                 // Delete statistics records on simulation start
                 await this.simulationStatistics.DeleteSimulationStatisticsAsync(simulation.Id);
@@ -417,7 +415,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             simulation.DevicesCreationComplete = true;
 
-            return await this.TryToUpdateSimulation(simulation);
+            return await this.TryToUpdateSimulationAsync(simulation);
         }
 
         public async Task<bool> TryToSetDeviceDeletionCompleteAsync(string simulationId)
@@ -434,22 +432,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             simulation.DeviceCreationJobId = null;
             simulation.DevicesCreationStarted = false;
 
-            return await this.TryToUpdateSimulation(simulation);
-        }
-
-        public async Task<bool> TryToUpdateSimulation(Models.Simulation simulation)
-        {
-            try
-            {
-                await this.SaveAsync(simulation, simulation.ETag);
-            }
-            catch (ConflictingResourceException e)
-            {
-                this.log.Warn("Update failed, another client modified the simulation record", e);
-                return false;
-            }
-
-            return true;
+            return await this.TryToUpdateSimulationAsync(simulation);
         }
 
         public async Task AddDeviceAsync(string id)
@@ -513,6 +496,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log.Debug("Device IDs loaded", () => new { Simulation = simulation.Id, deviceCount });
 
             return result;
+        }
+
+        private async Task<bool> TryToUpdateSimulationAsync(Models.Simulation simulation)
+        {
+            try
+            {
+                await this.SaveAsync(simulation, simulation.ETag);
+            }
+            catch (ConflictingResourceException e)
+            {
+                this.log.Warn("Update failed, another client modified the simulation record", e);
+                return false;
+            }
+
+            return true;
         }
 
         private async Task<Models.Simulation> SaveAsync(Models.Simulation simulation, string eTag)

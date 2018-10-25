@@ -128,11 +128,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         // ActualStartTime is the time when Simulation was started
         [JsonProperty(Order = 140)]
-        public DateTimeOffset? ActualStartTime
-        {
-            get => this.actualStartTime;
-            set => this.actualStartTime = value ?? DateTimeOffset.MinValue;
-        }
+        public DateTimeOffset? ActualStartTime { get; set; }
 
         public Simulation()
         {
@@ -147,7 +143,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
             // By default, run forever
             this.StartTime = DateTimeOffset.MinValue;
-            this.ActualStartTime = DateTimeOffset.MinValue;
             this.EndTime = DateTimeOffset.MaxValue;
 
             this.DeviceModels = new List<DeviceModelRef>();

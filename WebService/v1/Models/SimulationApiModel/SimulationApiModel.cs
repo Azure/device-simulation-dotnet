@@ -190,7 +190,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             }
 
             result.DeviceModels = SimulationDeviceModelRef.FromServiceModel(value.DeviceModels);
-            result.Statistics = getSimulationStatistics(value);
+            result.Statistics = GetSimulationStatistics(value);
 
             result.created = value.Created;
             result.modified = value.Modified;
@@ -258,7 +258,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             }
         }
 
-        private static SimulationStatistics getSimulationStatistics(Simulation simulation)
+        private static SimulationStatistics GetSimulationStatistics(Simulation simulation)
         {
             var statistics = SimulationStatistics.FromServiceModel(simulation.Statistics);
 

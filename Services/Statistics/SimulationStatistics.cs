@@ -1,12 +1,11 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Azure.Documents;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
@@ -44,25 +43,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             if (string.IsNullOrEmpty(simulationId))
             {
                 this.log.Error("Simulation Id cannot be null or empty");
-                return null;
+                throw new InvalidInputException("Simulation Id cannot be null or empty");
             }
 
-            string sqlCondition = " CONTAINS(ROOT.id, @simulationId)";
-            SqlParameter[] sqlParameters = new[] { new SqlParameter { Name = "@simulationId", Value = simulationId } };
             SimulationStatisticsModel statistics = new SimulationStatisticsModel();
 
             try
             {
-                var simulationRecords = (await this.simulationStatisticsStorage.GetAsync(sqlCondition, sqlParameters))
+                var simulationRecords = (await this.simulationStatisticsStorage.GetAllAsync())
                     .Select(p => JsonConvert.DeserializeObject<SimulationStatisticsRecord>(p.Data))
                     .ToList();
                  
                 foreach (var record in simulationRecords)
                 {
-                    statistics.TotalMessagesSent += record.Statistics.TotalMessagesSent;
-                    statistics.FailedDeviceConnections += record.Statistics.FailedDeviceConnections;
-                    statistics.FailedDevicePropertiesUpdates += record.Statistics.FailedDevicePropertiesUpdates;
-                    statistics.FailedMessages += record.Statistics.FailedMessages;
+                    if (record.SimulationId == simulationId)
+                    {
+                        statistics.TotalMessagesSent += record.Statistics.TotalMessagesSent;
+                        statistics.FailedDeviceConnections += record.Statistics.FailedDeviceConnections;
+                        statistics.FailedDevicePropertiesUpdates += record.Statistics.FailedDevicePropertiesUpdates;
+                        statistics.FailedMessages += record.Statistics.FailedMessages;
+                    }
                 }
             }
             catch (Exception e)
@@ -107,17 +107,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             if (string.IsNullOrEmpty(simulationId))
             {
                 this.log.Error("Simulation Id cannot be null or empty");
-                return;
+                throw new InvalidInputException("Simulation Id cannot be null or empty");
             }
 
-            string sqlCondition = " CONTAINS(ROOT.id, @simulationId)";
-            SqlParameter[] sqlParameters = new[] { new SqlParameter { Name = "@simulationId", Value = simulationId } };
             SimulationStatisticsModel statistics = new SimulationStatisticsModel();
 
             try
             {
-                var statisticsRecordsIds = (await this.simulationStatisticsStorage.GetAsync(sqlCondition, sqlParameters))
-                    .Select(p => p.Id)
+                var statisticsRecordsIds = (await this.simulationStatisticsStorage.GetAllAsync())
+                    .Select(r => r.Id)
+                    .Where(i => i.StartsWith(simulationId))
                     .ToList();
 
                 if (statisticsRecordsIds.Count > 0)
