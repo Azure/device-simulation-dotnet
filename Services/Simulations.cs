@@ -414,8 +414,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             if (simulation.DevicesCreationComplete) return true;
 
             simulation.DevicesCreationComplete = true;
+            
+            // Reset device deletion state
+            simulation.DevicesDeletionComplete = false;
+            simulation.DeviceDeletionJobId = null;
+            simulation.DevicesDeletionStarted = false;
 
-            return await this.TryToUpdateSimulationAsync(simulation);
+            return await this.TryToUpdateSimulation(simulation);
         }
 
         public async Task<bool> TryToSetDeviceDeletionCompleteAsync(string simulationId)
