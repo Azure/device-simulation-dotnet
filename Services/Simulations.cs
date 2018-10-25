@@ -414,7 +414,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             if (simulation.DevicesCreationComplete) return true;
 
             simulation.DevicesCreationComplete = true;
-            
+
             // Reset device deletion state
             simulation.DevicesDeletionComplete = false;
             simulation.DeviceDeletionJobId = null;

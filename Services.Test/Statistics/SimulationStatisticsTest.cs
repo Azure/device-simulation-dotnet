@@ -26,7 +26,7 @@ namespace Services.Test.Statistics
         private readonly Mock<IServicesConfig> config;
         private readonly Mock<IStorageRecords> simulationStatisticsStorage;
         private List<StorageRecord> storageRecords;
-        
+
         public SimulationStatisticsTest()
         {
             var STATISTICS = "statistics";

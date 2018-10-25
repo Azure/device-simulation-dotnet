@@ -52,17 +52,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             {
                 var simulationRecords = (await this.simulationStatisticsStorage.GetAllAsync())
                     .Select(p => JsonConvert.DeserializeObject<SimulationStatisticsRecord>(p.Data))
+                    .Where(i => i.SimulationId == simulationId)
                     .ToList();
-                 
+
                 foreach (var record in simulationRecords)
                 {
-                    if (record.SimulationId == simulationId)
-                    {
-                        statistics.TotalMessagesSent += record.Statistics.TotalMessagesSent;
-                        statistics.FailedDeviceConnections += record.Statistics.FailedDeviceConnections;
-                        statistics.FailedDevicePropertiesUpdates += record.Statistics.FailedDevicePropertiesUpdates;
-                        statistics.FailedMessages += record.Statistics.FailedMessages;
-                    }
+
+                    statistics.TotalMessagesSent += record.Statistics.TotalMessagesSent;
+                    statistics.FailedDeviceConnections += record.Statistics.FailedDeviceConnections;
+                    statistics.FailedDevicePropertiesUpdates += record.Statistics.FailedDevicePropertiesUpdates;
+                    statistics.FailedMessages += record.Statistics.FailedMessages;
                 }
             }
             catch (Exception e)
