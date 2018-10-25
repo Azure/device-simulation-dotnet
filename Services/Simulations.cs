@@ -420,7 +420,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             simulation.DeviceDeletionJobId = null;
             simulation.DevicesDeletionStarted = false;
 
-            return await this.TryToUpdateSimulation(simulation);
+            return await this.TryToUpdateSimulationAsync(simulation);
         }
 
         public async Task<bool> TryToSetDeviceDeletionCompleteAsync(string simulationId)
