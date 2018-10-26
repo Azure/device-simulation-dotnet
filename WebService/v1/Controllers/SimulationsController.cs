@@ -26,7 +26,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly IIothubMetrics iothubMetrics;
         private readonly ISimulationAgent simulationAgent;
-        
+
         private readonly ILogger log;
 
         public SimulationsController(

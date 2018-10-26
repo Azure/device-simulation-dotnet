@@ -36,7 +36,7 @@ namespace WebService.Test.v1.Controllers
             this.preprovisionedIotHub = new Mock<IPreprovisionedIotHub>();
             this.simulationAgent = new Mock<ISimulationAgent>();
             this.log = new Mock<ILogger>();
-            
+
             this.target = new SimulationsController(
                 this.simulationsService.Object,
                 this.connectionStringManager.Object,

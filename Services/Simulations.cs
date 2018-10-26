@@ -240,6 +240,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     throw new ResourceOutOfDateException($"Invalid ETag. The simulation ETag is '{existingSimulation.ETag}'");
                 }
 
+                if (this.IsSimulationStartedOrStopped(existingSimulation.Enabled, simulation.Enabled) && simulation.Enabled)
+                {
+                    simulation = await this.UpdateSimulationOnStartAsync(simulation);
+                }
+
                 simulation.Created = existingSimulation.Created;
             }
             else
@@ -289,8 +294,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 throw new ConflictingResourceException(
                     $"The ETag provided doesn't match the current resource ETag ({simulation.ETag}).");
             }
-
-            if (!patch.Enabled.HasValue || patch.Enabled.Value == simulation.Enabled)
+            
+            if (!this.IsSimulationStartedOrStopped(simulation.Enabled, patch.Enabled))
             {
                 // Nothing to do
                 return simulation;
@@ -298,7 +303,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             simulation.Enabled = patch.Enabled.Value;
 
-            if (patch.Enabled == false)
+            if (simulation.Enabled)
+            {
+                simulation = await this.UpdateSimulationOnStartAsync(simulation);
+            }
+            else
             {
                 simulation.StoppedTime = simulation.Modified;
 
@@ -307,15 +316,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 {
                     simulation.PartitioningComplete = false;
                 }
-            }
-
-            if (simulation.Enabled)
-            {
-                // Reset ActualStartTime
-                simulation.ActualStartTime = null;
-
-                // Delete statistics records on simulation start
-                await this.simulationStatistics.DeleteSimulationStatisticsAsync(simulation.Id);
             }
 
             item = await this.simulationsStorage.UpsertAsync(
@@ -550,6 +550,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 });
 
             return simulation;
+        }
+
+        private async Task<Models.Simulation> UpdateSimulationOnStartAsync(Models.Simulation simulation)
+        {
+            // Reset ActualStartTime
+            simulation.ActualStartTime = null;
+
+            // Delete statistics records on simulation start
+            await this.simulationStatistics.DeleteSimulationStatisticsAsync(simulation.Id);
+
+            return simulation;
+        }
+
+        private bool IsSimulationStartedOrStopped(bool previousIsEnabledState, bool? newIsEnabledState)
+        {
+            // Returns true if current Enabled state is different from previous one
+            return newIsEnabledState.HasValue && newIsEnabledState.Value != previousIsEnabledState;
         }
     }
 }
