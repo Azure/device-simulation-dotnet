@@ -294,7 +294,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 throw new ConflictingResourceException(
                     $"The ETag provided doesn't match the current resource ETag ({simulation.ETag}).");
             }
-            
+  
             if (!this.IsSimulationStartedOrStopped(simulation.Enabled, patch.Enabled))
             {
                 // Nothing to do
