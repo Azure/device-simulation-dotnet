@@ -131,14 +131,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
             try
             {
-                var filePath = "/tmp/share/device-connection-log.csv";
+                var filePath = "/tmp/device-connection-log.csv";
                 this.log.LogToFile(filePath, sb.ToString());
             }
             catch
             {
                 try
                 {
-                    var filePath = "/tmp/share/device-connection-log-1.csv";
+                    var filePath = "/tmp/device-connection-log-1.csv";
                     this.log.LogToFile(filePath, sb.ToString());
                 }
                 catch (Exception ex)
