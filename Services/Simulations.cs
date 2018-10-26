@@ -563,10 +563,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return simulation;
         }
 
-		private bool IsSimulationStarted(bool previousIsEnabledState, bool? newIsEnabledState)
-		{
-			return this.IsSimulationStartedOrStopped(previousIsEnabledState, newIsEnabledState) && newIsEnabledState.Value;
-		}
+	private bool IsSimulationStarted(bool previousIsEnabledState, bool? newIsEnabledState)
+	{
+		return this.IsSimulationStartedOrStopped(previousIsEnabledState, newIsEnabledState) && newIsEnabledState.Value;
+	}
 
         private bool IsSimulationStartedOrStopped(bool previousIsEnabledState, bool? newIsEnabledState)
         {
