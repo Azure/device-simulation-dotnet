@@ -147,7 +147,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
         {
             // Arrange
             var simulation = this.GetSimulationModel();
-            var statistics = new SimulationStatisticsModel { TotalMessagesSent = 100, FailedDeviceConnections = 1, FailedDevicePropertiesUpdates = 2, FailedMessages = 3  };
+            var statistics = new SimulationStatisticsModel { TotalMessagesSent = 100, FailedDeviceConnections = 1, FailedDevicePropertiesUpdates = 2, FailedMessages = 3 };
             simulation.Statistics = statistics;
             var now = DateTimeOffset.UtcNow;
             simulation.ActualStartTime = now.AddSeconds(-60);

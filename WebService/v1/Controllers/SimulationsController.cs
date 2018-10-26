@@ -13,7 +13,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Devices;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel;
-using SimulationStatistics = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.SimulationStatistics;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers
 {
@@ -164,12 +163,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             SimulationPatch patchServiceModel = patch.ToServiceModel(id);
-            if (patchServiceModel.Enabled == false)
-            {
-                // TODO: add distributed statistics
-                patchServiceModel.Statistics = new SimulationStatistics();
-            }
-
             var simulation = await this.simulationsService.MergeAsync(patchServiceModel);
             return SimulationApiModel.FromServiceModel(simulation);
         }
