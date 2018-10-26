@@ -48,11 +48,6 @@
         <ProjectReference Include="..\Services\Services.csproj" />
         <ProjectReference Include="..\SimulationAgent\SimulationAgent.csproj" />
     </ItemGroup>
-    <ItemGroup>
-      <Content Update="data\device-simulation-template.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
-    </ItemGroup>
     <ProjectExtensions>
         <MonoDevelop>
             <Properties>
