@@ -73,12 +73,12 @@ namespace SimulationAgent.Test
             {
                 new Simulation()
             };
-            string TAMPLATE_FILE = JsonConvert.SerializeObject(simulationList);
+            string TEMPLATE_FILE = JsonConvert.SerializeObject(simulationList);
 
             this.file.Setup(x => x.Exists(It.IsAny<string>()))
                 .Returns(true);
             this.file.Setup(x => x.ReadAllText(It.IsAny<string>()))
-                .Returns(TAMPLATE_FILE);
+                .Returns(TEMPLATE_FILE);
         }
     }
 }
