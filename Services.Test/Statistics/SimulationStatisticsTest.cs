@@ -1,8 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System.Collections.Generic;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
@@ -17,7 +15,7 @@ namespace Services.Test.Statistics
 {
     public class SimulationStatisticsTest
     {
-        private const string SIM_Id = "1";
+        private const string SIM_ID = "1";
         private static string[] NODE_IDS = { "123", "234" };
         private readonly Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics.SimulationStatistics target;
         private readonly Mock<IClusterNodes> clusterNodes;
@@ -53,10 +51,10 @@ namespace Services.Test.Statistics
             this.storageRecords = new List<StorageRecord>
             {
                 new StorageRecord {
-                    Id = $"{SIM_Id}__{NODE_IDS[0]}",
+                    Id = $"{SIM_ID}__{NODE_IDS[0]}",
                     Data = JsonConvert.SerializeObject(
                     new SimulationStatisticsRecord {
-                        SimulationId = SIM_Id,
+                        SimulationId = SIM_ID,
                         NodeId = NODE_IDS[0],
                         Statistics = new SimulationStatisticsModel {
                             TotalMessagesSent = 100,
@@ -64,10 +62,10 @@ namespace Services.Test.Statistics
                             FailedDevicePropertiesUpdates = 2,
                             FailedMessages = 3 }})},
                 new StorageRecord {
-                    Id = $"{SIM_Id}__{NODE_IDS[1]}",
+                    Id = $"{SIM_ID}__{NODE_IDS[1]}",
                     Data = JsonConvert.SerializeObject(
                     new SimulationStatisticsRecord {
-                        SimulationId = SIM_Id,
+                        SimulationId = SIM_ID,
                         NodeId = NODE_IDS[0],
                         Statistics = new SimulationStatisticsModel {
                             TotalMessagesSent = 200,
@@ -94,7 +92,7 @@ namespace Services.Test.Statistics
                 .ReturnsAsync(this.storageRecords);
 
             // Act
-            var result = this.target.GetSimulationStatisticsAsync(SIM_Id).CompleteOrTimeout();
+            var result = this.target.GetSimulationStatisticsAsync(SIM_ID).CompleteOrTimeout();
 
             // Assert
             Assert.Equal(expectedStatistics.TotalMessagesSent, result.Result.TotalMessagesSent);
@@ -107,7 +105,7 @@ namespace Services.Test.Statistics
         public void ItCreatesSimulationStatistics()
         {
             // Arrange
-            var statisticsRecordId = $"{SIM_Id}__{NODE_IDS[0]}";
+            var statisticsRecordId = $"{SIM_ID}__{NODE_IDS[0]}";
 
             SimulationStatisticsModel inputStatistics = new SimulationStatisticsModel
             {
@@ -119,7 +117,7 @@ namespace Services.Test.Statistics
 
             SimulationStatisticsRecord expectedStatistics = new SimulationStatisticsRecord
             {
-                SimulationId = SIM_Id,
+                SimulationId = SIM_ID,
                 NodeId = NODE_IDS[0],
                 Statistics= inputStatistics
             };
@@ -133,7 +131,7 @@ namespace Services.Test.Statistics
             this.clusterNodes.Setup(x => x.GetCurrentNodeId()).Returns(NODE_IDS[0]);
 
             // Act
-            var result = this.target.CreateOrUpdateAsync(SIM_Id, inputStatistics).CompleteOrTimeout();
+            var result = this.target.CreateOrUpdateAsync(SIM_ID, inputStatistics).CompleteOrTimeout();
 
             // Assert
             this.simulationStatisticsStorage.Verify(x => x.CreateAsync(It.Is<StorageRecord>(
@@ -145,14 +143,14 @@ namespace Services.Test.Statistics
         public void ItDeletesSimulationStatistics()
         {
             // Arrange
-            List<string> expectedIds = new List<string>(new string[] { $"{SIM_Id}__{NODE_IDS[0]}", $"{SIM_Id}__{NODE_IDS[1]}" });
+            List<string> expectedIds = new List<string>(new string[] { $"{SIM_ID}__{NODE_IDS[0]}", $"{SIM_ID}__{NODE_IDS[1]}" });
 
             this.simulationStatisticsStorage
                 .Setup(x => x.GetAllAsync())
                 .ReturnsAsync(this.storageRecords);
 
             // Act
-            this.target.DeleteSimulationStatisticsAsync(SIM_Id).CompleteOrTimeout();
+            this.target.DeleteSimulationStatisticsAsync(SIM_ID).CompleteOrTimeout();
 
             // Assert
             this.simulationStatisticsStorage.Verify(x => x.DeleteMultiAsync(It.Is<List<string>>(

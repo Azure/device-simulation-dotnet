@@ -147,7 +147,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
             this.DeviceModels = new List<DeviceModelRef>();
             this.CustomDevices = new List<CustomDeviceRef>();
-
         }
 
         public class DeviceModelRef

@@ -241,20 +241,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             try
             {
-                var telemetryActors = this.deviceTelemetryActors ?? this.deviceTelemetryActors.Where(a => a.Key.StartsWith(simulation.Id));
+                var telemetryActors = this.deviceTelemetryActors ?? this.deviceTelemetryActors.Where(a => a.Key.StartsWith(this.simulation.Id));
                 var simulationModel = new SimulationStatisticsModel
                 {
                     TotalMessagesSent = telemetryActors != null ? telemetryActors.Sum(a => a.Value.TotalMessagesCount) : 0,
                     FailedMessages = telemetryActors != null ? telemetryActors.Sum(a => a.Value.FailedMessagesCount) : 0,
-                    FailedDeviceConnections = this.deviceConnectionActors != null ? this.deviceConnectionActors.Where(a => a.Key.StartsWith(simulation.Id)).Sum(a => a.Value.FailedDeviceConnectionsCount) : 0,
-                    FailedDevicePropertiesUpdates = this.devicePropertiesActors != null ? this.devicePropertiesActors.Where(a => a.Key.StartsWith(simulation.Id)).Sum(a => a.Value.FailedTwinUpdatesCount) : 0,
+                    FailedDeviceConnections = this.deviceConnectionActors != null ? this.deviceConnectionActors.Where(a => a.Key.StartsWith(this.simulation.Id)).Sum(a => a.Value.FailedDeviceConnectionsCount) : 0,
+                    FailedDevicePropertiesUpdates = this.devicePropertiesActors != null ? this.devicePropertiesActors.Where(a => a.Key.StartsWith(this.simulation.Id)).Sum(a => a.Value.FailedTwinUpdatesCount) : 0,
                 };
 
-                await this.simulationStatistics.CreateOrUpdateAsync(simulation.Id, simulationModel);
+                await this.simulationStatistics.CreateOrUpdateAsync(this.simulation.Id, simulationModel);
             }
             catch (Exception e)
             {
-                this.log.Error("Error saving simulation statistics", () => new { simulation.Id, e });
+                this.log.Error("Error saving simulation statistics", () => new { this.simulation.Id, e });
             }
         }
 
@@ -475,7 +475,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     if (!this.simulation.ActualStartTime.HasValue)
                     {
                         this.simulation.ActualStartTime = DateTimeOffset.UtcNow;
-                        await this.simulations.UpsertAsync(simulation);
+                        await this.simulations.UpsertAsync(this.simulation);
                     }
                 }
             }
