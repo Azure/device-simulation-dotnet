@@ -48,6 +48,9 @@
         <ProjectReference Include="..\Services\Services.csproj" />
         <ProjectReference Include="..\SimulationAgent\SimulationAgent.csproj" />
     </ItemGroup>
+    <ItemGroup>
+      <Folder Include="data\" />
+    </ItemGroup>
     <ProjectExtensions>
         <MonoDevelop>
             <Properties>
