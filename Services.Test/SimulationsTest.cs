@@ -10,6 +10,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.DocumentDb;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
@@ -41,6 +42,7 @@ namespace Services.Test
         private readonly Mock<IDocumentDbWrapper> mockDocumentDbWrapper;
         private readonly Mock<IDocumentClient> mockDocumentClient;
         private readonly Mock<IResourceResponse<Document>> mockStorageDocument;
+        private readonly Mock<ISimulationStatistics> simulationStatistics;
         private readonly Simulations target;
         private readonly List<DeviceModel> models;
 
@@ -63,6 +65,7 @@ namespace Services.Test
             this.mockDocumentClient = new Mock<IDocumentClient>();
             this.mockStorageDocument = new Mock<IResourceResponse<Document>>();
             this.mockStorageAdapterClient = new Mock<IStorageAdapterClient>();
+            this.simulationStatistics = new Mock<ISimulationStatistics>();
 
             this.mockFactory = new Mock<IFactory>();
             this.mockFactory.Setup(x => x.Resolve<IStorageRecords>()).Returns(this.mockStorageRecords.Object);
@@ -87,7 +90,8 @@ namespace Services.Test
                 this.connStringManager.Object,
                 this.devices.Object,
                 this.logger.Object,
-                this.diagnosticsLogger.Object);
+                this.diagnosticsLogger.Object,
+                this.simulationStatistics.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -187,6 +191,25 @@ namespace Services.Test
             Assert.ThrowsAsync<InvalidInputException>(
                     async () => await this.target.InsertAsync(new SimulationModel(), "mytemplate"))
                 .Wait(Constants.TEST_TIMEOUT);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItInvokesGetSimulationStatisticsOnceOnGetWithStatistics()
+        {
+            // Arrange
+            const string ID = "1";
+
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync(new StorageRecord() { Id = ID, Data = "{}" });
+
+            // Act
+            var result = this.target.GetWithStatisticsAsync(ID).CompleteOrTimeout().Result;
+
+            // Assert
+            this.simulationStatistics
+                .Verify(x => x.GetSimulationStatisticsAsync(
+                    ID
+                ), Times.Once);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
