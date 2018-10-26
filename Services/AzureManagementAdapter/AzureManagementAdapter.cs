@@ -158,16 +158,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
             request.SetUriFromString($"{this.config.AzureManagementAdapterApiUrl}/{this.GetVmssAutoScaleSettingsUrl(autoScaleSettingsName)}");
             request.Options.EnsureSuccess = false;
             request.Options.Timeout = this.config.AzureManagementAdapterApiTimeout;
-            
+
             var content = new AutoScaleSettingsCreateOrUpdateRequestModel();
             content.Location = this.deploymentConfig.AzureResourceGroupLocation;
             content.Properties = new Properties();
             content.Properties.Enabled = true;
             content.Properties.TargetResourceUri = this.GetVmssResourceUrl();
             content.Properties.Profiles = new List<Profile>();
-            content.Properties.Profiles.Add(new Profile { Name  = autoScaleSettingsName,
-                                                          Capacity = new Capacity{ Minimum = vmCount, Maximum = vmCount, Default = vmCount },
-                                                          Rules = new List<object>() });
+            content.Properties.Profiles.Add(new Profile
+            {
+                Name = autoScaleSettingsName,
+                Capacity = new Capacity { Minimum = vmCount, Maximum = vmCount, Default = vmCount },
+                Rules = new List<object>()
+            });
 
             if (content != null)
             {

@@ -51,28 +51,40 @@ namespace Services.Test.Statistics
             // Mock storage records
             this.storageRecords = new List<StorageRecord>
             {
-                new StorageRecord {
+                new StorageRecord
+                {
                     Id = $"{SIM_ID}__{NODE_IDS[0]}",
                     Data = JsonConvert.SerializeObject(
-                    new SimulationStatisticsRecord {
-                        SimulationId = SIM_ID,
-                        NodeId = NODE_IDS[0],
-                        Statistics = new SimulationStatisticsModel {
-                            TotalMessagesSent = 100,
-                            FailedDeviceConnections = 1,
-                            FailedDevicePropertiesUpdates = 2,
-                            FailedMessages = 3 }})},
-                new StorageRecord {
+                        new SimulationStatisticsRecord
+                        {
+                            SimulationId = SIM_ID,
+                            NodeId = NODE_IDS[0],
+                            Statistics = new SimulationStatisticsModel
+                            {
+                                TotalMessagesSent = 100,
+                                FailedDeviceConnections = 1,
+                                FailedDevicePropertiesUpdates = 2,
+                                FailedMessages = 3
+                            }
+                        })
+                },
+                new StorageRecord
+                {
                     Id = $"{SIM_ID}__{NODE_IDS[1]}",
                     Data = JsonConvert.SerializeObject(
-                    new SimulationStatisticsRecord {
-                        SimulationId = SIM_ID,
-                        NodeId = NODE_IDS[0],
-                        Statistics = new SimulationStatisticsModel {
-                            TotalMessagesSent = 200,
-                            FailedDeviceConnections = 5,
-                            FailedDevicePropertiesUpdates = 6,
-                            FailedMessages = 7 }})},
+                        new SimulationStatisticsRecord
+                        {
+                            SimulationId = SIM_ID,
+                            NodeId = NODE_IDS[0],
+                            Statistics = new SimulationStatisticsModel
+                            {
+                                TotalMessagesSent = 200,
+                                FailedDeviceConnections = 5,
+                                FailedDevicePropertiesUpdates = 6,
+                                FailedMessages = 7
+                            }
+                        })
+                },
             };
         }
 
@@ -120,7 +132,7 @@ namespace Services.Test.Statistics
             {
                 SimulationId = SIM_ID,
                 NodeId = NODE_IDS[0],
-                Statistics= inputStatistics
+                Statistics = inputStatistics
             };
 
             StorageRecord storageRecord = new StorageRecord
@@ -137,7 +149,7 @@ namespace Services.Test.Statistics
             // Assert
             this.simulationStatisticsStorage.Verify(x => x.CreateAsync(It.Is<StorageRecord>(
                 a => a.Id == storageRecord.Id &&
-                a.Data == storageRecord.Data)));
+                     a.Data == storageRecord.Data)));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -155,7 +167,7 @@ namespace Services.Test.Statistics
 
             // Assert
             this.simulationStatisticsStorage.Verify(x => x.DeleteMultiAsync(It.Is<List<string>>(
-                    a => a.Count.Equals(expectedIds.Count))));
+                a => a.Count.Equals(expectedIds.Count))));
         }
     }
 }
