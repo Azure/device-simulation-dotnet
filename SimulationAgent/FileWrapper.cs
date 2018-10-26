@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Microsoft. All rights reserved. 
 
-
 using System.IO;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
@@ -10,6 +9,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         bool Exists(string path);
         string ReadAllText(string path);
     }
+    
     public class FileWrapper : IFile
     {
         public bool Exists(string path)
