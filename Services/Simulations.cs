@@ -9,6 +9,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Newtonsoft.Json;
@@ -22,6 +23,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         // Get a simulation.
         Task<Models.Simulation> GetAsync(string id);
+
+        // Get a simulation with statistics.
+        Task<Models.Simulation> GetWithStatisticsAsync(string id);
 
         // Create a simulation.
         Task<Models.Simulation> InsertAsync(Models.Simulation simulation, string template = "");
@@ -68,6 +72,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IStorageAdapterClient storageAdapterClient;
         private readonly IStorageRecords simulationsStorage;
         private readonly IIotHubConnectionStringManager connectionStringManager;
+        private readonly ISimulationStatistics simulationStatistics;
         private readonly IDevices devices;
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
@@ -80,7 +85,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IIotHubConnectionStringManager connectionStringManager,
             IDevices devices,
             ILogger logger,
-            IDiagnosticsLogger diagnosticsLogger)
+            IDiagnosticsLogger diagnosticsLogger,
+            ISimulationStatistics simulationStatistics)
         {
             this.deviceModels = deviceModels;
             this.storageAdapterClient = storageAdapterClient;
@@ -89,6 +95,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.devices = devices;
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
+            this.simulationStatistics = simulationStatistics;
         }
 
         /// <summary>
@@ -121,6 +128,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
             simulation.ETag = item.ETag;
             simulation.Id = item.Id;
+            return simulation;
+        }
+
+        public async Task<Models.Simulation> GetWithStatisticsAsync(string id)
+        {
+            var simulation = await this.GetAsync(id);
+
+            if (simulation == null) return null;
+
+            simulation.Statistics = await this.simulationStatistics.GetSimulationStatisticsAsync(id);
             return simulation;
         }
 
@@ -205,6 +222,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.log.Info("Simulation not found in storage, hence proceeding to create new simulation");
             }
 
+            var simulationIsRestarting = false;
+            var simulationIsStopping = false;
+
             if (existingSimulation != null)
             {
                 this.log.Info("Modifying simulation");
@@ -222,6 +242,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     this.diagnosticsLogger.LogServiceError($"Invalid simulation ETag", new { simulation.Id, simulation.Name });
                     throw new ResourceOutOfDateException($"Invalid ETag. The simulation ETag is '{existingSimulation.ETag}'");
                 }
+
+                // Define the user intent looking at the simulation status and the patch content
+                simulationIsRestarting = !existingSimulation.Enabled && simulation.Enabled;
+                simulationIsStopping = existingSimulation.Enabled && !simulation.Enabled;
 
                 simulation.Created = existingSimulation.Created;
             }
@@ -245,11 +269,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
             }
 
+            // Note: this code is also in MergeAsync
+            // (consider refactoring it out unless the code becomes harder to follow)
+            if (simulationIsRestarting)
+            {
+                simulation = await this.ResetSimulationStatisticsAsync(simulation);
+            }
+            else if (simulationIsStopping)
+            {
+                simulation.StoppedTime = DateTimeOffset.UtcNow;
+
+                // When a simulation is disabled, its partitions are deleted.
+                // This boolean triggers the deletion of partitions from the storage
+                // in the partitioning agent.
+                simulation.PartitioningComplete = false;
+            }
+
             return await this.SaveAsync(simulation, simulation.ETag);
         }
 
         /// <summary>
-        /// Modify a simulation.
+        /// Modify some simulation details
         /// </summary>
         public async Task<Models.Simulation> MergeAsync(SimulationPatch patch)
         {
@@ -273,30 +313,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     $"The ETag provided doesn't match the current resource ETag ({simulation.ETag}).");
             }
 
-            if (!patch.Enabled.HasValue || patch.Enabled.Value == simulation.Enabled)
+            // Define the user intent looking at the simulation status and the patch content
+            var simulationIsRestarting = !simulation.Enabled && patch.Enabled.HasValue && patch.Enabled.Value;
+            var simulationIsStopping = simulation.Enabled && patch.Enabled.HasValue && !patch.Enabled.Value;
+
+            // Note: this code is also in UpsertAsync
+            // (consider refactoring it out unless the code becomes harder to follow)
+            if (simulationIsRestarting)
             {
-                // Nothing to do
-                return simulation;
+                simulation = await this.ResetSimulationStatisticsAsync(simulation);
+            }
+            else if (simulationIsStopping)
+            {
+                simulation.StoppedTime = DateTimeOffset.UtcNow;
+
+                // When a simulation is disabled, its partitions are deleted.
+                // This boolean triggers the deletion of partitions from the storage
+                // in the partitioning agent.
+                simulation.PartitioningComplete = false;
             }
 
-            simulation.Enabled = patch.Enabled.Value;
+            // The Enabled field is optional, e.g. in case PATCH is extended to
+            // modify other fields, so we need to check for null
+            if (patch.Enabled != null) simulation.Enabled = patch.Enabled.Value;
 
-            if (patch.Enabled == false)
-            {
-                simulation.StoppedTime = simulation.Modified;
-                simulation.Statistics = new Models.Simulation.StatisticsRef
-                {
-                    AverageMessagesPerSecond = patch.Statistics.AverageMessagesPerSecond,
-                    TotalMessagesSent = patch.Statistics.TotalMessagesSent
-                };
-
-                // When a simulation is disabled, its partitions are deleted - this triggers the deletion
-                if (!simulation.Enabled)
-                {
-                    simulation.PartitioningComplete = false;
-                }
-            }
-
+            // TODO: can we use this.SaveAsync() here too and avoid the duplication?
             item = await this.simulationsStorage.UpsertAsync(
                 new StorageRecord
                 {
@@ -312,13 +353,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
-        /// Delete a simulation and its devices.
+        /// Delete a simulation, its statistics and devices.
         /// </summary>
         public async Task DeleteAsync(string id)
         {
             // Delete devices first
             var deviceIds = this.GetDeviceIds(await this.GetAsync(id));
             await this.devices.DeleteListAsync(deviceIds);
+
+            await this.simulationStatistics.DeleteSimulationStatisticsAsync(id);
 
             // Then delete the simulation from storage
             await this.simulationsStorage.DeleteAsync(id);
@@ -399,7 +442,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             simulation.DeviceDeletionJobId = null;
             simulation.DevicesDeletionStarted = false;
 
-            return await this.TryToUpdateSimulation(simulation);
+            return await this.TryToUpdateSimulationAsync(simulation);
         }
 
         public async Task<bool> TryToSetDeviceDeletionCompleteAsync(string simulationId)
@@ -416,22 +459,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             simulation.DeviceCreationJobId = null;
             simulation.DevicesCreationStarted = false;
 
-            return await this.TryToUpdateSimulation(simulation);
-        }
-
-        private async Task<bool> TryToUpdateSimulation(Models.Simulation simulation)
-        {
-            try
-            {
-                await this.SaveAsync(simulation, simulation.ETag);
-            }
-            catch (ConflictingResourceException e)
-            {
-                this.log.Warn("Update failed, another client modified the simulation record", e);
-                return false;
-            }
-
-            return true;
+            return await this.TryToUpdateSimulationAsync(simulation);
         }
 
         public async Task AddDeviceAsync(string id)
@@ -497,6 +525,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return result;
         }
 
+        private async Task<bool> TryToUpdateSimulationAsync(Models.Simulation simulation)
+        {
+            try
+            {
+                await this.SaveAsync(simulation, simulation.ETag);
+            }
+            catch (ConflictingResourceException e)
+            {
+                this.log.Warn("Update failed, another client modified the simulation record", e);
+                return false;
+            }
+
+            return true;
+        }
+
         private async Task<Models.Simulation> SaveAsync(Models.Simulation simulation, string eTag)
         {
             simulation.Modified = DateTimeOffset.UtcNow;
@@ -527,6 +570,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     simulation.Enabled,
                     simulation.PartitioningComplete
                 });
+
+            return simulation;
+        }
+
+        private async Task<Models.Simulation> ResetSimulationStatisticsAsync(Models.Simulation simulation)
+        {
+            // Reset ActualStartTime, which is used to calculate statistics
+            // from the moment when the simulation starts connecting devices and sending telemetry,
+            // i.e. after the devices have been created.
+            simulation.ActualStartTime = null;
+
+            // Delete statistics records on simulation start
+            await this.simulationStatistics.DeleteSimulationStatisticsAsync(simulation.Id);
 
             return simulation;
         }
