@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
@@ -58,6 +59,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private readonly ISimulations simulations;
         private readonly IFactory factory;
         private DateTimeOffset lastPolledTime;
+        private IFile file;
 
         // Flag signaling whether the agent has started and is running (to avoid contentions)
         private bool running;
@@ -105,13 +107,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             ISimulations simulations,
             IFactory factory,
             ILogger logger,
-            IDiagnosticsLogger diagnosticsLogger)
+            IDiagnosticsLogger diagnosticsLogger,
+            IFile file)
         {
             this.appConcurrencyConfig = appConcurrencyConfig;
             this.simulations = simulations;
             this.factory = factory;
             this.log = logger;
             this.logDiagnostics = diagnosticsLogger;
+            this.file = file;
 
             this.startingOrStopping = false;
             this.running = false;
@@ -173,9 +177,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             var fileName = templateName + ".json";
             var root = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             var file = Path.Combine(root, "data", fileName);
-            if (File.Exists(file))
+            if (this.file.Exists(file))
             {
-                content = File.ReadAllText(file);
+                content = this.file.ReadAllText(file);
             }
             else
             {
@@ -192,9 +196,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 {
                     var simulation = simulationList[index];
                     simulation.Id = index.ToString();
-                    var existingSimulation = this.simulations.GetAsync(simulation.Id);
 
-                    if (existingSimulation == null)
+                    try
+                    {
+                        var existingSimulation = await this.simulations.GetAsync(simulation.Id);
+                    }
+                    catch (ResourceNotFoundException)
                     {
                         simulation.StartTime = DateTimeOffset.UtcNow;
                         await this.simulations.UpsertAsync(simulation);
