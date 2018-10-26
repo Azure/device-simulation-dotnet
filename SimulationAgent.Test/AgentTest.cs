@@ -60,8 +60,7 @@ namespace SimulationAgent.Test
         }
 
         private void ThereIsNoSimulationInStorage()
-        {
-            
+        {            
             this.simulations
                 .Setup(x => x.GetAsync(It.IsAny<string>()))
                 .ThrowsAsync(new ResourceNotFoundException());
