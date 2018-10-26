@@ -240,7 +240,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     throw new ResourceOutOfDateException($"Invalid ETag. The simulation ETag is '{existingSimulation.ETag}'");
                 }
 
-                if (this.IsSimulationStartedOrStopped(existingSimulation.Enabled, simulation.Enabled) && simulation.Enabled)
+                if (this.IsSimulationStarted(existingSimulation.Enabled, simulation.Enabled))
                 {
                     simulation = await this.UpdateSimulationOnStartAsync(simulation);
                 }
@@ -562,6 +562,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             return simulation;
         }
+
+		private bool IsSimulationStarted(bool previousIsEnabledState, bool? newIsEnabledState)
+		{
+			return this.IsSimulationStartedOrStopped(previousIsEnabledState, newIsEnabledState) && newIsEnabledState.Value;
+		}
 
         private bool IsSimulationStartedOrStopped(bool previousIsEnabledState, bool? newIsEnabledState)
         {
