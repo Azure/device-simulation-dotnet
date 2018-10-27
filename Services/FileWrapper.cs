@@ -2,7 +2,7 @@
 
 using System.IO;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface IFile
     {

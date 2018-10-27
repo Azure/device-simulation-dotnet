@@ -6,6 +6,14 @@
         <RootNamespace>Microsoft.Azure.IoTSolutions.DeviceSimulation.Services</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
+      <None Remove="data\template\device-simulation-template.json" />
+    </ItemGroup>
+    <ItemGroup>
+      <Content Include="data\template\device-simulation-template.json">
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+    </ItemGroup>
+    <ItemGroup>
         <PackageReference Include="Google.Protobuf" Version="3.5.1" />
         <PackageReference Include="jint" Version="2.10.4" />
         <PackageReference Include="Microsoft.Azure.Devices" Version="1.17.0" />

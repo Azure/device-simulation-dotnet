@@ -3,15 +3,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
@@ -19,7 +16,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProper
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.SimulationThreads;
-using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
@@ -62,7 +58,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private readonly ISimulations simulations;
         private readonly IFactory factory;
         private DateTimeOffset lastPolledTime;
-        private IFile file;
 
         // Flag signaling whether the agent has started and is running (to avoid contentions)
         private bool running;
@@ -110,15 +105,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             ISimulations simulations,
             IFactory factory,
             ILogger logger,
-            IDiagnosticsLogger diagnosticsLogger,
-            IFile file)
+            IDiagnosticsLogger diagnosticsLogger)
         {
             this.appConcurrencyConfig = appConcurrencyConfig;
             this.simulations = simulations;
             this.factory = factory;
             this.log = logger;
             this.logDiagnostics = diagnosticsLogger;
-            this.file = file;
 
             this.startingOrStopping = false;
             this.running = false;
@@ -176,45 +169,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // This creates sample simulations that will be shown on simulation dashboard by default
         public async Task SeedAsync(string templateName)
         {
-            string content;
-            var fileName = templateName + ".json";
-            var root = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            var file = Path.Combine(root, "data", fileName);
-            if (this.file.Exists(file))
-            {
-                content = this.file.ReadAllText(file);
-            }
-            else
-            {
-                this.log.Debug("Template not found for setting sample simulations");
-                return;
-            }
-
-            try
-            {
-                var simulationList = JsonConvert.DeserializeObject<List<Simulation>>(content);
-                if (simulationList == null || simulationList.Count == 0) return;
-
-                for (int index = 0; index < simulationList.Count; index++)
-                {
-                    var simulation = simulationList[index];
-                    simulation.Id = index.ToString();
-
-                    try
-                    {
-                        var existingSimulation = await this.simulations.GetAsync(simulation.Id);
-                    }
-                    catch (ResourceNotFoundException)
-                    {
-                        simulation.StartTime = DateTimeOffset.UtcNow;
-                        await this.simulations.UpsertAsync(simulation);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                this.log.Error("Failed to create sample simulation", ex);
-            }
+            await this.simulations.TrySeedAsync(templateName);
         }
 
         private async Task RunAsync()
