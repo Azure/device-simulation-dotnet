@@ -82,7 +82,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly ISimulationStatistics simulationStatistics;
         private readonly IDevices devices;
-        private readonly IFile file;
+        private readonly IFileSystem file;
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
 
@@ -93,7 +93,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IStorageAdapterClient storageAdapterClient,
             IIotHubConnectionStringManager connectionStringManager,
             IDevices devices,
-            IFile file,
+            IFileSystem file,
             ILogger logger,
             IDiagnosticsLogger diagnosticsLogger,
             ISimulationStatistics simulationStatistics)
@@ -390,6 +390,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     var record = new StorageRecord { Id = SEED_STATUS_KEY, Data = "Seed Completed" };
                     await this.mainStorage.CreateAsync(record);
                 }
+                else
+                {
+                    this.log.Info("Seeding skipped.");
+                }
             }
             catch (Exception e)
             {
@@ -405,7 +409,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             string content;
             var fileName = templateName + ".json";
             var root = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            var filePath = Path.Combine(root, "data/template", fileName);
+            var filePath = Path.Combine(root, "data/templates", fileName);
             if (this.file.Exists(filePath))
             {
                 content = this.file.ReadAllText(filePath);

@@ -4,13 +4,13 @@ using System.IO;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
-    public interface IFile
+    public interface IFileSystem
     {
         bool Exists(string path);
         string ReadAllText(string path);
     }
     
-    public class FileWrapper : IFile
+    public class FileWrapper : IFileSystem
     {
         public bool Exists(string path)
         {

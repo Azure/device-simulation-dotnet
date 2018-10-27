@@ -36,7 +36,7 @@ namespace Services.Test
         private readonly Mock<IStorageAdapterClient> mockStorageAdapterClient;
         private readonly Mock<IStorageRecords> mockStorageRecords;
         private readonly Mock<IDevices> devices;
-        private readonly Mock<IFile> file;
+        private readonly Mock<IFileSystem> file;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
         private readonly Mock<IIotHubConnectionStringManager> connStringManager;
@@ -74,7 +74,7 @@ namespace Services.Test
             this.logger = new Mock<ILogger>();
             this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
             this.devices = new Mock<IDevices>();
-            this.file = new Mock<IFile>();
+            this.file = new Mock<IFileSystem>();
             this.connStringManager = new Mock<IIotHubConnectionStringManager>();
             this.models = new List<DeviceModel>
             {
