@@ -6,11 +6,8 @@
         <RootNamespace>Microsoft.Azure.IoTSolutions.DeviceSimulation.Services</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
-      <None Remove="data\templates\device-simulation-templates.json" />
-    </ItemGroup>
-    <ItemGroup>
       <Content Include="data\templates\device-simulation-templates.json">
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
     </ItemGroup>
     <ItemGroup>

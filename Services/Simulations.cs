@@ -71,7 +71,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private const string DEFAULT_SIMULATION_ID = "1";
         private const string DEFAULT_TEMPLATE_NAME = "default";
         private const string DEVICES_COLLECTION = "SimulatedDevices";
-        private const string SEED_COLLECTION_ID = "SolutionSettings";
         public const string SEED_STATUS_KEY = "SeedCompleted";
         private const int DEVICES_PER_MODEL_IN_DEFAULT_TEMPLATE = 1;
 
