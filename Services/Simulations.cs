@@ -408,7 +408,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             string content;
             var fileName = templateName + ".json";
             var root = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            var filePath = Path.Combine(root, "data/templates", fileName);
+            var filePath = Path.Combine(root, "data", "templates", fileName);
             if (this.fileSystem.Exists(filePath))
             {
                 content = this.fileSystem.ReadAllText(filePath);
@@ -427,7 +427,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 for (int index = 0; index < simulationList.Count; index++)
                 {
                     var simulation = simulationList[index];
-                    simulation.Id = index.ToString();
+                    var simulationId = index + 1;
+                    simulation.Id = simulationId.ToString();
 
                     try
                     {
