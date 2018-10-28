@@ -94,7 +94,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 else
                 {
                     var task = this.LoadScriptAsync(filename, isInStorage);
-                    
+
                     var sourceCode = Task.Run(async () => await task).Result;
 
                     this.log.Debug("Compiling script source code", () => new { filename });
