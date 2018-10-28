@@ -93,16 +93,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 }
                 else
                 {
-                    // TODO: refactor the code to avoid blocking
-                    //       https://github.com/Azure/device-simulation-dotnet/issues/240 
                     var task = this.LoadScriptAsync(filename, isInStorage);
-                    task.Wait(TimeSpan.FromSeconds(30));
-                    var sourceCode = task.Result;
+                    
+                    var sourceCode = Task.Run(async () => await task).Result;
 
                     this.log.Debug("Compiling script source code", () => new { filename });
                     program = parser.Parse(sourceCode);
                     programs.Add(filename, program);
                 }
+
                 this.log.Debug("Executing JS function", () => new { filename });
 
                 engine.Execute(program).Invoke(
