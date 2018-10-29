@@ -283,7 +283,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                     durationInSeconds = simulation.StoppedTime.Value.Subtract(actualStartTime).TotalSeconds;
                 }
 
-                statistics.AverageMessagesPerSecond = durationInSeconds > 0 ? Math.Ceiling((double) statistics.TotalMessagesSent / durationInSeconds) : 0;
+                statistics.AverageMessagesPerSecond = durationInSeconds > 0 ? Math.Round((double) statistics.TotalMessagesSent / durationInSeconds, 2) : 0;
             }
 
             return statistics;
