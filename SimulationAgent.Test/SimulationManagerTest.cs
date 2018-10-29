@@ -301,7 +301,8 @@ namespace SimulationAgent.Test
 
             // Assert
             this.mockSimulationStatistics.Verify(x => x.CreateOrUpdateAsync(SIM_ID, It.Is<SimulationStatisticsModel>(
-                a => a.TotalMessagesSent == statisticsModel.TotalMessagesSent &&
+                a => a.ActiveDevices == statisticsModel.ActiveDevices &&
+                     a.TotalMessagesSent == statisticsModel.TotalMessagesSent &&
                      a.FailedMessages == statisticsModel.FailedMessages &&
                      a.FailedDeviceConnections == statisticsModel.FailedDeviceConnections &&
                      a.FailedDevicePropertiesUpdates == statisticsModel.FailedDevicePropertiesUpdates)));
