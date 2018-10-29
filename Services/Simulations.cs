@@ -21,6 +21,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Get list of simulations.
         Task<IList<Models.Simulation>> GetListAsync();
 
+        // Get list of simulations with statistics.
+        Task<IList<Models.Simulation>> GetListWithStatisticsAsync();
+
         // Get a simulation.
         Task<Models.Simulation> GetAsync(string id);
 
@@ -115,6 +118,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             // TODO: This will need changes to support pagination. Also order should be by simulation Id.
             return result.OrderByDescending(s => s.Created).ToList();
+        }
+
+        /// <summary>
+        /// // Get list of simulations with statistics.
+        /// </summary>
+        public async Task<IList<Models.Simulation>> GetListWithStatisticsAsync()
+        {
+            var items = await this.GetListAsync();
+
+            foreach (var item in items)
+            {
+                item.Statistics = await this.simulationStatistics.GetSimulationStatisticsAsync(item.Id);
+            }
+
+            return items;
         }
 
         /// <summary>
