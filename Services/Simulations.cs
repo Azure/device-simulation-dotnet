@@ -19,12 +19,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface ISimulations
     {
         // Get list of simulations.
+        // This will have better perf than GetListWithStatisticsAsync.
         Task<IList<Models.Simulation>> GetListAsync();
 
         // Get list of simulations with statistics.
         Task<IList<Models.Simulation>> GetListWithStatisticsAsync();
 
         // Get a simulation.
+        // This will have better perf than GetWithStatisticsAsync.
         Task<Models.Simulation> GetAsync(string id);
 
         // Get a simulation with statistics.
@@ -121,7 +123,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
-        /// // Get list of simulations with statistics.
+        /// Get list of simulations with statistics.
         /// </summary>
         public async Task<IList<Models.Simulation>> GetListWithStatisticsAsync()
         {
