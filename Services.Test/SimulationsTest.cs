@@ -836,6 +836,39 @@ namespace Services.Test
             this.devices.Verify(x => x.DeleteListUsingJobsAsync(It.IsAny<IEnumerable<string>>()), Times.Once);
         }
 
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItTrysToCreateDefaultSimulationsWhenThereIsNoDefaultSimulationsInStorage()
+        {
+            // Arrange
+            this.ThereIsNoDefaultSimulationsInStorage();
+            this.ThereIsATemplateForDefaultSimulations();
+
+            // Act
+            this.target.TrySeedAsync("template").CompleteOrTimeout();
+
+            // Assert
+            this.mockStorageRecords.Verify(x => x.CreateAsync(It.IsAny<StorageRecord>()), Times.Once);
+        }
+
+        private void ThereIsATemplateForDefaultSimulations()
+        {
+            var simulationList = new List<SimulationModel>()
+            {
+                new SimulationModel()
+            };
+            string fileContent = JsonConvert.SerializeObject(simulationList);
+            const string TEMPLATE_FILE_PATH = "/data/";
+            this.mockConfig.Setup(x => x.SeedTemplateFolder).Returns(TEMPLATE_FILE_PATH);
+            this.file.Setup(x => x.Exists(It.IsAny<string>())).Returns(true);
+            this.file.Setup(x => x.ReadAllText(It.IsAny<string>())).Returns(fileContent);
+        }
+
+        private void ThereIsNoDefaultSimulationsInStorage()
+        {
+            this.mockStorageRecords.Setup(x => x.ExistsAsync(It.IsAny<string>())).ReturnsAsync(false);
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>())).ThrowsAsync(new ResourceNotFoundException());
+        }
+
         private void ThereAreSomeDeviceModels()
         {
             this.deviceModels.Setup(x => x.GetListAsync())
