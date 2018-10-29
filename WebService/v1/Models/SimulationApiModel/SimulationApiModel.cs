@@ -268,11 +268,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         {
             var statistics = SimulationStatistics.FromServiceModel(simulation.Statistics);
 
-            if (statistics != null)
+            if (statistics != null && simulation.ActualStartTime.HasValue)
             {
                 DateTimeOffset now = DateTimeOffset.UtcNow;
-                TimeSpan duration = simulation.IsActiveNow ? now.Subtract(simulation.ActualStartTime.Value) : simulation.StoppedTime.Value.Subtract(simulation.ActualStartTime.Value);
-                statistics.AverageMessagesPerSecond = Math.Round((double) statistics.TotalMessagesSent / duration.TotalSeconds, 2);
+                var actualStartTime = simulation.ActualStartTime.Value;
+                double durationInSeconds = 0;
+
+                if (simulation.IsActiveNow)
+                {
+                    durationInSeconds = now.Subtract(actualStartTime).TotalSeconds;
+                }
+                else if (simulation.StoppedTime.HasValue)
+                {
+                    durationInSeconds = simulation.StoppedTime.Value.Subtract(actualStartTime).TotalSeconds;
+                }
+
+                statistics.AverageMessagesPerSecond = durationInSeconds > 0 ? Math.Round((double) statistics.TotalMessagesSent / durationInSeconds, 2) : 0;
             }
 
             return statistics;
