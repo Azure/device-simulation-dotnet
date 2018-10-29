@@ -450,7 +450,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception ex)
             {
-                var message = "Failed to create sample simulation. " + ex.Message + " template: " + JsonConvert.SerializeObject(simulation);
+                var message = "Failed to create sample simulation. " + " template: " + JsonConvert.SerializeObject(simulation);
                 this.log.Error(message, ex);
             }
         }
