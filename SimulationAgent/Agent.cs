@@ -57,6 +57,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private readonly ISimulations simulations;
         private readonly IFactory factory;
         private DateTimeOffset lastPolledTime;
+        private DateTimeOffset lastSaveStatisticsTime;
+        private long lastPrintStatisticsTime;
 
         // Flag signaling whether the agent has started and is running (to avoid contentions)
         private bool running;
@@ -97,7 +99,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         // Used to stop the threads
         private CancellationTokenSource runningToken;
-        private long lastStatsTime;
 
         public Agent(
             IAppConcurrencyConfig appConcurrencyConfig,
@@ -116,7 +117,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.running = false;
             this.runningToken = new CancellationTokenSource();
             this.lastPolledTime = DateTimeOffset.UtcNow;
-            this.lastStatsTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            this.lastPrintStatisticsTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            this.lastSaveStatisticsTime = DateTimeOffset.UtcNow;
 
             this.simulationManagers = new ConcurrentDictionary<string, ISimulationManager>();
             this.deviceStateActors = new ConcurrentDictionary<string, IDeviceStateActor>();
@@ -240,15 +242,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             foreach (var simulation in simulations)
             {
-                DateTimeOffset now = DateTimeOffset.UtcNow;
-                TimeSpan duration = now - this.lastPolledTime;
-
-                // Save simulation statistics at specified interval
-                if (duration.Seconds >= SAVE_STATS_INTERVAL_SECS)
+                try
                 {
-                    await this.simulationManagers[simulation.Id].SaveStatisticsAsync();
+                    if (this.simulationManagers.ContainsKey(simulation.Id))
+                    {
+                        DateTimeOffset now = DateTimeOffset.UtcNow;
+                        TimeSpan duration = now - this.lastSaveStatisticsTime;
 
-                    this.lastPolledTime = now;
+                        // Save simulation statistics at specified interval
+                        if (duration.Seconds >= SAVE_STATS_INTERVAL_SECS)
+                        {
+                            await this.simulationManagers[simulation.Id].SaveStatisticsAsync();
+
+                            this.lastSaveStatisticsTime = now;
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    this.log.Error("Failed to save simulation statistics.", () => new { simulation.Id, e });
                 }
             }
         }
@@ -288,10 +300,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             var printStats = false;
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            if (now - this.lastStatsTime > PRINT_STATS_INTERVAL_MSECS)
+            if (now - this.lastPrintStatisticsTime > PRINT_STATS_INTERVAL_MSECS)
             {
                 printStats = true;
-                this.lastStatsTime = now;
+                this.lastPrintStatisticsTime = now;
             }
 
             // TODO: determine if these can be run in parallel
