@@ -448,7 +448,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 for (int index = 0; index < simulationList.Count; index++)
                 {
-                    // We need to start creating simulations starting with id 1 as it is treated as defailt simulation
+                    // We need to start creating simulations starting with id 1 as it is treated as default simulation
                     // and is referenced in Welcome page on UI
                     simulation = simulationList[index];
                     var simulationId = index + 1;

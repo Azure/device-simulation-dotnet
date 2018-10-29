@@ -25,7 +25,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         Task AddDeviceAsync(string simulationId, string name, string modelId);
         Task DeleteDevicesAsync(List<string> ids);
         void Stop();
-        Task SeedAsync(string templateName);
     }
 
     public class Agent : ISimulationAgent
@@ -166,12 +165,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // Allow some time to pass before trying to stop threads
             Thread.Sleep(SHUTDOWN_WAIT_BEFORE_STOPPING_THREADS_MSECS);
             this.TryToStopThreads();
-        }
-
-        // This creates sample simulations that will be shown on simulation dashboard by default
-        public async Task SeedAsync(string templateName)
-        {
-            await this.simulations.TrySeedAsync(templateName);
         }
 
         private async Task RunAsync()

@@ -6,6 +6,7 @@ using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
@@ -24,6 +25,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
         // Agent responsible for simulating IoT devices
         private ISimulationAgent simulationAgent;
+
+        // Service responsible for simulating IoT devices
+        private ISimulations simulationService;
 
         // Initialized in `Startup`
         public IConfigurationRoot Configuration { get; }
@@ -113,7 +117,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             var config = this.ApplicationContainer.Resolve<IConfig>();
             if (!string.IsNullOrEmpty(config.SeedTemplate))
             {
-                this.simulationAgent.SeedAsync(config.SeedTemplate.ToLowerInvariant());
+                // This creates sample simulations that will be shown on simulation dashboard by default
+                this.simulationService = this.ApplicationContainer.Resolve<ISimulations>();
+                this.simulationService.TrySeedAsync(config.SeedTemplate.ToLowerInvariant());
             }
         }
 
