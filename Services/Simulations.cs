@@ -438,7 +438,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     {
                         // Check if there is an existing simulation with the given id
                         // if it exists then skip creating a new simulation
-                        var existingSimulation = await this.GetAsync(simulation.Id);
+                        await this.GetAsync(simulation.Id);
                     }
                     catch (ResourceNotFoundException)
                     {
