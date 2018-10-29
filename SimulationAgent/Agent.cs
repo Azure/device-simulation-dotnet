@@ -43,8 +43,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // The number of days to wait between sending a diagnostics heartbeat
         private const int DIAGNOSTICS_POLLING_FREQUENCY_DAYS = 1;
 
-        // How often (minimum) to log simulation statistics
-        private const int STATS_INTERVAL_MSECS = 15000;
+        // How often (minimum) to print simulation statistics
+        private const int PRINT_STATS_INTERVAL_MSECS = 15000;
+
+        // How often (minimum) to save simulation statistics to storage
+        private const int SAVE_STATS_INTERVAL_SECS = 30;
 
         // Global thread settings, not specific to any simulation
         private readonly IAppConcurrencyConfig appConcurrencyConfig;
@@ -179,8 +182,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.log.Debug("Active simulations loaded", () => new { activeSimulations.Count });
 
                     await this.CreateSimulationManagersAsync(activeSimulations);
+                    await this.SaveSimulationStatisticsAsync(activeSimulations);
                     await this.RunSimulationManagersMaintenanceAsync();
-                    this.StopInactiveSimulations(activeSimulations);
+                    await this.StopInactiveSimulationsAsync(activeSimulations);
 
                     Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
                 }
@@ -214,7 +218,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             return;
         }
 
-        private void StopInactiveSimulations(IList<Simulation> activeSimulations)
+        private async Task StopInactiveSimulationsAsync(IList<Simulation> activeSimulations)
         {
             // Get a list of all simulations that are not active in storage.
             var activeIds = activeSimulations.Select(simulation => simulation.Id).ToList();
@@ -222,11 +226,29 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             foreach (var manager in managersToStop)
             {
+                await manager.Value.SaveStatisticsAsync();
                 manager.Value.TearDown();
                 if (!this.simulationManagers.TryRemove(manager.Key, out _))
                 {
                     this.log.Error("Unable to remove simulation manager from the list of managers",
                         () => new { SimulationId = manager.Key });
+                }
+            }
+        }
+
+        private async Task SaveSimulationStatisticsAsync(IList<Simulation> simulations)
+        {
+            foreach (var simulation in simulations)
+            {
+                DateTimeOffset now = DateTimeOffset.UtcNow;
+                TimeSpan duration = now - this.lastPolledTime;
+
+                // Save simulation statistics at specified interval
+                if (duration.Seconds >= SAVE_STATS_INTERVAL_SECS)
+                {
+                    await this.simulationManagers[simulation.Id].SaveStatisticsAsync();
+
+                    this.lastPolledTime = now;
                 }
             }
         }
@@ -266,7 +288,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             var printStats = false;
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            if (now - this.lastStatsTime > STATS_INTERVAL_MSECS)
+            if (now - this.lastStatsTime > PRINT_STATS_INTERVAL_MSECS)
             {
                 printStats = true;
                 this.lastStatsTime = now;

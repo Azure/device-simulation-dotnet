@@ -8,7 +8,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel;
 using Moq;
@@ -141,6 +140,35 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             Assert.ThrowsAsync<BadRequestException>(
                     async () => await simulationApiModel.ValidateInputRequestAsync(this.logger.Object, this.connectionStringManager.Object))
                 .Wait(Constants.TEST_TIMEOUT);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItSetsSimulationStatisticsFromServiceModel()
+        {
+            // Arrange
+            var simulation = this.GetSimulationModel();
+            var statistics = new SimulationStatisticsModel { TotalMessagesSent = 100, FailedDeviceConnections = 1, FailedDevicePropertiesUpdates = 2, FailedMessages = 3 };
+            simulation.Statistics = statistics;
+            var now = DateTimeOffset.UtcNow;
+            simulation.ActualStartTime = now.AddSeconds(-60);
+            simulation.StoppedTime = now;
+            simulation.Enabled = false;
+            // Avg messages = 100/60 (TotalMessagesSent / stoppedTime - startTime)
+            var expectedAvgMessages = 1.6666666666666667;
+
+            // Act
+            var result = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel.FromServiceModel(
+                simulation);
+
+            // Assert
+            Assert.IsType<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel>(result);
+            Assert.Equal(simulation.Id, result.Id);
+            Assert.NotNull(result.Statistics);
+            Assert.Equal(statistics.TotalMessagesSent, result.Statistics.TotalMessagesSent);
+            Assert.Equal(statistics.FailedDeviceConnections, result.Statistics.FailedDeviceConnections);
+            Assert.Equal(statistics.FailedDevicePropertiesUpdates, result.Statistics.FailedDevicePropertiesUpdates);
+            Assert.Equal(statistics.FailedMessages, result.Statistics.FailedMessages);
+            Assert.Equal(expectedAvgMessages, result.Statistics.AverageMessagesPerSecond);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

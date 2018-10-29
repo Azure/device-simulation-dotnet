@@ -4,11 +4,9 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
@@ -133,7 +131,7 @@ namespace WebService.Test.v1.Controllers
             var simulation = this.GetSimulationById(ID);
 
             // Act
-            var result = this.target.GetAsync(ID).Result;
+            var result = this.target.GetAsync(ID).CompleteOrTimeout().Result;
 
             // Assert
             Assert.Null(result);
@@ -150,7 +148,7 @@ namespace WebService.Test.v1.Controllers
                 .ReturnsAsync(simulations);
 
             // Act
-            var result = this.target.GetAsync().Result;
+            var result = this.target.GetAsync().CompleteOrTimeout().Result;
 
             // Assert
             Assert.Equal(simulations.Count, result.Items.Count);
@@ -164,11 +162,11 @@ namespace WebService.Test.v1.Controllers
             var simulation = this.GetSimulationById(ID);
 
             this.simulationsService
-                .Setup(x => x.GetAsync(ID))
+                .Setup(x => x.GetWithStatisticsAsync(ID))
                 .ReturnsAsync(simulation);
 
             // Act
-            var result = this.target.GetAsync(ID).Result;
+            var result = this.target.GetAsync(ID).CompleteOrTimeout().Result;
 
             // Assert
             Assert.NotNull(result);
