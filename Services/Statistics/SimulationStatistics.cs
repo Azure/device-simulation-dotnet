@@ -57,6 +57,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
 
                 foreach (var record in simulationRecords)
                 {
+                    statistics.ActiveDevices += record.Statistics.ActiveDevices;
                     statistics.TotalMessagesSent += record.Statistics.TotalMessagesSent;
                     statistics.FailedDeviceConnections += record.Statistics.FailedDeviceConnections;
                     statistics.FailedDevicePropertiesUpdates += record.Statistics.FailedDevicePropertiesUpdates;
@@ -91,8 +92,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
 
             try
             {
-                this.log.Debug("Creating statistics record", () => new { statisticsStorageRecord });
-                await this.simulationStatisticsStorage.CreateAsync(statisticsStorageRecord);
+                if (await this.simulationStatisticsStorage.ExistsAsync(statisticsRecordId))
+                {
+                    this.log.Debug("Updating statistics record", () => new { statisticsStorageRecord });
+                    var record = await this.simulationStatisticsStorage.GetAsync(statisticsRecordId);
+                    await this.simulationStatisticsStorage.UpsertAsync(statisticsStorageRecord, record.ETag);
+                }
+                else
+                {
+                    this.log.Debug("Creating statistics record", () => new { statisticsStorageRecord });
+                    await this.simulationStatisticsStorage.CreateAsync(statisticsStorageRecord);
+                }
             }
             catch (Exception e)
             {

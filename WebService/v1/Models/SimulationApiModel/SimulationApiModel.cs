@@ -268,11 +268,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         {
             var statistics = SimulationStatistics.FromServiceModel(simulation.Statistics);
 
-            if (statistics != null)
+            // AverageMessagesPerSecond calculation needs ActualStartTime to be set.
+            // ActualStartTime will be set once partitioning and device creation is done, upto that point it can be null.
+            if (statistics != null && simulation.ActualStartTime.HasValue)
             {
                 DateTimeOffset now = DateTimeOffset.UtcNow;
-                TimeSpan duration = simulation.IsActiveNow ? now.Subtract(simulation.ActualStartTime.Value) : simulation.StoppedTime.Value.Subtract(simulation.ActualStartTime.Value);
-                statistics.AverageMessagesPerSecond = (double) statistics.TotalMessagesSent / duration.TotalSeconds;
+                var actualStartTime = simulation.ActualStartTime.Value;
+                double durationInSeconds = 0;
+
+                if (simulation.IsActiveNow)
+                {
+                    // If the simulation is active, calculate duration from start till now.
+                    durationInSeconds = now.Subtract(actualStartTime).TotalSeconds;
+                }
+                else if (simulation.StoppedTime.HasValue)
+                {
+                    // If simulation is stopped, calculate duration from start till stop time.
+                    durationInSeconds = simulation.StoppedTime.Value.Subtract(actualStartTime).TotalSeconds;
+                }
+
+                statistics.AverageMessagesPerSecond = durationInSeconds > 0 ? Math.Round((double) statistics.TotalMessagesSent / durationInSeconds, 2) : 0;
             }
 
             return statistics;
