@@ -46,8 +46,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         [HttpGet]
         public async Task<SimulationListApiModel> GetAsync()
         {
-            var simulationList = await this.simulationsService.GetListAsync();
-            return new SimulationListApiModel(await this.simulationsService.GetListAsync());
+            var simulationList = await this.simulationsService.GetListWithStatisticsAsync();
+            return new SimulationListApiModel(simulationList);
         }
 
         [HttpGet("{id}")]

@@ -144,7 +144,7 @@ namespace WebService.Test.v1.Controllers
             var simulations = this.GetSimulations();
 
             this.simulationsService
-                .Setup(x => x.GetListAsync())
+                .Setup(x => x.GetListWithStatisticsAsync())
                 .ReturnsAsync(simulations);
 
             // Act

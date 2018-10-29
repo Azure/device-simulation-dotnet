@@ -244,6 +244,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var telemetryActors = this.deviceTelemetryActors ?? this.deviceTelemetryActors.Where(a => a.Key.StartsWith(this.simulation.Id));
                 var simulationModel = new SimulationStatisticsModel
                 {
+                    ActiveDevices = deviceStateActors != null ? deviceStateActors.Count(a => a.Value.IsDeviceActive) : 0,
                     TotalMessagesSent = telemetryActors != null ? telemetryActors.Sum(a => a.Value.TotalMessagesCount) : 0,
                     FailedMessages = telemetryActors != null ? telemetryActors.Sum(a => a.Value.FailedMessagesCount) : 0,
                     FailedDeviceConnections = this.deviceConnectionActors != null ? this.deviceConnectionActors.Where(a => a.Key.StartsWith(this.simulation.Id)).Sum(a => a.Value.FailedDeviceConnectionsCount) : 0,

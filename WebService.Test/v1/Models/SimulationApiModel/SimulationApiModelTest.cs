@@ -147,14 +147,14 @@ namespace WebService.Test.v1.Models.SimulationApiModel
         {
             // Arrange
             var simulation = this.GetSimulationModel();
-            var statistics = new SimulationStatisticsModel { TotalMessagesSent = 100, FailedDeviceConnections = 1, FailedDevicePropertiesUpdates = 2, FailedMessages = 3 };
+            var statistics = new SimulationStatisticsModel { ActiveDevices = 10, TotalMessagesSent = 100, FailedDeviceConnections = 1, FailedDevicePropertiesUpdates = 2, FailedMessages = 3 };
             simulation.Statistics = statistics;
             var now = DateTimeOffset.UtcNow;
             simulation.ActualStartTime = now.AddSeconds(-60);
             simulation.StoppedTime = now;
             simulation.Enabled = false;
             // Avg messages = 100/60 (TotalMessagesSent / stoppedTime - startTime)
-            var expectedAvgMessages = 1.6666666666666667;
+            var expectedAvgMessages = 1.67;
 
             // Act
             var result = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel.FromServiceModel(
@@ -164,6 +164,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             Assert.IsType<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel>(result);
             Assert.Equal(simulation.Id, result.Id);
             Assert.NotNull(result.Statistics);
+            Assert.Equal(statistics.ActiveDevices, result.Statistics.ActiveDevices);
             Assert.Equal(statistics.TotalMessagesSent, result.Statistics.TotalMessagesSent);
             Assert.Equal(statistics.FailedDeviceConnections, result.Statistics.FailedDeviceConnections);
             Assert.Equal(statistics.FailedDevicePropertiesUpdates, result.Statistics.FailedDevicePropertiesUpdates);
