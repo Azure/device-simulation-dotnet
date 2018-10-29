@@ -6,7 +6,7 @@
         <RootNamespace>Microsoft.Azure.IoTSolutions.DeviceSimulation.Services</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
-      <Content Include="data\templates\device-simulation-templates.json">
+      <Content Include="data\templates\multiple-simulations-template.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
     </ItemGroup>

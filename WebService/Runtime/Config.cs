@@ -48,6 +48,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string APPLICATION_KEY = "DeviceSimulationService:";
 
         private const string SEED_TEMPLATE_KEY = APPLICATION_KEY + "seed_template";
+        private const string SEED_TEMPLATE_FOLDER_KEY = APPLICATION_KEY + "seed_template_folder";
         private const string PORT_KEY = APPLICATION_KEY + "webservice_port";
         private const string DEVICE_MODELS_FOLDER_KEY = APPLICATION_KEY + "device_models_folder";
         private const string DEVICE_MODELS_SCRIPTS_FOLDER_KEY = APPLICATION_KEY + "device_models_scripts_folder";
@@ -256,6 +257,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
 
             return new ServicesConfig
             {
+                SeedTemplateFolder = MapRelativePath(configData.GetString(SEED_TEMPLATE_FOLDER_KEY)),
                 DeviceModelsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_FOLDER_KEY)),
                 DeviceModelsScriptsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_SCRIPTS_FOLDER_KEY)),
                 IoTHubConnString = connstring,

@@ -74,6 +74,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public const string SEED_STATUS_KEY = "SeedCompleted";
         private const int DEVICES_PER_MODEL_IN_DEFAULT_TEMPLATE = 1;
 
+        private readonly IServicesConfig config;
         private readonly IDeviceModels deviceModels;
         private readonly IStorageAdapterClient storageAdapterClient;
         private readonly IStorageRecords mainStorage;
@@ -97,6 +98,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IDiagnosticsLogger diagnosticsLogger,
             ISimulationStatistics simulationStatistics)
         {
+            this.config = config;
             this.deviceModels = deviceModels;
             this.storageAdapterClient = storageAdapterClient;
             this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
@@ -396,7 +398,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                var msg = "Failed to seed default simulations." + e.Message;
+                var msg = "Failed to seed default simulations." + e;
                 this.log.Error(msg);
                 this.diagnosticsLogger.LogServiceError(msg);
             }
@@ -408,7 +410,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             string content;
             var fileName = templateName + ".json";
             var root = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            var filePath = Path.Combine(root, "data", "templates", fileName);
+            var filePath = Path.Combine(root, this.config.SeedTemplateFolder, fileName);
             if (this.fileSystem.Exists(filePath))
             {
                 content = this.fileSystem.ReadAllText(filePath);
@@ -426,16 +428,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 for (int index = 0; index < simulationList.Count; index++)
                 {
+                    // We need to start creating simulations starting with id 1 as it is treated as defailt simulation
+                    // and is referenced in Welcome page on UI
                     var simulation = simulationList[index];
                     var simulationId = index + 1;
                     simulation.Id = simulationId.ToString();
 
                     try
                     {
+                        // Check if there is an existing simulation with the given id
+                        // if it exists then skip creating a new simulation
                         var existingSimulation = await this.GetAsync(simulation.Id);
                     }
                     catch (ResourceNotFoundException)
                     {
+                        // create a simulation if no sample simulation exists with provided id.
                         simulation.StartTime = DateTimeOffset.UtcNow;
                         await this.UpsertAsync(simulation);
                     }
