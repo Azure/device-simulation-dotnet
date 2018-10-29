@@ -240,15 +240,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             foreach (var simulation in simulations)
             {
-                DateTimeOffset now = DateTimeOffset.UtcNow;
-                TimeSpan duration = now - this.lastPolledTime;
-
-                // Save simulation statistics at specified interval
-                if (duration.Seconds >= SAVE_STATS_INTERVAL_SECS)
+                try
                 {
-                    await this.simulationManagers[simulation.Id].SaveStatisticsAsync();
+                    if (this.simulationManagers.ContainsKey(simulation.Id))
+                    {
+                        DateTimeOffset now = DateTimeOffset.UtcNow;
+                        TimeSpan duration = now - this.lastPolledTime;
 
-                    this.lastPolledTime = now;
+                        // Save simulation statistics at specified interval
+                        if (duration.Seconds >= SAVE_STATS_INTERVAL_SECS)
+                        {
+                            await this.simulationManagers[simulation.Id].SaveStatisticsAsync();
+
+                            this.lastPolledTime = now;
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    this.log.Error("Failed to save simulation statistics.", () => new { simulation.Id, e });
                 }
             }
         }
