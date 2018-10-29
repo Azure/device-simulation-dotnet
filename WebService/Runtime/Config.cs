@@ -47,7 +47,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
     {
         private const string APPLICATION_KEY = "DeviceSimulationService:";
 
-        private const string SEED_TEMPLATE_KEY = APPLICATION_KEY + "seed_template";
+        private const string SEED_TEMPLATE_KEY = APPLICATION_KEY + "seed_template_name";
         private const string SEED_TEMPLATE_FOLDER_KEY = APPLICATION_KEY + "seed_template_folder";
         private const string PORT_KEY = APPLICATION_KEY + "webservice_port";
         private const string DEVICE_MODELS_FOLDER_KEY = APPLICATION_KEY + "device_models_folder";

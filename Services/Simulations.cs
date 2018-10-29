@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -409,8 +408,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             string content;
             var fileName = templateName + ".json";
-            var root = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            var filePath = Path.Combine(root, this.config.SeedTemplateFolder, fileName);
+            var filePath = Path.Combine(this.config.SeedTemplateFolder, fileName);
             if (this.fileSystem.Exists(filePath))
             {
                 content = this.fileSystem.ReadAllText(filePath);
