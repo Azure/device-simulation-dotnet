@@ -58,7 +58,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private readonly IFactory factory;
         private DateTimeOffset lastPolledTime;
         private DateTimeOffset lastSaveStatisticsTime;
-        private long lastPrintStatsTime;
+        private long lastPrintStatisticsTime;
 
         // Flag signaling whether the agent has started and is running (to avoid contentions)
         private bool running;
@@ -117,7 +117,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.running = false;
             this.runningToken = new CancellationTokenSource();
             this.lastPolledTime = DateTimeOffset.UtcNow;
-            this.lastPrintStatsTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            this.lastPrintStatisticsTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             this.lastSaveStatisticsTime = DateTimeOffset.UtcNow;
 
             this.simulationManagers = new ConcurrentDictionary<string, ISimulationManager>();
@@ -300,10 +300,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             var printStats = false;
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            if (now - this.lastPrintStatsTime > PRINT_STATS_INTERVAL_MSECS)
+            if (now - this.lastPrintStatisticsTime > PRINT_STATS_INTERVAL_MSECS)
             {
                 printStats = true;
-                this.lastPrintStatsTime = now;
+                this.lastPrintStatisticsTime = now;
             }
 
             // TODO: determine if these can be run in parallel
