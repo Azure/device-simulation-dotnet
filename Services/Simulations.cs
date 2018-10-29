@@ -419,6 +419,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 return;
             }
 
+            Models.Simulation simulation = null;
+
             try
             {
                 var simulationList = JsonConvert.DeserializeObject<List<Models.Simulation>>(content);
@@ -428,7 +430,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 {
                     // We need to start creating simulations starting with id 1 as it is treated as defailt simulation
                     // and is referenced in Welcome page on UI
-                    var simulation = simulationList[index];
+                    simulation = simulationList[index];
                     var simulationId = index + 1;
                     simulation.Id = simulationId.ToString();
 
@@ -448,7 +450,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception ex)
             {
-                this.log.Error("Failed to create sample simulation", ex);
+                var message = "Failed to create sample simulation. " + ex.Message + " template: " + JsonConvert.SerializeObject(simulation);
+                this.log.Error(message, ex);
             }
         }
 
