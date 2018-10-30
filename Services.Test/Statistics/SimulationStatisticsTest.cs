@@ -159,7 +159,7 @@ namespace Services.Test.Statistics
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItUpdatesSimulationStatistics()
+        public void ItUpdatesSimulationStatisticsIfRecordExists()
         {
             // Arrange
             var statisticsRecordId = $"{SIM_ID}__{NODE_IDS[0]}";
@@ -196,6 +196,47 @@ namespace Services.Test.Statistics
             // Assert
             this.simulationStatisticsStorage.Verify(x => x.GetAsync(It.Is<string>(
                a => a == statisticsRecordId)));
+            this.simulationStatisticsStorage.Verify(x => x.UpsertAsync(It.Is<StorageRecord>(
+                a => a.Id == storageRecord.Id &&
+                     a.Data == storageRecord.Data),
+                     It.IsAny<string>()));
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItUpdatesSimulationStatistics()
+        {
+            // Arrange
+            var statisticsRecordId = $"{SIM_ID}__{NODE_IDS[0]}";
+
+            SimulationStatisticsModel inputStatistics = new SimulationStatisticsModel
+            {
+                ActiveDevices = 5,
+                TotalMessagesSent = 300,
+                FailedDeviceConnections = 6,
+                FailedDevicePropertiesUpdates = 8,
+                FailedMessages = 10
+            };
+
+            SimulationStatisticsRecord expectedStatistics = new SimulationStatisticsRecord
+            {
+                SimulationId = SIM_ID,
+                NodeId = NODE_IDS[0],
+                Statistics = inputStatistics
+            };
+
+            StorageRecord storageRecord = new StorageRecord
+            {
+                Id = statisticsRecordId,
+                Data = JsonConvert.SerializeObject(expectedStatistics),
+            };
+
+            this.clusterNodes.Setup(x => x.GetCurrentNodeId()).Returns(NODE_IDS[0]);
+            this.simulationStatisticsStorage.Setup(x => x.GetAsync(statisticsRecordId)).ReturnsAsync(storageRecord);
+
+            // Act
+            var result = this.target.UpdateAsync(SIM_ID, inputStatistics).CompleteOrTimeout();
+
+            // Assert
             this.simulationStatisticsStorage.Verify(x => x.UpsertAsync(It.Is<StorageRecord>(
                 a => a.Id == storageRecord.Id &&
                      a.Data == storageRecord.Data),
