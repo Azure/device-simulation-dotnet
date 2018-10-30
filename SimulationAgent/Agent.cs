@@ -399,17 +399,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // Telemetry
             try
             {
-                var count = this.appConcurrencyConfig.TelemetryThreads;
+                var telemetryThreadCount = this.appConcurrencyConfig.TelemetryThreads;
 
-                this.devicesTelemetryThreads = new Thread[count];
+                this.devicesTelemetryThreads = new Thread[telemetryThreadCount];
                 this.devicesTelemetryTasks = new List<IDeviceTelemetryTask>();
-                for (int i = 0; i < count; i++)
+                for (int i = 0; i < telemetryThreadCount; i++)
                 {
                     var task = this.factory.Resolve<IDeviceTelemetryTask>();
                     this.devicesTelemetryTasks.Add(task);
 
+                    // Thread position must be calculated outside of the thread-execution lamda. Otherwise,
+                    // the thread index passed to the execution method will be off by one.
+                    var telemetryThreadPosition = i + 1;
                     this.devicesTelemetryThreads[i] = new Thread(
-                        () => task.RunAsync(this.deviceTelemetryActors, i + 1, count, this.runningToken.Token));
+                        () => task.RunAsync(this.deviceTelemetryActors, telemetryThreadPosition, telemetryThreadCount, this.runningToken.Token));
                     this.devicesTelemetryThreads[i].Start();
                 }
             }
