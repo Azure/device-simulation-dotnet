@@ -408,7 +408,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     var task = this.factory.Resolve<IDeviceTelemetryTask>();
                     this.devicesTelemetryTasks.Add(task);
 
-                    // Thread position must be calculated outside of the thread-execution lamda. Otherwise,
+                    // Thread position must be calculated outside of the thread-execution lambda. Otherwise,
                     // the thread index passed to the execution method will be off by one.
                     var telemetryThreadPosition = i + 1;
                     this.devicesTelemetryThreads[i] = new Thread(
