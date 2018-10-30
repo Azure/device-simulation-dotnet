@@ -77,7 +77,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
         {
             var nodeId = this.clusterNodes.GetCurrentNodeId();
             var statisticsRecordId = this.GetStatisticsRecordId(simulationId, nodeId);
-
             var statisticsStorageRecord = this.GetStorageRecord(simulationId, statistics);
 
             try
@@ -104,7 +103,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
         {
             var nodeId = this.clusterNodes.GetCurrentNodeId();
             var statisticsRecordId = this.GetStatisticsRecordId(simulationId, nodeId);
-
             var statisticsStorageRecord = this.GetStorageRecord(simulationId, statistics);
 
             try
