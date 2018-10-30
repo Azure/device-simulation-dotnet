@@ -381,6 +381,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private IDeviceClientWrapper GetDeviceSdkClient(Device device, IoTHubProtocol protocol)
         {
             var connectionString = $"HostName={device.IoTHubHostName};DeviceId={device.Id};SharedAccessKey={device.AuthPrimaryKey}";
+            var userAgent = this.config.UserAgent;
 
             IDeviceClientWrapper sdkClient;
             switch (protocol)
@@ -389,21 +390,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     this.log.Debug("Creating AMQP device client",
                         () => new { device.Id, device.IoTHubHostName });
 
-                    sdkClient = this.deviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp_Tcp_Only);
+                    sdkClient = this.deviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp_Tcp_Only, userAgent);
                     break;
 
                 case IoTHubProtocol.MQTT:
                     this.log.Debug("Creating MQTT device client",
                         () => new { device.Id, device.IoTHubHostName });
 
-                    sdkClient = this.deviceClient.CreateFromConnectionString(connectionString, TransportType.Mqtt_Tcp_Only);
+                    sdkClient = this.deviceClient.CreateFromConnectionString(connectionString, TransportType.Mqtt_Tcp_Only, userAgent);
                     break;
 
                 case IoTHubProtocol.HTTP:
                     this.log.Debug("Creating HTTP device client",
                         () => new { device.Id, device.IoTHubHostName });
 
-                    sdkClient = this.deviceClient.CreateFromConnectionString(connectionString, TransportType.Http1);
+                    sdkClient = this.deviceClient.CreateFromConnectionString(connectionString, TransportType.Http1, userAgent);
                     break;
 
                 default:
