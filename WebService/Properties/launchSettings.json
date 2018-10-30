@@ -20,7 +20,8 @@
         "PCS_SUBSCRIPTION_DOMAIN": "",
         "PCS_SUBSCRIPTION_ID": "",
         "PCS_RESOURCE_GROUP": "",
-        "PCS_IOHUB_NAME": ""
+        "PCS_IOHUB_NAME": "",
+        "PCS_SEED_TEMPLATE": ""
       },
       "applicationUrl": "http://localhost:9003/v1/status"
     }
