@@ -270,11 +270,11 @@ namespace SimulationAgent.Test
             var expectedFailedMessagesCount = 2;
             var expectedFailedDeviceConnectionsCount = 6;
             var expectedFailedTwinUpdatesCount = 10;
-            var expectedActiceDevicesCount = 2;
+            var expectedActiveDevicesCount = 2;
 
             var statisticsModel = new SimulationStatisticsModel
             {
-                ActiveDevices = expectedActiceDevicesCount,
+                ActiveDevices = expectedActiveDevicesCount,
                 TotalMessagesSent = expectedTotalMessageCount,
                 FailedMessages = expectedFailedMessagesCount,
                 FailedDeviceConnections = expectedFailedDeviceConnectionsCount,
