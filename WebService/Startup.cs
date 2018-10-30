@@ -26,7 +26,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         // Agent responsible for simulating IoT devices
         private ISimulationAgent simulationAgent;
 
-        // Service responsible for simulating IoT devices
+        // Service responsible for managing simulation state 
         private ISimulations simulationService;
 
         // Initialized in `Startup`
@@ -114,13 +114,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             this.simulationAgent = this.ApplicationContainer.Resolve<ISimulationAgent>();
             this.simulationAgent.StartAsync();
 
-            var config = this.ApplicationContainer.Resolve<IConfig>();
-            if (!string.IsNullOrEmpty(config.SeedTemplate))
-            {
-                // This creates sample simulations that will be shown on simulation dashboard by default
-                this.simulationService = this.ApplicationContainer.Resolve<ISimulations>();
-                this.simulationService.TrySeedAsync(config.SeedTemplate.ToLowerInvariant());
-            }
+            // This creates sample simulations that will be shown on simulation dashboard by default
+            this.simulationService = this.ApplicationContainer.Resolve<ISimulations>();
+            this.simulationService.TrySeedAsync();
         }
 
         private void StopAgents()

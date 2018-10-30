@@ -20,8 +20,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         // Web service listening port
         int Port { get; }
 
-        string SeedTemplate { get; }
-
         ILoggingConfig LoggingConfig { get; }
 
         // Service layer configuration
@@ -145,7 +143,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string AAD_ACCESS_TOKEN_URL = AZURE_ACTIVE_DIRECTORY_KEY + "access_token_url";
 
         public int Port { get; }
-        public string SeedTemplate { get; }
         public ILoggingConfig LoggingConfig { get; set; }
         public IClientAuthConfig ClientAuthConfig { get; }
         public IServicesConfig ServicesConfig { get; }
@@ -157,7 +154,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         public Config(IConfigData configData)
         {
             this.Port = configData.GetInt(PORT_KEY);
-            this.SeedTemplate = configData.GetString(SEED_TEMPLATE_KEY);
             this.LoggingConfig = GetLogConfig(configData);
             this.ServicesConfig = GetServicesConfig(configData);
             this.ClientAuthConfig = GetClientAuthConfig(configData);
@@ -258,6 +254,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
 
             return new ServicesConfig
             {
+                SeedTemplate = configData.GetString(SEED_TEMPLATE_KEY),
                 SeedTemplateFolder = MapRelativePath(configData.GetString(SEED_TEMPLATE_FOLDER_KEY)),
                 DeviceModelsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_FOLDER_KEY)),
                 DeviceModelsScriptsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_SCRIPTS_FOLDER_KEY)),

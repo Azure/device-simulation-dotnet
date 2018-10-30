@@ -49,7 +49,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task DeleteAsync(string id);
 
         // Seed default simulations
-        Task TrySeedAsync(string templateName);
+        Task TrySeedAsync();
 
         // Try to start a job to create all the devices
         Task<bool> TryToStartDevicesCreationAsync(string simulationId, IDevices devices);
@@ -75,7 +75,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private const string DEFAULT_SIMULATION_ID = "1";
         private const string DEFAULT_TEMPLATE_NAME = "default";
         private const string DEVICES_COLLECTION = "SimulatedDevices";
-        public const string SEED_STATUS_KEY = "SeedCompleted";
+        private const string SEED_STATUS_KEY = "SeedCompleted";
         private const int DEVICES_PER_MODEL_IN_DEFAULT_TEMPLATE = 1;
 
         private readonly IServicesConfig config;
@@ -399,10 +399,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             await this.simulationsStorage.DeleteAsync(id);
         }
 
-        public async Task TrySeedAsync(string templateName)
+        public async Task TrySeedAsync()
         {
             try
             {
+                var templateName = this.config.SeedTemplate;
+
+                if (string.IsNullOrEmpty(templateName)) return;
+
                 // Skips if the seeding has already been complete
                 if (!await this.mainStorage.ExistsAsync(SEED_STATUS_KEY))
                 {
@@ -420,58 +424,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var msg = "Failed to seed default simulations." + e;
                 this.log.Error(msg);
                 this.diagnosticsLogger.LogServiceError(msg);
-            }
-        }
-
-        // This creates sample simulations that will be shown on simulation dashboard by default
-        private async Task SeedSimulationsAsync(string templateName)
-        {
-            string content;
-            var fileName = templateName + ".json";
-            var filePath = Path.Combine(this.config.SeedTemplateFolder, fileName);
-            if (this.fileSystem.Exists(filePath))
-            {
-                content = this.fileSystem.ReadAllText(filePath);
-            }
-            else
-            {
-                this.log.Debug("Template not found for setting sample simulations.");
-                return;
-            }
-
-            Models.Simulation simulation = null;
-
-            try
-            {
-                var simulationList = JsonConvert.DeserializeObject<List<Models.Simulation>>(content);
-                if (simulationList == null || simulationList.Count == 0) return;
-
-                for (int index = 0; index < simulationList.Count; index++)
-                {
-                    // We need to start creating simulations starting with id 1 as it is treated as default simulation
-                    // and is referenced in Welcome page on UI
-                    simulation = simulationList[index];
-                    var simulationId = index + 1;
-                    simulation.Id = simulationId.ToString();
-
-                    try
-                    {
-                        // Check if there is an existing simulation with the given id
-                        // if it exists then skip creating a new simulation
-                        await this.GetAsync(simulation.Id);
-                    }
-                    catch (ResourceNotFoundException)
-                    {
-                        // create a simulation if no sample simulation exists with provided id.
-                        simulation.StartTime = DateTimeOffset.UtcNow;
-                        await this.UpsertAsync(simulation);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                var message = "Failed to create sample simulation. " + " template: " + JsonConvert.SerializeObject(simulation);
-                this.log.Error(message, ex);
             }
         }
 
@@ -680,6 +632,58 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 });
 
             return simulation;
+        }
+
+        // This creates sample simulations that will be shown on simulation dashboard by default
+        private async Task SeedSimulationsAsync(string templateName)
+        {
+            string content;
+            var fileName = templateName + ".json";
+            var filePath = Path.Combine(this.config.SeedTemplateFolder, fileName);
+            if (this.fileSystem.Exists(filePath))
+            {
+                content = this.fileSystem.ReadAllText(filePath);
+            }
+            else
+            {
+                this.log.Debug("Template not found for setting sample simulations.");
+                return;
+            }
+
+            Models.Simulation simulation = null;
+
+            try
+            {
+                var simulationList = JsonConvert.DeserializeObject<List<Models.Simulation>>(content);
+                if (simulationList == null || simulationList.Count == 0) return;
+
+                for (int index = 0; index < simulationList.Count; index++)
+                {
+                    // We need to start creating simulations starting with id 1 as it is treated as default simulation
+                    // and is referenced in Welcome page on UI
+                    simulation = simulationList[index];
+                    var simulationId = index + 1;
+                    simulation.Id = simulationId.ToString();
+
+                    try
+                    {
+                        // Check if there is an existing simulation with the given id
+                        // if it exists then skip creating a new simulation
+                        await this.GetAsync(simulation.Id);
+                    }
+                    catch (ResourceNotFoundException)
+                    {
+                        // create a simulation if no sample simulation exists with provided id.
+                        simulation.StartTime = DateTimeOffset.UtcNow;
+                        await this.UpsertAsync(simulation);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                var message = "Failed to create sample simulation. " + " template: " + JsonConvert.SerializeObject(simulation);
+                this.log.Error(message, ex);
+            }
         }
 
         private async Task<Models.Simulation> ResetSimulationStatisticsAsync(Models.Simulation simulation)

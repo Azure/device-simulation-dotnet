@@ -844,7 +844,7 @@ namespace Services.Test
             this.ThereIsATemplateForDefaultSimulations();
 
             // Act
-            this.target.TrySeedAsync("template").CompleteOrTimeout();
+            this.target.TrySeedAsync().CompleteOrTimeout();
 
             // Assert
             this.mockStorageRecords.Verify(x => x.CreateAsync(It.IsAny<StorageRecord>()), Times.Once);
@@ -859,6 +859,7 @@ namespace Services.Test
             string fileContent = JsonConvert.SerializeObject(simulationList);
             const string TEMPLATE_FILE_PATH = "/data/";
             this.mockConfig.Setup(x => x.SeedTemplateFolder).Returns(TEMPLATE_FILE_PATH);
+            this.mockConfig.Setup(x => x.SeedTemplate).Returns("template");
             this.file.Setup(x => x.Exists(It.IsAny<string>())).Returns(true);
             this.file.Setup(x => x.ReadAllText(It.IsAny<string>())).Returns(fileContent);
         }

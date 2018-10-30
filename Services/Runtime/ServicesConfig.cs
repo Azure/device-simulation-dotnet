@@ -7,6 +7,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 {
     public interface IServicesConfig
     {
+        string SeedTemplate { get; }
         string SeedTemplateFolder { get; }
         string DeviceModelsFolder { get; }
         string DeviceModelsScriptsFolder { get; }
@@ -48,12 +49,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             this.ihf = string.Empty;
         }
 
-        public string SeedTemplateFolder
-        {
-            get { return this.stf; }
-            set { this.stf = this.NormalizePath(value); }
-        }
-
         public string DeviceModelsFolder
         {
             get { return this.dtf; }
@@ -65,6 +60,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             get { return this.dtbf; }
             set { this.dtbf = this.NormalizePath(value); }
         }
+
+        public string SeedTemplateFolder
+        {
+            get { return this.stf; }
+            set { this.stf = this.NormalizePath(value); }
+        }
+
+        public string SeedTemplate { get; set; }
 
         public string IoTHubConnString { get; set; }
 
