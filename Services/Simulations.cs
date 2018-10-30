@@ -464,7 +464,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     {
                         // create a simulation if no sample simulation exists with provided id.
                         simulation.StartTime = DateTimeOffset.UtcNow;
-                        simulation.EndTime = DateTimeOffset.MaxValue;
                         await this.UpsertAsync(simulation);
                     }
                 }
