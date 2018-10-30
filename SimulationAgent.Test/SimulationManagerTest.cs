@@ -34,6 +34,7 @@ namespace SimulationAgent.Test
         private const string DEVICE1 = "j1";
         private const string DEVICE2 = "j2";
         private const string DEVICE3 = "b3";
+        private const string ACTOR_PREFIX_SEPARATOR = "//";
 
         private readonly Mock<ISimulationContext> mockSimulationContext;
         private readonly Mock<IDevicePartitions> mockDevicePartitions;
@@ -269,43 +270,71 @@ namespace SimulationAgent.Test
             var expectedFailedMessagesCount = 2;
             var expectedFailedDeviceConnectionsCount = 6;
             var expectedFailedTwinUpdatesCount = 10;
+            var expectedActiceDevicesCount = 2;
 
             var statisticsModel = new SimulationStatisticsModel
             {
+                ActiveDevices = expectedActiceDevicesCount,
                 TotalMessagesSent = expectedTotalMessageCount,
                 FailedMessages = expectedFailedMessagesCount,
                 FailedDeviceConnections = expectedFailedDeviceConnectionsCount,
                 FailedDevicePropertiesUpdates = expectedFailedTwinUpdatesCount
             };
 
-            var mockDeviceConnectionActor = new Mock<IDeviceConnectionActor>();
-            var mockDevicePropertiesActor = new Mock<IDevicePropertiesActor>();
-            var mockDeviceTelemetryActor = new Mock<IDeviceTelemetryActor>();
-
+            // Add data for expected simulation
             for (int i = 0; i < 2; i++)
             {
-                var deviceName = SIM_ID + "_" + i;
+                var deviceName = SIM_ID + ACTOR_PREFIX_SEPARATOR + i;
+                var mockDeviceTelemetryActor = new Mock<IDeviceTelemetryActor>();
                 mockDeviceTelemetryActor.Setup(x => x.TotalMessagesCount).Returns(100);
                 mockDeviceTelemetryActor.Setup(x => x.FailedMessagesCount).Returns(1);
                 this.deviceTelemetryActors.TryAdd(deviceName, mockDeviceTelemetryActor.Object);
 
+                var mockDeviceConnectionActor = new Mock<IDeviceConnectionActor>();
                 mockDeviceConnectionActor.Setup(x => x.FailedDeviceConnectionsCount).Returns(3);
                 this.mockDeviceContext.TryAdd(deviceName, mockDeviceConnectionActor.Object);
 
+                var mockDevicePropertiesActor = new Mock<IDevicePropertiesActor>();
                 mockDevicePropertiesActor.Setup(x => x.FailedTwinUpdatesCount).Returns(5);
                 this.devicePropertiesActors.TryAdd(deviceName, mockDevicePropertiesActor.Object);
+
+                var mockDeviceStateActor = new Mock<IDeviceStateActor>();
+                mockDeviceStateActor.Setup(x => x.IsDeviceActive).Returns(true);
+                this.deviceStateActors.TryAdd(deviceName, mockDeviceStateActor.Object);
+            }
+
+            // Add data for additional simulations
+            for (int i = 2; i < 5; i++)
+            {
+                var deviceName = SIM_ID + i + ACTOR_PREFIX_SEPARATOR + i;
+                var mockDeviceTelemetryActor = new Mock<IDeviceTelemetryActor>();
+                mockDeviceTelemetryActor.Setup(x => x.TotalMessagesCount).Returns(100 * i);
+                mockDeviceTelemetryActor.Setup(x => x.FailedMessagesCount).Returns(1 * i);
+                this.deviceTelemetryActors.TryAdd(deviceName, mockDeviceTelemetryActor.Object);
+
+                var mockDeviceConnectionActor = new Mock<IDeviceConnectionActor>();
+                mockDeviceConnectionActor.Setup(x => x.FailedDeviceConnectionsCount).Returns(3 * i);
+                this.mockDeviceContext.TryAdd(deviceName, mockDeviceConnectionActor.Object);
+
+                var mockDevicePropertiesActor = new Mock<IDevicePropertiesActor>();
+                mockDevicePropertiesActor.Setup(x => x.FailedTwinUpdatesCount).Returns(5 * i);
+                this.devicePropertiesActors.TryAdd(deviceName, mockDevicePropertiesActor.Object);
+
+                var mockDeviceStateActor = new Mock<IDeviceStateActor>();
+                mockDeviceStateActor.Setup(x => x.IsDeviceActive).Returns(true);
+                this.deviceStateActors.TryAdd(deviceName, mockDeviceStateActor.Object);
             }
 
             // Act
-            this.target.SaveStatisticsAsync().CompleteOrTimeout();
+            this.target.SaveStatisticsAsync().CompleteOrTimeout(); 
 
-            // Assert
+            // Assert create or update is called with expected simulation id and statistics
             this.mockSimulationStatistics.Verify(x => x.CreateOrUpdateAsync(SIM_ID, It.Is<SimulationStatisticsModel>(
                 a => a.ActiveDevices == statisticsModel.ActiveDevices &&
                      a.TotalMessagesSent == statisticsModel.TotalMessagesSent &&
                      a.FailedMessages == statisticsModel.FailedMessages &&
                      a.FailedDeviceConnections == statisticsModel.FailedDeviceConnections &&
-                     a.FailedDevicePropertiesUpdates == statisticsModel.FailedDevicePropertiesUpdates)));
+                     a.FailedDevicePropertiesUpdates == statisticsModel.FailedDevicePropertiesUpdates)), Times.Once);
         }
 
         private static long RandomInt()
