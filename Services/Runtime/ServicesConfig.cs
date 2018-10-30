@@ -26,6 +26,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         StorageConfig PartitionsStorage { get; set; }
         StorageConfig StatisticsStorage { get; set; }
         string DiagnosticsEndpointUrl { get; }
+        string UserAgent { get; }
     }
 
     // TODO: test Windows/Linux folder separator
@@ -94,6 +95,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         public StorageConfig DevicesStorage { get; set; }
 
         public StorageConfig PartitionsStorage { get; set; }
+
+        public string UserAgent { get; set; }
 
         public StorageConfig StatisticsStorage { get; set; }
 

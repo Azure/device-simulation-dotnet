@@ -10,7 +10,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
     public interface IDeviceClientWrapper
     {
         uint OperationTimeoutInMilliseconds { get; set; }
-        IDeviceClientWrapper CreateFromConnectionString(string connectionString, TransportType transportType);
+        IDeviceClientWrapper CreateFromConnectionString(string connectionString, TransportType transportType, string userAgent);
         Task OpenAsync();
         Task CloseAsync();
         Task UpdateReportedPropertiesAsync(TwinCollection reportedProperties);
@@ -34,9 +34,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             set => this.internalClient.OperationTimeoutInMilliseconds = value;
         }
 
-        public IDeviceClientWrapper CreateFromConnectionString(string connectionString, TransportType transportType)
+        public IDeviceClientWrapper CreateFromConnectionString(string connectionString, TransportType transportType, string userAgent)
         {
             var sdkClient = Azure.Devices.Client.DeviceClient.CreateFromConnectionString(connectionString, transportType);
+            sdkClient.ProductInfo = userAgent;
+
             return this.WrapSdkClient(sdkClient);
         }
 
