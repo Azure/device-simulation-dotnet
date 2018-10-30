@@ -179,7 +179,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
                 Id = statisticsRecordId,
                 Data = JsonConvert.SerializeObject(statisticsRecord)
             };
-
         }
 
         private string GetStatisticsRecordId(string simId, string nodeId)
