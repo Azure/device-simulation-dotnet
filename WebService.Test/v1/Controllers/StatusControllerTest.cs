@@ -6,9 +6,8 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers;
 using Moq;
 using WebService.Test.helpers;
@@ -26,7 +25,7 @@ namespace WebService.Test.v1.Controllers
         private readonly Mock<IStorageAdapterClient> storage;
         private readonly Mock<ISimulations> simulations;
         private readonly Mock<ILogger> logger;
-        private readonly Mock<IServicesConfig> servicesConfig;
+        private readonly Mock<IConfig> config;
         private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
         private readonly Mock<IRateLimiting> rateReporter;
         private readonly StatusController target;
@@ -37,7 +36,7 @@ namespace WebService.Test.v1.Controllers
             this.storage = new Mock<IStorageAdapterClient>();
             this.simulations = new Mock<ISimulations>();
             this.logger = new Mock<ILogger>();
-            this.servicesConfig = new Mock<IServicesConfig>();
+            this.config = new Mock<IConfig>();
             this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
             this.rateReporter = new Mock<IRateLimiting>();
 
@@ -46,7 +45,7 @@ namespace WebService.Test.v1.Controllers
                 this.storage.Object,
                 this.simulations.Object,
                 this.logger.Object,
-                this.servicesConfig.Object);
+                this.config.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -104,8 +103,8 @@ namespace WebService.Test.v1.Controllers
         {
             const string IOTHUB_CONNECTION_STRING = "hostname=hub-1;sharedaccesskeyname=hubowner;sharedaccesskey=fakekey";
 
-            this.servicesConfig
-                .Setup(x => x.IoTHubConnString)
+            this.config
+                .Setup(x => x.ServicesConfig.IoTHubConnString)
                 .Returns(IOTHUB_CONNECTION_STRING);
 
             this.connectionStringManager

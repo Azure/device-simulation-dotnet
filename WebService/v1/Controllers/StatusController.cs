@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
 
@@ -27,20 +27,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private readonly IStorageAdapterClient storageAdapterClient;
         private readonly ISimulations simulations;
         private readonly ILogger log;
-        private readonly IServicesConfig servicesConfig;
+        private readonly IConfig config;
 
         public StatusController(
             IPreprovisionedIotHub preprovisionedIotHub,
             IStorageAdapterClient storageAdapterClient,
             ISimulations simulations,
             ILogger logger,
-            IServicesConfig servicesConfig)
+            IConfig config)
         {
             this.preprovisionedIotHub = preprovisionedIotHub;
             this.storageAdapterClient = storageAdapterClient;
             this.simulations = simulations;
             this.log = logger;
-            this.servicesConfig = servicesConfig;
+            this.config = config;
         }
 
         // TODO: reduce method complexity, refactor out some logic
@@ -81,6 +81,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 result.Message = string.Join("; ", errors);
             }
 
+            result.Properties.Add("DiagnosticsEndpointUrl", this.config.ServicesConfig?.DiagnosticsEndpointUrl);
+            result.Properties.Add("StorageAdapterApiUrl", this.config.ServicesConfig?.StorageAdapterApiUrl);
+            result.Properties.Add("Port", this.config.Port.ToString());
             this.log.Info("Service status request", () => new { Healthy = result.IsHealthy, result.Message });
             return result;
         }
@@ -108,7 +111,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         // Check whether the configuration contains a connection string
         private bool IsHubConnectionStringConfigured()
         {
-            var cs = this.servicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
+            var cs = this.config.ServicesConfig?.IoTHubConnString?.ToLowerInvariant().Trim();
             return (!string.IsNullOrEmpty(cs)
                     && cs.Contains("hostname=")
                     && cs.Contains("sharedaccesskeyname=")
@@ -122,6 +125,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             List<string> errors
             )
         {
+            if (serviceTuple == null)
+            {
+                return;
+            }
             var serviceStatusModel = new StatusModel
             {
                 Message = serviceTuple.Item2,
