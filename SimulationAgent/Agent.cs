@@ -243,7 +243,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             DateTimeOffset now = DateTimeOffset.UtcNow;
             TimeSpan duration = now - this.lastSaveStatisticsTime;
 
-            // Save simulation statistics at specified interval
+            // Save statistics for simulations at specified interval
             if (duration.Seconds >= SAVE_STATS_INTERVAL_SECS)
             {
                 foreach (var simulation in simulations)
@@ -254,7 +254,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                         {
                             {
                                 await this.simulationManagers[simulation.Id].SaveStatisticsAsync();
-                           }
+                            }
                         }
                     }
                     catch (Exception e)
