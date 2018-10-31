@@ -363,6 +363,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 // This boolean triggers the deletion of partitions from the storage
                 // in the partitioning agent.
                 simulation.PartitioningComplete = false;
+
+                // Reset active device count to 0
+                await this.ResetActiveDevicesStatistics(simulation);
             }
 
             // The Enabled field is optional, e.g. in case PATCH is extended to
@@ -697,6 +700,32 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             await this.simulationStatistics.DeleteSimulationStatisticsAsync(simulation.Id);
 
             return simulation;
+        }
+
+        private async Task ResetActiveDevicesStatistics(Models.Simulation simulation)
+        {
+            try
+            {
+                var currentStats = await this.simulationStatistics.GetSimulationStatisticsAsync(simulation.Id);
+
+                if (currentStats != null)
+                {
+                    var simulationModel = new SimulationStatisticsModel
+                    {
+                        ActiveDevices = 0, // Reset active devices to 0
+                        TotalMessagesSent = currentStats.TotalMessagesSent,
+                        FailedMessages = currentStats.FailedMessages,
+                        FailedDeviceConnections = currentStats.FailedDeviceConnections,
+                        FailedDevicePropertiesUpdates = currentStats.FailedDevicePropertiesUpdates,
+                    };
+
+                    await this.simulationStatistics.UpdateAsync(simulation.Id, simulationModel);
+                }
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Error updating active device count statistics.", () => new { simulation.Id, e });
+            }
         }
     }
 }
