@@ -240,28 +240,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         private async Task SaveSimulationStatisticsAsync(IList<Simulation> simulations)
         {
-            foreach (var simulation in simulations)
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+            TimeSpan duration = now - this.lastSaveStatisticsTime;
+
+            // Save statistics for simulations at specified interval
+            if (duration.Seconds >= SAVE_STATS_INTERVAL_SECS)
             {
-                try
+                foreach (var simulation in simulations)
                 {
-                    if (this.simulationManagers.ContainsKey(simulation.Id))
+                    try
                     {
-                        DateTimeOffset now = DateTimeOffset.UtcNow;
-                        TimeSpan duration = now - this.lastSaveStatisticsTime;
-
-                        // Save simulation statistics at specified interval
-                        if (duration.Seconds >= SAVE_STATS_INTERVAL_SECS)
+                        if (this.simulationManagers.ContainsKey(simulation.Id))
                         {
-                            await this.simulationManagers[simulation.Id].SaveStatisticsAsync();
-
-                            this.lastSaveStatisticsTime = now;
+                            {
+                                await this.simulationManagers[simulation.Id].SaveStatisticsAsync();
+                            }
                         }
                     }
+                    catch (Exception e)
+                    {
+                        this.log.Error("Failed to save simulation statistics.", () => new { simulation.Id, e });
+                    }
                 }
-                catch (Exception e)
-                {
-                    this.log.Error("Failed to save simulation statistics.", () => new { simulation.Id, e });
-                }
+
+                this.lastSaveStatisticsTime = now;
             }
         }
 
