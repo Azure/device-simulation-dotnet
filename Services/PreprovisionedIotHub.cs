@@ -37,18 +37,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Ping the registry to see if the connection is healthy
         public async Task<Tuple<bool, string>> PingRegistryAsync()
         {
-            await this.InitAsync();
-
+            var isHealthy = false;
+            var message = "IoTHub check failed";
             try
             {
+                await this.InitAsync();
                 await this.registry.GetDeviceAsync("healthcheck");
-                return new Tuple<bool, string>(true, "OK");
+                isHealthy = true;
+                message = "Alive and Well!";
             }
             catch (Exception e)
             {
                 this.log.Error("Device registry test failed", e);
-                return new Tuple<bool, string>(false, e.Message);
             }
+
+            return new Tuple<bool, string>(isHealthy, message);
         }
 
         // This call can throw an exception, which is fine when the exception happens during a method

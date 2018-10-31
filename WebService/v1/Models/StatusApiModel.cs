@@ -15,11 +15,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         [JsonProperty(PropertyName = "Name", Order = 10)]
         public string Name => "DeviceSimulation";
 
-        [JsonProperty(PropertyName = "Status", Order = 20)]
-        public string Status { get; set; }
+        [JsonProperty(PropertyName = "IsHealthy", Order = 20)]
+        public bool IsHealthy = true;
 
-        [JsonProperty(PropertyName = "IsConnected", Order = 25)]
-        public bool IsConnected { get; set; }
+        [JsonProperty(PropertyName = "Message", Order = 25)]
+        public string Message = "Alive and well!";
 
         [JsonProperty(PropertyName = "CurrentTime", Order = 30)]
         public string CurrentTime => DateTimeOffset.UtcNow.ToString(DATE_FORMAT);
@@ -52,15 +52,5 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
             { "$type", "Status;" + Version.NUMBER },
             { "$uri", "/" + Version.PATH + "/status" }
         };
-
-        public StatusApiModel(bool isOk, string msg)
-        {
-            this.IsConnected = isOk ? true : false;
-            this.Status = isOk ? "OK" : "ERROR";
-            if (!string.IsNullOrEmpty(msg))
-            {
-                this.Status += ":" + msg;
-            }
-        }
     }
 }

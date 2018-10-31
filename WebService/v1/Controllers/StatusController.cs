@@ -17,8 +17,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
     [Route(Version.PATH + "/[controller]"), ExceptionsFilter]
     public sealed class StatusController : Controller
     {
-        private const string SERVICE_IS_HEALTHY = "Alive and well";
-
         private const string JSON_TRUE = "true";
         private const string JSON_FALSE = "false";
 
@@ -49,68 +47,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         [HttpGet]
         public async Task<StatusApiModel> GetAsync()
         {
-            var statusIsOk = true;
-            var statusMsg = SERVICE_IS_HEALTHY;
+            var result = new StatusApiModel();
             var errors = new List<string>();
-
-            StatusModel storageAdapterStatusModel = new StatusModel();
-            StatusModel ioTHubStatusModel = new StatusModel();
 
             // Simulation status
             var simulationIsRunning = await this.CheckIsSimulationRunningAsync(errors);
             var isRunning = simulationIsRunning.HasValue && simulationIsRunning.Value;
 
             // Check access to Storage Adapter
-            var storageAdapterStatus = await this.storageAdapterClient.PingAsync();
-            if (storageAdapterStatus != null)
-            {
-                if (!storageAdapterStatus.Item1)
-                {
-                    statusIsOk = false;
-                    var message = "Unable to connect to Storage Adapter service";
-                    errors.Add(message);
-                    storageAdapterStatusModel.Message = message;
-                    storageAdapterStatusModel.IsConnected = false;
-                }
-                else
-                {
-                    storageAdapterStatusModel.Message = storageAdapterStatus.Item2;
-                    storageAdapterStatusModel.IsConnected = true;
-                }
-            }
+            var storageAdapterTuple = await this.storageAdapterClient.PingAsync();
+            SetServiceStatus("StorgeAdapter", storageAdapterTuple, result, errors);
 
             // Preprovisioned IoT hub status
             var isHubPreprovisioned = this.IsHubConnectionStringConfigured();
 
             if (isHubPreprovisioned)
             {
-                var preprovisionedHubStatus = await this.CheckAzureIoTHubStatusAsync(errors);
-                if (preprovisionedHubStatus != null)
-                {
-                    if (!preprovisionedHubStatus.Item1)
-                    {
-                        statusIsOk = false;
-                        var message = "Unable to connect to IoTHUb";
-                        errors.Add(message);
-                        ioTHubStatusModel.Message = message;
-                        ioTHubStatusModel.IsConnected = false;
-                    }
-                    else
-                    {
-                        ioTHubStatusModel.Message = preprovisionedHubStatus.Item2;
-                        ioTHubStatusModel.IsConnected = true;
-                    }
-                }
+                var preprovisionedHubTuple = await this.preprovisionedIotHub.PingRegistryAsync();
+                SetServiceStatus("IoTHub", preprovisionedHubTuple, result, errors);
             }
 
-            // Prepare status message and response
-            if (!statusIsOk)
-            {
-                statusMsg = string.Join(";", errors);
-            }
-
-            // Prepare response
-            var result = new StatusApiModel(statusIsOk, statusMsg);
             result.Properties.Add(SIMULATION_RUNNING_KEY,
                 simulationIsRunning.HasValue
                     ? (isRunning ? JSON_TRUE : JSON_FALSE)
@@ -120,18 +76,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                     ? JSON_TRUE
                     : JSON_FALSE);
 
-            result.Dependencies.Add("Storage Adapter", storageAdapterStatusModel);
-            if (isHubPreprovisioned)
+            if (errors.Count > 0)
             {
-                result.Dependencies.Add(PREPROVISIONED_IOTHUB_KEY, ioTHubStatusModel);
+                result.Message = string.Join("; ", errors);
             }
 
-            this.log.Info("Service status request", () => new
-            {
-                Healthy = statusIsOk,
-                statusMsg
-            });
-
+            this.log.Info("Service status request", () => new { Healthy = result.IsHealthy, result.Message });
             return result;
         }
 
@@ -155,34 +105,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             return simulationRunning;
         }
 
-        // Check IoT Hub dependency status
-        private async Task<Tuple<bool, string>> CheckAzureIoTHubStatusAsync(ICollection<string> errors)
-        {
-            Tuple<bool, string> result;
-            try
-            {
-                if (this.IsHubConnectionStringConfigured())
-                {
-                    result = await this.preprovisionedIotHub.PingRegistryAsync();
-                    if (!result.Item1)
-                    {
-                        errors.Add("Unable to use Azure IoT Hub service");
-                    }
-                }
-                else
-                {
-                    result = new Tuple<bool, string>(true, "IoTHub connection string not configured");
-                }
-            }
-            catch (Exception e)
-            {
-                result = new Tuple<bool, string>(false, "IoTHub check failed");
-                this.log.Error("IoT Hub ping failed", e);
-            }
-
-            return result;
-        }
-
         // Check whether the configuration contains a connection string
         private bool IsHubConnectionStringConfigured()
         {
@@ -191,6 +113,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                     && cs.Contains("hostname=")
                     && cs.Contains("sharedaccesskeyname=")
                     && cs.Contains("sharedaccesskey="));
+        }
+
+        private void SetServiceStatus(
+            string dependencyName,
+            Tuple<bool, string> serviceTuple,
+            StatusApiModel result,
+            List<string> errors
+            )
+        {
+            var serviceStatusModel = new StatusModel
+            {
+                Message = serviceTuple.Item2,
+                IsHealthy = serviceTuple.Item1
+            };
+
+            if (!serviceTuple.Item1)
+            {
+                errors.Add(dependencyName + " check failed");
+                result.IsHealthy = serviceTuple.Item1;
+            }
+            result.Dependencies.Add(dependencyName, serviceStatusModel);
         }
     }
 }
