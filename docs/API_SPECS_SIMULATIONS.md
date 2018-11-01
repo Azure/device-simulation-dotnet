@@ -504,8 +504,7 @@ Content-Type: application/json; charset=utf-8
       "FailedMessagesCount": 0,
       "ActiveDevicesCount": 0,
       "FailedDeviceConnectionsCount": 0,
-      "FailedDeviceTwinUpdatesCount": 0,
-      "SimulationErrorsCount": 0
+      "FailedDeviceTwinUpdatesCount": 0
   },
   "$metadata": {
       "$type": "Simulation;1",
