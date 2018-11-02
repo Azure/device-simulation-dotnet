@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
@@ -12,7 +13,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface IPreprovisionedIotHub
     {
         // Ping the registry to see if the connection is healthy
-        Task<Tuple<bool, string>> PingRegistryAsync();
+        Task<StatusResultServiceModel> PingRegistryAsync();
     }
 
     public class PreprovisionedIotHub : IPreprovisionedIotHub
@@ -35,23 +36,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         // Ping the registry to see if the connection is healthy
-        public async Task<Tuple<bool, string>> PingRegistryAsync()
+        public async Task<StatusResultServiceModel> PingRegistryAsync()
         {
-            var isHealthy = false;
-            var message = "IoTHub check failed";
+            var result = new StatusResultServiceModel(false, "IoTHub check failed");
+            
             try
             {
                 await this.InitAsync();
                 await this.registry.GetDeviceAsync("healthcheck");
-                isHealthy = true;
-                message = "Alive and Well!";
+                result.IsHealthy = true;
+                result.Message = "Alive and Well!";
             }
             catch (Exception e)
             {
                 this.log.Error("Device registry test failed", e);
             }
 
-            return new Tuple<bool, string>(isHealthy, message);
+            return result;
         }
 
         // This call can throw an exception, which is fine when the exception happens during a method

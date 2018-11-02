@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Newtonsoft.Json;
 
@@ -15,7 +16,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
 {
     public interface IStorageAdapterClient
     {
-        Task<Tuple<bool, string>> PingAsync();
+        Task<StatusResultServiceModel> PingAsync();
         Task<ValueListApiModel> GetAllAsync(string collectionId);
         Task<ValueApiModel> GetAsync(string collectionId, string key);
         Task<ValueApiModel> CreateAsync(string collectionId, string value);
@@ -50,31 +51,29 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
             this.diagnosticsLogger = diagnosticsLogger;
         }
 
-        public async Task<Tuple<bool, string>> PingAsync()
+        public async Task<StatusResultServiceModel> PingAsync()
         {
-            var isHealthy = false;
-            var message = "Storage adapter check failed";
+            var result = new StatusResultServiceModel(false, "Storage adapter check failed");
             try
             {
                 var response = await this.httpClient.GetAsync(this.PrepareRequest($"status"));
                 if (response.IsError)
                 {
-                    message = "Status code: " + response.StatusCode + "; Response: " + response.Content;
+                    result.Message = $"Status code: {response.StatusCode}; Response: {response.Content}";
                 }
                 else
                 {
-                    var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(response.Content);
-                    message = data["Message"].ToString();
-                    isHealthy = Convert.ToBoolean(data["IsHealthy"]);
+                    var data = JsonConvert.DeserializeObject<StatusServiceModel>(response.Content);
+                    result = data.Status;
                 }
             }
             catch (Exception e)
             {
-                this.log.Error(message, () => new { e });
-                this.diagnosticsLogger.LogServiceError(message, e);
+                this.log.Error(result.Message, () => new { e });
+                this.diagnosticsLogger.LogServiceError(result.Message, e);
             }
 
-            return new Tuple<bool, string>(isHealthy, message);
+            return result;
         }
 
         public async Task<ValueListApiModel> GetAllAsync(string collectionId)
