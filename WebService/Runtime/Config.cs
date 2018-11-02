@@ -45,6 +45,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
     {
         private const string APPLICATION_KEY = "DeviceSimulationService:";
 
+        private const string SEED_TEMPLATE_KEY = APPLICATION_KEY + "seed_template_name";
+        private const string SEED_TEMPLATE_FOLDER_KEY = APPLICATION_KEY + "seed_template_folder";
         private const string PORT_KEY = APPLICATION_KEY + "webservice_port";
         private const string DEVICE_MODELS_FOLDER_KEY = APPLICATION_KEY + "device_models_folder";
         private const string DEVICE_MODELS_SCRIPTS_FOLDER_KEY = APPLICATION_KEY + "device_models_scripts_folder";
@@ -53,6 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string IOTHUB_IMPORT_STORAGE_CONNSTRING_KEY = APPLICATION_KEY + "iothub_import_storage_account_connstring";
         private const string IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY = APPLICATION_KEY + "iothub_sdk_device_client_timeout";
         private const string TWIN_READ_WRITE_ENABLED_KEY = APPLICATION_KEY + "twin_read_write_enabled";
+        private const string USER_AGENT_KEY = APPLICATION_KEY + "user_agent";
 
         private const string IOTHUB_LIMITS_KEY = APPLICATION_KEY + "RateLimits:";
         private const string CONNECTIONS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "device_connections_per_second";
@@ -95,6 +98,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string SIMULATIONS_STORAGE_KEY = APPLICATION_KEY + "Storage:Simulations:";
         private const string DEVICES_STORAGE_KEY = APPLICATION_KEY + "Storage:Devices:";
         private const string PARTITIONS_STORAGE_KEY = APPLICATION_KEY + "Storage:Partitions:";
+        private const string STATISTICS_STORAGE_KEY = APPLICATION_KEY + "Storage:Statistics:";
 
         private const string STORAGE_TYPE_KEY = "type";
         private const string STORAGE_MAX_PENDING_OPERATIONS = APPLICATION_KEY + "max_pending_storage_tasks";
@@ -250,6 +254,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
 
             return new ServicesConfig
             {
+                SeedTemplate = configData.GetString(SEED_TEMPLATE_KEY),
+                SeedTemplateFolder = MapRelativePath(configData.GetString(SEED_TEMPLATE_FOLDER_KEY)),
                 DeviceModelsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_FOLDER_KEY)),
                 DeviceModelsScriptsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_SCRIPTS_FOLDER_KEY)),
                 IoTHubConnString = connstring,
@@ -266,6 +272,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 SimulationsStorage = GetStorageConfig(configData, SIMULATIONS_STORAGE_KEY),
                 DevicesStorage = GetStorageConfig(configData, DEVICES_STORAGE_KEY),
                 PartitionsStorage = GetStorageConfig(configData, PARTITIONS_STORAGE_KEY),
+                UserAgent = configData.GetString(USER_AGENT_KEY),
+                StatisticsStorage = GetStorageConfig(configData, STATISTICS_STORAGE_KEY),
                 DiagnosticsEndpointUrl = configData.GetString(LOGGING_DIAGNOSTICS_URL_KEY)
             };
         }

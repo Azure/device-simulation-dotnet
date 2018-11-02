@@ -9,20 +9,23 @@
     <PropertyGroup Condition=" '$(RunConfiguration)' == 'Default' ">
         <StartAction>Project</StartAction>
         <EnvironmentVariables>
-            <Variable name="ASPNETCORE_ENVIRONMENT" value="Development"/>
-            <Variable name="PCS_IOTHUB_CONNSTRING" value="your Azure IoT Hub connection string"/>
-            <Variable name="PCS_STORAGEADAPTER_WEBSERVICE_URL" value="http://localhost:9022/v1"/>
-            <Variable name="PCS_RESOURCE_GROUP_LOCATION" value="your Azure resource group location"/>
-            <Variable name="PCS_VMSS_NAME" value="your vm scale set name"/>
-            <Variable name="PCS_LOG_LEVEL" value="Debug"/>
-            <Variable name="PCS_AUTH_REQUIRED" value="false"/>
-            <Variable name="PCS_AUTH_ISSUER" value=""/>
-            <Variable name="PCS_AUTH_AUDIENCE" value=""/>
-            <Variable name="PCS_CORS_WHITELIST" value=""/>
-            <Variable name="PCS_SUBSCRIPTION_DOMAIN" value=""/>
-            <Variable name="PCS_SUBSCRIPTION_ID" value=""/>
-            <Variable name="PCS_RESOURCE_GROUP" value=""/>
-            <Variable name="PCS_IOHUB_NAME" value=""/>
+            <Variable name="ASPNETCORE_ENVIRONMENT" value="Development" />
+            <Variable name="PCS_IOTHUB_CONNSTRING" value="your Azure IoT Hub connection string" />
+            <Variable name="PCS_STORAGEADAPTER_WEBSERVICE_URL" value="http://localhost:9022/v1" />
+            <Variable name="PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING" value="your DocumentDb connection string" />
+            <Variable name="PCS_AZURE_STORAGE_ACCOUNT" value="your Azure Storage Account connection string" />
+            <Variable name="PCS_RESOURCE_GROUP_LOCATION" value="your Azure resource group location" />
+            <Variable name="PCS_VMSS_NAME" value="your vm scale set name" />
+            <Variable name="PCS_LOG_LEVEL" value="Debug" />
+            <Variable name="PCS_AUTH_REQUIRED" value="false" />
+            <Variable name="PCS_AUTH_ISSUER" value="" />
+            <Variable name="PCS_AUTH_AUDIENCE" value="" />
+            <Variable name="PCS_CORS_WHITELIST" value="" />
+            <Variable name="PCS_SUBSCRIPTION_DOMAIN" value="" />
+            <Variable name="PCS_SUBSCRIPTION_ID" value="" />
+            <Variable name="PCS_RESOURCE_GROUP" value="" />
+            <Variable name="PCS_IOHUB_NAME" value="" />
+            <Variable name="PCS_SEED_TEMPLATE" value="" />
         </EnvironmentVariables>
         <ApplicationURL>http://localhost:9003</ApplicationURL>
         <LaunchUrl>http://localhost:9003/v1/status</LaunchUrl>
@@ -33,28 +36,28 @@
         </Content>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Autofac" Version="4.8.1"/>
-        <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.3.0"/>
-        <PackageReference Include="Microsoft.AspNetCore" Version="2.1.3"/>
-        <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.2"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="2.1.1"/>
-        <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="2.1.5"/>
+        <PackageReference Include="Autofac" Version="4.8.1" />
+        <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.3.0" />
+        <PackageReference Include="Microsoft.AspNetCore" Version="2.1.3" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.2" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="2.1.1" />
+        <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="2.1.5" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\PartitioningAgent\PartitioningAgent.csproj"/>
-        <ProjectReference Include="..\Services\Services.csproj"/>
-        <ProjectReference Include="..\SimulationAgent\SimulationAgent.csproj"/>
+        <ProjectReference Include="..\PartitioningAgent\PartitioningAgent.csproj" />
+        <ProjectReference Include="..\Services\Services.csproj" />
+        <ProjectReference Include="..\SimulationAgent\SimulationAgent.csproj" />
     </ItemGroup>
     <ProjectExtensions>
         <MonoDevelop>
             <Properties>
                 <Policies>
-                    <TextStylePolicy TabWidth="4" IndentWidth="4" RemoveTrailingWhitespace="True" NoTabsAfterNonTabs="False" EolMarker="Native" FileWidth="80" TabsToSpaces="True" scope="text/x-csharp"/>
-                    <CSharpFormattingPolicy IndentBlock="True" IndentBraces="False" IndentSwitchSection="True" IndentSwitchCaseSection="True" LabelPositioning="OneLess" NewLinesForBracesInTypes="True" NewLinesForBracesInMethods="True" NewLinesForBracesInProperties="True" NewLinesForBracesInAccessors="True" NewLinesForBracesInAnonymousMethods="True" NewLinesForBracesInControlBlocks="True" NewLinesForBracesInAnonymousTypes="True" NewLinesForBracesInObjectCollectionArrayInitializers="True" NewLinesForBracesInLambdaExpressionBody="True" NewLineForElse="True" NewLineForCatch="True" NewLineForFinally="True" NewLineForMembersInObjectInit="True" NewLineForMembersInAnonymousTypes="True" NewLineForClausesInQuery="True" SpacingAfterMethodDeclarationName="False" SpaceWithinMethodDeclarationParenthesis="False" SpaceBetweenEmptyMethodDeclarationParentheses="False" SpaceAfterMethodCallName="False" SpaceWithinMethodCallParentheses="False" SpaceBetweenEmptyMethodCallParentheses="False" SpaceAfterControlFlowStatementKeyword="True" SpaceWithinExpressionParentheses="False" SpaceWithinCastParentheses="False" SpaceWithinOtherParentheses="False" SpaceAfterCast="False" SpacesIgnoreAroundVariableDeclaration="False" SpaceBeforeOpenSquareBracket="False" SpaceBetweenEmptySquareBrackets="False" SpaceWithinSquareBrackets="False" SpaceAfterColonInBaseTypeDeclaration="True" SpaceAfterComma="True" SpaceAfterDot="False" SpaceAfterSemicolonsInForStatement="True" SpaceBeforeColonInBaseTypeDeclaration="True" SpaceBeforeComma="False" SpaceBeforeDot="False" SpaceBeforeSemicolonsInForStatement="False" SpacingAroundBinaryOperator="Single" WrappingPreserveSingleLine="True" WrappingKeepStatementsOnSingleLine="True" PlaceSystemDirectiveFirst="True" scope="text/x-csharp"/>
-                    <TextStylePolicy TabWidth="4" IndentWidth="4" RemoveTrailingWhitespace="True" NoTabsAfterNonTabs="False" EolMarker="Native" FileWidth="80" TabsToSpaces="True" scope="text/plain"/>
-                    <TextStylePolicy TabWidth="4" IndentWidth="4" RemoveTrailingWhitespace="True" NoTabsAfterNonTabs="False" EolMarker="Native" FileWidth="80" TabsToSpaces="True" scope="text/x-json"/>
-                    <JSONFormattingPolicy AutomaticFormatting="False" AutoStructureCompletion="True" BracePositions="SemiExpanded" FormatOnPaste="True" scope="text/x-json"/>
-                    <StandardHeader IncludeInNewFiles="True" Text="// Copyright (c) Microsoft. All rights reserved.&#xA;"/>
+                    <TextStylePolicy TabWidth="4" IndentWidth="4" RemoveTrailingWhitespace="True" NoTabsAfterNonTabs="False" EolMarker="Native" FileWidth="80" TabsToSpaces="True" scope="text/x-csharp" />
+                    <CSharpFormattingPolicy IndentBlock="True" IndentBraces="False" IndentSwitchSection="True" IndentSwitchCaseSection="True" LabelPositioning="OneLess" NewLinesForBracesInTypes="True" NewLinesForBracesInMethods="True" NewLinesForBracesInProperties="True" NewLinesForBracesInAccessors="True" NewLinesForBracesInAnonymousMethods="True" NewLinesForBracesInControlBlocks="True" NewLinesForBracesInAnonymousTypes="True" NewLinesForBracesInObjectCollectionArrayInitializers="True" NewLinesForBracesInLambdaExpressionBody="True" NewLineForElse="True" NewLineForCatch="True" NewLineForFinally="True" NewLineForMembersInObjectInit="True" NewLineForMembersInAnonymousTypes="True" NewLineForClausesInQuery="True" SpacingAfterMethodDeclarationName="False" SpaceWithinMethodDeclarationParenthesis="False" SpaceBetweenEmptyMethodDeclarationParentheses="False" SpaceAfterMethodCallName="False" SpaceWithinMethodCallParentheses="False" SpaceBetweenEmptyMethodCallParentheses="False" SpaceAfterControlFlowStatementKeyword="True" SpaceWithinExpressionParentheses="False" SpaceWithinCastParentheses="False" SpaceWithinOtherParentheses="False" SpaceAfterCast="False" SpacesIgnoreAroundVariableDeclaration="False" SpaceBeforeOpenSquareBracket="False" SpaceBetweenEmptySquareBrackets="False" SpaceWithinSquareBrackets="False" SpaceAfterColonInBaseTypeDeclaration="True" SpaceAfterComma="True" SpaceAfterDot="False" SpaceAfterSemicolonsInForStatement="True" SpaceBeforeColonInBaseTypeDeclaration="True" SpaceBeforeComma="False" SpaceBeforeDot="False" SpaceBeforeSemicolonsInForStatement="False" SpacingAroundBinaryOperator="Single" WrappingPreserveSingleLine="True" WrappingKeepStatementsOnSingleLine="True" PlaceSystemDirectiveFirst="True" scope="text/x-csharp" />
+                    <TextStylePolicy TabWidth="4" IndentWidth="4" RemoveTrailingWhitespace="True" NoTabsAfterNonTabs="False" EolMarker="Native" FileWidth="80" TabsToSpaces="True" scope="text/plain" />
+                    <TextStylePolicy TabWidth="4" IndentWidth="4" RemoveTrailingWhitespace="True" NoTabsAfterNonTabs="False" EolMarker="Native" FileWidth="80" TabsToSpaces="True" scope="text/x-json" />
+                    <JSONFormattingPolicy AutomaticFormatting="False" AutoStructureCompletion="True" BracePositions="SemiExpanded" FormatOnPaste="True" scope="text/x-json" />
+                    <StandardHeader IncludeInNewFiles="True" Text="// Copyright (c) Microsoft. All rights reserved.&#xA;" />
                 </Policies>
             </Properties>
         </MonoDevelop>

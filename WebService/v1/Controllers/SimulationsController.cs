@@ -3,19 +3,16 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Filters;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Devices;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel;
-using SimulationStatistics = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.SimulationStatistics;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers
 {
@@ -28,6 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly IIothubMetrics iothubMetrics;
         private readonly ISimulationAgent simulationAgent;
+
         private readonly ILogger log;
 
         public SimulationsController(
@@ -48,14 +46,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         [HttpGet]
         public async Task<SimulationListApiModel> GetAsync()
         {
-            var simulationList = await this.simulationsService.GetListAsync();
-            return new SimulationListApiModel(await this.simulationsService.GetListAsync());
+            var simulationList = await this.simulationsService.GetListWithStatisticsAsync();
+            return new SimulationListApiModel(simulationList);
         }
 
         [HttpGet("{id}")]
         public async Task<SimulationApiModel> GetAsync(string id)
         {
-            return SimulationApiModel.FromServiceModel(await this.simulationsService.GetAsync(id));
+            var simulation = await this.simulationsService.GetWithStatisticsAsync(id);
+            return SimulationApiModel.FromServiceModel(simulation);
         }
 
         [HttpPost]
@@ -164,12 +163,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             }
 
             SimulationPatch patchServiceModel = patch.ToServiceModel(id);
-            if (patchServiceModel.Enabled == false)
-            {
-                // TODO: add distributed statistics
-                patchServiceModel.Statistics = new SimulationStatistics();
-            }
-
             var simulation = await this.simulationsService.MergeAsync(patchServiceModel);
             return SimulationApiModel.FromServiceModel(simulation);
         }

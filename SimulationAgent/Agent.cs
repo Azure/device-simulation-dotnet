@@ -43,8 +43,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // The number of days to wait between sending a diagnostics heartbeat
         private const int DIAGNOSTICS_POLLING_FREQUENCY_DAYS = 1;
 
-        // How often (minimum) to log simulation statistics
-        private const int STATS_INTERVAL_MSECS = 15000;
+        // How often (minimum) to print simulation statistics
+        private const int PRINT_STATS_INTERVAL_MSECS = 15000;
+
+        // How often (minimum) to save simulation statistics to storage
+        private const int SAVE_STATS_INTERVAL_SECS = 30;
 
         // Global thread settings, not specific to any simulation
         private readonly IAppConcurrencyConfig appConcurrencyConfig;
@@ -54,6 +57,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private readonly ISimulations simulations;
         private readonly IFactory factory;
         private DateTimeOffset lastPolledTime;
+        private DateTimeOffset lastSaveStatisticsTime;
+        private long lastPrintStatisticsTime;
 
         // Flag signaling whether the agent has started and is running (to avoid contentions)
         private bool running;
@@ -94,7 +99,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         // Used to stop the threads
         private CancellationTokenSource runningToken;
-        private long lastStatsTime;
 
         public Agent(
             IAppConcurrencyConfig appConcurrencyConfig,
@@ -113,7 +117,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.running = false;
             this.runningToken = new CancellationTokenSource();
             this.lastPolledTime = DateTimeOffset.UtcNow;
-            this.lastStatsTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            this.lastPrintStatisticsTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            this.lastSaveStatisticsTime = DateTimeOffset.UtcNow;
 
             this.simulationManagers = new ConcurrentDictionary<string, ISimulationManager>();
             this.deviceStateActors = new ConcurrentDictionary<string, IDeviceStateActor>();
@@ -179,8 +184,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.log.Debug("Active simulations loaded", () => new { activeSimulations.Count });
 
                     await this.CreateSimulationManagersAsync(activeSimulations);
+                    await this.SaveSimulationStatisticsAsync(activeSimulations);
                     await this.RunSimulationManagersMaintenanceAsync();
-                    this.StopInactiveSimulations(activeSimulations);
+                    await this.StopInactiveSimulationsAsync(activeSimulations);
 
                     Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
                 }
@@ -214,7 +220,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             return;
         }
 
-        private void StopInactiveSimulations(IList<Simulation> activeSimulations)
+        private async Task StopInactiveSimulationsAsync(IList<Simulation> activeSimulations)
         {
             // Get a list of all simulations that are not active in storage.
             var activeIds = activeSimulations.Select(simulation => simulation.Id).ToList();
@@ -222,12 +228,42 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             foreach (var manager in managersToStop)
             {
+                await manager.Value.SaveStatisticsAsync();
                 manager.Value.TearDown();
                 if (!this.simulationManagers.TryRemove(manager.Key, out _))
                 {
                     this.log.Error("Unable to remove simulation manager from the list of managers",
                         () => new { SimulationId = manager.Key });
                 }
+            }
+        }
+
+        private async Task SaveSimulationStatisticsAsync(IList<Simulation> simulations)
+        {
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+            TimeSpan duration = now - this.lastSaveStatisticsTime;
+
+            // Save statistics for simulations at specified interval
+            if (duration.Seconds >= SAVE_STATS_INTERVAL_SECS)
+            {
+                foreach (var simulation in simulations)
+                {
+                    try
+                    {
+                        if (this.simulationManagers.ContainsKey(simulation.Id))
+                        {
+                            {
+                                await this.simulationManagers[simulation.Id].SaveStatisticsAsync();
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        this.log.Error("Failed to save simulation statistics.", () => new { simulation.Id, e });
+                    }
+                }
+
+                this.lastSaveStatisticsTime = now;
             }
         }
 
@@ -266,10 +302,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             var printStats = false;
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            if (now - this.lastStatsTime > STATS_INTERVAL_MSECS)
+            if (now - this.lastPrintStatisticsTime > PRINT_STATS_INTERVAL_MSECS)
             {
                 printStats = true;
-                this.lastStatsTime = now;
+                this.lastPrintStatisticsTime = now;
             }
 
             // TODO: determine if these can be run in parallel
@@ -365,17 +401,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // Telemetry
             try
             {
-                var count = this.appConcurrencyConfig.TelemetryThreads;
+                var telemetryThreadCount = this.appConcurrencyConfig.TelemetryThreads;
 
-                this.devicesTelemetryThreads = new Thread[count];
+                this.devicesTelemetryThreads = new Thread[telemetryThreadCount];
                 this.devicesTelemetryTasks = new List<IDeviceTelemetryTask>();
-                for (int i = 0; i < count; i++)
+                for (int i = 0; i < telemetryThreadCount; i++)
                 {
                     var task = this.factory.Resolve<IDeviceTelemetryTask>();
                     this.devicesTelemetryTasks.Add(task);
 
+                    // Thread position must be calculated outside of the thread-execution lambda. Otherwise,
+                    // the thread index passed to the execution method will be off by one.
+                    var telemetryThreadPosition = i + 1;
                     this.devicesTelemetryThreads[i] = new Thread(
-                        () => task.RunAsync(this.deviceTelemetryActors, i + 1, count, this.runningToken.Token));
+                        () => task.RunAsync(this.deviceTelemetryActors, telemetryThreadPosition, telemetryThreadCount, this.runningToken.Token));
                     this.devicesTelemetryThreads[i].Start();
                 }
             }

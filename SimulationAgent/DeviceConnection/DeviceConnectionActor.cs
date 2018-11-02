@@ -446,6 +446,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
                 case ActorEvents.TelemetryClientBroken:
                     this.Client?.DisconnectAsync();
+                    this.Client?.DisposeInternalClient();
                     this.Client = null;
                     this.ScheduleConnection();
                     break;

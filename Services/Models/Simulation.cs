@@ -9,6 +9,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
     public class Simulation
     {
         private DateTimeOffset? startTime;
+        private DateTimeOffset? actualStartTime;
         private DateTimeOffset? endTime;
         private IList<string> iotHubConnectionStrings;
 
@@ -87,7 +88,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public IList<DeviceModelRef> DeviceModels { get; set; }
 
         [JsonProperty(Order = 60)]
-        public StatisticsRef Statistics { get; set; }
+        public SimulationStatisticsModel Statistics { get; set; }
 
         [JsonProperty(Order = 70)]
         public IList<CustomDeviceRef> CustomDevices { get; set; }
@@ -125,6 +126,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         [JsonProperty(Order = 130)]
         public DateTimeOffset Modified { get; set; }
 
+        // ActualStartTime is the time when Simulation was started
+        [JsonProperty(Order = 140)]
+        public DateTimeOffset? ActualStartTime { get; set; }
+
         public Simulation()
         {
             // When unspecified, a simulation is enabled
@@ -142,11 +147,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
             this.DeviceModels = new List<DeviceModelRef>();
             this.CustomDevices = new List<CustomDeviceRef>();
-            this.Statistics = new StatisticsRef();
-
-            // By default, do not delete IoT Hub devices when the
-            // simulation ends
-            this.DeleteDevicesWhenSimulationEnds = false;
         }
 
         public class DeviceModelRef
@@ -160,12 +160,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         {
             public string DeviceId { get; set; }
             public DeviceModelRef DeviceModel { get; set; }
-        }
-
-        public class StatisticsRef
-        {
-            public long TotalMessagesSent { get; set; }
-            public double AverageMessagesPerSecond { get; set; }
         }
 
         public class DeviceModelOverride

@@ -66,6 +66,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "DeviceModels")]
         public IList<SimulationDeviceModelRef> DeviceModels { get; set; }
 
+        // Note: read-only property, used only to report the simulation status
+        [JsonProperty(PropertyName = "Statistics")]
+        public SimulationStatistics Statistics { get; set; }
+
         // Note: read-only metadata
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
@@ -148,7 +152,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         }
 
         // Map service model to API model
-        public static SimulationApiModel FromServiceModel(Simulation value)
+        public static SimulationApiModel FromServiceModel(
+            Simulation value)
         {
             if (value == null) return null;
 
@@ -163,9 +168,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 ActiveNow = value.IsActiveNow,
                 DevicesDeletionComplete = value.DevicesDeletionComplete,
                 DeleteDevicesWhenSimulationEnds = value.DeleteDevicesWhenSimulationEnds,
-                StartTime = value.StartTime?.ToString(DATE_FORMAT),
-                EndTime = value.EndTime?.ToString(DATE_FORMAT),
-                StoppedTime = value.StoppedTime?.ToString(DATE_FORMAT),
                 IotHubs = new List<SimulationIotHub>()
             };
 
@@ -194,6 +196,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             }
 
             result.DeviceModels = SimulationDeviceModelRef.FromServiceModel(value.DeviceModels);
+            result.Statistics = GetSimulationStatistics(value);
+
             result.created = value.Created;
             result.modified = value.Modified;
 
@@ -258,6 +262,35 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             {
                 await connectionStringManager.ValidateConnectionStringAsync(iotHub.ConnectionString);
             }
+        }
+
+        private static SimulationStatistics GetSimulationStatistics(Simulation simulation)
+        {
+            var statistics = SimulationStatistics.FromServiceModel(simulation.Statistics);
+
+            // AverageMessagesPerSecond calculation needs ActualStartTime to be set.
+            // ActualStartTime will be set once partitioning and device creation is done, upto that point it can be null.
+            if (statistics != null && simulation.ActualStartTime.HasValue)
+            {
+                DateTimeOffset now = DateTimeOffset.UtcNow;
+                var actualStartTime = simulation.ActualStartTime.Value;
+                double durationInSeconds = 0;
+
+                if (simulation.IsActiveNow)
+                {
+                    // If the simulation is active, calculate duration from start till now.
+                    durationInSeconds = now.Subtract(actualStartTime).TotalSeconds;
+                }
+                else if (simulation.StoppedTime.HasValue)
+                {
+                    // If simulation is stopped, calculate duration from start till stop time.
+                    durationInSeconds = simulation.StoppedTime.Value.Subtract(actualStartTime).TotalSeconds;
+                }
+
+                statistics.AverageMessagesPerSecond = durationInSeconds > 0 ? Math.Round((double) statistics.TotalMessagesSent / durationInSeconds, 2) : 0;
+            }
+
+            return statistics;
         }
     }
 }
