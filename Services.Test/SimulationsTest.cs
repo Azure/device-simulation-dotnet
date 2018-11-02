@@ -36,6 +36,7 @@ namespace Services.Test
         private readonly Mock<IStorageAdapterClient> mockStorageAdapterClient;
         private readonly Mock<IStorageRecords> mockStorageRecords;
         private readonly Mock<IDevices> devices;
+        private readonly Mock<IFileSystem> file;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
         private readonly Mock<IIotHubConnectionStringManager> connStringManager;
@@ -73,6 +74,7 @@ namespace Services.Test
             this.logger = new Mock<ILogger>();
             this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
             this.devices = new Mock<IDevices>();
+            this.file = new Mock<IFileSystem>();
             this.connStringManager = new Mock<IIotHubConnectionStringManager>();
             this.models = new List<DeviceModel>
             {
@@ -89,6 +91,7 @@ namespace Services.Test
                 this.mockStorageAdapterClient.Object,
                 this.connStringManager.Object,
                 this.devices.Object,
+                this.file.Object,
                 this.logger.Object,
                 this.diagnosticsLogger.Object,
                 this.simulationStatistics.Object);
@@ -831,6 +834,40 @@ namespace Services.Test
             // Assert
             Assert.False(result);
             this.devices.Verify(x => x.DeleteListUsingJobsAsync(It.IsAny<IEnumerable<string>>()), Times.Once);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItTrysToCreateDefaultSimulationsWhenThereIsNoDefaultSimulationsInStorage()
+        {
+            // Arrange
+            this.ThereIsNoDefaultSimulationsInStorage();
+            this.ThereIsATemplateForDefaultSimulations();
+
+            // Act
+            this.target.TrySeedAsync().CompleteOrTimeout();
+
+            // Assert
+            this.mockStorageRecords.Verify(x => x.CreateAsync(It.IsAny<StorageRecord>()), Times.Once);
+        }
+
+        private void ThereIsATemplateForDefaultSimulations()
+        {
+            var simulationList = new List<SimulationModel>()
+            {
+                new SimulationModel()
+            };
+            string fileContent = JsonConvert.SerializeObject(simulationList);
+            const string TEMPLATE_FILE_PATH = "/data/";
+            this.mockConfig.Setup(x => x.SeedTemplateFolder).Returns(TEMPLATE_FILE_PATH);
+            this.mockConfig.Setup(x => x.SeedTemplate).Returns("template");
+            this.file.Setup(x => x.Exists(It.IsAny<string>())).Returns(true);
+            this.file.Setup(x => x.ReadAllText(It.IsAny<string>())).Returns(fileContent);
+        }
+
+        private void ThereIsNoDefaultSimulationsInStorage()
+        {
+            this.mockStorageRecords.Setup(x => x.ExistsAsync(It.IsAny<string>())).ReturnsAsync(false);
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>())).ThrowsAsync(new ResourceNotFoundException());
         }
 
         private void ThereAreSomeDeviceModels()

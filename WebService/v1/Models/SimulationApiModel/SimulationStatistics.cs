@@ -26,9 +26,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "FailedDeviceTwinUpdatesCount")]
         public long FailedDevicePropertiesUpdates { get; set; }
 
+        // Total number of devices that are currently connected (i.e. are active) to Hub
+        [JsonProperty(PropertyName = "ActiveDevicesCount")]
+        public long ActiveDevices { get; set; }
+
         // Default constructor used by web service requests
         public SimulationStatistics()
         {
+            this.ActiveDevices = 0;
             this.TotalMessagesSent = 0;
             this.AverageMessagesPerSecond = 0;
             this.FailedMessages = 0;
@@ -43,6 +48,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
             return new SimulationStatistics
             {
+                ActiveDevices = statistics.ActiveDevices,
                 TotalMessagesSent = statistics.TotalMessagesSent,
                 FailedDeviceConnections = statistics.FailedDeviceConnections,
                 FailedMessages = statistics.FailedMessages,

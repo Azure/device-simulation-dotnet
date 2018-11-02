@@ -241,13 +241,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             try
             {
-                var telemetryActors = this.deviceTelemetryActors ?? this.deviceTelemetryActors.Where(a => a.Key.StartsWith(this.simulation.Id));
+                var prefix = this.GetDictKey(string.Empty);
+                var telemetryActors = this.deviceTelemetryActors.Where(a => a.Key.StartsWith(prefix));
+                var connectionActors = this.deviceConnectionActors.Where(a => a.Key.StartsWith(prefix));
+                var propertiesActors = this.devicePropertiesActors.Where(a => a.Key.StartsWith(prefix));
+                var stateActors = this.deviceStateActors.Where(a => a.Key.StartsWith(prefix));
+
                 var simulationModel = new SimulationStatisticsModel
                 {
+                    ActiveDevices = stateActors != null ? stateActors.Count(a => a.Value.IsDeviceActive) : 0,
                     TotalMessagesSent = telemetryActors != null ? telemetryActors.Sum(a => a.Value.TotalMessagesCount) : 0,
                     FailedMessages = telemetryActors != null ? telemetryActors.Sum(a => a.Value.FailedMessagesCount) : 0,
-                    FailedDeviceConnections = this.deviceConnectionActors != null ? this.deviceConnectionActors.Where(a => a.Key.StartsWith(this.simulation.Id)).Sum(a => a.Value.FailedDeviceConnectionsCount) : 0,
-                    FailedDevicePropertiesUpdates = this.devicePropertiesActors != null ? this.devicePropertiesActors.Where(a => a.Key.StartsWith(this.simulation.Id)).Sum(a => a.Value.FailedTwinUpdatesCount) : 0,
+                    FailedDeviceConnections = connectionActors != null ? connectionActors.Sum(a => a.Value.FailedDeviceConnectionsCount) : 0,
+                    FailedDevicePropertiesUpdates = propertiesActors != null ? propertiesActors.Sum(a => a.Value.FailedTwinUpdatesCount) : 0,
                 };
 
                 await this.simulationStatistics.CreateOrUpdateAsync(this.simulation.Id, simulationModel);

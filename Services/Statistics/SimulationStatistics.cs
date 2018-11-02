@@ -17,6 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
     {
         Task<SimulationStatisticsModel> GetSimulationStatisticsAsync(string simulationId);
         Task CreateOrUpdateAsync(string simulationId, SimulationStatisticsModel statistics);
+        Task UpdateAsync(string simulationId, SimulationStatisticsModel statistics);
         Task DeleteSimulationStatisticsAsync(string simulationId);
     }
 
@@ -38,6 +39,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             this.simulationStatisticsStorage = factory.Resolve<IStorageRecords>().Init(config.StatisticsStorage);
         }
 
+        /// <summary>
+        /// Fetches statististics records for a given simulation and returns aggregate values.
+        /// </summary>
         public async Task<SimulationStatisticsModel> GetSimulationStatisticsAsync(string simulationId)
         {
             if (string.IsNullOrEmpty(simulationId))
@@ -57,6 +61,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
 
                 foreach (var record in simulationRecords)
                 {
+                    statistics.ActiveDevices += record.Statistics.ActiveDevices;
                     statistics.TotalMessagesSent += record.Statistics.TotalMessagesSent;
                     statistics.FailedDeviceConnections += record.Statistics.FailedDeviceConnections;
                     statistics.FailedDevicePropertiesUpdates += record.Statistics.FailedDevicePropertiesUpdates;
@@ -71,28 +76,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             return statistics;
         }
         
+        /// <summary>
+        /// Creates or updates statistics record for a given simulation.
+        /// </summary>
         public async Task CreateOrUpdateAsync(string simulationId, SimulationStatisticsModel statistics)
         {
             var nodeId = this.clusterNodes.GetCurrentNodeId();
             var statisticsRecordId = this.GetStatisticsRecordId(simulationId, nodeId);
-
-            var statisticsRecord = new SimulationStatisticsRecord
-            {
-                NodeId = nodeId,
-                SimulationId = simulationId,
-                Statistics = statistics
-            };
-
-            var statisticsStorageRecord = new StorageRecord
-            {
-                Id = statisticsRecordId,
-                Data = JsonConvert.SerializeObject(statisticsRecord)
-            };
+            var statisticsStorageRecord = this.GetStorageRecord(simulationId, statistics);
 
             try
             {
-                this.log.Debug("Creating statistics record", () => new { statisticsStorageRecord });
-                await this.simulationStatisticsStorage.CreateAsync(statisticsStorageRecord);
+                if (await this.simulationStatisticsStorage.ExistsAsync(statisticsRecordId))
+                {
+                    this.log.Debug("Updating statistics record", () => new { statisticsStorageRecord });
+                    var record = await this.simulationStatisticsStorage.GetAsync(statisticsRecordId);
+                    await this.simulationStatisticsStorage.UpsertAsync(statisticsStorageRecord, record.ETag);
+                }
+                else
+                {
+                    this.log.Debug("Creating statistics record", () => new { statisticsStorageRecord });
+                    await this.simulationStatisticsStorage.CreateAsync(statisticsStorageRecord);
+                }
             }
             catch (Exception e)
             {
@@ -100,6 +105,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             }
         }
 
+        /// <summary>
+        /// Updates statistics record for a given simulation.
+        /// </summary>
+        public async Task UpdateAsync(string simulationId, SimulationStatisticsModel statistics)
+        {
+            var nodeId = this.clusterNodes.GetCurrentNodeId();
+            var statisticsRecordId = this.GetStatisticsRecordId(simulationId, nodeId);
+            var statisticsStorageRecord = this.GetStorageRecord(simulationId, statistics);
+
+            try
+            {
+                this.log.Debug("Updating statistics record", () => new { statisticsStorageRecord });
+                var record = await this.simulationStatisticsStorage.GetAsync(statisticsRecordId);
+                await this.simulationStatisticsStorage.UpsertAsync(statisticsStorageRecord, record.ETag);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Error on saving statistics records", e);
+            }
+        }
+
+        /// <summary>
+        /// Deletes statistics records for a simulation.
+        /// </summary>
         public async Task DeleteSimulationStatisticsAsync(string simulationId)
         {
             if (string.IsNullOrEmpty(simulationId))
@@ -131,6 +160,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             {
                 this.log.Error("Error on getting statistics records", e);
             }
+        }
+
+        private StorageRecord GetStorageRecord(string simulationId, SimulationStatisticsModel statistics)
+        {
+            var nodeId = this.clusterNodes.GetCurrentNodeId();
+            var statisticsRecordId = this.GetStatisticsRecordId(simulationId, nodeId);
+
+            var statisticsRecord = new SimulationStatisticsRecord
+            {
+                NodeId = nodeId,
+                SimulationId = simulationId,
+                Statistics = statistics
+            };
+
+            return new StorageRecord
+            {
+                Id = statisticsRecordId,
+                Data = JsonConvert.SerializeObject(statisticsRecord)
+            };
         }
 
         private string GetStatisticsRecordId(string simId, string nodeId)
