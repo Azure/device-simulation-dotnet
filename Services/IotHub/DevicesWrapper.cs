@@ -1,4 +1,6 @@
-﻿using Microsoft.Azure.Devices;
+﻿// Copyright (c) Microsoft. All rights reserved. 
+
+using Microsoft.Azure.Devices;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 {

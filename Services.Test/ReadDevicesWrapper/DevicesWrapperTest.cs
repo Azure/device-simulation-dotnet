@@ -1,4 +1,6 @@
-﻿using Microsoft.Azure.Devices;
+﻿// Copyright (c) Microsoft. All rights reserved. 
+
+using Microsoft.Azure.Devices;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Moq;
 using Services.Test.helpers;
