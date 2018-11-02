@@ -75,7 +75,7 @@ namespace SimulationAgent.Test.SimulationThreads
                     actor.Value.Verify(x => x.RunAsync(), Times.Once);
                     countOfActorCalls++;
                 }
-                catch (MockException e){}
+                catch (MockException){}
             }
 
             // Compare the number of actors that were called to the number of

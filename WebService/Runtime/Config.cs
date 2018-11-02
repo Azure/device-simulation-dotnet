@@ -106,6 +106,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string DOCUMENTDB_DATABASE_KEY = "documentdb_database";
         private const string DOCUMENTDB_COLLECTION_KEY = "documentdb_collection";
         private const string DOCUMENTDB_THROUGHPUT_KEY = "documentdb_collection_throughput";
+        private const string DOCUMENTDB_PAGE_SIZE = "devices_page_size";
 
         private const string LOGGING_KEY = APPLICATION_KEY + "Logging:";
         private const string LOGGING_LOGLEVEL_KEY = LOGGING_KEY + "LogLevel";
@@ -288,7 +289,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 DocumentDbConnString = configData.GetString(prefix + DOCUMENTDB_CONNECTION_STRING_KEY),
                 DocumentDbDatabase = configData.GetString(prefix + DOCUMENTDB_DATABASE_KEY),
                 DocumentDbCollection = configData.GetString(prefix + DOCUMENTDB_COLLECTION_KEY),
-                DocumentDbThroughput = configData.GetInt(prefix + DOCUMENTDB_THROUGHPUT_KEY, defaults.DocumentDbThroughput)
+                DocumentDbThroughput = configData.GetInt(prefix + DOCUMENTDB_THROUGHPUT_KEY, defaults.DocumentDbThroughput),
+                DocumentDbPageSize = configData.GetInt(prefix + DOCUMENTDB_PAGE_SIZE)
             };
         }
 

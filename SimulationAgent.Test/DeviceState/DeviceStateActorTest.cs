@@ -68,7 +68,6 @@ namespace SimulationAgent.Test.DeviceState
         {
             string DEVICE_ID = "01";
             int postion = 1;
-            int total = 10;
             var deviceModel = new DeviceModel { Id = DEVICE_ID };
 
             var mockSimulationContext = new Mock<ISimulationContext>();

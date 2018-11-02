@@ -15,19 +15,21 @@ namespace Services.Test.IotHub
     {
         private readonly Mock<ILogger> mockLogger;
         private readonly Mock<IDiagnosticsLogger> mockDiagnosticsLogger;
+        private readonly Mock<IDevicesWrapper> devicesWrapper;
         private readonly Mock<IFactory> mockFactory;
         private readonly IServicesConfig config;
         private readonly IotHubConnectionStringManager target;
-
+        
         public IotHubConnectionStringManagerTest()
         {
             this.mockLogger = new Mock<ILogger>();
             this.mockDiagnosticsLogger = new Mock<IDiagnosticsLogger>();
+            this.devicesWrapper = new Mock<IDevicesWrapper>();
             this.mockFactory = new Mock<IFactory>();
             this.mockFactory.Setup(x => x.Resolve<IStorageRecords>()).Returns(new Mock<IStorageRecords>().Object);
 
             this.config = new ServicesConfig();
-            this.target = new IotHubConnectionStringManager(this.config, this.mockFactory.Object, this.mockDiagnosticsLogger.Object, this.mockLogger.Object);
+            this.target = new IotHubConnectionStringManager(this.config, this.mockFactory.Object, this.mockDiagnosticsLogger.Object, this.devicesWrapper.Object, this.mockLogger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

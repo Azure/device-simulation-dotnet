@@ -14,6 +14,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
         public string DocumentDbDatabase { get; set; }
         public string DocumentDbCollection { get; set; }
         public int DocumentDbThroughput { get; set; }
+        public int DocumentDbPageSize { get; set; }
 
         public StorageConfig()
         {

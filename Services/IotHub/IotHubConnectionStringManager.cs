@@ -33,17 +33,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
         private readonly IStorageRecords mainStorage;
+        private readonly IDevicesWrapper devicesWrapper;
 
         public IotHubConnectionStringManager(
             IServicesConfig config,
             IFactory factory,
             IDiagnosticsLogger diagnosticsLogger,
+            IDevicesWrapper devicesWrapper,
             ILogger logger)
         {
             this.config = config;
             this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
+            this.devicesWrapper = devicesWrapper;
         }
 
         /// <summary>
@@ -144,7 +147,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             if (!match.Groups[CONNSTRING_REGEX_KEY].Value.IsNullOrWhiteSpace())
             {
                 this.ValidateConnectionString(connectionString);
-                await this.TestIoTHubReadPermissionsAsync(connectionString);
+                this.TestIoTHubReadPermissionsAsync(connectionString);
                 await this.TestIoTHubWritePermissionsAsync(connectionString);
             }
 
@@ -172,7 +175,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             try
             {
                 this.ValidateConnectionString(this.config.IoTHubConnString);
-                await this.TestIoTHubReadPermissionsAsync(this.config.IoTHubConnString);
+                this.TestIoTHubReadPermissionsAsync(this.config.IoTHubConnString);
                 await this.TestIoTHubWritePermissionsAsync(this.config.IoTHubConnString);
             }
             catch (Exception e)
@@ -214,13 +217,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
         }
 
-        private async Task TestIoTHubReadPermissionsAsync(string connectionString)
+        private void TestIoTHubReadPermissionsAsync(string connectionString)
         {
             var registryManager = RegistryManager.CreateFromConnectionString(connectionString);
 
             try
             {
-                await registryManager.GetDevicesAsync(1, CancellationToken.None);
+                this.devicesWrapper.GetDevices(registryManager, this.config.DevicesStorage.DocumentDbCollection, this.config.DevicesStorage.DocumentDbPageSize);
             }
             catch (Exception e)
             {
