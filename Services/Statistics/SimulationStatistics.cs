@@ -59,9 +59,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
                     .Where(i => i.SimulationId == simulationId)
                     .ToList();
 
+                var nodeRecords = await this.clusterNodes.GetSortedIdListAsync();
+
                 foreach (var record in simulationRecords)
                 {
-                    statistics.ActiveDevices += record.Statistics.ActiveDevices;
+                    if (nodeRecords.Contains(record.NodeId))
+                    {
+                        statistics.ActiveDevices += record.Statistics.ActiveDevices;
+                    }
+
                     statistics.TotalMessagesSent += record.Statistics.TotalMessagesSent;
                     statistics.FailedDeviceConnections += record.Statistics.FailedDeviceConnections;
                     statistics.FailedDevicePropertiesUpdates += record.Statistics.FailedDevicePropertiesUpdates;
