@@ -22,10 +22,12 @@ namespace Services.Test.ReadDevicesWrapper
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void TestReadPermissionOnDevicesCollection()
+        public void ShouldReadDevicesCollectionFromDocumentDb()
         {
+            // Act
             this.target.GetDevices(this.registryManager.Object, documentDbCollection, documentDbPageSize);
 
+            // Assert - check if the createQuery function is called once
             this.registryManager.Verify(x => x.CreateQuery(It.IsAny<string>(), It.IsAny<int>()), Times.Once);
         }
     }
