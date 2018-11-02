@@ -19,7 +19,7 @@ namespace Services.Test.IotHub
         private readonly Mock<IFactory> mockFactory;
         private readonly IServicesConfig config;
         private readonly IotHubConnectionStringManager target;
-        
+
         public IotHubConnectionStringManagerTest()
         {
             this.mockLogger = new Mock<ILogger>();
