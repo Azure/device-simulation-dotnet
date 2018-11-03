@@ -16,7 +16,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
 {
     public interface IStorageAdapterClient
     {
-        Task<StatusResultServiceModel> PingAsync();
         Task<ValueListApiModel> GetAllAsync(string collectionId);
         Task<ValueApiModel> GetAsync(string collectionId, string key);
         Task<ValueApiModel> CreateAsync(string collectionId, string value);
@@ -49,31 +48,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
             this.serviceUri = config.StorageAdapterApiUrl;
             this.timeout = config.StorageAdapterApiTimeout;
             this.diagnosticsLogger = diagnosticsLogger;
-        }
-
-        public async Task<StatusResultServiceModel> PingAsync()
-        {
-            var result = new StatusResultServiceModel(false, "Storage adapter check failed");
-            try
-            {
-                var response = await this.httpClient.GetAsync(this.PrepareRequest($"status"));
-                if (response.IsError)
-                {
-                    result.Message = $"Status code: {response.StatusCode}; Response: {response.Content}";
-                }
-                else
-                {
-                    var data = JsonConvert.DeserializeObject<StatusServiceModel>(response.Content);
-                    result = data.Status;
-                }
-            }
-            catch (Exception e)
-            {
-                this.log.Error(result.Message, () => new { e });
-                this.diagnosticsLogger.LogServiceError(result.Message, e);
-            }
-
-            return result;
         }
 
         public async Task<ValueListApiModel> GetAllAsync(string collectionId)

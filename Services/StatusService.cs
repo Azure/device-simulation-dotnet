@@ -1,12 +1,15 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
@@ -19,24 +22,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private const string SIMULATION_RUNNING_KEY = "SimulationRunning";
         private const string PREPROVISIONED_IOTHUB_KEY = "PreprovisionedIoTHub";
 
+        private const bool ALLOW_INSECURE_SSL_SERVER = true;
+        private readonly int timeoutMS = 10000;
+
         private readonly IPreprovisionedIotHub preprovisionedIotHub;
-        private readonly IStorageAdapterClient storageAdapterClient;
         private readonly ISimulations simulations;
+        private readonly IHttpClient httpClient;
         private readonly ILogger log;
         private readonly IServicesConfig servicesConfig;
 
         public StatusService(
             ILogger logger,
             IPreprovisionedIotHub preprovisionedIotHub,
-            IStorageAdapterClient storageAdapterClient,
             ISimulations simulations,
+            IHttpClient httpClient,
             IServicesConfig servicesConfig
             )
         {
             this.log = logger;
             this.preprovisionedIotHub = preprovisionedIotHub;
             this.simulations = simulations;
-            this.storageAdapterClient = storageAdapterClient;
+            this.httpClient = httpClient;
             this.servicesConfig = servicesConfig;
         }
 
@@ -45,13 +51,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var result = new StatusServiceModel(true, "Alive and well!");
             var errors = new List<string>();
 
+            string storageAdapterName = "StorageAdapter";
+            string diagnosticsName = "Diagnostics";
+
             // Simulation status
             var simulationIsRunning = await this.CheckIsSimulationRunningAsync(errors);
             var isRunning = simulationIsRunning.HasValue && simulationIsRunning.Value;
 
-            // Check access to Storage Adapter
-            var storageAdapterResult = await this.storageAdapterClient.PingAsync();
-            SetServiceStatus("StorgeAdapter", storageAdapterResult, result, errors);
+            // Check access to StorageAdapter
+            var storageAdapterResult = await this.PingServiceAsync(
+                storageAdapterName,
+                this.servicesConfig.StorageAdapterApiUrl);
+            SetServiceStatus(storageAdapterName, storageAdapterResult, result, errors);
+
+            // Check access to Diagnostics
+            var diagnosticsResult = await this.PingServiceAsync(
+                diagnosticsName,
+                this.servicesConfig.DiagnosticsEndpointUrl);
+            // Note: Overall simulation service status is independent of diagnostics service
+            // Hence not using SetServiceStatus on diagnosticsResult
+            result.Dependencies.Add(diagnosticsName, diagnosticsResult);
 
             // Preprovisioned IoT hub status
             var isHubPreprovisioned = this.IsHubConnectionStringConfigured();
@@ -131,6 +150,49 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     && cs.Contains("hostname=")
                     && cs.Contains("sharedaccesskeyname=")
                     && cs.Contains("sharedaccesskey="));
+        }
+
+        private async Task<StatusResultServiceModel> PingServiceAsync(string serviceName, string serviceURL)
+        {
+            var result = new StatusResultServiceModel(false, $"{serviceName} check failed");
+            try
+            {
+                var response = await this.httpClient.GetAsync(this.PrepareRequest($"{serviceURL}/status"));
+                if (response.IsError)
+                {
+                    result.Message = $"Status code: {response.StatusCode}; Response: {response.Content}";
+                }
+                else
+                {
+                    var data = JsonConvert.DeserializeObject<StatusServiceModel>(response.Content);
+                    result = data.Status;
+                }
+            }
+            catch (Exception e)
+            {
+                this.log.Error(result.Message, () => new { e });
+            }
+
+            return result;
+        }
+
+        private HttpRequest PrepareRequest(string path)
+        {
+            var request = new HttpRequest();
+            request.AddHeader(HttpRequestHeader.Accept.ToString(), "application/json");
+            request.AddHeader(HttpRequestHeader.CacheControl.ToString(), "no-cache");
+            request.AddHeader(HttpRequestHeader.Referer.ToString(), "ASA Manager " + this.GetType().FullName);
+            request.SetUriFromString(path);
+            request.Options.EnsureSuccess = false;
+            request.Options.Timeout = this.timeoutMS;
+            if (path.ToLowerInvariant().StartsWith("https:"))
+            {
+                request.Options.AllowInsecureSSLServer = ALLOW_INSECURE_SSL_SERVER;
+            }
+
+            this.log.Debug("Prepare Request", () => new { request });
+
+            return request;
         }
     }
 }
