@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
-    class StatusService: IStatusService
+    class StatusService : IStatusService
     {
         private const string JSON_TRUE = "true";
         private const string JSON_FALSE = "false";
@@ -99,8 +99,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             result.Properties.Add("StorageAdapterApiUrl", this.servicesConfig?.StorageAdapterApiUrl);
             this.log.Info(
                 "Service status request",
-                () => new {
-                    Healthy = result.Status.IsHealthy, result.Status.Message
+                () => new
+                {
+                    Healthy = result.Status.IsHealthy,
+                    result.Status.Message
                 });
             return result;
         }
@@ -112,14 +114,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             List<string> errors
             )
         {
-            var StatusResultServiceModel = new StatusResultServiceModel(serviceResult);
-
             if (!serviceResult.IsHealthy)
             {
                 errors.Add(dependencyName + " check failed");
                 result.Status.IsHealthy = false;
             }
-            result.Dependencies.Add(dependencyName, StatusResultServiceModel);
+            result.Dependencies.Add(dependencyName, serviceResult);
         }
 
         // Check whether the simulation is running, and populate errors if any

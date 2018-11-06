@@ -6,7 +6,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
 using Newtonsoft.Json;
 
-// TODO: complete - https://github.com/Azure/device-simulation-dotnet/issues/82
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
 {
     public sealed class StatusApiModel
