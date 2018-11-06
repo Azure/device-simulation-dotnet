@@ -643,7 +643,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                               | SharedAccessAccountPermissions.Update,
                 Services = SharedAccessAccountServices.Blob,
                 ResourceTypes = SharedAccessAccountResourceTypes.Container | SharedAccessAccountResourceTypes.Object,
-                SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(60),
+                SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(300),
                 Protocols = SharedAccessProtocol.HttpsOnly
             };
 
