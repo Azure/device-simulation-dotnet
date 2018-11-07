@@ -19,7 +19,6 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Newtonsoft.Json;
 using Device = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Device;
-using IotHubConnectionStringBuilder = Microsoft.Azure.Devices.IotHubConnectionStringBuilder;
 using TransportType = Microsoft.Azure.Devices.Client.TransportType;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
@@ -693,8 +692,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         private string GetSasTokenForImportExport()
         {
+            // Recommended to address possible clock skew, see
+            // https://docs.microsoft.com/azure/storage/common/storage-dotnet-shared-access-signature-part-1#best-practices-when-using-sas
+            const int CLOCK_SKEW_MINUTES = 15;
+
             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(this.config.IoTHubImportStorageAccount);
 
+            // Note:
+            // 1. don't set start time, so the token is valid immediately and not affected by clock skew
+            // 2. for clients using a REST version prior to 2012-02-12, the maximum duration for a SAS that does
+            //    NOT reference a stored access policy is 1 hour
             var policy = new SharedAccessAccountPolicy
             {
                 Permissions = SharedAccessAccountPermissions.Read
@@ -705,7 +712,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                               | SharedAccessAccountPermissions.Update,
                 Services = SharedAccessAccountServices.Blob,
                 ResourceTypes = SharedAccessAccountResourceTypes.Container | SharedAccessAccountResourceTypes.Object,
-                SharedAccessExpiryTime = DateTime.UtcNow.AddHours(JOB_SAS_TOKEN_DURATION_HOURS),
+                SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(JOB_SAS_TOKEN_DURATION_HOURS * 60 + CLOCK_SKEW_MINUTES),
                 Protocols = SharedAccessProtocol.HttpsOnly
             };
 
