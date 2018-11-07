@@ -143,7 +143,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             // if a key is provided, check if IoTHub is valid
             if (!match.Groups[CONNSTRING_REGEX_KEY].Value.IsNullOrWhiteSpace())
             {
-                this.ValidateConnectionString(connectionString);
+                this.ValidateExistingIotHub(connectionString);
                 await this.TestIoTHubReadPermissionsAsync(connectionString);
                 await this.TestIoTHubWritePermissionsAsync(connectionString);
             }
@@ -171,7 +171,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             // Check if pre-provisioned IoT Hub connection string
             try
             {
-                this.ValidateConnectionString(this.config.IoTHubConnString);
+                this.ValidateExistingIotHub(this.config.IoTHubConnString);
                 await this.TestIoTHubReadPermissionsAsync(this.config.IoTHubConnString);
                 await this.TestIoTHubWritePermissionsAsync(this.config.IoTHubConnString);
             }
@@ -198,8 +198,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
         }
 
-        // Throws if unable to create a registry manager with the given connection string
-        private void ValidateConnectionString(string connectionString)
+        /// <summary> Throws if unable to create a registry manager with a valid IotHub. </summary>
+        private void ValidateExistingIotHub(string connectionString)
         {
             try
             {
@@ -207,7 +207,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
             catch (Exception e)
             {
-                var message = "The IoT Hub connection string provided is not valid";
+                string message = "Could not connect to IotHub with the connection " +
+                                 "string provided. Check that the key is valid and " +
+                                 "that the hub exists.";
                 this.log.Error(message, e);
                 this.diagnosticsLogger.LogServiceError(message, e.Message);
                 throw new IotHubConnectionException(message, e);
