@@ -67,8 +67,7 @@ namespace SimulationAgent.Test.DeviceState
         private void SetupDeviceStateActor()
         {
             string DEVICE_ID = "01";
-            int postion = 1;
-            int total = 10;
+            int position = 1;
             var deviceModel = new DeviceModel { Id = DEVICE_ID };
 
             var mockSimulationContext = new Mock<ISimulationContext>();
@@ -77,7 +76,7 @@ namespace SimulationAgent.Test.DeviceState
                 mockSimulationContext.Object,
                 DEVICE_ID,
                 deviceModel,
-                postion);
+                position);
         }
     }
 }

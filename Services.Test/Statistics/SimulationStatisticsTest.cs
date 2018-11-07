@@ -231,11 +231,11 @@ namespace Services.Test.Statistics
 
             // Assert
             this.simulationStatisticsStorage.Verify(x => x.GetAsync(It.Is<string>(
-               a => a == statisticsRecordId)));
+                a => a == statisticsRecordId)));
             this.simulationStatisticsStorage.Verify(x => x.UpsertAsync(It.Is<StorageRecord>(
-                a => a.Id == storageRecord.Id &&
-                     a.Data == storageRecord.Data),
-                     It.IsAny<string>()));
+                    a => a.Id == storageRecord.Id &&
+                         a.Data == storageRecord.Data),
+                It.IsAny<string>()));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -274,9 +274,9 @@ namespace Services.Test.Statistics
 
             // Assert
             this.simulationStatisticsStorage.Verify(x => x.UpsertAsync(It.Is<StorageRecord>(
-                a => a.Id == storageRecord.Id &&
-                     a.Data == storageRecord.Data),
-                     It.IsAny<string>()));
+                    a => a.Id == storageRecord.Id &&
+                         a.Data == storageRecord.Data),
+                It.IsAny<string>()));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
