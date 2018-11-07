@@ -30,6 +30,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // initialize the IoT Hub registry, and perform other initializations. 
         Task InitAsync();
 
+        // Explicitly set IoTHub connection string
+        // TODO: remove this method once InitAsync() uses the connection string of a given
+        //       simulation instead of using the single conn string present in the storage.
+        void TmpInit(string connectionString);
+
         // Get a client for the device
         IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter);
 
@@ -85,6 +90,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public const string SIMULATED_TAG_KEY = "IsSimulated";
         public const string SIMULATED_TAG_VALUE = "Y";
 
+        // When creating import/export jobs the app creates a SAS token to grant access to a blob
+        // in the storage account. When the token expires the job is unable to access this blob
+        // so it's important to ensure that the token remains valid until the job completes.
+        // Note (2018): assume that S3 hub processes ~1M devices per hour
+        private const int JOB_SAS_TOKEN_DURATION_HOURS = 24 * 2; // 2 days
+
         // When using bulk operations, this is the max number of devices that the registry APIs allow
         private const int REGISTRY_MAX_BATCH_SIZE = 100;
 
@@ -132,6 +143,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             try
             {
+                // TODO: use the simulation object to decide which conn string to use
                 // Retrieve connection string from file/storage
                 this.connString = await this.connectionStringManager.GetConnectionStringAsync();
 
@@ -152,11 +164,61 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 this.instance.InitComplete();
             }
+            catch (Exception e) when (e is ArgumentException || e is FormatException)
+            {
+                const string MSG = "Invalid IoT Hub connection string";
+                this.log.Error(MSG, e);
+                this.diagnosticsLogger.LogServiceError(MSG, e.Message);
+                throw new InvalidIotHubConnectionStringFormatException(MSG, e);
+            }
             catch (Exception e)
             {
-                var msg = "IoT Hub connection setup failed";
-                this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceError(msg, e.Message);
+                const string MSG = "IoT Hub connection setup failed";
+                this.log.Error(MSG, e);
+                this.diagnosticsLogger.LogServiceError(MSG, e.Message);
+                throw;
+            }
+        }
+
+        // TODO: method to be removed when InitAsync allows to use the connection string
+        //       of a given simulation (i.e. when context is supported)
+        public void TmpInit(string connectionString)
+        {
+            this.instance.InitOnce();
+
+            try
+            {
+                this.connString = connectionString;
+
+                // Parse connection string, this triggers an exception if the string is invalid
+                IotHubConnectionStringBuilder connStringBuilder = IotHubConnectionStringBuilder.Create(this.connString);
+
+                // Prepare registry class used to create/retrieve devices
+                this.registry.Init(this.connString);
+                this.log.Debug("Device registry object ready", () => new { this.ioTHubHostName });
+
+                // Prepare hostname used to build device connection strings
+                this.ioTHubHostName = connStringBuilder.HostName;
+                this.log.Info("Selected active IoT Hub for devices", () => new { this.ioTHubHostName });
+
+                // Prepare the auth key used for all the devices
+                this.fixedDeviceKey = connStringBuilder.SharedAccessKey;
+                this.log.Debug("Device authentication key defined", () => new { this.ioTHubHostName });
+
+                this.instance.InitComplete();
+            }
+            catch (Exception e) when (e is ArgumentException || e is FormatException)
+            {
+                const string MSG = "Invalid IoT Hub connection string";
+                this.log.Error(MSG, e);
+                this.diagnosticsLogger.LogServiceError(MSG, e.Message);
+                throw new InvalidIotHubConnectionStringFormatException(MSG, e);
+            }
+            catch (Exception e)
+            {
+                const string MSG = "IoT Hub connection setup failed";
+                this.log.Error(MSG, e);
+                this.diagnosticsLogger.LogServiceError(MSG, e.Message);
                 throw;
             }
         }
@@ -643,7 +705,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                               | SharedAccessAccountPermissions.Update,
                 Services = SharedAccessAccountServices.Blob,
                 ResourceTypes = SharedAccessAccountResourceTypes.Container | SharedAccessAccountResourceTypes.Object,
-                SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(60),
+                SharedAccessExpiryTime = DateTime.UtcNow.AddHours(JOB_SAS_TOKEN_DURATION_HOURS),
                 Protocols = SharedAccessProtocol.HttpsOnly
             };
 
@@ -672,7 +734,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private IDeviceClientWrapper GetDeviceSdkClient(Device device, IoTHubProtocol protocol)
         {
             var connectionString = $"HostName={device.IoTHubHostName};DeviceId={device.Id};SharedAccessKey={device.AuthPrimaryKey}";
-            var userAgent = config.UserAgent;
+            var userAgent = this.config.UserAgent;
 
             IDeviceClientWrapper sdkClient;
             switch (protocol)
