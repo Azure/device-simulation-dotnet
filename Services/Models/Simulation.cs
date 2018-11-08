@@ -9,7 +9,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
     public class Simulation
     {
         private DateTimeOffset? startTime;
-        private DateTimeOffset? actualStartTime;
         private DateTimeOffset? endTime;
         private IList<string> iotHubConnectionStrings;
 

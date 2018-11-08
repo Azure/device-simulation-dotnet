@@ -204,9 +204,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         //       does not support this because we do not have a design for
         //       how to modify existing partitions at runtime. Implementation
         //       of this feature is pending a design for this.
-        public async Task AddDeviceAsync(string simulationid, string deviceId, string modelId)
+        public Task AddDeviceAsync(string simulationid, string deviceId, string modelId)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         // TODO: Implement support for removing devices from a running simulation.
@@ -215,9 +215,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         //       does not support this because we do not have a design for
         //       how to modify existing partitions at runtime. Implementation
         //       of this feature is pending a design for this.
-        public async Task DeleteDevicesAsync(List<string> ids)
+        public Task DeleteDevicesAsync(List<string> ids)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         private async Task StopInactiveSimulationsAsync(IList<Simulation> activeSimulations)

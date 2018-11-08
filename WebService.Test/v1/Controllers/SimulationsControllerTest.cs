@@ -21,6 +21,7 @@ namespace WebService.Test.v1.Controllers
     public class SimulationsControllerTest
     {
         private readonly Mock<ISimulations> simulationsService;
+        private readonly Mock<IDevices> devices;
         private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
         private readonly Mock<IIothubMetrics> iothubMetrics;
         private readonly Mock<IPreprovisionedIotHub> preprovisionedIotHub;
@@ -31,6 +32,7 @@ namespace WebService.Test.v1.Controllers
         public SimulationsControllerTest()
         {
             this.simulationsService = new Mock<ISimulations>();
+            this.devices = new Mock<IDevices>();
             this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
             this.iothubMetrics = new Mock<IIothubMetrics>();
             this.preprovisionedIotHub = new Mock<IPreprovisionedIotHub>();
@@ -39,6 +41,7 @@ namespace WebService.Test.v1.Controllers
 
             this.target = new SimulationsController(
                 this.simulationsService.Object,
+                this.devices.Object,
                 this.connectionStringManager.Object,
                 this.iothubMetrics.Object,
                 this.preprovisionedIotHub.Object,
@@ -111,9 +114,7 @@ namespace WebService.Test.v1.Controllers
             const string ID = "1";
 
             // Act
-            this.target.PostAsync(
-                    new MetricsRequestsApiModel(),
-                    ID)
+            this.target.PostAsync(ID, new MetricsRequestsApiModel())
                 .Wait(Constants.TEST_TIMEOUT);
 
             // Assert

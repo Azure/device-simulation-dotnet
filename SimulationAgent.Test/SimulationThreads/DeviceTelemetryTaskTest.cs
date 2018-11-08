@@ -53,7 +53,7 @@ namespace SimulationAgent.Test.SimulationThreads
 
             // Determine the chunk size so that we'll know how many actors should have been called in
             // one loop of the target's main thread (the expected count is the total number - chunk size).
-            int chunkSize = (int)Math.Ceiling((double)ACTOR_COUNT / (double)TELEMETRY_THREAD_COUNT);
+            int chunkSize = (int) Math.Ceiling((double) ACTOR_COUNT / (double) TELEMETRY_THREAD_COUNT);
 
             // Act
             // The cancellation token will be triggered through a callback,
@@ -75,7 +75,9 @@ namespace SimulationAgent.Test.SimulationThreads
                     actor.Value.Verify(x => x.RunAsync(), Times.Once);
                     countOfActorCalls++;
                 }
-                catch (MockException){}
+                catch (MockException)
+                {
+                }
             }
 
             // Compare the number of actors that were called to the number of
@@ -108,10 +110,7 @@ namespace SimulationAgent.Test.SimulationThreads
                 // Use a callback to cancel the token so that the main loop of
                 // the target will stop after the first iteration.
                 mockActor.Setup(x => x.RunAsync()).Returns(Task.CompletedTask)
-                    .Callback(() =>
-                    {
-                        cancellationToken.Cancel();
-                    });
+                    .Callback(() => { cancellationToken.Cancel(); });
 
                 mockDictionary.TryAdd(deviceName, mockActor);
                 objectDictionary.TryAdd(deviceName, mockActor.Object);
