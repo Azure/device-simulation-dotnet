@@ -14,7 +14,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
         public string DocumentDbDatabase { get; set; }
         public string DocumentDbCollection { get; set; }
         public int DocumentDbThroughput { get; set; }
-        
+
         public StorageConfig()
         {
             this.MaxPendingOperations = DEFAULT_MAX_PENDING_STORAGE_OPERATIONS;
