@@ -224,7 +224,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             {
                 // This call doesn't affect the quota used by the simulation agent 
                 // This doesn't interfere with simulations in progress
-                await this.registry.GetJobsAsync();
+                await this.registryManager.GetJobsAsync();
             }
             catch (Exception e)
             {
