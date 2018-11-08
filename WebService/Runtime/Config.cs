@@ -106,7 +106,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string DOCUMENTDB_DATABASE_KEY = "documentdb_database";
         private const string DOCUMENTDB_COLLECTION_KEY = "documentdb_collection";
         private const string DOCUMENTDB_THROUGHPUT_KEY = "documentdb_collection_throughput";
-        
+
         private const string LOGGING_KEY = APPLICATION_KEY + "Logging:";
         private const string LOGGING_LOGLEVEL_KEY = LOGGING_KEY + "LogLevel";
         private const string LOGGING_INCLUDEPROCESSID_KEY = LOGGING_KEY + "IncludeProcessId";
