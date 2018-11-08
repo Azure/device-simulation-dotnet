@@ -220,7 +220,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private async Task TestIoTHubReadPermissionsAsync(string connectionString)
         {
             this.registry.Init(connectionString);
-            
+
             try
             {
                 await this.registry.GetJobsAsync();
