@@ -33,7 +33,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
         private readonly IStorageRecords mainStorage;
-        private readonly IRegistryManager registry;
+        private readonly IRegistryManager registryManager;
         
         public IotHubConnectionStringManager(
             IServicesConfig config,
@@ -46,8 +46,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
-            this.registry = registryManager;
-            this.registry.Init(this.config.IoTHubConnString);
+            this.registryManager = registryManager;
+            this.registryManager.Init(this.config.IoTHubConnString);
         }
 
         /// <summary>
