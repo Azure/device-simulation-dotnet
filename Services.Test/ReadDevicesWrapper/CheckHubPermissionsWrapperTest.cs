@@ -24,10 +24,10 @@ namespace Services.Test.ReadDevicesWrapper
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ShouldReadDevicesCollectionFromDocumentDb()
+        public void ShouldCheckForHubPermissions()
         {
             // Act
-            this.target.TestReadPermissions(this.mockRegistryManager.Object, documentDbCollection, documentDbPageSize);
+            this.target.CheckPermissions(this.mockRegistryManager.Object, documentDbCollection, documentDbPageSize);
 
             // Assert - check if the createQuery function is called once
             this.mockRegistryManager.Verify(x => x.GetJobsAsync(), Times.Once);

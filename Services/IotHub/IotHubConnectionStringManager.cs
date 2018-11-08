@@ -223,7 +223,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
             try
             {
-                this.checkPermsWrapper.TestReadPermissions(registryManager, this.config.DevicesStorage.DocumentDbCollection, this.config.DevicesStorage.DocumentDbPageSize);
+                this.checkPermsWrapper.CheckPermissions(registryManager, this.config.DevicesStorage.DocumentDbCollection, this.config.DevicesStorage.DocumentDbPageSize);
             }
             catch (Exception e)
             {
