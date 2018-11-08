@@ -63,7 +63,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
         private readonly ILogger log;
         private readonly IActorsLogger actorLogger;
-        private readonly IRateLimiting rateLimiting;
         private readonly IDevicePropertiesLogic updatePropertiesLogic;
         private readonly IDevicePropertiesLogic deviceSetDeviceTagLogic;
         private readonly IInstance instance;
@@ -114,14 +113,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         public DevicePropertiesActor(
             ILogger logger,
             IActorsLogger actorLogger,
-            IRateLimiting rateLimiting,
             UpdateReportedProperties updatePropertiesLogic,
             SetDeviceTag deviceSetDeviceTagLogic,
             IInstance instance)
         {
             this.log = logger;
             this.actorLogger = actorLogger;
-            this.rateLimiting = rateLimiting;
             this.updatePropertiesLogic = updatePropertiesLogic;
             this.deviceSetDeviceTagLogic = deviceSetDeviceTagLogic;
             this.instance = instance;

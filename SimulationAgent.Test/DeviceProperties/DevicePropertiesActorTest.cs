@@ -151,7 +151,6 @@ namespace SimulationAgent.Test.DeviceProperties
             this.target = new DevicePropertiesActor(
                 this.logger.Object,
                 this.actorsLogger.Object,
-                this.mockRateLimiting.Object,
                 this.updatePropertiesLogic.Object,
                 this.deviceTagLogic.Object,
                 this.mockInstance.Object);
