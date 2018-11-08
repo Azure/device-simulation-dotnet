@@ -8,18 +8,18 @@ using Xunit;
 
 namespace Services.Test.ReadDevicesWrapper
 {
-    public class DevicesWrapperTest
+    public class CheckHubPermissionsWrapperTest
     {
         private const string IOTHUB_CONNSTRING = @"http://foobar";
         private const string documentDbCollection = "devices";
         private const int documentDbPageSize = 1;
 
-        private readonly DevicesWrapper target;
+        private readonly CheckHubPermissionsWrapper target;
         private Mock<RegistryManager> mockRegistryManager;
 
-        public DevicesWrapperTest()
+        public CheckHubPermissionsWrapperTest()
         {
-            this.target = new DevicesWrapper();
+            this.target = new CheckHubPermissionsWrapper();
             this.mockRegistryManager = new Mock<RegistryManager>();
         }
 
@@ -27,10 +27,10 @@ namespace Services.Test.ReadDevicesWrapper
         public void ShouldReadDevicesCollectionFromDocumentDb()
         {
             // Act
-            this.target.GetDevices(this.mockRegistryManager.Object, documentDbCollection, documentDbPageSize);
+            this.target.TestReadPermissions(this.mockRegistryManager.Object, documentDbCollection, documentDbPageSize);
 
             // Assert - check if the createQuery function is called once
-            this.mockRegistryManager.Verify(x => x.CreateQuery(It.IsAny<string>(), It.IsAny<int>()), Times.Once);
+            this.mockRegistryManager.Verify(x => x.GetJobsAsync(), Times.Once);
         }
     }
 }

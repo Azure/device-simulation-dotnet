@@ -33,20 +33,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
         private readonly IStorageRecords mainStorage;
-        private readonly IDevicesWrapper devicesWrapper;
+        private readonly ICheckHubPermissionsWrapper checkPermsWrapper;
 
         public IotHubConnectionStringManager(
             IServicesConfig config,
             IFactory factory,
             IDiagnosticsLogger diagnosticsLogger,
-            IDevicesWrapper devicesWrapper,
+            ICheckHubPermissionsWrapper devicesWrapper,
             ILogger logger)
         {
             this.config = config;
             this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
-            this.devicesWrapper = devicesWrapper;
+            this.checkPermsWrapper = devicesWrapper;
         }
 
         /// <summary>
@@ -223,7 +223,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
             try
             {
-                this.devicesWrapper.GetDevices(registryManager, this.config.DevicesStorage.DocumentDbCollection, this.config.DevicesStorage.DocumentDbPageSize);
+                this.checkPermsWrapper.TestReadPermissions(registryManager, this.config.DevicesStorage.DocumentDbCollection, this.config.DevicesStorage.DocumentDbPageSize);
             }
             catch (Exception e)
             {
