@@ -270,7 +270,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         {
             // considering the throttling settings, when can the properties be updated
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var pauseMsec = this.rateLimiting.GetPauseForNextTwinWrite();
+            var pauseMsec = this.simulationContext.RateLimiting.GetPauseForNextTwinWrite();
             this.whenToRun = now + pauseMsec;
             this.status = ActorStatus.ReadyToUpdate;
 
@@ -289,7 +289,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         {
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             // note: we overwrite the twin, so no Read operation is needed
-            var pauseMsec = this.rateLimiting.GetPauseForNextTwinWrite();
+            var pauseMsec = this.simulationContext.RateLimiting.GetPauseForNextTwinWrite();
             this.whenToRun = now + pauseMsec;
             this.status = ActorStatus.ReadyToTagDevice;
 
