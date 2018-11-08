@@ -10,10 +10,7 @@ namespace Services.Test.CheckHubPermissions
 {
     public class CheckHubPermissionsWrapperTest
     {
-        private const string IOTHUB_CONNSTRING = @"http://foobar";
-        private const string documentDbCollection = "devices";
-        private const int documentDbPageSize = 1;
-
+        
         private readonly CheckHubPermissionsWrapper target;
         private Mock<RegistryManager> mockRegistryManager;
 
@@ -27,7 +24,7 @@ namespace Services.Test.CheckHubPermissions
         public void ShouldCheckForHubPermissions()
         {
             // Act
-            this.target.CheckPermissions(this.mockRegistryManager.Object, documentDbCollection, documentDbPageSize);
+            this.target.CheckPermissions(this.mockRegistryManager.Object);
 
             // Assert - check if the createQuery function is called once
             this.mockRegistryManager.Verify(x => x.GetJobsAsync(), Times.Once);

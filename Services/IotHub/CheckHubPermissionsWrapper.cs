@@ -6,12 +6,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 {
     public interface ICheckHubPermissionsWrapper
     {
-        void CheckPermissions(RegistryManager registryManager, string documentDbCollection, int documentDbPageSize);
+        void CheckPermissions(RegistryManager registryManager);
     }
 
     public class CheckHubPermissionsWrapper : ICheckHubPermissionsWrapper
     {
-        public void CheckPermissions(RegistryManager registryManager, string documentDbCollection, int documentDbPageSize)
+        public void CheckPermissions(RegistryManager registryManager)
         {
             registryManager.GetJobsAsync();
         }
