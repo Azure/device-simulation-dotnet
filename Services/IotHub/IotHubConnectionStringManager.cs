@@ -33,20 +33,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
         private readonly IStorageRecords mainStorage;
-        private readonly ICheckHubPermissionsWrapper checkPermsWrapper;
-
+        private readonly IRegistryManager registry;
+        
         public IotHubConnectionStringManager(
             IServicesConfig config,
             IFactory factory,
             IDiagnosticsLogger diagnosticsLogger,
-            ICheckHubPermissionsWrapper checkPermsWrapper,
+            IRegistryManager registryManager,
             ILogger logger)
         {
             this.config = config;
             this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
-            this.checkPermsWrapper = checkPermsWrapper;
+            this.registry = registryManager;
         }
 
         /// <summary>
@@ -219,11 +219,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         private async Task TestIoTHubReadPermissionsAsync(string connectionString)
         {
-            var registryManager = RegistryManager.CreateFromConnectionString(connectionString);
-
+            this.registry.Init(connectionString);
+            
             try
             {
-                await this.checkPermsWrapper.CheckPermissionsAsync(registryManager);
+                await this.registry.GetJobsAsync();
             }
             catch (Exception e)
             {
