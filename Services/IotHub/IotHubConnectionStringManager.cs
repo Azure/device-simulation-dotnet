@@ -47,6 +47,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
             this.registry = registryManager;
+            this.registry.Init(this.config.IoTHubConnString);
         }
 
         /// <summary>
@@ -219,8 +220,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         private async Task TestIoTHubReadPermissionsAsync(string connectionString)
         {
-            this.registry.Init(connectionString);
-
             try
             {
                 // This call doesn't affect the quota used by the simulation agent and so it avoids interfering with simulations in progress
