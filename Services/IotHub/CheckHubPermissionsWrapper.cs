@@ -1,19 +1,20 @@
 ﻿// Copyright (c) Microsoft. All rights reserved. 
 
 using Microsoft.Azure.Devices;
+using System.Threading.Tasks;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 {
     public interface ICheckHubPermissionsWrapper
     {
-        void CheckPermissions(RegistryManager registryManager);
+        Task CheckPermissionsAsync(RegistryManager registryManager);
     }
 
     public class CheckHubPermissionsWrapper : ICheckHubPermissionsWrapper
     {
-        public void CheckPermissions(RegistryManager registryManager)
+        public async Task CheckPermissionsAsync(RegistryManager registryManager)
         {
-            registryManager.GetJobsAsync();
+            await registryManager.GetJobsAsync();
         }
     }
 }

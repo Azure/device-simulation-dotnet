@@ -20,10 +20,10 @@ namespace Services.Test.CheckHubPermissions
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ShouldCheckForHubPermissions()
+        public async void ShouldCheckForHubPermissions()
         {
             // Act
-            this.target.CheckPermissions(this.mockRegistryManager.Object);
+            await this.target.CheckPermissionsAsync(this.mockRegistryManager.Object);
 
             // Assert - check if the createQuery function is called once
             this.mockRegistryManager.Verify(x => x.GetJobsAsync(), Times.Once);

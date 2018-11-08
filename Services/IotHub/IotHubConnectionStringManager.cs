@@ -147,7 +147,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             if (!match.Groups[CONNSTRING_REGEX_KEY].Value.IsNullOrWhiteSpace())
             {
                 this.ValidateConnectionString(connectionString);
-                this.TestIoTHubReadPermissionsAsync(connectionString);
+                await this.TestIoTHubReadPermissionsAsync(connectionString);
                 await this.TestIoTHubWritePermissionsAsync(connectionString);
             }
 
@@ -175,7 +175,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             try
             {
                 this.ValidateConnectionString(this.config.IoTHubConnString);
-                this.TestIoTHubReadPermissionsAsync(this.config.IoTHubConnString);
+                await this.TestIoTHubReadPermissionsAsync(this.config.IoTHubConnString);
                 await this.TestIoTHubWritePermissionsAsync(this.config.IoTHubConnString);
             }
             catch (Exception e)
@@ -217,13 +217,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             }
         }
 
-        private void TestIoTHubReadPermissionsAsync(string connectionString)
+        private async Task TestIoTHubReadPermissionsAsync(string connectionString)
         {
             var registryManager = RegistryManager.CreateFromConnectionString(connectionString);
 
             try
             {
-                this.checkPermsWrapper.CheckPermissions(registryManager);
+                await this.checkPermsWrapper.CheckPermissionsAsync(registryManager);
             }
             catch (Exception e)
             {
