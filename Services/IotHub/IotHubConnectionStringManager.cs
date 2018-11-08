@@ -39,14 +39,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             IServicesConfig config,
             IFactory factory,
             IDiagnosticsLogger diagnosticsLogger,
-            ICheckHubPermissionsWrapper devicesWrapper,
+            ICheckHubPermissionsWrapper checkPermsWrapper,
             ILogger logger)
         {
             this.config = config;
             this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
-            this.checkPermsWrapper = devicesWrapper;
+            this.checkPermsWrapper = checkPermsWrapper;
         }
 
         /// <summary>

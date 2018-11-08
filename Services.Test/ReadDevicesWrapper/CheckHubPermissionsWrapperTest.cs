@@ -10,7 +10,6 @@ namespace Services.Test.CheckHubPermissions
 {
     public class CheckHubPermissionsWrapperTest
     {
-        
         private readonly CheckHubPermissionsWrapper target;
         private Mock<RegistryManager> mockRegistryManager;
 
