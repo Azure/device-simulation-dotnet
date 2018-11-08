@@ -6,7 +6,7 @@ using Moq;
 using Services.Test.helpers;
 using Xunit;
 
-namespace Services.Test.ReadDevicesWrapper
+namespace Services.Test.CheckHubPermissions
 {
     public class CheckHubPermissionsWrapperTest
     {
