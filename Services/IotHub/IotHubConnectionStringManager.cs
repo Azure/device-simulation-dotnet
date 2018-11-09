@@ -34,7 +34,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private readonly IDiagnosticsLogger diagnosticsLogger;
         private readonly IStorageRecords mainStorage;
         private readonly IRegistryManager registryManager;
-        
+
         public IotHubConnectionStringManager(
             IServicesConfig config,
             IFactory factory,
@@ -47,7 +47,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
             this.registryManager = registryManager;
-            this.registryManager.Init(this.config.IoTHubConnString);
         }
 
         /// <summary>
@@ -224,6 +223,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             {
                 // This call doesn't affect the quota used by the simulation agent 
                 // This doesn't interfere with simulations in progress
+                this.registryManager.Init(connectionString);
                 await this.registryManager.GetJobsAsync();
             }
             catch (Exception e)
