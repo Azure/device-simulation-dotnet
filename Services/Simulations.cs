@@ -375,6 +375,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             // modify other fields, so we need to check for null
             if (patch.Enabled != null) simulation.Enabled = patch.Enabled.Value;
 
+            if (patch.DeleteDevicesWhenSimulationEnds != null) simulation.DeleteDevicesWhenSimulationEnds = patch.DeleteDevicesWhenSimulationEnds.Value;
+
             // TODO: can we use this.SaveAsync() here too and avoid the duplication?
             item = await this.simulationsStorage.UpsertAsync(
                 new StorageRecord

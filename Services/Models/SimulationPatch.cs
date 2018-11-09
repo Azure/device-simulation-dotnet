@@ -7,5 +7,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public string ETag { get; set; }
         public string Id { get; set; }
         public bool? Enabled { get; set; }
+        public bool? DeleteDevicesWhenSimulationEnds { get; set; }
     }
 }
