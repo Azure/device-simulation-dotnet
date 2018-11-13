@@ -138,7 +138,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         public void Dispose()
         {
-            this.registry.Dispose();
+            this.registry?.Dispose();
         }
     }
 }
