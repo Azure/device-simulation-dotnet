@@ -63,7 +63,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
         private readonly ILogger log;
         private readonly IActorsLogger actorLogger;
-        private readonly IRateLimiting rateLimiting;
         private readonly IDevicePropertiesLogic updatePropertiesLogic;
         private readonly IDevicePropertiesLogic deviceSetDeviceTagLogic;
         private readonly IInstance instance;
@@ -114,14 +113,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         public DevicePropertiesActor(
             ILogger logger,
             IActorsLogger actorLogger,
-            IRateLimiting rateLimiting,
             UpdateReportedProperties updatePropertiesLogic,
             SetDeviceTag deviceSetDeviceTagLogic,
             IInstance instance)
         {
             this.log = logger;
             this.actorLogger = actorLogger;
-            this.rateLimiting = rateLimiting;
             this.updatePropertiesLogic = updatePropertiesLogic;
             this.deviceSetDeviceTagLogic = deviceSetDeviceTagLogic;
             this.instance = instance;
@@ -270,7 +267,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         {
             // considering the throttling settings, when can the properties be updated
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var pauseMsec = this.rateLimiting.GetPauseForNextTwinWrite();
+            var pauseMsec = this.simulationContext.RateLimiting.GetPauseForNextTwinWrite();
             this.whenToRun = now + pauseMsec;
             this.status = ActorStatus.ReadyToUpdate;
 
@@ -289,7 +286,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         {
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             // note: we overwrite the twin, so no Read operation is needed
-            var pauseMsec = this.rateLimiting.GetPauseForNextTwinWrite();
+            var pauseMsec = this.simulationContext.RateLimiting.GetPauseForNextTwinWrite();
             this.whenToRun = now + pauseMsec;
             this.status = ActorStatus.ReadyToTagDevice;
 

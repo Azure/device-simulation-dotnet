@@ -76,7 +76,7 @@ namespace Services.Test.Statistics
                         new SimulationStatisticsRecord
                         {
                             SimulationId = SIM_ID,
-                            NodeId = NODE_IDS[0],
+                            NodeId = NODE_IDS[1],
                             Statistics = new SimulationStatisticsModel
                             {
                                 ActiveDevices = 10,
@@ -106,6 +106,42 @@ namespace Services.Test.Statistics
             this.simulationStatisticsStorage
                 .Setup(x => x.GetAllAsync())
                 .ReturnsAsync(this.storageRecords);
+
+            this.clusterNodes
+                .Setup(x => x.GetSortedIdListAsync())
+                .ReturnsAsync(new SortedSet<string> { NODE_IDS[0], NODE_IDS[1] });
+
+            // Act
+            var result = this.target.GetSimulationStatisticsAsync(SIM_ID).CompleteOrTimeout();
+
+            // Assert
+            Assert.Equal(expectedStatistics.ActiveDevices, result.Result.ActiveDevices);
+            Assert.Equal(expectedStatistics.TotalMessagesSent, result.Result.TotalMessagesSent);
+            Assert.Equal(expectedStatistics.FailedDeviceConnections, result.Result.FailedDeviceConnections);
+            Assert.Equal(expectedStatistics.FailedDevicePropertiesUpdates, result.Result.FailedDevicePropertiesUpdates);
+            Assert.Equal(expectedStatistics.FailedMessages, result.Result.FailedMessages);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItIgnoresAverageCountForExpiredNode()
+        {
+            // Arrange
+            SimulationStatisticsModel expectedStatistics = new SimulationStatisticsModel
+            {
+                ActiveDevices = 10,
+                TotalMessagesSent = 300,
+                FailedDeviceConnections = 6,
+                FailedDevicePropertiesUpdates = 8,
+                FailedMessages = 10
+            };
+
+            this.simulationStatisticsStorage
+                .Setup(x => x.GetAllAsync())
+                .ReturnsAsync(this.storageRecords);
+
+            this.clusterNodes
+                .Setup(x => x.GetSortedIdListAsync())
+                .ReturnsAsync(new SortedSet<string> { NODE_IDS[1] });
 
             // Act
             var result = this.target.GetSimulationStatisticsAsync(SIM_ID).CompleteOrTimeout();
@@ -195,11 +231,11 @@ namespace Services.Test.Statistics
 
             // Assert
             this.simulationStatisticsStorage.Verify(x => x.GetAsync(It.Is<string>(
-               a => a == statisticsRecordId)));
+                a => a == statisticsRecordId)));
             this.simulationStatisticsStorage.Verify(x => x.UpsertAsync(It.Is<StorageRecord>(
-                a => a.Id == storageRecord.Id &&
-                     a.Data == storageRecord.Data),
-                     It.IsAny<string>()));
+                    a => a.Id == storageRecord.Id &&
+                         a.Data == storageRecord.Data),
+                It.IsAny<string>()));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -238,9 +274,9 @@ namespace Services.Test.Statistics
 
             // Assert
             this.simulationStatisticsStorage.Verify(x => x.UpsertAsync(It.Is<StorageRecord>(
-                a => a.Id == storageRecord.Id &&
-                     a.Data == storageRecord.Data),
-                     It.IsAny<string>()));
+                    a => a.Id == storageRecord.Id &&
+                         a.Data == storageRecord.Data),
+                It.IsAny<string>()));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
