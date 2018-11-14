@@ -22,6 +22,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         private const int MAX_DELETE_DEVICES = 100;
 
         private readonly ISimulations simulationsService;
+        private readonly IDevices devices;
         private readonly IIotHubConnectionStringManager connectionStringManager;
         private readonly IIothubMetrics iothubMetrics;
         private readonly ISimulationAgent simulationAgent;
@@ -30,6 +31,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
         public SimulationsController(
             ISimulations simulationsService,
+            IDevices devices,
             IIotHubConnectionStringManager connectionStringManager,
             IIothubMetrics iothubMetrics,
             IPreprovisionedIotHub preprovisionedIotHub,
@@ -37,6 +39,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             ILogger logger)
         {
             this.simulationsService = simulationsService;
+            this.devices = devices;
             this.connectionStringManager = connectionStringManager;
             this.iothubMetrics = iothubMetrics;
             this.simulationAgent = simulationAgent;
@@ -83,9 +86,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         }
 
         [HttpPost("{id}/metrics/iothub!search")]
-        public async Task<object> PostAsync(
-            [FromBody] MetricsRequestsApiModel requests,
-            string id)
+        public async Task<object> PostAsync(string id, [FromBody] MetricsRequestsApiModel requests)
         {
             // API payload validation is not required as we're simply relaying the request.
             var payload = requests?.ToServiceModel();
@@ -96,9 +97,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         }
 
         [HttpPut("{id}")]
-        public async Task<SimulationApiModel> PutAsync(
-            [FromBody] SimulationApiModel simulationApiModel,
-            string id = "")
+        public async Task<SimulationApiModel> PutAsync([FromBody] SimulationApiModel simulationApiModel, string id = "")
         {
             if (simulationApiModel == null)
             {
@@ -115,10 +114,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             return SimulationApiModel.FromServiceModel(simulation);
         }
 
-        [HttpPut("{id}/Devices!create")]
-        public async Task PutAsync(
-            [FromBody] CreateActionApiModel device,
-            string id = "")
+        [HttpPut("{id}/devices!create")]
+        public async Task PutAsync([FromBody] CreateActionApiModel device, string id = "")
         {
             if (device == null)
             {
@@ -131,9 +128,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             await this.simulationAgent.AddDeviceAsync(id, device.DeviceId, device.ModelId);
         }
 
-        [HttpPut("{id}/Devices!batchDelete")]
-        public async Task PutAsync(
-            [FromBody] BatchDeleteActionApiModel devices)
+        [HttpPut("{id}/devices!batchDelete")]
+        public async Task PutAsync([FromBody] BatchDeleteActionApiModel devices)
         {
             if (devices == null)
             {
@@ -150,11 +146,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             await this.simulationAgent.DeleteDevicesAsync(devices.DeviceIds);
         }
 
+        // TODO: use the connection string of the simulation, instead of passing the value.
+        [HttpPut("{id}/devices!deleteAll")]
+        public async Task<object> PutEraseHubAsync(string id, [FromBody] IoTHubApiModel hubDetails)
+        {
+            if (hubDetails == null) throw new BadRequestException("Hub details are missing");
+
+            this.devices.TmpInit(hubDetails.ConnectionString);
+            return await this.simulationsService.DeleteAllDevicesAsync(id, this.devices);
+        }
+
         // TODO: save statistics to storage during patch
         [HttpPatch("{id}")]
-        public async Task<SimulationApiModel> PatchAsync(
-            string id,
-            [FromBody] SimulationPatchApiModel patch)
+        public async Task<SimulationApiModel> PatchAsync(string id, [FromBody] SimulationPatchApiModel patch)
         {
             if (patch == null)
             {

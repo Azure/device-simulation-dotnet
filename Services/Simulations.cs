@@ -57,7 +57,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Change the simulation, setting the device creation complete
         Task<bool> TryToSetDeviceCreationCompleteAsync(string simulationId);
 
-        // Try to start a job to delete all the devices
+        // Create a job to delete all the devices (used by web service on user request)
+        Task<(bool jobCreated, string jobId)> DeleteAllDevicesAsync(string simulationId, IDevices devices);
+
+        // Try to start a job to delete all the devices (used by simulation agent when a simulation ends)
         Task<bool> TryToStartDevicesDeletionAsync(string simulationId, IDevices devices);
 
         // Change the simulation, setting the device deletion complete
@@ -464,34 +467,56 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return true;
         }
 
+        /// <summary>
+        /// Try to create a job to delete all the devices in a simulation.
+        /// Throw exception in case of errors.
+        ///
+        /// This operation is not meant to modify the simulation object, so if the simulation
+        /// is still running it will cause errors due to the missing devices. The simulation
+        /// might as well recreate the devices if it is running, that is not a problem.
+        ///
+        /// This method is invoked by the web service, exceptions are thrown to tell the user
+        /// what happened. At this point the UI doesn't consume this logic, which is used only
+        /// for maintenance.
+        /// </summary>
+        public async Task<(bool jobCreated, string jobId)> DeleteAllDevicesAsync(string simulationId, IDevices devices)
+        {
+            try
+            {
+                var (simulation, jobCreated, jobId) = await this.CreateJobToDeleteDevices(simulationId, devices);
+                return (jobCreated, jobId);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Failed to start bulk device deletion", e);
+                throw new ExternalDependencyException("Failed to start bulk device deletion", e);
+            }
+        }
+
+        /// <summary>
+        /// Try to create a job to delete all the devices in a simulation.
+        /// This method is used by the simulation agent when a simulation ends.
+        /// In case of errors the method returns 'false' and the caller is expected to retry.
+        /// </summary>
         public async Task<bool> TryToStartDevicesDeletionAsync(string simulationId, IDevices devices)
         {
-            // Fetch latest record
-            var simulation = await this.GetAsync(simulationId);
-
-            if (!simulation.DevicesDeletionStarted)
+            try
             {
-                try
-                {
-                    Dictionary<string, List<string>> deviceList = this.GetDeviceIdsByModel(simulation);
-                    var deviceIds = deviceList.SelectMany(x => x.Value);
-                    this.log.Info("Deleting devices...", () => new { simulationId });
+                var (simulation, jobCreated, jobId) = await this.CreateJobToDeleteDevices(simulationId, devices);
 
-                    simulation.DeviceDeletionJobId = await devices.DeleteListUsingJobsAsync(deviceIds);
-                    simulation.DevicesDeletionStarted = true;
+                if (!jobCreated) return true;
 
-                    this.log.Info("Import job created for bulk device deletion", () => new { simulationId, simulation.DeviceCreationJobId });
+                simulation.DeviceDeletionJobId = jobId;
+                simulation.DevicesDeletionStarted = true;
 
-                    await this.SaveAsync(simulation, simulation.ETag);
-                }
-                catch (Exception e)
-                {
-                    this.log.Error("Failed to create bulk-device-deletion job", e);
-                    return false;
-                }
+                await this.SaveAsync(simulation, simulation.ETag);
+                return true;
             }
-
-            return true;
+            catch (Exception e)
+            {
+                this.log.Error("Failed to start bulk device deletion", e);
+                return false;
+            }
         }
 
         public async Task<bool> TryToSetDeviceCreationCompleteAsync(string simulationId)
@@ -652,6 +677,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             result.Items = items;
 
             return result;
+        }
+        
+        private async Task<(Models.Simulation simulation, bool jobCreated, string jobId)> CreateJobToDeleteDevices(string simulationId, IDevices devices)
+        {
+            // Fetch latest record, so that updates have the latest ETag if needed
+            var simulation = await this.GetAsync(simulationId);
+
+            // If deletion already happened there's nothing to do, return an empty Job ID
+            if (simulation.DevicesDeletionStarted || simulation.DevicesDeletionComplete)
+            {
+                this.log.Info("Bulk device deletion not needed, devices have already been deleted", () => new { simulation.Id });
+                return (simulation, false, null);
+            }
+
+            Dictionary<string, List<string>> deviceList = this.GetDeviceIdsByModel(simulation);
+            var deviceIds = deviceList.SelectMany(x => x.Value).ToList();
+
+            string jobId = await devices.DeleteListUsingJobsAsync(deviceIds);
+            this.log.Info("Bulk device deletion started", () => new { simulation.Id, jobId, deviceIds.Count });
+
+            return (simulation, true, jobId);
         }
 
         private async Task<bool> TryToUpdateSimulationAsync(Models.Simulation simulation)
