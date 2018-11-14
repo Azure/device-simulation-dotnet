@@ -33,17 +33,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
         private readonly IStorageRecords mainStorage;
+        private readonly IRegistryManager registryManager;
 
         public IotHubConnectionStringManager(
             IServicesConfig config,
             IFactory factory,
             IDiagnosticsLogger diagnosticsLogger,
+            IRegistryManager registryManager,
             ILogger logger)
         {
             this.config = config;
             this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
+            this.registryManager = registryManager;
         }
 
         /// <summary>
@@ -216,16 +219,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         private async Task TestIoTHubReadPermissionsAsync(string connectionString)
         {
-            var registryManager = RegistryManager.CreateFromConnectionString(connectionString);
-
             try
             {
-                await registryManager.GetDevicesAsync(1, CancellationToken.None);
+                // This call doesn't affect the quota used by the simulation agent 
+                // This doesn't interfere with simulations in progress
+                this.registryManager.Init(connectionString);
+                await this.registryManager.GetJobsAsync();
             }
             catch (Exception e)
             {
-                var message = "The IoT Hub connection string does not have read permissions to the device registry. " +
-                              "Check that the policy for the key allows `Registry Read/Write` " +
+                var message = "The IoT Hub connection string does not provide all the required permissions to the device registry. " +
+                              "Check that the policy for the key allows `Registry Read', 'Registy Write` " +
                               "and `Service Connect` permissions.";
                 this.log.Error(message, e);
                 this.diagnosticsLogger.LogServiceError(message, e.Message);
