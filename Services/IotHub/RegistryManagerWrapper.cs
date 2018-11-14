@@ -38,6 +38,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
         Task<JobProperties> GetJobAsync(string jobId);
 
+        Task GetJobsAsync();
+
         void Dispose();
     }
 
@@ -128,9 +130,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             return this.registry.GetJobAsync(jobId);
         }
 
+        public async Task GetJobsAsync()
+        {
+            this.instance.InitRequired();
+            await this.registry.GetJobsAsync();
+        }
+
         public void Dispose()
         {
-            this.registry.Dispose();
+            this.registry?.Dispose();
         }
     }
 }
