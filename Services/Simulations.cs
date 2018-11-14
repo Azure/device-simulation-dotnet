@@ -68,6 +68,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         // Get the ID of the devices in a simulation, grouped by device model ID.
         Dictionary<string, List<string>> GetDeviceIdsByModel(Models.Simulation simulation);
+
+        Task<DeviceList> GetDeviceList(string skip, string limit);
     }
 
     public class Simulations : ISimulations
@@ -77,6 +79,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private const string DEVICES_COLLECTION = "SimulatedDevices";
         private const string SEED_STATUS_KEY = "SeedCompleted";
         private const int DEVICES_PER_MODEL_IN_DEFAULT_TEMPLATE = 1;
+        private const int DEFAULT_DEVICE_LIST_PAGE_SIZE = 40;
 
         private readonly IServicesConfig config;
         private readonly IDeviceModels deviceModels;
@@ -584,6 +587,69 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             this.log.Debug("Device IDs loaded", () => new { Simulation = simulation.Id, deviceCount });
+
+            return result;
+        }
+
+        public async Task<DeviceList> GetDeviceList(string skip, string limit)
+        {
+            // Get sorted active simulation list
+            var simulations = await this.GetListAsync();
+            var activeSimulationsSortById = simulations.Where(x => x.IsActiveNow).OrderBy(x => x.Id).ToList();
+
+            // Generate device id list
+            var deviceIdList = new List<string>();
+
+            foreach (var simulation in activeSimulationsSortById)
+            {
+                var deviceIdsByModel = this.GetDeviceIdsByModel(simulation);
+                var list = deviceIdsByModel.Keys.ToList();
+                list.Sort();
+
+                foreach (var key in list)
+                {
+                    var deviceIds = deviceIdsByModel[key];
+                    deviceIdList = deviceIdList.Concat(deviceIds).ToList();
+                }
+            }
+
+            // Calculate pagination
+            return this.ToDeviceList(deviceIdList, skip, limit);
+        }
+
+        private DeviceList ToDeviceList(List<string> deviceIds, string skip, string limit)
+        {
+            int skipValue = 0;
+            int pageLimit = 0;
+            Int32.TryParse(skip, out skipValue);
+            Int32.TryParse(limit, out pageLimit);
+
+            if (pageLimit == 0)
+            {
+                pageLimit = DEFAULT_DEVICE_LIST_PAGE_SIZE;
+            }
+
+            var total = deviceIds.Count;
+            var prev = skipValue == 0
+                ? null
+                : $"?skip={skipValue}&limit={pageLimit}";
+            var next = skipValue + pageLimit >= total
+                ? null
+                : $"?skip={skipValue + pageLimit}&limit={pageLimit}";
+            var count = pageLimit < total - skipValue ? pageLimit : total - skipValue;
+            var ids = deviceIds.GetRange(skipValue, count);
+            var items = new List<Device>();
+            foreach (var id in ids)
+            {
+                var device = new Device(id);
+                items.Add(device);
+            }
+
+            var result = new DeviceList();
+            result.Total = total;
+            result.Prev = prev;
+            result.Next = next;
+            result.Items = items;
 
             return result;
         }
