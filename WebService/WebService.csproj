@@ -31,6 +31,9 @@
         <LaunchUrl>http://localhost:9003/v1/status</LaunchUrl>
     </PropertyGroup>
     <ItemGroup>
+      <Compile Remove="v1\Models\SimulationApiModel\SimulationRateLimits.cs" />
+    </ItemGroup>
+    <ItemGroup>
         <Content Include="appsettings.ini">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
