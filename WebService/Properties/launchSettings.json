@@ -10,6 +10,8 @@
         "PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING": "your DocumentDb connection string",
         "PCS_AZURE_STORAGE_ACCOUNT": "your Azure Storage Account connection string",
         "PCS_STORAGEADAPTER_WEBSERVICE_URL": "http://localhost:9022/v1",
+        "PCS_RESOURCE_GROUP_LOCATION": "your Azure resource group location",
+        "PCS_VMSS_NAME": "your vm scale set name",
         "PCS_LOG_LEVEL": "Debug",
         "PCS_AUTH_REQUIRED": "false",
         "PCS_AUTH_ISSUER": "",
@@ -18,7 +20,8 @@
         "PCS_SUBSCRIPTION_DOMAIN": "",
         "PCS_SUBSCRIPTION_ID": "",
         "PCS_RESOURCE_GROUP": "",
-        "PCS_IOHUB_NAME": ""
+        "PCS_IOHUB_NAME": "",
+        "PCS_SEED_TEMPLATE": ""
       },
       "applicationUrl": "http://localhost:9003/v1/status"
     }

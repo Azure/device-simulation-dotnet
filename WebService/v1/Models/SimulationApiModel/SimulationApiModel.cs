@@ -47,6 +47,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "ActiveNow")]
         public bool? ActiveNow { get; set; }
 
+        // Note: read-only property, used only to report the simulation status
+        [JsonProperty(PropertyName = "DevicesDeletionComplete")]
+        public bool? DevicesDeletionComplete { get; set; }
+
         [JsonProperty(PropertyName = "IoTHubs")]
         public IList<SimulationIotHub> IotHubs { get; set; }
 
@@ -68,7 +72,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         public SimulationStatistics Statistics { get; set; }
 
         [JsonProperty(PropertyName = "RateLimits")]
-        public SimulationRateLimits RateLimits { get; set; }
+        public IRateLimitingConfig RateLimits { get; set; }
 
         // Note: read-only metadata
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
@@ -92,12 +96,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             this.Running = false;
             this.DeleteDevicesWhenSimulationEnds = false;
             this.ActiveNow = false;
+            this.DevicesDeletionComplete = false;
             this.IotHubs = new List<SimulationIotHub>();
             this.StartTime = null;
             this.EndTime = null;
             this.StoppedTime = null;
             this.DeviceModels = new List<SimulationDeviceModelRef>();
-            this.RateLimits = new SimulationRateLimits();
+            this.RateLimits = new RateLimitingConfig();
         }
 
         // Map API model to service model, keeping the original fields when needed
@@ -126,7 +131,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             result.StartTime = DateHelper.ParseDateExpression(this.StartTime, now);
             result.EndTime = DateHelper.ParseDateExpression(this.EndTime, now);
             result.DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList();
-            result.RateLimits = this.RateLimits.ToServiceModel(defaultRateLimits);
+            result.RateLimits = this.GetRateLimits(defaultRateLimits);
 
             // Overwrite the value only if the request included the field, i.e. don't
             // enable/disable the simulation if the user didn't explicitly ask to.
@@ -156,7 +161,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         }
 
         // Map service model to API model
-        public static SimulationApiModel FromServiceModel(Simulation value)
+        public static SimulationApiModel FromServiceModel(
+            Simulation value)
         {
             if (value == null) return null;
 
@@ -169,10 +175,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 Enabled = value.Enabled,
                 Running = value.ShouldBeRunning,
                 ActiveNow = value.IsActiveNow,
+                DevicesDeletionComplete = value.DevicesDeletionComplete,
                 DeleteDevicesWhenSimulationEnds = value.DeleteDevicesWhenSimulationEnds,
-                StartTime = value.StartTime?.ToString(DATE_FORMAT),
-                EndTime = value.EndTime?.ToString(DATE_FORMAT),
-                StoppedTime = value.StoppedTime?.ToString(DATE_FORMAT),
                 IotHubs = new List<SimulationIotHub>()
             };
 
@@ -201,8 +205,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             }
 
             result.DeviceModels = SimulationDeviceModelRef.FromServiceModel(value.DeviceModels);
-            result.Statistics = SimulationStatistics.FromServiceModel(value.Statistics);
-            result.RateLimits = SimulationRateLimits.FromServiceModel(value.RateLimits);
+            result.Statistics = GetSimulationStatistics(value);
+            result.RateLimits = value.RateLimits;
+
             result.created = value.Created;
             result.modified = value.Modified;
 
@@ -262,6 +267,62 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             {
                 throw new BadRequestException(NO_IOTHUB_CONNSTRING);
             }
+
+            foreach (var iotHub in this.IotHubs)
+            {
+                await connectionStringManager.ValidateConnectionStringAsync(iotHub.ConnectionString);
+            }
+        }
+
+        private static SimulationStatistics GetSimulationStatistics(Simulation simulation)
+        {
+            var statistics = SimulationStatistics.FromServiceModel(simulation.Statistics);
+
+            // AverageMessagesPerSecond calculation needs ActualStartTime to be set.
+            // ActualStartTime will be set once partitioning and device creation is done, upto that point it can be null.
+            if (statistics != null && simulation.ActualStartTime.HasValue)
+            {
+                DateTimeOffset now = DateTimeOffset.UtcNow;
+                var actualStartTime = simulation.ActualStartTime.Value;
+                double durationInSeconds = 0;
+
+                if (simulation.IsActiveNow)
+                {
+                    // If the simulation is active, calculate duration from start till now.
+                    durationInSeconds = now.Subtract(actualStartTime).TotalSeconds;
+                }
+                else if (simulation.StoppedTime.HasValue)
+                {
+                    // If simulation is stopped, calculate duration from start till stop time.
+                    durationInSeconds = simulation.StoppedTime.Value.Subtract(actualStartTime).TotalSeconds;
+                }
+
+                statistics.AverageMessagesPerSecond = durationInSeconds > 0 ? Math.Round((double) statistics.TotalMessagesSent / durationInSeconds, 2) : 0;
+            }
+
+            return statistics;
+        }
+
+        private IRateLimitingConfig GetRateLimits(IRateLimitingConfig defaultRateLimits)
+        {
+            var simulationRateLimits = this.RateLimits;
+
+            var connectionsPerSecond = simulationRateLimits.ConnectionsPerSecond > 0 ? simulationRateLimits.ConnectionsPerSecond : defaultRateLimits.ConnectionsPerSecond;
+            var registryOperationsPerMinute = simulationRateLimits.RegistryOperationsPerMinute > 0 ? simulationRateLimits.RegistryOperationsPerMinute : defaultRateLimits.RegistryOperationsPerMinute;
+            var twinReadsPerSecond = simulationRateLimits.TwinReadsPerSecond > 0 ? simulationRateLimits.TwinReadsPerSecond : defaultRateLimits.TwinReadsPerSecond;
+            var twinWritesPerSecond = simulationRateLimits.TwinWritesPerSecond > 0 ? simulationRateLimits.TwinWritesPerSecond : defaultRateLimits.TwinWritesPerSecond;
+            var deviceMessagesPerSecond = simulationRateLimits.DeviceMessagesPerSecond > 0 ? simulationRateLimits.DeviceMessagesPerSecond : defaultRateLimits.DeviceMessagesPerSecond;
+            var deviceMessagesPerDay = simulationRateLimits.DeviceMessagesPerDay > 0 ? simulationRateLimits.DeviceMessagesPerDay : defaultRateLimits.DeviceMessagesPerDay;
+
+            return new RateLimitingConfig
+            {
+                ConnectionsPerSecond = connectionsPerSecond,
+                RegistryOperationsPerMinute = registryOperationsPerMinute,
+                TwinReadsPerSecond = twinReadsPerSecond,
+                TwinWritesPerSecond = twinWritesPerSecond,
+                DeviceMessagesPerSecond = deviceMessagesPerSecond,
+                DeviceMessagesPerDay = deviceMessagesPerDay
+            };
         }
     }
 }

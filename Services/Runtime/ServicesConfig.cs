@@ -7,6 +7,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 {
     public interface IServicesConfig
     {
+        string SeedTemplate { get; }
+        string SeedTemplateFolder { get; }
         string DeviceModelsFolder { get; }
         string DeviceModelsScriptsFolder { get; }
         string IoTHubConnString { get; }
@@ -23,7 +25,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         StorageConfig SimulationsStorage { get; set; }
         StorageConfig DevicesStorage { get; set; }
         StorageConfig PartitionsStorage { get; set; }
+        StorageConfig StatisticsStorage { get; set; }
         string DiagnosticsEndpointUrl { get; }
+        string UserAgent { get; }
     }
 
     // TODO: test Windows/Linux folder separator
@@ -32,12 +36,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
     {
         public const string USE_DEFAULT_IOTHUB = "default";
 
+        private string stf;
         private string dtf;
         private string dtbf;
         private string ihf;
 
         public ServicesConfig()
         {
+            this.stf = string.Empty;
             this.dtf = string.Empty;
             this.dtbf = string.Empty;
             this.ihf = string.Empty;
@@ -54,6 +60,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             get { return this.dtbf; }
             set { this.dtbf = this.NormalizePath(value); }
         }
+
+        public string SeedTemplateFolder
+        {
+            get { return this.stf; }
+            set { this.stf = this.NormalizePath(value); }
+        }
+
+        public string SeedTemplate { get; set; }
 
         public string IoTHubConnString { get; set; }
 
@@ -84,6 +98,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         public StorageConfig DevicesStorage { get; set; }
 
         public StorageConfig PartitionsStorage { get; set; }
+
+        public string UserAgent { get; set; }
+
+        public StorageConfig StatisticsStorage { get; set; }
 
         private string NormalizePath(string path)
         {

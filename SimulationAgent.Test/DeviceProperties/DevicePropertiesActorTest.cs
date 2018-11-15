@@ -25,7 +25,7 @@ namespace SimulationAgent.Test.DeviceProperties
         private readonly Mock<ILogger> logger;
         private readonly Mock<IActorsLogger> actorsLogger;
         private readonly Mock<CredentialsSetup> credentialSetup;
-        private readonly Mock<IRateLimiting> rateLimiting;
+        private readonly Mock<IRateLimiting> mockRateLimiting;
         private readonly Mock<IRateLimitingConfig> rateLimitingConfig;
         private readonly Mock<IDevices> devices;
         private readonly Mock<IStorageAdapterClient> storageAdapterClient;
@@ -46,7 +46,7 @@ namespace SimulationAgent.Test.DeviceProperties
         {
             this.logger = new Mock<ILogger>();
             this.actorsLogger = new Mock<IActorsLogger>();
-            this.rateLimiting = new Mock<IRateLimiting>();
+            this.mockRateLimiting = new Mock<IRateLimiting>();
             this.credentialSetup = new Mock<CredentialsSetup>();
             this.rateLimitingConfig = new Mock<IRateLimitingConfig>();
             this.mockDeviceContext = new Mock<IDeviceConnectionActor>();
@@ -151,7 +151,6 @@ namespace SimulationAgent.Test.DeviceProperties
             this.target = new DevicePropertiesActor(
                 this.logger.Object,
                 this.actorsLogger.Object,
-                this.rateLimiting.Object,
                 this.updatePropertiesLogic.Object,
                 this.deviceTagLogic.Object,
                 this.mockInstance.Object);
@@ -164,6 +163,7 @@ namespace SimulationAgent.Test.DeviceProperties
             var mockSimulationContext = new Mock<ISimulationContext>();
             mockSimulationContext.Object.InitAsync(testSimulation).Wait(Constants.TEST_TIMEOUT);
             mockSimulationContext.SetupGet(x => x.Devices).Returns(this.devices.Object);
+            mockSimulationContext.SetupGet(x => x.RateLimiting).Returns(this.mockRateLimiting.Object);
 
             this.target.Init(
                 mockSimulationContext.Object,

@@ -49,11 +49,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             this.instance.InitOnce();
 
-            var defaultRatingConfig = this.factory.Resolve<IRateLimitingConfig>();
             var rateLimits = simulation.RateLimits;
             this.RateLimiting.Init(rateLimits);
-            this.ConnectionLoopSettings = new ConnectionLoopSettings(defaultRatingConfig);
-            this.PropertiesLoopSettings = new PropertiesLoopSettings(defaultRatingConfig);
+            this.ConnectionLoopSettings = new ConnectionLoopSettings(rateLimits);
+            this.PropertiesLoopSettings = new PropertiesLoopSettings(rateLimits);
 
             await this.Devices.InitAsync();
 

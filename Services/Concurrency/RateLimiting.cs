@@ -14,11 +14,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         long GetPauseForNextTwinWrite();
         long GetPauseForNextMessage();
         double GetThroughputForMessages();
-        Models.Simulation.SimulationRateLimits GetRateLimits();
-        void SetCounters(Models.Simulation.SimulationRateLimits simulationRateLimits);
-        void ResetCounters();
         void ChangeClusterSize(int currentCount);
-        void Init(Models.Simulation.SimulationRateLimits rateLimits);
+        void Init(IRateLimitingConfig rateLimits);
     }
 
     public class RateLimiting : IRateLimiting
@@ -51,7 +48,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             this.instance = instance;
         }
 
-        public void Init(Models.Simulation.SimulationRateLimits rateLimits)
+        public void Init(IRateLimitingConfig rateLimits)
         {
             this.instance.InitOnce();
 
@@ -71,57 +68,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 rateLimits.DeviceMessagesPerSecond, "Device msg/sec", this.log);
 
             this.instance.InitComplete();
-        }
-
-        public Models.Simulation.SimulationRateLimits GetRateLimits()
-        {
-            return new Models.Simulation.SimulationRateLimits
-            {
-                ConnectionsPerSecond = this.connections.EventsPerTimeUnit,
-                RegistryOperationsPerMinute = this.registryOperations.EventsPerTimeUnit,
-                TwinWritesPerSecond = this.twinReads.EventsPerTimeUnit,
-                TwinReadsPerSecond = this.twinWrites.EventsPerTimeUnit,
-                DeviceMessagesPerSecond = this.messaging.EventsPerTimeUnit
-            };
-        }
-
-        public void SetCounters(Models.Simulation.SimulationRateLimits simulationRateLimits)
-        {
-            if (simulationRateLimits.ConnectionsPerSecond > 0)
-            {
-                this.connections = new PerSecondCounter(simulationRateLimits.ConnectionsPerSecond, "Device connections", this.log);
-            }
-
-            if (simulationRateLimits.RegistryOperationsPerMinute > 0)
-            {
-                this.registryOperations = new PerMinuteCounter(simulationRateLimits.RegistryOperationsPerMinute, "Registry operations", this.log);
-            }
-
-            if (simulationRateLimits.TwinReadsPerSecond > 0)
-            {
-                this.twinReads = new PerSecondCounter(simulationRateLimits.TwinReadsPerSecond, "Twin reads", this.log);
-            }
-
-            if (simulationRateLimits.TwinWritesPerSecond > 0)
-            {
-                this.twinWrites = new PerSecondCounter(simulationRateLimits.TwinWritesPerSecond, "Twin writes", this.log);
-            }
-
-            if (simulationRateLimits.DeviceMessagesPerSecond > 0)
-            {
-                this.messaging = new PerSecondCounter(simulationRateLimits.DeviceMessagesPerSecond, "Device msg/sec", this.log);
-            }
-
-            this.log.Info("Rate limiting started. This message should appear only once in the logs.");
-        }
-
-        public void ResetCounters()
-        {
-            this.connections.ResetCounter();
-            this.registryOperations.ResetCounter();
-            this.twinReads.ResetCounter();
-            this.twinWrites.ResetCounter();
-            this.messaging.ResetCounter();
         }
 
         public void ChangeClusterSize(int count)

@@ -45,6 +45,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
     {
         private const string APPLICATION_KEY = "DeviceSimulationService:";
 
+        private const string SEED_TEMPLATE_KEY = APPLICATION_KEY + "seed_template_name";
+        private const string SEED_TEMPLATE_FOLDER_KEY = APPLICATION_KEY + "seed_template_folder";
         private const string PORT_KEY = APPLICATION_KEY + "webservice_port";
         private const string DEVICE_MODELS_FOLDER_KEY = APPLICATION_KEY + "device_models_folder";
         private const string DEVICE_MODELS_SCRIPTS_FOLDER_KEY = APPLICATION_KEY + "device_models_scripts_folder";
@@ -53,6 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string IOTHUB_IMPORT_STORAGE_CONNSTRING_KEY = APPLICATION_KEY + "iothub_import_storage_account_connstring";
         private const string IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY = APPLICATION_KEY + "iothub_sdk_device_client_timeout";
         private const string TWIN_READ_WRITE_ENABLED_KEY = APPLICATION_KEY + "twin_read_write_enabled";
+        private const string USER_AGENT_KEY = APPLICATION_KEY + "user_agent";
 
         private const string IOTHUB_LIMITS_KEY = APPLICATION_KEY + "RateLimits:";
         private const string CONNECTIONS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "device_connections_per_second";
@@ -95,6 +98,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string SIMULATIONS_STORAGE_KEY = APPLICATION_KEY + "Storage:Simulations:";
         private const string DEVICES_STORAGE_KEY = APPLICATION_KEY + "Storage:Devices:";
         private const string PARTITIONS_STORAGE_KEY = APPLICATION_KEY + "Storage:Partitions:";
+        private const string STATISTICS_STORAGE_KEY = APPLICATION_KEY + "Storage:Statistics:";
 
         private const string STORAGE_TYPE_KEY = "type";
         private const string STORAGE_MAX_PENDING_OPERATIONS = APPLICATION_KEY + "max_pending_storage_tasks";
@@ -128,8 +132,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string AZURE_SUBSCRIPTION_DOMAIN = DEPLOYMENT_KEY + "azure_subscription_domain";
         private const string AZURE_SUBSCRIPTION_ID = DEPLOYMENT_KEY + "azure_subscription_id";
         private const string AZURE_RESOURCE_GROUP = DEPLOYMENT_KEY + "azure_resource_group";
+        private const string AZURE_RESOURCE_GROUP_LOCATION = DEPLOYMENT_KEY + "azure_resource_group_location";
         private const string AZURE_IOTHUB_NAME = DEPLOYMENT_KEY + "azure_iothub_name";
-
+        private const string AZURE_VMSS_NAME = DEPLOYMENT_KEY + "azure_vmss_name";
+        
         private const string AZURE_ACTIVE_DIRECTORY_KEY = APPLICATION_KEY + "AzureActiveDirectory:";
         private const string AAD_TENANT_ID = AZURE_ACTIVE_DIRECTORY_KEY + "tenant_id";
         private const string AAD_APP_ID = AZURE_ACTIVE_DIRECTORY_KEY + "app_id";
@@ -236,8 +242,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                                     "value in the 'appsettings.ini' configuration file.");
             }
 
+            var azureManagementAdapterApiUrl = configData.GetString(AZURE_MANAGEMENT_ADAPTER_API_URL_KEY);
+            if (!azureManagementAdapterApiUrl.ToLowerInvariant().StartsWith("https:"))
+            {
+                throw new Exception("The service configuration is incomplete. " +
+                                    "Azure Management API url must start with https. " +
+                                    "For more information, see the environment variables " +
+                                    "used in project properties and the 'webservice_url' " +
+                                    "value in the 'appsettings.ini' configuration file.");
+            }
+
             return new ServicesConfig
             {
+                SeedTemplate = configData.GetString(SEED_TEMPLATE_KEY),
+                SeedTemplateFolder = MapRelativePath(configData.GetString(SEED_TEMPLATE_FOLDER_KEY)),
                 DeviceModelsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_FOLDER_KEY)),
                 DeviceModelsScriptsFolder = MapRelativePath(configData.GetString(DEVICE_MODELS_SCRIPTS_FOLDER_KEY)),
                 IoTHubConnString = connstring,
@@ -245,7 +263,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 IoTHubSdkDeviceClientTimeout = configData.GetOptionalUInt(IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY),
                 StorageAdapterApiUrl = configData.GetString(STORAGE_ADAPTER_API_URL_KEY),
                 StorageAdapterApiTimeout = configData.GetInt(STORAGE_ADAPTER_API_TIMEOUT_KEY),
-                AzureManagementAdapterApiUrl = configData.GetString(AZURE_MANAGEMENT_ADAPTER_API_URL_KEY),
+                AzureManagementAdapterApiUrl = azureManagementAdapterApiUrl,
                 AzureManagementAdapterApiTimeout = configData.GetInt(AZURE_MANAGEMENT_ADAPTER_API_TIMEOUT_KEY),
                 AzureManagementAdapterApiVersion = configData.GetString(AZURE_MANAGEMENT_ADAPTER_API_VERSION),
                 TwinReadWriteEnabled = configData.GetBool(TWIN_READ_WRITE_ENABLED_KEY, true),
@@ -254,6 +272,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 SimulationsStorage = GetStorageConfig(configData, SIMULATIONS_STORAGE_KEY),
                 DevicesStorage = GetStorageConfig(configData, DEVICES_STORAGE_KEY),
                 PartitionsStorage = GetStorageConfig(configData, PARTITIONS_STORAGE_KEY),
+                UserAgent = configData.GetString(USER_AGENT_KEY),
+                StatisticsStorage = GetStorageConfig(configData, STATISTICS_STORAGE_KEY),
                 DiagnosticsEndpointUrl = configData.GetString(LOGGING_DIAGNOSTICS_URL_KEY)
             };
         }
@@ -320,7 +340,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 AzureSubscriptionDomain = configData.GetString(AZURE_SUBSCRIPTION_DOMAIN, "undefined.onmicrosoft.com"),
                 AzureSubscriptionId = configData.GetString(AZURE_SUBSCRIPTION_ID, Guid.Empty.ToString()),
                 AzureResourceGroup = configData.GetString(AZURE_RESOURCE_GROUP, "undefined"),
+                AzureResourceGroupLocation = configData.GetString(AZURE_RESOURCE_GROUP_LOCATION, "undefined"),
                 AzureIothubName = configData.GetString(AZURE_IOTHUB_NAME, "undefined"),
+                AzureVmssName = configData.GetString(AZURE_VMSS_NAME, "undefined"),
                 AadTenantId = configData.GetString(AAD_TENANT_ID, "undefined"),
                 AadAppId = configData.GetString(AAD_APP_ID, "undefined"),
                 AadAppSecret = configData.GetString(AAD_APP_SECRET, "undefined"),

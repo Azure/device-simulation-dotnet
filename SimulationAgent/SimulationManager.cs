@@ -16,6 +16,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnec
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
@@ -42,6 +43,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Check if the cluster size has changed and act accordingly
         Task UpdateThrottlingLimitsAsync();
 
+        Task SaveStatisticsAsync();
+
         void PrintStats();
 
         // === END - Executed by Agent.RunAsync
@@ -67,8 +70,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private readonly IClusterNodes clusterNodes;
         private readonly IDeviceModels deviceModels;
         private readonly IFactory factory;
+        private readonly ISimulationStatistics simulationStatistics;
         private readonly ILogger log;
         private readonly IInstance instance;
+        private readonly ISimulations simulations;
         private readonly int maxDevicePerNode;
 
         // Data shared with other simulations
@@ -93,16 +98,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             IFactory factory,
             IClusteringConfig clusteringConfig,
             ILogger logger,
-            IInstance instance)
+            IInstance instance,
+            ISimulationStatistics simulationStatistics,
+            ISimulations simulations)
         {
             this.simulationContext = simulationContext;
             this.devicePartitions = devicePartitions;
             this.clusterNodes = clusterNodes;
             this.deviceModels = deviceModels;
+            this.simulationStatistics = simulationStatistics;
             this.factory = factory;
             this.log = logger;
             this.instance = instance;
             this.maxDevicePerNode = clusteringConfig.MaxDevicesPerNode;
+            this.simulations = simulations;
 
             this.assignedPartitions = new ConcurrentDictionary<string, DevicesPartition>();
             this.nodeCount = 1;
@@ -226,6 +235,33 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     RateLimitMessagesThroughput = this.simulationContext.RateLimiting.GetThroughputForMessages(),
                     RateLimitClusterSize = this.simulationContext.RateLimiting.ClusterSize
                 });
+        }
+
+        public async Task SaveStatisticsAsync()
+        {
+            try
+            {
+                var prefix = this.GetDictKey(string.Empty);
+                var telemetryActors = this.deviceTelemetryActors.Where(a => a.Key.StartsWith(prefix));
+                var connectionActors = this.deviceConnectionActors.Where(a => a.Key.StartsWith(prefix));
+                var propertiesActors = this.devicePropertiesActors.Where(a => a.Key.StartsWith(prefix));
+                var stateActors = this.deviceStateActors.Where(a => a.Key.StartsWith(prefix));
+
+                var simulationModel = new SimulationStatisticsModel
+                {
+                    ActiveDevices = stateActors != null ? stateActors.Count(a => a.Value.IsDeviceActive) : 0,
+                    TotalMessagesSent = telemetryActors != null ? telemetryActors.Sum(a => a.Value.TotalMessagesCount) : 0,
+                    FailedMessages = telemetryActors != null ? telemetryActors.Sum(a => a.Value.FailedMessagesCount) : 0,
+                    FailedDeviceConnections = connectionActors != null ? connectionActors.Sum(a => a.Value.FailedDeviceConnectionsCount) : 0,
+                    FailedDevicePropertiesUpdates = propertiesActors != null ? propertiesActors.Sum(a => a.Value.FailedTwinUpdatesCount) : 0,
+                };
+
+                await this.simulationStatistics.CreateOrUpdateAsync(this.simulation.Id, simulationModel);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Error saving simulation statistics", () => new { this.simulation.Id, e });
+            }
         }
 
         // Stop all the actors and delete them
@@ -440,6 +476,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.CreateActorsForDevice(deviceId, deviceModel, this.deviceCount);
                     this.deviceCount++;
                     count++;
+
+                    // Set ActualStartTime if required
+                    if (!this.simulation.ActualStartTime.HasValue)
+                    {
+                        this.simulation.ActualStartTime = DateTimeOffset.UtcNow;
+                        await this.simulations.UpsertAsync(this.simulation);
+                    }
                 }
             }
 

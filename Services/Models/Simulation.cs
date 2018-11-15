@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
@@ -87,10 +88,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public IList<DeviceModelRef> DeviceModels { get; set; }
 
         [JsonProperty(Order = 60)]
-        public StatisticsRef Statistics { get; set; }
+        public SimulationStatisticsModel Statistics { get; set; }
 
         [JsonProperty(Order = 70)]
-        public SimulationRateLimits RateLimits { get; set; }
+        public IRateLimitingConfig RateLimits { get; set; }
 
         [JsonProperty(Order = 80)]
         public IList<CustomDeviceRef> CustomDevices { get; set; }
@@ -128,6 +129,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         [JsonProperty(Order = 140)]
         public DateTimeOffset Modified { get; set; }
 
+        // ActualStartTime is the time when Simulation was started
+        [JsonProperty(Order = 140)]
+        public DateTimeOffset? ActualStartTime { get; set; }
+
         public Simulation()
         {
             // When unspecified, a simulation is enabled
@@ -145,12 +150,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
             this.DeviceModels = new List<DeviceModelRef>();
             this.CustomDevices = new List<CustomDeviceRef>();
-            this.Statistics = new StatisticsRef();
-            this.RateLimits = new SimulationRateLimits();
-
-            // By default, do not delete IoT Hub devices when the
-            // simulation ends
-            this.DeleteDevicesWhenSimulationEnds = false;
+            this.RateLimits = new RateLimitingConfig();
         }
 
         public class DeviceModelRef
@@ -164,22 +164,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         {
             public string DeviceId { get; set; }
             public DeviceModelRef DeviceModel { get; set; }
-        }
-
-        public class StatisticsRef
-        {
-            public long TotalMessagesSent { get; set; }
-            public double AverageMessagesPerSecond { get; set; }
-        }
-
-        public class SimulationRateLimits
-        {
-            public int ConnectionsPerSecond { get; set; }
-            public int RegistryOperationsPerMinute { get; set; }
-            public int TwinReadsPerSecond { get; set; }
-            public int TwinWritesPerSecond { get; set; }
-            public int DeviceMessagesPerSecond { get; set; }
-            public long DeviceMessagesPerDay { get; set; }
         }
 
         public class DeviceModelOverride

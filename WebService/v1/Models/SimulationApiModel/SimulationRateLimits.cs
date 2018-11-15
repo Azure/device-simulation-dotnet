@@ -37,40 +37,5 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             this.DeviceMessagesPerSecond = 0;
             this.DeviceMessagesPerDay = 0;
         }
-
-        // Map API model to service model
-        public static SimulationRateLimits FromServiceModel(Services.Models.Simulation.SimulationRateLimits simulationRateLimits)
-        {
-            return new SimulationRateLimits
-            {
-                ConnectionsPerSecond = simulationRateLimits.ConnectionsPerSecond,
-                RegistryOperationsPerMinute = simulationRateLimits.RegistryOperationsPerMinute,
-                TwinReadsPerSecond = simulationRateLimits.TwinReadsPerSecond,
-                TwinWritesPerSecond = simulationRateLimits.TwinWritesPerSecond,
-                DeviceMessagesPerSecond = simulationRateLimits.DeviceMessagesPerSecond,
-                DeviceMessagesPerDay = simulationRateLimits.DeviceMessagesPerDay
-            };
-        }
-
-        // Map API model to service model
-        public Services.Models.Simulation.SimulationRateLimits ToServiceModel(IRateLimitingConfig defaultRateLimits)
-        {
-            var connectionsPerSecond = this.ConnectionsPerSecond > 0 ? this.ConnectionsPerSecond : defaultRateLimits.ConnectionsPerSecond;
-            var registryOperationsPerMinute = this.RegistryOperationsPerMinute > 0 ? this.RegistryOperationsPerMinute : defaultRateLimits.RegistryOperationsPerMinute;
-            var twinReadsPerSecond = this.TwinReadsPerSecond > 0 ? this.TwinReadsPerSecond : defaultRateLimits.TwinReadsPerSecond;
-            var twinWritesPerSecond = this.TwinWritesPerSecond > 0 ? this.TwinWritesPerSecond : defaultRateLimits.TwinWritesPerSecond;
-            var deviceMessagesPerSecond = this.DeviceMessagesPerSecond > 0 ? this.DeviceMessagesPerSecond : defaultRateLimits.DeviceMessagesPerSecond;
-            var deviceMessagesPerDay = this.DeviceMessagesPerDay > 0 ? this.DeviceMessagesPerDay : defaultRateLimits.DeviceMessagesPerDay;
-
-            return new Services.Models.Simulation.SimulationRateLimits
-            {
-                ConnectionsPerSecond = connectionsPerSecond,
-                RegistryOperationsPerMinute = registryOperationsPerMinute,
-                TwinReadsPerSecond = twinReadsPerSecond,
-                TwinWritesPerSecond = twinWritesPerSecond,
-                DeviceMessagesPerSecond = deviceMessagesPerSecond,
-                DeviceMessagesPerDay = deviceMessagesPerDay
-            };
-        }
     }
 }

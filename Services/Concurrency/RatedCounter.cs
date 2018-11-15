@@ -67,10 +67,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         //       monitor, so this is a good place for future optimizations
         private readonly Queue<long> timestamps;
 
-        // The max frequency to enforce, e.g. the maximum number
-        // of events allowed within a minute, a second, etc.
-        public int EventsPerTimeUnit { get; }
-
         public RatedCounter(int rate, double timeUnitLength, string name, ILogger logger)
         {
             this.log = logger;
@@ -115,7 +111,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 this.CleanQueue(now);
 
                 // No pause if the limit hasn't been reached yet,
-                if (this.timestamps.Count < this.EventsPerTimeUnit)
+                if (this.timestamps.Count < this.eventsPerTimeUnit)
                 {
                     this.timestamps.Enqueue(now);
                     return 0;
@@ -127,14 +123,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 var howManyInTheLastTimeUnit = this.timestamps.Count(t => t > startFrom);
 
                 // No pause if the limit hasn't been reached in the last time unit
-                if (howManyInTheLastTimeUnit < this.EventsPerTimeUnit)
+                if (howManyInTheLastTimeUnit < this.eventsPerTimeUnit)
                 {
                     when = Math.Max(this.timestamps.Last(), now);
                 }
                 else
                 {
                     // Add one [time unit] since when the Nth event ran
-                    var oneUnitTimeAgo = this.timestamps.ElementAt(this.timestamps.Count - this.EventsPerTimeUnit);
+                    var oneUnitTimeAgo = this.timestamps.ElementAt(this.timestamps.Count - this.eventsPerTimeUnit);
                     when = oneUnitTimeAgo + (long) this.timeUnitLength;
                 }
 

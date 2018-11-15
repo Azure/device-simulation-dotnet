@@ -8,7 +8,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
@@ -23,6 +22,7 @@ namespace WebService.Test.v1.Controllers
     public class SimulationsControllerTest
     {
         private readonly Mock<ISimulations> simulationsService;
+        private readonly Mock<IDevices> devices;
         private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
         private readonly Mock<IIothubMetrics> iothubMetrics;
         private readonly Mock<IPreprovisionedIotHub> preprovisionedIotHub;
@@ -34,6 +34,7 @@ namespace WebService.Test.v1.Controllers
         public SimulationsControllerTest()
         {
             this.simulationsService = new Mock<ISimulations>();
+            this.devices = new Mock<IDevices>();
             this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
             this.iothubMetrics = new Mock<IIothubMetrics>();
             this.preprovisionedIotHub = new Mock<IPreprovisionedIotHub>();
@@ -43,6 +44,7 @@ namespace WebService.Test.v1.Controllers
 
             this.target = new SimulationsController(
                 this.simulationsService.Object,
+                this.devices.Object,
                 this.connectionStringManager.Object,
                 this.iothubMetrics.Object,
                 this.defaultRatingConfig.Object,
@@ -116,9 +118,7 @@ namespace WebService.Test.v1.Controllers
             const string ID = "1";
 
             // Act
-            this.target.PostAsync(
-                    new MetricsRequestsApiModel(),
-                    ID)
+            this.target.PostAsync(ID, new MetricsRequestsApiModel())
                 .Wait(Constants.TEST_TIMEOUT);
 
             // Assert
@@ -136,7 +136,7 @@ namespace WebService.Test.v1.Controllers
             var simulation = this.GetSimulationById(ID);
 
             // Act
-            var result = this.target.GetAsync(ID).Result;
+            var result = this.target.GetAsync(ID).CompleteOrTimeout().Result;
 
             // Assert
             Assert.Null(result);
@@ -149,11 +149,11 @@ namespace WebService.Test.v1.Controllers
             var simulations = this.GetSimulations();
 
             this.simulationsService
-                .Setup(x => x.GetListAsync())
+                .Setup(x => x.GetListWithStatisticsAsync())
                 .ReturnsAsync(simulations);
 
             // Act
-            var result = this.target.GetAsync().Result;
+            var result = this.target.GetAsync().CompleteOrTimeout().Result;
 
             // Assert
             Assert.Equal(simulations.Count, result.Items.Count);
@@ -167,11 +167,11 @@ namespace WebService.Test.v1.Controllers
             var simulation = this.GetSimulationById(ID);
 
             this.simulationsService
-                .Setup(x => x.GetAsync(ID))
+                .Setup(x => x.GetWithStatisticsAsync(ID))
                 .ReturnsAsync(simulation);
 
             // Act
-            var result = this.target.GetAsync(ID).Result;
+            var result = this.target.GetAsync(ID).CompleteOrTimeout().Result;
 
             // Assert
             Assert.NotNull(result);

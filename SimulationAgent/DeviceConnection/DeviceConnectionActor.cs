@@ -36,6 +36,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         void HandleEvent(DeviceConnectionActor.ActorEvents e);
         void Stop();
         void Delete();
+        void DisposeClient();
     }
 
     public class DeviceConnectionActor : IDeviceConnectionActor
@@ -260,6 +261,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             }
         }
 
+        public void DisposeClient()
+        {
+            if (this.Client == null) return;
+
+            this.Client.DisposeInternalClient();
+            this.Client = null;
+        }
+
         public bool HasWorkToDo()
         {
             switch (this.status)
@@ -437,6 +446,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
                 case ActorEvents.TelemetryClientBroken:
                     this.Client?.DisconnectAsync();
+                    this.Client?.DisposeInternalClient();
                     this.Client = null;
                     this.ScheduleConnection();
                     break;
@@ -531,11 +541,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
         private void ScheduleDisconnection()
         {
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
-            // TODO: should disconnection impact rate limiting?
-            var pauseMsec = this.simulationContext.RateLimiting.GetPauseForNextConnection();
-            this.whenToRun = now + pauseMsec;
+            this.whenToRun = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             this.status = ActorStatus.ReadyToDisconnect;
 
             this.actorLogger.DeviceDisconnectionScheduled(this.whenToRun);

@@ -8,7 +8,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel;
 using Moq;
@@ -151,6 +150,36 @@ namespace WebService.Test.v1.Models.SimulationApiModel
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItSetsSimulationStatisticsFromServiceModel()
+        {
+            // Arrange
+            var simulation = this.GetSimulationModel();
+            var statistics = new SimulationStatisticsModel { ActiveDevices = 10, TotalMessagesSent = 100, FailedDeviceConnections = 1, FailedDevicePropertiesUpdates = 2, FailedMessages = 3 };
+            simulation.Statistics = statistics;
+            var now = DateTimeOffset.UtcNow;
+            simulation.ActualStartTime = now.AddSeconds(-60);
+            simulation.StoppedTime = now;
+            simulation.Enabled = false;
+            // Avg messages = 100/60 (TotalMessagesSent / stoppedTime - startTime)
+            var expectedAvgMessages = 1.67;
+
+            // Act
+            var result = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel.FromServiceModel(
+                simulation);
+
+            // Assert
+            Assert.IsType<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel>(result);
+            Assert.Equal(simulation.Id, result.Id);
+            Assert.NotNull(result.Statistics);
+            Assert.Equal(statistics.ActiveDevices, result.Statistics.ActiveDevices);
+            Assert.Equal(statistics.TotalMessagesSent, result.Statistics.TotalMessagesSent);
+            Assert.Equal(statistics.FailedDeviceConnections, result.Statistics.FailedDeviceConnections);
+            Assert.Equal(statistics.FailedDevicePropertiesUpdates, result.Statistics.FailedDevicePropertiesUpdates);
+            Assert.Equal(statistics.FailedMessages, result.Statistics.FailedMessages);
+            Assert.Equal(expectedAvgMessages, result.Statistics.AverageMessagesPerSecond);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItThrowsBadRequestExceptionForInvalidTimes()
         {
             // Arrange
@@ -189,22 +218,38 @@ namespace WebService.Test.v1.Models.SimulationApiModel
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsCustomRateLimits()
+        public void ItReturnsAllCustomRateLimits()
         {
             // Arrange
-            var simulation = this.GetSimulationModel();
+            var simulationApiModel = this.GetSimulationApiModel();
+            this.SetupDefaultRateLimits();
+
+            // Act
+            var result = simulationApiModel.ToServiceModel(null, this.defaultRateLimits.Object, simulationApiModel.Id);
+
+            // Assert
+            Assert.IsType<Simulation>(result);
+            Assert.Equal(simulationApiModel.RateLimits.ConnectionsPerSecond, result.RateLimits.ConnectionsPerSecond);
+            Assert.Equal(simulationApiModel.RateLimits.TwinReadsPerSecond, result.RateLimits.TwinReadsPerSecond);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReturnsDefaultWhenCustomRateLimitMissing()
+        {
+            // Arrange
+            var simulationApiModel = this.GetBasicSimulationApiModel();
             var connectionsPerSecond = 100;
-            simulation.RateLimits = new Simulation.SimulationRateLimits { ConnectionsPerSecond = connectionsPerSecond };
+            simulationApiModel.RateLimits = new RateLimitingConfig { ConnectionsPerSecond = connectionsPerSecond };
 
             this.SetupDefaultRateLimits();
 
             // Act
-            var result = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel.FromServiceModel(simulation);
+            var result = simulationApiModel.ToServiceModel(null, this.defaultRateLimits.Object, simulationApiModel.Id);
 
             // Assert
-            Assert.IsType<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel>(result);
-            Assert.Equal(simulation.Id, result.Id);
+            Assert.IsType<Simulation>(result);
             Assert.Equal(connectionsPerSecond, result.RateLimits.ConnectionsPerSecond);
+            Assert.Equal(TWIN_READ_PER_SECOND, result.RateLimits.TwinReadsPerSecond);
         }
 
         private void SetupConnectionStringManager()
@@ -247,7 +292,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
                     }
                 },
                 IotHubs = new List<SimulationIotHub> { new SimulationIotHub("HostName=[hubname];SharedAccessKeyName=[iothubowner];SharedAccessKey=[valid key]") },
-                RateLimits = new SimulationRateLimits
+                RateLimits = new RateLimitingConfig
                 {
                     ConnectionsPerSecond = 100,
                     RegistryOperationsPerMinute = 100,

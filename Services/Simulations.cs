@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -9,6 +10,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Newtonsoft.Json;
@@ -18,10 +20,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface ISimulations
     {
         // Get list of simulations.
+        // This will have better perf than GetListWithStatisticsAsync.
         Task<IList<Models.Simulation>> GetListAsync();
 
+        // Get list of simulations with statistics.
+        Task<IList<Models.Simulation>> GetListWithStatisticsAsync();
+
         // Get a simulation.
+        // This will have better perf than GetWithStatisticsAsync.
         Task<Models.Simulation> GetAsync(string id);
+
+        // Get a simulation with statistics.
+        Task<Models.Simulation> GetWithStatisticsAsync(string id);
 
         // Create a simulation.
         Task<Models.Simulation> InsertAsync(Models.Simulation simulation, string template = "");
@@ -38,13 +48,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Delete a simulation and its devices.
         Task DeleteAsync(string id);
 
+        // Seed default simulations
+        Task TrySeedAsync();
+
         // Try to start a job to create all the devices
         Task<bool> TryToStartDevicesCreationAsync(string simulationId, IDevices devices);
 
         // Change the simulation, setting the device creation complete
         Task<bool> TryToSetDeviceCreationCompleteAsync(string simulationId);
 
-        // Try to start a job to delete all the devices
+        // Create a job to delete all the devices (used by web service on user request)
+        Task<(bool jobCreated, string jobId)> DeleteAllDevicesAsync(string simulationId, IDevices devices);
+
+        // Try to start a job to delete all the devices (used by simulation agent when a simulation ends)
         Task<bool> TryToStartDevicesDeletionAsync(string simulationId, IDevices devices);
 
         // Change the simulation, setting the device deletion complete
@@ -62,13 +78,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private const string DEFAULT_SIMULATION_ID = "1";
         private const string DEFAULT_TEMPLATE_NAME = "default";
         private const string DEVICES_COLLECTION = "SimulatedDevices";
+        private const string SEED_STATUS_KEY = "SeedCompleted";
         private const int DEVICES_PER_MODEL_IN_DEFAULT_TEMPLATE = 1;
 
+        private readonly IServicesConfig config;
         private readonly IDeviceModels deviceModels;
         private readonly IStorageAdapterClient storageAdapterClient;
+        private readonly IStorageRecords mainStorage;
         private readonly IStorageRecords simulationsStorage;
         private readonly IIotHubConnectionStringManager connectionStringManager;
+        private readonly ISimulationStatistics simulationStatistics;
         private readonly IDevices devices;
+        private readonly IFileSystem fileSystem;
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
 
@@ -79,16 +100,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IStorageAdapterClient storageAdapterClient,
             IIotHubConnectionStringManager connectionStringManager,
             IDevices devices,
+            IFileSystem fileSystem,
             ILogger logger,
-            IDiagnosticsLogger diagnosticsLogger)
+            IDiagnosticsLogger diagnosticsLogger,
+            ISimulationStatistics simulationStatistics)
         {
+            this.config = config;
             this.deviceModels = deviceModels;
             this.storageAdapterClient = storageAdapterClient;
+            this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
             this.simulationsStorage = factory.Resolve<IStorageRecords>().Init(config.SimulationsStorage);
             this.connectionStringManager = connectionStringManager;
             this.devices = devices;
+            this.fileSystem = fileSystem;
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
+            this.simulationStatistics = simulationStatistics;
         }
 
         /// <summary>
@@ -111,6 +138,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
+        /// Get list of simulations with statistics.
+        /// </summary>
+        public async Task<IList<Models.Simulation>> GetListWithStatisticsAsync()
+        {
+            var items = await this.GetListAsync();
+
+            foreach (var item in items)
+            {
+                item.Statistics = await this.simulationStatistics.GetSimulationStatisticsAsync(item.Id);
+            }
+
+            return items;
+        }
+
+        /// <summary>
         /// Get a simulation.
         /// </summary>
         public async Task<Models.Simulation> GetAsync(string id)
@@ -121,6 +163,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
             simulation.ETag = item.ETag;
             simulation.Id = item.Id;
+            return simulation;
+        }
+
+        public async Task<Models.Simulation> GetWithStatisticsAsync(string id)
+        {
+            var simulation = await this.GetAsync(id);
+
+            if (simulation == null) return null;
+
+            simulation.Statistics = await this.simulationStatistics.GetSimulationStatisticsAsync(id);
             return simulation;
         }
 
@@ -205,6 +257,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.log.Info("Simulation not found in storage, hence proceeding to create new simulation");
             }
 
+            var simulationIsRestarting = false;
+            var simulationIsStopping = false;
+
             if (existingSimulation != null)
             {
                 this.log.Info("Modifying simulation");
@@ -222,6 +277,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     this.diagnosticsLogger.LogServiceError($"Invalid simulation ETag", new { simulation.Id, simulation.Name });
                     throw new ResourceOutOfDateException($"Invalid ETag. The simulation ETag is '{existingSimulation.ETag}'");
                 }
+
+                // Define the user intent looking at the simulation status and the patch content
+                simulationIsRestarting = !existingSimulation.Enabled && simulation.Enabled;
+                simulationIsStopping = existingSimulation.Enabled && !simulation.Enabled;
 
                 simulation.Created = existingSimulation.Created;
             }
@@ -245,11 +304,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
             }
 
+            // Note: this code is also in MergeAsync
+            // (consider refactoring it out unless the code becomes harder to follow)
+            if (simulationIsRestarting)
+            {
+                simulation = await this.ResetSimulationStatisticsAsync(simulation);
+            }
+            else if (simulationIsStopping)
+            {
+                simulation.StoppedTime = DateTimeOffset.UtcNow;
+
+                // When a simulation is disabled, its partitions are deleted.
+                // This boolean triggers the deletion of partitions from the storage
+                // in the partitioning agent.
+                simulation.PartitioningComplete = false;
+            }
+
             return await this.SaveAsync(simulation, simulation.ETag);
         }
 
         /// <summary>
-        /// Modify a simulation.
+        /// Modify some simulation details
         /// </summary>
         public async Task<Models.Simulation> MergeAsync(SimulationPatch patch)
         {
@@ -273,30 +348,34 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     $"The ETag provided doesn't match the current resource ETag ({simulation.ETag}).");
             }
 
-            if (!patch.Enabled.HasValue || patch.Enabled.Value == simulation.Enabled)
+            // Define the user intent looking at the simulation status and the patch content
+            var simulationIsRestarting = !simulation.Enabled && patch.Enabled.HasValue && patch.Enabled.Value;
+            var simulationIsStopping = simulation.Enabled && patch.Enabled.HasValue && !patch.Enabled.Value;
+
+            // Note: this code is also in UpsertAsync
+            // (consider refactoring it out unless the code becomes harder to follow)
+            if (simulationIsRestarting)
             {
-                // Nothing to do
-                return simulation;
+                simulation = await this.ResetSimulationStatisticsAsync(simulation);
+            }
+            else if (simulationIsStopping)
+            {
+                simulation.StoppedTime = DateTimeOffset.UtcNow;
+
+                // When a simulation is disabled, its partitions are deleted.
+                // This boolean triggers the deletion of partitions from the storage
+                // in the partitioning agent.
+                simulation.PartitioningComplete = false;
+
+                // Reset active device count to 0
+                await this.ResetActiveDevicesStatistics(simulation);
             }
 
-            simulation.Enabled = patch.Enabled.Value;
+            // The Enabled field is optional, e.g. in case PATCH is extended to
+            // modify other fields, so we need to check for null
+            if (patch.Enabled != null) simulation.Enabled = patch.Enabled.Value;
 
-            if (patch.Enabled == false)
-            {
-                simulation.StoppedTime = simulation.Modified;
-                simulation.Statistics = new Models.Simulation.StatisticsRef
-                {
-                    AverageMessagesPerSecond = patch.Statistics.AverageMessagesPerSecond,
-                    TotalMessagesSent = patch.Statistics.TotalMessagesSent
-                };
-
-                // When a simulation is disabled, its partitions are deleted - this triggers the deletion
-                if (!simulation.Enabled)
-                {
-                    simulation.PartitioningComplete = false;
-                }
-            }
-
+            // TODO: can we use this.SaveAsync() here too and avoid the duplication?
             item = await this.simulationsStorage.UpsertAsync(
                 new StorageRecord
                 {
@@ -312,7 +391,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
-        /// Delete a simulation and its devices.
+        /// Delete a simulation, its statistics and devices.
         /// </summary>
         public async Task DeleteAsync(string id)
         {
@@ -320,8 +399,38 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var deviceIds = this.GetDeviceIds(await this.GetAsync(id));
             await this.devices.DeleteListAsync(deviceIds);
 
+            await this.simulationStatistics.DeleteSimulationStatisticsAsync(id);
+
             // Then delete the simulation from storage
             await this.simulationsStorage.DeleteAsync(id);
+        }
+
+        public async Task TrySeedAsync()
+        {
+            try
+            {
+                var templateName = this.config.SeedTemplate;
+
+                if (string.IsNullOrEmpty(templateName)) return;
+
+                // Skips if the seeding has already been complete
+                if (!await this.mainStorage.ExistsAsync(SEED_STATUS_KEY))
+                {
+                    await this.SeedSimulationsAsync(templateName);
+                    var record = new StorageRecord { Id = SEED_STATUS_KEY, Data = "Seed Completed" };
+                    await this.mainStorage.CreateAsync(record);
+                }
+                else
+                {
+                    this.log.Info("Seeding skipped.");
+                }
+            }
+            catch (Exception e)
+            {
+                var msg = "Failed to seed default simulations." + e;
+                this.log.Error(msg);
+                this.diagnosticsLogger.LogServiceError(msg);
+            }
         }
 
         public async Task<bool> TryToStartDevicesCreationAsync(string simulationId, IDevices devices)
@@ -355,34 +464,56 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return true;
         }
 
+        /// <summary>
+        /// Try to create a job to delete all the devices in a simulation.
+        /// Throw exception in case of errors.
+        ///
+        /// This operation is not meant to modify the simulation object, so if the simulation
+        /// is still running it will cause errors due to the missing devices. The simulation
+        /// might as well recreate the devices if it is running, that is not a problem.
+        ///
+        /// This method is invoked by the web service, exceptions are thrown to tell the user
+        /// what happened. At this point the UI doesn't consume this logic, which is used only
+        /// for maintenance.
+        /// </summary>
+        public async Task<(bool jobCreated, string jobId)> DeleteAllDevicesAsync(string simulationId, IDevices devices)
+        {
+            try
+            {
+                var (simulation, jobCreated, jobId) = await this.CreateJobToDeleteDevices(simulationId, devices);
+                return (jobCreated, jobId);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Failed to start bulk device deletion", e);
+                throw new ExternalDependencyException("Failed to start bulk device deletion", e);
+            }
+        }
+
+        /// <summary>
+        /// Try to create a job to delete all the devices in a simulation.
+        /// This method is used by the simulation agent when a simulation ends.
+        /// In case of errors the method returns 'false' and the caller is expected to retry.
+        /// </summary>
         public async Task<bool> TryToStartDevicesDeletionAsync(string simulationId, IDevices devices)
         {
-            // Fetch latest record
-            var simulation = await this.GetAsync(simulationId);
-
-            if (!simulation.DevicesDeletionStarted)
+            try
             {
-                try
-                {
-                    Dictionary<string, List<string>> deviceList = this.GetDeviceIdsByModel(simulation);
-                    var deviceIds = deviceList.SelectMany(x => x.Value);
-                    this.log.Info("Deleting devices...", () => new { simulationId });
+                var (simulation, jobCreated, jobId) = await this.CreateJobToDeleteDevices(simulationId, devices);
 
-                    simulation.DeviceDeletionJobId = await devices.DeleteListUsingJobsAsync(deviceIds);
-                    simulation.DevicesDeletionStarted = true;
+                if (!jobCreated) return true;
 
-                    this.log.Info("Import job created for bulk device deletion", () => new { simulationId, simulation.DeviceCreationJobId });
+                simulation.DeviceDeletionJobId = jobId;
+                simulation.DevicesDeletionStarted = true;
 
-                    await this.SaveAsync(simulation, simulation.ETag);
-                }
-                catch (Exception e)
-                {
-                    this.log.Error("Failed to create bulk-device-deletion job", e);
-                    return false;
-                }
+                await this.SaveAsync(simulation, simulation.ETag);
+                return true;
             }
-
-            return true;
+            catch (Exception e)
+            {
+                this.log.Error("Failed to start bulk device deletion", e);
+                return false;
+            }
         }
 
         public async Task<bool> TryToSetDeviceCreationCompleteAsync(string simulationId)
@@ -394,7 +525,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             simulation.DevicesCreationComplete = true;
 
-            return await this.TryToUpdateSimulation(simulation);
+            // Reset device deletion state
+            simulation.DevicesDeletionComplete = false;
+            simulation.DeviceDeletionJobId = null;
+            simulation.DevicesDeletionStarted = false;
+
+            return await this.TryToUpdateSimulationAsync(simulation);
         }
 
         public async Task<bool> TryToSetDeviceDeletionCompleteAsync(string simulationId)
@@ -411,22 +547,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             simulation.DeviceCreationJobId = null;
             simulation.DevicesCreationStarted = false;
 
-            return await this.TryToUpdateSimulation(simulation);
-        }
-
-        private async Task<bool> TryToUpdateSimulation(Models.Simulation simulation)
-        {
-            try
-            {
-                await this.SaveAsync(simulation, simulation.ETag);
-            }
-            catch (ConflictingResourceException e)
-            {
-                this.log.Warn("Update failed, another client modified the simulation record", e);
-                return false;
-            }
-
-            return true;
+            return await this.TryToUpdateSimulationAsync(simulation);
         }
 
         public async Task AddDeviceAsync(string id)
@@ -492,6 +613,42 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return result;
         }
 
+        private async Task<(Models.Simulation simulation, bool jobCreated, string jobId)> CreateJobToDeleteDevices(string simulationId, IDevices devices)
+        {
+            // Fetch latest record, so that updates have the latest ETag if needed
+            var simulation = await this.GetAsync(simulationId);
+
+            // If deletion already happened there's nothing to do, return an empty Job ID
+            if (simulation.DevicesDeletionStarted || simulation.DevicesDeletionComplete)
+            {
+                this.log.Info("Bulk device deletion not needed, devices have already been deleted", () => new { simulation.Id });
+                return (simulation, false, null);
+            }
+
+            Dictionary<string, List<string>> deviceList = this.GetDeviceIdsByModel(simulation);
+            var deviceIds = deviceList.SelectMany(x => x.Value).ToList();
+
+            string jobId = await devices.DeleteListUsingJobsAsync(deviceIds);
+            this.log.Info("Bulk device deletion started", () => new { simulation.Id, jobId, deviceIds.Count });
+
+            return (simulation, true, jobId);
+        }
+
+        private async Task<bool> TryToUpdateSimulationAsync(Models.Simulation simulation)
+        {
+            try
+            {
+                await this.SaveAsync(simulation, simulation.ETag);
+            }
+            catch (ConflictingResourceException e)
+            {
+                this.log.Warn("Update failed, another client modified the simulation record", e);
+                return false;
+            }
+
+            return true;
+        }
+
         private async Task<Models.Simulation> SaveAsync(Models.Simulation simulation, string eTag)
         {
             simulation.Modified = DateTimeOffset.UtcNow;
@@ -524,6 +681,97 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 });
 
             return simulation;
+        }
+
+        // This creates sample simulations that will be shown on simulation dashboard by default
+        private async Task SeedSimulationsAsync(string templateName)
+        {
+            string content;
+            var fileName = templateName + ".json";
+            var filePath = Path.Combine(this.config.SeedTemplateFolder, fileName);
+            if (this.fileSystem.Exists(filePath))
+            {
+                content = this.fileSystem.ReadAllText(filePath);
+            }
+            else
+            {
+                this.log.Debug("Template not found for setting sample simulations.");
+                return;
+            }
+
+            Models.Simulation simulation = null;
+
+            try
+            {
+                var simulationList = JsonConvert.DeserializeObject<List<Models.Simulation>>(content);
+                if (simulationList == null || simulationList.Count == 0) return;
+
+                for (int index = 0; index < simulationList.Count; index++)
+                {
+                    // We need to start creating simulations starting with id 1 as it is treated as default simulation
+                    // and is referenced in Welcome page on UI
+                    simulation = simulationList[index];
+                    var simulationId = index + 1;
+                    simulation.Id = simulationId.ToString();
+
+                    try
+                    {
+                        // Check if there is an existing simulation with the given id
+                        // if it exists then skip creating a new simulation
+                        await this.GetAsync(simulation.Id);
+                    }
+                    catch (ResourceNotFoundException)
+                    {
+                        // create a simulation if no sample simulation exists with provided id.
+                        simulation.StartTime = DateTimeOffset.UtcNow;
+                        await this.UpsertAsync(simulation);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                var message = "Failed to create sample simulation. " + " template: " + JsonConvert.SerializeObject(simulation);
+                this.log.Error(message, ex);
+            }
+        }
+
+        private async Task<Models.Simulation> ResetSimulationStatisticsAsync(Models.Simulation simulation)
+        {
+            // Reset ActualStartTime, which is used to calculate statistics
+            // from the moment when the simulation starts connecting devices and sending telemetry,
+            // i.e. after the devices have been created.
+            simulation.ActualStartTime = null;
+
+            // Delete statistics records on simulation start
+            await this.simulationStatistics.DeleteSimulationStatisticsAsync(simulation.Id);
+
+            return simulation;
+        }
+
+        private async Task ResetActiveDevicesStatistics(Models.Simulation simulation)
+        {
+            try
+            {
+                var currentStats = await this.simulationStatistics.GetSimulationStatisticsAsync(simulation.Id);
+
+                if (currentStats != null)
+                {
+                    var simulationModel = new SimulationStatisticsModel
+                    {
+                        ActiveDevices = 0, // Reset active devices to 0
+                        TotalMessagesSent = currentStats.TotalMessagesSent,
+                        FailedMessages = currentStats.FailedMessages,
+                        FailedDeviceConnections = currentStats.FailedDeviceConnections,
+                        FailedDevicePropertiesUpdates = currentStats.FailedDevicePropertiesUpdates,
+                    };
+
+                    await this.simulationStatistics.UpdateAsync(simulation.Id, simulationModel);
+                }
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Error updating active device count statistics.", () => new { simulation.Id, e });
+            }
         }
     }
 }

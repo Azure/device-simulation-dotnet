@@ -18,6 +18,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
     public interface IAzureManagementAdapterClient
     {
         Task<MetricsResponseListModel> PostAsync(MetricsRequestListModel requestList);
+        Task CreateOrUpdateVmssAutoscaleSettingsAsync(int vmCount);
     }
 
     public class AzureManagementAdapter : IAzureManagementAdapterClient
@@ -56,16 +57,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         /// <param name="requestList"></param>
         public async Task<MetricsResponseListModel> PostAsync(MetricsRequestListModel requestList)
         {
-            if (this.AccessTokenIsNullOrEmpty())
-            {
-                await this.GetAadTokenAsync();
-            }
-
-            // Renew access token 10 minutes before it's expire time
-            if (this.AccessTokenExpireSoon())
-            {
-                this.GetAadTokenAsync();
-            }
+            await this.CreateOrUpdateAccessTokenAsync();
 
             if (requestList == null)
             {
@@ -97,6 +89,32 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
             return metricsResponseList;
         }
 
+        public async Task CreateOrUpdateVmssAutoscaleSettingsAsync(int vmCount)
+        {
+            await this.CreateOrUpdateAccessTokenAsync();
+
+            var accessToken = $"Bearer {this.ReadSecureString(this.secureAccessToken)}";
+
+            var request = this.PrepareVmssAutoscaleSettingsRequest(accessToken, vmCount.ToString());
+
+            this.log.Debug("Azure Management request content", () => new { request.Content });
+
+            var response = await this.httpClient.PutAsync(request);
+
+            this.log.Debug("Azure management response", () => new { response });
+
+            // TODO: Exception handling for specific exceptions like not enough cores left in subscription.
+            this.ThrowIfError(response);
+        }
+
+        private async Task CreateOrUpdateAccessTokenAsync()
+        {
+            if (this.AccessTokenIsNullOrEmpty() || this.AccessTokenExpireSoon())
+            {
+                await this.GetAadTokenAsync();
+            }
+        }
+
         private bool AccessTokenIsNullOrEmpty()
         {
             return this.secureAccessToken.Length == 0;
@@ -116,10 +134,43 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
             request.SetUriFromString($"{this.config.AzureManagementAdapterApiUrl}/{path}");
             request.Options.EnsureSuccess = false;
             request.Options.Timeout = this.config.AzureManagementAdapterApiTimeout;
-            if (!this.config.AzureManagementAdapterApiUrl.ToLowerInvariant().StartsWith("https:"))
+
+            if (content != null)
             {
-                throw new InvalidConfigurationException("Azure Management API url must start with https");
+                request.SetContent(content);
             }
+
+            this.log.Debug("Azure Management request", () => new { request });
+
+            return request;
+        }
+
+        /// <summary>
+        /// https://docs.microsoft.com/en-us/rest/api/monitor/autoscalesettings/createorupdate
+        /// </summary>
+        private HttpRequest PrepareVmssAutoscaleSettingsRequest(string token, string vmCount)
+        {
+            var autoScaleSettingsName = "scalevmss";
+            var request = new HttpRequest();
+            request.AddHeader(HttpRequestHeader.Accept.ToString(), "application/json");
+            request.AddHeader(HttpRequestHeader.CacheControl.ToString(), "no-cache");
+            request.AddHeader(HttpRequestHeader.Authorization.ToString(), token);
+            request.SetUriFromString($"{this.config.AzureManagementAdapterApiUrl}/{this.GetVmssAutoScaleSettingsUrl(autoScaleSettingsName)}");
+            request.Options.EnsureSuccess = false;
+            request.Options.Timeout = this.config.AzureManagementAdapterApiTimeout;
+
+            var content = new AutoScaleSettingsCreateOrUpdateRequestModel();
+            content.Location = this.deploymentConfig.AzureResourceGroupLocation;
+            content.Properties = new Properties();
+            content.Properties.Enabled = true;
+            content.Properties.TargetResourceUri = this.GetVmssResourceUrl();
+            content.Properties.Profiles = new List<Profile>();
+            content.Properties.Profiles.Add(new Profile
+            {
+                Name = autoScaleSettingsName,
+                Capacity = new Capacity { Minimum = vmCount, Maximum = vmCount, Default = vmCount },
+                Rules = new List<object>()
+            });
 
             if (content != null)
             {
@@ -135,10 +186,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
         {
             if (!response.IsError) return;
 
-            this.log.Error("Metrics request error", () => new { response.Content });
-            this.diagnosticsLogger.LogServiceError("Metrics request error", new { response.Content });
+            this.log.Error("Management API request error", () => new { response.Content });
+            this.diagnosticsLogger.LogServiceError("Management API request error", new { response.Content });
             throw new ExternalDependencyException(
-                new HttpRequestException($"Metrics request error: status code {response.StatusCode}"));
+                new HttpRequestException($"Management API request error: status code {response.StatusCode}"));
         }
 
         private string GetDefaultIoTHubMetricsUrl()
@@ -148,6 +199,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagement
                    $"/providers/Microsoft.Devices/IotHubs/{this.deploymentConfig.AzureIothubName}" +
                    $"/providers/Microsoft.Insights/metrics?api-version={METRICS_API_VERSION}&" +
                    $"$filter={this.GetDefaultMetricsQuery()}";
+        }
+
+        private string GetVmssResourceUrl()
+        {
+            return $"/subscriptions/{this.deploymentConfig.AzureSubscriptionId}" +
+                   $"/resourceGroups/{this.deploymentConfig.AzureResourceGroup}" +
+                   $"/providers/Microsoft.Compute/virtualMachineScaleSets/{this.deploymentConfig.AzureVmssName}";
+        }
+
+        private string GetVmssAutoScaleSettingsUrl(string name)
+        {
+            return $"/subscriptions/{this.deploymentConfig.AzureSubscriptionId}" +
+                   $"/resourceGroups/{this.deploymentConfig.AzureResourceGroup}" +
+                   $"/providers/microsoft.insights/autoscalesettings/{name}" +
+                   $"?api-version=2015-04-01";
         }
 
         /// <summary>
