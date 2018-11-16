@@ -360,6 +360,32 @@ Content-Type: application/json; charset=utf-8
 }
 ```
 
+### Example: Custom rate limits (aka throttling limits)
+
+The following example shows how to override the rate limits for simulation. Service controls
+the outbound requests to IoT Hub in order to avoid getting throttled. These can be changed 
+according to the targeted IoT Hub.
+
+Request:
+```
+POST /v1/simulations
+Content-Type: application/json; charset=utf-8
+```
+```json
+{
+  "Enabled": true,
+  "RateLimits": {
+    "RegistryOperationsPerMinute": 120,
+    "TwinReadsPerSecond": 12,
+    "TwinWritesPerSecond": 10,
+    "ConnectionsPerSecond": 120,
+    "DeviceMessagesPerSecond": 120,
+    "DeviceMessagesPerDay": 6000000
+  }
+}
+```
+More details about these limits: https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-quotas-throttling
+
 ### Example: Customize scripts (custom sensors)
 
 The following example shows how to customize the scripts used to generate
@@ -472,52 +498,67 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-  "ETag": "969ee1fb277640",
-  "Id": "1",
-  "Name": "Sample Simulation",
-  "Description": "This is a sample simulation",
-  "Enabled": false,
-  "Running": false,
-  "IoTHubs": [
+   "ETag":"969ee1fb277640",
+   "Id":"1",
+   "Name":"Sample Simulation",
+   "Description":"This is a sample simulation",
+   "Enabled":false,
+   "DeleteDevicesWhenSimulationEnds":false,
+   "Running":false,
+   "ActiveNow":false,
+   "DevicesDeletionComplete":false,
+   "IoTHubs":[
       {
-          "ConnectionString": "default",
-          "PreprovisionedIoTHubInUse": false,
-          "PreprovisionedIoTHubMetricsUrl": "https://portal.azure.com/..."
+         "ConnectionString":"default",
+         "PreprovisionedIoTHubInUse":false,
+         "PreprovisionedIoTHubMetricsUrl":"https://portal.azure.com/..."
       }
-  ],
-  "StartTime": "2018-08-31T00:30:00+00:00",
-  "EndTime": "2018-09-01T00:40:00+00:00",
-  "StoppedTime": "2018-08-31T00:35:00+00:00",
-  "DeviceModels": [
+   ],
+   "StartTime":"2018-08-31T00:30:00+00:00",
+   "EndTime":"2018-09-01T00:40:00+00:00",
+   "StoppedTime":"2018-08-31T00:35:00+00:00",
+   "DeviceModels":[
       {
-          "Id": "truck-02",
-          "Count": 2
+         "Id":"truck-02",
+         "Count":2
       },
       {
-          "Id": "elevator-02",
-          "Count": 4
+         "Id":"elevator-02",
+         "Count":4
       }
-  ],
-  "Statistics": {
-      "TotalMessagesSent": 60,
-      "AverageMessagesPerSecond": 6.43,
-      "FailedMessagesCount": 0,
-      "ActiveDevicesCount": 0,
-      "FailedDeviceConnectionsCount": 0,
-      "FailedDeviceTwinUpdatesCount": 0
-  },
-  "$metadata": {
-      "$type": "Simulation;1",
-      "$uri": "/v1/simulations/1",
-      "$created": "2018-08-31T00:30:00+00:00",
-      "$modified": "2018-08-31T00:35:00+00:00"
-  }
+   ],
+   "Statistics":{
+      "TotalMessagesSent":60,
+      "AverageMessagesPerSecond":6.43,
+      "FailedMessagesCount":0,
+      "ActiveDevicesCount":0,
+      "FailedDeviceConnectionsCount":0,
+      "FailedDeviceTwinUpdatesCount":0
+   },
+   "RateLimits":{
+      "RegistryOperationsPerMinute":120,
+      "TwinReadsPerSecond":12,
+      "TwinWritesPerSecond":10,
+      "ConnectionsPerSecond":120,
+      "DeviceMessagesPerSecond":120,
+      "DeviceMessagesPerDay":6000000
+   },
+   "$metadata":{
+      "$type":"Simulation;1",
+      "$uri":"/v1/simulations/1",
+      "$created":"2018-08-31T00:30:00+00:00",
+      "$modified":"2018-08-31T00:35:00+00:00"
+   }
 }
 ```
 
 There are some read-only properties in the api response. 
 * `Running` is a calculated property, reporting whether the simulation is
   currently running.
+* `ActiveNow` is a calculated property, reporting whether the simulation is
+  setting up resources in order to start running.
+* `DevicesDeletionComplete` is a calculated property, reporting whether the devices has
+  been deleted after simulation has stopped running.
 * `StoppedTime` is the time when the simulation was manually
   stopped before it's scheduled `EndTime`. 
 * `PreprovisionedIoTHubInUse`: whether the simulation ran or is running
