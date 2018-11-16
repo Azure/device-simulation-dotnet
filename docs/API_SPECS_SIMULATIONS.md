@@ -760,12 +760,12 @@ Content-Type: application/json; charset=utf-8
 optional body.
 ```json
 {
-  "requests": [
-  	{
-	  "httpMethod": "GET",
-	  "relativeUrl":"/subscriptions/{subscription_id}/resourceGroups/{resourceGroup}/providers/Microsoft.Devices/IotHubs/{iothub_name}/providers/Microsoft.Insights/metrics?api-version=2016-06-01&$filter={filters}"
-	}
-  ]
+   "requests":[
+      {
+         "httpMethod":"GET",
+         "relativeUrl":"/subscriptions/{subscription_id}/resourceGroups/{resourceGroup}/providers/Microsoft.Devices/IotHubs/{iothub_name}/providers/Microsoft.Insights/metrics?api-version=2016-06-01&$filter={filters}"
+      }
+   ]
 }
 ```
 
@@ -775,22 +775,22 @@ Response:
 Content-Type: application/JSON
 ```json
 {
-  "responses": [
-    {
-	  "content": {
-	    "value": [
-		  {
-		  	"data": [
-			  {
-			  	"timeStamp": "2018-09-20T17:50:00Z",
-				"total": 0
-			  },
-			  ...
-			]
-		  }
-		]
-	  }
-	}
-  ]
+   "responses":[
+      {
+         "content":{
+            "value":[
+               {
+                  "data":[
+                     {
+                        "timeStamp":"2018-09-20T17:50:00Z",
+                        "total":0
+                     },
+                     ...
+                  ]
+               }
+            ]
+         }
+      }
+   ]
 }
 ```
