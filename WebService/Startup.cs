@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
@@ -26,8 +28,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         // Agent responsible for simulating IoT devices
         private ISimulationAgent simulationAgent;
 
+        // Token used to stop the application threads when shutting down
+        private readonly CancellationTokenSource appStopToken = new CancellationTokenSource();
+
         // Service responsible for managing simulation state 
         private ISimulations simulationService;
+
+        // References used to monitor the application
+        private Task partitioningAgentTask;
+        private Task simulationAgentTask;
+        private Task threadsMonitoringTask;
 
         // Initialized in `Startup`
         public IConfigurationRoot Configuration { get; }
@@ -91,8 +101,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
             app.UseMvc();
 
-            // Start simulation agent thread
-            appLifetime.ApplicationStarted.Register(this.StartAgents);
+            // Start simulation agent and partitioning agent threads
+            appLifetime.ApplicationStarted.Register(() => this.StartAgents(appLifetime));
             appLifetime.ApplicationStopping.Register(this.StopAgents);
 
             // If you want to dispose of resources that have been resolved in the
@@ -100,7 +110,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             appLifetime.ApplicationStopped.Register(() => this.ApplicationContainer.Dispose());
         }
 
-        private void StartAgents()
+        private void StartAgents(IApplicationLifetime appLifetime)
         {
             // Temporary workaround to allow twin JSON deserialization in IoT SDK
             JsonConvert.DefaultSettings = () => new JsonSerializerSettings
@@ -109,20 +119,57 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             };
 
             this.partitioningAgent = this.ApplicationContainer.Resolve<IPartitioningAgent>();
-            this.partitioningAgent.StartAsync();
+            this.partitioningAgentTask = this.partitioningAgent.StartAsync(this.appStopToken.Token);
 
             this.simulationAgent = this.ApplicationContainer.Resolve<ISimulationAgent>();
-            this.simulationAgent.StartAsync();
+            this.simulationAgentTask = this.simulationAgent.StartAsync(this.appStopToken.Token);
 
             // This creates sample simulations that will be shown on simulation dashboard by default
             this.simulationService = this.ApplicationContainer.Resolve<ISimulations>();
             this.simulationService.TrySeedAsync();
+
+            this.threadsMonitoringTask = this.MonitorThreadsAsync(appLifetime);
         }
 
         private void StopAgents()
         {
+            // Send a signal to stop the application
+            this.appStopToken.Cancel();
+
+            // Stop the application threads
+            // TODO: see if we can rely solely on the cancellation token
             this.partitioningAgent.Stop();
             this.simulationAgent.Stop();
+        }
+
+        private Task MonitorThreadsAsync(IApplicationLifetime appLifetime)
+        {
+            return Task.Run(() =>
+                {
+                    while (!this.appStopToken.IsCancellationRequested)
+                    {
+                        // Check threads every 2 seconds
+                        Thread.Sleep(2000);
+
+                        if (this.simulationAgentTask.Status == TaskStatus.Faulted
+                            || this.simulationAgentTask.Status == TaskStatus.Canceled
+                            || this.simulationAgentTask.Status == TaskStatus.RanToCompletion
+                            || this.partitioningAgentTask.Status == TaskStatus.Faulted
+                            || this.partitioningAgentTask.Status == TaskStatus.Canceled
+                            || this.partitioningAgentTask.Status == TaskStatus.RanToCompletion)
+                        {
+                            var log = this.ApplicationContainer.Resolve<ILogger>();
+                            log.Error("Part of the service is not running",
+                                () => new
+                                {
+                                    SimulationAgent = this.simulationAgentTask.Status.ToString(),
+                                    PartitioningAgent = this.partitioningAgentTask.Status.ToString()
+                                });
+                            appLifetime.StopApplication();
+                        }
+                    }
+                },
+                this.appStopToken.Token);
         }
 
         private void PrintBootstrapInfo(IContainer container)

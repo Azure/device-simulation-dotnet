@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter;
@@ -16,7 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
 {
     public interface IPartitioningAgent
     {
-        Task StartAsync();
+        Task StartAsync(CancellationToken appStopToken);
         void Stop();
     }
 
@@ -59,14 +60,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
             this.currentNodeCount = DEFAULT_NODE_COUNT;
         }
 
-        public async Task StartAsync()
+        public async Task StartAsync(CancellationToken appStopToken)
         {
             this.log.Info("Partitioning agent started", () => new { Node = this.clusterNodes.GetCurrentNodeId() });
 
             this.running = true;
 
             // Repeat until the agent is stopped
-            while (this.running)
+            while (this.running && !appStopToken.IsCancellationRequested)
             {
                 await this.clusterNodes.KeepAliveNodeAsync();
 

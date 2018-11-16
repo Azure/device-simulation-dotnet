@@ -21,7 +21,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
     public interface ISimulationAgent
     {
-        Task StartAsync();
+        Task StartAsync(CancellationToken appStopToken);
         Task AddDeviceAsync(string simulationId, string name, string modelId);
         Task DeleteDevicesAsync(List<string> ids);
         void Stop();
@@ -127,7 +127,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.devicePropertiesActors = new ConcurrentDictionary<string, IDevicePropertiesActor>();
         }
 
-        public Task StartAsync()
+        public Task StartAsync(CancellationToken appStopToken)
         {
             if (this.startingOrStopping || this.running)
             {
@@ -145,13 +145,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.running = true;
             this.startingOrStopping = false;
 
-            return this.RunAsync();
+            return this.RunAsync(appStopToken);
         }
 
         public void Stop()
         {
             while (this.startingOrStopping)
+            {
                 Thread.Sleep(SHUTDOWN_WAIT_INTERVAL_MSECS);
+            }
 
             this.startingOrStopping = true;
             this.log.Write("Stopping simulation agent...");
@@ -167,11 +169,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.TryToStopThreads();
         }
 
-        private async Task RunAsync()
+        private async Task RunAsync(CancellationToken appStopToken)
         {
             try
             {
-                while (this.running)
+                while (this.running && !appStopToken.IsCancellationRequested)
                 {
                     this.SendSolutionHeartbeat();
 
