@@ -3,8 +3,6 @@ API specifications - Simulations
 
 ## Creating simulations
 
-The service supports only one simulation, with ID "1".
-
 ### Creation with POST
 
 When invoking the API using the POST HTTP method, the service will always
