@@ -498,7 +498,7 @@ Content-Type: application/json; charset=utf-8
 ```
 More details about these limits: https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-quotas-throttling
 
-## Get details of the simulation, including device models and statistics
+## Get details of the simulation, including device models, rate limits and statistics
 
 Request:
 ```
@@ -577,12 +577,10 @@ There are some read-only properties in the api response.
   stopped before it's scheduled `EndTime`. 
 * `PreprovisionedIoTHubInUse`: whether the simulation ran or is running
   using the Azure IoT Hub created during the solution deployment.
-* 'PreprovisionedIoTHubMetricsUrl': the url to navigate to the IoT Hub
+* `PreprovisionedIoTHubMetricsUrl`: the url to navigate to the IoT Hub
   metrics page. 
 * `Statistics` is a set of read only properties providing counters
-  at a given time. When the simulation is stopped, the current values
-  for `TotalMessagesSent` and `AverageMessagesPerSecond` are retrieved from
-  storage. 
+  at a given time. 
 
 ## Start simulation
 
