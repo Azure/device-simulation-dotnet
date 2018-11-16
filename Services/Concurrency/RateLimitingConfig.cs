@@ -1,5 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using Newtonsoft.Json;
+
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
     public interface IRateLimitingConfig
@@ -15,11 +17,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
     public class RateLimitingConfig : IRateLimitingConfig
     {
+        [JsonProperty(PropertyName = "RegistryOperationsPerMinute")]
         public int RegistryOperationsPerMinute { get; set; }
+
+        [JsonProperty(PropertyName = "TwinReadsPerSecond")]
         public int TwinReadsPerSecond { get; set; }
+
+        [JsonProperty(PropertyName = "TwinWritesPerSecond")]
         public int TwinWritesPerSecond { get; set; }
+
+        [JsonProperty(PropertyName = "ConnectionsPerSecond")]
         public int ConnectionsPerSecond { get; set; }
+
+        [JsonProperty(PropertyName = "DeviceMessagesPerSecond")]
         public int DeviceMessagesPerSecond { get; set; }
+
+        [JsonProperty(PropertyName = "DeviceMessagesPerDay")]
         public long DeviceMessagesPerDay { get; set; }
 
         public IRateLimitingConfig ToServiceModel(IRateLimitingConfig defaultRateLimits)
