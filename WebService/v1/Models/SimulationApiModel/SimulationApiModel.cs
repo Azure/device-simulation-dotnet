@@ -131,7 +131,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             result.StartTime = DateHelper.ParseDateExpression(this.StartTime, now);
             result.EndTime = DateHelper.ParseDateExpression(this.EndTime, now);
             result.DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList();
-            result.RateLimits = this.GetRateLimits(defaultRateLimits);
+            result.RateLimits = this.RateLimits.ToServiceModel(defaultRateLimits);
 
             // Overwrite the value only if the request included the field, i.e. don't
             // enable/disable the simulation if the user didn't explicitly ask to.
@@ -301,28 +301,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             }
 
             return statistics;
-        }
-
-        private IRateLimitingConfig GetRateLimits(IRateLimitingConfig defaultRateLimits)
-        {
-            var simulationRateLimits = this.RateLimits;
-
-            var connectionsPerSecond = simulationRateLimits.ConnectionsPerSecond > 0 ? simulationRateLimits.ConnectionsPerSecond : defaultRateLimits.ConnectionsPerSecond;
-            var registryOperationsPerMinute = simulationRateLimits.RegistryOperationsPerMinute > 0 ? simulationRateLimits.RegistryOperationsPerMinute : defaultRateLimits.RegistryOperationsPerMinute;
-            var twinReadsPerSecond = simulationRateLimits.TwinReadsPerSecond > 0 ? simulationRateLimits.TwinReadsPerSecond : defaultRateLimits.TwinReadsPerSecond;
-            var twinWritesPerSecond = simulationRateLimits.TwinWritesPerSecond > 0 ? simulationRateLimits.TwinWritesPerSecond : defaultRateLimits.TwinWritesPerSecond;
-            var deviceMessagesPerSecond = simulationRateLimits.DeviceMessagesPerSecond > 0 ? simulationRateLimits.DeviceMessagesPerSecond : defaultRateLimits.DeviceMessagesPerSecond;
-            var deviceMessagesPerDay = simulationRateLimits.DeviceMessagesPerDay > 0 ? simulationRateLimits.DeviceMessagesPerDay : defaultRateLimits.DeviceMessagesPerDay;
-
-            return new RateLimitingConfig
-            {
-                ConnectionsPerSecond = connectionsPerSecond,
-                RegistryOperationsPerMinute = registryOperationsPerMinute,
-                TwinReadsPerSecond = twinReadsPerSecond,
-                TwinWritesPerSecond = twinWritesPerSecond,
-                DeviceMessagesPerSecond = deviceMessagesPerSecond,
-                DeviceMessagesPerDay = deviceMessagesPerDay
-            };
         }
     }
 }
