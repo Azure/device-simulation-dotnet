@@ -360,32 +360,6 @@ Content-Type: application/json; charset=utf-8
 }
 ```
 
-### Example: Custom rate limits (aka throttling limits)
-
-The following example shows how to override the rate limits for simulation. Service controls
-the outbound requests to IoT Hub in order to avoid getting throttled. These can be changed 
-according to the targeted IoT Hub.
-
-Request:
-```
-POST /v1/simulations
-Content-Type: application/json; charset=utf-8
-```
-```json
-{
-  "Enabled": true,
-  "RateLimits": {
-    "RegistryOperationsPerMinute": 120,
-    "TwinReadsPerSecond": 12,
-    "TwinWritesPerSecond": 10,
-    "ConnectionsPerSecond": 120,
-    "DeviceMessagesPerSecond": 120,
-    "DeviceMessagesPerDay": 6000000
-  }
-}
-```
-More details about these limits: https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-quotas-throttling
-
 ### Example: Customize scripts (custom sensors)
 
 The following example shows how to customize the scripts used to generate
@@ -483,6 +457,47 @@ Content-Type: application/json; charset=utf-8
   ]
 }
 ```
+## Creating a simulation with custom rate limits (aka throttling limits)
+
+The following example shows how to override the rate limits for simulation. Service controls
+the outbound requests to IoT Hub in order to avoid getting throttled. These can be changed 
+according to the targeted IoT Hub.
+
+Request:
+```
+POST /v1/simulations
+Content-Type: application/json; charset=utf-8
+```
+```json
+{
+   "ETag":"*",
+   "Name":"Sample Simulation",
+   "Desc":"This is a sample simulation.",
+   "Enabled":true,
+   "StartTime":"NOW",
+   "EndTime":"NOW+P7D",
+   "IoTHubs":[
+      {
+         "ConnectionString":"default"
+      }
+   ],
+   "DeviceModels":[
+      {
+         "Id":"truck-01",
+         "Count":5
+      }
+   ],
+   "RateLimits":{
+      "RegistryOperationsPerMinute":120,
+      "TwinReadsPerSecond":12,
+      "TwinWritesPerSecond":10,
+      "ConnectionsPerSecond":120,
+      "DeviceMessagesPerSecond":120,
+      "DeviceMessagesPerDay":6000000
+   }
+}
+```
+More details about these limits: https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-quotas-throttling
 
 ## Get details of the simulation, including device models and statistics
 
