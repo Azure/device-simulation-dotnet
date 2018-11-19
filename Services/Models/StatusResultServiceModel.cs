@@ -11,12 +11,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         [JsonProperty(PropertyName = "Message")]
         public string Message { get; set; }
-        
+
         [JsonConstructor]
         public StatusResultServiceModel(bool isHealthy, string message)
         {
-            IsHealthy = isHealthy;
-            Message = message;
+            this.IsHealthy = isHealthy;
+            this.Message = message;
         }
     }
 }
