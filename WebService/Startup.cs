@@ -118,15 +118,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
                 CheckAdditionalContent = false
             };
 
-            this.partitioningAgent = this.ApplicationContainer.Resolve<IPartitioningAgent>();
-            this.partitioningAgentTask = this.partitioningAgent.StartAsync(this.appStopToken.Token);
+            var config = this.ApplicationContainer.Resolve<IConfig>();
 
+            // Start the partitioning agent, unless disabled
+            this.partitioningAgent = this.ApplicationContainer.Resolve<IPartitioningAgent>();
+            this.partitioningAgentTask = config.ServicesConfig.DisablePartitioningAgent
+                ? Task.Run(() => Thread.Sleep(TimeSpan.FromHours(1)))
+                : this.partitioningAgent.StartAsync(this.appStopToken.Token);
+
+            // Start the simulation agent, unless disabled
             this.simulationAgent = this.ApplicationContainer.Resolve<ISimulationAgent>();
-            this.simulationAgentTask = this.simulationAgent.StartAsync(this.appStopToken.Token);
+            this.simulationAgentTask = config.ServicesConfig.DisableSimulationAgent
+                ? Task.Run(() => Thread.Sleep(TimeSpan.FromHours(1)))
+                : this.simulationAgent.StartAsync(this.appStopToken.Token);
 
             // This creates sample simulations that will be shown on simulation dashboard by default
             this.simulationService = this.ApplicationContainer.Resolve<ISimulations>();
-            this.simulationService.TrySeedAsync();
+            if (!config.ServicesConfig.DisableSeedByTemplate)
+            {
+                this.simulationService.TrySeedAsync();
+            }
 
             this.threadsMonitoringTask = this.MonitorThreadsAsync(appLifetime);
         }
@@ -201,6 +212,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             log.Write("Min duration of twin write loop:  " + config.AppConcurrencyConfig.MinDevicePropertiesLoopDuration);
 
             log.Write("Max devices per partition:        " + config.ClusteringConfig.MaxPartitionSize);
+
+            if (config.ServicesConfig.DisableSimulationAgent)
+            {
+                log.Error("Simulation Agent is disabled!");
+            }
+
+            if (config.ServicesConfig.DisablePartitioningAgent)
+            {
+                log.Error("Partitioning Agent is disabled!");
+            }
+
+            if (config.ServicesConfig.DisableSeedByTemplate)
+            {
+                log.Warn("Seed by Template is disabled!");
+            }
         }
     }
 }
