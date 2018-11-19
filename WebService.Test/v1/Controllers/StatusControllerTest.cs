@@ -27,7 +27,7 @@ namespace WebService.Test.v1.Controllers
         private readonly Mock<ISimulations> simulations;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IServicesConfig> servicesConfig;
-        private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
+        private readonly Mock<IConnectionStrings> connectionStringManager;
         private readonly Mock<IRateLimiting> rateReporter;
         private readonly StatusController target;
 
@@ -38,7 +38,7 @@ namespace WebService.Test.v1.Controllers
             this.simulations = new Mock<ISimulations>();
             this.logger = new Mock<ILogger>();
             this.servicesConfig = new Mock<IServicesConfig>();
-            this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
+            this.connectionStringManager = new Mock<IConnectionStrings>();
             this.rateReporter = new Mock<IRateLimiting>();
 
             this.target = new StatusController(
@@ -109,7 +109,7 @@ namespace WebService.Test.v1.Controllers
                 .Returns(IOTHUB_CONNECTION_STRING);
 
             this.connectionStringManager
-                .Setup(x => x.GetConnectionStringAsync())
+                .Setup(x => x.GetAsync())
                 .ReturnsAsync(IOTHUB_CONNECTION_STRING);
         }
     }

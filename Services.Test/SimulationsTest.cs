@@ -39,7 +39,7 @@ namespace Services.Test
         private readonly Mock<IFileSystem> file;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
-        private readonly Mock<IIotHubConnectionStringManager> connStringManager;
+        private readonly Mock<IConnectionStrings> connStringManager;
         private readonly Mock<IDocumentDbWrapper> mockDocumentDbWrapper;
         private readonly Mock<IDocumentClient> mockDocumentClient;
         private readonly Mock<IResourceResponse<Document>> mockStorageDocument;
@@ -75,7 +75,7 @@ namespace Services.Test
             this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
             this.devices = new Mock<IDevices>();
             this.file = new Mock<IFileSystem>();
-            this.connStringManager = new Mock<IIotHubConnectionStringManager>();
+            this.connStringManager = new Mock<IConnectionStrings>();
             this.models = new List<DeviceModel>
             {
                 new DeviceModel { Id = "01" },

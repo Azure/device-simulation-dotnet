@@ -86,7 +86,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IStorageAdapterClient storageAdapterClient;
         private readonly IStorageRecords mainStorage;
         private readonly IStorageRecords simulationsStorage;
-        private readonly IIotHubConnectionStringManager connectionStringManager;
+        private readonly IConnectionStrings connectionStrings;
         private readonly ISimulationStatistics simulationStatistics;
         private readonly IDevices devices;
         private readonly IFileSystem fileSystem;
@@ -98,7 +98,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IDeviceModels deviceModels,
             IFactory factory,
             IStorageAdapterClient storageAdapterClient,
-            IIotHubConnectionStringManager connectionStringManager,
+            IConnectionStrings connectionStrings,
             IDevices devices,
             IFileSystem fileSystem,
             ILogger logger,
@@ -110,7 +110,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.storageAdapterClient = storageAdapterClient;
             this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
             this.simulationsStorage = factory.Resolve<IStorageRecords>().Init(config.SimulationsStorage);
-            this.connectionStringManager = connectionStringManager;
+            this.connectionStrings = connectionStrings;
             this.devices = devices;
             this.fileSystem = fileSystem;
             this.log = logger;
@@ -219,7 +219,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             for (var index = 0; index < simulation.IotHubConnectionStrings.Count; index++)
             {
-                var connString = await this.connectionStringManager.RedactAndSaveAsync(simulation.IotHubConnectionStrings[index]);
+                var connString = await this.connectionStrings.SaveAsync(simulation.IotHubConnectionStrings[index]);
 
                 if (!simulation.IotHubConnectionStrings.Contains(connString))
                 {
@@ -296,7 +296,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             for (var index = 0; index < simulation.IotHubConnectionStrings.Count; index++)
             {
-                var connString = await this.connectionStringManager.RedactAndSaveAsync(simulation.IotHubConnectionStrings[index]);
+                var connString = await this.connectionStrings.SaveAsync(simulation.IotHubConnectionStrings[index]);
 
                 if (!simulation.IotHubConnectionStrings.Contains(connString))
                 {
