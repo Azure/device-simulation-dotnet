@@ -510,7 +510,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 simulation.DeviceDeletionJobId = jobId;
                 simulation.DevicesDeletionStarted = true;
-                
+
                 await this.SaveAsync(simulation, simulation.ETag);
                 return true;
             }
