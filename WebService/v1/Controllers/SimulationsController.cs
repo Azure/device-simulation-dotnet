@@ -24,7 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
         private readonly ISimulations simulationsService;
         private readonly IDevices devices;
-        private readonly IIotHubConnectionStringManager connectionStringManager;
+        private readonly IConnectionStringValidation connectionStringValidation;
         private readonly IIothubMetrics iothubMetrics;
         private readonly IRateLimitingConfig defaultRatingConfig;
         private readonly ISimulationAgent simulationAgent;
@@ -34,7 +34,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         public SimulationsController(
             ISimulations simulationsService,
             IDevices devices,
-            IIotHubConnectionStringManager connectionStringManager,
+            IConnectionStringValidation connectionStringValidation,
             IIothubMetrics iothubMetrics,
             IRateLimitingConfig defaultRatingConfig,
             IPreprovisionedIotHub preprovisionedIotHub,
@@ -43,7 +43,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         {
             this.simulationsService = simulationsService;
             this.devices = devices;
-            this.connectionStringManager = connectionStringManager;
+            this.connectionStringValidation = connectionStringValidation;
             this.iothubMetrics = iothubMetrics;
             this.defaultRatingConfig = defaultRatingConfig;
             this.simulationAgent = simulationAgent;
@@ -71,7 +71,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         {
             if (simulationApiModel != null)
             {
-                await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringManager);
+                await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringValidation);
             }
             else
             {
@@ -109,7 +109,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data provided, request object is empty.");
             }
 
-            await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringManager);
+            await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringValidation);
 
             // Load the existing resource, so that internal properties can be copied
             var existingSimulation = await this.GetExistingSimulationAsync(id);

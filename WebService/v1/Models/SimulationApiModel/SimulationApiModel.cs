@@ -214,7 +214,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             return result;
         }
 
-        public async Task ValidateInputRequestAsync(ILogger log, IIotHubConnectionStringManager connectionStringManager)
+        public async Task ValidateInputRequestAsync(ILogger log, IConnectionStringValidation connectionStringValidation)
         {
             const string NO_DEVICE_MODEL = "The simulation doesn't contain any device model";
             const string ZERO_DEVICES = "The simulation has zero devices";
@@ -270,7 +270,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
             foreach (var iotHub in this.IotHubs)
             {
-                await connectionStringManager.ValidateConnectionStringAsync(iotHub.ConnectionString);
+                await connectionStringValidation.TestAsync(iotHub.ConnectionString, true);
             }
         }
 

@@ -23,7 +23,7 @@ namespace Services.Test
 
         private readonly Devices target;
         private readonly Mock<IServicesConfig> config;
-        private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
+        private readonly Mock<IConnectionStrings> connectionStrings;
         private readonly Mock<IRegistryManager> registry;
         private readonly Mock<IDeviceClientWrapper> deviceClient;
         private readonly Mock<ILogger> logger;
@@ -34,7 +34,7 @@ namespace Services.Test
             this.log = log;
 
             this.config = new Mock<IServicesConfig>();
-            this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
+            this.connectionStrings = new Mock<IConnectionStrings>();
             this.registry = new Mock<IRegistryManager>();
             this.deviceClient = new Mock<IDeviceClientWrapper>();
             this.logger = new Mock<ILogger>();
@@ -44,15 +44,15 @@ namespace Services.Test
 
             this.target = new Devices(
                 this.config.Object,
-                this.connectionStringManager.Object,
+                this.connectionStrings.Object,
                 this.registry.Object,
                 this.deviceClient.Object,
                 this.logger.Object,
                 this.diagnosticsLogger.Object,
                 instance);
 
-            this.connectionStringManager
-                .Setup(x => x.GetConnectionStringAsync())
+            this.connectionStrings
+                .Setup(x => x.GetAsync())
                 .ReturnsAsync("HostName=iothub-AAAA.azure-devices.net;SharedAccessKeyName=AAAA;SharedAccessKey=AAAA");
 
             this.target.InitAsync().Wait(Constants.TEST_TIMEOUT);

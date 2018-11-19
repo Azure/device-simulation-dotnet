@@ -23,7 +23,7 @@ namespace WebService.Test.v1.Controllers
     {
         private readonly Mock<ISimulations> simulationsService;
         private readonly Mock<IDevices> devices;
-        private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
+        private readonly Mock<IConnectionStringValidation> connectionStringValidation;
         private readonly Mock<IIothubMetrics> iothubMetrics;
         private readonly Mock<IPreprovisionedIotHub> preprovisionedIotHub;
         private readonly Mock<IRateLimitingConfig> defaultRatingConfig;
@@ -35,7 +35,7 @@ namespace WebService.Test.v1.Controllers
         {
             this.simulationsService = new Mock<ISimulations>();
             this.devices = new Mock<IDevices>();
-            this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
+            this.connectionStringValidation = new Mock<IConnectionStringValidation>();
             this.iothubMetrics = new Mock<IIothubMetrics>();
             this.preprovisionedIotHub = new Mock<IPreprovisionedIotHub>();
             this.defaultRatingConfig = new Mock<IRateLimitingConfig>();
@@ -45,7 +45,7 @@ namespace WebService.Test.v1.Controllers
             this.target = new SimulationsController(
                 this.simulationsService.Object,
                 this.devices.Object,
-                this.connectionStringManager.Object,
+                this.connectionStringValidation.Object,
                 this.iothubMetrics.Object,
                 this.defaultRatingConfig.Object,
                 this.preprovisionedIotHub.Object,
@@ -66,10 +66,7 @@ namespace WebService.Test.v1.Controllers
 
             // Act
             var simulationApiModel = SimulationApiModel.FromServiceModel(simulation);
-
-            var postAsyncTask = this.target.PostAsync(simulationApiModel);
-            postAsyncTask.Wait(Constants.TEST_TIMEOUT);
-            var result = postAsyncTask.Result;
+            var result = this.target.PostAsync(simulationApiModel).CompleteOrTimeout().Result;
 
             // Assert
             Assert.NotNull(result);
@@ -104,8 +101,7 @@ namespace WebService.Test.v1.Controllers
             const string ID = "1";
 
             // Act
-            this.target.DeleteAsync(ID)
-                .Wait(Constants.TEST_TIMEOUT);
+            this.target.DeleteAsync(ID).CompleteOrTimeout();
 
             // Assert
             this.simulationsService.Verify(x => x.DeleteAsync(ID), Times.Once);
@@ -118,8 +114,7 @@ namespace WebService.Test.v1.Controllers
             const string ID = "1";
 
             // Act
-            this.target.PostAsync(ID, new MetricsRequestsApiModel())
-                .Wait(Constants.TEST_TIMEOUT);
+            this.target.PostAsync(ID, new MetricsRequestsApiModel()).CompleteOrTimeout();
 
             // Assert
             this.iothubMetrics
@@ -186,11 +181,10 @@ namespace WebService.Test.v1.Controllers
 
             // Act & Assert
             Assert.ThrowsAsync<BadRequestException>(
-                    async () => await this.target.PostAsync(
-                        SimulationApiModel.FromServiceModel(simulation)
-                    )
+                async () => await this.target.PostAsync(
+                    SimulationApiModel.FromServiceModel(simulation)
                 )
-                .Wait(Constants.TEST_TIMEOUT);
+            ).CompleteOrTimeout();
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]

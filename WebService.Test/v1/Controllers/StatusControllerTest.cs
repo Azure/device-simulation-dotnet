@@ -13,10 +13,9 @@ namespace WebService.Test.v1.Controllers
 {
     public class StatusControllerTest
     {
-        private const string SIMULATION_ID = "1";
-
         private readonly Mock<IStatusService> statusService;
         private readonly Mock<IConfig> config;
+
         private readonly StatusController target;
 
         public StatusControllerTest(ITestOutputHelper log)
