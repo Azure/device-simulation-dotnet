@@ -434,7 +434,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // State
             try
             {
-                this.devicesStateThread.Interrupt();
+                this.devicesStateThread?.Interrupt();
             }
             catch (Exception e)
             {
@@ -444,7 +444,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // Connection
             try
             {
-                this.devicesConnectionThread.Interrupt();
+                this.devicesConnectionThread?.Interrupt();
             }
             catch (Exception e)
             {
@@ -454,7 +454,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // Properties
             try
             {
-                this.devicesPropertiesThread.Interrupt();
+                this.devicesPropertiesThread?.Interrupt();
             }
             catch (Exception e)
             {

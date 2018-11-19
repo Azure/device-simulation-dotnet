@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
-    class StatusService : IStatusService
+    public class StatusService : IStatusService
     {
         private const string JSON_TRUE = "true";
         private const string JSON_FALSE = "false";
@@ -36,8 +36,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IPreprovisionedIotHub preprovisionedIotHub,
             ISimulations simulations,
             IHttpClient httpClient,
-            IServicesConfig servicesConfig
-            )
+            IServicesConfig servicesConfig)
         {
             this.log = logger;
             this.preprovisionedIotHub = preprovisionedIotHub;
@@ -62,7 +61,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var storageAdapterResult = await this.PingServiceAsync(
                 storageAdapterName,
                 this.servicesConfig.StorageAdapterApiUrl);
-            SetServiceStatus(storageAdapterName, storageAdapterResult, result, errors);
+            this.SetServiceStatus(storageAdapterName, storageAdapterResult, result, errors);
 
             // Check access to Diagnostics
             var diagnosticsResult = await this.PingServiceAsync(
@@ -78,7 +77,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             if (isHubPreprovisioned)
             {
                 var preprovisionedHubResult = await this.preprovisionedIotHub.PingRegistryAsync();
-                SetServiceStatus("IoTHub", preprovisionedHubResult, result, errors);
+                this.SetServiceStatus("IoTHub", preprovisionedHubResult, result, errors);
             }
 
             result.Properties.Add(SIMULATION_RUNNING_KEY,
@@ -111,14 +110,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             string dependencyName,
             StatusResultServiceModel serviceResult,
             StatusServiceModel result,
-            List<string> errors
-            )
+            List<string> errors)
         {
             if (!serviceResult.IsHealthy)
             {
                 errors.Add(dependencyName + " check failed");
                 result.Status.IsHealthy = false;
             }
+
             result.Dependencies.Add(dependencyName, serviceResult);
         }
 
@@ -152,12 +151,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     && cs.Contains("sharedaccesskey="));
         }
 
-        private async Task<StatusResultServiceModel> PingServiceAsync(string serviceName, string serviceURL)
+        private async Task<StatusResultServiceModel> PingServiceAsync(string serviceName, string serviceUrl)
         {
             var result = new StatusResultServiceModel(false, $"{serviceName} check failed");
             try
             {
-                var response = await this.httpClient.GetAsync(this.PrepareRequest($"{serviceURL}/status"));
+                var response = await this.httpClient.GetAsync(this.PrepareRequest($"{serviceUrl}/status"));
                 if (response.IsError)
                 {
                     result.Message = $"Status code: {response.StatusCode}; Response: {response.Content}";

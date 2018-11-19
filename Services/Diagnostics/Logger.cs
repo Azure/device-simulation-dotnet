@@ -75,7 +75,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             [CallerLineNumber] int lineNumber = 0)
         {
             if (this.priorityThreshold > LogLevel.Info) return;
-            this.Write(LogLevel.Info, message, callerName, filePath, lineNumber);
+            this.Write(LogLevel.Warn, message, callerName, filePath, lineNumber);
         }
 
         public void Error(string message,
