@@ -1,20 +1,13 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System;
-using System.Collections.Generic;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers;
 using Moq;
 using WebService.Test.helpers;
 using Xunit;
 using Xunit.Abstractions;
-using SimulationModel = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
 
 namespace WebService.Test.v1.Controllers
 {
@@ -29,10 +22,14 @@ namespace WebService.Test.v1.Controllers
         private readonly Mock<IServicesConfig> servicesConfig;
         private readonly Mock<IConnectionStrings> connectionStrings;
         private readonly Mock<IRateLimiting> rateReporter;
+        private readonly Mock<IStatusService> statusService;
+        private readonly Mock<IConfig> config;
+
         private readonly StatusController target;
 
         public StatusControllerTest(ITestOutputHelper log)
         {
+
             this.preprovisionedIotHub = new Mock<IPreprovisionedIotHub>();
             this.storage = new Mock<IStorageAdapterClient>();
             this.simulations = new Mock<ISimulations>();
@@ -41,24 +38,25 @@ namespace WebService.Test.v1.Controllers
             this.connectionStrings = new Mock<IConnectionStrings>();
             this.rateReporter = new Mock<IRateLimiting>();
 
-            this.target = new StatusController(
-                this.preprovisionedIotHub.Object,
-                this.storage.Object,
-                this.simulations.Object,
-                this.logger.Object,
-                this.servicesConfig.Object);
+            this.statusService = new Mock<IStatusService>();
+            this.config = new Mock<IConfig>();
+
+            this.target = new StatusController(this.config.Object, this.statusService.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItReturnsTheStatusOfRunningSimulation()
+        public void ItReturnsHealthOfSimulationService()
         {
-            // Arrange
-            this.SetupSimulationForRunner();
+            //Arrange
+            this.statusService
+                .Setup(x => x.GetStatusAsync())
+                .ReturnsAsync(new StatusServiceModel(true, "Alive and well!"));
 
             // Act
             var result = this.target.GetAsync().CompleteOrTimeout().Result;
 
             // Assert
+
             Assert.Equal("true", result.Properties["SimulationRunning"]);
         }
 
@@ -111,6 +109,9 @@ namespace WebService.Test.v1.Controllers
             this.connectionStrings
                 .Setup(x => x.GetAsync())
                 .ReturnsAsync(IOTHUB_CONNECTION_STRING);
+
+            Assert.True(result.Status.IsHealthy);
+
         }
     }
 }
