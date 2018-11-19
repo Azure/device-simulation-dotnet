@@ -375,9 +375,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             // modify other fields, so we need to check for null
             if (patch.Enabled != null) simulation.Enabled = patch.Enabled.Value;
 
-            // DeleteDevicesWhenSimulationEnds field is optional (e.g. in case PATCH is
-            // extended to modify other fields), so we need to check for null
-            if (patch.DeleteDevicesWhenSimulationEnds != null) simulation.DeleteDevicesWhenSimulationEnds = patch.DeleteDevicesWhenSimulationEnds.Value;
+            if (patch.DeleteDevicesOnce != null)
+            {
+                simulation.DeleteDevicesOnce = patch.DeleteDevicesOnce.Value;
+            }
 
             // TODO: can we use this.SaveAsync() here too and avoid the duplication?
             item = await this.simulationsStorage.UpsertAsync(
@@ -509,7 +510,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 simulation.DeviceDeletionJobId = jobId;
                 simulation.DevicesDeletionStarted = true;
-
+                
                 await this.SaveAsync(simulation, simulation.ETag);
                 return true;
             }
@@ -550,6 +551,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             simulation.DevicesCreationComplete = false;
             simulation.DeviceCreationJobId = null;
             simulation.DevicesCreationStarted = false;
+
+            if (simulation.DeleteDevicesOnce == true)
+            {
+                simulation.DeleteDevicesOnce = false;
+            }
 
             return await this.TryToUpdateSimulationAsync(simulation);
         }

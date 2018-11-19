@@ -12,13 +12,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         [JsonProperty(PropertyName = "Enabled")]
         public bool? Enabled { get; set; }
 
-        [JsonProperty(PropertyName = "DeleteDevicesWhenSimulationEnds")]
-        public bool? DeleteDevicesWhenSimulationEnds { get; set; }
+        [JsonProperty(PropertyName = "DeleteDevicesOnce")]
+        public bool? DeleteDevicesOnce { get; set; }
 
         public SimulationPatchApiModel()
         {
             this.Enabled = null;
-            this.DeleteDevicesWhenSimulationEnds = null;
+            this.DeleteDevicesOnce = false;
         }
 
         /// <summary>Map an API model to the corresponding service model</summary>
@@ -29,7 +29,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
                 ETag = this.ETag,
                 Id = id,
                 Enabled = this.Enabled,
-                DeleteDevicesWhenSimulationEnds = this.DeleteDevicesWhenSimulationEnds
+                DeleteDevicesOnce = this.DeleteDevicesOnce
             };
         }
     }
