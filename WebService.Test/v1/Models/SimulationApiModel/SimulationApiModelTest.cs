@@ -13,13 +13,14 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Simulat
 using Moq;
 using WebService.Test.helpers;
 using Xunit;
+using Model = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel;
 
 namespace WebService.Test.v1.Models.SimulationApiModel
 {
     public class SimulationApiModelTest
     {
         private readonly Mock<ILogger> logger;
-        private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
+        private readonly Mock<IConnectionStringValidation> connectionStringValidation;
         private readonly Mock<IServicesConfig> servicesConfig;
         private readonly Mock<IDeploymentConfig> deploymentConfig;
         private readonly Mock<IRateLimiting> rateReporter;
@@ -27,7 +28,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
         public SimulationApiModelTest()
         {
             this.logger = new Mock<ILogger>();
-            this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
+            this.connectionStringValidation = new Mock<IConnectionStringValidation>();
             this.servicesConfig = new Mock<IServicesConfig>();
             this.deploymentConfig = new Mock<IDeploymentConfig>();
             this.rateReporter = new Mock<IRateLimiting>();
@@ -40,11 +41,10 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             var simulation = this.GetSimulationModel();
 
             // Act
-            var result = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel.FromServiceModel(
-                simulation);
+            var result = Model.FromServiceModel(simulation);
 
             // Assert
-            Assert.IsType<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel>(result);
+            Assert.IsType<Model>(result);
             Assert.Equal(simulation.Id, result.Id);
         }
 
@@ -95,10 +95,10 @@ namespace WebService.Test.v1.Models.SimulationApiModel
         {
             // Arrange
             var simulationApiModel = this.GetSimulationApiModel();
-            this.SetupConnectionStringManager();
+            this.SetupConnectionStringValidation();
 
             // Act
-            var task = Record.ExceptionAsync(async () => await simulationApiModel.ValidateInputRequestAsync(this.logger.Object, this.connectionStringManager.Object));
+            var task = Record.ExceptionAsync(async () => await simulationApiModel.ValidateInputRequestAsync(this.logger.Object, this.connectionStringValidation.Object));
 
             // Assert
             Assert.Null(task.Exception);
@@ -108,38 +108,38 @@ namespace WebService.Test.v1.Models.SimulationApiModel
         public void ItThrowsBadRequestExceptionForInvalidDeviceModels()
         {
             // Arrange
-            Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel InvalidDeviceModels(Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel model)
+            Model InvalidDeviceModels(Model model)
             {
                 model.DeviceModels = new List<SimulationDeviceModelRef>();
                 return model;
             }
 
             var simulationApiModel = this.GetInvalidSimulationApiModel(InvalidDeviceModels);
-            this.SetupConnectionStringManager();
+            this.SetupConnectionStringValidation();
 
             // Assert
             Assert.ThrowsAsync<BadRequestException>(
-                    async () => await simulationApiModel.ValidateInputRequestAsync(this.logger.Object, this.connectionStringManager.Object))
-                .Wait(Constants.TEST_TIMEOUT);
+                    async () => await simulationApiModel.ValidateInputRequestAsync(this.logger.Object, this.connectionStringValidation.Object))
+                .CompleteOrTimeout();
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItThrowsBadRequestExceptionForInvalidDeviceModelsCount()
         {
             // Arrange
-            Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel InvalidDeviceModels(Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel model)
+            Model InvalidDeviceModels(Model model)
             {
                 model.DeviceModels = new List<SimulationDeviceModelRef>() { new SimulationDeviceModelRef() { Count = 0 } };
                 return model;
             }
 
             var simulationApiModel = this.GetInvalidSimulationApiModel(InvalidDeviceModels);
-            this.SetupConnectionStringManager();
+            this.SetupConnectionStringValidation();
 
             // Assert
             Assert.ThrowsAsync<BadRequestException>(
-                    async () => await simulationApiModel.ValidateInputRequestAsync(this.logger.Object, this.connectionStringManager.Object))
-                .Wait(Constants.TEST_TIMEOUT);
+                    async () => await simulationApiModel.ValidateInputRequestAsync(this.logger.Object, this.connectionStringValidation.Object))
+                .CompleteOrTimeout();
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -157,11 +157,10 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             var expectedAvgMessages = 1.67;
 
             // Act
-            var result = Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel.FromServiceModel(
-                simulation);
+            var result = Model.FromServiceModel(simulation);
 
             // Assert
-            Assert.IsType<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel>(result);
+            Assert.IsType<Model>(result);
             Assert.Equal(simulation.Id, result.Id);
             Assert.NotNull(result.Statistics);
             Assert.Equal(statistics.ActiveDevices, result.Statistics.ActiveDevices);
@@ -176,7 +175,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
         public void ItThrowsBadRequestExceptionForInvalidTimes()
         {
             // Arrange
-            Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel InvalidDates(Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel model)
+            Model InvalidDates(Model model)
             {
                 model.StartTime = "2017-05-31T01:21:37+00:00";
                 model.EndTime = "2017-05-31T01:21:37+00:00";
@@ -184,30 +183,30 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             }
 
             var simulationApiModel = this.GetInvalidSimulationApiModel(InvalidDates);
-            this.SetupConnectionStringManager();
+            this.SetupConnectionStringValidation();
 
             // Assert
             Assert.ThrowsAsync<BadRequestException>(
-                    async () => await simulationApiModel.ValidateInputRequestAsync(this.logger.Object, this.connectionStringManager.Object))
-                .Wait(Constants.TEST_TIMEOUT);
+                    async () => await simulationApiModel.ValidateInputRequestAsync(this.logger.Object, this.connectionStringValidation.Object))
+                .CompleteOrTimeout();
         }
 
-        private void SetupConnectionStringManager()
+        private void SetupConnectionStringValidation()
         {
-            this.connectionStringManager
-                .Setup(x => x.ValidateConnectionStringAsync(It.IsAny<string>()))
+            this.connectionStringValidation
+                .Setup(x => x.TestAsync(It.IsAny<string>(), true))
                 .Returns(Task.CompletedTask);
         }
 
-        private Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel GetInvalidSimulationApiModel(Func<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel, Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel> func)
+        private Model GetInvalidSimulationApiModel(Func<Model, Model> func)
         {
             var model = this.GetSimulationApiModel();
             return func(model);
         }
 
-        private Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel GetSimulationApiModel()
+        private Model GetSimulationApiModel()
         {
-            var simulationApiModel = new Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel
+            var simulationApiModel = new Model
             {
                 Id = "id",
                 ETag = "etag",

@@ -98,7 +98,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // When using bulk operations, this is the max number of devices that the registry APIs allow
         private const int REGISTRY_MAX_BATCH_SIZE = 100;
 
-        private readonly IIotHubConnectionStringManager connectionStringManager;
+        private readonly IConnectionStrings connectionStrings;
         private readonly IDeviceClientWrapper deviceClient;
         private readonly IRegistryManager registry;
 
@@ -114,7 +114,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         public Devices(
             IServicesConfig config,
-            IIotHubConnectionStringManager connStringManager,
+            IConnectionStrings connStrings,
             IRegistryManager registryManager,
             IDeviceClientWrapper deviceClient,
             ILogger logger,
@@ -122,7 +122,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IInstance instance)
         {
             this.config = config;
-            this.connectionStringManager = connStringManager;
+            this.connectionStrings = connStrings;
             this.registry = registryManager;
             this.deviceClient = deviceClient;
             this.log = logger;
@@ -144,7 +144,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 // TODO: use the simulation object to decide which conn string to use
                 // Retrieve connection string from file/storage
-                this.connString = await this.connectionStringManager.GetConnectionStringAsync();
+                this.connString = await this.connectionStrings.GetAsync();
 
                 // Parse connection string, this triggers an exception if the string is invalid
                 IotHubConnectionStringBuilder connStringBuilder = IotHubConnectionStringBuilder.Create(this.connString);
