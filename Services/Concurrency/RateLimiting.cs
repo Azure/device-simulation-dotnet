@@ -15,7 +15,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         long GetPauseForNextMessage();
         double GetThroughputForMessages();
         void ChangeClusterSize(int currentCount);
-        void Init(IRateLimitingConfig rateLimits);
+        void Init(IRateLimitingConfig config);
     }
 
     public class RateLimiting : IRateLimiting
@@ -48,24 +48,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             this.instance = instance;
         }
 
-        public void Init(IRateLimitingConfig rateLimits)
+        public void Init(IRateLimitingConfig config)
         {
             this.instance.InitOnce();
 
             this.connections = new PerSecondCounter(
-                rateLimits.ConnectionsPerSecond, "Device connections", this.log);
+                config.ConnectionsPerSecond, "Device connections", this.log);
 
             this.registryOperations = new PerMinuteCounter(
-                rateLimits.RegistryOperationsPerMinute, "Registry operations", this.log);
+                config.RegistryOperationsPerMinute, "Registry operations", this.log);
 
             this.twinReads = new PerSecondCounter(
-                rateLimits.TwinReadsPerSecond, "Twin reads", this.log);
+                config.TwinReadsPerSecond, "Twin reads", this.log);
 
             this.twinWrites = new PerSecondCounter(
-                rateLimits.TwinWritesPerSecond, "Twin writes", this.log);
+                config.TwinWritesPerSecond, "Twin writes", this.log);
 
             this.messaging = new PerSecondCounter(
-                rateLimits.DeviceMessagesPerSecond, "Device msg/sec", this.log);
+                config.DeviceMessagesPerSecond, "Device msg/sec", this.log);
 
             this.instance.InitComplete();
         }

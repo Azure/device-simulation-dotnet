@@ -1,7 +1,5 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-using Newtonsoft.Json;
-
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
     public interface IRateLimitingConfig
