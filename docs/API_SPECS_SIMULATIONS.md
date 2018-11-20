@@ -458,8 +458,11 @@ Content-Type: application/json; charset=utf-8
 
 ## Creating a simulation with custom rate limits (aka throttling limits)
 
-IoT Hub enforces some are rate limitations aka throttling limits that are applied in minute ranges, and are intended to prevent abuse. Simulation services follows the same limits in order to 
-avoid getting errors from the IoT Hub. The following example shows how to override the rate limits for simulation. These can be changed according to the targeted IoT Hub.
+IoT Hub enforces some rate limitations, aka throttling limits, that are applied
+in minute ranges, and are intended to prevent abuse. The simulation service follows
+the same limits in order to avoid getting errors from the IoT Hub. The following
+example shows how to override the rate limits for a simulation. These can be changed
+accordingli to the targeted IoT Hub, for example depending on the IoT Hub SKU.
 
 Request:
 ```
@@ -571,10 +574,10 @@ There are some read-only properties in the api response.
 * `DevicesDeletionComplete` is a calculated property, reporting whether the devices has
   been deleted after the simulation has stopped running.
 * `StoppedTime` is the time when the simulation was manually
-  stopped before it's scheduled `EndTime`. 
+  stopped before its scheduled `EndTime`. 
 * `PreprovisionedIoTHubInUse`: whether the simulation ran or is running
   using the Azure IoT Hub created during the solution deployment.
-* `PreprovisionedIoTHubMetricsUrl`: the url to navigate to the IoT Hub
+* `PreprovisionedIoTHubMetricsUrl`: the URL to navigate to the IoT Hub
   metrics page. 
 * `Statistics` is a set of read only properties providing counters
   at a given time. 
