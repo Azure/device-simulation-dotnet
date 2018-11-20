@@ -238,7 +238,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             // Arrange
             var simulationApiModel = this.GetBasicSimulationApiModel();
             var connectionsPerSecond = 100;
-            simulationApiModel.RateLimits = new RateLimitingConfig { ConnectionsPerSecond = connectionsPerSecond };
+            simulationApiModel.RateLimits = new SimulationRateLimits { ConnectionsPerSecond = connectionsPerSecond };
 
             this.SetupDefaultRateLimits();
 
@@ -274,7 +274,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             this.defaultRateLimits.Setup(x => x.DeviceMessagesPerSecond).Returns(DEVICE_MSGS_PER_SECOND);
         }
 
-        private Model GetInvalidSimulationApiModel(Func<Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel, Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel> func)
+        private Model GetInvalidSimulationApiModel(Func<Model, Model> func)
         {
             var model = this.GetSimulationApiModel();
             return func(model);
@@ -298,7 +298,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
                     }
                 },
                 IotHubs = new List<SimulationIotHub> { new SimulationIotHub("HostName=[hubname];SharedAccessKeyName=[iothubowner];SharedAccessKey=[valid key]") },
-                RateLimits = new RateLimitingConfig
+                RateLimits = new SimulationRateLimits
                 {
                     ConnectionsPerSecond = 100,
                     RegistryOperationsPerMinute = 100,
@@ -311,9 +311,9 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             return simulationApiModel;
         }
 
-        private Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel GetBasicSimulationApiModel()
+        private Model GetBasicSimulationApiModel()
         {
-            var simulationApiModel = new Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.SimulationApiModel.SimulationApiModel
+            var simulationApiModel = new Model
             {
                 Id = "id",
                 ETag = "etag",

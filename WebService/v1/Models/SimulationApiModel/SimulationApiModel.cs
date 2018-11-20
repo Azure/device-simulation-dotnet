@@ -72,7 +72,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         public SimulationStatistics Statistics { get; set; }
 
         [JsonProperty(PropertyName = "RateLimits")]
-        public IRateLimitingConfig RateLimits { get; set; }
+        public SimulationRateLimits RateLimits { get; set; }
 
         // Note: read-only metadata
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
@@ -102,7 +102,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             this.EndTime = null;
             this.StoppedTime = null;
             this.DeviceModels = new List<SimulationDeviceModelRef>();
-            this.RateLimits = new RateLimitingConfig();
+            this.RateLimits = new SimulationRateLimits();
         }
 
         // Map API model to service model, keeping the original fields when needed
@@ -206,7 +206,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
             result.DeviceModels = SimulationDeviceModelRef.FromServiceModel(value.DeviceModels);
             result.Statistics = GetSimulationStatistics(value);
-            result.RateLimits = value.RateLimits;
+            result.RateLimits = SimulationRateLimits.FromServiceModel(value.RateLimits);
 
             result.created = value.Created;
             result.modified = value.Modified;
