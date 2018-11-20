@@ -14,9 +14,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         long GetPauseForNextTwinWrite();
         long GetPauseForNextMessage();
         double GetThroughputForMessages();
-        void ResetCounters();
         void ChangeClusterSize(int currentCount);
-        void Init(IRateLimitingConfig rateLimitingConfig);
+        void Init(IRateLimitingConfig config);
     }
 
     public class RateLimiting : IRateLimiting
@@ -41,7 +40,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         // Note: this class should be used only via the simulation context
         // to ensure that concurrent simulations don't share data
         public RateLimiting(
-            IRateLimitingConfig config,
             ILogger log,
             IInstance instance)
         {
@@ -70,15 +68,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 config.DeviceMessagesPerSecond, "Device msg/sec", this.log);
 
             this.instance.InitComplete();
-        }
-
-        public void ResetCounters()
-        {
-            this.connections.ResetCounter();
-            this.registryOperations.ResetCounter();
-            this.twinReads.ResetCounter();
-            this.twinWrites.ResetCounter();
-            this.messaging.ResetCounter();
         }
 
         public void ChangeClusterSize(int count)

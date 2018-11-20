@@ -295,7 +295,7 @@ namespace Services.Test
                 .Wait(Constants.TEST_TIMEOUT);
         }
 
-        [Fact]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void UpsertWillSucceedWhenETagsMatch()
         {
             // Arrange

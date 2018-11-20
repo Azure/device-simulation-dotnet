@@ -3,14 +3,12 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Moq;
 using SimulationAgent.Test.helpers;
 using Xunit;
@@ -26,12 +24,8 @@ namespace SimulationAgent.Test.DeviceConnection
         private readonly Mock<IDevices> devices;
         private readonly Mock<IScriptInterpreter> scriptInterpreter;
         private readonly Mock<IDeviceClient> deviceClient;
-        private readonly Mock<IDeviceStateActor> deviceStateActor;
         private readonly Mock<IDeviceConnectionActor> mockDeviceContext;
-        private readonly Mock<IRateLimitingConfig> rateLimitingConfig;
-        private readonly Mock<ConnectionLoopSettings> loopSettings;
         private readonly Mock<IInstance> mockInstance;
-
         private readonly DeviceModel deviceModel;
         private readonly Disconnect target;
 
@@ -40,11 +34,8 @@ namespace SimulationAgent.Test.DeviceConnection
             this.logger = new Mock<ILogger>();
             this.devices = new Mock<IDevices>();
             this.scriptInterpreter = new Mock<IScriptInterpreter>();
-            this.rateLimitingConfig = new Mock<IRateLimitingConfig>();
-            this.deviceStateActor = new Mock<IDeviceStateActor>();
             this.mockDeviceContext = new Mock<IDeviceConnectionActor>();
             this.deviceClient = new Mock<IDeviceClient>();
-            this.loopSettings = new Mock<ConnectionLoopSettings>(this.rateLimitingConfig.Object);
             this.mockInstance = new Mock<IInstance>();
             this.deviceModel = new DeviceModel { Id = DEVICE_ID };
 
