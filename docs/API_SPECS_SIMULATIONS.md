@@ -462,7 +462,7 @@ IoT Hub enforces some rate limitations, aka throttling limits, that are applied
 in minute ranges, and are intended to prevent abuse. The simulation service follows
 the same limits in order to avoid getting errors from the IoT Hub. The following
 example shows how to override the rate limits for a simulation. These can be changed
-accordingli to the targeted IoT Hub, for example depending on the IoT Hub SKU.
+accordingly to the targeted IoT Hub, for example depending on the IoT Hub SKU.
 
 Request:
 ```
