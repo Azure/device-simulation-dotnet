@@ -458,9 +458,8 @@ Content-Type: application/json; charset=utf-8
 
 ## Creating a simulation with custom rate limits (aka throttling limits)
 
-The following example shows how to override the rate limits for simulation. Service controls
-the outbound requests to IoT Hub in order to avoid getting throttled. These can be changed 
-according to the targeted IoT Hub.
+IoT Hub enforces some are rate limitations aka throttling limits that are applied in minute ranges, and are intended to prevent abuse. Simulation services follows the same limits in order to 
+avoid getting errors from the IoT Hub. The following example shows how to override the rate limits for simulation. These can be changed according to the targeted IoT Hub.
 
 Request:
 ```
@@ -469,7 +468,6 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-   "ETag":"*",
    "Name":"Sample Simulation",
    "Desc":"This is a sample simulation.",
    "Enabled":true,
@@ -491,14 +489,13 @@ Content-Type: application/json; charset=utf-8
       "TwinReadsPerSecond":12,
       "TwinWritesPerSecond":10,
       "ConnectionsPerSecond":120,
-      "DeviceMessagesPerSecond":120,
-      "DeviceMessagesPerDay":6000000
+      "DeviceMessagesPerSecond":120
    }
 }
 ```
-More details about these limits: https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-quotas-throttling
+More details about these limits: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-quotas-throttling
 
-## Get details of the simulation, including device models, rate limits and statistics
+## Get details of a simulation, including device models, rate limits and statistics
 
 Request:
 ```
@@ -512,7 +509,7 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-   "ETag":"969ee1fb277640",
+   "ETag":"\"2a008403-0000-0700-0000-5bef24c70000\"",
    "Id":"1",
    "Name":"Sample Simulation",
    "Description":"This is a sample simulation",
@@ -569,10 +566,10 @@ Content-Type: application/json; charset=utf-8
 There are some read-only properties in the api response. 
 * `Running` is a calculated property, reporting whether the simulation is
   currently running.
-* `ActiveNow` is a calculated property, reporting whether the simulation is
-  setting up resources in order to start running.
+* `ActiveNow` is a calculated property, reporting whether the simulation is enabled and is
+  setting up resources (provisioning VMs, creating devices) in order to start running.
 * `DevicesDeletionComplete` is a calculated property, reporting whether the devices has
-  been deleted after simulation has stopped running.
+  been deleted after the simulation has stopped running.
 * `StoppedTime` is the time when the simulation was manually
   stopped before it's scheduled `EndTime`. 
 * `PreprovisionedIoTHubInUse`: whether the simulation ran or is running

@@ -22,6 +22,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "DeviceMessagesPerSecond")]
         public int DeviceMessagesPerSecond { get; set; }
 
+        // Note: This is not implemented yet. i.e. whatever value the user passes, the value is ignored.
         [JsonProperty(PropertyName = "DeviceMessagesPerDay")]
         public long DeviceMessagesPerDay { get; set; }
 
