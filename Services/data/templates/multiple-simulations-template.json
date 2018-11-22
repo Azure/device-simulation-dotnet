@@ -1,7 +1,7 @@
 ﻿[
   {
     "Name": "Sample Multi-Model Simulation",
-    "Description": "An example showing a simulation with more than one type of device",
+    "Description": "A sample simulation with multiple device types",
     "Enabled": false,
     "IotHubConnectionStrings": [
       "default"
