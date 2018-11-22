@@ -13,7 +13,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface IPreprovisionedIotHub
     {
         // Ping the registry to see if the connection is healthy
-        Task<StatusResultServiceModel> PingRegistryAsync();
+        Task<Tuple<bool, string>> PingRegistryAsync();
     }
 
     public class PreprovisionedIotHub : IPreprovisionedIotHub
@@ -36,23 +36,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         // Ping the registry to see if the connection is healthy
-        public async Task<StatusResultServiceModel> PingRegistryAsync()
+        public async Task<Tuple<bool, string>> PingRegistryAsync()
         {
-            var result = new StatusResultServiceModel(false, "IoTHub check failed");
-            
+            await this.InitAsync();
+
             try
             {
                 await this.InitAsync();
                 await this.registry.GetDeviceAsync("healthcheck");
-                result.IsHealthy = true;
-                result.Message = "Alive and Well!";
+                return new Tuple<bool, string>(true, "OK");
             }
             catch (Exception e)
             {
                 this.log.Error("Device registry test failed", e);
+                return new Tuple<bool, string>(false, e.Message);
             }
-
-            return result;
         }
 
         // This call can throw an exception, which is fine when the exception happens during a method
