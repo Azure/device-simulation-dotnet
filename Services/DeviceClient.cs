@@ -236,7 +236,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var timeSpentMsecs = GetTimeSpentMsecs();
                 this.log.Error("Message delivery IOException",
-                    () => new { timeSpentMsecs, Protocol = this.protocol.ToString(), e });
+                    () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
 
                 throw new TelemetrySendIOException("Message delivery I/O failed with " + e.Message, e);
             }
@@ -246,7 +246,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 var timeSpentMsecs = GetTimeSpentMsecs();
                 this.log.Error("Message delivery failed",
-                    () => new { timeSpentMsecs, Protocol = this.protocol.ToString(), e });
+                    () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
 
                 throw new TelemetrySendException("Message delivery failed with " + e.Message, e);
             }
@@ -255,7 +255,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 // This error often occurs under CPU stress, apparently a bug in the internal AMQP library
                 var timeSpentMsecs = GetTimeSpentMsecs();
                 this.log.Error("Message delivery failed, internal client failure",
-                    () => new { timeSpentMsecs, Protocol = this.protocol.ToString(), e });
+                    () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
 
                 throw new BrokenDeviceClientException("Message delivery failed, internal client failure", e);
             }
@@ -263,7 +263,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var timeSpentMsecs = GetTimeSpentMsecs();
                 this.log.Error("Message delivery failed",
-                    () => new { timeSpentMsecs, Protocol = this.protocol.ToString(), e });
+                    () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
 
                 throw new TelemetrySendException("Message delivery failed with " + e.Message, e);
             }

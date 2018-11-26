@@ -30,10 +30,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
                 var name = data.Name;
                 var value = data.GetValue(o, index: null);
 
-                if (value is Exception)
+                if (value is Exception e)
                 {
-                    var e = value as Exception;
                     logdata.Add(name, SerializeException(e));
+                }
+                else if (value is double d)
+                {
+                    d = (long) (d * 1000);
+                    d = d / 1000;
+                    logdata.Add(name, d);
                 }
                 else
                 {

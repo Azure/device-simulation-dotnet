@@ -230,7 +230,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             foreach (var manager in managersToStop)
             {
+                this.log.Info("Stopping simulation", () => new { manager.Key });
+
+                // Note: SaveStatisticsAsync doesn't throw exceptions
                 await manager.Value.SaveStatisticsAsync();
+
                 manager.Value.TearDown();
                 if (!this.simulationManagers.TryRemove(manager.Key, out _))
                 {
@@ -250,18 +254,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             {
                 foreach (var simulation in simulations)
                 {
-                    try
+                    if (this.simulationManagers.ContainsKey(simulation.Id))
                     {
-                        if (this.simulationManagers.ContainsKey(simulation.Id))
-                        {
-                            {
-                                await this.simulationManagers[simulation.Id].SaveStatisticsAsync();
-                            }
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        this.log.Error("Failed to save simulation statistics.", () => new { simulation.Id, e });
+                        // Note: SaveStatisticsAsync doesn't throw exceptions
+                        await this.simulationManagers[simulation.Id].SaveStatisticsAsync();
                     }
                 }
 
@@ -279,6 +275,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             {
                 try
                 {
+                    this.log.Info("Starting simulation", () => new { simulation.Id });
+
                     var manager = this.factory.Resolve<ISimulationManager>();
                     await manager.InitAsync(
                         simulation,
