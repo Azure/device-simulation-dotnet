@@ -66,6 +66,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                 () => new { this.deviceId, MessageSchema = this.message.MessageSchema.Name, msg });
 
             var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
 
             try
             {
@@ -74,21 +75,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
                 await this.context.Client.SendMessageAsync(msg, this.message.MessageSchema);
 
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                var timeSpentMsecs = GetTimeSpentMsecs();
                 this.log.Debug("Telemetry delivered",
                     () => new { timeSpentMsecs, this.deviceId, MessageSchema = this.message.MessageSchema.Name });
+
                 this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
             }
             catch (BrokenDeviceClientException e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Error("Client broke while sending telemetry", () => new { timeSpentMsecs, this.deviceId, e });
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Client broke while sending telemetry",
+                    () => new { timeSpentMsecs, this.deviceId, e });
+
                 this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryClientBroken);
             }
             catch (Exception e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Error("Unexpected error while sending telemetry", () => new { timeSpentMsecs, this.deviceId, e });
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Unexpected error while sending telemetry",
+                    () => new { timeSpentMsecs, this.deviceId, e });
+
                 this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendFailure);
             }
         }

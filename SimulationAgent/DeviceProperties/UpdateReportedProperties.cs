@@ -31,7 +31,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         public async Task RunAsync()
         {
             this.log.Debug("Sending device properties update...", () => new { this.deviceId });
+
             var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
 
             try
             {
@@ -46,9 +48,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
                     // Update the device twin with the current device properties state
                     await this.context.Client.UpdatePropertiesAsync(this.context.DeviceProperties);
-                    var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                    this.log.Debug("Device property updates delivered", () => new { timeSpentMsecs, this.deviceId, properties });
-                    this.context.HandleEvent(DevicePropertiesActor.ActorEvents.PropertiesUpdated);
+
+                    var timeSpentMsecs = GetTimeSpentMsecs();
+                    this.log.Debug("Device property updates delivered",
+                        () => new { timeSpentMsecs, this.deviceId, properties });
 
                     // Mark properties as updated
                     this.context.DeviceProperties.ResetChanged();
@@ -56,15 +59,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                 else
                 {
                     // Device could be rebooting, updating firmware, etc.
-                    var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                    this.log.Debug("No properties will be updated because the device is offline...", () => new { timeSpentMsecs, this.deviceId });
+                    var timeSpentMsecs = GetTimeSpentMsecs();
+                    this.log.Debug("No properties will be updated because the device is offline",
+                        () => new { timeSpentMsecs, this.deviceId });
+
                     this.context.HandleEvent(DevicePropertiesActor.ActorEvents.PropertiesUpdateFailed);
                 }
             }
             catch (Exception e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Error("Error while updating the reported properties in the device twin", () => new { timeSpentMsecs, this.deviceId, e });
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Error while updating the reported properties in the device twin",
+                    () => new { timeSpentMsecs, this.deviceId, e });
+
                 this.context.HandleEvent(DevicePropertiesActor.ActorEvents.PropertiesUpdateFailed);
             }
         }

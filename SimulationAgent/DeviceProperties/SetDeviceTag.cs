@@ -32,19 +32,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         public async Task RunAsync()
         {
             this.log.Debug("Adding tag to device twin...", () => new { this.deviceId });
+
             var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
 
             try
             {
                 await this.devices.AddTagAsync(this.deviceId);
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+
+                var timeSpentMsecs = GetTimeSpentMsecs();
                 this.log.Debug("Device tag set", () => new { timeSpentMsecs, this.deviceId });
+
                 this.context.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTagged);
             }
             catch (Exception e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Error("Error while tagging the device twin", () => new { timeSpentMsecs, this.deviceId, e });
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Error while tagging the device twin",
+                    () => new { timeSpentMsecs, this.deviceId, e });
+
                 this.context.HandleEvent(DevicePropertiesActor.ActorEvents.DeviceTaggingFailed);
             }
         }

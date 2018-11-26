@@ -40,21 +40,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         {
             this.instance.InitRequired();
 
-            this.log.Debug("Deregistering device...", () => new { this.deviceId });
+            this.log.Debug("De-registering device...", () => new { this.deviceId });
+
+            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
 
             try
             {
-                var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 await this.simulationContext.Devices.DeleteAsync(this.deviceId);
 
-                var timeSpent = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - now;
-                this.log.Debug("Device deregistered", () => new { this.deviceId, timeSpent });
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Debug("Device de-registered",
+                    () => new { timeSpentMsecs, this.deviceId });
 
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceDeregistered);
             }
             catch (Exception e)
             {
-                this.log.Error("Error while registering the device", () => new { this.deviceId, e });
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Error while de-registering the device",
+                    () => new { timeSpentMsecs, this.deviceId, e });
+
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DeregisterationFailed);
             }
         }

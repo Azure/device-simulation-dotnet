@@ -121,10 +121,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             catch (Exception e)
             {
                 var msg = "Unable to load device model from storage";
-                this.log.Error(msg,
-                    () => new { id, e.Message, Exception = e });
-                this.diagnosticsLogger.LogServiceError(msg,
-                    new { id, e.Message, Exception = e.Message });
+                this.log.Error(msg, () => new { id, e });
+                this.diagnosticsLogger.LogServiceError(msg, new { id, Exception = e.Message });
                 throw new ExternalDependencyException(msg, e);
             }
 
@@ -136,8 +134,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to parse device model loaded from storage",
-                    () => new { id, e.Message, Exception = e });
+                this.log.Error("Unable to parse device model loaded from storage", () => new { id, e });
                 throw new ExternalDependencyException("Unable to parse device model loaded from storage", e);
             }
         }

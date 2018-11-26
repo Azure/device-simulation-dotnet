@@ -51,7 +51,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.instance.InitRequired();
 
             this.log.Debug("Connecting...", () => new { this.deviceId });
+
             var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
 
             try
             {
@@ -71,26 +73,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
                 await this.deviceContext.Client.RegisterDesiredPropertiesUpdateAsync(this.deviceContext.DeviceProperties);
 
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Debug("Device connected", () => new { timeSpentMsecs, this.deviceId });
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Debug("Device connected",
+                    () => new { timeSpentMsecs, this.deviceId });
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.Connected);
             }
             catch (DeviceAuthFailedException e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Error("Invalid connection credentials", () => new { timeSpentMsecs, this.deviceId, e });
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Invalid connection credentials",
+                    () => new { timeSpentMsecs, this.deviceId, e });
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.AuthFailed);
             }
             catch (DeviceNotFoundException e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Error("Device not found", () => new { timeSpentMsecs, this.deviceId, e });
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Device not found",
+                    () => new { timeSpentMsecs, this.deviceId, e });
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceNotFound);
             }
             catch (Exception e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Error("Connection error", () => new { timeSpentMsecs, this.deviceId, e });
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Connection error",
+                    () => new { timeSpentMsecs, this.deviceId, e });
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.ConnectionFailed);
             }
         }

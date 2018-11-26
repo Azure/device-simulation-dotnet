@@ -41,22 +41,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.instance.InitRequired();
 
             this.log.Debug("Registering device...", () => new { this.deviceId });
+
             var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
 
             try
             {
                 var device = await this.simulationContext.Devices.CreateAsync(this.deviceId);
 
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Debug("Device registered", () => new { timeSpentMsecs, this.deviceId });
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Debug("Device registered",
+                    () => new { timeSpentMsecs, this.deviceId });
 
                 this.deviceContext.Device = device;
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceRegistered);
             }
             catch (Exception e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Error("Error while registering the device", () => new { timeSpentMsecs, this.deviceId, e });
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Error while registering the device",
+                    () => new { timeSpentMsecs, this.deviceId, e });
+
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.RegistrationFailed);
             }
         }

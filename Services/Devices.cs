@@ -255,9 +255,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             this.log.Debug("Fetching device from registry", () => new { deviceId });
 
-            Device result = null;
             var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
 
+            Device result = null;
             try
             {
                 Azure.Devices.Device device = await this.registry.GetDeviceAsync(deviceId);
@@ -267,19 +268,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
                 else
                 {
-                    var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                    var timeSpentMsecs = GetTimeSpentMsecs();
                     this.log.Debug("Device not found", () => new { timeSpentMsecs, deviceId });
                 }
             }
             catch (Exception e) when (e is TaskCanceledException || e.InnerException is TaskCanceledException)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                var timeSpentMsecs = GetTimeSpentMsecs();
                 this.log.Error("Get device task timed out", () => new { timeSpentMsecs, deviceId, e.Message });
+
                 throw new ExternalDependencyException("Get device task timed out", e);
             }
             catch (Exception e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                var timeSpentMsecs = GetTimeSpentMsecs();
                 var msg = "Unable to fetch the IoT device";
                 this.log.Error(msg, () => new { timeSpentMsecs, deviceId, e });
                 this.diagnosticsLogger.LogServiceError(msg, new { timeSpentMsecs, deviceId, e.Message });
@@ -295,6 +297,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.instance.InitRequired();
 
             var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
 
             try
             {
@@ -307,7 +310,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                var timeSpentMsecs = GetTimeSpentMsecs();
                 var msg = "Unable to create the device";
                 this.log.Error(msg, () => new { timeSpentMsecs, deviceId, e });
                 this.diagnosticsLogger.LogServiceError(msg, new { timeSpentMsecs, deviceId, e.Message });

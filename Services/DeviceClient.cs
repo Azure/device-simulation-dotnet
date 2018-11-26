@@ -74,6 +74,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             if (this.client != null && !this.connected)
             {
+                var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+
                 try
                 {
                     // TODO: HTTP clients don't "connect", find out how HTTP connections are measured and throttled
@@ -86,12 +89,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     // Note: this exception might not occur with HTTP
                     // TODO: test for HTTP
 
-                    this.log.Error("Device connection auth failed", () => new { this.deviceId, this.protocol, e });
+                    var timeSpentMsecs = GetTimeSpentMsecs();
+                    this.log.Error("Device connection auth failed",
+                        () => new { timeSpentMsecs, this.deviceId, this.protocol, e });
                     throw new DeviceAuthFailedException(e);
                 }
                 catch (DeviceNotFoundException e)
                 {
-                    this.log.Error("Device not found", () => new { this.deviceId, this.protocol, e });
+                    var timeSpentMsecs = GetTimeSpentMsecs();
+                    this.log.Error("Device not found",
+                        () => new { timeSpentMsecs, this.deviceId, this.protocol, e });
                     throw new DeviceNotFoundException(this.deviceId);
                 }
             }
@@ -162,24 +169,29 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task UpdatePropertiesAsync(ISmartDictionary properties)
         {
+            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+
             try
             {
                 var reportedProperties = this.SmartDictionaryToTwinCollection(properties);
                 await this.client.UpdateReportedPropertiesAsync(reportedProperties);
-                this.log.Debug("Update reported properties for device", () => new
-                {
-                    this.deviceId,
-                    reportedProperties
-                });
+
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Debug("Update reported properties for device",
+                    () => new { this.deviceId, timeSpentMsecs, reportedProperties });
             }
             catch (KeyNotFoundException e)
             {
                 // This exception sometimes occurs when calling UpdateReportedPropertiesAsync.
                 // Still unknown why, apparently an issue with the internal AMQP library
                 // used by IoT SDK. We need to collect extra information to report the issue.
+                // The exception is logged differently than usual to capture info that might help fixing the SDK.
+                var timeSpentMsecs = GetTimeSpentMsecs();
                 this.log.Error("Unexpected error, failed to update reported properties",
                     () => new
                     {
+                        timeSpentMsecs,
                         Protocol = this.protocol.ToString(),
                         Exception = e.GetType().FullName,
                         e.Message,
@@ -192,51 +204,39 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
+                var timeSpentMsecs = GetTimeSpentMsecs();
                 this.log.Error("Failed to update reported properties",
-                    () => new
-                    {
-                        Protocol = this.protocol.ToString(),
-                        ExceptionMessage = e.Message,
-                        Exception = e.GetType().FullName,
-                        e.InnerException
-                    });
+                    () => new { timeSpentMsecs, Protocol = this.protocol.ToString(), e });
+
             }
         }
 
         private async Task SendRawMessageAsync(Message message)
         {
+            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+
             try
             {
                 await this.client.SendEventAsync(message);
 
-                this.log.Debug("SendRawMessageAsync for device", () => new
-                {
-                    this.deviceId
-                });
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Debug("SendRawMessageAsync for device",
+                    () => new { timeSpentMsecs, this.deviceId });
             }
             catch (TimeoutException e)
             {
+                var timeSpentMsecs = GetTimeSpentMsecs();
                 this.log.Error("Message delivery timed out",
-                    () => new
-                    {
-                        Protocol = this.protocol.ToString(),
-                        ExceptionMessage = e.Message,
-                        Exception = e.GetType().FullName,
-                        e.InnerException
-                    });
+                    () => new { timeSpentMsecs, Protocol = this.protocol.ToString(), e });
 
                 throw new TelemetrySendTimeoutException("Message delivery timed out with " + e.Message, e);
             }
             catch (IOException e)
             {
-                this.log.Error("Message delivery IOExcepotion",
-                    () => new
-                    {
-                        Protocol = this.protocol.ToString(),
-                        ExceptionMessage = e.Message,
-                        Exception = e.GetType().FullName,
-                        e.InnerException
-                    });
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Message delivery IOException",
+                    () => new { timeSpentMsecs, Protocol = this.protocol.ToString(), e });
 
                 throw new TelemetrySendIOException("Message delivery I/O failed with " + e.Message, e);
             }
@@ -244,41 +244,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 var e = aggEx.InnerException;
 
+                var timeSpentMsecs = GetTimeSpentMsecs();
                 this.log.Error("Message delivery failed",
-                    () => new
-                    {
-                        Protocol = this.protocol.ToString(),
-                        ExceptionMessage = e.Message,
-                        Exception = e.GetType().FullName,
-                        e.InnerException
-                    });
+                    () => new { timeSpentMsecs, Protocol = this.protocol.ToString(), e });
 
                 throw new TelemetrySendException("Message delivery failed with " + e.Message, e);
             }
             catch (ObjectDisposedException e)
             {
                 // This error often occurs under CPU stress, apparently a bug in the internal AMQP library
+                var timeSpentMsecs = GetTimeSpentMsecs();
                 this.log.Error("Message delivery failed, internal client failure",
-                    () => new
-                    {
-                        Protocol = this.protocol.ToString(),
-                        ExceptionMessage = e.Message,
-                        Exception = e.GetType().FullName,
-                        e.InnerException
-                    });
+                    () => new { timeSpentMsecs, Protocol = this.protocol.ToString(), e });
 
                 throw new BrokenDeviceClientException("Message delivery failed, internal client failure", e);
             }
             catch (Exception e)
             {
+                var timeSpentMsecs = GetTimeSpentMsecs();
                 this.log.Error("Message delivery failed",
-                    () => new
-                    {
-                        Protocol = this.protocol.ToString(),
-                        ExceptionMessage = e.Message,
-                        Exception = e.GetType().FullName,
-                        e.InnerException
-                    });
+                    () => new { timeSpentMsecs, Protocol = this.protocol.ToString(), e });
 
                 throw new TelemetrySendException("Message delivery failed with " + e.Message, e);
             }

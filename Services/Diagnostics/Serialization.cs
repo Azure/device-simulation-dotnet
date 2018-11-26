@@ -44,7 +44,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             return JsonConvert.SerializeObject(logdata, serializationSettings);
         }
 
-        public static object SerializeException(Exception e, int depth = 3)
+        public static object SerializeException(Exception e, int depth = 4)
         {
             if (e == null) return null;
             if (depth == 0) return "-max serialization depth reached-";
