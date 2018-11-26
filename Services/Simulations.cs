@@ -375,7 +375,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             // modify other fields, so we need to check for null
             if (patch.Enabled != null) simulation.Enabled = patch.Enabled.Value;
 
-            if (patch.DeleteDevicesOnce != null)
+            if (patch.DeleteDevicesOnce.HasValue)
             {
                 simulation.DeleteDevicesOnce = patch.DeleteDevicesOnce.Value;
             }
