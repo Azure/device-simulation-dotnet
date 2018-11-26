@@ -554,8 +554,7 @@ Content-Type: application/json; charset=utf-8
       "TwinReadsPerSecond":12,
       "TwinWritesPerSecond":10,
       "ConnectionsPerSecond":120,
-      "DeviceMessagesPerSecond":120,
-      "DeviceMessagesPerDay":6000000
+      "DeviceMessagesPerSecond":120
    },
    "$metadata":{
       "$type":"Simulation;1",

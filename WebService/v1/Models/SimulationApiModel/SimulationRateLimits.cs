@@ -22,10 +22,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "DeviceMessagesPerSecond")]
         public int DeviceMessagesPerSecond { get; set; }
 
-        // Note: This is not implemented yet. i.e. whatever value the user passes, the value is ignored.
-        [JsonProperty(PropertyName = "DeviceMessagesPerDay")]
-        public long DeviceMessagesPerDay { get; set; }
-
         public IRateLimitingConfig ToServiceModel(IRateLimitingConfig defaultRateLimits)
         {
             var connectionsPerSecond = this.ConnectionsPerSecond > 0 ? this.ConnectionsPerSecond : defaultRateLimits.ConnectionsPerSecond;
@@ -33,7 +29,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             var twinReadsPerSecond = this.TwinReadsPerSecond > 0 ? this.TwinReadsPerSecond : defaultRateLimits.TwinReadsPerSecond;
             var twinWritesPerSecond = this.TwinWritesPerSecond > 0 ? this.TwinWritesPerSecond : defaultRateLimits.TwinWritesPerSecond;
             var deviceMessagesPerSecond = this.DeviceMessagesPerSecond > 0 ? this.DeviceMessagesPerSecond : defaultRateLimits.DeviceMessagesPerSecond;
-            var deviceMessagesPerDay = this.DeviceMessagesPerDay > 0 ? this.DeviceMessagesPerDay : defaultRateLimits.DeviceMessagesPerDay;
 
             return new RateLimitingConfig
             {
@@ -41,8 +36,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 RegistryOperationsPerMinute = registryOperationsPerMinute,
                 TwinReadsPerSecond = twinReadsPerSecond,
                 TwinWritesPerSecond = twinWritesPerSecond,
-                DeviceMessagesPerSecond = deviceMessagesPerSecond,
-                DeviceMessagesPerDay = deviceMessagesPerDay
+                DeviceMessagesPerSecond = deviceMessagesPerSecond
             };
         }
 
@@ -54,8 +48,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 RegistryOperationsPerMinute = simulationRateLimits.RegistryOperationsPerMinute,
                 TwinReadsPerSecond = simulationRateLimits.TwinReadsPerSecond,
                 TwinWritesPerSecond = simulationRateLimits.TwinWritesPerSecond,
-                DeviceMessagesPerSecond = simulationRateLimits.DeviceMessagesPerSecond,
-                DeviceMessagesPerDay = simulationRateLimits.DeviceMessagesPerDay
+                DeviceMessagesPerSecond = simulationRateLimits.DeviceMessagesPerSecond
             };
         }
     }

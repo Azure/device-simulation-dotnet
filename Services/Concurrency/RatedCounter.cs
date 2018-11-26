@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 
+// TODO: optimize the memory usage https://github.com/Azure/device-simulation-dotnet/issues/80
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
     public class PerSecondCounter : RatedCounter
@@ -23,17 +24,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         public PerMinuteCounter(int rate, string name, ILogger logger)
             : base(rate, 60 * 1000, name, logger)
         {
-        }
-    }
-
-    // TODO: optimize the memory usage for this counter (see Queue<long> usage)
-    //       https://github.com/Azure/device-simulation-dotnet/issues/80
-    public class PerDayCounter : RatedCounter
-    {
-        public PerDayCounter(int rate, string name, ILogger logger)
-            : base(rate, 86400 * 1000, name, logger)
-        {
-            throw new NotSupportedException("Daily counters are not supported yet, due to memory constraints.");
         }
     }
 

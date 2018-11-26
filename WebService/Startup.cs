@@ -200,7 +200,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             log.Write("Twin reads per second:     " + config.RateLimitingConfig.TwinReadsPerSecond);
             log.Write("Twin writes per second:    " + config.RateLimitingConfig.TwinWritesPerSecond);
             log.Write("Messages per second:       " + config.RateLimitingConfig.DeviceMessagesPerSecond);
-            log.Write("Messages per day:          " + config.RateLimitingConfig.DeviceMessagesPerDay);
 
             log.Write("Number of telemetry threads:      " + config.AppConcurrencyConfig.TelemetryThreads);
             log.Write("Max pending connections:          " + config.AppConcurrencyConfig.MaxPendingConnections);

@@ -39,8 +39,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         private PerSecondCounter twinWrites;
         private PerSecondCounter messaging;
 
-        // TODO: https://github.com/Azure/device-simulation-dotnet/issues/80
-        //private readonly PerDayCounter messagingDaily;
         public int ClusterSize => this.clusterSize;
 
         // Note: this class should be used only via the simulation context
