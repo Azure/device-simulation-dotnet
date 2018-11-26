@@ -27,7 +27,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             IDeviceConnectionActor context,
             PropertiesLoopSettings loopSettings);
 
+        // Used by the main thread to decide whether to invoke RunAsync(), in order to
+        // reduce the chance of enqueuing an async task when there is nothing to do
         bool HasWorkToDo();
+
         Task<string> RunAsync();
         void HandleEvent(DevicePropertiesActor.ActorEvents e);
         void Stop();
@@ -201,6 +204,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             }
         }
 
+        // Used by the main thread to decide whether to invoke RunAsync(), in order to
+        // reduce the chance of enqueuing an async task when there is nothing to do
         public bool HasWorkToDo()
         {
             switch (this.status)
@@ -221,10 +226,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         // Run the next step and return a description about what happened
         public async Task<string> RunAsync()
         {
-            this.log.Debug(this.status.ToString(), () => new { this.deviceId });
-
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             if (now < this.whenToRun) return null;
+
+            this.log.Debug(this.status.ToString(), () => new { this.deviceId });
 
             switch (this.status)
             {

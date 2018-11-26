@@ -25,7 +25,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     /// </summary>
     public class SimulationContext : ISimulationContext
     {
+        // Note: this applies to a single hub; simulations with multiple hubs are not supported yet
         public IRateLimiting RateLimiting { get; }
+
         public IDevices Devices { get; }
         public ConnectionLoopSettings ConnectionLoopSettings { get; private set; }
         public PropertiesLoopSettings PropertiesLoopSettings { get; private set; }

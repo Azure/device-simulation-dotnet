@@ -52,11 +52,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 }
 
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                foreach (var device in devicePropertiesActors)
+                foreach (var actor in devicePropertiesActors)
                 {
-                    if (device.Value.HasWorkToDo())
+                    // Avoid enqueueing async tasks that don't have anything to do
+                    if (actor.Value.HasWorkToDo())
                     {
-                        tasks.Add(device.Value.RunAsync());
+                        tasks.Add(actor.Value.RunAsync());
                     }
 
                     if (tasks.Count < pendingTasksLimit) continue;

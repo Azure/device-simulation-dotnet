@@ -272,7 +272,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private async Task SendProtobufMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
         {
             var eventMessage = default(Message);
-            string className = schema.ClassName;
             Type type = Assembly.GetExecutingAssembly().GetType(schema.ClassName, false);
 
             if (type != null)

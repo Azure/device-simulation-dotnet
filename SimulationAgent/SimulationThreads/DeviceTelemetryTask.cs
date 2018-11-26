@@ -73,11 +73,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 var index = -1;
-                foreach (var telemetry in deviceTelemetryActors)
+                foreach (var actor in deviceTelemetryActors)
                 {
-                    // Only send telemetry for devices *other* than the ones in 
+                    // Only send telemetry for devices *other* than the ones in
                     // the chunk for the current thread, for example:
-                    // 
+                    //
                     //    Count = 20000
                     //    chunkSize = 6667
                     //
@@ -91,7 +91,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     //    |            |
                     //    v            v
                     //    +------------+-------------------------+
-                    //    |    send    | don't send | don't send | 
+                    //    |    send    | don't send | don't send |
                     //    +------------+-------------------------+
                     //
                     //
@@ -101,7 +101,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     //                 |            |
                     //                 v            v
                     //    +------------+-------------------------+
-                    //    | don't send |    send    | don't send | 
+                    //    | don't send |    send    | don't send |
                     //    +------------+-------------------------+
                     //
                     //
@@ -111,12 +111,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     //                              |            |
                     //                              v            v
                     //    +------------+-------------------------+
-                    //    | don't send | don't send |    send    | 
+                    //    | don't send | don't send |    send    |
                     //    +------------+-------------------------+
                     index++;
                     if (index >= firstActor && index < lastActor)
                     {
-                        tasks.Add(telemetry.Value.RunAsync());
+                            tasks.Add(actor.Value.RunAsync());
 
                         if (tasks.Count < pendingTaskLimit)
                             continue;

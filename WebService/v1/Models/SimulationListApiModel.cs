@@ -1,10 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 using System.Collections.Generic;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
@@ -27,7 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         }
 
         /// <summary>Map a service model to the corresponding API model</summary>	
-        public SimulationListApiModel(IEnumerable<Services.Models.Simulation> simulations)
+        public SimulationListApiModel(IEnumerable<Simulation> simulations)
         {
             this.Items = new List<SimulationApiModel.SimulationApiModel>();
             foreach (var x in simulations)

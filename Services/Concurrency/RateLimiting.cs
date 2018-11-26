@@ -8,16 +8,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
     public interface IRateLimiting
     {
         int ClusterSize { get; }
+
+        void Init(IRateLimitingConfig config);
         long GetPauseForNextConnection();
         long GetPauseForNextRegistryOperation();
         long GetPauseForNextTwinRead();
         long GetPauseForNextTwinWrite();
         long GetPauseForNextMessage();
+
+        // Get message throughput (messages per second)
         double GetThroughputForMessages();
+
+        // Change the number of VMs, which affects the rating speed
         void ChangeClusterSize(int currentCount);
-        void Init(IRateLimitingConfig config);
     }
 
+    // TODO: https://github.com/Azure/device-simulation-dotnet/issues/80
     public class RateLimiting : IRateLimiting
     {
         private readonly ILogger log;
@@ -105,14 +111,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         public long GetPauseForNextMessage()
         {
-            // TODO: consider daily quota
-            // https://github.com/Azure/device-simulation-dotnet/issues/80
             return this.messaging.GetPause();
         }
 
-        /// <summary>
-        /// Get message throughput (messages per second)
-        /// </summary>
+        // Change the rating behavior to 'normal' when quota is not exceeded
+
+        // Get message throughput (messages per second)
         public double GetThroughputForMessages()
         {
             return this.messaging.GetThroughputForMessages();
