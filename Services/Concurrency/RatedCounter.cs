@@ -182,8 +182,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             {
                 if (this.timestamps.Count > 1)
                 {
+                    var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    var last = this.timestamps.Last();
+
+                    // To avoid stale stats, return 0 Ii there are no events in the last minute
+                    if (now - last > 60000) return 0;
+
                     // Time range in milliseconds
-                    long time = this.timestamps.Last() - this.timestamps.First();
+                    long time = last - this.timestamps.First();
 
                     // Unit for speed is messages per second
                     speed = (1000 * (double) this.timestamps.Count / time * 10) / 10;
