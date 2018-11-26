@@ -43,6 +43,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
     public class DeviceConnectionActor : IDeviceConnectionActor
     {
+        public enum ActorEvents
+        {
+            Started,
+            DeviceNotFound,
+            FetchFailed,
+            FetchCompleted,
+            RegistrationFailed,
+            CredentialsSetupCompleted,
+            DeviceRegistered,
+            DeviceDeregistered,
+            DeregisterationFailed,
+            Connected,
+            ConnectionFailed,
+            DisconnectionFailed,
+            Disconnected,
+            AuthFailed,
+            TelemetryClientBroken,
+        }
+
         private enum ActorStatus
         {
             None,
@@ -62,25 +81,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             ReadyToDeregister,
             Deregistering,
             Deleted
-        }
-
-        public enum ActorEvents
-        {
-            Started,
-            DeviceNotFound,
-            FetchFailed,
-            FetchCompleted,
-            RegistrationFailed,
-            CredentialsSetupCompleted,
-            DeviceRegistered,
-            DeviceDeregistered,
-            DeregisterationFailed,
-            Connected,
-            ConnectionFailed,
-            DisconnectionFailed,
-            Disconnected,
-            AuthFailed,
-            TelemetryClientBroken
         }
 
         private readonly ILogger log;
@@ -234,41 +234,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.status = ActorStatus.ReadyToStart;
 
             this.instance.InitComplete();
-        }
-
-        public void Stop()
-        {
-            try
-            {
-                this.status = ActorStatus.Stopped;
-                this.actorLogger.ActorStopped();
-                this.Client?.DisconnectAsync();
-            }
-            catch (Exception e)
-            {
-                this.log.Warn("Error while stopping", e);
-            }
-        }
-
-        public void Delete()
-        {
-            try
-            {
-                this.ScheduleDisconnection();
-                this.actorLogger.DisconnectingDevice();
-            }
-            catch (Exception e)
-            {
-                this.log.Warn("Error while deleting", () => new { e });
-            }
-        }
-
-        public void DisposeClient()
-        {
-            if (this.Client == null) return;
-
-            this.Client.DisposeInternalClient();
-            this.Client = null;
         }
 
         // Used by the main thread to decide whether to invoke RunAsync(), in order to
@@ -457,6 +422,41 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 default:
                     throw new ArgumentOutOfRangeException(nameof(e), e, null);
             }
+        }
+
+        public void Stop()
+        {
+            try
+            {
+                this.status = ActorStatus.Stopped;
+                this.actorLogger.ActorStopped();
+                this.Client?.DisconnectAsync();
+            }
+            catch (Exception e)
+            {
+                this.log.Warn("Error while stopping", e);
+            }
+        }
+
+        public void Delete()
+        {
+            try
+            {
+                this.ScheduleDisconnection();
+                this.actorLogger.DisconnectingDevice();
+            }
+            catch (Exception e)
+            {
+                this.log.Warn("Error while deleting", () => new { e });
+            }
+        }
+
+        public void DisposeClient()
+        {
+            if (this.Client == null) return;
+
+            this.Client.DisposeInternalClient();
+            this.Client = null;
         }
 
         private void ScheduleCredentialsSetup()

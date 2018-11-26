@@ -38,7 +38,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // See also https://github.com/Azure/toketi-iothubreact/blob/master/src/main/scala/com/microsoft/azure/iot/iothubreact/MessageFromDevice.scala
         private const string CREATION_TIME_PROPERTY = "$$CreationTimeUtc";
         private const string CLASSNAME_PROPERTY = "$$ClassName";
-
         private const string MESSAGE_SCHEMA_PROPERTY = "$$MessageSchema";
         private const string CONTENT_PROPERTY = "$$ContentType";
 

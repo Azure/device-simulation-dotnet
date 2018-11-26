@@ -74,19 +74,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             this.instance.InitComplete();
         }
 
-        public void ChangeClusterSize(int count)
-        {
-            this.log.Info("Updating rating limits to the new cluster size",
-                () => new { previousSize = this.clusterSize, newSize = count });
-
-            this.clusterSize = count;
-            this.connections.ChangeConcurrencyFactor(count);
-            this.registryOperations.ChangeConcurrencyFactor(count);
-            this.twinReads.ChangeConcurrencyFactor(count);
-            this.twinWrites.ChangeConcurrencyFactor(count);
-            this.messaging.ChangeConcurrencyFactor(count);
-        }
-
         public long GetPauseForNextConnection()
         {
             return this.connections.GetPause();
@@ -118,6 +105,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         public double GetThroughputForMessages()
         {
             return this.messaging.GetThroughputForMessages();
+        }
+
+        // Change the number of VMs, which affects the rating speed
+        public void ChangeClusterSize(int count)
+        {
+            this.log.Info("Updating rating limits to the new cluster size",
+                () => new { previousSize = this.clusterSize, newSize = count });
+
+            this.clusterSize = count;
+            this.connections.ChangeConcurrencyFactor(count);
+            this.registryOperations.ChangeConcurrencyFactor(count);
+            this.twinReads.ChangeConcurrencyFactor(count);
+            this.twinWrites.ChangeConcurrencyFactor(count);
+            this.messaging.ChangeConcurrencyFactor(count);
         }
     }
 }

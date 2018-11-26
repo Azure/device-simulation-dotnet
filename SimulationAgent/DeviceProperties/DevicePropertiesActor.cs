@@ -43,6 +43,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
     /// </summary>
     public class DevicePropertiesActor : IDevicePropertiesActor
     {
+        public enum ActorEvents
+        {
+            Started,
+            DeviceTaggingFailed,
+            DeviceTagged,
+            PropertiesUpdateFailed,
+            PropertiesUpdated,
+        }
+
         private enum ActorStatus
         {
             None,
@@ -53,15 +62,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             ReadyToUpdate,
             Updating,
             Stopped
-        }
-
-        public enum ActorEvents
-        {
-            Started,
-            DeviceTaggingFailed,
-            DeviceTagged,
-            PropertiesUpdateFailed,
-            PropertiesUpdated,
         }
 
         private readonly ILogger log;

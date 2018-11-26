@@ -37,6 +37,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
      */
     public class DeviceTelemetryActor : IDeviceTelemetryActor
     {
+        public enum ActorEvents
+        {
+            Started,
+            SendingTelemetry,
+            TelemetrySendFailure,
+            TelemetryClientBroken,
+            TelemetryDelivered,
+        }
+
         private enum ActorStatus
         {
             None,
@@ -44,15 +53,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             ReadyToSend,
             Sending,
             Stopped
-        }
-
-        public enum ActorEvents
-        {
-            Started,
-            SendingTelemetry,
-            TelemetrySendFailure,
-            TelemetryClientBroken,
-            TelemetryDelivered
         }
 
         private readonly ILogger log;
@@ -154,9 +154,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             this.instance.InitComplete();
         }
 
-        public void Stop()
         {
-            this.status = ActorStatus.Stopped;
         }
 
         // Run the next step and return a description about what happened
@@ -164,10 +162,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         {
             this.instance.InitRequired();
 
-            this.log.Debug(this.status.ToString(), () => new { this.deviceId });
-
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             if (now < this.whenToRun) return;
+
+            this.log.Debug(this.status.ToString(), () => new { this.deviceId });
 
             switch (this.status)
             {
@@ -222,6 +220,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                 default:
                     throw new ArgumentOutOfRangeException(nameof(e), e, null);
             }
+        }
+
+        public void Stop()
+        {
+            this.status = ActorStatus.Stopped;
         }
 
         private void Reset()
