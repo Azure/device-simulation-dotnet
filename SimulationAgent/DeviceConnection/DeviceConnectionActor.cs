@@ -434,7 +434,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             }
             catch (Exception e)
             {
-                this.log.Warn("Error while stopping", e);
+                this.log.Error("Error while stopping", e);
             }
         }
 
@@ -442,12 +442,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         {
             try
             {
+                this.status = ActorStatus.Stopped;
                 this.ScheduleDisconnection();
                 this.actorLogger.DisconnectingDevice();
             }
             catch (Exception e)
             {
-                this.log.Warn("Error while deleting", () => new { e });
+                this.log.Error("Error while deleting", e);
             }
         }
 

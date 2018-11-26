@@ -116,7 +116,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     index++;
                     if (index >= firstActor && index < lastActor)
                     {
+                        // Avoid enqueueing async tasks that don't have anything to do
+                        if (actor.Value.HasWorkToDo())
+                        {
                             tasks.Add(actor.Value.RunAsync());
+                        }
 
                         if (tasks.Count < pendingTaskLimit)
                             continue;

@@ -121,6 +121,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 // Note: this is important to ensure that any pending task inside the SDK is stopped
                 this.client.Dispose();
+                this.client = null;
             }
             catch (Exception e)
             {

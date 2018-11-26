@@ -27,6 +27,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             IDeviceStateActor deviceStateActor,
             IDeviceConnectionActor context);
 
+        // Used by the main thread to decide whether to invoke RunAsync(), in order to
+        // reduce the chance of enqueuing an async task when there is nothing to do
+        bool HasWorkToDo();
+
         Task RunAsync();
         void HandleEvent(DeviceTelemetryActor.ActorEvents e);
         void Stop();
@@ -154,7 +158,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             this.instance.InitComplete();
         }
 
+        // Used by the main thread to decide whether to invoke RunAsync(), in order to
+        // reduce the chance of enqueuing an async task when there is nothing to do
+        public bool HasWorkToDo()
         {
+            switch (this.status)
+            {
+                case ActorStatus.ReadyToStart:
+                    return this.deviceContext.Connected;
+
+                case ActorStatus.WaitingForQuota:
+                    return this.deviceContext.Connected;
+
+                case ActorStatus.ReadyToSend:
+                    return true;
+            }
+
+            return false;
         }
 
         // Run the next step and return a description about what happened
@@ -170,8 +190,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             switch (this.status)
             {
                 case ActorStatus.ReadyToStart:
-                    if (!this.deviceContext.Connected) return;
-
                     this.whenToRun = 0;
                     this.HandleEvent(ActorEvents.Started);
                     break;
@@ -234,14 +252,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
         private void ScheduleTelemetry()
         {
-            // considering the throttling settings, when can the message be sent
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var availableSchedule = now + this.simulationContext.RateLimiting.GetPauseForNextMessage();
+            // Considering the throttling settings, when can the message be sent
+            var availableSchedule = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                                    + this.simulationContext.RateLimiting.GetPauseForNextMessage();
 
-            // looking at the simulation settings, when should the message be sent
+            // Looking at the device model, when should the message be sent
             // note: this.whenToRun contains the time when the last msg was sent
             var optimalSchedule = this.whenToRun + (long) this.Message.Interval.TotalMilliseconds;
 
+            // TODO: review this approach: when choosing optimalSchedule the app might overload the hub and cause throttling
             this.whenToRun = Math.Max(optimalSchedule, availableSchedule);
             this.status = ActorStatus.ReadyToSend;
 
