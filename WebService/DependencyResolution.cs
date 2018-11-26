@@ -91,7 +91,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             // Parse file and ensure the file is parsed only once
             configuration = configurationBuilder.Build();
 
-            return new Config(new ConfigData(configuration, new Logger(Uptime.ProcessId)));
+            // To avoid circular dependencies, this logger doesn't follow the settings in appsettings.ini
+            var tmpLogConfig = new LoggingConfig { LogLevel = LogLevel.Info, ExtraDiagnostics = false };
+            return new Config(new ConfigData(configuration, new Logger(Uptime.ProcessId, tmpLogConfig)));
         }
 
         /// <summary>

@@ -119,6 +119,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             var data = this.Parse(connectionString, keyCanBeEmpty);
             if (!string.IsNullOrWhiteSpace(data.keyValue))
             {
+                this.log.Info("Testing connection string...");
                 await this.TestServiceConnectAsync(connectionString);
                 await this.TestRegistryReadWriteAsync(connectionString);
             }

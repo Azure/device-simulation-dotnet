@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
@@ -14,11 +16,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         private readonly bool logProcessId;
         private readonly string dateFormat;
         private readonly object fileLock;
-
-        public Logger(string processId) :
-            this(processId, new LoggingConfig())
-        {
-        }
+        private readonly ImmutableHashSet<string> blackList;
+        private readonly ImmutableHashSet<string> whiteList;
+        private readonly bool onlyWhiteListed;
 
         public Logger(string processId, ILoggingConfig config)
         {
@@ -27,6 +27,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.logProcessId = config.LogProcessId;
             this.dateFormat = config.DateFormat;
             this.fileLock = new object();
+
+            this.blackList = config.BlackList
+                .Where(s => !string.IsNullOrEmpty(s))
+                .Select(s => s.ToLowerInvariant()).ToImmutableHashSet();
+
+            this.whiteList = config.WhiteList
+                .Where(s => !string.IsNullOrEmpty(s))
+                .Select(s => s.ToLowerInvariant()).ToImmutableHashSet();
+            this.onlyWhiteListed = this.whiteList.Count > 0;
         }
 
         public LogLevel LogLevel => this.priorityThreshold;
@@ -310,6 +319,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (pos != -1)
             {
                 filePath = filePath.Substring(pos + 1);
+            }
+
+            var wbKey = $"{filePath}:{methodName}".ToLowerInvariant();
+            if (this.onlyWhiteListed)
+            {
+                // Skip non whitelisted sources
+                if (!this.whiteList.Contains(wbKey)) return;
+            }
+            else if (this.blackList.Contains(wbKey))
+            {
+                // Skip blacklisted sources
+                return;
             }
 
             var methodInfo = $"{filePath}:{lineNumber}:{methodName}";

@@ -169,14 +169,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private static ILoggingConfig GetLogConfig(IConfigData configData)
         {
             var data = configData.GetString(LOGGING_BLACKLIST_SOURCES_KEY);
-            var values = data.Replace(";", ",").Replace(":", ".").Split(",");
+            var values = data.Replace(";", ",").Split(",");
             var blacklist = new HashSet<string>();
             foreach (var k in values) blacklist.Add(k);
 
             data = configData.GetString(LOGGING_WHITELIST_SOURCES_KEY);
-            values = data.Replace(";", ",").Replace(":", ".").Split(",");
+            values = data.Replace(";", ",").Split(",");
             var whitelist = new HashSet<string>();
-            foreach (var k in values) blacklist.Add(k);
+            foreach (var k in values) whitelist.Add(k);
 
             Enum.TryParse(configData.GetString(LOGGING_LOGLEVEL_KEY, Services.Diagnostics.LoggingConfig.DEFAULT_LOGLEVEL.ToString()), true, out LogLevel logLevel);
             var result = new LoggingConfig

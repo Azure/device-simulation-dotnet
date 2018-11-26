@@ -174,7 +174,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.instance.InitRequired();
 
             if (this.deviceCount > this.maxDevicePerNode) return;
-                
+
             this.log.Debug("Searching for unassigned partitions...");
             var unassignedPartitions = await this.devicePartitions.GetUnassignedAsync(this.simulation.Id);
             this.log.Debug(() => new { UnassignedPartitions = unassignedPartitions.Count });
@@ -224,7 +224,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             var connectedCount = this.deviceConnectionActors.Count(x => x.Value.Connected);
 
-            this.log.Info($"Simulation stats",
+            this.log.Info("Simulation stats",
                 () => new
                 {
                     SimulationId = this.simulation.Id,
@@ -260,6 +260,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
             catch (Exception e)
             {
+                // Log and do not rethrow
                 this.log.Error("Error saving simulation statistics", () => new { this.simulation.Id, e });
             }
         }
