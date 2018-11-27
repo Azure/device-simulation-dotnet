@@ -95,19 +95,6 @@ namespace WebService.Test.v1.Controllers
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItInvokesDeleteOnceWhenDeleteSimulationWithId()
-        {
-            // Arrange
-            const string ID = "1";
-
-            // Act
-            this.target.DeleteAsync(ID).CompleteOrTimeout();
-
-            // Assert
-            this.simulationsService.Verify(x => x.DeleteAsync(ID), Times.Once);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItInvokesMetricsServiceOnceWhenQueryIotHubMetrics()
         {
             // Arrange
