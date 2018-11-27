@@ -45,7 +45,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Add a device to simulation
         Task AddDeviceAsync(string id);
 
-        // Delete a simulation and its devices.
+        // Delete a simulation and its statistics (not the devices).
         Task DeleteAsync(string id);
 
         // Seed default simulations
@@ -391,17 +391,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
-        /// Delete a simulation, its statistics and devices.
+        /// Delete a simulation and its statistics (not the devices).
         /// </summary>
         public async Task DeleteAsync(string id)
         {
-            // Delete devices first
-            var deviceIds = this.GetDeviceIds(await this.GetAsync(id));
-            await this.devices.DeleteListAsync(deviceIds);
-
             await this.simulationStatistics.DeleteSimulationStatisticsAsync(id);
-
-            // Then delete the simulation from storage
             await this.simulationsStorage.DeleteAsync(id);
         }
 

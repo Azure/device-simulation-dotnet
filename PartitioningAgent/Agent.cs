@@ -252,7 +252,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
 
                 if (await deviceService.IsJobCompleteAsync(simulation.DeviceCreationJobId, () => { creationFailed = true; }))
                 {
-                    this.log.Info("All devices have been created, updating the simulation record", () => new { SimulationId = simulation.Id });
+                    // Note: at this point we don't know if all devices have been created, quota can cause some errors,
+                    // see job log in the storage account
+                    this.log.Info("Device creation job complete, updating the simulation record. All devices should have been created. " +
+                                  "If any error occurred, the 'importErrors.log' file in the storage account contains the details.",
+                        () => new { SimulationId = simulation.Id });
 
                     if (await this.simulations.TryToSetDeviceCreationCompleteAsync(simulation.Id))
                     {
