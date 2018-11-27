@@ -39,15 +39,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
             // device could be rebooting, updating firmware, etc.
             this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
-            if ((bool) state["online"] == false)
+            if (!state.ContainsKey("online") || (bool) state["online"])
             {
-                this.log.Debug("No telemetry will be sent as the device is offline...", () => new { this.deviceId });
+                this.log.Debug("The device state says the device is online, sending telemetry...", () => new { this.deviceId });
+            }
+            else
+            {
+                this.log.Debug("No telemetry will be sent because the device is offline...", () => new { this.deviceId });
                 this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
                 return;
             }
-
-            this.log.Debug("The device state says the device is online", () => new { this.deviceId });
-            this.log.Debug("Sending telemetry...", () => new { this.deviceId });
 
             // Inject the device state into the message template
             this.log.Debug("Preparing the message content using the device state", () => new { this.deviceId });

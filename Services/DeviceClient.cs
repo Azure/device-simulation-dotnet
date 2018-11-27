@@ -287,7 +287,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (NullReferenceException)
             {
-                // In case of multi-threaded access to the client...
+                // In case of multi-threaded access to the client, ignore
                 if (this.client == null) return;
 
                 throw;
@@ -329,7 +329,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 throw new BrokenDeviceClientException(
                     "Message delivery failed: "
                     + e.Message
-                    + ". If the client is using MQTT this could cause by throttling.", e);
+                    + ". If the client is using MQTT this could be caused by throttling.", e);
             }
             catch (IOException e)
             {

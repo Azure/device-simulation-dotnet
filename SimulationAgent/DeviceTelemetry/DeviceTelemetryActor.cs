@@ -169,6 +169,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         {
             if (Now < this.whenToRun) return false;
 
+            if (!this.deviceContext.Connected) return false;
+
             switch (this.status)
             {
                 // If messaging quota has been reached, allow these actions only once
@@ -177,15 +179,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                 case ActorStatus.ReadyToSend:
                 case ActorStatus.WaitingForQuota:
                     return
-                        this.deviceContext.Connected
-                        && (!this.simulationContext.RateLimiting.HasExceededMessagingQuota
-                            || this.simulationContext.RateLimiting.CanProbeMessagingQuota(Now));
+                        !this.simulationContext.RateLimiting.HasExceededMessagingQuota
+                        || this.simulationContext.RateLimiting.CanProbeMessagingQuota(Now);
             }
 
             return false;
         }
 
-        // Run the next step and return a description about what happened
         public async Task RunAsync()
         {
             this.instance.InitRequired();

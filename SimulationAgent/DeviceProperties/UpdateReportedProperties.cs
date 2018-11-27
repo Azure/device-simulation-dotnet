@@ -42,7 +42,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                 var state = this.context.DeviceState.GetAll();
 
                 this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
-                if ((bool) state["online"])
+                if (!state.ContainsKey("online") || (bool) state["online"])
                 {
                     // Device could be rebooting, updating firmware, etc.
                     this.log.Debug("The device state says the device is online", () => new { this.deviceId });
