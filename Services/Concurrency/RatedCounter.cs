@@ -185,7 +185,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                     var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                     var last = this.timestamps.Last();
 
-                    // To avoid stale stats, return 0 Ii there are no events in the last minute
+                    // To avoid stale stats, return 0 if there are no events in the last minute
                     if (now - last > 60000) return 0;
 
                     // Time range in milliseconds
