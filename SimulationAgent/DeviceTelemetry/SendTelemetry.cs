@@ -81,6 +81,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
                 this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
             }
+            catch (DailyTelemetryQuotaExceededException e)
+            {
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Warn("Client reached the daily quota",
+                    () => new { timeSpentMsecs, this.deviceId, e });
+
+                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryQuotaExceeded);
+            }
             catch (BrokenDeviceClientException e)
             {
                 var timeSpentMsecs = GetTimeSpentMsecs();
@@ -88,6 +96,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                     () => new { timeSpentMsecs, this.deviceId, e });
 
                 this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryClientBroken);
+            }
+            catch (TelemetrySendTimeoutException e)
+            {
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Telemetry delivery timeout",
+                    () => new { timeSpentMsecs, this.deviceId, e });
+
+                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendFailure);
+            }
+            catch (TelemetrySendException e)
+            {
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Unexpected telemetry error",
+                    () => new { timeSpentMsecs, this.deviceId, e });
+
+                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendFailure);
             }
             catch (Exception e)
             {

@@ -27,6 +27,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         void DeregisteringDevice();
         void DeviceDeregistered();
         void DeviceDeregistrationFailed();
+        void DeviceQuotaExceeded();
 
         void DeviceTaggingScheduled(long time);
         void TaggingDevice();
@@ -49,6 +50,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         void SendingTelemetry();
         void TelemetryDelivered();
         void TelemetryFailed();
+        void DailyTelemetryQuotaExceeded();
+        void TelemetryPaused(long time);
 
         void DevicePropertiesUpdateScheduled(long time, bool isRetry);
         void UpdatingDeviceProperties();
@@ -264,6 +267,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.LogRegistry("Deregistration FAILED");
         }
 
+        public void DeviceQuotaExceeded()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Device QUOTA EXCEEDED");
+            this.LogRegistry("QUOTA EXCEEDED");
+        }
+
         public void DeviceTaggingScheduled(long time)
         {
             if (!this.enabled) return;
@@ -402,6 +413,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
             this.Log("Telemetry FAILED");
             this.LogTelemetry("FAILED");
+        }
+
+        public void DailyTelemetryQuotaExceeded()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Telemetry QUOTA EXCEEDED");
+            this.LogTelemetry("QUOTA EXCEEDED");
+        }
+
+        public void TelemetryPaused(long time)
+        {
+            if (!this.enabled) return;
+
+            var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
+            this.Log("Telemetry paused until: " + msg);
+            this.LogTelemetry("Telemetry paused until: " + msg);
         }
 
         public void DevicePropertiesUpdateScheduled(long time, bool isRetry)

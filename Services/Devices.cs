@@ -282,10 +282,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             catch (Exception e)
             {
                 var timeSpentMsecs = GetTimeSpentMsecs();
-                var msg = "Unable to fetch the IoT device";
-                this.log.Error(msg, () => new { timeSpentMsecs, deviceId, e });
-                this.diagnosticsLogger.LogServiceError(msg, new { timeSpentMsecs, deviceId, e.Message });
-                throw new ExternalDependencyException(msg);
+                const string MSG = "Unable to fetch the IoT device";
+                this.log.Error(MSG, () => new { timeSpentMsecs, deviceId, e });
+                this.diagnosticsLogger.LogServiceError(MSG, new { timeSpentMsecs, deviceId, e.Message });
+                throw new ExternalDependencyException(MSG);
             }
 
             return result;
@@ -308,13 +308,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 return new Device(device, this.ioTHubHostName);
             }
+            catch (QuotaExceededException e)
+            {
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                const string MSG = "Too many devices, quota exceeded, unable to create the device";
+                this.log.Error(MSG, () => new { timeSpentMsecs, deviceId, e });
+                this.diagnosticsLogger.LogServiceError(MSG, new { timeSpentMsecs, deviceId, e.Message });
+                throw new TotalDeviceCountQuotaExceededException(MSG, e);
+            }
             catch (Exception e)
             {
                 var timeSpentMsecs = GetTimeSpentMsecs();
-                var msg = "Unable to create the device";
-                this.log.Error(msg, () => new { timeSpentMsecs, deviceId, e });
-                this.diagnosticsLogger.LogServiceError(msg, new { timeSpentMsecs, deviceId, e.Message });
-                throw new ExternalDependencyException(msg, e);
+                const string MSG = "Unable to create the device";
+                this.log.Error(MSG, () => new { timeSpentMsecs, deviceId, e });
+                this.diagnosticsLogger.LogServiceError(MSG, new { timeSpentMsecs, deviceId, e.Message });
+                throw new ExternalDependencyException(MSG, e);
             }
         }
 
@@ -388,7 +396,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception error)
             {
-                this.log.Error("Failed to delete device", () => new { error });
+                this.log.Error("Failed to delete device, unexpected error", () => new { error });
                 throw;
             }
         }
@@ -430,23 +438,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (TooManyDevicesException error)
             {
-                var msg = "Failed to delete devices, the batch is too big";
-                this.log.Error(msg, error);
-                this.diagnosticsLogger.LogServiceError(msg, error.Message);
+                const string MSG = "Failed to delete devices, the batch is too big";
+                this.log.Error(MSG, error);
+                this.diagnosticsLogger.LogServiceError(MSG, error.Message);
                 throw;
             }
             catch (IotHubCommunicationException error)
             {
-                var msg = "Failed to delete devices (IotHubCommunicationException)";
-                this.log.Error(msg, () => new { error.InnerException, error });
-                this.diagnosticsLogger.LogServiceError(msg, new { error.Message });
+                const string MSG = "Failed to delete devices (IotHubCommunicationException)";
+                this.log.Error(MSG, () => new { error.InnerException, error });
+                this.diagnosticsLogger.LogServiceError(MSG, new { error.Message });
                 throw;
             }
             catch (Exception error)
             {
-                var msg = "Failed to delete devices";
-                this.log.Error(msg, error);
-                this.diagnosticsLogger.LogServiceError(msg, error.Message);
+                const string MSG = "Failed to delete devices, unexpected error";
+                this.log.Error(MSG, error);
+                this.diagnosticsLogger.LogServiceError(MSG, error.Message);
                 throw;
             }
         }

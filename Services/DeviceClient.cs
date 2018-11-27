@@ -43,10 +43,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         private readonly string deviceId;
         private readonly IoTHubProtocol protocol;
-        private readonly IDeviceClientWrapper client;
         private readonly IDeviceMethods deviceMethods;
         private readonly IDevicePropertiesRequest propertiesUpdateRequest;
         private readonly ILogger log;
+
+        private IDeviceClientWrapper client;
 
         private bool connected;
 
@@ -83,6 +84,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     await this.client.OpenAsync();
                     this.connected = true;
                 }
+                catch (NullReferenceException)
+                {
+                    // In case of multi-threaded access to the client...
+                    if (this.client == null) return;
+
+                    throw;
+                }
                 catch (UnauthorizedException e)
                 {
                     // Note: this exception might not occur with HTTP
@@ -108,19 +116,40 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.connected = false;
             if (this.client != null)
             {
-                await this.client.CloseAsync();
+                try
+                {
+                    await this.client.CloseAsync();
+                }
+                catch (NullReferenceException)
+                {
+                    // In case of multi-threaded access to the client, ignore
+                    if (this.client == null) return;
+
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    this.log.Error("Device disconnect failed",
+                        () => new
+                        {
+                            this.deviceId,
+                            this.protocol,
+                            e
+                        });
+                }
+
                 this.DisposeInternalClient();
             }
         }
 
         public void DisposeInternalClient()
         {
+            this.connected = false;
+
             try
             {
-                if (this.client == null) return;
-
                 // Note: this is important to ensure that any pending task inside the SDK is stopped
-                this.client.Dispose();
+                this.client?.Dispose();
                 this.client = null;
             }
             catch (Exception e)
@@ -181,6 +210,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.log.Debug("Update reported properties for device",
                     () => new { this.deviceId, timeSpentMsecs, reportedProperties });
             }
+            catch (NullReferenceException)
+            {
+                // In case of multi-threaded access to the client, nothing to do
+                if (this.client == null) return;
+
+                throw;
+            }
             catch (KeyNotFoundException e)
             {
                 // This exception sometimes occurs when calling UpdateReportedPropertiesAsync.
@@ -192,6 +228,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     () => new
                     {
                         timeSpentMsecs,
+                        this.deviceId,
                         Protocol = this.protocol.ToString(),
                         Exception = e.GetType().FullName,
                         e.Message,
