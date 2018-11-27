@@ -238,13 +238,37 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         e.TargetSite,
                         e.InnerException // This appears to always be null in this scenario
                     });
+                throw new BrokenDeviceClientException("Unexpected error, failed to update reported properties", e);
+            }
+            catch (TimeoutException e)
+            {
+                // Note: this exception can occur in case of throttling, and
+                // the caller should not recreate the client
+
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Reported properties update timed out",
+                    () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
+
+                throw new PropertySendException("Reported properties update timed out", e);
+            }
+            catch (IotHubCommunicationException e)
+            {
+                // Note: this exception can occur in case of throttling, and
+                // the caller should not recreate the client
+
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Failed to update reported properties",
+                    () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
+
+                throw new PropertySendException("Failed to update reported properties", e);
             }
             catch (Exception e)
             {
                 var timeSpentMsecs = GetTimeSpentMsecs();
                 this.log.Error("Failed to update reported properties",
-                    () => new { timeSpentMsecs, Protocol = this.protocol.ToString(), e });
+                    () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
 
+                throw new BrokenDeviceClientException("Failed to update reported properties", e);
             }
         }
 
@@ -261,13 +285,51 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.log.Debug("SendRawMessageAsync for device",
                     () => new { timeSpentMsecs, this.deviceId });
             }
+            catch (NullReferenceException)
+            {
+                // In case of multi-threaded access to the client...
+                if (this.client == null) return;
+
+                throw;
+            }
             catch (TimeoutException e)
             {
                 var timeSpentMsecs = GetTimeSpentMsecs();
                 this.log.Error("Message delivery timed out",
-                    () => new { timeSpentMsecs, Protocol = this.protocol.ToString(), e });
+                    () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
 
                 throw new TelemetrySendTimeoutException("Message delivery timed out with " + e.Message, e);
+            }
+            catch (DeviceMaximumQueueDepthExceededException e)
+            {
+                // Throttling in AMQP leads here
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Daily telemetry quota exceeded",
+                    () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
+
+                throw new DailyTelemetryQuotaExceededException("Daily telemetry quota exceeded", e);
+            }
+            catch (QuotaExceededException e)
+            {
+                // Throttling in HTTP leads here
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Daily telemetry quota exceeded",
+                    () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
+
+                throw new DailyTelemetryQuotaExceededException("Daily telemetry quota exceeded", e);
+            }
+            catch (System.Net.Sockets.SocketException e)
+            {
+                // TODO: throttling in MQTT leads here, but the exception
+                // is too generic to know if the app is being throttled
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Message delivery failed",
+                    () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
+
+                throw new BrokenDeviceClientException(
+                    "Message delivery failed: "
+                    + e.Message
+                    + ". If the client is using MQTT this could cause by throttling.", e);
             }
             catch (IOException e)
             {

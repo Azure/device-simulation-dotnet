@@ -422,6 +422,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
                 case ActorEvents.TelemetryClientBroken:
                 case ActorEvents.PropertiesClientBroken:
+                    // Change the status asap, so the client results disconnected
+                    // to other actors - see the 'Connected' property - to avoid
+                    // hub traffic from starting right now
+                    this.status = ActorStatus.None;
                     this.Client?.DisconnectAsync();
                     this.Client?.DisposeInternalClient();
                     this.Client = null;

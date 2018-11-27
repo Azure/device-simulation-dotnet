@@ -31,7 +31,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         // reduce the chance of enqueuing an async task when there is nothing to do
         bool HasWorkToDo();
 
-        Task<string> RunAsync();
+        Task RunAsync();
         void HandleEvent(DevicePropertiesActor.ActorEvents e);
         void Stop();
     }
@@ -50,6 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             DeviceTagged,
             PropertiesUpdateFailed,
             PropertiesUpdated,
+            PropertiesClientBroken
         }
 
         private enum ActorStatus
@@ -87,6 +88,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
         /// Reference to the actor managing the device connection
         /// </summary>
         private IDeviceConnectionActor deviceContext;
+
+        private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         /// <summary>
         /// Device properties maintained by the device state actor
@@ -159,6 +162,61 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             this.instance.InitComplete();
         }
 
+        // Used by the main thread to decide whether to invoke RunAsync(), in order to
+        // reduce the chance of enqueuing an async task when there is nothing to do
+        public bool HasWorkToDo()
+        {
+            if (Now < this.whenToRun) return false;
+
+            if (!this.deviceContext.Connected) return false;
+
+            switch (this.status)
+            {
+                case ActorStatus.ReadyToStart:
+                    return this.deviceContext.Connected;
+
+                case ActorStatus.WaitingForChanges:
+                    return this.DeviceProperties != null && this.DeviceProperties.Changed;
+
+                case ActorStatus.ReadyToUpdate:
+                    return this.deviceContext.Connected;
+            }
+
+            return false;
+        }
+
+        // Run the next step and return a description about what happened
+        public async Task RunAsync()
+        {
+            this.instance.InitRequired();
+
+            this.log.Debug(this.status.ToString(), () => new { this.deviceId });
+
+            switch (this.status)
+            {
+                case ActorStatus.ReadyToStart:
+                    this.whenToRun = 0;
+                    this.HandleEvent(ActorEvents.Started);
+                    break;
+
+                case ActorStatus.ReadyToTagDevice:
+                    this.status = ActorStatus.TaggingDevice;
+                    this.actorLogger.TaggingDevice();
+                    await this.deviceSetDeviceTagLogic.RunAsync();
+                    break;
+
+                case ActorStatus.WaitingForChanges:
+                    this.SchedulePropertiesUpdate();
+                    break;
+
+                case ActorStatus.ReadyToUpdate:
+                    this.status = ActorStatus.Updating;
+                    this.actorLogger.UpdatingDeviceProperties();
+                    await this.updatePropertiesLogic.RunAsync();
+                    break;
+            }
+        }
+
         public void HandleEvent(ActorEvents e)
         {
             switch (e)
@@ -199,65 +257,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                     this.SchedulePropertiesUpdate(isRetry: true);
                     break;
 
+                case ActorEvents.PropertiesClientBroken:
+                    this.failedTwinUpdatesCount++;
+                    this.actorLogger.DevicePropertiesUpdateFailed();
+                    this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.PropertiesClientBroken);
+                    this.Reset();
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(e), e, null);
             }
-        }
-
-        // Used by the main thread to decide whether to invoke RunAsync(), in order to
-        // reduce the chance of enqueuing an async task when there is nothing to do
-        public bool HasWorkToDo()
-        {
-            switch (this.status)
-            {
-                case ActorStatus.ReadyToStart:
-                    return this.deviceContext.Connected;
-
-                case ActorStatus.WaitingForChanges:
-                    return this.DeviceProperties?.Changed ?? false;
-
-                case ActorStatus.ReadyToUpdate:
-                    return true;
-            }
-
-            return false;
-        }
-
-        // Run the next step and return a description about what happened
-        public async Task<string> RunAsync()
-        {
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            if (now < this.whenToRun) return null;
-
-            this.log.Debug(this.status.ToString(), () => new { this.deviceId });
-
-            switch (this.status)
-            {
-                case ActorStatus.ReadyToStart:
-                    if (!this.deviceContext.Connected) return "device not connected yet";
-                    this.whenToRun = 0;
-                    this.HandleEvent(ActorEvents.Started);
-                    return "started";
-
-                case ActorStatus.ReadyToTagDevice:
-                    this.status = ActorStatus.TaggingDevice;
-                    this.actorLogger.TaggingDevice();
-                    await this.deviceSetDeviceTagLogic.RunAsync();
-                    return "device tag scheduled";
-
-                case ActorStatus.WaitingForChanges:
-                    if (!(this.DeviceProperties?.Changed ?? false)) return "no properties to update";
-                    this.SchedulePropertiesUpdate();
-                    return "properties update scheduled";
-
-                case ActorStatus.ReadyToUpdate:
-                    this.status = ActorStatus.Updating;
-                    this.actorLogger.UpdatingDeviceProperties();
-                    await this.updatePropertiesLogic.RunAsync();
-                    return "updated properties";
-            }
-
-            return null;
         }
 
         public void Stop()
@@ -268,12 +277,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             this.status = ActorStatus.Stopped;
         }
 
+        private void Reset()
+        {
+            this.status = ActorStatus.ReadyToStart;
+        }
+
         private void SchedulePropertiesUpdate(bool isRetry = false)
         {
             // considering the throttling settings, when can the properties be updated
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var pauseMsec = this.simulationContext.RateLimiting.GetPauseForNextTwinWrite();
-            this.whenToRun = now + pauseMsec;
+            this.whenToRun = Now + pauseMsec;
             this.status = ActorStatus.ReadyToUpdate;
 
             this.actorLogger.DevicePropertiesUpdateScheduled(this.whenToRun, isRetry);
@@ -289,10 +302,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
         private void ScheduleDeviceTagging()
         {
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             // note: we overwrite the twin, so no Read operation is needed
             var pauseMsec = this.simulationContext.RateLimiting.GetPauseForNextTwinWrite();
-            this.whenToRun = now + pauseMsec;
+            this.whenToRun = Now + pauseMsec;
             this.status = ActorStatus.ReadyToTagDevice;
 
             this.actorLogger.DeviceTaggingScheduled(this.whenToRun);

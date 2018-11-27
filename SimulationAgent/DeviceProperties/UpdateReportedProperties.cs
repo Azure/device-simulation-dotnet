@@ -3,6 +3,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties
 {
@@ -55,6 +56,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
                     // Mark properties as updated
                     this.context.DeviceProperties.ResetChanged();
+
+                    this.context.HandleEvent(DevicePropertiesActor.ActorEvents.PropertiesUpdated);
                 }
                 else
                 {
@@ -66,10 +69,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                     this.context.HandleEvent(DevicePropertiesActor.ActorEvents.PropertiesUpdateFailed);
                 }
             }
-            catch (Exception e)
+            catch (BrokenDeviceClientException e)
             {
                 var timeSpentMsecs = GetTimeSpentMsecs();
                 this.log.Error("Error while updating the reported properties in the device twin",
+                    () => new { timeSpentMsecs, this.deviceId, e });
+
+                this.context.HandleEvent(DevicePropertiesActor.ActorEvents.PropertiesClientBroken);
+            }
+            catch (PropertySendException e)
+            {
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Failed to update device twin reported properties",
+                    () => new { timeSpentMsecs, this.deviceId, e });
+
+                this.context.HandleEvent(DevicePropertiesActor.ActorEvents.PropertiesUpdateFailed);
+            }
+            catch (Exception e)
+            {
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Unexpected error while updating the reported properties in the device twin",
                     () => new { timeSpentMsecs, this.deviceId, e });
 
                 this.context.HandleEvent(DevicePropertiesActor.ActorEvents.PropertiesUpdateFailed);
