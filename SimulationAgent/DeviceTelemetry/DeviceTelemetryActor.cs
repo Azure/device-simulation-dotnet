@@ -311,9 +311,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             // TODO: back off? - this retry logic is probably overloading the CPU
 
             /*
-            var now = Now;
             var pauseMsec = this.rateLimiting.GetPauseForNextMessage();
-            this.whenToRun = now + pauseMsec;
+            this.whenToRun = Now + pauseMsec;
             this.status = ActorStatus.ReadyToSend;
 
             this.actorLogger.TelemetryRetryScheduled(this.whenToRun);
