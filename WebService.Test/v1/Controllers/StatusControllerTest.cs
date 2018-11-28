@@ -23,7 +23,6 @@ namespace WebService.Test.v1.Controllers
         {
             this.statusService = new Mock<IStatusService>();
             this.config = new Mock<IConfig>();
-
             this.target = new StatusController(this.config.Object, this.statusService.Object);
         }
 

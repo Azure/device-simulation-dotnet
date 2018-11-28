@@ -39,7 +39,7 @@ namespace Services.Test
         private readonly Mock<IFileSystem> file;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
-        private readonly Mock<IIotHubConnectionStringManager> connStringManager;
+        private readonly Mock<IConnectionStrings> connectionStrings;
         private readonly Mock<IDocumentDbWrapper> mockDocumentDbWrapper;
         private readonly Mock<IDocumentClient> mockDocumentClient;
         private readonly Mock<IResourceResponse<Document>> mockStorageDocument;
@@ -75,7 +75,7 @@ namespace Services.Test
             this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
             this.devices = new Mock<IDevices>();
             this.file = new Mock<IFileSystem>();
-            this.connStringManager = new Mock<IIotHubConnectionStringManager>();
+            this.connectionStrings = new Mock<IConnectionStrings>();
             this.models = new List<DeviceModel>
             {
                 new DeviceModel { Id = "01" },
@@ -89,7 +89,7 @@ namespace Services.Test
                 this.deviceModels.Object,
                 this.mockFactory.Object,
                 this.mockStorageAdapterClient.Object,
-                this.connStringManager.Object,
+                this.connectionStrings.Object,
                 this.devices.Object,
                 this.file.Object,
                 this.logger.Object,
@@ -295,7 +295,7 @@ namespace Services.Test
                 .Wait(Constants.TEST_TIMEOUT);
         }
 
-        [Fact]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void UpsertWillSucceedWhenETagsMatch()
         {
             // Arrange

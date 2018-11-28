@@ -3,6 +3,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
@@ -23,8 +24,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
 
         private readonly ISimulations simulationsService;
         private readonly IDevices devices;
-        private readonly IIotHubConnectionStringManager connectionStringManager;
+        private readonly IConnectionStringValidation connectionStringValidation;
         private readonly IIothubMetrics iothubMetrics;
+        private readonly IRateLimitingConfig defaultRatingConfig;
         private readonly ISimulationAgent simulationAgent;
 
         private readonly ILogger log;
@@ -32,16 +34,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         public SimulationsController(
             ISimulations simulationsService,
             IDevices devices,
-            IIotHubConnectionStringManager connectionStringManager,
+            IConnectionStringValidation connectionStringValidation,
             IIothubMetrics iothubMetrics,
+            IRateLimitingConfig defaultRatingConfig,
             IPreprovisionedIotHub preprovisionedIotHub,
             ISimulationAgent simulationAgent,
             ILogger logger)
         {
             this.simulationsService = simulationsService;
             this.devices = devices;
-            this.connectionStringManager = connectionStringManager;
+            this.connectionStringValidation = connectionStringValidation;
             this.iothubMetrics = iothubMetrics;
+            this.defaultRatingConfig = defaultRatingConfig;
             this.simulationAgent = simulationAgent;
             this.log = logger;
         }
@@ -67,7 +71,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         {
             if (simulationApiModel != null)
             {
-                await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringManager);
+                await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringValidation);
             }
             else
             {
@@ -81,7 +85,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 simulationApiModel = new SimulationApiModel();
             }
 
-            var simulation = await this.simulationsService.InsertAsync(simulationApiModel.ToServiceModel(null), template);
+            var simulation = await this.simulationsService.InsertAsync(simulationApiModel.ToServiceModel(null, this.defaultRatingConfig), template);
             return SimulationApiModel.FromServiceModel(simulation);
         }
 
@@ -105,12 +109,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No data provided, request object is empty.");
             }
 
-            await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringManager);
+            await simulationApiModel.ValidateInputRequestAsync(this.log, this.connectionStringValidation);
 
             // Load the existing resource, so that internal properties can be copied
             var existingSimulation = await this.GetExistingSimulationAsync(id);
 
-            var simulation = await this.simulationsService.UpsertAsync(simulationApiModel.ToServiceModel(existingSimulation, id));
+            var simulation = await this.simulationsService.UpsertAsync(simulationApiModel.ToServiceModel(existingSimulation, this.defaultRatingConfig, id));
             return SimulationApiModel.FromServiceModel(simulation);
         }
 

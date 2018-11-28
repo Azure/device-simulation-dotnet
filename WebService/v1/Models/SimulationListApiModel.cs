@@ -27,8 +27,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         }
 
         /// <summary>Map a service model to the corresponding API model</summary>	
-        public SimulationListApiModel(
-            IEnumerable<Services.Models.Simulation> simulations)
+        public SimulationListApiModel(IEnumerable<Services.Models.Simulation> simulations)
         {
             this.Items = new List<SimulationApiModel.SimulationApiModel>();
             foreach (var x in simulations)

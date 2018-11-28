@@ -72,7 +72,7 @@ namespace PartitioningAgent.Test
             this.AfterStartRunOnlyOneLoop();
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             this.clusterNodes.Verify(x => x.KeepAliveNodeAsync(), Times.Once);
@@ -82,7 +82,7 @@ namespace PartitioningAgent.Test
         public void ItStopsWhenAskedTo()
         {
             // Arrange
-            var task = Task.Factory.StartNew(() => this.target.StartAsync());
+            var task = Task.Factory.StartNew(() => this.target.StartAsync(CancellationToken.None));
             WaitForTaskStatus(task, TaskStatus.Running, 2500);
             Assert.Equal(TaskStatus.Running, task.Status);
 
@@ -102,7 +102,7 @@ namespace PartitioningAgent.Test
             this.TheCurrentNodeIsNotMaster();
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             this.clusterNodes.Verify(x => x.RemoveStaleNodesAsync(), Times.Never);
@@ -111,7 +111,7 @@ namespace PartitioningAgent.Test
             this.TheCurrentNodeIsMaster();
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             this.clusterNodes.Verify(x => x.RemoveStaleNodesAsync(), Times.Once);
@@ -140,7 +140,7 @@ namespace PartitioningAgent.Test
             this.TheCurrentNodeIsNotMaster();
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             this.simulations.Verify(x => x.TryToStartDevicesCreationAsync(It.IsAny<string>(), It.IsAny<IDevices>()), Times.Never);
@@ -149,7 +149,7 @@ namespace PartitioningAgent.Test
             this.TheCurrentNodeIsMaster();
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             this.simulations.Verify(x => x.TryToStartDevicesCreationAsync(It.IsAny<string>(), It.IsAny<IDevices>()), Times.Once);
@@ -184,7 +184,7 @@ namespace PartitioningAgent.Test
             this.TheCurrentNodeIsNotMaster();
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             this.partitions.Verify(x => x.CreateAsync(It.IsAny<string>()), Times.Never);
@@ -194,7 +194,7 @@ namespace PartitioningAgent.Test
             this.TheCurrentNodeIsMaster();
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             this.partitions.Verify(x => x.CreateAsync(It.IsAny<string>()), Times.Once);
@@ -238,7 +238,7 @@ namespace PartitioningAgent.Test
             });
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             this.partitions.Verify(x => x.CreateAsync(It.IsAny<string>()), Times.Exactly(2));
@@ -288,7 +288,7 @@ namespace PartitioningAgent.Test
             });
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             this.partitions.Verify(x => x.DeleteListAsync(It.Is<List<string>>(l => l.Count == 4)), Times.Once);
@@ -344,7 +344,7 @@ namespace PartitioningAgent.Test
             });
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             this.simulations.Verify(x => x.TryToStartDevicesCreationAsync(It.IsAny<string>(), It.IsAny<IDevices>()), Times.Never);
@@ -374,7 +374,7 @@ namespace PartitioningAgent.Test
             this.simulations.Setup(x => x.GetListAsync()).ReturnsAsync(new List<Simulation> { simulation });
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             this.simulations.Verify(x => x.TryToStartDevicesCreationAsync(It.IsAny<string>(), It.IsAny<IDevices>()), Times.Never);
@@ -407,7 +407,7 @@ namespace PartitioningAgent.Test
             this.simulations.Setup(x => x.GetListAsync()).ReturnsAsync(new List<Simulation> { simulation });
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             deviceService.Verify(x => x.IsJobCompleteAsync(jobId, It.IsAny<Action>()), Times.Once);
@@ -440,7 +440,7 @@ namespace PartitioningAgent.Test
             this.simulations.Setup(x => x.GetListAsync()).ReturnsAsync(new List<Simulation> { simulation });
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             deviceService.Verify(x => x.IsJobCompleteAsync(simulation.DeviceCreationJobId, It.IsAny<Action>()), Times.Once);
@@ -502,7 +502,7 @@ namespace PartitioningAgent.Test
             });
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             this.simulations.Verify(x => x.TryToStartDevicesDeletionAsync(It.IsAny<string>(), It.IsAny<IDevices>()), Times.Never);
@@ -532,7 +532,7 @@ namespace PartitioningAgent.Test
             this.TheCurrentNodeIsNotMaster();
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             this.simulations.Verify(x => x.TryToStartDevicesDeletionAsync(It.IsAny<string>(), It.IsAny<IDevices>()), Times.Never);
@@ -541,7 +541,7 @@ namespace PartitioningAgent.Test
             this.TheCurrentNodeIsMaster();
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             this.simulations.Verify(x => x.TryToStartDevicesDeletionAsync(It.IsAny<string>(), It.IsAny<IDevices>()), Times.Once);
@@ -573,7 +573,7 @@ namespace PartitioningAgent.Test
             this.simulations.Setup(x => x.GetListAsync()).ReturnsAsync(new List<Simulation> { simulation });
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             this.simulations.Verify(x => x.TryToStartDevicesDeletionAsync(It.IsAny<string>(), It.IsAny<IDevices>()), Times.Never);
@@ -608,7 +608,7 @@ namespace PartitioningAgent.Test
             this.simulations.Setup(x => x.GetListAsync()).ReturnsAsync(new List<Simulation> { simulation });
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             deviceService.Verify(x => x.IsJobCompleteAsync(jobId, It.IsAny<Action>()), Times.Once);
@@ -649,7 +649,7 @@ namespace PartitioningAgent.Test
                     DevicesCreationComplete = true,
                     DeleteDevicesWhenSimulationEnds = true,
                     DeviceModels = deviceModels,
-                    CustomDevices = customDevices 
+                    CustomDevices = customDevices
                 }
             });
 
@@ -658,7 +658,7 @@ namespace PartitioningAgent.Test
             this.TheCurrentNodeIsMaster();
 
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             // Verify request to update autoscale settings is made when node count changes
@@ -666,9 +666,9 @@ namespace PartitioningAgent.Test
 
             // Arrange
             this.azureManagementAdapterClient.Invocations.Clear();
-            
+
             // Act
-            this.target.StartAsync().CompleteOrTimeout();
+            this.target.StartAsync(CancellationToken.None).CompleteOrTimeout();
 
             // Assert
             // Verify request to update autoscale settings is not made when node count does not change
