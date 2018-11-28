@@ -51,10 +51,6 @@
         }
     ],
     "CloudToDeviceMethods": {
-        "FirmwareUpdate": {
-            "Type": "javascript",
-            "Path": "FirmwareUpdate-method.js"
-        },
         "DecreaseCargoTemperature": {
             "Type": "javascript",
             "Path": "TempDecrease-method.js"

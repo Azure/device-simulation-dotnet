@@ -46,10 +46,6 @@
         }
     ],
     "CloudToDeviceMethods": {
-        "FirmwareUpdate": {
-            "Type": "javascript",
-            "Path": "FirmwareUpdate-method.js"
-        },
         "StopElevator": {
             "Type": "javascript",
             "Path": "StopElevator-method.js"

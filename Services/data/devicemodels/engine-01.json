@@ -49,10 +49,6 @@
         }
     ],
     "CloudToDeviceMethods": {
-        "FirmwareUpdate": {
-            "Type": "javascript",
-            "Path": "FirmwareUpdate-method.js"
-        },
         "EmptyTank": {
             "Type": "javascript",
             "Path": "EmptyTank-method.js"

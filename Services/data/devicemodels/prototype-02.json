@@ -54,10 +54,6 @@
             "Type": "javascript",
             "Path": "Reboot-method.js"
         },
-        "FirmwareUpdate": {
-            "Type": "javascript",
-            "Path": "FirmwareUpdate-method.js"
-        },
         "StartMovingDevice": {
             "Type": "javascript",
             "Path": "StartMovingDevice-method.js"
