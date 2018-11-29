@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -195,6 +196,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             try
             {
+                var applicationProcess = Process.GetCurrentProcess();
+
                 while (this.running && !appStopToken.IsCancellationRequested)
                 {
                     this.SendSolutionHeartbeat();
@@ -212,6 +215,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     await this.RunSimulationManagersMaintenanceAsync();
                     await this.StopInactiveSimulationsAsync(activeSimulations);
 
+                    this.LogProcessStats(applicationProcess);
+
                     Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
                 }
             }
@@ -222,8 +227,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
+        private void LogProcessStats(Process p)
         {
+            this.log.Write("Process stats", () => new
+            {
+                ThreadsCount = p.Threads.Count,
 
+                // The amount of physical memory, in bytes, allocated for the associated process.
+                // The working set includes both shared and private data. The shared data includes
+                // the pages that contain all the instructions that the process executes, including
+                // instructions in the process modules and the system libraries.
+                WorkingSetMB = p.WorkingSet64 / 1024 / 1024,
+
+                // The amount of virtual memory, in bytes, allocated for the associated process.
+                VirtualMemorySizeMB = p.VirtualMemorySize64 / 1024 / 1024,
+
+                // The amount of memory, in bytes, allocated for the associated process that cannot
+                // be shared with other processes.
+                PrivateMemorySizeMB = p.PrivateMemorySize64 / 1024 / 1024
+            });
         }
 
         private async Task StopInactiveSimulationsAsync(IList<Simulation> activeSimulations)
