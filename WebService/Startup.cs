@@ -150,8 +150,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
             // Stop the application threads
             // TODO: see if we can rely solely on the cancellation token
-            this.partitioningAgent.Stop();
-            this.simulationAgent.Stop();
+            this.partitioningAgent?.Stop();
+            this.simulationAgent?.Stop();
         }
 
         private Task MonitorThreadsAsync(IApplicationLifetime appLifetime)
