@@ -4,9 +4,9 @@ using System;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
 {
+    // This exception is thrown when it's not possible to register a device due to quota limits
     public class TotalDeviceCountQuotaExceededException : Exception
     {
-        // This exception is thrown when it's not possible to register a device due to quota limits
         public TotalDeviceCountQuotaExceededException(string message) : base(message)
         {
         }

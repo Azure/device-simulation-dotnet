@@ -4,11 +4,11 @@ using System;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
 {
+    /// <summary>
+    /// This exception is thrown when unable to send device twin reported properties
+    /// </summary>
     public class PropertySendException : Exception
     {
-        /// <summary>
-        /// This exception is thrown when unable to send device twin reported properties
-        /// </summary>
         public PropertySendException(string message) : base(message)
         {
         }

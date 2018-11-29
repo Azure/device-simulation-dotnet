@@ -169,6 +169,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.TryToStopThreads();
         }
 
+        // TODO: Implement support for adding devices to a running simulation.
+        //       This functionality is needed for Remote Monitoring, but the
+        //       initial implementation of large-scale device simulation
+        //       does not support this because we do not have a design for
+        //       how to modify existing partitions at runtime. Implementation
+        //       of this feature is pending a design for this.
+        public Task AddDeviceAsync(string simulationid, string deviceId, string modelId)
+        {
+            return Task.CompletedTask;
+        }
+
+        // TODO: Implement support for removing devices from a running simulation.
+        //       This functionality is needed for Remote Monitoring, but the
+        //       initial implementation of large-scale device simulation
+        //       does not support this because we do not have a design for
+        //       how to modify existing partitions at runtime. Implementation
+        //       of this feature is pending a design for this.
+        public Task DeleteDevicesAsync(List<string> ids)
+        {
+            return Task.CompletedTask;
+        }
+
         private async Task RunAsync(CancellationToken appStopToken)
         {
             try
@@ -200,26 +222,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        // TODO: Implement support for adding devices to a running simulation.
-        //       This functionality is needed for Remote Monitoring, but the
-        //       initial implementation of large-scale device simulation
-        //       does not support this because we do not have a design for
-        //       how to modify existing partitions at runtime. Implementation
-        //       of this feature is pending a design for this.
-        public Task AddDeviceAsync(string simulationid, string deviceId, string modelId)
         {
-            return Task.CompletedTask;
-        }
 
-        // TODO: Implement support for removing devices from a running simulation.
-        //       This functionality is needed for Remote Monitoring, but the
-        //       initial implementation of large-scale device simulation
-        //       does not support this because we do not have a design for
-        //       how to modify existing partitions at runtime. Implementation
-        //       of this feature is pending a design for this.
-        public Task DeleteDevicesAsync(List<string> ids)
-        {
-            return Task.CompletedTask;
         }
 
         private async Task StopInactiveSimulationsAsync(IList<Simulation> activeSimulations)
