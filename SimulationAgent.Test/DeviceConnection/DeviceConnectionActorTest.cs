@@ -55,14 +55,12 @@ namespace SimulationAgent.Test.DeviceConnection
                 this.logger.Object,
                 this.mockInstance.Object);
             this.connectLogic = new Mock<Connect>(
-                this.scriptInterpreter.Object,
                 this.logger.Object,
                 this.mockInstance.Object);
             this.deregisterLogic = new Mock<Deregister>(
                 this.logger.Object,
                 this.mockInstance.Object);
             this.disconnectLogic = new Mock<Disconnect>(
-                this.scriptInterpreter.Object,
                 this.logger.Object,
                 this.mockInstance.Object);
             this.deviceStateActor = new Mock<IDeviceStateActor>();

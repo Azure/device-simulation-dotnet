@@ -4,6 +4,7 @@ using System;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -14,6 +15,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         ISmartDictionary DeviceState { get; }
         ISmartDictionary DeviceProperties { get; }
         bool IsDeviceActive { get; }
+        IScriptInterpreter ScriptInterpreter { get; }
 
         void Init(
             ISimulationContext simulationContext,
@@ -61,19 +63,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         /// the number of active devices, we can include devices which are not
         /// connected yet but being simulated.
         /// </summary>
-        public bool IsDeviceActive
-        {
-            get { return this.status == ActorStatus.Updating; }
-        }
+        public bool IsDeviceActive => this.status == ActorStatus.Updating;
 
         public string DeviceId => this.deviceId;
 
+        public IScriptInterpreter ScriptInterpreter { get; }
+
         public DeviceStateActor(
             UpdateDeviceState updateDeviceStateLogic,
+            IScriptInterpreter scriptInterpreter,
             ILogger logger,
             IInstance instance)
         {
             this.updateDeviceStateLogic = updateDeviceStateLogic;
+            this.ScriptInterpreter = scriptInterpreter;
             this.log = logger;
             this.instance = instance;
             this.status = ActorStatus.None;

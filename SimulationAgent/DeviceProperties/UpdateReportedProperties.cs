@@ -2,6 +2,7 @@
 
 using System;
 using System.Threading.Tasks;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 
@@ -23,7 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
             this.log = logger;
         }
 
-        public void Init(IDevicePropertiesActor context, string deviceId)
+        public void Init(IDevicePropertiesActor context, string deviceId, IDevices devices)
         {
             this.context = context;
             this.deviceId = deviceId;

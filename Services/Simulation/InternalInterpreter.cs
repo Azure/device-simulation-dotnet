@@ -28,6 +28,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             ISmartDictionary properties);
     }
 
+    // Singleton - doesn't hold any device or simulation specific state
     public class InternalInterpreter : IInternalInterpreter
     {
         private const string SCRIPT_RANDOM = "math.random.withinrange";

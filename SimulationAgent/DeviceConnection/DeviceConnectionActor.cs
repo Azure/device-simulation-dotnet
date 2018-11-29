@@ -7,6 +7,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection
@@ -17,6 +18,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         ISmartDictionary DeviceState { get; }
         ISmartDictionary DeviceProperties { get; }
         IDeviceClient Client { get; set; }
+        IScriptInterpreter ScriptInterpreter { get; }
         Device Device { get; set; }
         bool Connected { get; }
         long FailedDeviceConnectionsCount { get; }
@@ -139,6 +141,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         /// Azure IoT Hub client shared by Connect, Properties, and SendTelemetry
         /// </summary>
         public IDeviceClient Client { get; set; }
+
+        /// <summary>
+        /// Script interpreter shared by methods and state
+        /// </summary>
+        public IScriptInterpreter ScriptInterpreter => this.deviceStateActor.ScriptInterpreter;
 
         /// <summary>
         /// Azure IoT Hub Device instance

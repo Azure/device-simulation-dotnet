@@ -16,7 +16,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
     /// </summary>
     public class Connect : IDeviceConnectionLogic
     {
-        private readonly IScriptInterpreter scriptInterpreter;
         private readonly ILogger log;
         private readonly IInstance instance;
         private string deviceId;
@@ -25,11 +24,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private ISimulationContext simulationContext;
 
         public Connect(
-            IScriptInterpreter scriptInterpreter,
             ILogger logger,
             IInstance instance)
         {
-            this.scriptInterpreter = scriptInterpreter;
             this.log = logger;
             this.instance = instance;
         }
@@ -62,14 +59,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
                 this.deviceContext.Client = this.simulationContext.Devices.GetClient(
                     this.deviceContext.Device,
-                    this.deviceModel.Protocol,
-                    this.scriptInterpreter);
+                    this.deviceModel.Protocol);
 
                 await this.deviceContext.Client.ConnectAsync();
                 await this.deviceContext.Client.RegisterMethodsForDeviceAsync(
                     this.deviceModel.CloudToDeviceMethods,
                     this.deviceContext.DeviceState,
-                    this.deviceContext.DeviceProperties);
+                    this.deviceContext.DeviceProperties,
+                    this.deviceContext.ScriptInterpreter);
 
                 await this.deviceContext.Client.RegisterDesiredPropertiesUpdateAsync(this.deviceContext.DeviceProperties);
 

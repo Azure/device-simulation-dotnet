@@ -3,6 +3,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties
@@ -12,21 +13,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
     /// </summary>
     public class SetDeviceTag : IDevicePropertiesLogic
     {
-        private readonly IDevices devices;
         private readonly ILogger log;
+        private readonly IInstance instance;
+
         private string deviceId;
+        private IDevices devices;
         private IDevicePropertiesActor context;
 
-        public SetDeviceTag(IDevices devices, ILogger logger)
+        public SetDeviceTag(ILogger logger, IInstance instance)
         {
             this.log = logger;
-            this.devices = devices;
+            this.instance = instance;
         }
 
-        public void Init(IDevicePropertiesActor context, string deviceId)
+        public void Init(IDevicePropertiesActor context, string deviceId, IDevices devices)
         {
+            this.instance.InitOnce();
+
             this.context = context;
             this.deviceId = deviceId;
+            this.devices = devices;
+
+            this.instance.InitComplete();
         }
 
         public async Task RunAsync()

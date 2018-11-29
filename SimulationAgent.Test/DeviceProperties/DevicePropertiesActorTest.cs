@@ -54,9 +54,9 @@ namespace SimulationAgent.Test.DeviceProperties
             this.devices = new Mock<IDevices>();
             this.loopSettings = new Mock<PropertiesLoopSettings>(this.rateLimitingConfig.Object);
             this.updatePropertiesLogic = new Mock<UpdateReportedProperties>(this.logger.Object);
-            this.deviceTagLogic = new Mock<SetDeviceTag>(this.devices.Object, this.logger.Object);
             this.storageAdapterClient = new Mock<IStorageAdapterClient>();
             this.mockInstance = new Mock<IInstance>();
+            this.deviceTagLogic = new Mock<SetDeviceTag>(this.logger.Object, this.mockInstance.Object);
             this.isInstanceInitialized = false;
 
             this.CreateNewDevicePropertiesActor();

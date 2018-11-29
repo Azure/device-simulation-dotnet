@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 {
-    public class Serialization
+    public static class Serialization
     {
         // Save memory avoiding serializations that go too deep
         private static readonly JsonSerializerSettings serializationSettings =

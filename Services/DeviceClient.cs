@@ -9,10 +9,12 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Client.Exceptions;
 using Microsoft.Azure.Devices.Shared;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -26,7 +28,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task DisconnectAsync();
         void DisposeInternalClient();
         Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema);
-        Task RegisterMethodsForDeviceAsync(IDictionary<string, Script> methods, ISmartDictionary deviceState, ISmartDictionary deviceProperties);
+
+        Task RegisterMethodsForDeviceAsync(
+            IDictionary<string, Script> methods,
+            ISmartDictionary deviceState,
+            ISmartDictionary deviceProperties,
+            IScriptInterpreter scriptInterpreter);
+
         Task RegisterDesiredPropertiesUpdateAsync(ISmartDictionary deviceProperties);
         Task UpdatePropertiesAsync(ISmartDictionary deviceProperties);
     }
@@ -162,12 +170,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public async Task RegisterMethodsForDeviceAsync(
             IDictionary<string, Script> methods,
             ISmartDictionary deviceState,
-            ISmartDictionary deviceProperties)
+            ISmartDictionary deviceProperties,
+            IScriptInterpreter scriptInterpreter)
         {
             this.log.Debug("Attempting to register device methods",
                 () => new { this.deviceId });
 
-            await this.deviceMethods.RegisterMethodsAsync(this.deviceId, methods, deviceState, deviceProperties);
+            await this.deviceMethods.RegisterMethodsAsync(
+                this.deviceId,
+                methods,
+                deviceState,
+                deviceProperties,
+                scriptInterpreter);
         }
 
         public async Task RegisterDesiredPropertiesUpdateAsync(ISmartDictionary deviceProperties)

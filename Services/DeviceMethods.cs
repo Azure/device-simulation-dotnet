@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -19,7 +20,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             string deviceId,
             IDictionary<string, Script> methods,
             ISmartDictionary deviceState,
-            ISmartDictionary deviceProperties);
+            ISmartDictionary deviceProperties,
+            IScriptInterpreter scriptInterpreter);
     }
 
     public class DeviceMethods : IDeviceMethods
@@ -27,7 +29,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IDeviceClientWrapper client;
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
-        private readonly IScriptInterpreter scriptInterpreter;
         private IDictionary<string, Script> cloudToDeviceMethods;
         private ISmartDictionary deviceState;
         private ISmartDictionary deviceProperties;
@@ -37,13 +38,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public DeviceMethods(
             IDeviceClientWrapper client,
             ILogger logger,
-            IDiagnosticsLogger diagnosticsLogger,
-            IScriptInterpreter scriptInterpreter)
+            IDiagnosticsLogger diagnosticsLogger)
         {
             this.client = client;
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
-            this.scriptInterpreter = scriptInterpreter;
             this.deviceId = string.Empty;
             this.isRegistered = false;
         }
@@ -52,7 +51,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             string deviceId,
             IDictionary<string, Script> methods,
             ISmartDictionary deviceState,
-            ISmartDictionary deviceProperties)
+            ISmartDictionary deviceProperties,
+            IScriptInterpreter scriptInterpreter)
         {
             if (methods == null) return;
 
@@ -78,7 +78,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 this.log.Debug("Setting up method for device.", () => new { item.Key, this.deviceId });
 
-                await this.client.SetMethodHandlerAsync(item.Key, this.ExecuteMethodAsync, null);
+                await this.client.SetMethodHandlerAsync(item.Key, this.ExecuteMethodAsync, scriptInterpreter);
 
                 this.log.Debug("Method for device setup successfully", () => new
                 {
@@ -90,7 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.isRegistered = true;
         }
 
-        public Task<MethodResponse> ExecuteMethodAsync(MethodRequest methodRequest, object userContext)
+        public Task<MethodResponse> ExecuteMethodAsync(MethodRequest methodRequest, object scriptInterpreter)
         {
             try
             {
@@ -103,7 +103,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 // Kick the method off on a separate thread & immediately return
                 // Not immediately returning would block the client connection to the hub
-                var t = Task.Run(() => this.MethodExecution(methodRequest));
+                var t = Task.Run(() => this.MethodExecution(methodRequest, (IScriptInterpreter) scriptInterpreter));
 
                 return Task.FromResult(new MethodResponse((int) HttpStatusCode.OK));
             }
@@ -116,7 +116,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
         }
 
-        private void MethodExecution(MethodRequest methodRequest)
+        private void MethodExecution(MethodRequest methodRequest, IScriptInterpreter scriptInterpreter)
         {
             try
             {
@@ -146,7 +146,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 });
 
                 // ignore the return state - state updates are handled by callbacks from the script
-                this.scriptInterpreter.Invoke(
+                scriptInterpreter.Invoke(
                     this.cloudToDeviceMethods[methodRequest.Name],
                     scriptContext,
                     this.deviceState,

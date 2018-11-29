@@ -22,7 +22,6 @@ namespace SimulationAgent.Test.DeviceConnection
 
         private readonly Mock<ILogger> logger;
         private readonly Mock<IDevices> devices;
-        private readonly Mock<IScriptInterpreter> scriptInterpreter;
         private readonly Mock<IDeviceClient> deviceClient;
         private readonly Mock<IDeviceConnectionActor> mockDeviceContext;
         private readonly Mock<IInstance> mockInstance;
@@ -33,14 +32,12 @@ namespace SimulationAgent.Test.DeviceConnection
         {
             this.logger = new Mock<ILogger>();
             this.devices = new Mock<IDevices>();
-            this.scriptInterpreter = new Mock<IScriptInterpreter>();
             this.mockDeviceContext = new Mock<IDeviceConnectionActor>();
             this.deviceClient = new Mock<IDeviceClient>();
             this.mockInstance = new Mock<IInstance>();
             this.deviceModel = new DeviceModel { Id = DEVICE_ID };
 
             this.target = new Disconnect(
-                this.scriptInterpreter.Object,
                 this.logger.Object,
                 this.mockInstance.Object);
         }

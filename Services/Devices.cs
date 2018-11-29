@@ -35,7 +35,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         void TmpInit(string connectionString);
 
         // Get a client for the device
-        IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter);
+        IDeviceClient GetClient(Device device, IoTHubProtocol protocol);
 
         // Get the device without connecting to the registry, using a known connection string
         Device GetWithKnownCredentials(string deviceId);
@@ -223,12 +223,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         // Get a client for the device
-        public IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter)
+        public IDeviceClient GetClient(Device device, IoTHubProtocol protocol)
         {
             this.instance.InitRequired();
 
             var sdkClient = this.GetDeviceSdkClient(device, protocol);
-            var methods = new DeviceMethods(sdkClient, this.log, this.diagnosticsLogger, scriptInterpreter);
+            var methods = new DeviceMethods(sdkClient, this.log, this.diagnosticsLogger);
 
             return new DeviceClient(
                 device.Id,
