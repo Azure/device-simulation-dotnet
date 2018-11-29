@@ -229,7 +229,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         private void LogProcessStats(Process p)
         {
-            this.log.Write("Process stats", () => new
+            this.log.Info("Process stats", () => new
             {
                 ThreadsCount = p.Threads.Count,
 
@@ -237,14 +237,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 // The working set includes both shared and private data. The shared data includes
                 // the pages that contain all the instructions that the process executes, including
                 // instructions in the process modules and the system libraries.
-                WorkingSetMB = p.WorkingSet64 / 1024 / 1024,
+                WorkingSetMemoryMB = p.WorkingSet64 / 1024 / 1024,
 
                 // The amount of virtual memory, in bytes, allocated for the associated process.
-                VirtualMemorySizeMB = p.VirtualMemorySize64 / 1024 / 1024,
+                VirtualMemoryMB = p.VirtualMemorySize64 / 1024 / 1024,
 
                 // The amount of memory, in bytes, allocated for the associated process that cannot
                 // be shared with other processes.
-                PrivateMemorySizeMB = p.PrivateMemorySize64 / 1024 / 1024
+                PrivateMemoryMB = p.PrivateMemorySize64 / 1024 / 1024
             });
         }
 
