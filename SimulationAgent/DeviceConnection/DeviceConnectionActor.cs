@@ -190,9 +190,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.fetchFromRegistryLogic = fetchFromRegistryLogic;
             this.registerLogic = registerLogic;
             this.connectLogic = connectLogic;
-            this.instance = instance;
             this.deregisterLogic = deregisterLogic;
             this.disconnectLogic = disconnectLogic;
+
+            this.instance = instance;
 
             this.Message = null;
             this.Client = null;

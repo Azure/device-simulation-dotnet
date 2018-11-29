@@ -7,8 +7,12 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.DocumentDb;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
@@ -130,6 +134,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterType<Simulations>().As<ISimulations>().SingleInstance();
             builder.RegisterType<DeviceModels>().As<IDeviceModels>().SingleInstance();
             builder.RegisterType<DiagnosticsLogger>().As<IDiagnosticsLogger>().SingleInstance();
+            // When extra diagnostics are disabled, use a singleton shim to save memory
+            // TODO: consider using DEBUG symbol
+            if (config.LoggingConfig.ExtraDiagnostics)
+            {
+                builder.RegisterType<ActorsLogger>().As<IActorsLogger>();
+            }
+            else
+            {
+                builder.RegisterType<ActorsLoggerShim>().As<IActorsLogger>().SingleInstance();
+            }
+
+            // When development mode is disabled, use a singleton shim to save memory
+            // TODO: consider using DEBUG symbol
+            if (config.ServicesConfig.DevelopmentMode)
+            {
+                builder.RegisterType<Instance>().As<IInstance>();
+            }
+            else
+            {
+                builder.RegisterType<InstanceShim>().As<IInstance>().SingleInstance();
+            }
 
             // Registrations required by Autofac, these classes implement the same interface
             builder.RegisterType<Connect>().As<Connect>();

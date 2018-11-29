@@ -141,6 +141,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string AAD_ACCESS_TOKEN_URL = AZURE_ACTIVE_DIRECTORY_KEY + "access_token_url";
 
         private const string DEBUGGING_SECTION_KEY = APPLICATION_KEY + "Debugging:";
+        private const string DEBUGGING_DEVELOPMENT_MODE_KEY = DEBUGGING_SECTION_KEY + "development_mode";
         private const string DEBUGGING_DISABLE_SIMULATION_AGENT_KEY = DEBUGGING_SECTION_KEY + "disable_simulation_agent";
         private const string DEBUGGING_DISABLE_PARTITIONING_AGENT_KEY = DEBUGGING_SECTION_KEY + "disable_partitioning_agent";
         private const string DEBUGGING_DISABLE_SEED_BY_TEMPLATE_KEY = DEBUGGING_SECTION_KEY + "disable_seed_by_template";
@@ -278,6 +279,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 UserAgent = configData.GetString(USER_AGENT_KEY),
                 StatisticsStorage = GetStorageConfig(configData, STATISTICS_STORAGE_KEY),
                 DiagnosticsEndpointUrl = configData.GetString(LOGGING_DIAGNOSTICS_URL_KEY),
+                DevelopmentMode = configData.GetBool(DEBUGGING_DEVELOPMENT_MODE_KEY, false),
                 DisableSimulationAgent = configData.GetBool(DEBUGGING_DISABLE_SIMULATION_AGENT_KEY, false),
                 DisablePartitioningAgent = configData.GetBool(DEBUGGING_DISABLE_PARTITIONING_AGENT_KEY, false),
                 DisableSeedByTemplate = configData.GetBool(DEBUGGING_DISABLE_SEED_BY_TEMPLATE_KEY, false)
