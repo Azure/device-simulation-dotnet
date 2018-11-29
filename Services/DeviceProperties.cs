@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Shared;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -70,13 +71,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 foreach (KeyValuePair<string, object> item in desiredProperties)
                 {
-                    // Only update if key doesn't exist or value has changed 
-                    if (!this.deviceProperties.Has(item.Key) ||
-                        (item.Value.ToString() != this.deviceProperties.Get(item.Key).ToString()))
-                    {
-                        // Update existing property or create new property if key doesn't exist.
-                        this.deviceProperties.Set(item.Key, item.Value);
-                    }
+                    // Update existing property or create new property if key doesn't exist.
+                    // Internally updates only if key doesn't exist or value has changed
+                    this.deviceProperties.Set(item.Key, item.Value, true);
                 }
             }
             catch (Exception e)

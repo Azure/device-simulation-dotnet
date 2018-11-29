@@ -47,7 +47,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         {
             this.instance.InitRequired();
 
-            if ((bool) this.deviceStateActor.DeviceState.Get(DeviceStateActor.CALC_TELEMETRY))
+            if (this.deviceStateActor.DeviceState.Has(DeviceStateActor.CALC_TELEMETRY)
+                && (bool) this.deviceStateActor.DeviceState.Get(DeviceStateActor.CALC_TELEMETRY))
             {
                 this.log.Debug("Updating device telemetry data", () => new { this.deviceId });
 

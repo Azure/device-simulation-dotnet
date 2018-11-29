@@ -10,6 +10,7 @@ using Jint.Native;
 using Jint.Parser;
 using Jint.Parser.Ast;
 using Jint.Runtime.Descriptors;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
@@ -23,6 +24,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             Dictionary<string, object> context,
             ISmartDictionary state,
             ISmartDictionary properties);
+
         string Validate(Stream stream);
     }
 
@@ -103,6 +105,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                     program = parser.Parse(sourceCode);
                     programs.Add(filename, program);
                 }
+
                 this.log.Debug("Executing JS function", () => new { filename });
 
                 engine.Execute(program).Invoke(
@@ -121,7 +124,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
         }
 
         /// <summary>
-        /// Reading a stream and try to parse it as javasript.
+        /// Reading a stream and try to parse it as javascript.
         /// </summary>
         public string Validate(Stream stream)
         {
@@ -238,7 +241,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 key = stateChanges.Keys.ElementAt(i);
                 value = stateChanges.Values.ElementAt(i);
                 this.log.Debug("state change", () => new { key, value });
-                this.deviceState.Set(key, value);
+                this.deviceState.Set(key, value, false);
             }
         }
 
@@ -249,7 +252,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             this.log.Debug("Updating device property from the script", () => new { key, value });
 
             // Update device property at key with the script value passed
-            this.deviceProperties.Set(key, value);
+            this.deviceProperties.Set(key, value, true);
         }
     }
 }

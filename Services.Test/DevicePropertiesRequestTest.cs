@@ -3,6 +3,7 @@
 using System.Reflection;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -109,8 +110,8 @@ namespace Services.Test
         {
             SmartDictionary properties = new SmartDictionary();
 
-            properties.Set(KEY1, VALUE1);
-            properties.Set(KEY2, VALUE2);
+            properties.Set(KEY1, VALUE1, false);
+            properties.Set(KEY2, VALUE2, false);
 
             return properties;
         }
