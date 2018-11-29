@@ -511,7 +511,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             {
                 this.Client?.Dispose();
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // ignore
             }
