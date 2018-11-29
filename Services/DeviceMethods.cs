@@ -17,6 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface IDeviceMethods
     {
         Task RegisterMethodsAsync(
+            IDeviceClientWrapper client,
             string deviceId,
             IDictionary<string, Script> methods,
             ISmartDictionary deviceState,
@@ -26,7 +27,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
     public class DeviceMethods : IDeviceMethods
     {
-        private readonly IDeviceClientWrapper client;
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
         private IDictionary<string, Script> cloudToDeviceMethods;
@@ -36,11 +36,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private bool isRegistered;
 
         public DeviceMethods(
-            IDeviceClientWrapper client,
             ILogger logger,
             IDiagnosticsLogger diagnosticsLogger)
         {
-            this.client = client;
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
             this.deviceId = string.Empty;
@@ -48,6 +46,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         public async Task RegisterMethodsAsync(
+            IDeviceClientWrapper client,
             string deviceId,
             IDictionary<string, Script> methods,
             ISmartDictionary deviceState,
@@ -78,7 +77,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 this.log.Debug("Setting up method for device.", () => new { item.Key, this.deviceId });
 
-                await this.client.SetMethodHandlerAsync(item.Key, this.ExecuteMethodAsync, scriptInterpreter);
+                await client.SetMethodHandlerAsync(item.Key, this.ExecuteMethodAsync, scriptInterpreter);
 
                 this.log.Debug("Method for device setup successfully", () => new
                 {

@@ -213,6 +213,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                             : "Device deletion is still in progress",
                         () => new { SimulationId = simulation.Id });
                 }
+
+                deviceService.Dispose();
             }
 
             // Start the job to delete the devices
@@ -233,6 +235,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                 {
                     this.log.Warn("Failed to start device deletion, will retry later");
                 }
+
+                deviceService.Dispose();
             }
         }
 
@@ -274,6 +278,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                             : "Device creation is still in progress",
                         () => new { SimulationId = simulation.Id });
                 }
+
+                deviceService.Dispose();
             }
 
             // Start the job to import the devices
@@ -294,6 +300,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                 {
                     this.log.Warn("Failed to start device creation, will retry later");
                 }
+
+                deviceService.Dispose();
             }
         }
 

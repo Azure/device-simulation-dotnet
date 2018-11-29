@@ -434,9 +434,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     // to other actors - see the 'Connected' property - to avoid
                     // hub traffic from starting right now
                     this.status = ActorStatus.None;
-                    this.Client?.DisconnectAsync();
-                    this.Client?.DisposeInternalClient();
-                    this.Client = null;
+                    this.DisposeClient();
                     this.ScheduleConnection();
                     break;
 
@@ -474,7 +472,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             {
                 this.status = ActorStatus.Stopped;
                 this.actorLogger.ActorStopped();
-                this.Client?.DisconnectAsync();
+                this.DisposeClient();
             }
             catch (Exception e)
             {
@@ -500,7 +498,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         {
             if (this.Client == null) return;
 
-            this.Client.DisposeInternalClient();
+            try
+            {
+                this.Client?.DisconnectAsync();
+            }
+            catch (Exception)
+            {
+                // ignore
+            }
+
+            try
+            {
+                this.Client?.Dispose();
+            }
+            catch (Exception e)
+            {
+                // ignore
+            }
+
             this.Client = null;
         }
 

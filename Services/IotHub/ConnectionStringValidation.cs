@@ -96,6 +96,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             {
                 var newRegistry = this.factory.Resolve<IRegistryManager>();
                 newRegistry.ValidateConnectionString(connectionString);
+                newRegistry.Dispose();
                 return (host, keyName, keyValue);
             }
             catch (Exception e)
@@ -140,6 +141,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
                 var newServiceClient = this.factory.Resolve<IServiceClient>();
                 newServiceClient.Init(connectionString);
                 await newServiceClient.GetServiceStatisticsAsync();
+                newServiceClient.Dispose();
                 this.log.Debug("'Service Connect' test passed");
             }
             catch (Exception e)
@@ -171,6 +173,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             try
             {
                 await newRegistry.RemoveDeviceAsync(testDeviceId);
+                newRegistry.Dispose();
                 this.log.Debug("'Registry Read/Write' test passed");
             }
             catch (Microsoft.Azure.Devices.Client.Exceptions.DeviceNotFoundException)

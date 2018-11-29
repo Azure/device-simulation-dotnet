@@ -131,7 +131,6 @@ namespace SimulationAgent.Test.DeviceTelemetry
             var simulationContext = new SimulationContext(
                 this.devices.Object,
                 this.rateLimiting.Object,
-                this.mockFactory.Object,
                 this.mockInstance.Object);
 
             this.target.Init(

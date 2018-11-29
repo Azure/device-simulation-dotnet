@@ -12,6 +12,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         void Init(string connString);
 
         Task<ServiceStatistics> GetServiceStatisticsAsync();
+
+        void Dispose();
     }
 
     public class ServiceClientWrapper : IServiceClient, IDisposable

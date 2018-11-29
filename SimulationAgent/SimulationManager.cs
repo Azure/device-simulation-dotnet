@@ -271,6 +271,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         {
             this.instance.InitRequired();
 
+            this.simulationContext?.Dispose();
+
             this.DeleteAllStateActors();
             this.DeleteAllConnectionActors();
             this.DeleteAllTelemetryActors();

@@ -14,27 +14,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public interface IDevicePropertiesRequest
     {
         Task RegisterChangeUpdateAsync(
+            IDeviceClientWrapper client,
             string deviceId,
             ISmartDictionary deviceProperties);
     }
 
     public class DeviceProperties : IDevicePropertiesRequest
     {
-        private readonly IDeviceClientWrapper client;
         private readonly ILogger log;
         private string deviceId;
         private ISmartDictionary deviceProperties;
         private bool isRegistered;
 
-        public DeviceProperties(IDeviceClientWrapper client, ILogger logger)
+        public DeviceProperties(ILogger logger)
         {
-            this.client = client;
             this.log = logger;
             this.deviceId = string.Empty;
             this.isRegistered = false;
         }
 
-        public async Task RegisterChangeUpdateAsync(string deviceId, ISmartDictionary deviceProperties)
+        public async Task RegisterChangeUpdateAsync(IDeviceClientWrapper client, string deviceId, ISmartDictionary deviceProperties)
         {
             if (this.isRegistered)
             {
@@ -48,7 +47,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log.Debug("Setting up callback for desired properties updates.", () => new { this.deviceId });
 
             // Set callback that IoT Hub calls whenever the client receives a desired properties state update.
-            await this.client.SetDesiredPropertyUpdateCallbackAsync(this.OnChangeCallback, null);
+            await client.SetDesiredPropertyUpdateCallbackAsync(this.OnChangeCallback, null);
 
             this.log.Debug("Callback for desired properties updates setup successfully", () => new { this.deviceId });
 

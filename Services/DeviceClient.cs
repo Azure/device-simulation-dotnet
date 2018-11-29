@@ -26,7 +26,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         string DeviceId { get; }
         Task ConnectAsync();
         Task DisconnectAsync();
-        void DisposeInternalClient();
         Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema);
 
         Task RegisterMethodsForDeviceAsync(
@@ -37,9 +36,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         Task RegisterDesiredPropertiesUpdateAsync(ISmartDictionary deviceProperties);
         Task UpdatePropertiesAsync(ISmartDictionary deviceProperties);
+        void Dispose();
     }
 
-    public class DeviceClient : IDeviceClient
+    public class DeviceClient : IDeviceClient, IDisposable
     {
         private const string DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:sszzz";
 
@@ -54,8 +54,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IDeviceMethods deviceMethods;
         private readonly IDevicePropertiesRequest propertiesUpdateRequest;
         private readonly ILogger log;
-
-        private IDeviceClientWrapper client;
+        private readonly IDeviceClientWrapper client;
 
         private bool connected;
 
@@ -75,7 +74,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.deviceMethods = deviceMethods;
             this.log = logger;
 
-            this.propertiesUpdateRequest = new DeviceProperties(client, this.log);
+            this.propertiesUpdateRequest = new DeviceProperties(this.log);
         }
 
         public async Task ConnectAsync()
@@ -146,24 +145,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         });
                 }
 
-                this.DisposeInternalClient();
-            }
-        }
-
-        public void DisposeInternalClient()
-        {
-            this.connected = false;
-
-            try
-            {
-                // Note: this is important to ensure that any pending task inside the SDK is stopped
-                this.client?.Dispose();
-                this.client = null;
-            }
-            catch (Exception e)
-            {
-                this.log.Error("Something went wrong while disposing the device client",
-                    () => new { this.deviceId, this.protocol, e });
+                this.Dispose();
             }
         }
 
@@ -177,6 +159,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 () => new { this.deviceId });
 
             await this.deviceMethods.RegisterMethodsAsync(
+                this.client,
                 this.deviceId,
                 methods,
                 deviceState,
@@ -189,7 +172,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log.Debug("Attempting to register desired property notifications for device",
                 () => new { this.deviceId });
 
-            await this.propertiesUpdateRequest.RegisterChangeUpdateAsync(this.deviceId, deviceProperties);
+            await this.propertiesUpdateRequest.RegisterChangeUpdateAsync(this.client, this.deviceId, deviceProperties);
         }
 
         public async Task SendMessageAsync(string message, DeviceModel.DeviceModelMessageSchema schema)
@@ -283,6 +266,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
 
                 throw new BrokenDeviceClientException("Failed to update reported properties", e);
+            }
+        }
+
+        public void Dispose()
+        {
+            this.connected = false;
+
+            try
+            {
+                // IDeviceClientWrapper disposal
+                this.client?.Dispose();
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Something went wrong while disposing the device client",
+                    () => new { this.deviceId, this.protocol, e });
             }
         }
 
