@@ -130,10 +130,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             // dependencies. To improve performance we reuse some instances,
             // for example to reuse IoT Hub connections, as opposed to creating
             // a new connection every time.
+            // Removing these can leads to thousands/millions of new object
+            // instantiations overloading the garbage collector.
             builder.RegisterType<Agent>().As<ISimulationAgent>().SingleInstance();
             builder.RegisterType<Simulations>().As<ISimulations>().SingleInstance();
             builder.RegisterType<DeviceModels>().As<IDeviceModels>().SingleInstance();
+            builder.RegisterType<DeviceModelScripts>().As<IDeviceModelScripts>().SingleInstance();
             builder.RegisterType<DiagnosticsLogger>().As<IDiagnosticsLogger>().SingleInstance();
+            builder.RegisterType<ThreadWrapper>().As<IThreadWrapper>().SingleInstance();
+            builder.RegisterType<InternalInterpreter>().As<IInternalInterpreter>().SingleInstance();
+            builder.RegisterType<Factory>().As<IFactory>().SingleInstance();
+            builder.RegisterType<ConnectionStringValidation>().As<IConnectionStringValidation>().SingleInstance();
+            builder.RegisterType<DocumentDbWrapper>().As<IDocumentDbWrapper>().SingleInstance();
+
             // When extra diagnostics are disabled, use a singleton shim to save memory
             // TODO: consider using DEBUG symbol
             if (config.LoggingConfig.ExtraDiagnostics)
