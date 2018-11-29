@@ -92,7 +92,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             this.messagingQuotaExceeded = false;
             this.messagingQuotaNextProbe = 0;
 
-            // Messaging quota variables
+            // Device quota variables
             this.deviceQuotaLock = new object();
             this.deviceQuotaExceeded = false;
             this.deviceQuotaNextProbe = 0;

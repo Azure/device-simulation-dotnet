@@ -16,8 +16,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         private readonly bool logProcessId;
         private readonly string dateFormat;
         private readonly object fileLock;
+
+        // Optional list of sources to ignore, e.g. methods for which log statements will be discarded
         private readonly ImmutableHashSet<string> blackList;
+
+        // Optional list of sources to include, ignoring everything else
         private readonly ImmutableHashSet<string> whiteList;
+
+        // Flag set to True when using a white list, to know that most of the logs are discarded
         private readonly bool onlyWhiteListed;
 
         public Logger(string processId, ILoggingConfig config)
