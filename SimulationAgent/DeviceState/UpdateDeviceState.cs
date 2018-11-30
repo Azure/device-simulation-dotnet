@@ -15,7 +15,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
     /// </summary>
     public class UpdateDeviceState
     {
-        private readonly IScriptInterpreter scriptInterpreter;
         private readonly ILogger log;
         private readonly IInstance instance;
         private string deviceId;
@@ -23,11 +22,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         private DeviceStateActor deviceStateActor;
 
         public UpdateDeviceState(
-            IScriptInterpreter scriptInterpreter,
             ILogger logger,
             IInstance instance)
         {
-            this.scriptInterpreter = scriptInterpreter;
             this.log = logger;
             this.instance = instance;
         }
@@ -47,7 +44,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         {
             this.instance.InitRequired();
 
-            if ((bool) this.deviceStateActor.DeviceState.Get(DeviceStateActor.CALC_TELEMETRY))
+            if (this.deviceStateActor.DeviceState.Has(DeviceStateActor.CALC_TELEMETRY)
+                && (bool) this.deviceStateActor.DeviceState.Get(DeviceStateActor.CALC_TELEMETRY))
             {
                 this.log.Debug("Updating device telemetry data", () => new { this.deviceId });
 
@@ -65,7 +63,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                     foreach (var script in this.deviceModel.Simulation.Scripts)
                     {
                         // call Invoke() to update the internal device state
-                        this.scriptInterpreter.Invoke(
+                        this.deviceStateActor.ScriptInterpreter.Invoke(
                             script,
                             scriptContext,
                             this.deviceStateActor.DeviceState,

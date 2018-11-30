@@ -55,6 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 foreach (var device in deviceConnectionActors)
                 {
+                    // Avoid enqueueing async tasks that don't have anything to do
                     if (device.Value.HasWorkToDo())
                     {
                         tasks.Add(device.Value.RunAsync());

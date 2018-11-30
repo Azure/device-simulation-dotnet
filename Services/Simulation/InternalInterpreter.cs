@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Newtonsoft.Json;
@@ -27,6 +28,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             ISmartDictionary properties);
     }
 
+    // Singleton - doesn't hold any device or simulation specific state
     public class InternalInterpreter : IInternalInterpreter
     {
         private const string SCRIPT_RANDOM = "math.random.withinrange";
@@ -81,7 +83,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             {
                 (double min, double max) = this.GetMinMaxParameters(sensor.Value);
                 var value = this.random.NextDouble() * (max - min) + min;
-                state.Set(sensor.Key, value);
+                state.Set(sensor.Key, value, false);
             }
         }
 
@@ -97,13 +99,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 // Add the sensor to the state if missing
                 if (!state.Has(sensor.Key))
                 {
-                    state.Set(sensor.Key, min);
+                    state.Set(sensor.Key, min, false);
                 }
 
                 double current = Convert.ToDouble(state.Get(sensor.Key));
                 double next = AreEqual(current, max) ? min : Math.Min(current + step, max);
 
-                state.Set(sensor.Key, next);
+                state.Set(sensor.Key, next, false);
             }
         }
 
@@ -119,13 +121,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
                 // Add the sensor to the state if missing
                 if (!state.Has(sensor.Key))
                 {
-                    state.Set(sensor.Key, max);
+                    state.Set(sensor.Key, max, false);
                 }
 
                 double current = Convert.ToDouble(state.Get(sensor.Key));
                 double next = AreEqual(current, min) ? max : Math.Max(current - step, min);
 
-                state.Set(sensor.Key, next);
+                state.Set(sensor.Key, next, false);
             }
         }
 

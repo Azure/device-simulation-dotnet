@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Services.Test.helpers;
 using Xunit;
@@ -125,7 +126,7 @@ namespace Services.Test
             const string VALUE = "testSetValue";
 
             // Act
-            this.target.Set(KEY, VALUE);
+            this.target.Set(KEY, VALUE, true);
             var result = this.target.Get(KEY);
 
             // Assert
@@ -140,7 +141,7 @@ namespace Services.Test
             this.target = this.GetEmptyProperties();
             const string KEY = "testSetKey";
             const string VALUE = "testSetValue";
-            this.target.Set(KEY, VALUE);
+            this.target.Set(KEY, VALUE, true);
 
             // Act
             var result = this.target.Get(KEY);
@@ -157,7 +158,7 @@ namespace Services.Test
             this.target = this.GetEmptyProperties();
             const string KEY = "testHasKey";
             const string VALUE = "testHasValue";
-            this.target.Set(KEY, VALUE);
+            this.target.Set(KEY, VALUE, true);
 
             // Act
             var result = this.target.Has(KEY);
@@ -191,7 +192,7 @@ namespace Services.Test
             const string VALUE = "testValue";
 
             // Act
-            this.target.Set(KEY, VALUE);
+            this.target.Set(KEY, VALUE, true);
 
             // Assert
             Assert.True(this.target.Changed);
@@ -205,7 +206,7 @@ namespace Services.Test
 
             const string KEY = "testKey";
             const string VALUE = "testValue";
-            this.target.Set(KEY, VALUE);
+            this.target.Set(KEY, VALUE, true);
 
             // Act
             this.target.ResetChanged();
@@ -221,6 +222,52 @@ namespace Services.Test
             this.target = new SmartDictionary(null);
 
             // Assert
+            Assert.True(this.target.Changed);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItCanDetectUnchangedValues()
+        {
+            // Arrange
+            this.target = this.GetTestProperties();
+            var key = Guid.NewGuid().ToString();
+            var value = Guid.NewGuid().ToString();
+            this.target.Set(key, value, false);
+            this.target.ResetChanged();
+
+            // Act - Assert
+            this.target.Set(key, value, true);
+            Assert.False(this.target.Changed);
+
+            // Assert
+            this.target.Set(key, value, false);
+            Assert.True(this.target.Changed);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItCanMissUnchangedValues()
+        {
+            // Arrange
+            this.target = this.GetTestProperties();
+            var key = Guid.NewGuid().ToString();
+            var value1 = Guid.NewGuid().ToString();
+            var value2 = Guid.NewGuid().ToString();
+            var valuesOrder1 = new { value1, value2 };
+            var valuesOrder2 = new { value2, value1 };
+
+            // Act
+            this.target.Set(key, valuesOrder1, false);
+            this.target.ResetChanged();
+            this.target.Set(key, valuesOrder1, true);
+
+            // Assert - In this case the comparison works because the order of properties is the same
+            Assert.False(this.target.Changed);
+
+            // Act
+            this.target.Set(key, valuesOrder2, true);
+
+            // Assert - The comparison is not so smart to detect that the properties have
+            // the same values and are just in a different order
             Assert.True(this.target.Changed);
         }
 

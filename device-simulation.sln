@@ -98,6 +98,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "development", "development", "{D97D0D98-A424-4FBA-9E18-FE4EEC538893}"
 ProjectSection(SolutionItems) = preProject
 	scripts\development\postman_collection.json = scripts\development\postman_collection.json
+	scripts\development\create-simulation.sh = scripts\development\create-simulation.sh
+	scripts\development\delete-simulation.sh = scripts\development\delete-simulation.sh
+	scripts\development\start-storage-adapter.sh = scripts\development\start-storage-adapter.sh
 EndProjectSection
 EndProject
 Global

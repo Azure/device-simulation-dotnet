@@ -4,12 +4,12 @@ using System;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
 {
+    /// <summary>
+    /// This exception is thrown when a connection to the IoTHub with the
+    /// provided connection string fails.
+    /// </summary>
     public class IotHubConnectionException : Exception
     {
-        /// <summary>
-        /// This exception is thrown when a connection to the IoTHub with the 
-        /// provided connection string fails.
-        /// </summary>
         public IotHubConnectionException() : base()
         {
         }

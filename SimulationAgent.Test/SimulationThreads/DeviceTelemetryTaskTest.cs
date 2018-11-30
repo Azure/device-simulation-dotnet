@@ -32,6 +32,7 @@ namespace SimulationAgent.Test.SimulationThreads
 
             Mock<IAppConcurrencyConfig> mockSimulationConcurrencyConfig = new Mock<IAppConcurrencyConfig>();
             mockSimulationConcurrencyConfig.SetupGet(x => x.MaxPendingTelemetry).Returns(MAX_PENDING_TELEMETRY_TASKS);
+            mockSimulationConcurrencyConfig.SetupGet(x => x.MinDeviceTelemetryLoopDuration).Returns(0);
             Mock<ILogger> mockLogger = new Mock<ILogger>();
 
             this.target = new DeviceTelemetryTask(
@@ -63,7 +64,7 @@ namespace SimulationAgent.Test.SimulationThreads
                 threadPosition,
                 TELEMETRY_THREAD_COUNT,
                 cancellationToken.Token);
-            targetTask.Wait(Constants.TEST_TIMEOUT);
+            targetTask.CompleteOrTimeout();
 
             // Assert
             // Verify that RunAsync was called on the expected actors
@@ -109,6 +110,7 @@ namespace SimulationAgent.Test.SimulationThreads
 
                 // Use a callback to cancel the token so that the main loop of
                 // the target will stop after the first iteration.
+                mockActor.Setup(x => x.HasWorkToDo()).Returns(true);
                 mockActor.Setup(x => x.RunAsync()).Returns(Task.CompletedTask)
                     .Callback(() => { cancellationToken.Cancel(); });
 

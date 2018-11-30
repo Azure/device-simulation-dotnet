@@ -28,6 +28,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         Task UpdateTwinAsync(string deviceId, Twin twinPatch, string eTag);
         Task<JobProperties> ImportDevicesAsync(string containerUri, string inputBlobName);
         Task<JobProperties> GetJobAsync(string jobId);
+        void Dispose();
     }
 
     /**

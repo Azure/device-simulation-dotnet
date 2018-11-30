@@ -93,8 +93,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to load device model script from storage",
-                    () => new { id, e.Message, Exception = e });
+                this.log.Error("Unable to load device model script from storage", () => new { id, e });
                 throw new ExternalDependencyException("Unable to load device model script from storage", e);
             }
 
@@ -106,8 +105,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to parse device model script loaded from storage",
-                    () => new { id, e.Message, Exception = e });
+                this.log.Error("Unable to parse device model script loaded from storage", () => new { id, e });
                 throw new ExternalDependencyException("Unable to parse device model script loaded from storage", e);
             }
         }
@@ -125,8 +123,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to load device model scripts from storage",
-                    () => new { e.Message, Exception = e });
+                this.log.Error("Unable to load device model scripts from storage", e);
                 throw new ExternalDependencyException("Unable to load device model scripts from storage", e);
             }
 
@@ -146,8 +143,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception e)
             {
-                this.log.Error("Unable to parse device model scripts loaded from storage",
-                    () => new { e.Message, Exception = e });
+                this.log.Error("Unable to parse device model scripts loaded from storage", e);
                 throw new ExternalDependencyException("Unable to parse device model scripts loaded from storage", e);
             }
         }
@@ -159,7 +155,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             deviceModelScript.Created = DateTimeOffset.UtcNow;
             deviceModelScript.Modified = deviceModelScript.Created;
-       
+
             if (string.IsNullOrEmpty(deviceModelScript.Id))
             {
                 deviceModelScript.Id = Guid.NewGuid().ToString();

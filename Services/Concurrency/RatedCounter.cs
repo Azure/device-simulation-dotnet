@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 
+// TODO: optimize the memory usage https://github.com/Azure/device-simulation-dotnet/issues/80
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
     public class PerSecondCounter : RatedCounter
@@ -23,17 +24,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         public PerMinuteCounter(int rate, string name, ILogger logger)
             : base(rate, 60 * 1000, name, logger)
         {
-        }
-    }
-
-    // TODO: optimize the memory usage for this counter (see Queue<long> usage)
-    //       https://github.com/Azure/device-simulation-dotnet/issues/80
-    public class PerDayCounter : RatedCounter
-    {
-        public PerDayCounter(int rate, string name, ILogger logger)
-            : base(rate, 86400 * 1000, name, logger)
-        {
-            throw new NotSupportedException("Daily counters are not supported yet, due to memory constraints.");
         }
     }
 
@@ -192,8 +182,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             {
                 if (this.timestamps.Count > 1)
                 {
+                    var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    var last = this.timestamps.Last();
+
+                    // To avoid stale stats, return 0 if there are no events in the last minute
+                    if (now - last > 60000) return 0;
+
                     // Time range in milliseconds
-                    long time = this.timestamps.Last() - this.timestamps.First();
+                    long time = last - this.timestamps.First();
 
                     // Unit for speed is messages per second
                     speed = (1000 * (double) this.timestamps.Count / time * 10) / 10;

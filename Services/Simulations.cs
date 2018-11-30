@@ -45,7 +45,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // Add a device to simulation
         Task AddDeviceAsync(string id);
 
-        // Delete a simulation and its devices.
+        // Delete a simulation and its statistics (not the devices).
         Task DeleteAsync(string id);
 
         // Seed default simulations
@@ -71,6 +71,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         // Get the ID of the devices in a simulation, grouped by device model ID.
         Dictionary<string, List<string>> GetDeviceIdsByModel(Models.Simulation simulation);
+
+        // Generate a device Id
+        string GenerateId(string simulationId, string deviceModelId, int position);
     }
 
     public class Simulations : ISimulations
@@ -88,7 +91,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IStorageRecords simulationsStorage;
         private readonly IConnectionStrings connectionStrings;
         private readonly ISimulationStatistics simulationStatistics;
-        private readonly IDevices devices;
         private readonly IFileSystem fileSystem;
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
@@ -99,7 +101,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IFactory factory,
             IStorageAdapterClient storageAdapterClient,
             IConnectionStrings connectionStrings,
-            IDevices devices,
             IFileSystem fileSystem,
             ILogger logger,
             IDiagnosticsLogger diagnosticsLogger,
@@ -111,7 +112,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
             this.simulationsStorage = factory.Resolve<IStorageRecords>().Init(config.SimulationsStorage);
             this.connectionStrings = connectionStrings;
-            this.devices = devices;
             this.fileSystem = fileSystem;
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
@@ -391,17 +391,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         /// <summary>
-        /// Delete a simulation, its statistics and devices.
+        /// Delete a simulation and its statistics (not the devices).
         /// </summary>
         public async Task DeleteAsync(string id)
         {
-            // Delete devices first
-            var deviceIds = this.GetDeviceIds(await this.GetAsync(id));
-            await this.devices.DeleteListAsync(deviceIds);
-
             await this.simulationStatistics.DeleteSimulationStatisticsAsync(id);
-
-            // Then delete the simulation from storage
             await this.simulationsStorage.DeleteAsync(id);
         }
 
@@ -568,7 +562,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 for (var i = 0; i < model.Count; i++)
                 {
-                    deviceIds.Add(this.devices.GenerateId(simulation.Id, model.Id, i));
+                    deviceIds.Add(this.GenerateId(simulation.Id, model.Id, i));
                 }
             }
 
@@ -589,7 +583,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 var deviceIds = new List<string>();
                 for (var i = 1; i <= model.Count; i++)
                 {
-                    deviceIds.Add(this.devices.GenerateId(simulation.Id, model.Id, i));
+                    deviceIds.Add(this.GenerateId(simulation.Id, model.Id, i));
                     deviceCount++;
                 }
 
@@ -611,6 +605,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log.Debug("Device IDs loaded", () => new { Simulation = simulation.Id, deviceCount });
 
             return result;
+        }
+
+        /// <summary>
+        /// Generate a device Id. The method is here to avoid the need to call Dispose
+        /// on the registry used by the Devices class.
+        /// </summary>
+        public string GenerateId(string simulationId, string deviceModelId, int position)
+        {
+            return simulationId + "." + deviceModelId + "." + position;
         }
 
         private async Task<(Models.Simulation simulation, bool jobCreated, string jobId)> CreateJobToDeleteDevices(string simulationId, IDevices devices)

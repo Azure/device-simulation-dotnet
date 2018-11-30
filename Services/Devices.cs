@@ -14,7 +14,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Newtonsoft.Json;
@@ -35,7 +34,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         void TmpInit(string connectionString);
 
         // Get a client for the device
-        IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter);
+        IDeviceClient GetClient(Device device, IoTHubProtocol protocol);
 
         // Get the device without connecting to the registry, using a known connection string
         Device GetWithKnownCredentials(string deviceId);
@@ -63,11 +62,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task DeleteListAsync(IEnumerable<string> deviceIds);
 
         /// <summary>
-        /// Generate a device Id
-        /// </summary>
-        string GenerateId(string simulationId, string deviceModelId, int position);
-
-        /// <summary>
         /// Create a list of devices using bulk import via storage account
         /// </summary>
         Task<string> CreateListUsingJobsAsync(IEnumerable<string> deviceIds);
@@ -81,9 +75,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// Delete a list of devices using bulk import via storage account
         /// </summary>
         Task<string> DeleteListUsingJobsAsync(IEnumerable<string> deviceIds);
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing,
+        /// or resetting unmanaged resources.
+        /// </summary>
+        void Dispose();
     }
 
-    public class Devices : IDevices
+    public class Devices : IDevices, IDisposable
     {
         // Simulated devices are marked with a tag "IsSimulated = Y"
         public const string SIMULATED_TAG_KEY = "IsSimulated";
@@ -99,7 +99,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private const int REGISTRY_MAX_BATCH_SIZE = 100;
 
         private readonly IConnectionStrings connectionStrings;
-        private readonly IDeviceClientWrapper deviceClient;
+        private readonly IDeviceClientWrapper deviceClientFactory;
         private readonly IRegistryManager registry;
 
         private readonly ILogger log;
@@ -107,7 +107,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IServicesConfig config;
         private readonly IInstance instance;
 
-        private readonly bool twinReadsWritesEnabled;
         private string ioTHubHostName;
         private string connString;
         private string fixedDeviceKey;
@@ -116,7 +115,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IServicesConfig config,
             IConnectionStrings connStrings,
             IRegistryManager registryManager,
-            IDeviceClientWrapper deviceClient,
+            IDeviceClientWrapper deviceClientFactory,
             ILogger logger,
             IDiagnosticsLogger diagnosticsLogger,
             IInstance instance)
@@ -124,13 +123,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.config = config;
             this.connectionStrings = connStrings;
             this.registry = registryManager;
-            this.deviceClient = deviceClient;
+            this.deviceClientFactory = deviceClientFactory;
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
             this.instance = instance;
 
             this.connString = null;
-            this.twinReadsWritesEnabled = config.TwinReadWriteEnabled;
         }
 
         // Set IoTHub connection strings, using either the user provided value or the configuration, 
@@ -223,12 +221,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         // Get a client for the device
-        public IDeviceClient GetClient(Device device, IoTHubProtocol protocol, IScriptInterpreter scriptInterpreter)
+        public IDeviceClient GetClient(Device device, IoTHubProtocol protocol)
         {
             this.instance.InitRequired();
 
-            var sdkClient = this.GetDeviceSdkClient(device, protocol);
-            var methods = new DeviceMethods(sdkClient, this.log, this.diagnosticsLogger, scriptInterpreter);
+            IDeviceClientWrapper sdkClient = this.GetDeviceSdkClient(device, protocol);
+            var methods = new DeviceMethods(this.log, this.diagnosticsLogger);
 
             return new DeviceClient(
                 device.Id,
@@ -255,9 +253,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             this.log.Debug("Fetching device from registry", () => new { deviceId });
 
-            Device result = null;
             var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
 
+            Device result = null;
             try
             {
                 Azure.Devices.Device device = await this.registry.GetDeviceAsync(deviceId);
@@ -267,23 +266,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 }
                 else
                 {
-                    var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                    var timeSpentMsecs = GetTimeSpentMsecs();
                     this.log.Debug("Device not found", () => new { timeSpentMsecs, deviceId });
                 }
             }
             catch (Exception e) when (e is TaskCanceledException || e.InnerException is TaskCanceledException)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                var timeSpentMsecs = GetTimeSpentMsecs();
                 this.log.Error("Get device task timed out", () => new { timeSpentMsecs, deviceId, e.Message });
+
                 throw new ExternalDependencyException("Get device task timed out", e);
             }
             catch (Exception e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                var msg = "Unable to fetch the IoT device";
-                this.log.Error(msg, () => new { timeSpentMsecs, deviceId, e });
-                this.diagnosticsLogger.LogServiceError(msg, new { timeSpentMsecs, deviceId, e.Message });
-                throw new ExternalDependencyException(msg);
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                const string MSG = "Unable to fetch the IoT device";
+                this.log.Error(MSG, () => new { timeSpentMsecs, deviceId, e });
+                this.diagnosticsLogger.LogServiceError(MSG, new { timeSpentMsecs, deviceId, e.Message });
+                throw new ExternalDependencyException(MSG);
             }
 
             return result;
@@ -295,6 +295,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.instance.InitRequired();
 
             var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
 
             try
             {
@@ -305,13 +306,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
                 return new Device(device, this.ioTHubHostName);
             }
+            catch (QuotaExceededException e)
+            {
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                const string MSG = "Too many devices, quota exceeded, unable to create the device";
+                this.log.Error(MSG, () => new { timeSpentMsecs, deviceId, e });
+                this.diagnosticsLogger.LogServiceError(MSG, new { timeSpentMsecs, deviceId, e.Message });
+                throw new TotalDeviceCountQuotaExceededException(MSG, e);
+            }
             catch (Exception e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                var msg = "Unable to create the device";
-                this.log.Error(msg, () => new { timeSpentMsecs, deviceId, e });
-                this.diagnosticsLogger.LogServiceError(msg, new { timeSpentMsecs, deviceId, e.Message });
-                throw new ExternalDependencyException(msg, e);
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                const string MSG = "Unable to create the device";
+                this.log.Error(MSG, () => new { timeSpentMsecs, deviceId, e });
+                this.diagnosticsLogger.LogServiceError(MSG, new { timeSpentMsecs, deviceId, e.Message });
+                throw new ExternalDependencyException(MSG, e);
             }
         }
 
@@ -385,7 +394,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (Exception error)
             {
-                this.log.Error("Failed to delete device", () => new { error });
+                this.log.Error("Failed to delete device, unexpected error", () => new { error });
                 throw;
             }
         }
@@ -427,33 +436,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (TooManyDevicesException error)
             {
-                var msg = "Failed to delete devices, the batch is too big";
-                this.log.Error(msg, error);
-                this.diagnosticsLogger.LogServiceError(msg, error.Message);
+                const string MSG = "Failed to delete devices, the batch is too big";
+                this.log.Error(MSG, error);
+                this.diagnosticsLogger.LogServiceError(MSG, error.Message);
                 throw;
             }
             catch (IotHubCommunicationException error)
             {
-                var msg = "Failed to delete devices (IotHubCommunicationException)";
-                this.log.Error(msg, () => new { error.InnerException, error });
-                this.diagnosticsLogger.LogServiceError(msg, new { error.Message });
+                const string MSG = "Failed to delete devices (IotHubCommunicationException)";
+                this.log.Error(MSG, () => new { error.InnerException, error });
+                this.diagnosticsLogger.LogServiceError(MSG, new { error.Message });
                 throw;
             }
             catch (Exception error)
             {
-                var msg = "Failed to delete devices";
-                this.log.Error(msg, error);
-                this.diagnosticsLogger.LogServiceError(msg, error.Message);
+                const string MSG = "Failed to delete devices, unexpected error";
+                this.log.Error(MSG, error);
+                this.diagnosticsLogger.LogServiceError(MSG, error.Message);
                 throw;
             }
-        }
-
-        /// <summary>
-        /// Generate a device Id
-        /// </summary>
-        public string GenerateId(string simulationId, string deviceModelId, int position)
-        {
-            return simulationId + "." + deviceModelId + "." + position;
         }
 
         // Create a list of devices using bulk import via storage account
@@ -617,6 +618,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             throw new ExternalDependencyException("Unknown job status: " + job.Status);
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing,
+        /// or resetting unmanaged resources.
+        /// </summary>
+        public void Dispose()
+        {
+            this.registry?.Dispose();
+            this.deviceClientFactory.Dispose();
+        }
+
         // Log the errors occurred during a batch operation
         private int AnalyzeBatchErrors(BulkRegistryOperationResult result)
         {
@@ -750,21 +761,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     this.log.Debug("Creating AMQP device client",
                         () => new { device.Id, device.IoTHubHostName });
 
-                    sdkClient = this.deviceClient.CreateFromConnectionString(connectionString, TransportType.Amqp_Tcp_Only, userAgent);
+                    sdkClient = this.deviceClientFactory.CreateFromConnectionString(connectionString, TransportType.Amqp_Tcp_Only, userAgent);
                     break;
 
                 case IoTHubProtocol.MQTT:
                     this.log.Debug("Creating MQTT device client",
                         () => new { device.Id, device.IoTHubHostName });
 
-                    sdkClient = this.deviceClient.CreateFromConnectionString(connectionString, TransportType.Mqtt_Tcp_Only, userAgent);
+                    sdkClient = this.deviceClientFactory.CreateFromConnectionString(connectionString, TransportType.Mqtt_Tcp_Only, userAgent);
                     break;
 
                 case IoTHubProtocol.HTTP:
                     this.log.Debug("Creating HTTP device client",
                         () => new { device.Id, device.IoTHubHostName });
 
-                    sdkClient = this.deviceClient.CreateFromConnectionString(connectionString, TransportType.Http1, userAgent);
+                    sdkClient = this.deviceClientFactory.CreateFromConnectionString(connectionString, TransportType.Http1, userAgent);
                     break;
 
                 default:

@@ -14,6 +14,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
     {
         private readonly ILogger log;
         private readonly IInstance instance;
+
         private string deviceId;
         private IDeviceConnectionActor deviceContext;
         private ISimulationContext simulationContext;

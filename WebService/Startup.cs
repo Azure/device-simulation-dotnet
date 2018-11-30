@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
@@ -149,8 +150,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
             // Stop the application threads
             // TODO: see if we can rely solely on the cancellation token
-            this.partitioningAgent.Stop();
-            this.simulationAgent.Stop();
+            this.partitioningAgent?.Stop();
+            this.simulationAgent?.Stop();
         }
 
         private Task MonitorThreadsAsync(IApplicationLifetime appLifetime)
@@ -200,7 +201,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             log.Write("Twin reads per second:     " + config.RateLimitingConfig.TwinReadsPerSecond);
             log.Write("Twin writes per second:    " + config.RateLimitingConfig.TwinWritesPerSecond);
             log.Write("Messages per second:       " + config.RateLimitingConfig.DeviceMessagesPerSecond);
-            log.Write("Messages per day:          " + config.RateLimitingConfig.DeviceMessagesPerDay);
 
             log.Write("Number of telemetry threads:      " + config.AppConcurrencyConfig.TelemetryThreads);
             log.Write("Max pending connections:          " + config.AppConcurrencyConfig.MaxPendingConnections);
@@ -210,8 +210,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             log.Write("Min duration of connection loop:  " + config.AppConcurrencyConfig.MinDeviceConnectionLoopDuration);
             log.Write("Min duration of telemetry loop:   " + config.AppConcurrencyConfig.MinDeviceTelemetryLoopDuration);
             log.Write("Min duration of twin write loop:  " + config.AppConcurrencyConfig.MinDevicePropertiesLoopDuration);
-
             log.Write("Max devices per partition:        " + config.ClusteringConfig.MaxPartitionSize);
+
+            log.Write("SDK device client timeout:                  " + config.ServicesConfig.IoTHubSdkDeviceClientTimeout);
+            log.Write("SDK Microsoft.Azure.Devices.Client version: "
+                      + typeof(Devices.Client.Message).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion);
+            log.Write("SDK Microsoft.Azure.Devices.Common version: "
+                      + typeof(Devices.Common.ExceptionExtensions).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion);
 
             if (config.ServicesConfig.DisableSimulationAgent)
             {
