@@ -50,7 +50,7 @@ namespace SimulationAgent.Test.SimulationThreads
 
             // Act
             // Act on the target. The cancellation token will be cancelled through
-            // a callback that will be triggered when each device-connection actor
+            // a callback that will be triggered when each device-replay actor
             // is called.
             var targetTask = this.target.RunAsync(
                 this.mockSimulationManagerObjects,
