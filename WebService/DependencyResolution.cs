@@ -130,7 +130,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             // dependencies. To improve performance we reuse some instances,
             // for example to reuse IoT Hub connections, as opposed to creating
             // a new connection every time.
-            // Removing these can leads to thousands/millions of new object
+            // Removing these can lead to thousands/millions of new object
             // instantiations overloading the garbage collector.
             builder.RegisterType<Agent>().As<ISimulationAgent>().SingleInstance();
             builder.RegisterType<Simulations>().As<ISimulations>().SingleInstance();
