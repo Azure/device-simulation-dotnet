@@ -546,7 +546,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             simulation.DeviceCreationJobId = null;
             simulation.DevicesCreationStarted = false;
             simulation.DeleteDevicesOnce = false;
-            
+
             return await this.TryToUpdateSimulationAsync(simulation);
         }
 
