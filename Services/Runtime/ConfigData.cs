@@ -28,6 +28,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 
         public ConfigData(IConfigurationRoot configuration, ILogger logger)
         {
+            // Note: this is a dedicated logger instance hard coded at Info level
             this.log = logger;
             this.configuration = configuration;
         }

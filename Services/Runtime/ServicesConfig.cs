@@ -28,6 +28,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         StorageConfig StatisticsStorage { get; set; }
         string DiagnosticsEndpointUrl { get; }
         string UserAgent { get; }
+        bool DevelopmentMode { get; }
         bool DisableSimulationAgent { get; }
         bool DisablePartitioningAgent { get; }
         bool DisableSeedByTemplate { get; }
@@ -52,6 +53,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             this.ihf = string.Empty;
 
             // By default, disable debugging features
+            this.DevelopmentMode = false;
             this.DisableSimulationAgent = false;
             this.DisablePartitioningAgent = false;
             this.DisableSeedByTemplate = false;
@@ -108,6 +110,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         public StorageConfig PartitionsStorage { get; set; }
 
         public string UserAgent { get; set; }
+
+        public bool DevelopmentMode { get; set; }
 
         public StorageConfig StatisticsStorage { get; set; }
 

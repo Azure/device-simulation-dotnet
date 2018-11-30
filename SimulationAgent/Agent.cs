@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -169,37 +170,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.TryToStopThreads();
         }
 
-        private async Task RunAsync(CancellationToken appStopToken)
-        {
-            try
-            {
-                while (this.running && !appStopToken.IsCancellationRequested)
-                {
-                    this.SendSolutionHeartbeat();
-
-                    this.log.Debug("Starting simulation agent loop",
-                        () => new { SimulationsCount = this.simulationManagers.Count });
-
-                    // Get the list of active simulations. Active simulations are already partitioned.
-                    IList<Simulation> activeSimulations = (await this.simulations.GetListAsync())
-                        .Where(x => x.IsActiveNow).ToList();
-                    this.log.Debug("Active simulations loaded", () => new { activeSimulations.Count });
-
-                    await this.CreateSimulationManagersAsync(activeSimulations);
-                    await this.SaveSimulationStatisticsAsync(activeSimulations);
-                    await this.RunSimulationManagersMaintenanceAsync();
-                    await this.StopInactiveSimulationsAsync(activeSimulations);
-
-                    Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
-                }
-            }
-            catch (Exception e)
-            {
-                this.log.Error("A critical error occurred in the simulation agent", e);
-                this.Stop();
-            }
-        }
-
         // TODO: Implement support for adding devices to a running simulation.
         //       This functionality is needed for Remote Monitoring, but the
         //       initial implementation of large-scale device simulation
@@ -222,6 +192,62 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             return Task.CompletedTask;
         }
 
+        private async Task RunAsync(CancellationToken appStopToken)
+        {
+            try
+            {
+                var applicationProcess = Process.GetCurrentProcess();
+
+                while (this.running && !appStopToken.IsCancellationRequested)
+                {
+                    this.SendSolutionHeartbeat();
+
+                    this.log.Debug("Starting simulation agent loop",
+                        () => new { SimulationsCount = this.simulationManagers.Count });
+
+                    // Get the list of active simulations. Active simulations are already partitioned.
+                    IList<Simulation> activeSimulations = (await this.simulations.GetListAsync())
+                        .Where(x => x.IsActiveNow).ToList();
+                    this.log.Debug("Active simulations loaded", () => new { activeSimulations.Count });
+
+                    await this.CreateSimulationManagersAsync(activeSimulations);
+                    await this.SaveSimulationStatisticsAsync(activeSimulations);
+                    await this.RunSimulationManagersMaintenanceAsync();
+                    await this.StopInactiveSimulationsAsync(activeSimulations);
+
+                    this.LogProcessStats(applicationProcess);
+
+                    Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
+                }
+            }
+            catch (Exception e)
+            {
+                this.log.Error("A critical error occurred in the simulation agent", e);
+                this.Stop();
+            }
+        }
+
+        private void LogProcessStats(Process p)
+        {
+            this.log.Info("Process stats", () => new
+            {
+                ThreadsCount = p.Threads.Count,
+
+                // The amount of physical memory, in bytes, allocated for the associated process.
+                // The working set includes both shared and private data. The shared data includes
+                // the pages that contain all the instructions that the process executes, including
+                // instructions in the process modules and the system libraries.
+                WorkingSetMemoryMB = p.WorkingSet64 / 1024 / 1024,
+
+                // The amount of virtual memory, in bytes, allocated for the associated process.
+                VirtualMemoryMB = p.VirtualMemorySize64 / 1024 / 1024,
+
+                // The amount of memory, in bytes, allocated for the associated process that cannot
+                // be shared with other processes.
+                PrivateMemoryMB = p.PrivateMemorySize64 / 1024 / 1024
+            });
+        }
+
         private async Task StopInactiveSimulationsAsync(IList<Simulation> activeSimulations)
         {
             // Get a list of all simulations that are not active in storage.
@@ -230,7 +256,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             foreach (var manager in managersToStop)
             {
+                this.log.Info("Stopping simulation", () => new { manager.Key });
+
+                // Note: SaveStatisticsAsync doesn't throw exceptions
                 await manager.Value.SaveStatisticsAsync();
+
                 manager.Value.TearDown();
                 if (!this.simulationManagers.TryRemove(manager.Key, out _))
                 {
@@ -250,18 +280,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             {
                 foreach (var simulation in simulations)
                 {
-                    try
+                    if (this.simulationManagers.ContainsKey(simulation.Id))
                     {
-                        if (this.simulationManagers.ContainsKey(simulation.Id))
-                        {
-                            {
-                                await this.simulationManagers[simulation.Id].SaveStatisticsAsync();
-                            }
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        this.log.Error("Failed to save simulation statistics.", () => new { simulation.Id, e });
+                        // Note: SaveStatisticsAsync doesn't throw exceptions
+                        await this.simulationManagers[simulation.Id].SaveStatisticsAsync();
                     }
                 }
 
@@ -279,6 +301,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             {
                 try
                 {
+                    this.log.Info("Starting simulation", () => new { simulation.Id });
+
                     var manager = this.factory.Resolve<ISimulationManager>();
                     await manager.InitAsync(
                         simulation,

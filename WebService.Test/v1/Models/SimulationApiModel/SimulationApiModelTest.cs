@@ -23,7 +23,13 @@ namespace WebService.Test.v1.Models.SimulationApiModel
         private readonly Mock<IConnectionStringValidation> connectionStringValidation;
         private readonly Mock<IServicesConfig> servicesConfig;
         private readonly Mock<IDeploymentConfig> deploymentConfig;
-        private readonly Mock<IRateLimiting> rateReporter;
+        private readonly Mock<IRateLimitingConfig> defaultRateLimits;
+
+        private const int CONNECTTIONS_PER_SECOND = 120;
+        private const int TWIN_READ_PER_SECOND = 10;
+        private const int TWIN_WRITES_PER_SECOND = 10;
+        private const int REGISTRY_OPERATIONS_PER_MIN = 100;
+        private const int DEVICE_MSGS_PER_SECOND = 100;
 
         public SimulationApiModelTest()
         {
@@ -31,7 +37,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             this.connectionStringValidation = new Mock<IConnectionStringValidation>();
             this.servicesConfig = new Mock<IServicesConfig>();
             this.deploymentConfig = new Mock<IDeploymentConfig>();
-            this.rateReporter = new Mock<IRateLimiting>();
+            this.defaultRateLimits = new Mock<IRateLimitingConfig>();
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -39,6 +45,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
         {
             // Arrange
             var simulation = this.GetSimulationModel();
+            this.SetupDefaultRateLimits();
 
             // Act
             var result = Model.FromServiceModel(simulation);
@@ -55,7 +62,7 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             var simulationApiModel = this.GetSimulationApiModel();
 
             // Act
-            var result = simulationApiModel.ToServiceModel(null, simulationApiModel.Id);
+            var result = simulationApiModel.ToServiceModel(null, this.defaultRateLimits.Object, simulationApiModel.Id);
 
             // Assert
             Assert.IsType<Simulation>(result);
@@ -80,8 +87,8 @@ namespace WebService.Test.v1.Models.SimulationApiModel
             };
 
             // Act
-            var result1 = simulationApiModel.ToServiceModel(existingSimulation1, simulationApiModel.Id);
-            var result2 = simulationApiModel.ToServiceModel(existingSimulation2, simulationApiModel.Id);
+            var result1 = simulationApiModel.ToServiceModel(existingSimulation1, this.defaultRateLimits.Object, simulationApiModel.Id);
+            var result2 = simulationApiModel.ToServiceModel(existingSimulation2, this.defaultRateLimits.Object, simulationApiModel.Id);
 
             // Assert
             Assert.True(result1.PartitioningComplete);
@@ -191,11 +198,80 @@ namespace WebService.Test.v1.Models.SimulationApiModel
                 .CompleteOrTimeout();
         }
 
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReturnsDefaultRateLimits()
+        {
+            // Arrange
+            var simulationApiModel = this.GetBasicSimulationApiModel();
+            this.SetupDefaultRateLimits();
+
+            // Act
+            var result = simulationApiModel.ToServiceModel(null, this.defaultRateLimits.Object, simulationApiModel.Id);
+
+            // Assert
+            Assert.IsType<Simulation>(result);
+            Assert.Equal(CONNECTTIONS_PER_SECOND, result.RateLimits.ConnectionsPerSecond);
+            Assert.Equal(REGISTRY_OPERATIONS_PER_MIN, result.RateLimits.RegistryOperationsPerMinute);
+            Assert.Equal(TWIN_READ_PER_SECOND, result.RateLimits.TwinReadsPerSecond);
+            Assert.Equal(TWIN_WRITES_PER_SECOND, result.RateLimits.TwinWritesPerSecond);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReturnsAllCustomRateLimits()
+        {
+            // Arrange
+            var simulationApiModel = this.GetSimulationApiModel();
+            this.SetupDefaultRateLimits();
+
+            // Act
+            var result = simulationApiModel.ToServiceModel(null, this.defaultRateLimits.Object, simulationApiModel.Id);
+
+            // Assert
+            Assert.IsType<Simulation>(result);
+            Assert.Equal(simulationApiModel.RateLimits.ConnectionsPerSecond, result.RateLimits.ConnectionsPerSecond);
+            Assert.Equal(simulationApiModel.RateLimits.TwinReadsPerSecond, result.RateLimits.TwinReadsPerSecond);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItReturnsDefaultWhenCustomRateLimitMissing()
+        {
+            // Arrange
+            var simulationApiModel = this.GetBasicSimulationApiModel();
+            var connectionsPerSecond = 100;
+            simulationApiModel.RateLimits = new SimulationRateLimits { ConnectionsPerSecond = connectionsPerSecond };
+
+            this.SetupDefaultRateLimits();
+
+            // Act
+            var result = simulationApiModel.ToServiceModel(null, this.defaultRateLimits.Object, simulationApiModel.Id);
+
+            // Assert
+            Assert.IsType<Simulation>(result);
+            Assert.Equal(connectionsPerSecond, result.RateLimits.ConnectionsPerSecond);
+            Assert.Equal(TWIN_READ_PER_SECOND, result.RateLimits.TwinReadsPerSecond);
+        }
+
         private void SetupConnectionStringValidation()
         {
             this.connectionStringValidation
                 .Setup(x => x.TestAsync(It.IsAny<string>(), true))
                 .Returns(Task.CompletedTask);
+        }
+
+        private void SetupConnectionStringManager()
+        {
+            this.connectionStringValidation
+                .Setup(x => x.TestAsync(It.IsAny<string>(), true))
+                .Returns(Task.CompletedTask);
+        }
+
+        private void SetupDefaultRateLimits()
+        {
+            this.defaultRateLimits.Setup(x => x.ConnectionsPerSecond).Returns(CONNECTTIONS_PER_SECOND);
+            this.defaultRateLimits.Setup(x => x.TwinReadsPerSecond).Returns(TWIN_READ_PER_SECOND);
+            this.defaultRateLimits.Setup(x => x.TwinWritesPerSecond).Returns(TWIN_WRITES_PER_SECOND);
+            this.defaultRateLimits.Setup(x => x.RegistryOperationsPerMinute).Returns(REGISTRY_OPERATIONS_PER_MIN);
+            this.defaultRateLimits.Setup(x => x.DeviceMessagesPerSecond).Returns(DEVICE_MSGS_PER_SECOND);
         }
 
         private Model GetInvalidSimulationApiModel(Func<Model, Model> func)
@@ -221,19 +297,50 @@ namespace WebService.Test.v1.Models.SimulationApiModel
                         Count = 1
                     }
                 },
-                IotHubs = new List<SimulationIotHub> { new SimulationIotHub("HostName=[hubname];SharedAccessKeyName=[iothubowner];SharedAccessKey=[valid key]") }
+                IotHubs = new List<SimulationIotHub> { new SimulationIotHub("HostName=[hubname];SharedAccessKeyName=[iothubowner];SharedAccessKey=[valid key]") },
+                RateLimits = new SimulationRateLimits
+                {
+                    ConnectionsPerSecond = 100,
+                    RegistryOperationsPerMinute = 100,
+                    TwinReadsPerSecond = 10,
+                    TwinWritesPerSecond = 10,
+                    DeviceMessagesPerSecond = 120
+                }
             };
 
             return simulationApiModel;
         }
 
-        private Simulation GetSimulationModel()
+        private Model GetBasicSimulationApiModel()
         {
-            var simulation = new Simulation()
+            var simulationApiModel = new Model
             {
                 Id = "id",
                 ETag = "etag",
-                DeviceModels = new List<Simulation.DeviceModelRef>()
+                StartTime = DateTimeOffset.UtcNow.ToString(),
+                EndTime = DateTimeOffset.UtcNow.AddHours(1).ToString(),
+                Enabled = false,
+                DeviceModels = new List<SimulationDeviceModelRef>()
+                {
+                    new SimulationDeviceModelRef()
+                    {
+                        Id = "device_id",
+                        Count = 1
+                    }
+                },
+                IotHubs = new List<SimulationIotHub> { new SimulationIotHub("HostName=[hubname];SharedAccessKeyName=[iothubowner];SharedAccessKey=[valid key]") }
+            };
+
+            return simulationApiModel;
+        }
+        
+        private Simulation GetSimulationModel()
+        {
+            var simulation = new Simulation
+            {
+                Id = "id",
+                ETag = "etag",
+                DeviceModels = new List<Simulation.DeviceModelRef>
                 {
                     new Simulation.DeviceModelRef { Id = "01", Count = 1 }
                 }

@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
@@ -93,9 +94,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public SimulationStatisticsModel Statistics { get; set; }
 
         [JsonProperty(Order = 70)]
-        public IList<CustomDeviceRef> CustomDevices { get; set; }
+        public IRateLimitingConfig RateLimits { get; set; }
 
         [JsonProperty(Order = 80)]
+        public IList<CustomDeviceRef> CustomDevices { get; set; }
+
+        [JsonProperty(Order = 90)]
         public IList<string> IotHubConnectionStrings
         {
             get => this.iotHubConnectionStrings;
@@ -103,7 +107,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         }
 
         // StartTime is the time when Simulation was started
-        [JsonProperty(Order = 90)]
+        [JsonProperty(Order = 100)]
         public DateTimeOffset? StartTime
         {
             get => this.startTime;
@@ -111,7 +115,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         }
 
         // EndTime is the time when Simulation ended after running for scheduled duration
-        [JsonProperty(Order = 100)]
+        [JsonProperty(Order = 110)]
         public DateTimeOffset? EndTime
         {
             get => this.endTime;
@@ -119,13 +123,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         }
 
         // StoppedTime is the time when Simulation was explicitly stopped by user
-        [JsonProperty(Order = 100)]
+        [JsonProperty(Order = 120)]
         public DateTimeOffset? StoppedTime { get; set; }
 
-        [JsonProperty(Order = 120)]
+        [JsonProperty(Order = 130)]
         public DateTimeOffset Created { get; set; }
 
-        [JsonProperty(Order = 130)]
+        [JsonProperty(Order = 140)]
         public DateTimeOffset Modified { get; set; }
 
         // ActualStartTime is the time when Simulation was started
@@ -149,6 +153,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
             this.DeviceModels = new List<DeviceModelRef>();
             this.CustomDevices = new List<CustomDeviceRef>();
+            this.RateLimits = new RateLimitingConfig();
         }
 
         public class DeviceModelRef

@@ -6,56 +6,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 {
-    public interface IActorsLogger
-    {
-        void Init(string deviceId, string actorName);
-        void ActorStarted();
-        void ActorStopped();
-        void CredentialsSetupScheduled(long time);
-        void FetchScheduled(long time);
-        void PreparingDeviceCredentials();
-        void FetchingDevice();
-        void DeviceCredentialsReady();
-        void DeviceFetched();
-        void DeviceNotFound();
-        void DeviceFetchFailed();
-        void RegistrationScheduled(long time);
-        void RegisteringDevice();
-        void DeviceRegistered();
-        void DeviceRegistrationFailed();
-        void DeregistrationScheduled(long time);
-        void DeregisteringDevice();
-        void DeviceDeregistered();
-        void DeviceDeregistrationFailed();
-
-        void DeviceTaggingScheduled(long time);
-        void TaggingDevice();
-        void DeviceTagged();
-        void DeviceTaggingFailed();
-
-        void DeviceConnectionScheduled(long time);
-        void ConnectingDevice();
-        void DeviceConnected();
-
-        void DeviceDisconnectionFailed();
-        void DeviceDisconnectionScheduled(long time);
-        void DisconnectingDevice();
-        void DeviceDisconnected();
-
-        void DeviceConnectionAuthFailed();
-        void DeviceConnectionFailed();
-
-        void TelemetryScheduled(long time);
-        void SendingTelemetry();
-        void TelemetryDelivered();
-        void TelemetryFailed();
-
-        void DevicePropertiesUpdateScheduled(long time, bool isRetry);
-        void UpdatingDeviceProperties();
-        void DevicePropertiesUpdated();
-        void DevicePropertiesUpdateFailed();
-    }
-
     public class ActorsLogger : IActorsLogger
     {
         private const string DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.fff";
@@ -264,6 +214,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.LogRegistry("Deregistration FAILED");
         }
 
+        public void DeviceQuotaExceeded()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Device QUOTA EXCEEDED");
+            this.LogRegistry("QUOTA EXCEEDED");
+        }
+
         public void DeviceTaggingScheduled(long time)
         {
             if (!this.enabled) return;
@@ -402,6 +360,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
             this.Log("Telemetry FAILED");
             this.LogTelemetry("FAILED");
+        }
+
+        public void DailyTelemetryQuotaExceeded()
+        {
+            if (!this.enabled) return;
+
+            this.Log("Telemetry QUOTA EXCEEDED");
+            this.LogTelemetry("QUOTA EXCEEDED");
+        }
+
+        public void TelemetryPaused(long time)
+        {
+            if (!this.enabled) return;
+
+            var msg = DateTimeOffset.FromUnixTimeMilliseconds(time).ToString(DATE_FORMAT);
+            this.Log("Telemetry paused until: " + msg);
+            this.LogTelemetry("Telemetry paused until: " + msg);
         }
 
         public void DevicePropertiesUpdateScheduled(long time, bool isRetry)

@@ -25,7 +25,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
     {
         private readonly IStorageRecords simulationStatisticsStorage;
         private readonly IClusterNodes clusterNodes;
-        private readonly IServicesConfig config;
         private readonly ILogger log;
 
         public SimulationStatistics(IServicesConfig config,
@@ -34,13 +33,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             ILogger logger)
         {
             this.clusterNodes = clusterNodes;
-            this.config = config;
             this.log = logger;
             this.simulationStatisticsStorage = factory.Resolve<IStorageRecords>().Init(config.StatisticsStorage);
         }
 
         /// <summary>
-        /// Fetches statististics records for a given simulation and returns aggregate values.
+        /// Fetch statistics records for a given simulation and returns aggregate values.
         /// </summary>
         public async Task<SimulationStatisticsModel> GetSimulationStatisticsAsync(string simulationId)
         {
@@ -78,12 +76,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             {
                 this.log.Error("Error on getting statistics records", e);
             }
-            
+
             return statistics;
         }
-        
+
         /// <summary>
         /// Creates or updates statistics record for a given simulation.
+        /// Note: exceptions are caught upstream
         /// </summary>
         public async Task CreateOrUpdateAsync(string simulationId, SimulationStatisticsModel statistics)
         {
@@ -91,28 +90,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             var statisticsRecordId = this.GetStatisticsRecordId(simulationId, nodeId);
             var statisticsStorageRecord = this.GetStorageRecord(simulationId, statistics);
 
-            try
+            if (await this.simulationStatisticsStorage.ExistsAsync(statisticsRecordId))
             {
-                if (await this.simulationStatisticsStorage.ExistsAsync(statisticsRecordId))
-                {
-                    this.log.Debug("Updating statistics record", () => new { statisticsStorageRecord });
-                    var record = await this.simulationStatisticsStorage.GetAsync(statisticsRecordId);
-                    await this.simulationStatisticsStorage.UpsertAsync(statisticsStorageRecord, record.ETag);
-                }
-                else
-                {
-                    this.log.Debug("Creating statistics record", () => new { statisticsStorageRecord });
-                    await this.simulationStatisticsStorage.CreateAsync(statisticsStorageRecord);
-                }
+                this.log.Debug("Updating statistics record", () => new { statisticsStorageRecord });
+                var record = await this.simulationStatisticsStorage.GetAsync(statisticsRecordId);
+                await this.simulationStatisticsStorage.UpsertAsync(statisticsStorageRecord, record.ETag);
             }
-            catch (Exception e)
+            else
             {
-                this.log.Error("Error on saving statistics records", e);
+                this.log.Debug("Creating statistics record", () => new { statisticsStorageRecord });
+                await this.simulationStatisticsStorage.CreateAsync(statisticsStorageRecord);
             }
         }
 
         /// <summary>
         /// Updates statistics record for a given simulation.
+        /// Note: exceptions are caught upstream
         /// </summary>
         public async Task UpdateAsync(string simulationId, SimulationStatisticsModel statistics)
         {
@@ -120,16 +113,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             var statisticsRecordId = this.GetStatisticsRecordId(simulationId, nodeId);
             var statisticsStorageRecord = this.GetStorageRecord(simulationId, statistics);
 
-            try
-            {
-                this.log.Debug("Updating statistics record", () => new { statisticsStorageRecord });
-                var record = await this.simulationStatisticsStorage.GetAsync(statisticsRecordId);
-                await this.simulationStatisticsStorage.UpsertAsync(statisticsStorageRecord, record.ETag);
-            }
-            catch (Exception e)
-            {
-                this.log.Error("Error on saving statistics records", e);
-            }
+            this.log.Debug("Updating statistics record", () => new { statisticsStorageRecord });
+            var record = await this.simulationStatisticsStorage.GetAsync(statisticsRecordId);
+            await this.simulationStatisticsStorage.UpsertAsync(statisticsStorageRecord, record.ETag);
         }
 
         /// <summary>

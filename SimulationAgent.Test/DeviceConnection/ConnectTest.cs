@@ -19,7 +19,6 @@ namespace SimulationAgent.Test.DeviceConnection
         private readonly Connect target;
 
         private readonly Mock<ILogger> log;
-        private readonly Mock<IScriptInterpreter> scriptInterpreter;
         private readonly Mock<IInstance> instance;
         private Mock<IDeviceConnectionActor> deviceContext;
         private Mock<ISimulationContext> simulationContext;
@@ -27,12 +26,10 @@ namespace SimulationAgent.Test.DeviceConnection
         public ConnectTest(ITestOutputHelper log)
         {
             this.log = new Mock<ILogger>();
-            this.scriptInterpreter = new Mock<IScriptInterpreter>();
             this.instance = new Mock<IInstance>();
             this.deviceContext = new Mock<IDeviceConnectionActor>();
 
             this.target = new Connect(
-                this.scriptInterpreter.Object,
                 this.log.Object,
                 this.instance.Object);
 
@@ -45,7 +42,7 @@ namespace SimulationAgent.Test.DeviceConnection
             // Arrange
             var callSequence = "";
             var devices = new Mock<IDevices>();
-            devices.Setup(x => x.GetClient(It.IsAny<Device>(), It.IsAny<IoTHubProtocol>(), It.IsAny<IScriptInterpreter>()))
+            devices.Setup(x => x.GetClient(It.IsAny<Device>(), It.IsAny<IoTHubProtocol>()))
                 .Callback(() => callSequence += "create;");
             this.simulationContext.SetupGet(x => x.Devices).Returns(devices.Object);
             this.deviceContext.Setup(x => x.DisposeClient())
@@ -57,7 +54,7 @@ namespace SimulationAgent.Test.DeviceConnection
             // Assert
             Assert.Equal("dispose;create;", callSequence);
             this.deviceContext.Verify(x => x.DisposeClient(), Times.Once);
-            devices.Verify(x => x.GetClient(It.IsAny<Device>(), It.IsAny<IoTHubProtocol>(), It.IsAny<IScriptInterpreter>()), Times.Once);
+            devices.Verify(x => x.GetClient(It.IsAny<Device>(), It.IsAny<IoTHubProtocol>()), Times.Once);
         }
 
         private void ActorInit()

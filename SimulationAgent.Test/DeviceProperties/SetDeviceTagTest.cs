@@ -21,6 +21,7 @@ namespace SimulationAgent.Test.DeviceProperties
         private const string DEVICE_ID = "01";
 
         private readonly Mock<ILogger> logger;
+        private readonly Mock<IInstance> instance;
         private readonly Mock<IDevices> devices;
         private readonly Mock<IDevicePropertiesActor> devicePropertiesActor;
         private readonly Mock<IDeviceStateActor> deviceStateActor;
@@ -32,6 +33,7 @@ namespace SimulationAgent.Test.DeviceProperties
         public SetDeviceTagTest(ITestOutputHelper log)
         {
             this.logger = new Mock<ILogger>();
+            this.instance = new Mock<IInstance>();
             this.devices = new Mock<IDevices>();
             this.rateLimitingConfig = new Mock<IRateLimitingConfig>();
             this.devicePropertiesActor = new Mock<IDevicePropertiesActor>();
@@ -39,7 +41,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.mockDeviceContext = new Mock<IDeviceConnectionActor>();
             this.loopSettings = new Mock<PropertiesLoopSettings>(this.rateLimitingConfig.Object);
 
-            this.target = new SetDeviceTag(this.devices.Object, this.logger.Object);
+            this.target = new SetDeviceTag(this.logger.Object, this.instance.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -47,7 +49,7 @@ namespace SimulationAgent.Test.DeviceProperties
         {
             // Arrange
             this.SetupPropertiesActor();
-            this.target.Init(this.devicePropertiesActor.Object, DEVICE_ID);
+            this.target.Init(this.devicePropertiesActor.Object, DEVICE_ID, this.devices.Object);
 
             // Act
             this.target.RunAsync().Wait();

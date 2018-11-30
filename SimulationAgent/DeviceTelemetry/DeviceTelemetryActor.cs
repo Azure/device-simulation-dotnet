@@ -3,6 +3,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -27,6 +28,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             IDeviceStateActor deviceStateActor,
             IDeviceConnectionActor context);
 
+        // Used by the main thread to decide whether to invoke RunAsync(), in order to
+        // reduce the chance of enqueuing an async task when there is nothing to do
+        bool HasWorkToDo();
+
         Task RunAsync();
         void HandleEvent(DeviceTelemetryActor.ActorEvents e);
         void Stop();
@@ -37,22 +42,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
      */
     public class DeviceTelemetryActor : IDeviceTelemetryActor
     {
-        private enum ActorStatus
-        {
-            None,
-            ReadyToStart,
-            ReadyToSend,
-            Sending,
-            Stopped
-        }
-
         public enum ActorEvents
         {
             Started,
             SendingTelemetry,
             TelemetrySendFailure,
             TelemetryClientBroken,
-            TelemetryDelivered
+            TelemetryDelivered,
+            TelemetryQuotaExceeded
+        }
+
+        private enum ActorStatus
+        {
+            None,
+            ReadyToStart,
+            ReadyToSend,
+            Sending,
+            WaitingForQuota,
+            Stopped
         }
 
         private readonly ILogger log;
@@ -78,6 +85,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         /// Reference to the actor managing the device connection
         /// </summary>
         private IDeviceConnectionActor deviceContext;
+
+        private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         /// <summary>
         /// The telemetry message managed by this actor
@@ -154,33 +163,44 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             this.instance.InitComplete();
         }
 
-        public void Stop()
+        // Used by the main thread to decide whether to invoke RunAsync(), in order to
+        // reduce the chance of enqueuing an async task when there is nothing to do
+        public bool HasWorkToDo()
         {
-            this.status = ActorStatus.Stopped;
+            if (Now < this.whenToRun) return false;
+
+            if (!this.deviceContext.Connected) return false;
+
+            switch (this.status)
+            {
+                // If messaging quota has been reached, allow these actions only once
+                // per minute and only in one device
+                case ActorStatus.ReadyToStart:
+                case ActorStatus.ReadyToSend:
+                case ActorStatus.WaitingForQuota:
+                    return
+                        !this.simulationContext.RateLimiting.HasExceededMessagingQuota
+                        || this.simulationContext.RateLimiting.CanProbeMessagingQuota(Now);
+            }
+
+            return false;
         }
 
-        // Run the next step and return a description about what happened
         public async Task RunAsync()
         {
             this.instance.InitRequired();
 
             this.log.Debug(this.status.ToString(), () => new { this.deviceId });
 
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            if (now < this.whenToRun) return;
-
             switch (this.status)
             {
                 case ActorStatus.ReadyToStart:
-                    if (!this.deviceContext.Connected) return;
-
                     this.whenToRun = 0;
                     this.HandleEvent(ActorEvents.Started);
                     break;
 
+                case ActorStatus.WaitingForQuota:
                 case ActorStatus.ReadyToSend:
-                    if (!this.deviceContext.Connected) return;
-
                     this.status = ActorStatus.Sending;
                     this.actorLogger.SendingTelemetry();
                     await this.sendTelemetryLogic.RunAsync();
@@ -202,6 +222,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                     break;
 
                 case ActorEvents.TelemetryDelivered:
+                    this.simulationContext.RateLimiting.MessagingQuotaNotExceeded();
                     this.actorLogger.TelemetryDelivered();
                     this.ScheduleTelemetry();
                     break;
@@ -219,9 +240,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                     this.ScheduleTelemetryRetry();
                     break;
 
+                case ActorEvents.TelemetryQuotaExceeded:
+                    this.simulationContext.RateLimiting.MessagingQuotaExceeded();
+                    this.actorLogger.DailyTelemetryQuotaExceeded();
+                    this.PauseForQuotaExceeded();
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(e), e, null);
             }
+        }
+
+        public void Stop()
+        {
+            this.status = ActorStatus.Stopped;
         }
 
         private void Reset()
@@ -231,14 +263,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
         private void ScheduleTelemetry()
         {
-            // considering the throttling settings, when can the message be sent
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var availableSchedule = now + this.simulationContext.RateLimiting.GetPauseForNextMessage();
+            // Considering the throttling settings, when can the message be sent
+            var availableSchedule = Now + this.simulationContext.RateLimiting.GetPauseForNextMessage();
 
-            // looking at the simulation settings, when should the message be sent
+            // Looking at the device model, when should the message be sent
             // note: this.whenToRun contains the time when the last msg was sent
             var optimalSchedule = this.whenToRun + (long) this.Message.Interval.TotalMilliseconds;
 
+            // TODO: review this approach: when choosing optimalSchedule the app might overload the hub and cause throttling
             this.whenToRun = Math.Max(optimalSchedule, availableSchedule);
             this.status = ActorStatus.ReadyToSend;
 
@@ -252,6 +284,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                 });
         }
 
+        private void PauseForQuotaExceeded()
+        {
+            this.status = ActorStatus.WaitingForQuota;
+
+            // Pause for a minute, before checking if new quota is available
+            this.whenToRun = Now + RateLimiting.PAUSE_FOR_QUOTA_MSECS;
+
+            this.actorLogger.TelemetryPaused(this.whenToRun);
+            this.log.Debug("Telemetry paused",
+                () => new
+                {
+                    this.deviceId,
+                    Status = this.status.ToString(),
+                    Until = this.log.FormatDate(this.whenToRun)
+                });
+        }
+
         private void ScheduleTelemetryRetry()
         {
             // TODO: Work in progress - CPU perf optimization
@@ -262,9 +311,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
             // TODO: back off? - this retry logic is probably overloading the CPU
 
             /*
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var pauseMsec = this.rateLimiting.GetPauseForNextMessage();
-            this.whenToRun = now + pauseMsec;
+            this.whenToRun = Now + pauseMsec;
             this.status = ActorStatus.ReadyToSend;
 
             this.actorLogger.TelemetryRetryScheduled(this.whenToRun);
