@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 {
-    public class Serialization
+    public static class Serialization
     {
         // Save memory avoiding serializations that go too deep
         private static readonly JsonSerializerSettings serializationSettings =
@@ -30,10 +30,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
                 var name = data.Name;
                 var value = data.GetValue(o, index: null);
 
-                if (value is Exception)
+                if (value is Exception e)
                 {
-                    var e = value as Exception;
                     logdata.Add(name, SerializeException(e));
+                }
+                else if (value is double d)
+                {
+                    d = (long) (d * 1000);
+                    d = d / 1000;
+                    logdata.Add(name, d);
                 }
                 else
                 {
@@ -44,7 +49,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             return JsonConvert.SerializeObject(logdata, serializationSettings);
         }
 
-        public static object SerializeException(Exception e, int depth = 3)
+        public static object SerializeException(Exception e, int depth = 4)
         {
             if (e == null) return null;
             if (depth == 0) return "-max serialization depth reached-";

@@ -4,11 +4,11 @@ using System;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
 {
+    /// <summary>
+    /// This exception is thrown when a device client is broken and should be recreated
+    /// </summary>
     public class BrokenDeviceClientException : Exception
     {
-        /// <summary>
-        /// This exception is thrown when a device client is broken and should be recreated
-        /// </summary>
         public BrokenDeviceClientException(string message) : base(message)
         {
         }

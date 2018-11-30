@@ -71,9 +71,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
             }
             catch (Exception e)
             {
-                var msg= "Storage adapter check failed";
-                this.log.Error(msg, e);
-                this.diagnosticsLogger.LogServiceError(msg, e.Message);
+                const string MSG = "Storage adapter check failed";
+                this.log.Error(MSG, e);
+                this.diagnosticsLogger.LogServiceError(MSG, e.Message);
                 message = e.Message;
             }
 

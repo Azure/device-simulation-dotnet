@@ -9,7 +9,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         bool Exists(string path);
         string ReadAllText(string path);
     }
-    
+
     public class FileWrapper : IFileSystem
     {
         public bool Exists(string path)

@@ -3,6 +3,7 @@
 using System.Reflection;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -31,7 +32,7 @@ namespace Services.Test
             this.sdkClient = new Mock<IDeviceClientWrapper>();
             this.logger = new Mock<ILogger>();
 
-            this.target = new DeviceProperties(this.sdkClient.Object, this.logger.Object);
+            this.target = new DeviceProperties(this.logger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -41,7 +42,7 @@ namespace Services.Test
             const string NEW_VALUE = "new value";
 
             ISmartDictionary reportedProps = this.GetTestProperties();
-            this.target.RegisterChangeUpdateAsync(DEVICE_ID, reportedProps);
+            this.target.RegisterChangeUpdateAsync(this.sdkClient.Object, DEVICE_ID, reportedProps);
 
             TwinCollection desiredProps = new TwinCollection();
             desiredProps[KEY1] = NEW_VALUE;
@@ -65,7 +66,7 @@ namespace Services.Test
             const string NEW_VALUE = "new value";
 
             ISmartDictionary reportedProps = this.GetTestProperties();
-            this.target.RegisterChangeUpdateAsync(DEVICE_ID, reportedProps);
+            this.target.RegisterChangeUpdateAsync(this.sdkClient.Object, DEVICE_ID, reportedProps);
 
             TwinCollection desiredProps = new TwinCollection();
             desiredProps[NEW_KEY] = NEW_VALUE;
@@ -89,7 +90,7 @@ namespace Services.Test
             reportedProps.ResetChanged();
             Assert.False(reportedProps.Changed);
 
-            this.target.RegisterChangeUpdateAsync(DEVICE_ID, reportedProps);
+            this.target.RegisterChangeUpdateAsync(this.sdkClient.Object, DEVICE_ID, reportedProps);
 
             TwinCollection desiredProps = new TwinCollection
             {
@@ -109,8 +110,8 @@ namespace Services.Test
         {
             SmartDictionary properties = new SmartDictionary();
 
-            properties.Set(KEY1, VALUE1);
-            properties.Set(KEY2, VALUE2);
+            properties.Set(KEY1, VALUE1, false);
+            properties.Set(KEY2, VALUE2, false);
 
             return properties;
         }

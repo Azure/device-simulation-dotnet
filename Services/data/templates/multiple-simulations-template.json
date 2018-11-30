@@ -1,19 +1,7 @@
 ﻿[
   {
-    "Name": "Sample Simple Simulation",
-    "Enabled": false,
-    "IotHubConnectionStrings": [
-      "default"
-    ],
-    "DeviceModels": [
-      {
-        "Id": "truck-01",
-        "Count": 10
-      }
-    ]
-  },
-  {
-    "Name": "Sample Multiple Devices",
+    "Name": "Sample Multi-Model Simulation",
+    "Description": "A sample simulation with multiple device types",
     "Enabled": false,
     "IotHubConnectionStrings": [
       "default"
@@ -27,6 +15,34 @@
         "Id": "elevator-01",
         "Count": 10
       }
-    ]
+    ],
+    "RateLimits": {
+      "RegistryOperationsPerMinute": 100,
+      "TwinReadsPerSecond": 10,
+      "TwinWritesPerSecond": 10,
+      "ConnectionsPerSecond": 120,
+      "DeviceMessagesPerSecond": 120
+    }
+  },
+  {
+    "Name": "Sample Simple Simulation",
+    "Description": "An example showing 10 simulated trucks",
+    "Enabled": false,
+    "IotHubConnectionStrings": [
+      "default"
+    ],
+    "DeviceModels": [
+      {
+        "Id": "truck-01",
+        "Count": 10
+      }
+    ],
+    "RateLimits": {
+      "RegistryOperationsPerMinute": 100,
+      "TwinReadsPerSecond": 10,
+      "TwinWritesPerSecond": 10,
+      "ConnectionsPerSecond": 120,
+      "DeviceMessagesPerSecond": 120
+    }
   }
 ]

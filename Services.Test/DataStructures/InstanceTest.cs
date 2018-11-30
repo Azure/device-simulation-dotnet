@@ -11,22 +11,12 @@ namespace Services.Test.DataStructures
     public class InstanceTest
     {
         private Instance target;
-        private Mock<ILogger> mockLogger;
+        private readonly Mock<ILogger> mockLogger;
 
         public InstanceTest()
         {
             this.mockLogger = new Mock<ILogger>();
             this.target = new Instance(this.mockLogger.Object);
-        }
-
-        [Fact]
-        public void ItIsNotInitializedByDefault()
-        {
-            // Act
-            this.target = new Instance(this.mockLogger.Object);
-
-            // Assert
-            Assert.False(this.target.IsInitialized);
         }
 
         [Fact]

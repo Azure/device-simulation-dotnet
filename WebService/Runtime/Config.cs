@@ -50,7 +50,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string PORT_KEY = APPLICATION_KEY + "webservice_port";
         private const string DEVICE_MODELS_FOLDER_KEY = APPLICATION_KEY + "device_models_folder";
         private const string DEVICE_MODELS_SCRIPTS_FOLDER_KEY = APPLICATION_KEY + "device_models_scripts_folder";
-        private const string IOTHUB_DATA_FOLDER_KEY = APPLICATION_KEY + "iothub_data_folder";
         private const string IOTHUB_CONNSTRING_KEY = APPLICATION_KEY + "iothub_connstring";
         private const string IOTHUB_IMPORT_STORAGE_CONNSTRING_KEY = APPLICATION_KEY + "iothub_import_storage_account_connstring";
         private const string IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY = APPLICATION_KEY + "iothub_sdk_device_client_timeout";
@@ -61,7 +60,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string CONNECTIONS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "device_connections_per_second";
         private const string REGISTRYOPS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "registry_operations_per_minute";
         private const string DEVICE_MESSAGES_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "device_to_cloud_messages_per_second";
-        private const string DEVICE_MESSAGES_DAILY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "device_to_cloud_messages_per_day";
         private const string TWIN_READS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "twin_reads_per_second";
         private const string TWIN_WRITES_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "twin_writes_per_second";
 
@@ -135,12 +133,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string AZURE_RESOURCE_GROUP_LOCATION = DEPLOYMENT_KEY + "azure_resource_group_location";
         private const string AZURE_IOTHUB_NAME = DEPLOYMENT_KEY + "azure_iothub_name";
         private const string AZURE_VMSS_NAME = DEPLOYMENT_KEY + "azure_vmss_name";
-        
+
         private const string AZURE_ACTIVE_DIRECTORY_KEY = APPLICATION_KEY + "AzureActiveDirectory:";
         private const string AAD_TENANT_ID = AZURE_ACTIVE_DIRECTORY_KEY + "tenant_id";
         private const string AAD_APP_ID = AZURE_ACTIVE_DIRECTORY_KEY + "app_id";
         private const string AAD_APP_SECRET = AZURE_ACTIVE_DIRECTORY_KEY + "app_secret";
         private const string AAD_ACCESS_TOKEN_URL = AZURE_ACTIVE_DIRECTORY_KEY + "access_token_url";
+
+        private const string DEBUGGING_SECTION_KEY = APPLICATION_KEY + "Debugging:";
+        private const string DEBUGGING_DEVELOPMENT_MODE_KEY = DEBUGGING_SECTION_KEY + "development_mode";
+        private const string DEBUGGING_DISABLE_SIMULATION_AGENT_KEY = DEBUGGING_SECTION_KEY + "disable_simulation_agent";
+        private const string DEBUGGING_DISABLE_PARTITIONING_AGENT_KEY = DEBUGGING_SECTION_KEY + "disable_partitioning_agent";
+        private const string DEBUGGING_DISABLE_SEED_BY_TEMPLATE_KEY = DEBUGGING_SECTION_KEY + "disable_seed_by_template";
 
         public int Port { get; }
         public ILoggingConfig LoggingConfig { get; set; }
@@ -166,14 +170,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private static ILoggingConfig GetLogConfig(IConfigData configData)
         {
             var data = configData.GetString(LOGGING_BLACKLIST_SOURCES_KEY);
-            var values = data.Replace(";", ",").Replace(":", ".").Split(",");
+            var values = data.Replace(";", ",").Split(",");
             var blacklist = new HashSet<string>();
             foreach (var k in values) blacklist.Add(k);
 
             data = configData.GetString(LOGGING_WHITELIST_SOURCES_KEY);
-            values = data.Replace(";", ",").Replace(":", ".").Split(",");
+            values = data.Replace(";", ",").Split(",");
             var whitelist = new HashSet<string>();
-            foreach (var k in values) blacklist.Add(k);
+            foreach (var k in values) whitelist.Add(k);
 
             Enum.TryParse(configData.GetString(LOGGING_LOGLEVEL_KEY, Services.Diagnostics.LoggingConfig.DEFAULT_LOGLEVEL.ToString()), true, out LogLevel logLevel);
             var result = new LoggingConfig
@@ -274,7 +278,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 PartitionsStorage = GetStorageConfig(configData, PARTITIONS_STORAGE_KEY),
                 UserAgent = configData.GetString(USER_AGENT_KEY),
                 StatisticsStorage = GetStorageConfig(configData, STATISTICS_STORAGE_KEY),
-                DiagnosticsEndpointUrl = configData.GetString(LOGGING_DIAGNOSTICS_URL_KEY)
+                DiagnosticsEndpointUrl = configData.GetString(LOGGING_DIAGNOSTICS_URL_KEY),
+                DevelopmentMode = configData.GetBool(DEBUGGING_DEVELOPMENT_MODE_KEY, false),
+                DisableSimulationAgent = configData.GetBool(DEBUGGING_DISABLE_SIMULATION_AGENT_KEY, false),
+                DisablePartitioningAgent = configData.GetBool(DEBUGGING_DISABLE_PARTITIONING_AGENT_KEY, false),
+                DisableSeedByTemplate = configData.GetBool(DEBUGGING_DISABLE_SEED_BY_TEMPLATE_KEY, false)
             };
         }
 
@@ -327,7 +335,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 ConnectionsPerSecond = configData.GetInt(CONNECTIONS_FREQUENCY_LIMIT_KEY, 50),
                 RegistryOperationsPerMinute = configData.GetInt(REGISTRYOPS_FREQUENCY_LIMIT_KEY, 50),
                 DeviceMessagesPerSecond = configData.GetInt(DEVICE_MESSAGES_FREQUENCY_LIMIT_KEY, 50),
-                DeviceMessagesPerDay = configData.GetLong(DEVICE_MESSAGES_DAILY_LIMIT_KEY, 8000),
                 TwinReadsPerSecond = configData.GetInt(TWIN_READS_FREQUENCY_LIMIT_KEY, 5),
                 TwinWritesPerSecond = configData.GetInt(TWIN_WRITES_FREQUENCY_LIMIT_KEY, 5)
             };

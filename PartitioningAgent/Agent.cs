@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.AzureManagementAdapter;
@@ -16,7 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
 {
     public interface IPartitioningAgent
     {
-        Task StartAsync();
+        Task StartAsync(CancellationToken appStopToken);
         void Stop();
     }
 
@@ -59,14 +60,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
             this.currentNodeCount = DEFAULT_NODE_COUNT;
         }
 
-        public async Task StartAsync()
+        public async Task StartAsync(CancellationToken appStopToken)
         {
             this.log.Info("Partitioning agent started", () => new { Node = this.clusterNodes.GetCurrentNodeId() });
 
             this.running = true;
 
             // Repeat until the agent is stopped
-            while (this.running)
+            while (this.running && !appStopToken.IsCancellationRequested)
             {
                 await this.clusterNodes.KeepAliveNodeAsync();
 
@@ -76,31 +77,24 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                 var isMaster = await this.clusterNodes.SelfElectToMasterNodeAsync();
                 if (isMaster)
                 {
-                    // Reload all simulations to have fresh status and discover new simulations
-                    IList<Simulation> simulations = (await this.simulations.GetListAsync());
-
-                    IList<Simulation> activeSimulations = simulations
-                        .Where(x => x.IsActiveNow).ToList();
-                    this.log.Debug("Active simulations loaded", () => new { activeSimulations.Count });
-
-                    IList<Simulation> deletionRequiredSimulations = simulations
-                        .Where(x => x.DeviceDeletionRequired).ToList();
-                    this.log.Debug("InActive simulations loaded", () => new { deletionRequiredSimulations.Count });
-
                     await this.clusterNodes.RemoveStaleNodesAsync();
 
-                    // Scale nodes in Vmss
-                    await this.ScaleVmssNodes(activeSimulations);
+                    var (success, activeSimulations, deletionRequiredSimulations) = await this.GetSimulations();
+                    if (success)
+                    {
+                        // Scale nodes in Vmss
+                        await this.ScaleVmssNodes(activeSimulations);
 
-                    // Create IoTHub devices for all the active simulations
-                    await this.CreateDevicesAsync(activeSimulations);
+                        // Create IoTHub devices for all the active simulations
+                        await this.CreateDevicesAsync(activeSimulations);
 
-                    // Delete IoTHub devices for inactive simulations
-                    await this.DeleteDevicesAsync(deletionRequiredSimulations);
+                        // Delete IoTHub devices for inactive simulations
+                        await this.DeleteDevicesAsync(deletionRequiredSimulations);
 
-                    // Create and delete partitions
-                    await this.CreatePartitionsAsync(activeSimulations);
-                    await this.DeletePartitionsAsync(activeSimulations);
+                        // Create and delete partitions
+                        await this.CreatePartitionsAsync(activeSimulations);
+                        await this.DeletePartitionsAsync(activeSimulations);
+                    }
                 }
 
                 // Sleep some seconds before checking for new simulations (by default 15 seconds)
@@ -112,69 +106,116 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
         {
             this.running = false;
         }
-                
-        private async Task ScaleVmssNodes(IList<Simulation> activeSimulations)
+
+        private async
+            Task<(bool success, IList<Simulation> activeSimulations, IList<Simulation> deletionRequiredSimulations)>
+            GetSimulations()
         {
-            // Default node count is 1
-            var nodeCount = DEFAULT_NODE_COUNT;
-            var maxDevicesPerNode = this.clusteringConfig.MaxDevicesPerNode;
-
-            if (activeSimulations.Count > 0)
+            try
             {
-                var models = new List<Simulation.DeviceModelRef>();
-                var customDevices = 0;
+                // Reload all simulations to have fresh status and discover new simulations
+                IList<Simulation> list = (await this.simulations.GetListAsync());
 
-                foreach (var simulation in activeSimulations)
-                {
-                    // Loop through all the device models used in the simulation
-                    models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
+                IList<Simulation> activeSimulations = list
+                    .Where(x => x.IsActiveNow).ToList();
+                this.log.Debug("Active simulations loaded", () => new { activeSimulations.Count });
 
-                    // Count total custom devices
-                    customDevices += simulation.CustomDevices.Count;
-                }
+                IList<Simulation> deletionRequiredSimulations = list
+                    .Where(x => x.DeviceDeletionRequired).ToList();
+                this.log.Debug("Inactive simulations loaded", () => new { deletionRequiredSimulations.Count });
 
-                // Calculate the total number of devices
-                var totalDevices = models.Sum(model => model.Count) + customDevices;
-
-                // Calculate number of nodes required
-                nodeCount = maxDevicesPerNode > 0 ? (int)Math.Ceiling((double)totalDevices / maxDevicesPerNode) : DEFAULT_NODE_COUNT;
+                return (true, activeSimulations, deletionRequiredSimulations);
             }
-
-            if (this.currentNodeCount != nodeCount)
+            catch (Exception e)
             {
-                // Send a request to update vmss auto scale settings to create vm instances
-                // TODO: when devices are added or removed, the number of VMs might need an update
-                await this.azureManagementAdapter.CreateOrUpdateVmssAutoscaleSettingsAsync(nodeCount);
-
-                this.currentNodeCount = nodeCount;
+                this.log.Error("An unexpected error occurred in the master node while loading the list of simulations", e);
+                return (false, null, null);
             }
         }
 
-        private async Task DeleteDevicesAsync(IList<Simulation> deletionRequiredSimulations)
+        private async Task ScaleVmssNodes(IList<Simulation> activeSimulations)
         {
-            if (deletionRequiredSimulations.Count == 0) return;
-
-            foreach (var simulation in deletionRequiredSimulations)
+            try
             {
-                await this.DeleteIoTHubDevicesAsync(simulation);
+                // Default node count is 1
+                var nodeCount = DEFAULT_NODE_COUNT;
+                var maxDevicesPerNode = this.clusteringConfig.MaxDevicesPerNode;
+
+                if (activeSimulations.Count > 0)
+                {
+                    var models = new List<Simulation.DeviceModelRef>();
+                    var customDevices = 0;
+
+                    foreach (var simulation in activeSimulations)
+                    {
+                        // Loop through all the device models used in the simulation
+                        models = (from model in simulation.DeviceModels where model.Count > 0 select model).ToList();
+
+                        // Count total custom devices
+                        customDevices += simulation.CustomDevices.Count;
+                    }
+
+                    // Calculate the total number of devices
+                    var totalDevices = models.Sum(model => model.Count) + customDevices;
+
+                    // Calculate number of nodes required
+                    nodeCount = maxDevicesPerNode > 0 ? (int) Math.Ceiling((double) totalDevices / maxDevicesPerNode) : DEFAULT_NODE_COUNT;
+                }
+
+                if (this.currentNodeCount != nodeCount)
+                {
+                    // Send a request to update vmss auto scale settings to create vm instances
+                    // TODO: when devices are added or removed, the number of VMs might need an update
+                    await this.azureManagementAdapter.CreateOrUpdateVmssAutoscaleSettingsAsync(nodeCount);
+
+                    this.currentNodeCount = nodeCount;
+                }
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unexpected error while scaling the deployment", e);
             }
         }
 
         private async Task CreateDevicesAsync(IList<Simulation> activeSimulations)
         {
-            if (activeSimulations.Count == 0) return;
-
-            var simulationsWithDevicesToCreate = activeSimulations.Where(x => x.DeviceCreationRequired).ToList();
-
-            if (simulationsWithDevicesToCreate.Count == 0)
+            try
             {
-                this.log.Debug("No simulations require device creation");
-                return;
+                if (activeSimulations.Count == 0) return;
+
+                var simulationsWithDevicesToCreate = activeSimulations.Where(x => x.DeviceCreationRequired).ToList();
+
+                if (simulationsWithDevicesToCreate.Count == 0)
+                {
+                    this.log.Debug("No simulations require device creation");
+                    return;
+                }
+
+                foreach (var simulation in simulationsWithDevicesToCreate)
+                {
+                    await this.CreateIoTHubDevicesAsync(simulation);
+                }
             }
-
-            foreach (var simulation in simulationsWithDevicesToCreate)
+            catch (Exception e)
             {
-                await this.CreateIoTHubDevicesAsync(simulation);
+                this.log.Error("Unexpected error while creating devices", e);
+            }
+        }
+
+        private async Task DeleteDevicesAsync(IList<Simulation> deletionRequiredSimulations)
+        {
+            try
+            {
+                if (deletionRequiredSimulations.Count == 0) return;
+
+                foreach (var simulation in deletionRequiredSimulations)
+                {
+                    await this.DeleteIoTHubDevicesAsync(simulation);
+                }
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unexpected error while deleting devices", e);
             }
         }
 
@@ -212,6 +253,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                             : "Device deletion is still in progress",
                         () => new { SimulationId = simulation.Id });
                 }
+
+                deviceService.Dispose();
             }
 
             // Start the job to delete the devices
@@ -232,6 +275,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                 {
                     this.log.Warn("Failed to start device deletion, will retry later");
                 }
+
+                deviceService.Dispose();
             }
         }
 
@@ -251,7 +296,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
 
                 if (await deviceService.IsJobCompleteAsync(simulation.DeviceCreationJobId, () => { creationFailed = true; }))
                 {
-                    this.log.Info("All devices have been created, updating the simulation record", () => new { SimulationId = simulation.Id });
+                    // Note: at this point we don't know if all devices have been created, quota can cause some errors,
+                    // see job log in the storage account
+                    this.log.Info("Device creation job complete, updating the simulation record. All devices should have been created. " +
+                                  "If any error occurred, the 'importErrors.log' file in the storage account contains the details.",
+                        () => new { SimulationId = simulation.Id });
 
                     if (await this.simulations.TryToSetDeviceCreationCompleteAsync(simulation.Id))
                     {
@@ -269,6 +318,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                             : "Device creation is still in progress",
                         () => new { SimulationId = simulation.Id });
                 }
+
+                deviceService.Dispose();
             }
 
             // Start the job to import the devices
@@ -289,53 +340,69 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                 {
                     this.log.Warn("Failed to start device creation, will retry later");
                 }
+
+                deviceService.Dispose();
             }
         }
 
         private async Task CreatePartitionsAsync(IList<Simulation> activeSimulations)
         {
-            if (activeSimulations.Count == 0) return;
-
-            var simulationsToPartition = activeSimulations.Where(x => x.PartitioningRequired).ToList();
-
-            if (simulationsToPartition.Count == 0)
+            try
             {
-                this.log.Debug("No simulations to be partitioned");
-                return;
+                if (activeSimulations.Count == 0) return;
+
+                var simulationsToPartition = activeSimulations.Where(x => x.PartitioningRequired).ToList();
+
+                if (simulationsToPartition.Count == 0)
+                {
+                    this.log.Debug("No simulations to be partitioned");
+                    return;
+                }
+
+                foreach (Simulation sim in simulationsToPartition)
+                {
+                    await this.partitions.CreateAsync(sim.Id);
+                }
             }
-
-            foreach (Simulation sim in simulationsToPartition)
+            catch (Exception e)
             {
-                await this.partitions.CreateAsync(sim.Id);
+                this.log.Error("Unexpected error while creating partitions", e);
             }
         }
 
         private async Task DeletePartitionsAsync(IList<Simulation> activeSimulations)
         {
-            if (activeSimulations.Count == 0) return;
-
-            this.log.Debug("Searching partitions to delete...");
-
-            var allPartitions = await this.partitions.GetAllAsync();
-            var simulationIds = new HashSet<string>(activeSimulations.Select(x => x.Id));
-            var partitionIds = new List<string>();
-            foreach (var partition in allPartitions)
+            try
             {
-                if (!simulationIds.Contains(partition.SimulationId))
+                if (activeSimulations.Count == 0) return;
+
+                this.log.Debug("Searching partitions to delete...");
+
+                var allPartitions = await this.partitions.GetAllAsync();
+                var simulationIds = new HashSet<string>(activeSimulations.Select(x => x.Id));
+                var partitionIds = new List<string>();
+                foreach (var partition in allPartitions)
                 {
-                    partitionIds.Add(partition.Id);
+                    if (!simulationIds.Contains(partition.SimulationId))
+                    {
+                        partitionIds.Add(partition.Id);
+                    }
                 }
-            }
 
-            if (partitionIds.Count == 0)
+                if (partitionIds.Count == 0)
+                {
+                    this.log.Debug("No partitions to delete");
+                    return;
+                }
+
+                // TODO: partitions should be deleted only after its actors are down
+                this.log.Debug("Deleting partitions...", () => new { partitionIds.Count });
+                await this.partitions.DeleteListAsync(partitionIds);
+            }
+            catch (Exception e)
             {
-                this.log.Debug("No partitions to delete");
-                return;
+                this.log.Error("Unexpected error while deleting partitions", e);
             }
-
-            // TODO: partitions should be deleted only after its actors are down
-            this.log.Debug("Deleting partitions...", () => new { partitionIds.Count });
-            await this.partitions.DeleteListAsync(partitionIds);
         }
     }
 }

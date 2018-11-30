@@ -155,7 +155,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 }
                 catch (ResourceNotFoundException)
                 {
-                    this.log.Error("Partition not found, assignment cannot continue", () => new { partition.Value.Id });
+                    // A partition might be deleted when deleting a simulation, so this is not always an error
+                    this.log.Warn("Partition not found, assignment cannot continue", () => new { partition.Value.Id });
                     partitionsToRelease.Add(partition.Value);
                 }
             }
@@ -174,7 +175,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.instance.InitRequired();
 
             if (this.deviceCount > this.maxDevicePerNode) return;
-                
+
             this.log.Debug("Searching for unassigned partitions...");
             var unassignedPartitions = await this.devicePartitions.GetUnassignedAsync(this.simulation.Id);
             this.log.Debug(() => new { UnassignedPartitions = unassignedPartitions.Count });
@@ -224,7 +225,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             var connectedCount = this.deviceConnectionActors.Count(x => x.Value.Connected);
 
-            this.log.Info($"Simulation stats",
+            this.log.Info("Simulation stats",
                 () => new
                 {
                     SimulationId = this.simulation.Id,
@@ -242,24 +243,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             try
             {
                 var prefix = this.GetDictKey(string.Empty);
-                var telemetryActors = this.deviceTelemetryActors.Where(a => a.Key.StartsWith(prefix));
-                var connectionActors = this.deviceConnectionActors.Where(a => a.Key.StartsWith(prefix));
-                var propertiesActors = this.devicePropertiesActors.Where(a => a.Key.StartsWith(prefix));
-                var stateActors = this.deviceStateActors.Where(a => a.Key.StartsWith(prefix));
+                var telemetryActors = this.deviceTelemetryActors.Where(a => a.Key.StartsWith(prefix)).ToList();
+                var connectionActors = this.deviceConnectionActors.Where(a => a.Key.StartsWith(prefix)).ToList();
+                var propertiesActors = this.devicePropertiesActors.Where(a => a.Key.StartsWith(prefix)).ToList();
+                var stateActors = this.deviceStateActors.Where(a => a.Key.StartsWith(prefix)).ToList();
 
                 var simulationModel = new SimulationStatisticsModel
                 {
-                    ActiveDevices = stateActors != null ? stateActors.Count(a => a.Value.IsDeviceActive) : 0,
-                    TotalMessagesSent = telemetryActors != null ? telemetryActors.Sum(a => a.Value.TotalMessagesCount) : 0,
-                    FailedMessages = telemetryActors != null ? telemetryActors.Sum(a => a.Value.FailedMessagesCount) : 0,
-                    FailedDeviceConnections = connectionActors != null ? connectionActors.Sum(a => a.Value.FailedDeviceConnectionsCount) : 0,
-                    FailedDevicePropertiesUpdates = propertiesActors != null ? propertiesActors.Sum(a => a.Value.FailedTwinUpdatesCount) : 0,
+                    ActiveDevices = stateActors.Count(a => a.Value.IsDeviceActive),
+                    TotalMessagesSent = telemetryActors.Sum(a => a.Value.TotalMessagesCount),
+                    FailedMessages = telemetryActors.Sum(a => a.Value.FailedMessagesCount),
+                    FailedDeviceConnections = connectionActors.Sum(a => a.Value.FailedDeviceConnectionsCount),
+                    FailedDevicePropertiesUpdates = propertiesActors.Sum(a => a.Value.FailedTwinUpdatesCount),
                 };
 
                 await this.simulationStatistics.CreateOrUpdateAsync(this.simulation.Id, simulationModel);
             }
             catch (Exception e)
             {
+                // Log and do not rethrow
                 this.log.Error("Error saving simulation statistics", () => new { this.simulation.Id, e });
             }
         }
@@ -268,6 +270,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         public void TearDown()
         {
             this.instance.InitRequired();
+
+            this.simulationContext?.Dispose();
 
             this.DeleteAllStateActors();
             this.DeleteAllConnectionActors();

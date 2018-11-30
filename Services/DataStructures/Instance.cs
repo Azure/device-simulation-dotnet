@@ -8,16 +8,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures
 {
     public interface IInstance
     {
-        // Return True if the instance has been initialized
-        bool IsInitialized { get; }
-
         // Mark the initialization complete
         void InitComplete();
 
         // Fail with exception if the instance has already been initialized
         void InitOnce(
-            [CallerMemberName] string callerName = "", 
-            [CallerFilePath] string filePath = "", 
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0);
 
         // Fail with exception if the instance has not been initialized
@@ -28,7 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures
     }
 
     /// <summary>
-    /// Helper used to require object initialization.
+    /// Helper used to require object initialization, not used in Production.
     /// Many objects are not ready to be used after the ctor is done, and either require
     /// async logic that cannot be executed in the ctor, or some context parameters
     /// that are not automatically injected. This class helps to ensure that these classes
@@ -38,28 +35,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures
     {
         private readonly ILogger log;
 
-        // Return True if the instance has been initialized
-        public bool IsInitialized { get; private set; }
+        private bool isInitialized;
 
         public Instance(ILogger log)
         {
             this.log = log;
-            this.IsInitialized = false;
+            this.isInitialized = false;
         }
 
         // Mark the initialization as complete
         public void InitComplete()
         {
-            this.IsInitialized = true;
+            this.isInitialized = true;
         }
 
         // Fail with exception if the instance has already been initialized
         public void InitOnce(
-            [CallerMemberName] string callerName = "", 
-            [CallerFilePath] string filePath = "", 
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0)
         {
-            if (!this.IsInitialized) return;
+            if (!this.isInitialized) return;
 
             this.log.Error("The instance has already been initialized", () => new { callerName, filePath, lineNumber });
             throw new ApplicationException($"Multiple initializations attempt ({filePath}:{lineNumber})");
@@ -67,14 +63,31 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures
 
         // Fail with exception if the instance has not been initialized
         public void InitRequired(
-            [CallerMemberName] string callerName = "", 
-            [CallerFilePath] string filePath = "", 
+            [CallerMemberName] string callerName = "",
+            [CallerFilePath] string filePath = "",
             [CallerLineNumber] int lineNumber = 0)
         {
-            if (this.IsInitialized) return;
+            if (this.isInitialized) return;
 
             this.log.Error("The instance has not been initialized", () => new { callerName, filePath, lineNumber });
             throw new ApplicationException($"Call from an instance not yet initialized ({filePath}:{lineNumber})");
+        }
+    }
+
+    // Singleton shim used to save memory in Production
+    // TODO: replace this with DEBUG symbol where IInstance is used
+    public class InstanceShim : IInstance
+    {
+        public void InitComplete()
+        {
+        }
+
+        public void InitOnce(string callerName = "", string filePath = "", int lineNumber = 0)
+        {
+        }
+
+        public void InitRequired(string callerName = "", string filePath = "", int lineNumber = 0)
+        {
         }
     }
 }

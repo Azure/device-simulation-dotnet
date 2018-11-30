@@ -28,6 +28,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         StorageConfig StatisticsStorage { get; set; }
         string DiagnosticsEndpointUrl { get; }
         string UserAgent { get; }
+        bool DevelopmentMode { get; }
+        bool DisableSimulationAgent { get; }
+        bool DisablePartitioningAgent { get; }
+        bool DisableSeedByTemplate { get; }
     }
 
     // TODO: test Windows/Linux folder separator
@@ -47,6 +51,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             this.dtf = string.Empty;
             this.dtbf = string.Empty;
             this.ihf = string.Empty;
+
+            // By default, disable debugging features
+            this.DevelopmentMode = false;
+            this.DisableSimulationAgent = false;
+            this.DisablePartitioningAgent = false;
+            this.DisableSeedByTemplate = false;
         }
 
         public string DeviceModelsFolder
@@ -101,7 +111,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 
         public string UserAgent { get; set; }
 
+        public bool DevelopmentMode { get; set; }
+
         public StorageConfig StatisticsStorage { get; set; }
+
+        public bool DisableSimulationAgent { get; set; }
+
+        public bool DisablePartitioningAgent { get; set; }
+
+        public bool DisableSeedByTemplate { get; set; }
 
         private string NormalizePath(string path)
         {

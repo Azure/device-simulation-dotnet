@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
@@ -70,6 +71,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         [JsonProperty(PropertyName = "Statistics")]
         public SimulationStatistics Statistics { get; set; }
 
+        [JsonProperty(PropertyName = "RateLimits")]
+        public SimulationRateLimits RateLimits { get; set; }
+
         // Note: read-only metadata
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
@@ -98,10 +102,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             this.EndTime = null;
             this.StoppedTime = null;
             this.DeviceModels = new List<SimulationDeviceModelRef>();
+            this.RateLimits = new SimulationRateLimits();
         }
 
         // Map API model to service model, keeping the original fields when needed
-        public Simulation ToServiceModel(Simulation existingSimulation, string id = "")
+        public Simulation ToServiceModel(
+            Simulation existingSimulation,
+            IRateLimitingConfig defaultRateLimits,
+            string id = "")
         {
             var now = DateTimeOffset.UtcNow;
 
@@ -123,6 +131,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             result.StartTime = DateHelper.ParseDateExpression(this.StartTime, now);
             result.EndTime = DateHelper.ParseDateExpression(this.EndTime, now);
             result.DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList();
+            result.RateLimits = this.RateLimits.ToServiceModel(defaultRateLimits);
 
             // Overwrite the value only if the request included the field, i.e. don't
             // enable/disable the simulation if the user didn't explicitly ask to.
@@ -197,6 +206,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
             result.DeviceModels = SimulationDeviceModelRef.FromServiceModel(value.DeviceModels);
             result.Statistics = GetSimulationStatistics(value);
+            result.RateLimits = SimulationRateLimits.FromServiceModel(value.RateLimits);
 
             result.created = value.Created;
             result.modified = value.Modified;
@@ -204,7 +214,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             return result;
         }
 
-        public async Task ValidateInputRequestAsync(ILogger log, IIotHubConnectionStringManager connectionStringManager)
+        public async Task ValidateInputRequestAsync(ILogger log, IConnectionStringValidation connectionStringValidation)
         {
             const string NO_DEVICE_MODEL = "The simulation doesn't contain any device model";
             const string ZERO_DEVICES = "The simulation has zero devices";
@@ -260,7 +270,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
 
             foreach (var iotHub in this.IotHubs)
             {
-                await connectionStringManager.ValidateConnectionStringAsync(iotHub.ConnectionString);
+                await connectionStringValidation.TestAsync(iotHub.ConnectionString, true);
             }
         }
 

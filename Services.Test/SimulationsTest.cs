@@ -39,7 +39,7 @@ namespace Services.Test
         private readonly Mock<IFileSystem> file;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
-        private readonly Mock<IIotHubConnectionStringManager> connStringManager;
+        private readonly Mock<IConnectionStrings> connectionStrings;
         private readonly Mock<IDocumentDbWrapper> mockDocumentDbWrapper;
         private readonly Mock<IDocumentClient> mockDocumentClient;
         private readonly Mock<IResourceResponse<Document>> mockStorageDocument;
@@ -75,7 +75,7 @@ namespace Services.Test
             this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
             this.devices = new Mock<IDevices>();
             this.file = new Mock<IFileSystem>();
-            this.connStringManager = new Mock<IIotHubConnectionStringManager>();
+            this.connectionStrings = new Mock<IConnectionStrings>();
             this.models = new List<DeviceModel>
             {
                 new DeviceModel { Id = "01" },
@@ -89,8 +89,7 @@ namespace Services.Test
                 this.deviceModels.Object,
                 this.mockFactory.Object,
                 this.mockStorageAdapterClient.Object,
-                this.connStringManager.Object,
-                this.devices.Object,
+                this.connectionStrings.Object,
                 this.file.Object,
                 this.logger.Object,
                 this.diagnosticsLogger.Object,
@@ -295,7 +294,7 @@ namespace Services.Test
                 .Wait(Constants.TEST_TIMEOUT);
         }
 
-        [Fact]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void UpsertWillSucceedWhenETagsMatch()
         {
             // Arrange
@@ -471,11 +470,6 @@ namespace Services.Test
                     new SimulationModel.DeviceModelRef { Id = modelId2, Count = 2 }
                 }
             };
-            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 1)).Returns($"{simulationId}.{modelId1}.1");
-            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 2)).Returns($"{simulationId}.{modelId1}.2");
-            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 3)).Returns($"{simulationId}.{modelId1}.3");
-            this.devices.Setup(x => x.GenerateId(simulationId, modelId2, 1)).Returns($"{simulationId}.{modelId2}.1");
-            this.devices.Setup(x => x.GenerateId(simulationId, modelId2, 2)).Returns($"{simulationId}.{modelId2}.2");
 
             // Act
             Dictionary<string, List<string>> result = this.target.GetDeviceIdsByModel(sim);
@@ -483,9 +477,9 @@ namespace Services.Test
             // Assert
             Assert.True(result.ContainsKey(modelId1));
             Assert.True(result.ContainsKey(modelId2));
-            this.devices.Verify(
-                x => x.GenerateId(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()),
-                Times.Exactly(sim.DeviceModels[0].Count + sim.DeviceModels[1].Count));
+            // this.devices.Verify(
+            //     x => x.GenerateId(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()),
+            //     Times.Exactly(sim.DeviceModels[0].Count + sim.DeviceModels[1].Count));
 
             Assert.Contains($"{simulationId}.{modelId1}.1", result[modelId1]);
             Assert.Contains($"{simulationId}.{modelId1}.2", result[modelId1]);
@@ -548,11 +542,6 @@ namespace Services.Test
                     }
                 }
             };
-            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 1)).Returns($"{simulationId}.{modelId1}.1");
-            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 2)).Returns($"{simulationId}.{modelId1}.2");
-            this.devices.Setup(x => x.GenerateId(simulationId, modelId1, 3)).Returns($"{simulationId}.{modelId1}.3");
-            this.devices.Setup(x => x.GenerateId(simulationId, modelId2, 1)).Returns($"{simulationId}.{modelId2}.1");
-            this.devices.Setup(x => x.GenerateId(simulationId, modelId2, 2)).Returns($"{simulationId}.{modelId2}.2");
 
             // Act
             Dictionary<string, List<string>> result = this.target.GetDeviceIdsByModel(sim);

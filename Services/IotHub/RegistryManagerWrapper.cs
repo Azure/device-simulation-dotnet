@@ -17,29 +17,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
     public interface IRegistryManager
     {
         void Init(string connString);
-
+        void ValidateConnectionString(string connString);
         Task<BulkRegistryOperationResult> AddDevices2Async(IEnumerable<Device> devices);
-
         Task<BulkRegistryOperationResult> RemoveDevices2Async(IEnumerable<Device> devices, bool forceRemove);
-
         Task OpenAsync();
-
         Task CloseAsync();
-
         Task<Device> AddDeviceAsync(Device device);
-
         Task RemoveDeviceAsync(string deviceId);
-
         Task<Device> GetDeviceAsync(string deviceId);
-
         Task UpdateTwinAsync(string deviceId, Twin twinPatch, string eTag);
-
         Task<JobProperties> ImportDevicesAsync(string containerUri, string inputBlobName);
-
         Task<JobProperties> GetJobAsync(string jobId);
-
-        Task GetJobsAsync();
-
         void Dispose();
     }
 
@@ -65,6 +53,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             this.instance.InitOnce();
             this.registry = RegistryManager.CreateFromConnectionString(connString);
             this.instance.InitComplete();
+        }
+
+        public void ValidateConnectionString(string connString)
+        {
+            var test = RegistryManager.CreateFromConnectionString(connString);
+            test.Dispose();
         }
 
         public async Task<BulkRegistryOperationResult> AddDevices2Async(
@@ -128,12 +122,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         {
             this.instance.InitRequired();
             return this.registry.GetJobAsync(jobId);
-        }
-
-        public async Task GetJobsAsync()
-        {
-            this.instance.InitRequired();
-            await this.registry.GetJobsAsync();
         }
 
         public void Dispose()

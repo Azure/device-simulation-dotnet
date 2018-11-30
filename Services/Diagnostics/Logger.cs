@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
@@ -15,10 +17,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         private readonly string dateFormat;
         private readonly object fileLock;
 
-        public Logger(string processId) :
-            this(processId, new LoggingConfig())
-        {
-        }
+        // Optional list of sources to ignore, e.g. methods for which log statements will be discarded
+        private readonly ImmutableHashSet<string> blackList;
+
+        // Optional list of sources to include, ignoring everything else
+        private readonly ImmutableHashSet<string> whiteList;
+
+        // Flag set to True when using a white list, to know that most of the logs are discarded
+        private readonly bool onlyWhiteListed;
 
         public Logger(string processId, ILoggingConfig config)
         {
@@ -27,6 +33,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.logProcessId = config.LogProcessId;
             this.dateFormat = config.DateFormat;
             this.fileLock = new object();
+
+            this.blackList = config.BlackList
+                .Where(s => !string.IsNullOrEmpty(s))
+                .Select(s => s.ToLowerInvariant()).ToImmutableHashSet();
+
+            this.whiteList = config.WhiteList
+                .Where(s => !string.IsNullOrEmpty(s))
+                .Select(s => s.ToLowerInvariant()).ToImmutableHashSet();
+            this.onlyWhiteListed = this.whiteList.Count > 0;
         }
 
         public LogLevel LogLevel => this.priorityThreshold;
@@ -75,7 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             [CallerLineNumber] int lineNumber = 0)
         {
             if (this.priorityThreshold > LogLevel.Info) return;
-            this.Write(LogLevel.Info, message, callerName, filePath, lineNumber);
+            this.Write(LogLevel.Warn, message, callerName, filePath, lineNumber);
         }
 
         public void Error(string message,
@@ -310,6 +325,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             if (pos != -1)
             {
                 filePath = filePath.Substring(pos + 1);
+            }
+
+            var wbKey = $"{filePath}:{methodName}".ToLowerInvariant();
+            if (this.onlyWhiteListed)
+            {
+                // Skip non whitelisted sources
+                if (!this.whiteList.Contains(wbKey)) return;
+            }
+            else if (this.blackList.Contains(wbKey))
+            {
+                // Skip blacklisted sources
+                return;
             }
 
             var methodInfo = $"{filePath}:{lineNumber}:{methodName}";

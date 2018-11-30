@@ -3,8 +3,6 @@ API specifications - Simulations
 
 ## Creating simulations
 
-The service supports only one simulation, with ID "1".
-
 ### Creation with POST
 
 When invoking the API using the POST HTTP method, the service will always
@@ -458,7 +456,49 @@ Content-Type: application/json; charset=utf-8
 }
 ```
 
-## Get details of the simulation, including device models and statistics
+## Creating a simulation with custom rate limits (aka throttling limits)
+
+IoT Hub enforces some rate limitations, aka throttling limits, that are applied
+in minute ranges, and are intended to prevent abuse. The simulation service follows
+the same limits in order to avoid getting errors from the IoT Hub. The following
+example shows how to override the rate limits for a simulation. These can be changed
+accordingly to the targeted IoT Hub, for example depending on the IoT Hub SKU.
+
+Request:
+```
+POST /v1/simulations
+Content-Type: application/json; charset=utf-8
+```
+```json
+{
+   "Name":"Sample Simulation",
+   "Desc":"This is a sample simulation.",
+   "Enabled":true,
+   "StartTime":"NOW",
+   "EndTime":"NOW+P7D",
+   "IoTHubs":[
+      {
+         "ConnectionString":"default"
+      }
+   ],
+   "DeviceModels":[
+      {
+         "Id":"truck-01",
+         "Count":5
+      }
+   ],
+   "RateLimits":{
+      "RegistryOperationsPerMinute":120,
+      "TwinReadsPerSecond":12,
+      "TwinWritesPerSecond":10,
+      "ConnectionsPerSecond":120,
+      "DeviceMessagesPerSecond":120
+   }
+}
+```
+More details about these limits: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-quotas-throttling
+
+## Get details of a simulation, including device models, rate limits and statistics
 
 Request:
 ```
@@ -472,62 +512,74 @@ Content-Type: application/json; charset=utf-8
 ```
 ```json
 {
-  "ETag": "969ee1fb277640",
-  "Id": "1",
-  "Name": "Sample Simulation",
-  "Description": "This is a sample simulation",
-  "Enabled": false,
-  "Running": false,
-  "IoTHubs": [
+   "ETag":"\"2a008403-0000-0700-0000-5bef24c70000\"",
+   "Id":"1",
+   "Name":"Sample Simulation",
+   "Description":"This is a sample simulation",
+   "Enabled":false,
+   "DeleteDevicesWhenSimulationEnds":false,
+   "Running":false,
+   "ActiveNow":false,
+   "DevicesDeletionComplete":false,
+   "IoTHubs":[
       {
-          "ConnectionString": "default",
-          "PreprovisionedIoTHubInUse": false,
-          "PreprovisionedIoTHubMetricsUrl": "https://portal.azure.com/..."
+         "ConnectionString":"default",
+         "PreprovisionedIoTHubInUse":false,
+         "PreprovisionedIoTHubMetricsUrl":"https://portal.azure.com/..."
       }
-  ],
-  "StartTime": "2018-08-31T00:30:00+00:00",
-  "EndTime": "2018-09-01T00:40:00+00:00",
-  "StoppedTime": "2018-08-31T00:35:00+00:00",
-  "DeviceModels": [
+   ],
+   "StartTime":"2018-08-31T00:30:00+00:00",
+   "EndTime":"2018-09-01T00:40:00+00:00",
+   "StoppedTime":"2018-08-31T00:35:00+00:00",
+   "DeviceModels":[
       {
-          "Id": "truck-02",
-          "Count": 2
+         "Id":"truck-02",
+         "Count":2
       },
       {
-          "Id": "elevator-02",
-          "Count": 4
+         "Id":"elevator-02",
+         "Count":4
       }
-  ],
-  "Statistics": {
-      "TotalMessagesSent": 60,
-      "AverageMessagesPerSecond": 6.43,
-      "FailedMessagesCount": 0,
-      "ActiveDevicesCount": 0,
-      "FailedDeviceConnectionsCount": 0,
-      "FailedDeviceTwinUpdatesCount": 0
-  },
-  "$metadata": {
-      "$type": "Simulation;1",
-      "$uri": "/v1/simulations/1",
-      "$created": "2018-08-31T00:30:00+00:00",
-      "$modified": "2018-08-31T00:35:00+00:00"
-  }
+   ],
+   "Statistics":{
+      "TotalMessagesSent":60,
+      "AverageMessagesPerSecond":6.43,
+      "FailedMessagesCount":0,
+      "ActiveDevicesCount":0,
+      "FailedDeviceConnectionsCount":0,
+      "FailedDeviceTwinUpdatesCount":0
+   },
+   "RateLimits":{
+      "RegistryOperationsPerMinute":120,
+      "TwinReadsPerSecond":12,
+      "TwinWritesPerSecond":10,
+      "ConnectionsPerSecond":120,
+      "DeviceMessagesPerSecond":120
+   },
+   "$metadata":{
+      "$type":"Simulation;1",
+      "$uri":"/v1/simulations/1",
+      "$created":"2018-08-31T00:30:00+00:00",
+      "$modified":"2018-08-31T00:35:00+00:00"
+   }
 }
 ```
 
 There are some read-only properties in the api response. 
 * `Running` is a calculated property, reporting whether the simulation is
   currently running.
+* `ActiveNow` is a calculated property, reporting whether the simulation is enabled and is
+  setting up resources (provisioning VMs, creating devices) in order to start running.
+* `DevicesDeletionComplete` is a calculated property, reporting whether the devices has
+  been deleted after the simulation has stopped running.
 * `StoppedTime` is the time when the simulation was manually
-  stopped before it's scheduled `EndTime`. 
+  stopped before its scheduled `EndTime`. 
 * `PreprovisionedIoTHubInUse`: whether the simulation ran or is running
   using the Azure IoT Hub created during the solution deployment.
-* 'PreprovisionedIoTHubMetricsUrl': the url to navigate to the IoT Hub
+* `PreprovisionedIoTHubMetricsUrl`: the URL to navigate to the IoT Hub
   metrics page. 
 * `Statistics` is a set of read only properties providing counters
-  at a given time. When the simulation is stopped, the current values
-  for `TotalMessagesSent` and `AverageMessagesPerSecond` are retrieved from
-  storage. 
+  at a given time. 
 
 ## Start simulation
 
@@ -705,12 +757,12 @@ Content-Type: application/json; charset=utf-8
 optional body.
 ```json
 {
-  "requests": [
-  	{
-	  "httpMethod": "GET",
-	  "relativeUrl":"/subscriptions/{subscription_id}/resourceGroups/{resourceGroup}/providers/Microsoft.Devices/IotHubs/{iothub_name}/providers/Microsoft.Insights/metrics?api-version=2016-06-01&$filter={filters}"
-	}
-  ]
+   "requests":[
+      {
+         "httpMethod":"GET",
+         "relativeUrl":"/subscriptions/{subscription_id}/resourceGroups/{resourceGroup}/providers/Microsoft.Devices/IotHubs/{iothub_name}/providers/Microsoft.Insights/metrics?api-version=2016-06-01&$filter={filters}"
+      }
+   ]
 }
 ```
 
@@ -720,22 +772,22 @@ Response:
 Content-Type: application/JSON
 ```json
 {
-  "responses": [
-    {
-	  "content": {
-	    "value": [
-		  {
-		  	"data": [
-			  {
-			  	"timeStamp": "2018-09-20T17:50:00Z",
-				"total": 0
-			  },
-			  ...
-			]
-		  }
-		]
-	  }
-	}
-  ]
+   "responses":[
+      {
+         "content":{
+            "value":[
+               {
+                  "data":[
+                     {
+                        "timeStamp":"2018-09-20T17:50:00Z",
+                        "total":0
+                     },
+                     ...
+                  ]
+               }
+            ]
+         }
+      }
+   ]
 }
 ```

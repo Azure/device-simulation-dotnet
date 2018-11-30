@@ -54,7 +54,7 @@ namespace Services.Test.Concurrency
          * per second. So, when the limit is 60 events/second, 60 events should
          * not be paused, the 61st should be paused.
          */
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST), Trait(Constants.SPEED, Constants.SLOW_TEST)]
         public void ItPausesWhenNeeded()
         {
             log.WriteLine("Starting test at " + DateTimeOffset.UtcNow.ToString("HH:mm:ss.fff"));
@@ -123,7 +123,7 @@ namespace Services.Test.Concurrency
          * When calculating the speed obtained, ignore the 41st event
          * and verify that the speed is between 19 and 20 events per second.
          */
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST), Trait(Constants.SPEED, Constants.SLOW_TEST)]
         public void ItObtainsTheDesiredFrequency_SeveralEventsPerSecond()
         {
             // TODO: find out why the test sometimes fails - in the mean time repeat the test a couple of times
@@ -169,7 +169,7 @@ namespace Services.Test.Concurrency
          * burst. The test should take just a bit more than 1 second, definitely less
          * than 2 seconds, so the actual speed should be ~39 events/second.
          */
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST), Trait(Constants.SPEED, Constants.SLOW_TEST)]
         public void ItAllowsBurstOfEvents()
         {
             // TODO: find out why the test sometimes fails - in the mean time repeat the test a couple of times
@@ -206,7 +206,7 @@ namespace Services.Test.Concurrency
          * avoid bursts on purpose to make sure the internal logic of the
          * rating logic is keeping the internal queue status correct.
          */
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST), Trait(Constants.SPEED, Constants.SLOW_TEST)]
         public void ItWorksWhenNoThrottlingIsNeeded()
         {
             // Arrange
@@ -221,7 +221,7 @@ namespace Services.Test.Concurrency
             }
         }
 
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST), Trait(Constants.SPEED, Constants.SLOW_TEST)]
         public void FourThreadsTenPerSecondAreThrottledTogether()
         {
             // Arrange
@@ -294,7 +294,7 @@ namespace Services.Test.Concurrency
             Assert.InRange(passed, 3000, 3500);
         }
 
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST), Trait(Constants.SPEED, Constants.SLOW_TEST)]
         public void FourThreadsTwentyPerSecondAreThrottledTogether()
         {
             // Arrange

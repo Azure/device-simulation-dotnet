@@ -27,7 +27,6 @@ namespace WebService.Test.v1.Controllers
         private readonly Mock<ISimulations> simulations;
         private readonly Mock<ILogger> logger;
         private readonly Mock<IServicesConfig> servicesConfig;
-        private readonly Mock<IIotHubConnectionStringManager> connectionStringManager;
         private readonly Mock<IRateLimiting> rateReporter;
         private readonly StatusController target;
 
@@ -38,7 +37,6 @@ namespace WebService.Test.v1.Controllers
             this.simulations = new Mock<ISimulations>();
             this.logger = new Mock<ILogger>();
             this.servicesConfig = new Mock<IServicesConfig>();
-            this.connectionStringManager = new Mock<IIotHubConnectionStringManager>();
             this.rateReporter = new Mock<IRateLimiting>();
 
             this.target = new StatusController(
@@ -90,10 +88,7 @@ namespace WebService.Test.v1.Controllers
                 DevicesCreationComplete = true
             };
 
-            var simulations = new List<SimulationModel>
-            {
-                simulation
-            };
+            var simulations = new List<SimulationModel> { simulation };
 
             this.simulations
                 .Setup(x => x.GetListAsync())
@@ -102,15 +97,14 @@ namespace WebService.Test.v1.Controllers
 
         private void SetupPreprovisionedIoTHub()
         {
-            const string IOTHUB_CONNECTION_STRING = "hostname=hub-1;sharedaccesskeyname=hubowner;sharedaccesskey=fakekey";
+            const string FAKE_KEY = "fakekey";
+            const string FAKE_HOST = "hub-1";
+            const string IOTHUB_CONNECTION_STRING =
+                "hostname=" + FAKE_HOST + ";sharedaccesskeyname=hubowner;sharedaccesskey=" + FAKE_KEY;
 
             this.servicesConfig
                 .Setup(x => x.IoTHubConnString)
                 .Returns(IOTHUB_CONNECTION_STRING);
-
-            this.connectionStringManager
-                .Setup(x => x.GetConnectionStringAsync())
-                .ReturnsAsync(IOTHUB_CONNECTION_STRING);
         }
     }
 }
