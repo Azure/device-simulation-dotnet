@@ -79,6 +79,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private Thread[] devicesTelemetryThreads;
         private List<IDeviceTelemetryTask> devicesTelemetryTasks;
 
+        // The thread responsible for replaying simulations from a file
+        private Thread deviceReplayThread;
+        private IDeviceReplayTask deviceReplayTask;
+
         // List of simulation managers, one for each simulation
         private readonly ConcurrentDictionary<string, ISimulationManager> simulationManagers;
 
@@ -93,6 +97,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         // Contains all the actors sending device property updates to Azure IoT Hub, indexed by Simulation ID + Device ID (string concat)
         private readonly ConcurrentDictionary<string, IDevicePropertiesActor> devicePropertiesActors;
+
+        // TODO: Add device replay actors
 
         // Flag signaling whether the simulation is starting (to reduce blocked threads)
         private bool startingOrStopping;
@@ -125,6 +131,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.deviceConnectionActors = new ConcurrentDictionary<string, IDeviceConnectionActor>();
             this.deviceTelemetryActors = new ConcurrentDictionary<string, IDeviceTelemetryActor>();
             this.devicePropertiesActors = new ConcurrentDictionary<string, IDevicePropertiesActor>();
+            // TODO: Add device replay actors
         }
 
         public Task StartAsync()
@@ -359,6 +366,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.devicePropertiesActors,
                     this.runningToken.Token));
 
+            this.deviceReplayTask = this.factory.Resolve<IDeviceReplayTask>();
+            this.deviceReplayThread = new Thread(
+                () => this.deviceReplayTask.RunAsync(
+                    this.simulationManagers,
+                    // TODO: Add device replay actors
+                    this.runningToken.Token));
+
             // State
             try
             {
@@ -425,6 +439,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.logDiagnostics.LogServiceError(msg, e);
                 throw new Exception("Unable to start the device-telemetry threads", e);
             }
+
+            // Replay
+            try
+            {
+                this.deviceReplayThread.Start();
+            }
+            catch (Exception e)
+            {
+                var msg = "Unable to start the device-replay thread";
+                this.log.Error(msg, e);
+                this.logDiagnostics.LogServiceError(msg, e);
+                throw new Exception("Unable to start the device-replay thread", e);
+            }
         }
 
         private void TryToStopThreads()
@@ -474,6 +501,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 {
                     this.log.Warn("Unable to stop the telemetry thread in a clean way", () => new { threadNumber = i, e });
                 }
+            }
+
+            // Replay
+            try
+            {
+                this.deviceReplayThread.Interrupt();
+            }
+            catch (Exception e)
+            {
+                this.log.Warn("Unable to stop the replay thread in a clean way", e);
             }
         }
 
