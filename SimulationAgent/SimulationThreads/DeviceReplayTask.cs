@@ -37,18 +37,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             ConcurrentDictionary<string, ISimulationManager> simulationManagers,
             CancellationToken runningToken)
         {
-            // Once N devices are attempting to connect, wait until they are done
-            var pendingTasksLimit = this.appConcurrencyConfig.MaxPendingConnections;
             var tasks = new List<Task>();
 
             while (!runningToken.IsCancellationRequested)
             {
-                // TODO: resetting counters every few seconds seems to be a bug - to be revisited
-                // Was this introduced to react to the changing number of nodes?
-                foreach (var manager in simulationManagers)
-                {
-                    manager.Value.NewConnectionLoop();
-                }
+                // TODO: Do work
+                // foreach (var manager in simulationManagers)
+                // {
+                // }
 
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
@@ -61,7 +57,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                 this.log.Debug("Device-state loop completed", () => new { durationMsecs });
-                this.SlowDownIfTooFast(durationMsecs, this.appConcurrencyConfig.MinDeviceConnectionLoopDuration);
+                this.SlowDownIfTooFast(durationMsecs, 1000);
             }
         }
 
