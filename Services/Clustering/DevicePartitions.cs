@@ -34,7 +34,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
     {
         private readonly ISimulations simulations;
         private readonly ILogger log;
-        private readonly IStorageRecords partitionsStorage;
+        private readonly IEngine partitionsStorage;
         private readonly IClusterNodes clusterNodes;
 
         private readonly int partitionLockDurationSecs;
@@ -50,7 +50,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         {
             this.simulations = simulations;
             this.log = logger;
-            this.partitionsStorage = factory.Resolve<IStorageRecords>().Init(config.PartitionsStorage);
+            this.partitionsStorage = factory.Resolve<IEngine>().Init(config.PartitionsStorage);
             this.clusterNodes = clusterNodes;
             this.partitionLockDurationSecs = clusteringConfig.PartitionLockDurationMsecs / 1000;
             this.maxPartitionSize = clusteringConfig.MaxPartitionSize;
@@ -208,11 +208,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
                 DeviceIdsByModel = deviceIdsByModel
             };
 
-            var partitionRecord = new StorageRecord
-            {
-                Id = partition.Id,
-                Data = JsonConvert.SerializeObject(partition)
-            };
+            var partitionRecord = this.partitionsStorage.BuildRecord(
+                partition.Id,
+                JsonConvert.SerializeObject(partition));
 
             await this.partitionsStorage.CreateAsync(partitionRecord);
 

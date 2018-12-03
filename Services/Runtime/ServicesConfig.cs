@@ -20,12 +20,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         int AzureManagementAdapterApiTimeout { get; }
         string AzureManagementAdapterApiVersion { get; }
         bool TwinReadWriteEnabled { get; }
-        StorageConfig MainStorage { get; }
-        StorageConfig NodesStorage { get; set; }
-        StorageConfig SimulationsStorage { get; set; }
-        StorageConfig DevicesStorage { get; set; }
-        StorageConfig PartitionsStorage { get; set; }
-        StorageConfig StatisticsStorage { get; set; }
+        Config MainStorage { get; }
+        Config NodesStorage { get; set; }
+        Config SimulationsStorage { get; set; }
+        Config DevicesStorage { get; set; }
+        Config PartitionsStorage { get; set; }
+        Config StatisticsStorage { get; set; }
         string DiagnosticsEndpointUrl { get; }
         string UserAgent { get; }
         bool DevelopmentMode { get; }
@@ -99,21 +99,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 
         public bool TwinReadWriteEnabled { get; set; }
 
-        public StorageConfig MainStorage { get; set; }
+        public Config MainStorage { get; set; }
 
-        public StorageConfig NodesStorage { get; set; }
+        public Config NodesStorage { get; set; }
 
-        public StorageConfig SimulationsStorage { get; set; }
+        public Config SimulationsStorage { get; set; }
 
-        public StorageConfig DevicesStorage { get; set; }
+        public Config DevicesStorage { get; set; }
 
-        public StorageConfig PartitionsStorage { get; set; }
+        public Config PartitionsStorage { get; set; }
 
         public string UserAgent { get; set; }
 
         public bool DevelopmentMode { get; set; }
 
-        public StorageConfig StatisticsStorage { get; set; }
+        public Config StatisticsStorage { get; set; }
 
         public bool DisableSimulationAgent { get; set; }
 

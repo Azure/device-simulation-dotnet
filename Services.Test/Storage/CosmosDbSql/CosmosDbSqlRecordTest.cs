@@ -3,19 +3,19 @@
 using System;
 using System.Threading;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.DocumentDb;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosDbSql;
 using Xunit;
 
-namespace Services.Test.Storage.DocumentDb
+namespace Services.Test.Storage.CosmosDbSql
 {
-    public class DocumentDbRecordTest
+    public class CosmosDbSqlRecordTest
     {
-        private DocumentDbRecord target;
+        private DataRecord target;
         private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        public DocumentDbRecordTest()
+        public CosmosDbSqlRecordTest()
         {
-            this.target = new DocumentDbRecord();
+            this.target = new DataRecord();
         }
 
         [Fact]
@@ -25,7 +25,7 @@ namespace Services.Test.Storage.DocumentDb
             // Recreate the target, so that we can have confidence
             // that a different test hasn't altered it before this test
             // runs
-            this.target = new DocumentDbRecord();
+            this.target = new DataRecord();
 
             // Assert
             Assert.False(this.target.IsLocked());

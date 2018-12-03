@@ -1,13 +1,15 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Data;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.DocumentDb
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosDbSql
 {
-    public class DocumentDbRecord : Resource
+    public class DataRecord : Resource, IDataRecord
     {
+        private string internalETag;
         public const long NEVER = -1;
 
         public string Data { get; set; }
@@ -16,9 +18,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
         public string LockOwnerId { get; set; }
         public string LockOwnerType { get; set; }
         public long LockExpirationUtcMsecs { get; set; }
+
         private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        public DocumentDbRecord()
+        public DataRecord()
         {
             this.Data = string.Empty;
             this.ExpirationUtcMsecs = NEVER;
@@ -27,6 +30,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             this.LockOwnerId = string.Empty;
             this.LockOwnerType = string.Empty;
             this.LockExpirationUtcMsecs = NEVER;
+        }
+
+        public string GetId()
+        {
+            return this.Id;
+        }
+
+        public string GetETag()
+        {
+            return this.internalETag;
+        }
+
+        public void SetETag(string eTag)
+        {
+            this.internalETag = eTag;
         }
 
         public void Touch()
@@ -83,6 +101,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
         public void ExpiresInMsecs(long durationMsecs)
         {
             this.ExpirationUtcMsecs = Now + durationMsecs;
+        }
+
+        public void ExpiresInSecs(long secs)
+        {
+            this.ExpiresInMsecs(secs * 1000);
         }
 
         public bool IsExpired()

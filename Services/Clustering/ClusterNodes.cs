@@ -28,8 +28,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         private static readonly string currentProcessNodeId = GenerateSharedNodeId();
 
         private readonly ILogger log;
-        private readonly IStorageRecords clusterNodesStorage;
-        private readonly IStorageRecords mainStorage;
+        private readonly IEngine clusterNodesStorage;
+        private readonly IEngine mainStorage;
         private readonly int nodeRecordMaxAgeSecs;
         private readonly int masterLockMaxAgeSecs;
 
@@ -41,8 +41,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         {
             this.log = logger;
 
-            this.clusterNodesStorage = factory.Resolve<IStorageRecords>().Init(config.NodesStorage);
-            this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
+            this.clusterNodesStorage = factory.Resolve<IEngine>().Init(config.NodesStorage);
+            this.mainStorage = factory.Resolve<IEngine>().Init(config.MainStorage);
             this.nodeRecordMaxAgeSecs = clusteringConfig.NodeRecordMaxAgeSecs;
             this.masterLockMaxAgeSecs = clusteringConfig.MasterLockDurationSecs;
         }
@@ -59,7 +59,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             try
             {
                 this.log.Debug("Getting cluster node record");
-                StorageRecord node = await this.clusterNodesStorage.GetAsync(currentProcessNodeId);
+                IDataRecord node = await this.clusterNodesStorage.GetAsync(currentProcessNodeId);
                 node.ExpiresInSecs(this.nodeRecordMaxAgeSecs);
                 await this.clusterNodesStorage.UpsertAsync(node);
             }
@@ -87,7 +87,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
                         "The key to lock the master role doesn't exist yet, will create",
                         () => new { currentProcessNodeId, MASTER_NODE_KEY });
 
-                    var record = new StorageRecord { Id = MASTER_NODE_KEY, Data = "Record locked by the master node" };
+                    var record = this.mainStorage.BuildRecord(MASTER_NODE_KEY, "Record locked by the master node");
                     await this.mainStorage.CreateAsync(record);
                 }
 
@@ -136,7 +136,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             var result = new SortedSet<string>();
             foreach (var nodeRecord in nodeRecords)
             {
-                result.Add(nodeRecord.Id);
+                result.Add(nodeRecord.GetId());
             }
 
             return result;
@@ -145,7 +145,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         // Insert a node in the list of nodes
         private async Task InsertNodeAsync(string nodeId)
         {
-            var node = new StorageRecord { Id = nodeId };
+            var node = this.clusterNodesStorage.BuildRecord(nodeId);
             node.ExpiresInSecs(this.nodeRecordMaxAgeSecs);
 
             try

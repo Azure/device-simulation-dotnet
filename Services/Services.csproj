@@ -19,6 +19,7 @@
         <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="2.1.1" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="2.1.1" />
         <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+        <PackageReference Include="WindowsAzure.Storage" Version="9.3.3" />
     </ItemGroup>
     <ItemGroup>
         <None Update="data\devicemodels\chiller-01.json">

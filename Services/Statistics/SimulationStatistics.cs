@@ -23,7 +23,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
 
     public class SimulationStatistics : ISimulationStatistics
     {
-        private readonly IStorageRecords simulationStatisticsStorage;
+        private readonly IEngine simulationStatisticsStorage;
         private readonly IClusterNodes clusterNodes;
         private readonly ILogger log;
 
@@ -34,7 +34,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
         {
             this.clusterNodes = clusterNodes;
             this.log = logger;
-            this.simulationStatisticsStorage = factory.Resolve<IStorageRecords>().Init(config.StatisticsStorage);
+            this.simulationStatisticsStorage = factory.Resolve<IEngine>().Init(config.StatisticsStorage);
         }
 
         /// <summary>
@@ -94,7 +94,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             {
                 this.log.Debug("Updating statistics record", () => new { statisticsStorageRecord });
                 var record = await this.simulationStatisticsStorage.GetAsync(statisticsRecordId);
-                await this.simulationStatisticsStorage.UpsertAsync(statisticsStorageRecord, record.ETag);
+                await this.simulationStatisticsStorage.UpsertAsync(statisticsStorageRecord, record.GetETag());
             }
             else
             {
@@ -115,7 +115,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
 
             this.log.Debug("Updating statistics record", () => new { statisticsStorageRecord });
             var record = await this.simulationStatisticsStorage.GetAsync(statisticsRecordId);
-            await this.simulationStatisticsStorage.UpsertAsync(statisticsStorageRecord, record.ETag);
+            await this.simulationStatisticsStorage.UpsertAsync(statisticsStorageRecord, record.GetETag());
         }
 
         /// <summary>
@@ -134,7 +134,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             try
             {
                 var statisticsRecordsIds = (await this.simulationStatisticsStorage.GetAllAsync())
-                    .Select(r => r.Id)
+                    .Select(r => r.GetId())
                     .Where(i => i.StartsWith(simulationId))
                     .ToList();
 
@@ -154,7 +154,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             }
         }
 
-        private StorageRecord GetStorageRecord(string simulationId, SimulationStatisticsModel statistics)
+        private IDataRecord GetStorageRecord(string simulationId, SimulationStatisticsModel statistics)
         {
             var nodeId = this.clusterNodes.GetCurrentNodeId();
             var statisticsRecordId = this.GetStatisticsRecordId(simulationId, nodeId);
@@ -166,11 +166,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
                 Statistics = statistics
             };
 
-            return new StorageRecord
-            {
-                Id = statisticsRecordId,
-                Data = JsonConvert.SerializeObject(statisticsRecord)
-            };
+            return this.simulationStatisticsStorage.BuildRecord(
+                statisticsRecordId, JsonConvert.SerializeObject(statisticsRecord));
         }
 
         private string GetStatisticsRecordId(string simId, string nodeId)

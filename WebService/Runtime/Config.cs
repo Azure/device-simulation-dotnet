@@ -7,7 +7,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth;
 
 // TODO: tests
@@ -105,6 +104,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string COSMOSDBSQL_DATABASE_KEY = "cosmosdbsql_database";
         private const string COSMOSDBSQL_COLLECTION_KEY = "cosmosdbsql_collection";
         private const string COSMOSDBSQL_THROUGHPUT_KEY = "cosmosdbsql_collection_throughput";
+        private const string TABLESTORAGE_CONNECTION_STRING_KEY = "azuretablestorage_connstring";
+        private const string TABLESTORAGE_TABLE_KEY = "azuretablestorage_table";
 
         private const string LOGGING_KEY = APPLICATION_KEY + "Logging:";
         private const string LOGGING_LOGLEVEL_KEY = LOGGING_KEY + "LogLevel";
@@ -287,18 +288,35 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             };
         }
 
-        private static StorageConfig GetStorageConfig(IConfigData configData, string prefix)
+        private static Services.Storage.Config GetStorageConfig(IConfigData configData, string prefix)
         {
-            var defaults = new StorageConfig();
-            return new StorageConfig
+            var defaults = new Services.Storage.Config();
+            var storageType = configData.GetEnum(prefix + STORAGE_TYPE_KEY, Services.Storage.Type.Unknown);
+
+            switch (storageType)
             {
-                StorageType = configData.GetString(prefix + STORAGE_TYPE_KEY, defaults.StorageType),
-                MaxPendingOperations = configData.GetInt(STORAGE_MAX_PENDING_OPERATIONS, defaults.MaxPendingOperations),
-                DocumentDbConnString = configData.GetString(prefix + DOCUMENTDB_CONNECTION_STRING_KEY),
-                DocumentDbDatabase = configData.GetString(prefix + DOCUMENTDB_DATABASE_KEY),
-                DocumentDbCollection = configData.GetString(prefix + DOCUMENTDB_COLLECTION_KEY),
-                DocumentDbThroughput = configData.GetInt(prefix + DOCUMENTDB_THROUGHPUT_KEY, defaults.DocumentDbThroughput)
-            };
+                case Services.Storage.Type.CosmosDbSql:
+                    return new Services.Storage.Config
+                    {
+                        StorageType = storageType,
+                        MaxPendingOperations = configData.GetInt(STORAGE_MAX_PENDING_OPERATIONS, defaults.MaxPendingOperations),
+                        CosmosDbSqlConnString = configData.GetString(prefix + COSMOSDBSQL_CONNECTION_STRING_KEY, ""),
+                        CosmosDbSqlDatabase = configData.GetString(prefix + COSMOSDBSQL_DATABASE_KEY, ""),
+                        CosmosDbSqlCollection = configData.GetString(prefix + COSMOSDBSQL_COLLECTION_KEY, ""),
+                        CosmosDbSqlThroughput = configData.GetInt(prefix + COSMOSDBSQL_THROUGHPUT_KEY, defaults.CosmosDbSqlThroughput),
+                    };
+
+                case Services.Storage.Type.TableStorage:
+                    return new Services.Storage.Config
+                    {
+                        StorageType = storageType,
+                        MaxPendingOperations = configData.GetInt(STORAGE_MAX_PENDING_OPERATIONS, defaults.MaxPendingOperations),
+                        TableStorageConnString = configData.GetString(TABLESTORAGE_CONNECTION_STRING_KEY, ""),
+                        TableStorageTableName = configData.GetString(TABLESTORAGE_TABLE_KEY, "")
+                    };
+            }
+
+            throw new ArgumentOutOfRangeException("Unknown storage type: " + storageType);
         }
 
         private static void ShowIoTHubConnStringInstructions()

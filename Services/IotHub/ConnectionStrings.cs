@@ -25,7 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private readonly IConnectionStringValidation connectionStringValidation;
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
-        private readonly IStorageRecords mainStorage;
+        private readonly IEngine mainStorage;
 
         public ConnectionStrings(
             IServicesConfig config,
@@ -36,7 +36,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         {
             this.config = config;
             this.connectionStringValidation = connectionStringValidation;
-            this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
+            this.mainStorage = factory.Resolve<IEngine>().Init(config.MainStorage);
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
         }
@@ -158,11 +158,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
             try
             {
-                await this.mainStorage.UpsertAsync(new StorageRecord
-                {
-                    Id = RECORD_ID,
-                    Data = connectionString
-                });
+                var record = this.mainStorage.BuildRecord(RECORD_ID, connectionString);
+                await this.mainStorage.UpsertAsync(record);
             }
             catch (Exception e)
             {

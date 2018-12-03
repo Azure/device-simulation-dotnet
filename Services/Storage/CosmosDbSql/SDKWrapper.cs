@@ -10,70 +10,64 @@ using Microsoft.Azure.Documents.Client;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.DocumentDb
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosDbSql
 {
-    public interface IDocumentDbWrapper
+    public interface ISDKWrapper
     {
-        Task<IDocumentClient> GetClientAsync(StorageConfig config);
+        Task<IDocumentClient> GetClientAsync(Config config);
 
         Task<IResourceResponse<Document>> CreateAsync(
             IDocumentClient client,
-            StorageConfig cfg,
+            Config cfg,
             Resource resource);
 
         Task<IResourceResponse<Document>> UpsertAsync(
             IDocumentClient client,
-            StorageConfig cfg,
+            Config cfg,
             Resource resource);
 
         Task<IResourceResponse<Document>> UpsertAsync(
             IDocumentClient client,
-            StorageConfig cfg,
+            Config cfg,
             Resource resource,
             string eTag);
 
         Task<IResourceResponse<Document>> ReadAsync(
             IDocumentClient client,
-            StorageConfig cfg,
+            Config cfg,
             string docId);
 
         Task DeleteAsync(
             IDocumentClient client,
-            StorageConfig cfg,
+            Config cfg,
             string docId);
 
         IOrderedQueryable<T> CreateQuery<T>(
             IDocumentClient client,
-            StorageConfig cfg);
-
-        IQueryable<T> CreateQuery<T>(
-            IDocumentClient client,
-            StorageConfig cfg,
-            string sqlCondition,
-            SqlParameter[] parameters);
+            Config cfg);
     }
 
-    public class DocumentDbWrapper : IDocumentDbWrapper
+    public class SDKWrapper : ISDKWrapper
     {
         private readonly ILogger log;
 
-        public DocumentDbWrapper(ILogger logger)
+        public SDKWrapper(ILogger logger)
         {
             this.log = logger;
         }
 
         public async Task<IResourceResponse<Document>> CreateAsync(
             IDocumentClient client,
-            StorageConfig cfg,
+            Config cfg,
             Resource resource)
         {
-            var collectionLink = $"/dbs/{cfg.DocumentDbDatabase}/colls/{cfg.DocumentDbCollection}";
+            var collectionLink = $"/dbs/{cfg.CosmosDbSqlDatabase}/colls/{cfg.CosmosDbSqlCollection}";
             return await client.CreateDocumentAsync(collectionLink, resource);
         }
 
         public async Task<IResourceResponse<Document>> UpsertAsync(
             IDocumentClient client,
-            StorageConfig cfg,
+            Config cfg,
             Resource resource)
         {
             return await this.UpsertAsync(client, cfg, resource, resource.ETag);
@@ -81,11 +75,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
 
         public async Task<IResourceResponse<Document>> UpsertAsync(
             IDocumentClient client,
-            StorageConfig cfg,
+            Config cfg,
             Resource resource,
             string eTag)
         {
-            var collectionLink = $"/dbs/{cfg.DocumentDbDatabase}/colls/{cfg.DocumentDbCollection}";
+            var collectionLink = $"/dbs/{cfg.CosmosDbSqlDatabase}/colls/{cfg.CosmosDbSqlCollection}";
 
             return await client.UpsertDocumentAsync(
                 collectionLink,
@@ -95,64 +89,51 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
 
         public async Task<IResourceResponse<Document>> ReadAsync(
             IDocumentClient client,
-            StorageConfig cfg,
+            Config cfg,
             string docId)
         {
-            var collectionLink = $"/dbs/{cfg.DocumentDbDatabase}/colls/{cfg.DocumentDbCollection}";
+            var collectionLink = $"/dbs/{cfg.CosmosDbSqlDatabase}/colls/{cfg.CosmosDbSqlCollection}";
             return await client.ReadDocumentAsync($"{collectionLink}/docs/{docId}");
         }
 
-        public async Task DeleteAsync(IDocumentClient client, StorageConfig cfg, string docId)
+        public async Task DeleteAsync(IDocumentClient client, Config cfg, string docId)
         {
-            var collectionLink = $"/dbs/{cfg.DocumentDbDatabase}/colls/{cfg.DocumentDbCollection}";
+            var collectionLink = $"/dbs/{cfg.CosmosDbSqlDatabase}/colls/{cfg.CosmosDbSqlCollection}";
             await client.DeleteDocumentAsync($"{collectionLink}/docs/{docId}");
         }
 
-        public IOrderedQueryable<T> CreateQuery<T>(IDocumentClient client, StorageConfig cfg)
+        public IOrderedQueryable<T> CreateQuery<T>(IDocumentClient client, Config cfg)
         {
-            var collectionLink = $"/dbs/{cfg.DocumentDbDatabase}/colls/{cfg.DocumentDbCollection}";
+            var collectionLink = $"/dbs/{cfg.CosmosDbSqlDatabase}/colls/{cfg.CosmosDbSqlCollection}";
             return client.CreateDocumentQuery<T>(collectionLink);
         }
 
-        public IQueryable<T> CreateQuery<T>(
-            IDocumentClient client,
-            StorageConfig cfg,
-            string sqlCondition,
-            SqlParameter[] parameters)
-        {
-            var collectionLink = $"/dbs/{cfg.DocumentDbDatabase}/colls/{cfg.DocumentDbCollection}";
-            var query = new SqlQuerySpec(
-                "SELECT * FROM ROOT WHERE " + sqlCondition,
-                new SqlParameterCollection(parameters));
-            return client.CreateDocumentQuery<T>(collectionLink, query);
-        }
-
-        public async Task<IDocumentClient> GetClientAsync(StorageConfig cfg)
+        public async Task<IDocumentClient> GetClientAsync(Config cfg)
         {
             const string FORMAT = "^AccountEndpoint=(?<endpoint>.*);AccountKey=(?<key>.*);$";
 
-            var connstring = cfg.DocumentDbConnString;
+            var connstring = cfg.CosmosDbSqlConnString;
 
             var match = Regex.Match(connstring, FORMAT);
             if (!match.Success)
             {
-                this.log.Error("Missing or invalid DocumentDb connection string ()", () => new { FORMAT, connstring });
-                throw new InvalidConfigurationException($"Missing or invalid DocumentDb connection string ({FORMAT})");
+                this.log.Error("Missing or invalid Cosmos DB SQL connection string ()", () => new { FORMAT, connstring });
+                throw new InvalidConfigurationException($"Missing or invalid Cosmos DB SQL connection string ({FORMAT})");
             }
 
-            var docDbEndpoint = new Uri(match.Groups["endpoint"].Value);
-            var docDbKey = match.Groups["key"].Value;
+            var cosmosDbEndpoint = new Uri(match.Groups["endpoint"].Value);
+            var cosmosDbKey = match.Groups["key"].Value;
 
-            var docDbOptions = new RequestOptions
+            var cosmosDbOptions = new RequestOptions
             {
-                OfferThroughput = cfg.DocumentDbThroughput,
+                OfferThroughput = cfg.CosmosDbSqlThroughput,
                 ConsistencyLevel = ConsistencyLevel.Strong
             };
 
-            var client = new DocumentClient(docDbEndpoint, docDbKey);
+            var client = new DocumentClient(cosmosDbEndpoint, cosmosDbKey);
 
-            await this.CreateDatabaseIfNotExistsAsync(client, docDbOptions, cfg.DocumentDbDatabase);
-            await this.CreateCollectionIfNotExistsAsync(client, docDbOptions, cfg.DocumentDbDatabase, cfg.DocumentDbCollection);
+            await this.CreateDatabaseIfNotExistsAsync(client, cosmosDbOptions, cfg.CosmosDbSqlDatabase);
+            await this.CreateCollectionIfNotExistsAsync(client, cosmosDbOptions, cfg.CosmosDbSqlDatabase, cfg.CosmosDbSqlCollection);
 
             return client;
         }
@@ -174,7 +155,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             }
             catch (Exception e)
             {
-                this.log.Error("Error while getting DocumentDb database", e);
+                this.log.Error("Error while getting Cosmos DB SQL database", e);
                 throw;
             }
         }
@@ -183,7 +164,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
         {
             try
             {
-                this.log.Info("Creating DocumentDb database",
+                this.log.Info("Creating Cosmos DB SQL database",
                     () => new { dbName });
                 var db = new Database { Id = dbName };
                 await client.CreateDatabaseAsync(db);
@@ -194,7 +175,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             }
             catch (Exception e)
             {
-                this.log.Error("Error while creating DocumentDb database", () => new { dbName, e });
+                this.log.Error("Error while creating Cosmos DB SQL database", () => new { dbName, e });
                 throw;
             }
         }
@@ -217,7 +198,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             }
             catch (Exception e)
             {
-                this.log.Error("Error while getting DocumentDb collection", e);
+                this.log.Error("Error while getting Cosmos DB SQL collection", e);
                 throw;
             }
         }
@@ -230,7 +211,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
         {
             try
             {
-                this.log.Info("Creating DocumentDb collection",
+                this.log.Info("Creating Cosmos DB SQL collection",
                     () => new { dbName, collName });
                 var coll = new DocumentCollection { Id = collName };
 
@@ -251,14 +232,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
                     return;
                 }
 
-                this.log.Error("Error while creating DocumentDb collection",
+                this.log.Error("Error while creating Cosmos DB SQL collection",
                     () => new { dbName, collName, e });
 
-                throw new ExternalDependencyException("Error while creating DocumentDb collection", e);
+                throw new ExternalDependencyException("Error while creating Cosmos DB SQL collection", e);
             }
             catch (Exception e)
             {
-                this.log.Error("Error while creating DocumentDb collection",
+                this.log.Error("Error while creating Cosmos DB SQL collection",
                     () => new { dbName, collName, e });
                 throw;
             }
