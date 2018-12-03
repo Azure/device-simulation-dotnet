@@ -100,10 +100,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
 
         private const string STORAGE_TYPE_KEY = "type";
         private const string STORAGE_MAX_PENDING_OPERATIONS = APPLICATION_KEY + "max_pending_storage_tasks";
-        private const string DOCUMENTDB_CONNECTION_STRING_KEY = "documentdb_connstring";
-        private const string DOCUMENTDB_DATABASE_KEY = "documentdb_database";
-        private const string DOCUMENTDB_COLLECTION_KEY = "documentdb_collection";
-        private const string DOCUMENTDB_THROUGHPUT_KEY = "documentdb_collection_throughput";
+
+        private const string COSMOSDBSQL_CONNECTION_STRING_KEY = "cosmosdbsql_connstring";
+        private const string COSMOSDBSQL_DATABASE_KEY = "cosmosdbsql_database";
+        private const string COSMOSDBSQL_COLLECTION_KEY = "cosmosdbsql_collection";
+        private const string COSMOSDBSQL_THROUGHPUT_KEY = "cosmosdbsql_collection_throughput";
 
         private const string LOGGING_KEY = APPLICATION_KEY + "Logging:";
         private const string LOGGING_LOGLEVEL_KEY = LOGGING_KEY + "LogLevel";

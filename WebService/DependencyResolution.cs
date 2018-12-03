@@ -12,7 +12,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.DocumentDb;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosDbSql;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;

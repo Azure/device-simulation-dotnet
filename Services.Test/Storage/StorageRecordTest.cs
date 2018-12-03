@@ -4,7 +4,7 @@ using System;
 using System.Threading;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.DocumentDb;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosDbSql;
 using Xunit;
 
 namespace Services.Test.Storage
@@ -15,7 +15,7 @@ namespace Services.Test.Storage
         private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         [Fact]
-        public void ItConvertsFromDocumentDbLockedAndNotExpired()
+        public void ItConvertsFromCosmosDbSqlLockedAndNotExpired()
         {
             // Arrange
             var id = "123";
@@ -34,7 +34,7 @@ namespace Services.Test.Storage
             document.SetPropertyValue("LockExpirationUtcMsecs", lockExpirationUtcMsecs);
 
             // Act
-            var target = StorageRecord.FromDocumentDb(document);
+            var target = DataRecord.FromCosmosDbSql(document);
 
             // Assert
             Assert.Equal(id, target.Id);
@@ -44,7 +44,7 @@ namespace Services.Test.Storage
         }
 
         [Fact]
-        public void ItConvertsFromDocumentDbExpiredAndNotLocked()
+        public void ItConvertsFromCosmosDbSqlExpiredAndNotLocked()
         {
             // Arrange
             var id = "123";
@@ -77,7 +77,7 @@ namespace Services.Test.Storage
         }
 
         [Fact]
-        public void ItConvertsFromDocumentDbRecordLockedAndNotExpired()
+        public void ItConvertsFromCosmosDbSqlRecordLockedAndNotExpired()
         {
             // Arrange
             var id = "123";
@@ -96,7 +96,7 @@ namespace Services.Test.Storage
             document.LockExpirationUtcMsecs = lockExpirationUtcMsecs;
 
             // Act
-            var target = StorageRecord.FromDocumentDbRecord(document);
+            var target = DataRecord.FromCosmosDbSqlRecord(document);
 
             // Assert
             Assert.Equal(id, target.Id);
@@ -106,7 +106,7 @@ namespace Services.Test.Storage
         }
 
         [Fact]
-        public void ItConvertsFromDocumentDbRecordExpiredAndNotLocked()
+        public void ItConvertsFromCosmosDbSqlRecordExpiredAndNotLocked()
         {
             // Arrange
             var id = "123";
@@ -125,7 +125,7 @@ namespace Services.Test.Storage
             document.LockExpirationUtcMsecs = lockExpirationUtcMsecs;
 
             // Act
-            var target = StorageRecord.FromDocumentDbRecord(document);
+            var target = DataRecord.FromCosmosDbSqlRecord(document);
 
             // Adding a small sleep to avoid the test executing the subsequent call(s) to
             // time-related methods in sub-millisecond time.

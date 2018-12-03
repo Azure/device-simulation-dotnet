@@ -40,7 +40,7 @@ namespace Services.Test
         private readonly Mock<ILogger> logger;
         private readonly Mock<IDiagnosticsLogger> diagnosticsLogger;
         private readonly Mock<IConnectionStrings> connectionStrings;
-        private readonly Mock<IDocumentDbWrapper> mockDocumentDbWrapper;
+        private readonly Mock<ISDKWrapper> mockCosmosDbSqlWrapper;
         private readonly Mock<IDocumentClient> mockDocumentClient;
         private readonly Mock<IResourceResponse<Document>> mockStorageDocument;
         private readonly Mock<ISimulationStatistics> simulationStatistics;
