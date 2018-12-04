@@ -177,7 +177,7 @@ namespace Services.Test.Models
             bool expected)
         {
             // Arrange and Act
-            var target1 = new SimulationModel
+            var target = new SimulationModel
             {
                 Enabled = enabled,
                 DeleteDevicesOnce = deleteDevicesOnce,
@@ -186,7 +186,7 @@ namespace Services.Test.Models
             };
 
             //Assert
-            Assert.Equal(target1.DeviceDeletionRequired, expected);
+            Assert.Equal(target.DeviceDeletionRequired, expected);
         }
     }
 }
