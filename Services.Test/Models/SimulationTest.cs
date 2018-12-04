@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Services.Test.helpers;
 using Xunit;
 using SimulationModel = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
@@ -150,6 +151,38 @@ namespace Services.Test.Models
             Assert.True(shouldCreate1.DeviceCreationRequired);
             Assert.True(shouldCreate2.DeviceCreationRequired);
             Assert.False(shouldNotCreateNotActive.DeviceCreationRequired);
+        }
+
+        [Theory, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        [InlineData(true, true, true, true, false)]
+        [InlineData(true, true, true, false, false)]
+        [InlineData(true, true, false, true, false)]
+        [InlineData(true, false, true, true, false)]
+        [InlineData(true, true, false, false, false)]
+        [InlineData(true, false, true, false, false)]
+        [InlineData(true, false, false, true, false)]
+        [InlineData(true, false, false, false, false)]
+        [InlineData(false, true, true, true, true)]
+        [InlineData(false, true, true, false, true)]
+        [InlineData(false, true, false, true, false)]
+        [InlineData(false, false, true, true, true)]
+        [InlineData(false, true, false, false, false)]
+        [InlineData(false, false, true, false, false)]
+        [InlineData(false, false, false, true, false)]
+        [InlineData(false, false, false, false, false)]
+        public void CheckIfDevicesDeletionRequiredIsPopulatedCorrect(bool enabled, bool deleteDevicesOnce, bool devicesCreationComplete, bool deleteDevicesWhenSimulationEnds, bool expected)
+        {
+            // Arrange and Act
+            var target1 = new Simulation
+            {
+                Enabled = enabled,
+                DeleteDevicesOnce = deleteDevicesOnce,
+                DevicesCreationComplete = devicesCreationComplete,
+                DeleteDevicesWhenSimulationEnds = deleteDevicesWhenSimulationEnds
+            };
+
+            //Assert
+            Assert.Equal(target1.DeviceDeletionRequired, expected);
         }
     }
 }
