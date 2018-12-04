@@ -37,7 +37,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task<Models.Simulation> InsertAsync(Models.Simulation simulation, string template = "");
 
         // Create or Replace a simulation.
-        Task<Models.Simulation> UpsertAsync(Models.Simulation simulation);
+        Task<Models.Simulation> UpsertAsync(Models.Simulation simulation, bool validateHubCredentials);
 
         // Modify a simulation.
         Task<Models.Simulation> MergeAsync(SimulationPatch patch);
@@ -219,7 +219,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             for (var index = 0; index < simulation.IotHubConnectionStrings.Count; index++)
             {
-                var connString = await this.connectionStrings.SaveAsync(simulation.IotHubConnectionStrings[index]);
+                var connString = await this.connectionStrings.SaveAsync(simulation.IotHubConnectionStrings[index], true);
 
                 if (!simulation.IotHubConnectionStrings.Contains(connString))
                 {
@@ -237,7 +237,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// Create or Replace a simulation.
         /// The logic works under the assumption that there is only one simulation with id "1".
         /// </summary>
-        public async Task<Models.Simulation> UpsertAsync(Models.Simulation simulation)
+        public async Task<Models.Simulation> UpsertAsync(Models.Simulation simulation, bool validateHubCredentials)
         {
             if (string.IsNullOrEmpty(simulation.Id))
             {
@@ -296,7 +296,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             for (var index = 0; index < simulation.IotHubConnectionStrings.Count; index++)
             {
-                var connString = await this.connectionStrings.SaveAsync(simulation.IotHubConnectionStrings[index]);
+                var connString = await this.connectionStrings.SaveAsync(simulation.IotHubConnectionStrings[index], validateHubCredentials);
 
                 if (!simulation.IotHubConnectionStrings.Contains(connString))
                 {
@@ -715,7 +715,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     {
                         // create a simulation if no sample simulation exists with provided id.
                         simulation.StartTime = DateTimeOffset.UtcNow;
-                        await this.UpsertAsync(simulation);
+                        await this.UpsertAsync(simulation, false);
                     }
                 }
             }

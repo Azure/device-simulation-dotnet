@@ -14,7 +14,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
     public interface IConnectionStrings
     {
         Task<string> GetAsync();
-        Task<string> SaveAsync(string connectionString);
+        Task<string> SaveAsync(string connectionString, bool validateHubCredentials);
     }
 
     public class ConnectionStrings : IConnectionStrings
@@ -73,19 +73,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// TODO: use KeyVault https://github.com/Azure/device-simulation-dotnet/issues/129
         /// </summary>
         /// <returns>Redacted connection string (i.e. without SharedAccessKey)</returns>
-        public async Task<string> SaveAsync(string connectionString)
+        public async Task<string> SaveAsync(string connectionString, bool validateHubCredentials)
         {
             // Check if configuration setting should be used
             if (this.connectionStringValidation.IsEmptyOrDefault(connectionString))
             {
-                await this.connectionStringValidation.TestAsync(this.config.IoTHubConnString, false);
+                if (validateHubCredentials)
+                {
+                    await this.connectionStringValidation.TestAsync(this.config.IoTHubConnString, false);
+                }
+
                 await this.RemoveCustomConnStringFromStorageAsync();
                 return ServicesConfig.USE_DEFAULT_IOTHUB;
             }
             else
             {
-                // Check that connection string is valid and the IotHub exists
-                await this.connectionStringValidation.TestAsync(connectionString, true);
+                if (validateHubCredentials)
+                {
+                    // Check that connection string is valid and the IotHub exists
+                    await this.connectionStringValidation.TestAsync(connectionString, true);
+                }
             }
 
             // If the secret key is missing, the string has been redacted,
