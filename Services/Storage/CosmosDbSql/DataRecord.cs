@@ -48,6 +48,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             this.internalETag = eTag;
         }
 
+        public void SetData(string data)
+        {
+            this.Data = data;
+        }
+
+        public string GetData()
+        {
+            return this.Data;
+        }
+
         public void Touch()
         {
             this.LastModifiedUtcMsecs = Now;

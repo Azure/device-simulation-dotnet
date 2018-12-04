@@ -189,7 +189,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             try
             {
                 var record = await this.mainStorage.GetAsync(RECORD_ID);
-                return record.Data;
+                return record.GetData();
             }
             catch (ResourceNotFoundException)
             {

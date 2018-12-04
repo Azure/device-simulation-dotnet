@@ -97,7 +97,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
 
             var result = partitions
                 .Where(p => !p.IsLocked())
-                .Select(p => JsonConvert.DeserializeObject<DevicesPartition>(p.Data))
+                .Select(p => JsonConvert.DeserializeObject<DevicesPartition>(p.GetData()))
                 .Where(x => x.SimulationId == simulationId)
                 .ToList();
 
@@ -110,7 +110,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         public async Task<IList<DevicesPartition>> GetAllAsync()
         {
             return (await this.partitionsStorage.GetAllAsync())
-                .Select(p => JsonConvert.DeserializeObject<DevicesPartition>(p.Data))
+                .Select(p => JsonConvert.DeserializeObject<DevicesPartition>(p.GetData()))
                 .ToList();
         }
 

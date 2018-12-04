@@ -127,7 +127,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var result = new List<Models.Simulation>();
             foreach (var item in items)
             {
-                var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
+                var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.GetData());
                 simulation.ETag = item.GetETag();
                 simulation.Id = item.GetId();
                 result.Add(simulation);
@@ -160,7 +160,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var item = await this.simulationsStorage.GetAsync(id);
             if (item == null) return null;
 
-            var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
+            var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.GetData());
             simulation.ETag = item.GetETag();
             simulation.Id = item.GetId();
             return simulation;
@@ -335,7 +335,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             var item = await this.simulationsStorage.GetAsync(patch.Id);
-            var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
+            var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.GetData());
             simulation.ETag = item.GetETag();
             simulation.Id = item.GetId();
 

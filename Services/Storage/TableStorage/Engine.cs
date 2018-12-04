@@ -65,7 +65,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
 
         public IDataRecord BuildRecord(string id, string data)
         {
-            return new DataRecord(id) { Data = data };
+            var record = new DataRecord(id);
+            record.SetData(data);
+            return record;
         }
 
         public async Task<IDataRecord> GetAsync(string id)

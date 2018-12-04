@@ -15,7 +15,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
         void SetETag(string eTag);
 
         // JSON serialized data from the business layer
-        string Data { get; set; }
+        void SetData(string data);
+
+        // JSON serialized data from the business layer
+        string GetData();
 
         // Set the record expiration
         void ExpiresInSecs(long secs);
