@@ -372,6 +372,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
 
             var record = new DataRecord
             {
+                Id = doc.Id,
                 Data = doc.GetPropertyValue<string>("Data"),
                 ExpirationUtcMsecs = doc.GetPropertyValue<long>("ExpirationUtcMsecs"),
                 LastModifiedUtcMsecs = doc.GetPropertyValue<long>("LastModifiedUtcMsecs"),

@@ -45,12 +45,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             IClusteringConfig clusteringConfig,
             ISimulations simulations,
             IClusterNodes clusterNodes,
-            IFactory factory,
+            IEngines engines,
             ILogger logger)
         {
             this.simulations = simulations;
             this.log = logger;
-            this.partitionsStorage = factory.Resolve<IEngine>().Init(config.PartitionsStorage);
+            this.partitionsStorage = engines.Build(config.PartitionsStorage);
             this.clusterNodes = clusterNodes;
             this.partitionLockDurationSecs = clusteringConfig.PartitionLockDurationMsecs / 1000;
             this.maxPartitionSize = clusteringConfig.MaxPartitionSize;

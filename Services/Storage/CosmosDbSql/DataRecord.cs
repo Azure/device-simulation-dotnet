@@ -9,7 +9,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
 {
     public class DataRecord : Resource, IDataRecord
     {
-        private string internalETag;
         public const long NEVER = -1;
 
         public string Data { get; set; }
@@ -20,6 +19,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
         public long LockExpirationUtcMsecs { get; set; }
 
         private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        private string internalETag;
 
         public DataRecord()
         {

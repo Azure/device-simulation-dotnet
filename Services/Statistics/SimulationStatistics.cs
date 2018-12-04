@@ -29,12 +29,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
 
         public SimulationStatistics(IServicesConfig config,
             IClusterNodes clusterNodes,
-            IFactory factory,
+            IEngines engines,
             ILogger logger)
         {
             this.clusterNodes = clusterNodes;
             this.log = logger;
-            this.simulationStatisticsStorage = factory.Resolve<IEngine>().Init(config.StatisticsStorage);
+            this.simulationStatisticsStorage = engines.Build(config.StatisticsStorage);
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             try
             {
                 var simulationRecords = (await this.simulationStatisticsStorage.GetAllAsync())
-                    .Select(p => JsonConvert.DeserializeObject<SimulationStatisticsRecord>(p.Data))
+                    .Select(p => JsonConvert.DeserializeObject<SimulationStatisticsRecord>(p.GetData()))
                     .Where(i => i.SimulationId == simulationId)
                     .ToList();
 

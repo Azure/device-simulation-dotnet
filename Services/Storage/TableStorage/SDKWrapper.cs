@@ -47,14 +47,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
 
         public async Task<TableResult> RetrieveAsync(CloudTable table, string id)
         {
-            TableOperation operation = TableOperation.Retrieve<DataRecord>(
-                DataRecord.FIXED_PKEY, id);
+            var operation = TableOperation.Retrieve<DataRecord>(DataRecord.FIXED_PKEY, id);
             return await table.ExecuteAsync(operation);
         }
 
-        public async Task<TableResult> ExecuteAsync(
-            CloudTable table,
-            TableOperation operation)
+        public async Task<TableResult> ExecuteAsync(CloudTable table, TableOperation operation)
         {
             return await table.ExecuteAsync(operation);
         }

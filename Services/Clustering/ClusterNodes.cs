@@ -36,13 +36,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         public ClusterNodes(
             IServicesConfig config,
             IClusteringConfig clusteringConfig,
-            IFactory factory,
+            IEngines engines,
             ILogger logger)
         {
             this.log = logger;
 
-            this.clusterNodesStorage = factory.Resolve<IEngine>().Init(config.NodesStorage);
-            this.mainStorage = factory.Resolve<IEngine>().Init(config.MainStorage);
+            this.clusterNodesStorage = engines.Build(config.NodesStorage);
+            this.mainStorage = engines.Build(config.MainStorage);
             this.nodeRecordMaxAgeSecs = clusteringConfig.NodeRecordMaxAgeSecs;
             this.masterLockMaxAgeSecs = clusteringConfig.MasterLockDurationSecs;
         }

@@ -30,13 +30,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         public ConnectionStrings(
             IServicesConfig config,
             IConnectionStringValidation connectionStringValidation,
-            IFactory factory,
+            IEngines engines,
             IDiagnosticsLogger diagnosticsLogger,
             ILogger logger)
         {
             this.config = config;
             this.connectionStringValidation = connectionStringValidation;
-            this.mainStorage = factory.Resolve<IEngine>().Init(config.MainStorage);
+            this.mainStorage = engines.Build(config.MainStorage);
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
         }

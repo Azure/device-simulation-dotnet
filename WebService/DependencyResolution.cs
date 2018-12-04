@@ -175,6 +175,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterType<UpdateReportedProperties>().As<UpdateReportedProperties>();
             builder.RegisterType<Deregister>().As<Deregister>();
             builder.RegisterType<Disconnect>().As<Disconnect>();
+            builder.RegisterType<Services.Storage.CosmosDbSql.Engine>().As<Services.Storage.CosmosDbSql.Engine>();
+            builder.RegisterType<Services.Storage.TableStorage.Engine>().As<Services.Storage.TableStorage.Engine>();
         }
 
         private static void RegisterFactory(IContainer container)
