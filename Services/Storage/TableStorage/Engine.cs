@@ -74,21 +74,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
         {
             await this.SetupStorageAsync();
 
-            this.log.Debug("Fetching record...", () => new { this.storageName, id });
-            TableResult response = await this.tableStorage.RetrieveAsync(this.tableStorageTable, id);
-            this.log.Debug("Record fetched", () => new { this.storageName, id });
+            TableResult response;
+
+            try
+            {
+                this.log.Debug("Fetching record...", () => new { this.storageName, id });
+                response = await this.tableStorage.RetrieveAsync(this.tableStorageTable, id);
+                this.log.Debug("Record fetched", () => new { this.storageName, id });
+            }
+            catch (Microsoft.WindowsAzure.Storage.StorageException e)
+                when (e.RequestInformation.HttpStatusCode == (int) HttpStatusCode.NotFound)
+            {
+                throw new ResourceNotFoundException($"The resource {id} doesn't exist.");
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unexpected error", () => new { this.storageName, id, e });
+                throw new ExternalDependencyException("Unexpected error", e);
+            }
 
             if (response.HttpStatusCode == (int) HttpStatusCode.NotFound)
             {
                 throw new ResourceNotFoundException($"The resource {id} doesn't exist.");
-            }
-
-            if (response.HttpStatusCode != (int) HttpStatusCode.OK)
-            {
-                this.log.Error("Unexpected error while retrieving the record from table storage", () =>
-                    new { this.storageName, id, response.HttpStatusCode, response.Result });
-                throw new ExternalDependencyException(
-                    "Unexpected response from table storage (StatusCode = " + response.HttpStatusCode + ")");
             }
 
             var record = response.Result as DataRecord;
@@ -114,8 +121,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
         {
             await this.SetupStorageAsync();
 
-            TableResult response = await this.tableStorage.RetrieveAsync(this.tableStorageTable, id);
-            var record = response?.Result as DataRecord;
+            TableResult response;
+
+            try
+            {
+                this.log.Debug("Searching record...", () => new { this.storageName, id });
+                response = await this.tableStorage.RetrieveAsync(this.tableStorageTable, id);
+            }
+            catch (Microsoft.WindowsAzure.Storage.StorageException e)
+                when (e.RequestInformation.HttpStatusCode == (int) HttpStatusCode.NotFound)
+            {
+                return false;
+            }
+
+            if (response.HttpStatusCode == (int) HttpStatusCode.NotFound)
+            {
+                return false;
+            }
+
+            var record = response.Result as DataRecord;
 
             if (record == null)
             {
@@ -176,7 +200,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
 
         public async Task<IDataRecord> CreateAsync(IDataRecord input)
         {
-            return await this.UpsertAsync(input, "");
+            return await this.UpsertAsync(input, null);
         }
 
         public async Task<IDataRecord> UpsertAsync(IDataRecord input)
@@ -189,57 +213,83 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
             await this.SetupStorageAsync();
 
             var entity = (DataRecord) input;
-            entity.ETag = eTag;
             entity.Touch();
-
-            var operation = TableOperation.InsertOrMerge(entity);
-            TableResult response = await this.tableStorage.ExecuteAsync(this.tableStorageTable, operation);
-
-            switch (response.HttpStatusCode)
+            if (!string.IsNullOrEmpty(eTag))
             {
-                case (int) HttpStatusCode.Conflict:
-                    this.log.Info("There is already a resource with the id specified.",
-                        () => new { this.storageName, Id = input.GetId() });
-                    throw new ConflictingResourceException($"There is already a resource with id = '{input.GetId()}'.");
-
-                case (int) HttpStatusCode.PreconditionFailed:
-                    this.log.Info(
-                        "E-Tag mismatch: the resource has been updated by another client.",
-                        () => new { this.storageName, Id = input.GetId(), ETag = input.GetETag() });
-                    throw new ConflictingResourceException("E-Tag mismatch: the resource has been updated by another client.");
+                entity.ETag = eTag;
             }
 
-            if (response.HttpStatusCode > 299)
+            try
             {
-                this.log.Error("Unexpected error",
-                    () => new { this.storageName, Id = input.GetId(), ETag = input.GetETag(), response });
+                var operation = TableOperation.InsertOrMerge(entity);
+                TableResult response = await this.tableStorage.ExecuteAsync(this.tableStorageTable, operation);
 
-                throw new ExternalDependencyException("Table storage request failed");
+                switch (response.HttpStatusCode)
+                {
+                    case (int) HttpStatusCode.Conflict:
+                        this.log.Info("There is already a resource with the id specified.",
+                            () => new { this.storageName, Id = input.GetId() });
+                        throw new ConflictingResourceException($"There is already a resource with id = '{input.GetId()}'.");
+
+                    case (int) HttpStatusCode.PreconditionFailed:
+                        this.log.Info(
+                            "E-Tag mismatch: the resource has been updated by another client.",
+                            () => new { this.storageName, Id = input.GetId(), ETag = input.GetETag() });
+                        throw new ConflictingResourceException("E-Tag mismatch: the resource has been updated by another client.");
+                }
+
+                if (response.HttpStatusCode > 299)
+                {
+                    this.log.Error("Unexpected error",
+                        () => new { this.storageName, Id = input.GetId(), ETag = input.GetETag(), response });
+
+                    throw new ExternalDependencyException("Table storage request failed");
+                }
+
+                return (DataRecord) response.Result;
             }
-
-            return (DataRecord) response.Result;
+            catch (Microsoft.WindowsAzure.Storage.StorageException e)
+            {
+                this.log.Error("Table storage error",
+                    () => new
+                    {
+                        e.Message,
+                        e.RequestInformation.HttpStatusCode,
+                        e.RequestInformation.HttpStatusMessage,
+                        e.RequestInformation.ExtendedErrorInformation
+                    });
+                throw new ExternalDependencyException(e);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unexpected error from table storage", e);
+                throw new ExternalDependencyException(e);
+            }
         }
 
         public async Task DeleteAsync(string id)
         {
             await this.SetupStorageAsync();
 
-            var entity = new DataRecord(id);
+            // Delete requires an ETag (which may be the '*' wildcard)
+            var entity = new DataRecord(id) { ETag = "*" };
 
-            var operation = TableOperation.Delete(entity);
-            TableResult response = await this.tableStorage.ExecuteAsync(this.tableStorageTable, operation);
+            try
+            {
+                var operation = TableOperation.Delete(entity);
+                TableResult response = await this.tableStorage.ExecuteAsync(this.tableStorageTable, operation);
 
-            if (response.HttpStatusCode == (int) HttpStatusCode.NotFound)
+                if (response.HttpStatusCode > 299)
+                {
+                    this.log.Error("Unexpected error",
+                        () => new { this.storageName, id, response });
+                    throw new ExternalDependencyException("Table storage request failed");
+                }
+            }
+            catch (Microsoft.WindowsAzure.Storage.StorageException e)
+                when (e.RequestInformation.HttpStatusCode == (int) HttpStatusCode.NotFound)
             {
                 this.log.Debug("The resource requested doesn't exist, nothing to do.", () => new { this.storageName, id });
-                return;
-            }
-
-            if (response.HttpStatusCode > 299)
-            {
-                this.log.Error("Unexpected error",
-                    () => new { this.storageName, id, response });
-                throw new ExternalDependencyException("Table storage request failed");
             }
         }
 
@@ -410,20 +460,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
 
         private async Task TryToDeleteExpiredRecord(string id)
         {
-            var entity = new DataRecord(id);
+            // Delete requires an ETag (which may be the '*' wildcard)
+            var entity = new DataRecord(id) { ETag = "*" };
 
-            var operation = TableOperation.Delete(entity);
-            TableResult response = await this.tableStorage.ExecuteAsync(this.tableStorageTable, operation);
+            try
+            {
+                var operation = TableOperation.Delete(entity);
+                TableResult response = await this.tableStorage.ExecuteAsync(this.tableStorageTable, operation);
 
-            if (response.HttpStatusCode == (int) HttpStatusCode.NotFound)
+                if (response.HttpStatusCode > 299)
+                {
+                    this.log.Warn("Unable to delete the record due to an unexpected error.", () => new { this.storageName, id, response });
+                }
+            }
+            catch (Microsoft.WindowsAzure.Storage.StorageException e)
+                when (e.RequestInformation.HttpStatusCode == (int) HttpStatusCode.NotFound)
             {
                 this.log.Debug("The resource requested doesn't exist, nothing to do.", () => new { this.storageName, id });
-                return;
-            }
-
-            if (response.HttpStatusCode > 299)
-            {
-                this.log.Warn("Unable to delete the record due to an unexpected error.", () => new { this.storageName, id, response });
             }
         }
     }
