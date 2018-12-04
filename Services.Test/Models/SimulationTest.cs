@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 using System;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Services.Test.helpers;
 using Xunit;
 using SimulationModel = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.Simulation;
@@ -170,10 +169,15 @@ namespace Services.Test.Models
         [InlineData(false, false, true, false, false)]
         [InlineData(false, false, false, true, false)]
         [InlineData(false, false, false, false, false)]
-        public void CheckIfDevicesDeletionRequiredIsPopulatedCorrect(bool enabled, bool deleteDevicesOnce, bool devicesCreationComplete, bool deleteDevicesWhenSimulationEnds, bool expected)
+        public void CheckIfDevicesDeletionRequiredIsPopulatedCorrect(
+            bool enabled, 
+            bool deleteDevicesOnce, 
+            bool devicesCreationComplete, 
+            bool deleteDevicesWhenSimulationEnds, 
+            bool expected)
         {
             // Arrange and Act
-            var target1 = new Simulation
+            var target1 = new SimulationModel
             {
                 Enabled = enabled,
                 DeleteDevicesOnce = deleteDevicesOnce,
