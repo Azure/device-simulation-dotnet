@@ -55,6 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
             if (ConfigFile.GetDevOnlyConfigFile() != null)
             {
+                Console.WriteLine("===========================\nLOADING SETTINGS FROM " + ConfigFile.GetDevOnlyConfigFile() + "\n===========================");
                 builder.AddIniFile(ConfigFile.GetDevOnlyConfigFile(), optional: true, reloadOnChange: true);
             }
 
@@ -211,6 +212,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             log.Write("Min duration of telemetry loop:   " + config.AppConcurrencyConfig.MinDeviceTelemetryLoopDuration);
             log.Write("Min duration of twin write loop:  " + config.AppConcurrencyConfig.MinDevicePropertiesLoopDuration);
             log.Write("Max devices per partition:        " + config.ClusteringConfig.MaxPartitionSize);
+
+            log.Write("Main storage:        " + config.ServicesConfig.MainStorage.StorageType);
+            log.Write("Simulations storage: " + config.ServicesConfig.SimulationsStorage.StorageType);
+            log.Write("Statistics storage:  " + config.ServicesConfig.StatisticsStorage.StorageType);
+            log.Write("Devices storage:     " + config.ServicesConfig.DevicesStorage.StorageType);
+            log.Write("Partitions storage:  " + config.ServicesConfig.PartitionsStorage.StorageType);
+            log.Write("Nodes storage:       " + config.ServicesConfig.NodesStorage.StorageType);
 
             log.Write("SDK device client timeout:                  " + config.ServicesConfig.IoTHubSdkDeviceClientTimeout);
             log.Write("SDK Microsoft.Azure.Devices.Client version: "

@@ -98,8 +98,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string STATISTICS_STORAGE_KEY = APPLICATION_KEY + "Storage:Statistics:";
 
         private const string STORAGE_TYPE_KEY = "type";
-        private const string STORAGE_MAX_PENDING_OPERATIONS = APPLICATION_KEY + "max_pending_storage_tasks";
-
+        private const string STORAGE_MAX_PENDING_OPERATIONS = "max_pending_storage_tasks";
         private const string COSMOSDBSQL_CONNECTION_STRING_KEY = "cosmosdbsql_connstring";
         private const string COSMOSDBSQL_DATABASE_KEY = "cosmosdbsql_database";
         private const string COSMOSDBSQL_COLLECTION_KEY = "cosmosdbsql_collection";
@@ -299,7 +298,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                     return new Services.Storage.Config
                     {
                         StorageType = storageType,
-                        MaxPendingOperations = configData.GetInt(STORAGE_MAX_PENDING_OPERATIONS, defaults.MaxPendingOperations),
+                        MaxPendingOperations = configData.GetInt(prefix + STORAGE_MAX_PENDING_OPERATIONS, defaults.MaxPendingOperations),
                         CosmosDbSqlConnString = configData.GetString(prefix + COSMOSDBSQL_CONNECTION_STRING_KEY, ""),
                         CosmosDbSqlDatabase = configData.GetString(prefix + COSMOSDBSQL_DATABASE_KEY, ""),
                         CosmosDbSqlCollection = configData.GetString(prefix + COSMOSDBSQL_COLLECTION_KEY, ""),
@@ -310,9 +309,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                     return new Services.Storage.Config
                     {
                         StorageType = storageType,
-                        MaxPendingOperations = configData.GetInt(STORAGE_MAX_PENDING_OPERATIONS, defaults.MaxPendingOperations),
-                        TableStorageConnString = configData.GetString(TABLESTORAGE_CONNECTION_STRING_KEY, ""),
-                        TableStorageTableName = configData.GetString(TABLESTORAGE_TABLE_KEY, "")
+                        MaxPendingOperations = configData.GetInt(prefix + STORAGE_MAX_PENDING_OPERATIONS, defaults.MaxPendingOperations),
+                        TableStorageConnString = configData.GetString(prefix + TABLESTORAGE_CONNECTION_STRING_KEY, ""),
+                        TableStorageTableName = configData.GetString(prefix + TABLESTORAGE_TABLE_KEY, "")
                     };
             }
 
