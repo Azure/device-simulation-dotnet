@@ -375,6 +375,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             // modify other fields, so we need to check for null
             if (patch.Enabled != null) simulation.Enabled = patch.Enabled.Value;
 
+            if (patch.DeleteDevicesOnce.HasValue)
+            {
+                simulation.DeleteDevicesOnce = patch.DeleteDevicesOnce.Value;
+            }
+
             // TODO: can we use this.SaveAsync() here too and avoid the duplication?
             var record = this.simulationsStorage.BuildRecord(simulation.Id, JsonConvert.SerializeObject(simulation));
             item = await this.simulationsStorage.UpsertAsync(record, patch.ETag);
@@ -534,6 +539,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             simulation.DevicesCreationComplete = false;
             simulation.DeviceCreationJobId = null;
             simulation.DevicesCreationStarted = false;
+            simulation.DeleteDevicesOnce = false;
 
             return await this.TryToUpdateSimulationAsync(simulation);
         }

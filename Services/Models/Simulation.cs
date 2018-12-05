@@ -32,7 +32,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         [JsonIgnore]
         public bool DeviceDeletionRequired => !this.IsActiveNow
                                               && this.DevicesCreationComplete
-                                              && this.DeleteDevicesWhenSimulationEnds;
+                                              && (this.DeleteDevicesWhenSimulationEnds || this.DeleteDevicesOnce);
 
         [JsonIgnore]
         public bool PartitioningRequired => this.IsActiveNow && !this.PartitioningComplete;
@@ -68,6 +68,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         [JsonProperty(Order = 15)]
         public bool DevicesDeletionComplete { get; set; }
+
+        [JsonProperty(Order = 16)]
+        public bool DeleteDevicesOnce { get; set; }
 
         [JsonProperty(Order = 1000)]
         public string DeviceCreationJobId { get; set; }
