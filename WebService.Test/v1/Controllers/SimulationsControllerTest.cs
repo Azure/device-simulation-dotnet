@@ -209,7 +209,7 @@ namespace WebService.Test.v1.Controllers
             var simulation = this.GetSimulationById(DEFAULT_SIMULATION_ID);
 
             this.simulationsService
-                .Setup(x => x.UpsertAsync(It.IsAny<Simulation>()))
+                .Setup(x => x.UpsertAsync(It.IsAny<Simulation>(), true))
                 .ReturnsAsync(simulation);
 
             // Act
@@ -237,10 +237,7 @@ namespace WebService.Test.v1.Controllers
                 },
                 StartTime = DateTimeOffset.UtcNow,
                 EndTime = DateTimeOffset.UtcNow.AddHours(2),
-                IotHubConnectionStrings = new List<string>
-                {
-                    ""
-                }
+                IotHubConnectionStrings = new List<string> { "" }
             };
         }
 
