@@ -114,6 +114,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             var statisticsStorageRecord = this.GetStorageRecord(simulationId, statistics);
 
             this.log.Debug("Updating statistics record", () => new { statisticsStorageRecord });
+
+            // Fetch the latest record to have the right ETag and be able to overwrite the existing record
             var record = await this.simulationStatisticsStorage.GetAsync(statisticsRecordId);
             await this.simulationStatisticsStorage.UpsertAsync(statisticsStorageRecord, record.GetETag());
         }

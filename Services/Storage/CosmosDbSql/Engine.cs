@@ -349,9 +349,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
 
             if (this.cosmosDbSqlClient == null)
             {
-                this.log.Debug("Getting CosmosDb SQL Client...", () => new { this.storageConfig.CosmosDbSqlDatabase, this.storageConfig.CosmosDbSqlCollection });
+                this.log.Debug("Getting Cosmos DB SQL Client...", () => new { this.storageConfig.CosmosDbSqlDatabase, this.storageConfig.CosmosDbSqlCollection });
                 this.cosmosDbSqlClient = await this.cosmosDbSql.GetClientAsync(this.storageConfig);
-                this.log.Debug("CosmosDb SQL Client ready", () => new { this.storageConfig.CosmosDbSqlDatabase, this.storageConfig.CosmosDbSqlCollection });
+                this.log.Debug("Cosmos DB SQL Client ready", () => new { this.storageConfig.CosmosDbSqlDatabase, this.storageConfig.CosmosDbSqlCollection });
             }
         }
 
