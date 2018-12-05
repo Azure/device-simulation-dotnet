@@ -57,6 +57,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
 
             this.instance.InitComplete();
 
+            this.log.Debug("Cosmos DB SQL instance initialized", () => new { this.storageName });
+
             return this;
         }
 
@@ -67,102 +69,57 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
 
         public IDataRecord BuildRecord(string id, string data)
         {
-            return new DataRecord { Id = id, Data = data };
+            var record = new DataRecord { Id = id };
+            record.SetData(data);
+            return record;
         }
 
         public async Task<IDataRecord> GetAsync(string id)
         {
-            await this.SetupStorageAsync();
-
-            try
-            {
-                this.log.Debug("Fetching record...", () => new { this.storageName, id });
-                IResourceResponse<Document> response = await this.cosmosDbSql.ReadAsync(this.cosmosDbSqlClient, this.storageConfig, id);
-                this.log.Debug("Record fetched", () => new { this.storageName, id });
-
-                Document document = response?.Resource;
-                if (document == null)
-                {
-                    throw new ResourceNotFoundException($"The resource {id} doesn't exist.");
-                }
-
-                var record = this.DocumentToRecord(document);
-                if (record.IsExpired())
-                {
-                    this.log.Debug("The resource requested has expired, deleting...", () => new { this.storageName, id });
-                    await this.TryToDeleteExpiredRecord(id);
-                    this.log.Debug("Expired resource deleted", () => new { this.storageName, id });
-
-                    throw new ResourceNotFoundException($"The resource {id} doesn't exist.");
-                }
-
-                return record;
-            }
-            catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
-            {
-                this.log.Debug("The resource requested doesn't exist.", () => new { this.storageName, id });
-                throw new ResourceNotFoundException($"The resource {id} doesn't exist.");
-            }
+            return (await this.RetrieveAsync(id, true)).record;
         }
 
         public async Task<bool> ExistsAsync(string id)
         {
-            await this.SetupStorageAsync();
-
-            try
-            {
-                IResourceResponse<Document> response = await this.cosmosDbSql.ReadAsync(this.cosmosDbSqlClient, this.storageConfig, id);
-
-                Document document = response?.Resource;
-                if (document == null)
-                {
-                    return false;
-                }
-
-                var record = new DataRecord
-                {
-                    ExpirationUtcMsecs = document.GetPropertyValue<long>("ExpirationUtcMsecs"),
-                };
-
-                if (record.IsExpired())
-                {
-                    this.log.Info("The resource requested has expired.", () => new { this.storageName, id });
-                    await this.TryToDeleteExpiredRecord(id);
-                    return false;
-                }
-
-                return true;
-            }
-            catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
-            {
-                return false;
-            }
+            return (await this.RetrieveAsync(id, false)).found;
         }
 
         public async Task<IEnumerable<IDataRecord>> GetAllAsync()
         {
             await this.SetupStorageAsync();
 
+            var result = new List<IDataRecord>();
+
             try
             {
-                List<DataRecord> storageRecords = this.cosmosDbSql.CreateQuery<DataRecord>(this.cosmosDbSqlClient, this.storageConfig).ToList();
+                this.log.Debug("Fetching all records", () => new { this.storageName });
+                List<DataRecord> storageRecords = this.cosmosDbSql
+                    .CreateQuery<DataRecord>(this.cosmosDbSqlClient, this.storageConfig).ToList();
 
                 // Delete expired records
                 foreach (var record in storageRecords)
                 {
                     if (record.IsExpired())
                     {
-                        this.log.Debug("Deleting expired resource", () => new { this.storageName, record.Id, record.ETag });
+                        this.log.Debug("Deleting expired record", () => new { this.storageName, record.Id, record.ETag });
                         await this.TryToDeleteExpiredRecord(record.Id);
+                    }
+                    else
+                    {
+                        result.Add(record);
                     }
                 }
 
-                return storageRecords.Where(x => !x.IsExpired());
+                return result;
+            }
+            catch (CustomException)
+            {
+                throw;
             }
             catch (Exception e)
             {
-                this.log.Error("Unexpected error while retrieving the list of resources", () => new { this.storageName, e });
-                throw;
+                this.log.Error("Unexpected error while reading from Cosmos DB SQL", () => new { this.storageName, e });
+                throw new ExternalDependencyException(e);
             }
         }
 
@@ -172,15 +129,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
 
             try
             {
+                this.log.Debug("Creating new record", () => new { this.storageName, Id = input.GetId() });
                 var record = (DataRecord) input;
                 record.Touch();
                 var response = await this.cosmosDbSql.CreateAsync(this.cosmosDbSqlClient, this.storageConfig, record);
                 return this.DocumentToRecord(response?.Resource);
             }
+            catch (CustomException)
+            {
+                throw;
+            }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.Conflict)
             {
-                this.log.Info("There is already a resource with the id specified.", () => new { this.storageName, Id = input.GetId() });
-                throw new ConflictingResourceException($"There is already a resource with id = '{input.GetId()}'.");
+                this.log.Info("There is already a record with the id specified", () => new { this.storageName, Id = input.GetId() });
+                throw new ConflictingResourceException($"There is already a record with id = '{input.GetId()}'.");
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unexpected error while writing to Cosmos DB SQL",
+                    () => new { this.storageName, Id = input.GetId(), e });
+                throw new ExternalDependencyException(e);
             }
         }
 
@@ -195,17 +163,28 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
 
             try
             {
+                this.log.Debug("Upserting record", () => new { this.storageName, Id = input.GetId(), eTag });
                 var record = (DataRecord) input;
                 record.Touch();
                 var response = await this.cosmosDbSql.UpsertAsync(this.cosmosDbSqlClient, this.storageConfig, record, eTag);
                 return this.DocumentToRecord(response?.Resource);
             }
+            catch (CustomException)
+            {
+                throw;
+            }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.PreconditionFailed)
             {
                 this.log.Info(
-                    "E-Tag mismatch: the resource has been updated by another client.",
+                    "E-Tag mismatch: the record has been updated by another client.",
                     () => new { this.storageName, Id = input.GetId(), ETag = input.GetETag() });
-                throw new ConflictingResourceException("E-Tag mismatch: the resource has been updated by another client.");
+                throw new ConflictingResourceException("E-Tag mismatch: the record has been updated by another client.");
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unexpected error while writing to Cosmos DB SQL",
+                    () => new { this.storageName, Id = input.GetId(), eTag, e });
+                throw new ExternalDependencyException(e);
             }
         }
 
@@ -215,12 +194,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
 
             try
             {
-                this.log.Debug("Deleting resource", () => new { this.storageName, id });
+                this.log.Debug("Deleting record", () => new { this.storageName, id });
                 await this.cosmosDbSql.DeleteAsync(this.cosmosDbSqlClient, this.storageConfig, id);
+            }
+            catch (CustomException)
+            {
+                throw;
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
             {
-                this.log.Debug("The resource requested doesn't exist, nothing to do.", () => new { this.storageName, id });
+                this.log.Debug("The record requested doesn't exist, nothing to do.", () => new { this.storageName, id });
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unexpected error while writing to Cosmos DB SQL",
+                    () => new { this.storageName, id, e });
+                throw new ExternalDependencyException(e);
             }
         }
 
@@ -254,11 +243,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
                 this.log.Debug("Trying to obtain lock for record", () => new { ownerType });
 
                 // Note: this can throw ResourceNotFoundException
-                IDataRecord record = await this.GetAsync(id);
+                IDataRecord record = (await this.RetrieveAsync(id, true)).record;
 
                 if (record.IsLockedByOthers(ownerId, ownerType))
                 {
-                    this.log.Debug("The resource is locked by another client",
+                    this.log.Debug("The record is locked by another client",
                         () => new { this.storageName, id, ownerId, ownerType });
                     return false;
                 }
@@ -269,23 +258,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
 
                 return true;
             }
-            catch (ResourceNotFoundException)
+            catch (CustomException)
             {
                 throw;
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.PreconditionFailed)
             {
-                this.log.Debug("E-Tag mismatch: the resource has been updated by another client and cannot be locked.",
+                this.log.Debug("E-Tag mismatch: the record has been updated by another client and cannot be locked.",
                     () => new { this.storageName, id, ownerId, ownerType });
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
             {
-                this.log.Warn("The resource doesn't exist and cannot be locked",
+                this.log.Warn("The record doesn't exist and cannot be locked",
                     () => new { this.storageName, id, ownerId, ownerType });
             }
             catch (Exception e)
             {
-                this.log.Error("Unexpected error while writing to the storage",
+                this.log.Error("Unexpected error while writing to Cosmos DB SQL",
                     () => new { this.storageName, id, ownerId, ownerType, lockDurationSecs = durationSeconds, e });
             }
 
@@ -299,7 +288,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             try
             {
                 // Note: this can throw ResourceNotFoundException
-                IDataRecord record = await this.GetAsync(id);
+                IDataRecord record = (await this.RetrieveAsync(id, true)).record;
 
                 // Nothing to do
                 if (!record.IsLocked()) return true;
@@ -316,23 +305,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
                 await this.cosmosDbSql.UpsertAsync(this.cosmosDbSqlClient, this.storageConfig, (Resource) record);
                 return true;
             }
-            catch (ResourceNotFoundException)
+            catch (CustomException)
             {
                 throw;
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.PreconditionFailed)
             {
-                this.log.Debug("E-Tag mismatch: the resource has been updated by another client and cannot be unlocked.",
+                this.log.Debug("E-Tag mismatch: the record has been updated by another client and cannot be unlocked.",
                     () => new { this.storageName, id, ownerId, ownerType });
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
             {
-                this.log.Warn("The resource doesn't exist and cannot be unlocked",
+                this.log.Warn("The record doesn't exist and cannot be unlocked",
                     () => new { this.storageName, id, ownerId, ownerType });
             }
             catch (Exception e)
             {
-                this.log.Error("Unexpected error while writing to the storage",
+                this.log.Error("Unexpected error while writing to Cosmos DB SQL",
                     () => new { this.storageName, id, ownerId, ownerType, e });
             }
 
@@ -366,6 +355,54 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             }
         }
 
+        private async Task<(bool found, IDataRecord record)> RetrieveAsync(string id, bool throwIfNotFound)
+        {
+            await this.SetupStorageAsync();
+
+            try
+            {
+                this.log.Debug("Fetching record...", () => new { this.storageName, id });
+                IResourceResponse<Document> response = await this.cosmosDbSql.ReadAsync(this.cosmosDbSqlClient, this.storageConfig, id);
+                this.log.Debug("Record fetched", () => new { this.storageName, id });
+
+                Document document = response?.Resource;
+                if (document == null)
+                {
+                    if (throwIfNotFound) throw new ResourceNotFoundException($"The resource {id} doesn't exist.");
+                    return (false, null);
+                }
+
+                var record = this.DocumentToRecord(document);
+                if (record.IsExpired())
+                {
+                    this.log.Debug("The record requested has expired, deleting...", () => new { this.storageName, id });
+                    await this.TryToDeleteExpiredRecord(id);
+                    this.log.Debug("Expired record deleted", () => new { this.storageName, id });
+
+                    if (throwIfNotFound) throw new ResourceNotFoundException($"The record '{id}' doesn't exist.");
+                    return (false, null);
+                }
+
+                return (true, record);
+            }
+            catch (CustomException)
+            {
+                throw;
+            }
+            catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
+            {
+                this.log.Debug("The record requested doesn't exist.", () => new { this.storageName, id });
+                if (throwIfNotFound) throw new ResourceNotFoundException($"The record '{id}' doesn't exist.");
+                return (false, null);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unexpected error while reading from Cosmos DB SQL",
+                    () => new { this.storageName, id, e });
+                throw new ExternalDependencyException(e);
+            }
+        }
+
         private DataRecord DocumentToRecord(Document doc)
         {
             if (doc == null) return null;
@@ -393,11 +430,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
             {
-                this.log.Debug("The resource requested doesn't exist, nothing to do.", () => new { this.storageName, id });
+                // Not an error, deletions are idempotent
+                this.log.Debug("The record requested doesn't exist, nothing to do", () => new { this.storageName, id });
             }
             catch (Exception e)
             {
-                this.log.Warn("Unable to delete the record due to an unexpected error.", () => new { this.storageName, id, e });
+                // Log and do not throw, we're just trying to delete and will retry automatically later
+                this.log.Warn("Unexpected error while writing to Cosmos DB SQL", () => new { this.storageName, id, e });
             }
         }
     }

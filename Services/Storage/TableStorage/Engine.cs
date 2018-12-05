@@ -55,6 +55,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
 
             this.instance.InitComplete();
 
+            this.log.Debug("Table storage instance initialized", () => new { this.storageName });
+
             return this;
         }
 
@@ -72,88 +74,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
 
         public async Task<IDataRecord> GetAsync(string id)
         {
-            await this.SetupStorageAsync();
-
-            TableResult response;
-
-            try
-            {
-                this.log.Debug("Fetching record...", () => new { this.storageName, id });
-                response = await this.tableStorage.RetrieveAsync(this.tableStorageTable, id);
-                this.log.Debug("Record fetched", () => new { this.storageName, id });
-            }
-            catch (Microsoft.WindowsAzure.Storage.StorageException e)
-                when (e.RequestInformation.HttpStatusCode == (int) HttpStatusCode.NotFound)
-            {
-                throw new ResourceNotFoundException($"The resource {id} doesn't exist.");
-            }
-            catch (Exception e)
-            {
-                this.log.Error("Unexpected error", () => new { this.storageName, id, e });
-                throw new ExternalDependencyException("Unexpected error", e);
-            }
-
-            if (response.HttpStatusCode == (int) HttpStatusCode.NotFound)
-            {
-                throw new ResourceNotFoundException($"The resource {id} doesn't exist.");
-            }
-
-            var record = response.Result as DataRecord;
-
-            if (record == null)
-            {
-                throw new ResourceNotFoundException($"The resource {id} doesn't exist.");
-            }
-
-            if (record.IsExpired())
-            {
-                this.log.Debug("The resource requested has expired, deleting...", () => new { this.storageName, id });
-                await this.TryToDeleteExpiredRecord(id);
-                this.log.Debug("Expired resource deleted", () => new { this.storageName, id });
-
-                throw new ResourceNotFoundException($"The resource {id} doesn't exist.");
-            }
-
-            return record;
+            return (await this.RetrieveAsync(id, true)).record;
         }
 
         public async Task<bool> ExistsAsync(string id)
         {
-            await this.SetupStorageAsync();
-
-            TableResult response;
-
-            try
-            {
-                this.log.Debug("Searching record...", () => new { this.storageName, id });
-                response = await this.tableStorage.RetrieveAsync(this.tableStorageTable, id);
-            }
-            catch (Microsoft.WindowsAzure.Storage.StorageException e)
-                when (e.RequestInformation.HttpStatusCode == (int) HttpStatusCode.NotFound)
-            {
-                return false;
-            }
-
-            if (response.HttpStatusCode == (int) HttpStatusCode.NotFound)
-            {
-                return false;
-            }
-
-            var record = response.Result as DataRecord;
-
-            if (record == null)
-            {
-                return false;
-            }
-
-            if (record.IsExpired())
-            {
-                this.log.Info("The resource requested has expired.", () => new { this.storageName, id });
-                await this.TryToDeleteExpiredRecord(id);
-                return false;
-            }
-
-            return true;
+            return (await this.RetrieveAsync(id, false)).found;
         }
 
         public async Task<IEnumerable<IDataRecord>> GetAllAsync()
@@ -164,6 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
 
             try
             {
+                this.log.Debug("Fetching all records", () => new { this.storageName });
                 string query = TableQuery.GenerateFilterCondition(
                     SDKWrapper.PK_FIELD, QueryComparisons.Equal, DataRecord.FIXED_PKEY);
                 var partitionScanQuery = new TableQuery<DataRecord>().Where(query);
@@ -172,19 +99,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
                 TableContinuationToken token = null;
                 do
                 {
+                    this.log.Debug("Fetching next page of records", () => new { this.storageName, token });
                     var segment = await this.tableStorage.ExecuteQuerySegmentedAsync(
                         this.tableStorageTable, partitionScanQuery, token);
                     token = segment.ContinuationToken;
-                    foreach (DataRecord entity in segment)
+
+                    // Delete expired records
+                    foreach (DataRecord record in segment)
                     {
-                        if (!entity.IsExpired())
+                        if (record.IsExpired())
                         {
-                            result.Add(entity);
+                            this.log.Debug("Deleting expired resource",
+                                () => new { this.storageName, Id = record.GetId(), ETag = record.GetETag() });
+                            await this.TryToDeleteExpiredRecord(record.GetId());
                         }
                         else
                         {
-                            this.log.Debug("Deleting expired resource", () => new { this.storageName, Id = entity.GetId(), ETag = entity.GetETag() });
-                            await this.TryToDeleteExpiredRecord(entity.GetId());
+                            result.Add(record);
                         }
                     }
                 } while (token != null);
@@ -193,8 +124,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
             }
             catch (Exception e)
             {
-                this.log.Error("Unexpected error while retrieving the list of resources", () => new { this.storageName, e });
-                throw;
+                this.log.Error("Unexpected error while reading from Table Storage", () => new { this.storageName, e });
+                throw new ExternalDependencyException(e);
             }
         }
 
@@ -227,13 +158,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
                 switch (response.HttpStatusCode)
                 {
                     case (int) HttpStatusCode.Conflict:
-                        this.log.Info("There is already a resource with the id specified.",
+                        this.log.Info("There is already a record with the id specified",
                             () => new { this.storageName, Id = input.GetId() });
                         throw new ConflictingResourceException($"There is already a resource with id = '{input.GetId()}'.");
 
                     case (int) HttpStatusCode.PreconditionFailed:
                         this.log.Info(
-                            "E-Tag mismatch: the resource has been updated by another client.",
+                            "E-Tag mismatch: the record has been updated by another client",
                             () => new { this.storageName, Id = input.GetId(), ETag = input.GetETag() });
                         throw new ConflictingResourceException("E-Tag mismatch: the resource has been updated by another client.");
                 }
@@ -247,6 +178,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
                 }
 
                 return (DataRecord) response.Result;
+            }
+            catch (CustomException)
+            {
+                throw;
             }
             catch (Microsoft.WindowsAzure.Storage.StorageException e)
             {
@@ -262,7 +197,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
             }
             catch (Exception e)
             {
-                this.log.Error("Unexpected error from table storage", e);
+                this.log.Error("Unexpected error while writing to Table Storage",
+                    () => new { this.storageName, Id = input.GetId(), e });
                 throw new ExternalDependencyException(e);
             }
         }
@@ -290,6 +226,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
                 when (e.RequestInformation.HttpStatusCode == (int) HttpStatusCode.NotFound)
             {
                 this.log.Debug("The resource requested doesn't exist, nothing to do.", () => new { this.storageName, id });
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unexpected error while writing to Table Storage",
+                    () => new { this.storageName, id, e });
+                throw new ExternalDependencyException(e);
             }
         }
 
@@ -358,13 +300,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
 
                 return true;
             }
-            catch (ResourceNotFoundException)
+            catch (CustomException)
             {
                 throw;
             }
             catch (Exception e)
             {
-                this.log.Error("Unexpected error while writing to the storage",
+                this.log.Error("Unexpected error while writing to Table Storage",
                     () => new { this.storageName, id, ownerId, ownerType, lockDurationSecs = durationSeconds, e });
             }
 
@@ -416,13 +358,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
 
                 return true;
             }
-            catch (ResourceNotFoundException)
+            catch (CustomException)
             {
                 throw;
             }
             catch (Exception e)
             {
-                this.log.Error("Unexpected error while writing to the storage",
+                this.log.Error("Unexpected error while writing to Table Storage",
                     () => new { this.storageName, id, ownerId, ownerType, e });
             }
 
@@ -458,6 +400,60 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
             }
         }
 
+        private async Task<(bool found, IDataRecord record)> RetrieveAsync(string id, bool throwIfNotFound)
+        {
+            await this.SetupStorageAsync();
+
+            TableResult response;
+
+            try
+            {
+                this.log.Debug("Fetching record...", () => new { this.storageName, id });
+                response = await this.tableStorage.RetrieveAsync(this.tableStorageTable, id);
+                this.log.Debug("Storage request completed", () => new { this.storageName, id, response.HttpStatusCode });
+            }
+            catch (Microsoft.WindowsAzure.Storage.StorageException e)
+                when (e.RequestInformation.HttpStatusCode == (int) HttpStatusCode.NotFound)
+            {
+                this.log.Debug("Record not found", () => new { this.storageName, id });
+                if (throwIfNotFound) throw new ResourceNotFoundException($"The resource {id} doesn't exist.");
+                return (false, null);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unexpected error while reading from Table Storage", () => new { this.storageName, id, e });
+                throw new ExternalDependencyException("Unexpected error", e);
+            }
+
+            if (response.HttpStatusCode == (int) HttpStatusCode.NotFound)
+            {
+                this.log.Debug("Record not found", () => new { this.storageName, id });
+                if (throwIfNotFound) throw new ResourceNotFoundException($"The resource {id} doesn't exist.");
+                return (false, null);
+            }
+
+            var record = response.Result as DataRecord;
+
+            if (record == null)
+            {
+                this.log.Debug("Record is null", () => new { this.storageName, id });
+                if (throwIfNotFound) throw new ResourceNotFoundException($"The resource {id} doesn't exist.");
+                return (false, null);
+            }
+
+            if (record.IsExpired())
+            {
+                this.log.Debug("The record requested has expired, deleting...", () => new { this.storageName, id });
+                await this.TryToDeleteExpiredRecord(id);
+                this.log.Debug("Expired record deleted", () => new { this.storageName, id });
+
+                if (throwIfNotFound) throw new ResourceNotFoundException($"The resource {id} doesn't exist.");
+                return (false, null);
+            }
+
+            return (true, record);
+        }
+
         private async Task TryToDeleteExpiredRecord(string id)
         {
             // Delete requires an ETag (which may be the '*' wildcard)
@@ -476,7 +472,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
             catch (Microsoft.WindowsAzure.Storage.StorageException e)
                 when (e.RequestInformation.HttpStatusCode == (int) HttpStatusCode.NotFound)
             {
+                // Not an error, deletions are idempotent
                 this.log.Debug("The resource requested doesn't exist, nothing to do.", () => new { this.storageName, id });
+            }
+            catch (Exception e)
+            {
+                // Log and do not throw, we're just trying to delete and will retry automatically later
+                this.log.Warn("Unexpected error while writing to Table Storage", () => new { this.storageName, id, e });
             }
         }
     }

@@ -20,5 +20,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
         Task DeleteMultiAsync(List<string> ids);
         Task<bool> TryToLockAsync(string id, string ownerId, string ownerType, int durationSeconds);
         Task<bool> TryToUnlockAsync(string id, string ownerId, string ownerType);
+
+        // TODO: implement this API to for scenarios where ETag mismatch doesn't matter
+        //       and the client wants to do a delete+insert (overwrite)
+        //Task<IDataRecord> DiscardAndUpsertAsync(IDataRecord input);
     }
 }
