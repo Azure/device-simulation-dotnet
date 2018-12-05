@@ -6,6 +6,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosDbSql;
 using Moq;
 using Services.Test.helpers;
 using Xunit;
@@ -21,18 +22,18 @@ namespace Services.Test.Clustering
         private readonly Mock<ILogger> log;
         private readonly Mock<IServicesConfig> config;
         private readonly Mock<IClusteringConfig> clusteringConfig;
-        private readonly Mock<IFactory> factory;
-        private readonly Mock<IStorageRecords> clusterNodesStorage;
-        private readonly Mock<IStorageRecords> mainStorage;
+        private readonly Mock<IEngines> enginesFactory;
+        private readonly Mock<IEngine> clusterNodesStorage;
+        private readonly Mock<IEngine> mainStorage;
 
         public ClusterNodesTest()
         {
             this.log = new Mock<ILogger>();
             this.config = new Mock<IServicesConfig>();
             this.clusteringConfig = new Mock<IClusteringConfig>();
-            this.factory = new Mock<IFactory>();
-            this.clusterNodesStorage = new Mock<IStorageRecords>();
-            this.mainStorage = new Mock<IStorageRecords>();
+            this.enginesFactory = new Mock<IEngines>();
+            this.clusterNodesStorage = new Mock<IEngine>();
+            this.mainStorage = new Mock<IEngine>();
 
             this.clusteringConfig.SetupGet(x => x.NodeRecordMaxAgeSecs).Returns(12045);
 
@@ -73,14 +74,14 @@ namespace Services.Test.Clustering
             // Arrange
             var nodeId = this.target.GetCurrentNodeId();
             //var instance = this.GetNewInstance();
-            this.clusterNodesStorage.Setup(x => x.GetAsync(nodeId)).ReturnsAsync(new StorageRecord { Id = nodeId });
+            this.clusterNodesStorage.Setup(x => x.GetAsync(nodeId)).ReturnsAsync(new DataRecord { Id = nodeId });
 
             // Act
             this.target.KeepAliveNodeAsync().CompleteOrTimeout();
 
             // Assert
             this.clusterNodesStorage.Verify(x => x.GetAsync(nodeId), Times.Once);
-            this.clusterNodesStorage.Verify(x => x.UpsertAsync(It.Is<StorageRecord>(n => n.Id == nodeId && !n.IsExpired())), Times.Once);
+            this.clusterNodesStorage.Verify(x => x.UpsertAsync(It.Is<IDataRecord>(n => n.GetId() == nodeId && !n.IsExpired())), Times.Once);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -95,8 +96,8 @@ namespace Services.Test.Clustering
 
             // Assert
             this.clusterNodesStorage.Verify(x => x.GetAsync(nodeId), Times.Once);
-            this.clusterNodesStorage.Verify(x => x.UpsertAsync(It.IsAny<StorageRecord>()), Times.Never);
-            this.clusterNodesStorage.Verify(x => x.CreateAsync(It.Is<StorageRecord>(n => n.Id == nodeId && !n.IsExpired())), Times.Once);
+            this.clusterNodesStorage.Verify(x => x.UpsertAsync(It.IsAny<IDataRecord>()), Times.Never);
+            this.clusterNodesStorage.Verify(x => x.CreateAsync(It.Is<IDataRecord>(n => n.GetId() == nodeId && !n.IsExpired())), Times.Once);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -112,7 +113,7 @@ namespace Services.Test.Clustering
 
             // Assert
             this.mainStorage
-                .Verify(x => x.CreateAsync(It.Is<StorageRecord>(r => r.Id == ClusterNodes.MASTER_NODE_KEY)), Times.Once);
+                .Verify(x => x.CreateAsync(It.Is<IDataRecord>(r => r.GetId() == ClusterNodes.MASTER_NODE_KEY)), Times.Once);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -193,7 +194,7 @@ namespace Services.Test.Clustering
             return new ClusterNodes(
                 this.config.Object,
                 this.clusteringConfig.Object,
-                this.factory.Object,
+                this.enginesFactory.Object,
                 this.log.Object);
         }
 
@@ -204,21 +205,21 @@ namespace Services.Test.Clustering
             // Inject configuration settings with a collection name which is then used
             // to intercept the call to .InitAsync()
             this.config.SetupGet(x => x.NodesStorage)
-                .Returns(new StorageConfig { DocumentDbCollection = NODES });
+                .Returns(new Config { CosmosDbSqlCollection = NODES });
             this.config.SetupGet(x => x.MainStorage)
-                .Returns(new StorageConfig { DocumentDbCollection = MAIN });
+                .Returns(new Config { CosmosDbSqlCollection = MAIN });
 
             // Intercept the call to .InitAsync() and return the right mock depending on the collection name
-            var storageMockFactory = new Mock<IStorageRecords>();
+            var storageMockFactory = new Mock<IEngine>();
             storageMockFactory
-                .Setup(x => x.Init(It.Is<StorageConfig>(c => c.DocumentDbCollection == MAIN)))
+                .Setup(x => x.Init(It.Is<Config>(c => c.CosmosDbSqlCollection == MAIN)))
                 .Returns(this.mainStorage.Object);
             storageMockFactory
-                .Setup(x => x.Init(It.Is<StorageConfig>(c => c.DocumentDbCollection == NODES)))
+                .Setup(x => x.Init(It.Is<Config>(c => c.CosmosDbSqlCollection == NODES)))
                 .Returns(this.clusterNodesStorage.Object);
 
             // When IStorageRecords is instantiated, return the factory above
-            this.factory.Setup(x => x.Resolve<IStorageRecords>()).Returns(storageMockFactory.Object);
+            this.enginesFactory.Setup(x => x.Build(It.IsAny<Config>())).Returns(storageMockFactory.Object);
         }
     }
 }

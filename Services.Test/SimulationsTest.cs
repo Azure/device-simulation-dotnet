@@ -12,7 +12,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.DocumentDb;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosDbSql;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter;
 using Moq;
 using Newtonsoft.Json;
@@ -25,16 +25,16 @@ namespace Services.Test
 {
     public class SimulationsTest
     {
-        /// <summary>The test logger</summary>
-        private readonly ITestOutputHelper log;
-
         private const string SIMULATION_ID = "1";
+
+        private readonly Simulations target;
+        private readonly List<DeviceModel> models;
 
         private readonly Mock<IServicesConfig> mockConfig;
         private readonly Mock<IDeviceModels> deviceModels;
-        private readonly Mock<IFactory> mockFactory;
+        private readonly Mock<IEngines> enginesFactory;
         private readonly Mock<IStorageAdapterClient> mockStorageAdapterClient;
-        private readonly Mock<IStorageRecords> mockStorageRecords;
+        private readonly Mock<IEngine> mockStorageRecords;
         private readonly Mock<IDevices> devices;
         private readonly Mock<IFileSystem> file;
         private readonly Mock<ILogger> logger;
@@ -44,32 +44,28 @@ namespace Services.Test
         private readonly Mock<IDocumentClient> mockDocumentClient;
         private readonly Mock<IResourceResponse<Document>> mockStorageDocument;
         private readonly Mock<ISimulationStatistics> simulationStatistics;
-        private readonly Simulations target;
-        private readonly List<DeviceModel> models;
 
         public SimulationsTest(ITestOutputHelper log)
         {
-            this.log = log;
-
             this.mockConfig = new Mock<IServicesConfig>();
             this.deviceModels = new Mock<IDeviceModels>();
-            this.mockStorageRecords = new Mock<IStorageRecords>();
-            this.mockStorageRecords.Setup(x => x.Init(It.IsAny<StorageConfig>())).Returns(this.mockStorageRecords.Object);
+            this.mockStorageRecords = new Mock<IEngine>();
+            this.mockStorageRecords.Setup(x => x.Init(It.IsAny<Config>())).Returns(this.mockStorageRecords.Object);
 
             // Multiple tests require the passed-in StorageRecord object to be returned from storage
             this.mockStorageRecords.Setup(
                     x => x.UpsertAsync(
-                        It.IsAny<StorageRecord>(),
+                        It.IsAny<IDataRecord>(),
                         It.IsAny<string>()))
-                .ReturnsAsync((StorageRecord storageRecord, string eTag) => storageRecord);
-            this.mockDocumentDbWrapper = new Mock<IDocumentDbWrapper>();
+                .ReturnsAsync((DataRecord storageRecord, string eTag) => storageRecord);
+            this.mockCosmosDbSqlWrapper = new Mock<ISDKWrapper>();
             this.mockDocumentClient = new Mock<IDocumentClient>();
             this.mockStorageDocument = new Mock<IResourceResponse<Document>>();
             this.mockStorageAdapterClient = new Mock<IStorageAdapterClient>();
             this.simulationStatistics = new Mock<ISimulationStatistics>();
 
-            this.mockFactory = new Mock<IFactory>();
-            this.mockFactory.Setup(x => x.Resolve<IStorageRecords>()).Returns(this.mockStorageRecords.Object);
+            this.enginesFactory = new Mock<IEngines>();
+            this.enginesFactory.Setup(x => x.Build(It.IsAny<Config>())).Returns(this.mockStorageRecords.Object);
 
             this.logger = new Mock<ILogger>();
             this.diagnosticsLogger = new Mock<IDiagnosticsLogger>();
@@ -87,7 +83,7 @@ namespace Services.Test
             this.target = new Simulations(
                 this.mockConfig.Object,
                 this.deviceModels.Object,
-                this.mockFactory.Object,
+                this.enginesFactory.Object,
                 this.mockStorageAdapterClient.Object,
                 this.connectionStrings.Object,
                 this.file.Object,
@@ -138,12 +134,12 @@ namespace Services.Test
             // Return the StorageRecord object that will be passed to StorageRecords
             this.mockStorageRecords.Setup(
                     x => x.UpsertAsync(
-                        It.IsAny<StorageRecord>(),
+                        It.IsAny<IDataRecord>(),
                         It.IsAny<string>()))
-                .ReturnsAsync((StorageRecord storageRecord, string eTag) => storageRecord);
+                .ReturnsAsync((DataRecord storageRecord, string eTag) => storageRecord);
 
             // Act
-            SimulationModel result = this.target.InsertAsync(simulation, "default").Result;
+            SimulationModel result = this.target.InsertAsync(simulation, "default").CompleteOrTimeout().Result;
 
             // Assert
             Assert.False(result.PartitioningComplete);
@@ -192,7 +188,7 @@ namespace Services.Test
             // Act + Assert
             Assert.ThrowsAsync<InvalidInputException>(
                     async () => await this.target.InsertAsync(new SimulationModel(), "mytemplate"))
-                .Wait(Constants.TEST_TIMEOUT);
+                .CompleteOrTimeout();
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -202,7 +198,7 @@ namespace Services.Test
             const string ID = "1";
 
             this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
-                .ReturnsAsync(new StorageRecord() { Id = ID, Data = "{}" });
+                .ReturnsAsync(new DataRecord() { Id = ID, Data = "{}" });
 
             // Act
             var result = this.target.GetWithStatisticsAsync(ID).CompleteOrTimeout().Result;
@@ -224,124 +220,87 @@ namespace Services.Test
             this.StorageReturnsSimulationRecordOnCreate(simulation);
 
             // Act
-            this.target.InsertAsync(simulation, "default").Wait();
+            this.target.InsertAsync(simulation, "default").CompleteOrTimeout();
 
             // Assert
             this.mockStorageRecords.Verify(
-                x => x.UpsertAsync(It.IsAny<StorageRecord>(), It.IsAny<string>()), Times.Once);
+                x => x.UpsertAsync(It.IsAny<IDataRecord>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void UpsertRequiresIdWhileInsertDoesNot()
         {
             // Arrange
-            var s1 = new SimulationModel() { Name = "Test Simulation 1" };
-            var s2 = new SimulationModel() { Name = "Test Simulation 2" };
+            var s1 = new SimulationModel { Name = "Test Simulation 1" };
+            var s2 = new SimulationModel { Name = "Test Simulation 2" };
             this.ThereAreNoSimulationsInTheStorage();
             this.StorageReturnsSimulationRecordOnCreate(s1);
-            var s2StorageRecord = new StorageRecord
+            var s2StorageRecord = new DataRecord
             {
                 Id = s2.Id,
                 Data = JsonConvert.SerializeObject(s2),
             };
 
-            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>()))
+            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<IDataRecord>()))
                 .ReturnsAsync(s2StorageRecord);
 
             // Act - No exception occurs
-            this.target.InsertAsync(s1).Wait(Constants.TEST_TIMEOUT);
+            this.target.InsertAsync(s1).CompleteOrTimeout();
 
             // Act + Assert
-            Assert.ThrowsAsync<InvalidInputException>(async () => await this.target.UpsertAsync(s2))
-                .Wait(Constants.TEST_TIMEOUT);
+            Assert.ThrowsAsync<InvalidInputException>(async () => await this.target.UpsertAsync(s2, false))
+                .CompleteOrTimeout();
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void UpsertWillFailWhenETagsDoNotMatch()
+        public void UpsertFailsWhenETagsDoNotMatch()
         {
             // Arrange
             const string ETAG1 = "ETag 001";
             const string ETAG2 = "ETag 002";
 
             // Mock simulation that will be returned from storage
-            var updatedSimulation = new SimulationModel { Id = SIMULATION_ID, Name = "Test Simulation 2", ETag = ETAG2 };
-            var updatedStorageRecord = new StorageRecord
-            {
-                Id = SIMULATION_ID,
-                Data = JsonConvert.SerializeObject(updatedSimulation),
-            };
-
-            // Create a mock DocumentDB Document object that will contain a
+            // Create a mock Cosmos DB SQL Document object that will contain a
             // different ETag than the one we're trying to use to upsert
-            var document = new Document();
-            document.Id = "foo";
-            document.SetPropertyValue("_etag", ETAG2);
-            document.SetPropertyValue("Data", JsonConvert.SerializeObject(updatedSimulation));
-            var mockStorageRecord = StorageRecord.FromDocumentDb(document);
-            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(mockStorageRecord);
-
-            // Initial simulation 
-            var initialSimulation = new SimulationModel { Id = SIMULATION_ID, Name = "Test Simulation 1", ETag = ETAG1 };
-            var initialStorageRecord = new StorageRecord
-            {
-                Id = SIMULATION_ID,
-                Data = JsonConvert.SerializeObject(initialSimulation),
-            };
+            var updatedSimulation = new SimulationModel { Id = SIMULATION_ID, Name = "Test Simulation 2", ETag = ETAG2 };
+            var record = new DataRecord { Id = "foo" };
+            record.SetETag(ETAG2);
+            record.SetData(JsonConvert.SerializeObject(updatedSimulation));
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(record);
 
             // Act + Assert
+            var initialSimulation = new SimulationModel { Id = SIMULATION_ID, Name = "Test Simulation 1", ETag = ETAG1 };
             Assert.ThrowsAsync<ResourceOutOfDateException>(
-                    async () => await this.target.UpsertAsync(initialSimulation))
-                .Wait(Constants.TEST_TIMEOUT);
+                    async () => await this.target.UpsertAsync(initialSimulation, false))
+                .CompleteOrTimeout();
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void UpsertWillSucceedWhenETagsMatch()
+        public void UpsertSucceedsWhenETagsMatch()
         {
             // Arrange
             const string ETAG1 = "ETag 001";
             const string ETAG2 = "ETag 002";
 
-            // Mock simulation that will be returned from storage
-            var existingSimulation = new SimulationModel { Id = SIMULATION_ID, Name = "Test Simulation 2", ETag = ETAG1 };
-            var updatedStorageRecord = new StorageRecord
-            {
-                Id = SIMULATION_ID,
-                Data = JsonConvert.SerializeObject(existingSimulation),
-            };
+            // Record in storage
+            var existingRecord = new DataRecord { Id = SIMULATION_ID };
+            existingRecord.SetETag(ETAG1);
 
-            // Create a mock DocumentDB Document object that will contain the
-            // same ETag value as the one we're trying to use to upsert with.
-            var document = new Document();
-            document.Id = "foo";
-            document.SetPropertyValue("_etag", ETAG1);
-            document.SetPropertyValue("Data", JsonConvert.SerializeObject(existingSimulation));
-            var mockStorageRecord = StorageRecord.FromDocumentDb(document);
+            // Record to write
+            var newSimulation = new SimulationModel { ETag = existingRecord.GetETag() };
 
-            // Initial simulation 
-            var initialSimulation = new SimulationModel { Id = SIMULATION_ID, Name = "Test Simulation 1", ETag = ETAG1 };
-            var initialStorageRecord = new StorageRecord
-            {
-                Id = SIMULATION_ID,
-                Data = JsonConvert.SerializeObject(initialSimulation),
-            };
+            // Record after writing to storage
+            var updatedRecord = new DataRecord { Id = SIMULATION_ID };
+            updatedRecord.SetETag(ETAG2);
 
-            // Create a second document that will be returned after the upsert,
-            // which will contain an updated ETag
-            var upsertResultDocument = new Document();
-            upsertResultDocument.Id = "bar";
-            upsertResultDocument.SetPropertyValue("_etag", ETAG2);
-            upsertResultDocument.SetPropertyValue("Data", JsonConvert.SerializeObject(initialSimulation));
-            var upsertResultStorageRecord = StorageRecord.FromDocumentDb(upsertResultDocument);
-
-            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(mockStorageRecord);
-            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>(), It.IsAny<string>())).ReturnsAsync(upsertResultStorageRecord);
+            this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync(existingRecord);
+            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<IDataRecord>(), It.IsAny<string>())).ReturnsAsync(updatedRecord);
 
             // Act
-            var returnedSimulationTask = this.target.UpsertAsync(initialSimulation);
-            returnedSimulationTask.Wait(Constants.TEST_TIMEOUT);
+            var result =this.target.UpsertAsync(newSimulation, false).CompleteOrTimeout().Result;
 
             // Assert
-            Assert.Matches(ETAG2, returnedSimulationTask.Result.ETag);
+            Assert.Matches(ETAG2, result.ETag);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -349,30 +308,22 @@ namespace Services.Test
         {
             // Arrange
             this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
-                .ReturnsAsync((StorageRecord) null);
+                .ReturnsAsync((DataRecord) null);
             var sim = new SimulationModel
             {
                 Id = "1",
                 Enabled = true,
                 PartitioningComplete = true
             };
-            var record = new ValueApiModel
-            {
-                Key = "1",
-                Data = JsonConvert.SerializeObject(sim),
-            };
 
-            // Create a DocumentDB Document that will be used to create a StorageRecord object
-            var document = new Document();
-            document.Id = "foo";
-            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
-            var storageRecord = StorageRecord.FromDocumentDb(document);
+            IDataRecord record = new DataRecord();
+            record.SetData(JsonConvert.SerializeObject(sim));
 
-            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>()))
-                .ReturnsAsync(storageRecord);
+            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<IDataRecord>()))
+                .ReturnsAsync(record);
 
             // Act
-            SimulationModel result = this.target.UpsertAsync(sim).CompleteOrTimeout().Result;
+            SimulationModel result = this.target.UpsertAsync(sim, false).CompleteOrTimeout().Result;
 
             // Assert
             Assert.False(result.PartitioningComplete);
@@ -389,22 +340,25 @@ namespace Services.Test
                 PartitioningComplete = true,
                 ETag = "*"
             };
-            var record = new ValueApiModel
-            {
-                Key = "1",
-                Data = JsonConvert.SerializeObject(sim)
-            };
+            // var record = new ValueApiModel
+            // {
+            //     Key = "1",
+            //     Data = JsonConvert.SerializeObject(sim)
+            // };
+            //
+            // // Create a Cosmos DB SQL Document that will be used to create a StorageRecord object
+            // var document = new Document();
+            // document.Id = "foo";
+            // document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            // document.SetPropertyValue("ETag", "*");
+            // var storageRecord = DataRecord.FromCosmosDbSql(document);
 
-            // Create a DocumentDB Document that will be used to create a StorageRecord object
-            var document = new Document();
-            document.Id = "foo";
-            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
-            document.SetPropertyValue("ETag", "*");
-            var storageRecord = StorageRecord.FromDocumentDb(document);
+            IDataRecord storageRecord = new DataRecord();
+            storageRecord.SetData(JsonConvert.SerializeObject(sim)).SetETag("*");
 
             this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
                 .ReturnsAsync(storageRecord);
-            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>(), It.IsAny<string>()))
+            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<IDataRecord>(), It.IsAny<string>()))
                 .ReturnsAsync(storageRecord);
 
             // Act
@@ -415,7 +369,7 @@ namespace Services.Test
                 PartitioningComplete = true,
                 ETag = "*"
             };
-            var result = this.target.UpsertAsync(update).CompleteOrTimeout().Result;
+            var result = this.target.UpsertAsync(update, false).CompleteOrTimeout().Result;
 
             // Assert
             Assert.False(result.Enabled);
@@ -585,12 +539,17 @@ namespace Services.Test
                 ETag = eTagValue
             };
 
-            // Create a DocumentDB Document that will be used to create a StorageRecord object
-            var document = new Document();
-            document.Id = "foo";
-            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
-            document.SetPropertyValue("ETag", eTagValue);
-            var storageRecord = StorageRecord.FromDocumentDb(document);
+            // // Create a Cosmos DB SQL Document that will be used to create a StorageRecord object
+            // var document = new Document();
+            // document.Id = "foo";
+            // document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            // document.SetPropertyValue("ETag", eTagValue);
+            // var storageRecord = DataRecord.FromCosmosDbSql(document);
+
+            IDataRecord storageRecord = new DataRecord { Id = "foo" };
+            storageRecord
+                .SetData(JsonConvert.SerializeObject(sim))
+                .SetETag(eTagValue);
 
             this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
                 .ReturnsAsync(storageRecord);
@@ -604,8 +563,8 @@ namespace Services.Test
             this.devices.Verify(x => x.CreateListUsingJobsAsync(It.IsAny<IEnumerable<string>>()), Times.Once);
             this.mockStorageRecords.Verify(
                 x => x.UpsertAsync(
-                    It.Is<StorageRecord>(
-                        sr => JsonConvert.DeserializeObject<SimulationModel>(sr.Data).DevicesCreationStarted),
+                    It.Is<IDataRecord>(
+                        sr => JsonConvert.DeserializeObject<SimulationModel>(sr.GetData()).DevicesCreationStarted),
                     It.IsAny<string>()), Times.Once());
         }
 
@@ -623,12 +582,15 @@ namespace Services.Test
                 }
             };
 
-            // Create a DocumentDB Document that will be used to create a StorageRecord object
-            var document = new Document();
-            document.Id = "foo";
-            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
-            document.SetPropertyValue("ETag", "*");
-            var storageRecord = StorageRecord.FromDocumentDb(document);
+            // Create a Cosmos DB SQL Document that will be used to create a StorageRecord object
+            // var document = new Document();
+            // document.Id = "foo";
+            // document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            // document.SetPropertyValue("ETag", "*");
+            // var storageRecord = DataRecord.FromCosmosDbSql(document);
+
+            IDataRecord storageRecord = new DataRecord { Id = "foo" };
+            storageRecord.SetData(JsonConvert.SerializeObject(sim)).SetETag("*");
 
             this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
                 .ReturnsAsync(storageRecord);
@@ -656,12 +618,15 @@ namespace Services.Test
                 }
             };
 
-            // Create a DocumentDB Document that will be used to create a StorageRecord object
-            var document = new Document();
-            document.Id = "foo";
-            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
-            document.SetPropertyValue("ETag", "*");
-            var storageRecord = StorageRecord.FromDocumentDb(document);
+            // Create a Cosmos DB SQL Document that will be used to create a StorageRecord object
+            // var document = new Document();
+            // document.Id = "foo";
+            // document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            // document.SetPropertyValue("ETag", "*");
+            // var storageRecord = DataRecord.FromCosmosDbSql(document);
+
+            IDataRecord storageRecord = new DataRecord { Id = "foo" };
+            storageRecord.SetData(JsonConvert.SerializeObject(sim)).SetETag("*");
 
             this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
                 .ReturnsAsync(storageRecord);
@@ -693,12 +658,15 @@ namespace Services.Test
                 }
             };
 
-            // Create a DocumentDB Document that will be used to create a StorageRecord object
-            var document = new Document();
-            document.Id = "foo";
-            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
-            document.SetPropertyValue("ETag", "*");
-            var storageRecord = StorageRecord.FromDocumentDb(document);
+            // Create a Cosmos DB SQL Document that will be used to create a StorageRecord object
+            // var document = new Document();
+            // document.Id = "foo";
+            // document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            // document.SetPropertyValue("ETag", "*");
+            // var storageRecord = DataRecord.FromCosmosDbSql(document);
+
+            IDataRecord storageRecord = new DataRecord { Id = "foo" };
+            storageRecord.SetData(JsonConvert.SerializeObject(sim)).SetETag("*");
 
             this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
                 .ReturnsAsync(storageRecord);
@@ -711,8 +679,8 @@ namespace Services.Test
             Assert.True(result);
             this.mockStorageRecords.Verify(
                 x => x.UpsertAsync(
-                    It.Is<StorageRecord>(
-                        sr => JsonConvert.DeserializeObject<SimulationModel>(sr.Data).DevicesCreationComplete),
+                    It.Is<IDataRecord>(
+                        sr => JsonConvert.DeserializeObject<SimulationModel>(sr.GetData()).DevicesCreationComplete),
                     It.IsAny<string>()), Times.Once());
         }
 
@@ -732,12 +700,15 @@ namespace Services.Test
                 }
             };
 
-            // Create a DocumentDB Document that will be used to create a StorageRecord object
-            var document = new Document();
-            document.Id = "foo";
-            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
-            document.SetPropertyValue("ETag", "*");
-            var storageRecord = StorageRecord.FromDocumentDb(document);
+            // Create a Cosmos DB SQL Document that will be used to create a StorageRecord object
+            // var document = new Document();
+            // document.Id = "foo";
+            // document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            // document.SetPropertyValue("ETag", "*");
+            // var storageRecord = DataRecord.FromCosmosDbSql(document);
+
+            IDataRecord storageRecord = new DataRecord { Id = "foo" };
+            storageRecord.SetData(JsonConvert.SerializeObject(sim)).SetETag("*");
 
             this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
                 .ReturnsAsync(storageRecord);
@@ -764,12 +735,15 @@ namespace Services.Test
                 ETag = eTagValue
             };
 
-            // Create a DocumentDB Document that will be used to create a StorageRecord object
-            var document = new Document();
-            document.Id = "foo";
-            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
-            document.SetPropertyValue("ETag", eTagValue);
-            var storageRecord = StorageRecord.FromDocumentDb(document);
+            // Create a Cosmos DB SQL Document that will be used to create a StorageRecord object
+            // var document = new Document();
+            // document.Id = "foo";
+            // document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            // document.SetPropertyValue("ETag", eTagValue);
+            // var storageRecord = DataRecord.FromCosmosDbSql(document);
+
+            IDataRecord storageRecord = new DataRecord { Id = "foo" };
+            storageRecord.SetData(JsonConvert.SerializeObject(sim)).SetETag(eTagValue);
 
             this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
                 .ReturnsAsync(storageRecord);
@@ -783,8 +757,8 @@ namespace Services.Test
             this.devices.Verify(x => x.DeleteListUsingJobsAsync(It.IsAny<IEnumerable<string>>()), Times.Once);
             this.mockStorageRecords.Verify(
                 x => x.UpsertAsync(
-                    It.Is<StorageRecord>(
-                        sr => JsonConvert.DeserializeObject<SimulationModel>(sr.Data).DevicesDeletionStarted),
+                    It.Is<IDataRecord>(
+                        sr => JsonConvert.DeserializeObject<SimulationModel>(sr.GetData()).DevicesDeletionStarted),
                     It.IsAny<string>()), Times.Once());
         }
 
@@ -804,12 +778,15 @@ namespace Services.Test
                 }
             };
 
-            // Create a DocumentDB Document that will be used to create a StorageRecord object
-            var document = new Document();
-            document.Id = "foo";
-            document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
-            document.SetPropertyValue("ETag", "*");
-            var storageRecord = StorageRecord.FromDocumentDb(document);
+            // Create a Cosmos DB SQL Document that will be used to create a StorageRecord object
+            // var document = new Document();
+            // document.Id = "foo";
+            // document.SetPropertyValue("Data", JsonConvert.SerializeObject(sim));
+            // document.SetPropertyValue("ETag", "*");
+            // var storageRecord = DataRecord.FromCosmosDbSql(document);
+
+            IDataRecord storageRecord = new DataRecord { Id = "foo" };
+            storageRecord.SetData(JsonConvert.SerializeObject(sim)).SetETag("*");
 
             this.mockStorageRecords.Setup(x => x.GetAsync(It.IsAny<string>()))
                 .ReturnsAsync(storageRecord);
@@ -836,7 +813,7 @@ namespace Services.Test
             this.target.TrySeedAsync().CompleteOrTimeout();
 
             // Assert
-            this.mockStorageRecords.Verify(x => x.CreateAsync(It.IsAny<StorageRecord>()), Times.Once);
+            this.mockStorageRecords.Verify(x => x.CreateAsync(It.IsAny<IDataRecord>()), Times.Once);
         }
 
         private void ThereIsATemplateForDefaultSimulations()
@@ -867,11 +844,11 @@ namespace Services.Test
 
         private void ThereAreNoSimulationsInTheStorage()
         {
-            this.mockStorageRecords.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<StorageRecord>());
+            this.mockStorageRecords.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<IDataRecord>());
 
             // In case the test inserts a record, return a valid StorageRecord object
-            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<StorageRecord>()))
-                .ReturnsAsync(new StorageRecord() { Id = SIMULATION_ID, Data = "{}" });
+            this.mockStorageRecords.Setup(x => x.UpsertAsync(It.IsAny<IDataRecord>()))
+                .ReturnsAsync(new DataRecord() { Id = SIMULATION_ID, Data = "{}" });
         }
 
         private void StorageReturnsSimulationRecordOnCreate(SimulationModel simulation = null)
@@ -881,12 +858,12 @@ namespace Services.Test
                 simulation = new SimulationModel { Id = Guid.NewGuid().ToString(), Enabled = false };
             }
 
-            var simulationRecord = new StorageRecord
+            var simulationRecord = new DataRecord
             {
                 Id = simulation.Id,
                 Data = JsonConvert.SerializeObject(simulation),
             };
-            this.mockStorageRecords.Setup(x => x.CreateAsync(It.IsAny<StorageRecord>()))
+            this.mockStorageRecords.Setup(x => x.CreateAsync(It.IsAny<IDataRecord>()))
                 .ReturnsAsync(simulationRecord);
         }
     }

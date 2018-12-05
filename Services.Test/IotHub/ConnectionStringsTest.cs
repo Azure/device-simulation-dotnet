@@ -17,8 +17,8 @@ namespace Services.Test.IotHub
         private readonly Mock<IConnectionStringValidation> connectionStringValidation;
         private readonly Mock<ILogger> mockLogger;
         private readonly Mock<IDiagnosticsLogger> mockDiagnosticsLogger;
-        private readonly Mock<IStorageRecords> mainStorage;
-        private readonly Mock<IFactory> mockFactory;
+        private readonly Mock<IEngine> mainStorage;
+        private readonly Mock<IEngines> enginesFactory;
         private readonly ConnectionStrings target;
 
         public ConnectionStringsTest()
@@ -27,14 +27,14 @@ namespace Services.Test.IotHub
             this.connectionStringValidation = new Mock<IConnectionStringValidation>();
             this.mockLogger = new Mock<ILogger>();
             this.mockDiagnosticsLogger = new Mock<IDiagnosticsLogger>();
-            this.mainStorage = new Mock<IStorageRecords>();
-            this.mockFactory = new Mock<IFactory>();
-            this.mockFactory.Setup(x => x.Resolve<IStorageRecords>()).Returns(this.mainStorage.Object);
+            this.mainStorage = new Mock<IEngine>();
+            this.enginesFactory = new Mock<IEngines>();
+            this.enginesFactory.Setup(x => x.Build(It.IsAny<Config>())).Returns(this.mainStorage.Object);
 
             this.target = new ConnectionStrings(
                 this.config,
                 this.connectionStringValidation.Object,
-                this.mockFactory.Object,
+                this.enginesFactory.Object,
                 this.mockDiagnosticsLogger.Object,
                 this.mockLogger.Object);
         }
@@ -49,7 +49,7 @@ namespace Services.Test.IotHub
 
             // Assert
             Assert.ThrowsAsync<InvalidIotHubConnectionStringFormatException>(
-                    async () => await this.target.SaveAsync(CS))
+                    async () => await this.target.SaveAsync(CS, true))
                 .CompleteOrTimeout();
         }
 
@@ -63,7 +63,7 @@ namespace Services.Test.IotHub
 
             // Assert
             Assert.ThrowsAsync<IotHubConnectionException>(
-                    async () => await this.target.SaveAsync(CS))
+                    async () => await this.target.SaveAsync(CS, true))
                 .CompleteOrTimeout();
         }
 
@@ -79,7 +79,7 @@ namespace Services.Test.IotHub
 
             // Assert
             Assert.ThrowsAsync<IotHubConnectionException>(
-                    async () => await this.target.SaveAsync(CS))
+                    async () => await this.target.SaveAsync(CS, true))
                 .CompleteOrTimeout();
         }
     }

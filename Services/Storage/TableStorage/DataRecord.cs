@@ -35,7 +35,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
 
         private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        // C# strings are UTF16 so each string property takes 64KB which is Azure Table Columns limit
+        // C# strings are encoded in UTF16, so a string property with 32767 chars
+        // requires 64KB, which is the limit for Azure Table columns
         private const int MAX_PROPERTY_LENGTH = 32767;
         private const int MAX_DATA_LENGTH = MAX_PROPERTY_LENGTH * 10;
 
@@ -65,12 +66,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
             return this.ETag;
         }
 
-        public void SetETag(string eTag)
+        public IDataRecord SetETag(string eTag)
         {
             this.ETag = eTag;
+            return this;
         }
 
-        public void SetData(string data)
+        public IDataRecord SetData(string data)
         {
             this.Data01 = string.Empty;
             this.Data02 = string.Empty;
@@ -87,9 +89,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
 
             var len = data.Length;
 
-            if (len == 0) return;
+            if (len == 0) return this;
 
-            if (len > MAX_DATA_LENGTH) throw new ArgumentOutOfRangeException(nameof(data));
+            if (len > MAX_DATA_LENGTH)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(data),
+                    $"The content length ({len} chars) exceeds the " +
+                    $"maximum record size ({MAX_DATA_LENGTH} chars)");
+            }
 
             int count = (int) Math.Ceiling((double) len / MAX_PROPERTY_LENGTH);
             var parts = new string[count + 1];
@@ -111,6 +119,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
             if (count >= 10) this.Data10 = parts[10];
             if (count >= 11) this.Data11 = parts[11];
             if (count >= 12) this.Data12 = parts[12];
+
+            return this;
         }
 
         public string GetData()

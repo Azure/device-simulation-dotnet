@@ -12,10 +12,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
         string GetETag();
 
         // ETag string. The value is not a "Property" to avoid it being saved twice.
-        void SetETag(string eTag);
+        IDataRecord SetETag(string eTag);
 
         // JSON serialized data from the business layer
-        void SetData(string data);
+        IDataRecord SetData(string data);
 
         // JSON serialized data from the business layer
         string GetData();

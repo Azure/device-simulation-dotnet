@@ -87,8 +87,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
         public async Task CreateOrUpdateAsync(string simulationId, SimulationStatisticsModel statistics)
         {
             var nodeId = this.clusterNodes.GetCurrentNodeId();
-            var statisticsRecordId = this.GetStatisticsRecordId(simulationId, nodeId);
-            var statisticsStorageRecord = this.GetStorageRecord(simulationId, statistics);
+            string statisticsRecordId = this.BuildRecordId(simulationId, nodeId);
+            IDataRecord statisticsStorageRecord = this.BuildStorageRecord(simulationId, statistics);
 
             if (await this.simulationStatisticsStorage.ExistsAsync(statisticsRecordId))
             {
@@ -110,14 +110,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
         public async Task UpdateAsync(string simulationId, SimulationStatisticsModel statistics)
         {
             var nodeId = this.clusterNodes.GetCurrentNodeId();
-            var statisticsRecordId = this.GetStatisticsRecordId(simulationId, nodeId);
-            var statisticsStorageRecord = this.GetStorageRecord(simulationId, statistics);
+            var recordId = this.BuildRecordId(simulationId, nodeId);
 
-            this.log.Debug("Updating statistics record", () => new { statisticsStorageRecord });
+            this.log.Debug("Fetch record to have latest ETag and overwrite the existing record", () => new { recordId });
+            IDataRecord existingRecord = await this.simulationStatisticsStorage.GetAsync(recordId);
 
-            // Fetch the latest record to have the right ETag and be able to overwrite the existing record
-            var record = await this.simulationStatisticsStorage.GetAsync(statisticsRecordId);
-            await this.simulationStatisticsStorage.UpsertAsync(statisticsStorageRecord, record.GetETag());
+            this.log.Debug("Updating statistics record", () => new { recordId });
+            IDataRecord newRecord = this.BuildStorageRecord(simulationId, statistics);
+            await this.simulationStatisticsStorage.UpsertAsync(newRecord, existingRecord.GetETag());
         }
 
         /// <summary>
@@ -156,10 +156,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             }
         }
 
-        private IDataRecord GetStorageRecord(string simulationId, SimulationStatisticsModel statistics)
+        private IDataRecord BuildStorageRecord(string simulationId, SimulationStatisticsModel statistics)
         {
             var nodeId = this.clusterNodes.GetCurrentNodeId();
-            var statisticsRecordId = this.GetStatisticsRecordId(simulationId, nodeId);
+            var statisticsRecordId = this.BuildRecordId(simulationId, nodeId);
 
             var statisticsRecord = new SimulationStatisticsRecord
             {
@@ -172,7 +172,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
                 statisticsRecordId, JsonConvert.SerializeObject(statisticsRecord));
         }
 
-        private string GetStatisticsRecordId(string simId, string nodeId)
+        private string BuildRecordId(string simId, string nodeId)
         {
             return $"{simId}__{nodeId}";
         }
