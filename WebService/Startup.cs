@@ -178,6 +178,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
                                     SimulationAgent = this.simulationAgentTask.Status.ToString(),
                                     PartitioningAgent = this.partitioningAgentTask.Status.ToString()
                                 });
+
+                            // Allow few seconds to flush logs
+                            Thread.Sleep(5000);
                             appLifetime.StopApplication();
                         }
                     }

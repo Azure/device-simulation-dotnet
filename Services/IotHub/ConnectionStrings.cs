@@ -200,7 +200,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             {
                 const string MSG = "Unable to read connection string from storage";
                 this.log.Error(MSG, e);
-                this.diagnosticsLogger.LogServiceError(MSG, new { e.Message });
+                this.diagnosticsLogger.LogServiceError(MSG, new { e, e.Message });
                 return null;
             }
         }
