@@ -3,22 +3,95 @@
 using System;
 using System.Threading;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosDbSql;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableStorage;
+using Services.Test.helpers;
 using Xunit;
 
-namespace Services.Test.Storage.CosmosDbSql
+namespace Services.Test.Storage.TableStorage
 {
-    public class CosmosDbSqlRecordTest
+    public class DataRecordTest
     {
         private DataRecord target;
-        private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        public CosmosDbSqlRecordTest()
+        public DataRecordTest()
         {
             this.target = new DataRecord();
         }
 
-        [Fact]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItHasAnId()
+        {
+            // Arrange
+            var value = Guid.NewGuid().ToString();
+
+            // Act
+            this.target = new DataRecord(value);
+
+            // Assert
+            Assert.Equal(value, this.target.GetId());
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItHasAnETag()
+        {
+            // Arrange
+            var value = Guid.NewGuid().ToString();
+
+            // Act
+            this.target = new DataRecord();
+            this.target.SetETag(value);
+
+            // Assert
+            Assert.Equal(value, this.target.ETag);
+            Assert.Equal(value, this.target.GetETag());
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItHasData()
+        {
+            // Arrange
+            var value = Guid.NewGuid().ToString();
+
+            // Act
+            this.target = new DataRecord();
+            this.target.SetData(value);
+
+            // Assert
+            Assert.Equal(value, this.target.GetData());
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItCanContainMoreThan64KbOfData()
+        {
+            // Arrange
+            var value = new string('*', 100000) + Guid.NewGuid();
+
+            // Act
+            this.target = new DataRecord();
+            this.target.SetData(value);
+
+            // Assert
+            Assert.Equal(value, this.target.GetData());
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItCanContainDataUpTo768Kb()
+        {
+            // Arrange
+            const int UTF16_CHARS_IN_64_KB = 1024 * 32 - 1;
+            var value1 = new string('*', UTF16_CHARS_IN_64_KB * 12);
+            var value2 = new string('*', UTF16_CHARS_IN_64_KB * 12 + 1);
+
+            // Act
+            this.target = new DataRecord();
+            this.target.SetData(value1);
+
+            // Assert
+            Assert.Equal(value1, this.target.GetData());
+            Assert.Throws<ArgumentOutOfRangeException>(() => this.target.SetData(value2));
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItIsNotLockedAndNotExpiredByDefault()
         {
             // Act
@@ -32,7 +105,7 @@ namespace Services.Test.Storage.CosmosDbSql
             Assert.False(this.target.IsExpired());
         }
 
-        [Fact]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItCanUnlockForCurrentOwner()
         {
             // Arrange
@@ -66,7 +139,7 @@ namespace Services.Test.Storage.CosmosDbSql
             Assert.True(this.target.CanUnlock("blarg", "bazz"));
         }
 
-        [Fact]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItThrowsIfADifferentUserUnlocks()
         {
             // Arrange
@@ -82,7 +155,7 @@ namespace Services.Test.Storage.CosmosDbSql
                 () => this.target.Unlock("blarg", "bazz"));
         }
 
-        [Fact]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItReturnsTrueForExpiredRecords()
         {
             // Arrange
@@ -93,7 +166,7 @@ namespace Services.Test.Storage.CosmosDbSql
             Assert.True(this.target.IsExpired());
         }
 
-        [Fact]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItCanLockRecords()
         {
             // Arrange
@@ -109,7 +182,7 @@ namespace Services.Test.Storage.CosmosDbSql
             Assert.True(this.target.IsLockedBy(ownerId, ownerType));
         }
 
-        [Fact]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItCanUnlockRecords()
         {
             // Arrange
@@ -120,12 +193,12 @@ namespace Services.Test.Storage.CosmosDbSql
             // Act
             this.target.Lock(ownerId, ownerType, durationSeconds);
             this.target.Unlock(ownerId, ownerType);
-            
+
             // Assert
             Assert.False(this.target.IsLocked());
         }
 
-        [Fact]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItCorrectlyReportsALockByOther()
         {
             // Arrange
@@ -140,7 +213,7 @@ namespace Services.Test.Storage.CosmosDbSql
             Assert.True(this.target.IsLockedByOthers("blarg", "bazz"));
         }
 
-        [Fact]
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItCorrectlyReportsLockedBy()
         {
             // Arrange

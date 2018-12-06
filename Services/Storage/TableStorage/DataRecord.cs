@@ -38,7 +38,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
         // C# strings are encoded in UTF16, so a string property with 32767 chars
         // requires 64KB, which is the limit for Azure Table columns
         private const int MAX_PROPERTY_LENGTH = 32767;
-        private const int MAX_DATA_LENGTH = MAX_PROPERTY_LENGTH * 10;
+        private const int MAX_DATA_LENGTH = MAX_PROPERTY_LENGTH * 12;
 
         // A table entity type must expose a parameter-less constructor
         public DataRecord()
