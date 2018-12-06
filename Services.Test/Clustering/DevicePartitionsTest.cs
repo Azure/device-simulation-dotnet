@@ -102,6 +102,21 @@ namespace Services.Test.Clustering
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItDoesntRequireConnectionStringValidatinoWhenUpdatingASimulation()
+        {
+            // Arrange
+            var simulation = new SimulationModel { Id = SIM_ID };
+            this.simulations.Setup(x => x.GetAsync(SIM_ID)).ReturnsAsync(simulation);
+            this.simulations.Setup(x => x.GetDeviceIdsByModel(simulation)).Returns(new Dictionary<string, List<string>>());
+
+            // Act
+            this.target.CreateAsync(SIM_ID).CompleteOrTimeout();
+
+            // Assert
+            this.simulations.Verify(x => x.UpsertAsync(It.IsAny<SimulationModel>(), false), Times.Once);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void ItDeletesLeftoverPartitionsBeforeCreatingThem()
         {
             // Arrange
