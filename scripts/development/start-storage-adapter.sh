@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING="AccountEndpoint=https://_______.documents.azure.com:443/;AccountKey=_______;"
+# You can uncomment and set your connection string here
+# BECAREFUL not to commit this file into the repository
+
+# PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING="AccountEndpoint=https://_______.documents.azure.com:443/;AccountKey=_______;"
 
 if [ ! -z "$1" ]; then
     PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING="$1"

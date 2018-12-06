@@ -44,6 +44,10 @@ namespace Services.Test.Statistics
             this.simulationStatisticsStorage
                 .Setup(x => x.Init(It.Is<Config>(c => c.CosmosDbSqlCollection == STATISTICS)))
                 .Returns(this.simulationStatisticsStorage.Object);
+            this.simulationStatisticsStorage
+                .Setup(x => x.BuildRecord(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns((string id, string json) => new DataRecord { Id = id, Data = json });
+
             this.enginesFactory.Setup(x => x.Build(It.IsAny<Config>()))
                 .Returns(this.simulationStatisticsStorage.Object);
 
@@ -188,7 +192,7 @@ namespace Services.Test.Statistics
             };
 
             this.clusterNodes.Setup(x => x.GetCurrentNodeId()).Returns(NODE_IDS[0]);
-            this.simulationStatisticsStorage.Setup(x => x.BuildRecord(statisticsRecordId, It.IsAny<string>())).Returns(storageRecord);
+
             this.simulationStatisticsStorage.Setup(x => x.ExistsAsync(NODE_IDS[0])).ReturnsAsync(false);
 
             // Act
@@ -231,7 +235,6 @@ namespace Services.Test.Statistics
             this.clusterNodes.Setup(x => x.GetCurrentNodeId()).Returns(NODE_IDS[0]);
             this.simulationStatisticsStorage.Setup(x => x.ExistsAsync(statisticsRecordId)).ReturnsAsync(true);
             this.simulationStatisticsStorage.Setup(x => x.GetAsync(statisticsRecordId)).ReturnsAsync(storageRecord);
-            this.simulationStatisticsStorage.Setup(x => x.BuildRecord(statisticsRecordId, It.IsAny<string>())).Returns(storageRecord);
 
             // Act
             this.target.CreateOrUpdateAsync(SIM_ID, inputStatistics).CompleteOrTimeout();
@@ -275,7 +278,6 @@ namespace Services.Test.Statistics
 
             this.clusterNodes.Setup(x => x.GetCurrentNodeId()).Returns(NODE_IDS[0]);
             this.simulationStatisticsStorage.Setup(x => x.GetAsync(statisticsRecordId)).ReturnsAsync(newRecord);
-            this.simulationStatisticsStorage.Setup(x => x.BuildRecord(statisticsRecordId, It.IsAny<string>())).Returns(newRecord);
 
             // Act
             var result = this.target.UpdateAsync(SIM_ID, inputStatistics).CompleteOrTimeout();
