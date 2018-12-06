@@ -19,6 +19,7 @@ namespace Services.Test.Clustering
         private const string MAIN = "main";
 
         private readonly ClusterNodes target;
+
         private readonly Mock<ILogger> log;
         private readonly Mock<IServicesConfig> config;
         private readonly Mock<IClusteringConfig> clusteringConfig;
@@ -32,8 +33,16 @@ namespace Services.Test.Clustering
             this.config = new Mock<IServicesConfig>();
             this.clusteringConfig = new Mock<IClusteringConfig>();
             this.enginesFactory = new Mock<IEngines>();
+
             this.clusterNodesStorage = new Mock<IEngine>();
+            this.clusterNodesStorage.Setup(x => x.BuildRecord(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns((string id, string json) => new DataRecord { Id = id, Data = json });
+            this.clusterNodesStorage.Setup(x => x.BuildRecord(It.IsAny<string>()))
+                .Returns((string id) => new DataRecord { Id = id });
+
             this.mainStorage = new Mock<IEngine>();
+            this.mainStorage.Setup(x => x.BuildRecord(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns((string id, string json) => new DataRecord { Id = id, Data = json });
 
             this.clusteringConfig.SetupGet(x => x.NodeRecordMaxAgeSecs).Returns(12045);
 
@@ -210,16 +219,13 @@ namespace Services.Test.Clustering
                 .Returns(new Config { CosmosDbSqlCollection = MAIN });
 
             // Intercept the call to .InitAsync() and return the right mock depending on the collection name
-            var storageMockFactory = new Mock<IEngine>();
-            storageMockFactory
-                .Setup(x => x.Init(It.Is<Config>(c => c.CosmosDbSqlCollection == MAIN)))
-                .Returns(this.mainStorage.Object);
-            storageMockFactory
-                .Setup(x => x.Init(It.Is<Config>(c => c.CosmosDbSqlCollection == NODES)))
-                .Returns(this.clusterNodesStorage.Object);
 
-            // When IStorageRecords is instantiated, return the factory above
-            this.enginesFactory.Setup(x => x.Build(It.IsAny<Config>())).Returns(storageMockFactory.Object);
+            this.enginesFactory
+                .Setup(x => x.Build(It.Is<Config>(c => c.CosmosDbSqlCollection == MAIN)))
+                .Returns(this.mainStorage.Object);
+            this.enginesFactory
+                .Setup(x => x.Build(It.Is<Config>(c => c.CosmosDbSqlCollection == NODES)))
+                .Returns(this.clusterNodesStorage.Object);
         }
     }
 }

@@ -39,7 +39,6 @@ namespace Services.Test.Clustering
             this.simulations = new Mock<ISimulations>();
             this.enginesFactory = new Mock<IEngines>();
             this.log = new Mock<ILogger>();
-            this.partitionsStorage = new Mock<IEngine>();
             this.clusterNodes = new Mock<IClusterNodes>();
 
             // Inject configuration settings with a collection name which is then used
@@ -48,13 +47,15 @@ namespace Services.Test.Clustering
                 .Returns(new Config { CosmosDbSqlCollection = PARTITIONS });
 
             // Intercept the call to IStorageRecords.InitAsync() and return the right storage mock
-            var storageMockFactory = new Mock<IEngine>();
-            storageMockFactory
+            this.partitionsStorage = new Mock<IEngine>();
+            this.partitionsStorage
                 .Setup(x => x.Init(It.Is<Config>(c => c.CosmosDbSqlCollection == PARTITIONS)))
                 .Returns(this.partitionsStorage.Object);
+            this.partitionsStorage.Setup(x => x.BuildRecord(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns((string id, string json) => new DataRecord { Id = id, Data = json });
 
             // When IStorageRecords is instantiated, return the factory above
-            this.enginesFactory.Setup(x => x.Build(It.IsAny<Config>())).Returns(storageMockFactory.Object);
+            this.enginesFactory.Setup(x => x.Build(It.IsAny<Config>())).Returns(this.partitionsStorage.Object);
 
             this.target = this.GetTargetInstance(1000);
         }

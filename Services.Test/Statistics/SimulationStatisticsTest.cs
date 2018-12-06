@@ -44,7 +44,8 @@ namespace Services.Test.Statistics
             this.simulationStatisticsStorage
                 .Setup(x => x.Init(It.Is<Config>(c => c.CosmosDbSqlCollection == STATISTICS)))
                 .Returns(this.simulationStatisticsStorage.Object);
-            this.enginesFactory.Setup(x => x.Build(It.IsAny<Config>())).Returns(this.simulationStatisticsStorage.Object);
+            this.enginesFactory.Setup(x => x.Build(It.IsAny<Config>()))
+                .Returns(this.simulationStatisticsStorage.Object);
 
             this.target = new SimulationStatistics(
                 this.config.Object,

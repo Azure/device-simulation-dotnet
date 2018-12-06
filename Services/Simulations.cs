@@ -662,8 +662,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 simulation.PartitioningComplete = false;
             }
 
-            var record = this.simulationsStorage.BuildRecord(simulation.Id, JsonConvert.SerializeObject(simulation));
-            var result = await this.simulationsStorage.UpsertAsync(record, eTag);
+            IDataRecord record = this.simulationsStorage.BuildRecord(simulation.Id, JsonConvert.SerializeObject(simulation));
+            IDataRecord result = await this.simulationsStorage.UpsertAsync(record, eTag);
 
             // Use the new ETag provided by the storage
             simulation.ETag = result.GetETag();
