@@ -259,6 +259,29 @@ namespace Services.Test
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItTestsConnectionStringsWhenCreatingASimulation()
+        {
+            // Arrange
+            this.ThereAreSomeDeviceModels();
+            this.ThereAreNoSimulationsInTheStorage();
+
+            // Act
+            var simulation = new SimulationModel
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = "Test",
+                IotHubConnectionStrings = new List<string> { "c1", "c2" }
+            };
+            this.StorageReturnsSimulationRecordOnCreate(simulation);
+            SimulationModel result = this.target.InsertAsync(simulation)
+                .CompleteOrTimeout().Result;
+
+            // Assert
+            this.connectionStrings.Verify(x => x.SaveAsync("c1", true), Times.Once);
+            this.connectionStrings.Verify(x => x.SaveAsync("c2", true), Times.Once);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
         public void UpsertFailsWhenETagsDoNotMatch()
         {
             // Arrange
@@ -299,7 +322,7 @@ namespace Services.Test
             const string ETAG2 = "ETag 002";
 
             // Record in storage
-            var existingSimulation = new SimulationModel{Id = SIMULATION_ID};
+            var existingSimulation = new SimulationModel { Id = SIMULATION_ID };
             var existingRecord = new DataRecord
             {
                 Id = SIMULATION_ID,

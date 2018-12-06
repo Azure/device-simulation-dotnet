@@ -13,7 +13,7 @@ namespace Services.Test.IotHub
 {
     public class ConnectionStringsTest
     {
-        private readonly IServicesConfig config;
+        private readonly ServicesConfig config;
         private readonly Mock<IConnectionStringValidation> connectionStringValidation;
         private readonly Mock<ILogger> mockLogger;
         private readonly Mock<IDiagnosticsLogger> mockDiagnosticsLogger;
@@ -65,6 +65,47 @@ namespace Services.Test.IotHub
             Assert.ThrowsAsync<IotHubConnectionException>(
                     async () => await this.target.SaveAsync(CS, true))
                 .CompleteOrTimeout();
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItTestsTheConnectionStringOnlyIfRequested()
+        {
+            // Arrange
+            const string CS1 = "1111";
+            this.connectionStringValidation.Setup(x => x.IsEmptyOrDefault(CS1)).Returns(false);
+
+            // Act
+            this.connectionStringValidation.Invocations.Clear();
+            this.target.SaveAsync(CS1, false).CompleteOrTimeout();
+
+            // Assert
+            this.connectionStringValidation.Verify(x => x.TestAsync(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+
+            // Act
+            this.connectionStringValidation.Invocations.Clear();
+            this.target.SaveAsync(CS1, true).CompleteOrTimeout();
+
+            // Assert
+            this.connectionStringValidation.Verify(x => x.TestAsync(It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
+
+            // Arrange
+            const string CS2 = "2222";
+            this.config.IoTHubConnString = CS2;
+            this.connectionStringValidation.Setup(x => x.IsEmptyOrDefault(CS2)).Returns(true);
+
+            // Act
+            this.connectionStringValidation.Invocations.Clear();
+            this.target.SaveAsync(CS2, false).CompleteOrTimeout();
+
+            // Assert
+            this.connectionStringValidation.Verify(x => x.TestAsync(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+
+            // Act
+            this.connectionStringValidation.Invocations.Clear();
+            this.target.SaveAsync(CS2, true).CompleteOrTimeout();
+
+            // Assert
+            this.connectionStringValidation.Verify(x => x.TestAsync(It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
