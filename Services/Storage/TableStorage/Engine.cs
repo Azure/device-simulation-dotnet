@@ -8,6 +8,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableStorage
@@ -93,7 +94,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
                 this.log.Debug("Fetching all records", () => new { this.storageName });
                 string query = TableQuery.GenerateFilterCondition(
                     SDKWrapper.PK_FIELD, QueryComparisons.Equal, DataRecord.FIXED_PKEY);
-                var partitionScanQuery = new TableQuery<DataRecord>().Where(query);
+                TableQuery<DataRecord> partitionScanQuery = new TableQuery<DataRecord>().Where(query);
 
                 // Page through the results
                 TableContinuationToken token = null;
@@ -102,10 +103,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
                     this.log.Debug("Fetching next page of records", () => new { this.storageName, token });
                     var segment = await this.tableStorage.ExecuteQuerySegmentedAsync(
                         this.tableStorageTable, partitionScanQuery, token);
-                    token = segment.ContinuationToken;
+                    token = segment.continuationToken;
 
                     // Delete expired records
-                    foreach (DataRecord record in segment)
+                    foreach (DataRecord record in segment.records)
                     {
                         if (record.IsExpired())
                         {
@@ -183,7 +184,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
             {
                 throw;
             }
-            catch (Microsoft.WindowsAzure.Storage.StorageException e)
+            catch (StorageException e)
             {
                 this.log.Error("Table storage error",
                     () => new
@@ -222,7 +223,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
                     throw new ExternalDependencyException("Table storage request failed");
                 }
             }
-            catch (Microsoft.WindowsAzure.Storage.StorageException e)
+            catch (StorageException e)
                 when (e.RequestInformation.HttpStatusCode == (int) HttpStatusCode.NotFound)
             {
                 this.log.Debug("The resource requested doesn't exist, nothing to do.", () => new { this.storageName, id });
@@ -412,7 +413,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
                 response = await this.tableStorage.RetrieveAsync(this.tableStorageTable, id);
                 this.log.Debug("Storage request completed", () => new { this.storageName, id, response.HttpStatusCode });
             }
-            catch (Microsoft.WindowsAzure.Storage.StorageException e)
+            catch (StorageException e)
                 when (e.RequestInformation.HttpStatusCode == (int) HttpStatusCode.NotFound)
             {
                 this.log.Debug("Record not found", () => new { this.storageName, id });
@@ -423,6 +424,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
             {
                 this.log.Error("Unexpected error while reading from Table Storage", () => new { this.storageName, id, e });
                 throw new ExternalDependencyException("Unexpected error", e);
+            }
+
+            if (response == null)
+            {
+                if (throwIfNotFound) throw new ResourceNotFoundException($"The resource {id} doesn't exist.");
+                return (false, null);
             }
 
             if (response.HttpStatusCode == (int) HttpStatusCode.NotFound)
@@ -469,7 +476,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
                     this.log.Warn("Unable to delete the record due to an unexpected error.", () => new { this.storageName, id, response });
                 }
             }
-            catch (Microsoft.WindowsAzure.Storage.StorageException e)
+            catch (StorageException e)
                 when (e.RequestInformation.HttpStatusCode == (int) HttpStatusCode.NotFound)
             {
                 // Not an error, deletions are idempotent

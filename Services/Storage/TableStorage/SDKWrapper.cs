@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.WindowsAzure.Storage;
@@ -15,10 +16,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
         Task<TableResult> RetrieveAsync(CloudTable table, string id);
         Task<TableResult> ExecuteAsync(CloudTable table, TableOperation operation);
 
-        Task<TableQuerySegment<DataRecord>> ExecuteQuerySegmentedAsync(
-            CloudTable table,
-            TableQuery<DataRecord> query,
-            TableContinuationToken token);
+        Task<(IList<DataRecord> records, TableContinuationToken continuationToken)>
+            ExecuteQuerySegmentedAsync(
+                CloudTable table,
+                TableQuery<DataRecord> query,
+                TableContinuationToken token);
     }
 
     public class SDKWrapper : ISDKWrapper
@@ -56,12 +58,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
             return await table.ExecuteAsync(operation);
         }
 
-        public async Task<TableQuerySegment<DataRecord>> ExecuteQuerySegmentedAsync(
-            CloudTable table,
-            TableQuery<DataRecord> query,
-            TableContinuationToken token)
+        public async Task<(IList<DataRecord> records, TableContinuationToken continuationToken)>
+            ExecuteQuerySegmentedAsync(
+                CloudTable table,
+                TableQuery<DataRecord> query,
+                TableContinuationToken token)
         {
-            return await table.ExecuteQuerySegmentedAsync(query, token);
+            TableQuerySegment<DataRecord> result = await table.ExecuteQuerySegmentedAsync(query, token);
+            return (result.Results, result.ContinuationToken);
         }
 
         private CloudStorageAccount GetStorageAccount(string storageConnectionString)
