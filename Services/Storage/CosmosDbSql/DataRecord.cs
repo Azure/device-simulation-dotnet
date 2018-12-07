@@ -18,9 +18,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
         public string LockOwnerType { get; set; }
         public long LockExpirationUtcMsecs { get; set; }
 
-        private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        // "_etag" is the internal property used by the SDK
+        private const string SDK_ETAG_FIELD = "_etag";
 
-        private string internalETag;
+        private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         public DataRecord()
         {
@@ -40,12 +41,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
 
         public string GetETag()
         {
-            return this.internalETag;
+            return this.ETag;
         }
 
         public IDataRecord SetETag(string eTag)
         {
-            this.internalETag = eTag;
+            this.SetPropertyValue(SDK_ETAG_FIELD, eTag);
             return this;
         }
 

@@ -93,8 +93,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             try
             {
                 this.log.Debug("Fetching all records", () => new { this.storageName });
-                List<DataRecord> storageRecords = this.cosmosDbSql
-                    .CreateQuery<DataRecord>(this.cosmosDbSqlClient, this.storageConfig).ToList();
+                IList<DataRecord> storageRecords = this.cosmosDbSql
+                    .CreateQuery<DataRecord>(this.cosmosDbSqlClient, this.storageConfig);
 
                 // Delete expired records
                 foreach (var record in storageRecords)

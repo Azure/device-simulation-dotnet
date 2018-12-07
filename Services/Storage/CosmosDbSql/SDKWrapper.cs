@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -42,7 +43,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             Config cfg,
             string docId);
 
-        IOrderedQueryable<T> CreateQuery<T>(
+        IList<T> CreateQuery<T>(
             IDocumentClient client,
             Config cfg);
     }
@@ -102,10 +103,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             await client.DeleteDocumentAsync($"{collectionLink}/docs/{docId}");
         }
 
-        public IOrderedQueryable<T> CreateQuery<T>(IDocumentClient client, Config cfg)
+        public IList<T> CreateQuery<T>(IDocumentClient client, Config cfg)
         {
             var collectionLink = $"/dbs/{cfg.CosmosDbSqlDatabase}/colls/{cfg.CosmosDbSqlCollection}";
-            return client.CreateDocumentQuery<T>(collectionLink);
+            return client.CreateDocumentQuery<T>(collectionLink).ToList();
         }
 
         public async Task<IDocumentClient> GetClientAsync(Config cfg)
