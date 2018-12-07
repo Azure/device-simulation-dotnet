@@ -101,8 +101,8 @@ namespace Services.Test.Storage.CosmosDbSql
             // Arrange
             const string ID_NEW = "new";
             const string ID_OLD = "old";
-            var response1 = BuildResponseWithDocument(id: ID_NEW, expired: false);
-            var response2 = BuildResponseWithDocument(id: ID_OLD, expired: true);
+            IResourceResponse<Document> response1 = BuildResponseWithDocument(id: ID_NEW, expired: false);
+            IResourceResponse<Document> response2 = BuildResponseWithDocument(id: ID_OLD, expired: true);
             this.cosmosDbSql.Setup(x => x.ReadAsync(It.IsAny<IDocumentClient>(), this.storageConfig, ID_NEW))
                 .ReturnsAsync(response1);
             this.cosmosDbSql.Setup(x => x.ReadAsync(It.IsAny<IDocumentClient>(), this.storageConfig, ID_OLD))
@@ -124,8 +124,8 @@ namespace Services.Test.Storage.CosmosDbSql
             // Arrange
             const string ID_NEW = "new";
             const string ID_OLD = "old";
-            var response1 = BuildResponseWithDocument(id: ID_NEW, expired: false);
-            var response2 = BuildResponseWithDocument(id: ID_OLD, expired: true);
+            IResourceResponse<Document> response1 = BuildResponseWithDocument(id: ID_NEW, expired: false);
+            IResourceResponse<Document> response2 = BuildResponseWithDocument(id: ID_OLD, expired: true);
             this.cosmosDbSql.Setup(x => x.ReadAsync(It.IsAny<IDocumentClient>(), this.storageConfig, ID_NEW))
                 .ReturnsAsync(response1);
             this.cosmosDbSql.Setup(x => x.ReadAsync(It.IsAny<IDocumentClient>(), this.storageConfig, ID_OLD))
@@ -181,8 +181,8 @@ namespace Services.Test.Storage.CosmosDbSql
             const string ID_NEW = "new";
             const string ID_OLD = "old";
             const string ID_MISSING = "xyz";
-            var response1 = BuildResponseWithDocument(id: ID_NEW, expired: false);
-            var response2 = BuildResponseWithDocument(id: ID_OLD, expired: true);
+            IResourceResponse<Document> response1 = BuildResponseWithDocument(id: ID_NEW, expired: false);
+            IResourceResponse<Document> response2 = BuildResponseWithDocument(id: ID_OLD, expired: true);
             this.cosmosDbSql.Setup(x => x.ReadAsync(It.IsAny<IDocumentClient>(), this.storageConfig, ID_NEW))
                 .ReturnsAsync(response1);
             this.cosmosDbSql.Setup(x => x.ReadAsync(It.IsAny<IDocumentClient>(), this.storageConfig, ID_OLD))
@@ -215,7 +215,7 @@ namespace Services.Test.Storage.CosmosDbSql
                 .Returns(data);
 
             // Act
-            var result = this.target.GetAllAsync().CompleteOrTimeout().Result;
+            IEnumerable<IDataRecord> result = this.target.GetAllAsync().CompleteOrTimeout().Result;
 
             // Assert
             Assert.Equal(2, result.Count());
@@ -342,7 +342,7 @@ namespace Services.Test.Storage.CosmosDbSql
             var ownerType = "bar";
             var lockDurationSeconds = 5;
 
-            var record = BuildResponseWithDocument(
+            IResourceResponse<Document> record = BuildResponseWithDocument(
                 id: id,
                 lockOwnerId: ownerId,
                 lockOwnerType: ownerType,
@@ -352,7 +352,7 @@ namespace Services.Test.Storage.CosmosDbSql
                 .ReturnsAsync(record);
 
             // Act
-            var result = this.target.TryToLockAsync(id, ownerId, ownerType, lockDurationSeconds)
+            bool result = this.target.TryToLockAsync(id, ownerId, ownerType, lockDurationSeconds)
                 .CompleteOrTimeout().Result;
 
             // Assert
@@ -366,7 +366,7 @@ namespace Services.Test.Storage.CosmosDbSql
             var id = Guid.NewGuid().ToString();
             var ownerId = Guid.NewGuid().ToString();
             var ownerType = Guid.NewGuid().ToString();
-            var record = BuildResponseWithDocument(
+            IResourceResponse<Document> record = BuildResponseWithDocument(
                 id: id,
                 lockOwnerId: ownerId,
                 lockOwnerType: ownerType,
@@ -394,7 +394,7 @@ namespace Services.Test.Storage.CosmosDbSql
             var id = Guid.NewGuid().ToString();
             var ownerId = Guid.NewGuid().ToString();
             var ownerType = Guid.NewGuid().ToString();
-            var record = BuildResponseWithDocument(
+            IResourceResponse<Document> record = BuildResponseWithDocument(
                 id: id,
                 lockOwnerId: ownerId,
                 lockOwnerType: ownerType,
@@ -404,10 +404,52 @@ namespace Services.Test.Storage.CosmosDbSql
                 .ReturnsAsync(record);
 
             // Act
-            var result = this.target.TryToUnlockAsync(id, "wrongOwner", ownerType).CompleteOrTimeout().Result;
+            bool result = this.target.TryToUnlockAsync(id, "wrongOwner", ownerType).CompleteOrTimeout().Result;
 
             // Assert
             Assert.False(result);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItConvertsTheLockedState()
+        {
+            // Arrange
+            var id1 = Guid.NewGuid().ToString();
+            var id2 = Guid.NewGuid().ToString();
+            var ownerId = "foo";
+            var ownerType = "bar";
+
+            var unlockedDoc = new Document { Id = id1 };
+            unlockedDoc.SetPropertyValue("Data", "");
+            unlockedDoc.SetPropertyValue("ExpirationUtcMsecs", Now + testOffsetMs);
+            unlockedDoc.SetPropertyValue("LockOwnerId", ownerId);
+            unlockedDoc.SetPropertyValue("LockOwnerType", ownerType);
+            unlockedDoc.SetPropertyValue("LockExpirationUtcMsecs", Now - testOffsetMs);
+
+            var lockedDoc = new Document { Id = id2 };
+            lockedDoc.SetPropertyValue("Data", "");
+            lockedDoc.SetPropertyValue("ExpirationUtcMsecs", Now + testOffsetMs);
+            lockedDoc.SetPropertyValue("LockOwnerId", ownerId);
+            lockedDoc.SetPropertyValue("LockOwnerType", ownerType);
+            lockedDoc.SetPropertyValue("LockExpirationUtcMsecs", Now + testOffsetMs);
+
+            this.cosmosDbSql.Setup(x => x.ReadAsync(this.cosmosDbSqlClient.Object, this.storageConfig, id1))
+                .ReturnsAsync(new ResourceResponse<Document>(unlockedDoc));
+
+            this.cosmosDbSql.Setup(x => x.ReadAsync(this.cosmosDbSqlClient.Object, this.storageConfig, id2))
+                .ReturnsAsync(new ResourceResponse<Document>(lockedDoc));
+
+            // Act
+            IDataRecord unlockedResult = this.target.GetAsync(id1).CompleteOrTimeout().Result;
+            IDataRecord lockedResult = this.target.GetAsync(id2).CompleteOrTimeout().Result;
+
+            // Assert
+            Assert.Equal(id1, unlockedResult.GetId());
+            Assert.Equal(id2, lockedResult.GetId());
+            Assert.False(unlockedResult.IsExpired());
+            Assert.False(lockedResult.IsExpired());
+            Assert.True(lockedResult.IsLocked());
+            Assert.False(unlockedResult.IsLocked());
         }
 
         // Helper to build responses returned by the SDK
