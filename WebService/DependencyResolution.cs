@@ -12,7 +12,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.DocumentDb;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
@@ -21,7 +20,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTeleme
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Agent = Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Agent;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 {
@@ -132,7 +130,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             // a new connection every time.
             // Removing these can lead to thousands/millions of new object
             // instantiations overloading the garbage collector.
-            builder.RegisterType<Agent>().As<ISimulationAgent>().SingleInstance();
+            builder.RegisterType<SimulationAgent.Agent>().As<ISimulationAgent>().SingleInstance();
             builder.RegisterType<Simulations>().As<ISimulations>().SingleInstance();
             builder.RegisterType<DeviceModels>().As<IDeviceModels>().SingleInstance();
             builder.RegisterType<DeviceModelScripts>().As<IDeviceModelScripts>().SingleInstance();
@@ -141,7 +139,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterType<InternalInterpreter>().As<IInternalInterpreter>().SingleInstance();
             builder.RegisterType<Factory>().As<IFactory>().SingleInstance();
             builder.RegisterType<ConnectionStringValidation>().As<IConnectionStringValidation>().SingleInstance();
-            builder.RegisterType<DocumentDbWrapper>().As<IDocumentDbWrapper>().SingleInstance();
+            builder.RegisterType<Services.Storage.CosmosDbSql.SDKWrapper>().As<Services.Storage.CosmosDbSql.ISDKWrapper>().SingleInstance();
+            builder.RegisterType<Services.Storage.TableStorage.SDKWrapper>().As<Services.Storage.TableStorage.ISDKWrapper>().SingleInstance();
 
             // When extra diagnostics are disabled, use a singleton shim to save memory
             // TODO: consider using DEBUG symbol
@@ -176,6 +175,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             builder.RegisterType<UpdateReportedProperties>().As<UpdateReportedProperties>();
             builder.RegisterType<Deregister>().As<Deregister>();
             builder.RegisterType<Disconnect>().As<Disconnect>();
+            builder.RegisterType<Services.Storage.CosmosDbSql.Engine>().As<Services.Storage.CosmosDbSql.Engine>();
+            builder.RegisterType<Services.Storage.TableStorage.Engine>().As<Services.Storage.TableStorage.Engine>();
         }
 
         private static void RegisterFactory(IContainer container)

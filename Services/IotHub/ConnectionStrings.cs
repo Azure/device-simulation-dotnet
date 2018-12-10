@@ -14,7 +14,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
     public interface IConnectionStrings
     {
         Task<string> GetAsync();
-        Task<string> SaveAsync(string connectionString);
+        Task<string> SaveAsync(string connectionString, bool validateHubCredentials);
     }
 
     public class ConnectionStrings : IConnectionStrings
@@ -25,18 +25,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         private readonly IConnectionStringValidation connectionStringValidation;
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
-        private readonly IStorageRecords mainStorage;
+        private readonly IEngine mainStorage;
 
         public ConnectionStrings(
             IServicesConfig config,
             IConnectionStringValidation connectionStringValidation,
-            IFactory factory,
+            IEngines engines,
             IDiagnosticsLogger diagnosticsLogger,
             ILogger logger)
         {
             this.config = config;
             this.connectionStringValidation = connectionStringValidation;
-            this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
+            this.mainStorage = engines.Build(config.MainStorage);
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
         }
@@ -73,19 +73,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         /// TODO: use KeyVault https://github.com/Azure/device-simulation-dotnet/issues/129
         /// </summary>
         /// <returns>Redacted connection string (i.e. without SharedAccessKey)</returns>
-        public async Task<string> SaveAsync(string connectionString)
+        public async Task<string> SaveAsync(string connectionString, bool validateHubCredentials)
         {
             // Check if configuration setting should be used
             if (this.connectionStringValidation.IsEmptyOrDefault(connectionString))
             {
-                await this.connectionStringValidation.TestAsync(this.config.IoTHubConnString, false);
+                if (validateHubCredentials)
+                {
+                    await this.connectionStringValidation.TestAsync(this.config.IoTHubConnString, false);
+                }
+
                 await this.RemoveCustomConnStringFromStorageAsync();
                 return ServicesConfig.USE_DEFAULT_IOTHUB;
             }
             else
             {
-                // Check that connection string is valid and the IotHub exists
-                await this.connectionStringValidation.TestAsync(connectionString, true);
+                if (validateHubCredentials)
+                {
+                    // Check that connection string is valid and the IotHub exists
+                    await this.connectionStringValidation.TestAsync(connectionString, true);
+                }
             }
 
             // If the secret key is missing, the string has been redacted,
@@ -158,11 +165,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
 
             try
             {
-                await this.mainStorage.UpsertAsync(new StorageRecord
-                {
-                    Id = RECORD_ID,
-                    Data = connectionString
-                });
+                var record = this.mainStorage.BuildRecord(RECORD_ID, connectionString);
+                await this.mainStorage.UpsertAsync(record);
             }
             catch (Exception e)
             {
@@ -185,7 +189,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             try
             {
                 var record = await this.mainStorage.GetAsync(RECORD_ID);
-                return record.Data;
+                return record.GetData();
             }
             catch (ResourceNotFoundException)
             {
@@ -196,7 +200,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             {
                 const string MSG = "Unable to read connection string from storage";
                 this.log.Error(MSG, e);
-                this.diagnosticsLogger.LogServiceError(MSG, new { e.Message });
+                this.diagnosticsLogger.LogServiceError(MSG, new { e, e.Message });
                 return null;
             }
         }

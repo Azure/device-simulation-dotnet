@@ -9,7 +9,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
     /// In order to recover, the service owner should fix the configuration
     /// and re-deploy the service.
     /// </summary>
-    public class InvalidConfigurationException : Exception
+    public class InvalidConfigurationException : CustomException
     {
         public InvalidConfigurationException() : base()
         {

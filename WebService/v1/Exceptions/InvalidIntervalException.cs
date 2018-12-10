@@ -1,10 +1,11 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions
 {
-    public class InvalidIntervalException : Exception
+    public class InvalidIntervalException : CustomException
     {
         /// <summary>
         /// This exception is thrown by a controller when an interval input validation

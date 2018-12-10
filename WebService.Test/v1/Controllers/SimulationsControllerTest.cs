@@ -209,7 +209,7 @@ namespace WebService.Test.v1.Controllers
             var simulation = this.GetSimulationById(DEFAULT_SIMULATION_ID);
 
             this.simulationsService
-                .Setup(x => x.UpsertAsync(It.IsAny<Simulation>()))
+                .Setup(x => x.UpsertAsync(It.IsAny<Simulation>(), true))
                 .ReturnsAsync(simulation);
 
             // Act
@@ -224,6 +224,10 @@ namespace WebService.Test.v1.Controllers
 
             // Assert
             Assert.Equal(DEFAULT_SIMULATION_ID, result.Id);
+
+            // Assert - The simulation is created validating the connection string
+            this.simulationsService.Verify(
+                x=>x.UpsertAsync(It.IsAny<Simulation>(), true), Times.Once);
         }
 
         private Simulation GetSimulationById(string id)
@@ -237,10 +241,7 @@ namespace WebService.Test.v1.Controllers
                 },
                 StartTime = DateTimeOffset.UtcNow,
                 EndTime = DateTimeOffset.UtcNow.AddHours(2),
-                IotHubConnectionStrings = new List<string>
-                {
-                    ""
-                }
+                IotHubConnectionStrings = new List<string> { "" }
             };
         }
 
