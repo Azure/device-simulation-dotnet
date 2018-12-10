@@ -42,6 +42,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public string Version { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        public string ReplayFile { get; set; }
         public DeviceModelType Type { get; set; }
         public IoTHubProtocol Protocol { get; set; }
 
@@ -59,10 +60,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.Version = "0.0.0";
             this.Name = string.Empty;
             this.Description = string.Empty;
+            this.ReplayFile = string.Empty;
             this.Type = DeviceModelType.Custom;
             this.Protocol = IoTHubProtocol.AMQP;
             this.Simulation = new StateSimulation();
             this.Properties = new Dictionary<string, object>();
+
             this.Telemetry = new List<DeviceModelMessage>();
             this.CloudToDeviceMethods = new Dictionary<string, Script>();
         }
