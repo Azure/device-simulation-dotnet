@@ -13,7 +13,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
     /// * the request timed out, or
     /// * the status code is one of 404, 408, 429
     /// </summary>
-    public class ExternalDependencyException : Exception
+    public class ExternalDependencyException : CustomException
     {
         public ExternalDependencyException() : base()
         {

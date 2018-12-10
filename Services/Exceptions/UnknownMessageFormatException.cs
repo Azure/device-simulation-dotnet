@@ -8,7 +8,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
     /// This exception is thrown when a client is requesting a message format that
     /// doesn't exist yet.
     /// </summary>
-    public class UnknownMessageFormatException : Exception
+    public class UnknownMessageFormatException : CustomException
     {
         public UnknownMessageFormatException() : base()
         {

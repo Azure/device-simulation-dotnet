@@ -7,7 +7,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
     /// <summary>
     /// This exception is thrown when a device fails to send a messages due to a timeout, typically due to throttling.
     /// </summary>
-    public class TelemetrySendTimeoutException : Exception
+    public class TelemetrySendTimeoutException : CustomException
     {
         public TelemetrySendTimeoutException(string message) : base(message)
         {

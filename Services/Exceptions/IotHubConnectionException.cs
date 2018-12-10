@@ -8,7 +8,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
     /// This exception is thrown when a connection to the IoTHub with the
     /// provided connection string fails.
     /// </summary>
-    public class IotHubConnectionException : Exception
+    public class IotHubConnectionException : CustomException
     {
         public IotHubConnectionException() : base()
         {

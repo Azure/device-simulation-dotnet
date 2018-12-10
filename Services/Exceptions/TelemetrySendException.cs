@@ -7,7 +7,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
     /// <summary>
     /// This exception is thrown when a device failed sending messages to IoTHub.
     /// </summary>
-    public class TelemetrySendException : Exception
+    public class TelemetrySendException : CustomException
     {
         public TelemetrySendException(string message) : base(message)
         {

@@ -4,7 +4,7 @@ using System;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
 {
-    public class ResourceIsLockedByAnotherOwnerException : Exception
+    public class ResourceIsLockedByAnotherOwnerException : CustomException
     {
         public ResourceIsLockedByAnotherOwnerException() : base()
         {

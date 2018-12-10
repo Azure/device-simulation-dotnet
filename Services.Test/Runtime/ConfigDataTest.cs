@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
@@ -278,6 +279,30 @@ namespace Services.Test.Runtime
             // Assert
             Assert.True(result1);
             Assert.False(result2);
+        }
+
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ReturnsAnEnum()
+        {
+            // Arrange
+            this.CfgContains("k1", "OK");
+            this.CfgContains("k2", "ok");
+            this.CfgContains("k3", "NOTFOUND");
+            this.CfgContains("k4", "NotFound");
+
+            // Act
+            var v1 = this.target.GetEnum("k1", HttpStatusCode.Unused);
+            var v2 = this.target.GetEnum("k2", HttpStatusCode.Unused);
+            var v3 = this.target.GetEnum("k3", HttpStatusCode.Unused);
+            var v4 = this.target.GetEnum("k4", HttpStatusCode.Unused);
+            var v5 = this.target.GetEnum("k5", HttpStatusCode.Unused);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, v1);
+            Assert.Equal(HttpStatusCode.OK, v2);
+            Assert.Equal(HttpStatusCode.NotFound, v3);
+            Assert.Equal(HttpStatusCode.NotFound, v4);
+            Assert.Equal(HttpStatusCode.Unused, v5);
         }
 
         private void CfgContains(string key, string value)

@@ -37,7 +37,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task<Models.Simulation> InsertAsync(Models.Simulation simulation, string template = "");
 
         // Create or Replace a simulation.
-        Task<Models.Simulation> UpsertAsync(Models.Simulation simulation);
+        Task<Models.Simulation> UpsertAsync(Models.Simulation simulation, bool validateHubCredentials);
 
         // Modify a simulation.
         Task<Models.Simulation> MergeAsync(SimulationPatch patch);
@@ -87,8 +87,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IServicesConfig config;
         private readonly IDeviceModels deviceModels;
         private readonly IStorageAdapterClient storageAdapterClient;
-        private readonly IStorageRecords mainStorage;
-        private readonly IStorageRecords simulationsStorage;
+        private readonly IEngine mainStorage;
+        private readonly IEngine simulationsStorage;
         private readonly IConnectionStrings connectionStrings;
         private readonly ISimulationStatistics simulationStatistics;
         private readonly IFileSystem fileSystem;
@@ -98,7 +98,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public Simulations(
             IServicesConfig config,
             IDeviceModels deviceModels,
-            IFactory factory,
+            IEngines engines,
             IStorageAdapterClient storageAdapterClient,
             IConnectionStrings connectionStrings,
             IFileSystem fileSystem,
@@ -109,8 +109,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.config = config;
             this.deviceModels = deviceModels;
             this.storageAdapterClient = storageAdapterClient;
-            this.mainStorage = factory.Resolve<IStorageRecords>().Init(config.MainStorage);
-            this.simulationsStorage = factory.Resolve<IStorageRecords>().Init(config.SimulationsStorage);
+            this.mainStorage = engines.Build(config.MainStorage);
+            this.simulationsStorage = engines.Build(config.SimulationsStorage);
             this.connectionStrings = connectionStrings;
             this.fileSystem = fileSystem;
             this.log = logger;
@@ -127,9 +127,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var result = new List<Models.Simulation>();
             foreach (var item in items)
             {
-                var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
-                simulation.ETag = item.ETag;
-                simulation.Id = item.Id;
+                var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.GetData());
+                simulation.ETag = item.GetETag();
+                simulation.Id = item.GetId();
                 result.Add(simulation);
             }
 
@@ -160,9 +160,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var item = await this.simulationsStorage.GetAsync(id);
             if (item == null) return null;
 
-            var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
-            simulation.ETag = item.ETag;
-            simulation.Id = item.Id;
+            var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.GetData());
+            simulation.ETag = item.GetETag();
+            simulation.Id = item.GetId();
             return simulation;
         }
 
@@ -219,7 +219,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             for (var index = 0; index < simulation.IotHubConnectionStrings.Count; index++)
             {
-                var connString = await this.connectionStrings.SaveAsync(simulation.IotHubConnectionStrings[index]);
+                var connString = await this.connectionStrings.SaveAsync(simulation.IotHubConnectionStrings[index], true);
 
                 if (!simulation.IotHubConnectionStrings.Contains(connString))
                 {
@@ -237,7 +237,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// Create or Replace a simulation.
         /// The logic works under the assumption that there is only one simulation with id "1".
         /// </summary>
-        public async Task<Models.Simulation> UpsertAsync(Models.Simulation simulation)
+        public async Task<Models.Simulation> UpsertAsync(Models.Simulation simulation, bool validateHubCredentials)
         {
             if (string.IsNullOrEmpty(simulation.Id))
             {
@@ -296,7 +296,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             for (var index = 0; index < simulation.IotHubConnectionStrings.Count; index++)
             {
-                var connString = await this.connectionStrings.SaveAsync(simulation.IotHubConnectionStrings[index]);
+                var connString = await this.connectionStrings.SaveAsync(simulation.IotHubConnectionStrings[index], validateHubCredentials);
 
                 if (!simulation.IotHubConnectionStrings.Contains(connString))
                 {
@@ -335,9 +335,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             var item = await this.simulationsStorage.GetAsync(patch.Id);
-            var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.Data);
-            simulation.ETag = item.ETag;
-            simulation.Id = item.Id;
+            var simulation = JsonConvert.DeserializeObject<Models.Simulation>(item.GetData());
+            simulation.ETag = item.GetETag();
+            simulation.Id = item.GetId();
 
             // Even when there's nothing to do, verify the ETag mismatch
             if (patch.ETag != simulation.ETag)
@@ -381,16 +381,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
 
             // TODO: can we use this.SaveAsync() here too and avoid the duplication?
-            item = await this.simulationsStorage.UpsertAsync(
-                new StorageRecord
-                {
-                    Id = simulation.Id,
-                    Data = JsonConvert.SerializeObject(simulation)
-                },
-                patch.ETag
-            );
+            var record = this.simulationsStorage.BuildRecord(simulation.Id, JsonConvert.SerializeObject(simulation));
+            item = await this.simulationsStorage.UpsertAsync(record, patch.ETag);
 
-            simulation.ETag = item.ETag;
+            simulation.ETag = item.GetETag();
 
             return simulation;
         }
@@ -416,7 +410,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 if (!await this.mainStorage.ExistsAsync(SEED_STATUS_KEY))
                 {
                     await this.SeedSimulationsAsync(templateName);
-                    var record = new StorageRecord { Id = SEED_STATUS_KEY, Data = "Seed Completed" };
+                    var record = this.mainStorage.BuildRecord(SEED_STATUS_KEY, "Seed Completed");
                     await this.mainStorage.CreateAsync(record);
                 }
                 else
@@ -668,18 +662,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 simulation.PartitioningComplete = false;
             }
 
-            var result = await this.simulationsStorage.UpsertAsync(
-                new StorageRecord
-                {
-                    Id = simulation.Id,
-                    Data = JsonConvert.SerializeObject(simulation)
-                },
-                eTag
-            );
+            IDataRecord record = this.simulationsStorage.BuildRecord(simulation.Id, JsonConvert.SerializeObject(simulation));
+            IDataRecord result = await this.simulationsStorage.UpsertAsync(record, eTag);
 
             // Use the new ETag provided by the storage
-            simulation.ETag = result.ETag;
-            simulation.Id = result.Id;
+            simulation.ETag = result.GetETag();
+            simulation.Id = result.GetId();
 
             this.log.Info("Simulation written to storage",
                 () => new
@@ -733,7 +721,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     {
                         // create a simulation if no sample simulation exists with provided id.
                         simulation.StartTime = DateTimeOffset.UtcNow;
-                        await this.UpsertAsync(simulation);
+                        await this.UpsertAsync(simulation, false);
                     }
                 }
             }

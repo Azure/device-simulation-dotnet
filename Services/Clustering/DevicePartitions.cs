@@ -34,7 +34,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
     {
         private readonly ISimulations simulations;
         private readonly ILogger log;
-        private readonly IStorageRecords partitionsStorage;
+        private readonly IEngine partitionsStorage;
         private readonly IClusterNodes clusterNodes;
 
         private readonly int partitionLockDurationSecs;
@@ -45,12 +45,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             IClusteringConfig clusteringConfig,
             ISimulations simulations,
             IClusterNodes clusterNodes,
-            IFactory factory,
+            IEngines engines,
             ILogger logger)
         {
             this.simulations = simulations;
             this.log = logger;
-            this.partitionsStorage = factory.Resolve<IStorageRecords>().Init(config.PartitionsStorage);
+            this.partitionsStorage = engines.Build(config.PartitionsStorage);
             this.clusterNodes = clusterNodes;
             this.partitionLockDurationSecs = clusteringConfig.PartitionLockDurationMsecs / 1000;
             this.maxPartitionSize = clusteringConfig.MaxPartitionSize;
@@ -80,7 +80,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
             await this.CreatePartitionsInternalAsync(simulation, deviceIdsByModel);
             this.log.Debug("The simulation partitioning is complete", () => new { SimulationId = simulation.Id });
             simulation.PartitioningComplete = true;
-            await this.simulations.UpsertAsync(simulation);
+            await this.simulations.UpsertAsync(simulation, false);
 
             // Insert new devices, remove deleted devices
             // TODO
@@ -97,7 +97,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
 
             var result = partitions
                 .Where(p => !p.IsLocked())
-                .Select(p => JsonConvert.DeserializeObject<DevicesPartition>(p.Data))
+                .Select(p => JsonConvert.DeserializeObject<DevicesPartition>(p.GetData()))
                 .Where(x => x.SimulationId == simulationId)
                 .ToList();
 
@@ -110,7 +110,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
         public async Task<IList<DevicesPartition>> GetAllAsync()
         {
             return (await this.partitionsStorage.GetAllAsync())
-                .Select(p => JsonConvert.DeserializeObject<DevicesPartition>(p.Data))
+                .Select(p => JsonConvert.DeserializeObject<DevicesPartition>(p.GetData()))
                 .ToList();
         }
 
@@ -208,11 +208,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
                 DeviceIdsByModel = deviceIdsByModel
             };
 
-            var partitionRecord = new StorageRecord
-            {
-                Id = partition.Id,
-                Data = JsonConvert.SerializeObject(partition)
-            };
+            var partitionRecord = this.partitionsStorage.BuildRecord(
+                partition.Id,
+                JsonConvert.SerializeObject(partition));
 
             await this.partitionsStorage.CreateAsync(partitionRecord);
 

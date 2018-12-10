@@ -8,7 +8,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
     /// This exception is thrown when a client attempts to connect and IoT Hub refuses
     /// the connection due to incorrect credentials.
     /// </summary>
-    public class DeviceAuthFailedException : Exception
+    public class DeviceAuthFailedException : CustomException
     {
         public DeviceAuthFailedException() : base()
         {
