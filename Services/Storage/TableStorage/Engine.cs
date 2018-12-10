@@ -165,9 +165,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
 
                     case (int) HttpStatusCode.PreconditionFailed:
                         this.log.Info(
-                            "E-Tag mismatch: the record has been updated by another client",
+                            "ETag mismatch: the record has been updated by another client",
                             () => new { this.storageName, Id = input.GetId(), ETag = input.GetETag() });
-                        throw new ConflictingResourceException("E-Tag mismatch: the resource has been updated by another client.");
+                        throw new ConflictingResourceException("ETag mismatch: the resource has been updated by another client.");
                 }
 
                 if (response.HttpStatusCode > 299)
@@ -286,9 +286,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
                 {
                     case (int) HttpStatusCode.PreconditionFailed:
                         this.log.Info(
-                            "E-Tag mismatch: the resource has been updated by another client.",
+                            "ETag mismatch: the resource has been updated by another client.",
                             () => new { this.storageName, Id = record.GetId(), ETag = record.GetETag() });
-                        throw new ConflictingResourceException("E-Tag mismatch: the resource has been updated by another client.");
+                        throw new ConflictingResourceException("ETag mismatch: the resource has been updated by another client.");
                 }
 
                 if (response.HttpStatusCode > 299)
@@ -344,9 +344,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
                 {
                     case (int) HttpStatusCode.PreconditionFailed:
                         this.log.Info(
-                            "E-Tag mismatch: the resource has been updated by another client.",
+                            "ETag mismatch: the resource has been updated by another client.",
                             () => new { this.storageName, Id = record.GetId(), ETag = record.GetETag() });
-                        throw new ConflictingResourceException("E-Tag mismatch: the resource has been updated by another client.");
+                        throw new ConflictingResourceException("ETag mismatch: the resource has been updated by another client.");
                 }
 
                 if (response.HttpStatusCode > 299)

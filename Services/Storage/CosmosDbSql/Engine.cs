@@ -176,9 +176,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.PreconditionFailed)
             {
                 this.log.Info(
-                    "E-Tag mismatch: the record has been updated by another client.",
+                    "ETag mismatch: the record has been updated by another client.",
                     () => new { this.storageName, Id = input.GetId(), ETag = input.GetETag() });
-                throw new ConflictingResourceException("E-Tag mismatch: the record has been updated by another client.");
+                throw new ConflictingResourceException("ETag mismatch: the record has been updated by another client.");
             }
             catch (Exception e)
             {
@@ -264,7 +264,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.PreconditionFailed)
             {
-                this.log.Debug("E-Tag mismatch: the record has been updated by another client and cannot be locked.",
+                this.log.Debug("ETag mismatch: the record has been updated by another client and cannot be locked.",
                     () => new { this.storageName, id, ownerId, ownerType });
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
@@ -311,7 +311,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.PreconditionFailed)
             {
-                this.log.Debug("E-Tag mismatch: the record has been updated by another client and cannot be unlocked.",
+                this.log.Debug("ETag mismatch: the record has been updated by another client and cannot be unlocked.",
                     () => new { this.storageName, id, ownerId, ownerType });
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
