@@ -56,8 +56,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 }
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
-                this.log.Debug("Device-state loop completed", () => new { durationMsecs });
-                this.SlowDownIfTooFast(durationMsecs, 1000);
+                this.log.Debug("Device-replay loop completed", () => new { durationMsecs });
+                this.SlowDownIfTooFast(durationMsecs, this.appConcurrencyConfig.MinDeviceReplayLoopDuration);
             }
         }
 
