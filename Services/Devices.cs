@@ -98,6 +98,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         // When using bulk operations, this is the max number of devices that the registry APIs allow
         private const int REGISTRY_MAX_BATCH_SIZE = 100;
 
+        // Default string used for user agent if not provided in configuration
+        private const string DEFAULT_USER_AGENT_STRING = "devicesimulation";
+
         private readonly IConnectionStrings connectionStrings;
         private readonly IDeviceClientWrapper deviceClientFactory;
         private readonly IRegistryManager registry;
@@ -753,6 +756,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             var connectionString = $"HostName={device.IoTHubHostName};DeviceId={device.Id};SharedAccessKey={device.AuthPrimaryKey}";
             var userAgent = this.config.UserAgent;
+            if (string.IsNullOrEmpty(userAgent))
+            {
+                this.log.Debug("Using default string for user agent.", () => new { userAgent });
+                userAgent = DEFAULT_USER_AGENT_STRING;
+            }
 
             IDeviceClientWrapper sdkClient;
             switch (protocol)
