@@ -758,7 +758,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var userAgent = this.config.UserAgent;
             if (string.IsNullOrEmpty(userAgent))
             {
-                this.log.Debug("Using default string for user agent.", () => new { userAgent });
+                this.log.Debug("Using default string for user agent.", () => new { userAgent, DEFAULT_USER_AGENT_STRING });
                 userAgent = DEFAULT_USER_AGENT_STRING;
             }
 
