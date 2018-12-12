@@ -54,6 +54,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY = APPLICATION_KEY + "iothub_sdk_device_client_timeout";
         private const string TWIN_READ_WRITE_ENABLED_KEY = APPLICATION_KEY + "twin_read_write_enabled";
         private const string USER_AGENT_KEY = APPLICATION_KEY + "user_agent";
+        private const string DEFAULT_USER_AGENT_STRING = "devicesimulation";
 
         private const string IOTHUB_LIMITS_KEY = APPLICATION_KEY + "RateLimits:";
         private const string CONNECTIONS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "device_connections_per_second";
@@ -277,7 +278,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 SimulationsStorage = GetStorageConfig(configData, SIMULATIONS_STORAGE_KEY),
                 DevicesStorage = GetStorageConfig(configData, DEVICES_STORAGE_KEY),
                 PartitionsStorage = GetStorageConfig(configData, PARTITIONS_STORAGE_KEY),
-                UserAgent = configData.GetString(USER_AGENT_KEY),
+                UserAgent = configData.GetString(USER_AGENT_KEY, DEFAULT_USER_AGENT_STRING),
                 StatisticsStorage = GetStorageConfig(configData, STATISTICS_STORAGE_KEY),
                 DiagnosticsEndpointUrl = configData.GetString(LOGGING_DIAGNOSTICS_URL_KEY),
                 DevelopmentMode = configData.GetBool(DEBUGGING_DEVELOPMENT_MODE_KEY, false),
