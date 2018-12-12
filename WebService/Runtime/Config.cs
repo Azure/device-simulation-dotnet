@@ -150,6 +150,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string DEBUGGING_DISABLE_PARTITIONING_AGENT_KEY = DEBUGGING_SECTION_KEY + "disable_partitioning_agent";
         private const string DEBUGGING_DISABLE_SEED_BY_TEMPLATE_KEY = DEBUGGING_SECTION_KEY + "disable_seed_by_template";
 
+        private const string DEFAULT_USER_AGENT_STRING = "devicesimulation";
+
         public int Port { get; }
         public ILoggingConfig LoggingConfig { get; set; }
         public IClientAuthConfig ClientAuthConfig { get; }
@@ -281,7 +283,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 SimulationsStorage = GetStorageConfig(configData, SIMULATIONS_STORAGE_KEY),
                 DevicesStorage = GetStorageConfig(configData, DEVICES_STORAGE_KEY),
                 PartitionsStorage = GetStorageConfig(configData, PARTITIONS_STORAGE_KEY),
-                UserAgent = configData.GetString(USER_AGENT_KEY),
+                UserAgent = configData.GetString(USER_AGENT_KEY, DEFAULT_USER_AGENT_STRING),
                 StatisticsStorage = GetStorageConfig(configData, STATISTICS_STORAGE_KEY),
                 DiagnosticsEndpointUrl = configData.GetString(LOGGING_DIAGNOSTICS_URL_KEY),
                 DevelopmentMode = configData.GetBool(DEBUGGING_DEVELOPMENT_MODE_KEY, false),
