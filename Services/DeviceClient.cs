@@ -14,6 +14,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -55,6 +56,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IDevicePropertiesRequest propertiesUpdateRequest;
         private readonly ILogger log;
         private readonly IDeviceClientWrapper client;
+        private readonly bool deviceTwinEnabled;
 
         private bool connected;
 
@@ -66,6 +68,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IoTHubProtocol protocol,
             IDeviceClientWrapper client,
             IDeviceMethods deviceMethods,
+            IServicesConfig servicesConfig,
             ILogger logger)
         {
             this.deviceId = deviceId;
@@ -73,8 +76,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.client = client;
             this.deviceMethods = deviceMethods;
             this.log = logger;
+            this.deviceTwinEnabled = servicesConfig.DeviceTwinEnabled;
 
-            this.propertiesUpdateRequest = new DeviceProperties(this.log);
+            this.propertiesUpdateRequest = new DeviceProperties(servicesConfig, logger);
         }
 
         public async Task ConnectAsync()
@@ -195,6 +199,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task UpdatePropertiesAsync(ISmartDictionary properties)
         {
+            if (!this.deviceTwinEnabled)
+            {
+                this.log.Debug("Skipping twin update, twin operations are disabled in the global configuration.");
+                return;
+            }
+
             var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
 
@@ -204,7 +214,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 await this.client.UpdateReportedPropertiesAsync(reportedProperties);
 
                 var timeSpentMsecs = GetTimeSpentMsecs();
-                this.log.Debug("Update reported properties for device",
+                this.log.Debug("Updated reported properties for device",
                     () => new { this.deviceId, timeSpentMsecs, reportedProperties });
             }
             catch (NullReferenceException)

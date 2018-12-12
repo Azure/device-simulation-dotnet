@@ -202,9 +202,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
             log.Write("Connections per second:    " + config.RateLimitingConfig.ConnectionsPerSecond);
             log.Write("Registry ops per minute:   " + config.RateLimitingConfig.RegistryOperationsPerMinute);
-            log.Write("Twin reads per second:     " + config.RateLimitingConfig.TwinReadsPerSecond);
-            log.Write("Twin writes per second:    " + config.RateLimitingConfig.TwinWritesPerSecond);
             log.Write("Messages per second:       " + config.RateLimitingConfig.DeviceMessagesPerSecond);
+
+            if (config.ServicesConfig.DeviceTwinEnabled)
+            {
+                log.Write("Twin reads per second:     " + config.RateLimitingConfig.TwinReadsPerSecond);
+                log.Write("Twin writes per second:    " + config.RateLimitingConfig.TwinWritesPerSecond);
+            }
+            else
+            {
+                log.Write("Twin reads per second:     0 - Twin disabled");
+                log.Write("Twin writes per second:    0 - Twin disabled");
+            }
+
+            log.Write("C2D Methods:               " + (config.ServicesConfig.C2DMethodsEnabled ? "Enabled" : "Disabled"));
 
             log.Write("Number of telemetry threads:      " + config.AppConcurrencyConfig.TelemetryThreads);
             log.Write("Max pending connections:          " + config.AppConcurrencyConfig.MaxPendingConnections);

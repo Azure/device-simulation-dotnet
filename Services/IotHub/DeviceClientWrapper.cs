@@ -13,11 +13,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         IDeviceClientWrapper CreateFromConnectionString(string connectionString, TransportType transportType, string userAgent);
         Task OpenAsync();
         Task CloseAsync();
-        Task UpdateReportedPropertiesAsync(TwinCollection reportedProperties);
         Task SendEventAsync(Message message);
+        Task UpdateReportedPropertiesAsync(TwinCollection reportedProperties);
         Task SetDesiredPropertyUpdateCallbackAsync(DesiredPropertyUpdateCallback callback, object userContext);
-        void DisableRetryPolicy();
         Task SetMethodHandlerAsync(string methodName, MethodCallback methodHandler, object userContext);
+        void DisableRetryPolicy();
         void Dispose();
     }
 
@@ -52,14 +52,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             return this.internalClient.CloseAsync();
         }
 
-        public Task UpdateReportedPropertiesAsync(TwinCollection reportedProperties)
-        {
-            return this.internalClient.UpdateReportedPropertiesAsync(reportedProperties);
-        }
-
         public Task SendEventAsync(Message message)
         {
             return this.internalClient.SendEventAsync(message);
+        }
+
+        public Task UpdateReportedPropertiesAsync(TwinCollection reportedProperties)
+        {
+            return this.internalClient.UpdateReportedPropertiesAsync(reportedProperties);
         }
 
         public Task SetDesiredPropertyUpdateCallbackAsync(DesiredPropertyUpdateCallback callback, object userContext)
@@ -67,14 +67,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
             return this.internalClient.SetDesiredPropertyUpdateCallbackAsync(callback, userContext);
         }
 
-        public void DisableRetryPolicy()
-        {
-            this.internalClient.SetRetryPolicy(new NoRetry());
-        }
-
         public Task SetMethodHandlerAsync(string methodName, MethodCallback methodHandler, object userContext)
         {
             return this.internalClient.SetMethodHandlerAsync(methodName, methodHandler, userContext);
+        }
+
+        public void DisableRetryPolicy()
+        {
+            this.internalClient.SetRetryPolicy(new NoRetry());
         }
 
         public void Dispose()

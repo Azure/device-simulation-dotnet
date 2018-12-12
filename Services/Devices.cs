@@ -226,13 +226,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.instance.InitRequired();
 
             IDeviceClientWrapper sdkClient = this.GetDeviceSdkClient(device, protocol);
-            var methods = new DeviceMethods(this.log, this.diagnosticsLogger);
+            var methods = new DeviceMethods(this.config, this.log, this.diagnosticsLogger);
 
             return new DeviceClient(
                 device.Id,
                 protocol,
                 sdkClient,
                 methods,
+                this.config,
                 this.log);
         }
 
