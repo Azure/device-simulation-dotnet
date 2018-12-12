@@ -114,6 +114,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
                 this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendFailure);
             }
+            catch (ResourceNotFoundException e)
+            {
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Telemetry error, the device is not registered",
+                    () => new { timeSpentMsecs, this.deviceId, e });
+
+                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.DeviceNotFound);
+            }
             catch (Exception e)
             {
                 var timeSpentMsecs = GetTimeSpentMsecs();
