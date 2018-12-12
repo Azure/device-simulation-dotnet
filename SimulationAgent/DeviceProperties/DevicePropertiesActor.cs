@@ -172,7 +172,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
 
             switch (this.status)
             {
+                case ActorStatus.ReadyToStart:
                 case ActorStatus.WaitingForChanges:
+                case ActorStatus.ReadyToUpdate:
                     return
                         this.DeviceProperties != null
                         && this.DeviceProperties.Changed
