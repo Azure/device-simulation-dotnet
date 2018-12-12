@@ -258,8 +258,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                                     "value in the 'appsettings.ini' configuration file.");
             }
 
-            var defaultUserAgentString = configData.GetString(DEFAULT_USER_AGENT_KEY);
-
             return new ServicesConfig
             {
                 SeedTemplate = configData.GetString(SEED_TEMPLATE_KEY),
@@ -280,7 +278,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 SimulationsStorage = GetStorageConfig(configData, SIMULATIONS_STORAGE_KEY),
                 DevicesStorage = GetStorageConfig(configData, DEVICES_STORAGE_KEY),
                 PartitionsStorage = GetStorageConfig(configData, PARTITIONS_STORAGE_KEY),
-                UserAgent = configData.GetString(USER_AGENT_KEY, defaultUserAgentString),
+                UserAgent = configData.GetString(USER_AGENT_KEY, "devicesimulation"),
                 StatisticsStorage = GetStorageConfig(configData, STATISTICS_STORAGE_KEY),
                 DiagnosticsEndpointUrl = configData.GetString(LOGGING_DIAGNOSTICS_URL_KEY),
                 DevelopmentMode = configData.GetBool(DEBUGGING_DEVELOPMENT_MODE_KEY, false),
