@@ -32,7 +32,7 @@ namespace SimulationAgent.Test.DeviceProperties
         private readonly Mock<UpdateReportedProperties> updatePropertiesLogic;
         private readonly Mock<SetDeviceTag> deviceTagLogic;
         private readonly Mock<IDeviceConnectionActor> mockDeviceContext;
-        private readonly Mock<IDeviceStateActor> deviceStateActor;
+        private readonly Mock<IDeviceStateActor> mockDeviceStateActor;
         private readonly Mock<PropertiesLoopSettings> loopSettings;
         private readonly Mock<IInstance> mockInstance;
 
@@ -50,7 +50,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.credentialSetup = new Mock<CredentialsSetup>();
             this.rateLimitingConfig = new Mock<IRateLimitingConfig>();
             this.mockDeviceContext = new Mock<IDeviceConnectionActor>();
-            this.deviceStateActor = new Mock<IDeviceStateActor>();
+            this.mockDeviceStateActor = new Mock<IDeviceStateActor>();
             this.devices = new Mock<IDevices>();
             this.loopSettings = new Mock<PropertiesLoopSettings>(this.rateLimitingConfig.Object);
             this.updatePropertiesLogic = new Mock<UpdateReportedProperties>(this.logger.Object);
@@ -131,6 +131,31 @@ namespace SimulationAgent.Test.DeviceProperties
             Assert.Equal(0, failedTwinUpdateCount);
         }
 
+        [Fact]
+        public void HasWorkToDoReturnsAsExpected()
+        {
+            // Arrange
+            this.CreateNewDevicePropertiesActor();
+            this.SetupDevicePropertiesActor();
+            this.mockDeviceContext.SetupGet(x => x.Connected).Returns(true);
+            
+            // mock properties
+            SmartDictionary properties = new SmartDictionary();
+            properties.Set("foo", "bar", false);
+            this.mockDeviceStateActor.SetupGet(x => x.DeviceProperties).Returns(properties);
+
+            // mock rate limiting
+            this.mockRateLimiting.SetupGet(x => x.HasExceededDeviceQuota).Returns(false);
+            this.mockRateLimiting.Setup(x => x.CanProbeMessagingQuota(It.IsAny<long>())).Returns(true);
+
+            // Act, Assert
+            Assert.True(this.target.HasWorkToDo());
+
+            // Mark properties as not being changed, then act and assert again
+            properties.ResetChanged();
+            Assert.False(this.target.HasWorkToDo());
+        }
+
         private void CreateNewDevicePropertiesActor()
         {
             // Set up the mock Instance to throw an exception if
@@ -168,7 +193,7 @@ namespace SimulationAgent.Test.DeviceProperties
             this.target.Init(
                 mockSimulationContext.Object,
                 DEVICE_ID,
-                this.deviceStateActor.Object,
+                this.mockDeviceStateActor.Object,
                 this.mockDeviceContext.Object,
                 this.loopSettings.Object);
         }
