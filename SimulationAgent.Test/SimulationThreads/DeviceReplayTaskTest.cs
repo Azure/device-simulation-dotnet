@@ -5,6 +5,7 @@ using System.Threading;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceReplay;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.SimulationThreads;
 using Moq;
 using Xunit;
@@ -19,11 +20,13 @@ namespace SimulationAgent.Test.SimulationThreads
         private readonly Mock<IAppConcurrencyConfig> mockAppConcurrencyConfig;
         private readonly Mock<ILogger> mockLogger;
         private readonly DeviceReplayTask target;
+        private readonly ConcurrentDictionary<string, IDeviceReplayActor> mockDeviceReplayActorObjects;
         private readonly ConcurrentDictionary<string, Mock<ISimulationManager>> mockSimulationManagers;
         private readonly ConcurrentDictionary<string, ISimulationManager> mockSimulationManagerObjects;
 
         public DeviceReplayTaskTest()
         {
+            this.mockDeviceReplayActorObjects = new ConcurrentDictionary<string, IDeviceReplayActor>();
             this.mockSimulationManagers = new ConcurrentDictionary<string, Mock<ISimulationManager>>();
             this.mockSimulationManagerObjects = new ConcurrentDictionary<string, ISimulationManager>();
 
@@ -54,6 +57,7 @@ namespace SimulationAgent.Test.SimulationThreads
             // is called.
             var targetTask = this.target.RunAsync(
                 this.mockSimulationManagerObjects,
+                this.mockDeviceReplayActorObjects,
                 cancellationToken.Token);
 
             // Assert
