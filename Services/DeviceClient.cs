@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -55,6 +57,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private readonly IDevicePropertiesRequest propertiesUpdateRequest;
         private readonly ILogger log;
         private readonly IDeviceClientWrapper client;
+        private readonly bool deviceTwinEnabled;
 
         private bool connected;
 
@@ -66,6 +69,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             IoTHubProtocol protocol,
             IDeviceClientWrapper client,
             IDeviceMethods deviceMethods,
+            IServicesConfig servicesConfig,
             ILogger logger)
         {
             this.deviceId = deviceId;
@@ -73,8 +77,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.client = client;
             this.deviceMethods = deviceMethods;
             this.log = logger;
+            this.deviceTwinEnabled = servicesConfig.DeviceTwinEnabled;
 
-            this.propertiesUpdateRequest = new DeviceProperties(this.log);
+            this.propertiesUpdateRequest = new DeviceProperties(servicesConfig, logger);
         }
 
         public async Task ConnectAsync()
@@ -195,6 +200,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// </summary>
         public async Task UpdatePropertiesAsync(ISmartDictionary properties)
         {
+            if (!this.deviceTwinEnabled)
+            {
+                this.log.Debug("Skipping twin update, twin operations are disabled in the global configuration.");
+                return;
+            }
+
             var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
 
@@ -204,7 +215,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 await this.client.UpdateReportedPropertiesAsync(reportedProperties);
 
                 var timeSpentMsecs = GetTimeSpentMsecs();
-                this.log.Debug("Update reported properties for device",
+                this.log.Debug("Updated reported properties for device",
                     () => new { this.deviceId, timeSpentMsecs, reportedProperties });
             }
             catch (NullReferenceException)
@@ -307,77 +318,100 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             }
             catch (TimeoutException e)
             {
+                var msg = "Message delivery timed out: " + e.Message;
+
                 var timeSpentMsecs = GetTimeSpentMsecs();
-                this.log.Error("Message delivery timed out",
+                this.log.Error(msg,
                     () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
 
-                throw new TelemetrySendTimeoutException("Message delivery timed out with " + e.Message, e);
+                throw new TelemetrySendTimeoutException(msg, e);
             }
             catch (DeviceMaximumQueueDepthExceededException e)
             {
                 // Throttling in AMQP leads here
+                var msg = "Daily telemetry quota exceeded: " + e.Message;
+
                 var timeSpentMsecs = GetTimeSpentMsecs();
-                this.log.Error("Daily telemetry quota exceeded",
+                this.log.Error(msg,
                     () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
 
-                throw new DailyTelemetryQuotaExceededException("Daily telemetry quota exceeded", e);
+                throw new DailyTelemetryQuotaExceededException(msg, e);
             }
             catch (QuotaExceededException e)
             {
                 // Throttling in HTTP leads here
+                var msg = "Daily telemetry quota exceeded: " + e.Message;
+
                 var timeSpentMsecs = GetTimeSpentMsecs();
-                this.log.Error("Daily telemetry quota exceeded",
+                this.log.Error(msg,
                     () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
 
-                throw new DailyTelemetryQuotaExceededException("Daily telemetry quota exceeded", e);
+                throw new DailyTelemetryQuotaExceededException(msg, e);
             }
-            catch (System.Net.Sockets.SocketException e)
+            catch (SocketException e)
             {
                 // TODO: throttling in MQTT leads here, but the exception
                 // is too generic to know if the app is being throttled
+                var msg = "Message delivery failed due to a socket error: " + e.Message + ". " +
+                          "If the client is using MQTT this could be caused by throttling.";
+
                 var timeSpentMsecs = GetTimeSpentMsecs();
-                this.log.Error("Message delivery failed",
+                this.log.Error(msg,
                     () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
 
-                throw new BrokenDeviceClientException(
-                    "Message delivery failed: "
-                    + e.Message
-                    + ". If the client is using MQTT this could be caused by throttling.", e);
+                throw new BrokenDeviceClientException(msg, e);
+            }
+            catch (DeviceNotFoundException e)
+            {
+                var msg = "Message delivery failed, device not found: " + e.Message;
+
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error(msg,
+                    () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
+
+                throw new ResourceNotFoundException(msg, e);
             }
             catch (IOException e)
             {
+                var msg = "Message delivery I/O error: " + e.Message;
+
                 var timeSpentMsecs = GetTimeSpentMsecs();
-                this.log.Error("Message delivery IOException",
+                this.log.Error(msg,
                     () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
 
-                throw new TelemetrySendIOException("Message delivery I/O failed with " + e.Message, e);
+                throw new TelemetrySendIOException(msg, e);
             }
             catch (AggregateException aggEx) when (aggEx.InnerException != null)
             {
                 var e = aggEx.InnerException;
 
+                var msg = "Message delivery failed: " + e.Message;
+
                 var timeSpentMsecs = GetTimeSpentMsecs();
-                this.log.Error("Message delivery failed",
+                this.log.Error(msg,
                     () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
 
-                throw new TelemetrySendException("Message delivery failed with " + e.Message, e);
+                throw new TelemetrySendException(msg, e);
             }
             catch (ObjectDisposedException e)
             {
+                var msg = "Message delivery failed due to internal client error: " + e.Message;
+
                 // This error often occurs under CPU stress, apparently a bug in the internal AMQP library
                 var timeSpentMsecs = GetTimeSpentMsecs();
-                this.log.Error("Message delivery failed, internal client failure",
+                this.log.Error(msg,
                     () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
 
-                throw new BrokenDeviceClientException("Message delivery failed, internal client failure", e);
+                throw new BrokenDeviceClientException(msg, e);
             }
             catch (Exception e)
             {
+                var msg = "Message delivery failed due to unexpected error: " + e.Message;
                 var timeSpentMsecs = GetTimeSpentMsecs();
-                this.log.Error("Message delivery failed",
+                this.log.Error(msg,
                     () => new { timeSpentMsecs, this.deviceId, Protocol = this.protocol.ToString(), e });
 
-                throw new TelemetrySendException("Message delivery failed with " + e.Message, e);
+                throw new TelemetrySendException(msg, e);
             }
         }
 

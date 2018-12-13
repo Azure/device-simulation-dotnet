@@ -46,6 +46,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         {
             Started,
             SendingTelemetry,
+            DeviceNotFound,
             TelemetrySendFailure,
             TelemetryClientBroken,
             TelemetryDelivered,
@@ -231,6 +232,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
                     this.failedMessagesCount++;
                     this.actorLogger.TelemetryFailed();
                     this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.TelemetryClientBroken);
+                    this.Reset();
+                    break;
+
+                case ActorEvents.DeviceNotFound:
+                    this.failedMessagesCount++;
+                    this.actorLogger.TelemetryFailed();
+                    this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceNotFound);
                     this.Reset();
                     break;
 
