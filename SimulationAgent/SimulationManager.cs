@@ -573,9 +573,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 }
             }
             else {
+                // Create one state actor for each device
+                var deviceStateActor = this.factory.Resolve<IDeviceStateActor>();
+                deviceStateActor.Init(this.simulationContext, deviceId, deviceModel, deviceCounter);
+                this.deviceStateActors.AddOrUpdate(dictKey, deviceStateActor, (k, v) => deviceStateActor);
+
+                // Create one connection actor for each device
+                var deviceContext = this.factory.Resolve<IDeviceConnectionActor>();
+                deviceContext.Init(this.simulationContext, deviceId, deviceModel, deviceStateActor, this.simulationContext.ConnectionLoopSettings);
+                this.deviceConnectionActors.AddOrUpdate(dictKey, deviceContext, (k, v) => deviceContext);
+
                 // Create one device replay actor for each device
                 var deviceReplayActor = this.factory.Resolve<IDeviceReplayActor>();
-                deviceReplayActor.Init(this.simulationContext, deviceId, deviceModel);
+                deviceReplayActor.Init(this.simulationContext, deviceId, deviceModel, deviceContext);
                 this.deviceReplayActors.AddOrUpdate(dictKey, deviceReplayActor, (k, v) => deviceReplayActor);
             }
         }

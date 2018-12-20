@@ -1,8 +1,11 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceReplay
 {
@@ -11,7 +14,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
         void Init(
             ISimulationContext simulationContext,
             string deviceId,
-            DeviceModel deviceModel);
+            DeviceModel deviceModel,
+            IDeviceConnectionActor context);
 
         bool HasWorkToDo();
         Task RunAsync();
@@ -23,6 +27,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
         private enum ActorStatus
         {
             None,
+            ReadingFile,
             Stopped
         }
 
@@ -34,10 +39,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
 
         private ActorStatus status;
         private string deviceId;
+        private string currentLine;
+        private StreamReader fileStream;
+        private IDeviceConnectionActor deviceContext;
 
         public DeviceReplayActor(
             ILogger logger,
             IActorsLogger actorLogger,
+            SendTelemetry sendTelemetryLogic,
             IInstance instance)
         {
             this.log = logger;
@@ -46,6 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
 
             this.status = ActorStatus.None;
             this.deviceModel = null;
+            this.currentLine = "";
         }
 
         /// <summary>
@@ -54,27 +64,56 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
         public void Init(
             ISimulationContext simulationContext, 
             string deviceId, 
-            DeviceModel deviceModel)
+            DeviceModel deviceModel,
+            IDeviceConnectionActor context)
         {
             this.instance.InitOnce();
 
             this.simulationContext = simulationContext;
             this.deviceModel = deviceModel;
             this.deviceId = deviceId;
+            this.deviceContext = context;
+            // this.sendTelemetryLogic.Init(this, this.deviceId, this.deviceModel);
             this.actorLogger.Init(deviceId, "Replay");
+
+            string path = deviceModel.ReplayFile;
+            try
+            {
+                // TODO: Pull from data store
+                if (File.Exists(path))
+                {
+                    this.fileStream = new StreamReader(path);
+                    this.status = ActorStatus.ReadingFile;
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("The process failed: {0}", e.ToString());
+            }
 
             this.instance.InitComplete();
         }
 
         public bool HasWorkToDo()
         {
-            // TODO: Compute work to do
+            if (!this.deviceContext.Connected) return false;
+
+            switch (this.status) {
+                case ActorStatus.ReadingFile:
+                    return true;
+            }
             return false;
         }
 
         public async Task RunAsync()
         {
-            // TODO: Perform asyn action
+            switch (this.status)
+            {
+                case ActorStatus.ReadingFile:
+                    this.readLine();
+                    await this.deviceContext.Client.SendMessageAsync(this.currentLine, null);
+                    break;
+            }
         }
 
         public void Stop()
@@ -83,6 +122,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
                 () => new { this.deviceId, Status = this.status.ToString() });
 
             this.status = ActorStatus.Stopped;
+        }
+
+        private void readLine() {
+            try
+            {
+                this.currentLine = this.fileStream.ReadLine();
+                if (this.currentLine == null)
+                {
+                    this.Stop();
+                }
+                else {
+                    // Check for incorrectly formed csv
+                    var values = this.currentLine.Split(',');
+                    this.currentLine = String.Join("", values, 2, values.Length - 2);
+                    Console.WriteLine(this.deviceId + ": {0}", this.currentLine);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Failed to read line");
+            }
         }
     }
 }

@@ -5,6 +5,7 @@
   "Name": "Replay",
   "Description": "Fake device model for csv file replay",
   "Protocol": "AMQP",
+  "ReplayFile": "C:\\Git\\device-simulation-dotnet\\WebService\\bin\\Debug\\netcoreapp2.0\\\\./data/devicemodels/\\simulationReplayTest.csv",
   "Simulation": {
     "InitialState": {
       "online": true
@@ -13,12 +14,17 @@
     "Scripts": [
     ]
   },
-  "ReplayFile": "simulationReplayTest.csv",
   "Properties": {
+    "Type": "Chiller"
   },
   "Tags": {
   },
   "Telemetry": [
+    {
+      "MessageSchema": {
+        "Name": "replay-sensors;v1"
+      }
+    }
   ],
   "CloudToDeviceMethods": {
   }

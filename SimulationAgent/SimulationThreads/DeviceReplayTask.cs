@@ -44,10 +44,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
             while (!runningToken.IsCancellationRequested)
             {
-                // TODO: Do work
-                // foreach (var manager in simulationManagers)
-                // {
-                // }
+                foreach (var actor in replayActors) {
+                    if (actor.Value.HasWorkToDo()) {
+                        tasks.Add(actor.Value.RunAsync());
+                    }
+                }
 
                 var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
@@ -59,7 +60,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 }
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
-                this.log.Debug("Device-state loop completed", () => new { durationMsecs });
+                this.log.Debug("Device-replay loop completed", () => new { durationMsecs });
                 this.SlowDownIfTooFast(durationMsecs, 1000);
             }
         }
