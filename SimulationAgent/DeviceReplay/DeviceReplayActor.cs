@@ -111,7 +111,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
             {
                 case ActorStatus.ReadingFile:
                     this.readLine();
-                    await this.deviceContext.Client.SendMessageAsync(this.currentLine, null);
+                    try
+                    {
+                        var line = "{\"temperature\": 51.32, \"temperature_unit\": \"fahrenheit\", \"humidity\": 69.59, \"humidity_unit\":\"RH\", \"pressure\": 440.20, \"pressure_unit\": \"psi\"}";
+                        await this.deviceContext.Client.SendMessageAsync(line, this.deviceModel.Telemetry[0].MessageSchema);
+                    }
+                    catch (Exception e) {
+                        Console.WriteLine("Failed to send message", e.ToString());
+                    }
                     break;
             }
         }

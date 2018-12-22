@@ -21,8 +21,18 @@
   },
   "Telemetry": [
     {
+      "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
       "MessageSchema": {
-        "Name": "replay-sensors;v1"
+        "Name": "replay-sensors;v1",
+        "Format": "JSON",
+        "Fields": {
+          "temperature": "double",
+          "temperature_unit": "text",
+          "humidity": "double",
+          "humidity_unit": "text",
+          "pressure": "double",
+          "pressure_unit": "text"
+        }
       }
     }
   ],
