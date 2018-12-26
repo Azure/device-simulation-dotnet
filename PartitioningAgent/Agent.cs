@@ -98,7 +98,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                 }
 
                 // Sleep some seconds before checking for new simulations (by default 15 seconds)
-                this.thread.Sleep(this.checkIntervalMsecs);
+                await Task.Delay(this.checkIntervalMsecs);
             }
         }
 
@@ -159,7 +159,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                     var totalDevices = models.Sum(model => model.Count) + customDevices;
 
                     // Calculate number of nodes required
-                    nodeCount = maxDevicesPerNode > 0 ? (int) Math.Ceiling((double) totalDevices / maxDevicesPerNode) : DEFAULT_NODE_COUNT;
+                    nodeCount = maxDevicesPerNode > 0 ? (int)Math.Ceiling((double)totalDevices / maxDevicesPerNode) : DEFAULT_NODE_COUNT;
                 }
 
                 if (this.currentNodeCount != nodeCount)

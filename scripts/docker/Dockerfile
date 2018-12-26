@@ -1,10 +1,15 @@
-FROM microsoft/dotnet:2.0.3-runtime-jessie
+FROM microsoft/dotnet:2.2-runtime
 
-MAINTAINER Devis Lucato (https://github.com/dluc)
+MAINTAINER IoTSimTeam@microsoft.com
 
 LABEL Tags="Azure,IoT,Solutions,Simulation,.NET"
 
 ARG user=pcsuser
+
+RUN apt-get update \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y net-tools \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -m -s /bin/bash -U $user
 

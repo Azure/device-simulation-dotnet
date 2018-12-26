@@ -161,12 +161,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
                 case ActorStatus.None:
                     this.whenCanIUpdate = now + this.startDelayMsecs;
                     this.log.Debug("Next update scheduled",
-                        () => new { this.deviceId, when = DateTimeOffset.FromUnixTimeMilliseconds(this.whenCanIUpdate).ToString("u") });
+                        () => new { this.deviceId, when = DateTimeOffset.FromUnixTimeMilliseconds(this.whenCanIUpdate).ToString("u", System.Globalization.CultureInfo.InvariantCulture) });
                     this.status = ActorStatus.Updating;
                     return;
 
                 case ActorStatus.Updating:
-                    this.whenCanIUpdate += (long) this.deviceModel.Simulation.Interval.TotalMilliseconds;
+                    this.whenCanIUpdate += (long)this.deviceModel.Simulation.Interval.TotalMilliseconds;
                     return;
             }
 

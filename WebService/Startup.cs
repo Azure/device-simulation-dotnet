@@ -194,51 +194,48 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             var config = container.Resolve<IConfig>();
             log.Write("Service started", () => new { Uptime.ProcessId, LogLevel = config.LoggingConfig.LogLevel.ToString() });
 
-            log.Write("Logging level:             " + config.LoggingConfig.LogLevel);
-            log.Write("Web service auth required: " + config.ClientAuthConfig.AuthRequired);
+            log.Write("Logging level:                               " + config.LoggingConfig.LogLevel);
+            log.Write("Web service auth required:                   " + config.ClientAuthConfig.AuthRequired);
 
-            log.Write("Device Models folder:      " + config.ServicesConfig.DeviceModelsFolder);
-            log.Write("Scripts folder:            " + config.ServicesConfig.DeviceModelsScriptsFolder);
-
-            log.Write("Connections per second:    " + config.RateLimitingConfig.ConnectionsPerSecond);
-            log.Write("Registry ops per minute:   " + config.RateLimitingConfig.RegistryOperationsPerMinute);
-            log.Write("Messages per second:       " + config.RateLimitingConfig.DeviceMessagesPerSecond);
+            log.Write("Device Models folder:                        " + config.ServicesConfig.DeviceModelsFolder);
+            log.Write("Scripts folder:                              " + config.ServicesConfig.DeviceModelsScriptsFolder);
 
             if (config.ServicesConfig.DeviceTwinEnabled)
             {
-                log.Write("Twin reads per second:     " + config.RateLimitingConfig.TwinReadsPerSecond);
-                log.Write("Twin writes per second:    " + config.RateLimitingConfig.TwinWritesPerSecond);
+                log.Write("Twin reads per second:                       " + config.RateLimitingConfig.TwinReadsPerSecond);
+                log.Write("Twin writes per second:                      " + config.RateLimitingConfig.TwinWritesPerSecond);
             }
             else
             {
-                log.Write("Twin reads per second:     0 - Twin disabled");
-                log.Write("Twin writes per second:    0 - Twin disabled");
+                log.Write("Twin reads per second:                       0 - Twin disabled");
+                log.Write("Twin writes per second:                      0 - Twin disabled");
             }
 
-            log.Write("C2D Methods:               " + (config.ServicesConfig.C2DMethodsEnabled ? "Enabled" : "Disabled"));
+            log.Write("C2D Methods:                                 " + (config.ServicesConfig.C2DMethodsEnabled ? "Enabled" : "Disabled"));
+            log.Write("Connections per second:                      " + config.RateLimitingConfig.ConnectionsPerSecond);
+            log.Write("Registry ops per minute:                     " + config.RateLimitingConfig.RegistryOperationsPerMinute);
+            log.Write("Messages per second:                         " + config.RateLimitingConfig.DeviceMessagesPerSecond);
 
-            log.Write("Number of telemetry threads:      " + config.AppConcurrencyConfig.TelemetryThreads);
-            log.Write("Max pending connections:          " + config.AppConcurrencyConfig.MaxPendingConnections);
-            log.Write("Max pending telemetry messages:   " + config.AppConcurrencyConfig.MaxPendingTelemetry);
-            log.Write("Max pending twin writes:          " + config.AppConcurrencyConfig.MaxPendingTwinWrites);
-            log.Write("Min duration of state loop:       " + config.AppConcurrencyConfig.MinDeviceStateLoopDuration);
-            log.Write("Min duration of connection loop:  " + config.AppConcurrencyConfig.MinDeviceConnectionLoopDuration);
-            log.Write("Min duration of telemetry loop:   " + config.AppConcurrencyConfig.MinDeviceTelemetryLoopDuration);
-            log.Write("Min duration of twin write loop:  " + config.AppConcurrencyConfig.MinDevicePropertiesLoopDuration);
-            log.Write("Max devices per partition:        " + config.ClusteringConfig.MaxPartitionSize);
+            log.Write("Number of telemetry threads:                 " + config.AppConcurrencyConfig.TelemetryThreads);
+            log.Write("Max pending connections:                     " + config.AppConcurrencyConfig.MaxPendingConnections);
+            log.Write("Max pending telemetry messages:              " + config.AppConcurrencyConfig.MaxPendingTelemetry);
+            log.Write("Max pending twin writes:                     " + config.AppConcurrencyConfig.MaxPendingTwinWrites);
+            log.Write("Min duration of state loop:                  " + config.AppConcurrencyConfig.MinDeviceStateLoopDuration);
+            log.Write("Min duration of connection loop:             " + config.AppConcurrencyConfig.MinDeviceConnectionLoopDuration);
+            log.Write("Min duration of telemetry loop:              " + config.AppConcurrencyConfig.MinDeviceTelemetryLoopDuration);
+            log.Write("Min duration of twin write loop:             " + config.AppConcurrencyConfig.MinDevicePropertiesLoopDuration);
+            log.Write("Max devices per partition:                   " + config.ClusteringConfig.MaxPartitionSize);
 
-            log.Write("Main storage:        " + config.ServicesConfig.MainStorage.StorageType);
-            log.Write("Simulations storage: " + config.ServicesConfig.SimulationsStorage.StorageType);
-            log.Write("Statistics storage:  " + config.ServicesConfig.StatisticsStorage.StorageType);
-            log.Write("Devices storage:     " + config.ServicesConfig.DevicesStorage.StorageType);
-            log.Write("Partitions storage:  " + config.ServicesConfig.PartitionsStorage.StorageType);
-            log.Write("Nodes storage:       " + config.ServicesConfig.NodesStorage.StorageType);
+            log.Write("Main storage:                                " + config.ServicesConfig.MainStorage.StorageType);
+            log.Write("Simulations storage:                         " + config.ServicesConfig.SimulationsStorage.StorageType);
+            log.Write("Statistics storage:                          " + config.ServicesConfig.StatisticsStorage.StorageType);
+            log.Write("Devices storage:                             " + config.ServicesConfig.DevicesStorage.StorageType);
+            log.Write("Partitions storage:                          " + config.ServicesConfig.PartitionsStorage.StorageType);
+            log.Write("Nodes storage:                               " + config.ServicesConfig.NodesStorage.StorageType);
 
-            log.Write("SDK device client timeout:                  " + config.ServicesConfig.IoTHubSdkDeviceClientTimeout);
-            log.Write("SDK Microsoft.Azure.Devices.Client version: "
-                      + typeof(Devices.Client.Message).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion);
-            log.Write("SDK Microsoft.Azure.Devices.Common version: "
-                      + typeof(Devices.Common.ExceptionExtensions).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion);
+            log.Write("SDK device client timeout:                   " + config.ServicesConfig.IoTHubSdkDeviceClientTimeout);
+            log.Write("SDK Microsoft.Azure.Devices.Client version:  " + typeof(Devices.Client.Message).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion);
+            log.Write("SDK Microsoft.Azure.Devices.Common version:  " + typeof(Devices.Common.ExceptionExtensions).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion);
 
             if (config.ServicesConfig.DisableSimulationAgent)
             {

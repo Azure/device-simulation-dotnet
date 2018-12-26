@@ -82,8 +82,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             // More info about configuration at
             // https://docs.microsoft.com/aspnet/core/fundamentals/configuration
             var configurationBuilder = new ConfigurationBuilder();
-            configurationBuilder
-                .AddIniFile(ConfigFile.DEFAULT, optional: false, reloadOnChange: false);
+            configurationBuilder.AddIniFile(ConfigFile.DEFAULT, optional: false, reloadOnChange: false);
 
             if (ConfigFile.GetDevOnlyConfigFile() != null)
             {

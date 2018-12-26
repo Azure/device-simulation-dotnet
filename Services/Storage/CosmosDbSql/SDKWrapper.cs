@@ -147,7 +147,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             try
             {
                 var uri = "/dbs/" + db;
-                this.log.Info("Checking if the database exists", () => new { uri });
+                this.log.Debug("Checking if the database exists", () => new { uri });
                 await client.ReadDatabaseAsync(uri, options);
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
@@ -190,7 +190,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             try
             {
                 var uri = $"/dbs/{dbName}/colls/{collName}";
-                this.log.Info("Checking if the collection exists", () => new { dbName, collName });
+                this.log.Debug("Checking if the collection exists", () => new { dbName, collName });
                 await client.ReadDocumentCollectionAsync(uri, options);
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)

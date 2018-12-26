@@ -134,7 +134,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
                        .TrimEnd(Path.DirectorySeparatorChar)
                        .Replace(
                            Path.DirectorySeparatorChar + "." + Path.DirectorySeparatorChar,
-                           Path.DirectorySeparatorChar.ToString())
+                           Path.DirectorySeparatorChar.ToString(System.Globalization.CultureInfo.InvariantCulture))
                    + Path.DirectorySeparatorChar;
         }
     }

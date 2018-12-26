@@ -222,7 +222,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                     this.LogProcessStats(applicationProcess);
 
-                    Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
+                    await Task.Delay(PAUSE_AFTER_CHECK_MSECS);
                 }
             }
             catch (Exception e)
@@ -234,6 +234,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         private void LogProcessStats(Process p)
         {
+            p.Refresh();
+
             this.log.Info("Process stats", () => new
             {
                 ThreadsCount = p.Threads.Count,

@@ -14,5 +14,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
         public DailyTelemetryQuotaExceededException(string message, Exception innerException) : base(message, innerException)
         {
         }
+
+        public DailyTelemetryQuotaExceededException()
+        {
+        }
     }
 }

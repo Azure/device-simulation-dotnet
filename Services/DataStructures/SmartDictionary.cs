@@ -12,8 +12,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures
         IDictionary<string, object> GetAll();
         void SetAll(Dictionary<string, object> newState);
         bool Has(string key);
+#pragma warning disable CA1716 // Identifiers should not match keywords
         object Get(string key);
         void Set(string key, object value, bool compareWithCurrent);
+#pragma warning restore CA1716 // Identifiers should not match keywords
         bool Changed { get; }
         void ResetChanged();
     }
