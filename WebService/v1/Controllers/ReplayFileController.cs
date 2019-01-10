@@ -42,26 +42,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         [HttpPost(Version.PATH + "/[controller]!validate")]
         public ActionResult Validate(IFormFile file)
         {
-            if (file == null)
-            {
-                this.log.Warn("No data provided");
-                throw new BadRequestException("No data provided.");
-            }
-
-            if (file.ContentType != TEXT_CSV && !file.FileName.EndsWith(".csv"))
-            {
-                this.log.Warn("Wrong content type provided", () => new { file.ContentType });
-                throw new BadRequestException("Wrong content type provided.");
-            }
-
             try
             {
-                var content = this.replayFileService.Validate(file.OpenReadStream());
+                var content = this.replayFileService.ValidateFile(file.OpenReadStream());
             }
             catch (Exception e)
             {
                 return new JsonResult(new ValidationApiModel
-                    {
+                    { 
                         IsValid = false,
                         Messages = new List<string>
                         {
@@ -77,23 +65,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         [HttpPost(Version.PATH + "/[controller]")]
         public async Task<ReplayFileApiModel> PostAsync(IFormFile file)
         {
-            if (file == null)
-            {
-                this.log.Warn("No data provided");
-                throw new BadRequestException("No data provided.");
-            }
-
-            if (file.ContentType != TEXT_CSV && !file.FileName.EndsWith(".csv"))
-            {
-                this.log.Warn("Wrong content type provided", () => new { file.ContentType });
-                throw new BadRequestException("Wrong content type provided.");
-            }
-
             var replayFile = new DataFile();
 
             try
             {
-                var content = this.replayFileService.Validate(file.OpenReadStream());
+                var content = this.replayFileService.ValidateFile(file.OpenReadStream());
                 replayFile.Content = content;
                 replayFile.Name = file.FileName;
             }
@@ -109,6 +85,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
         public async Task DeleteAsync(string id)
         {
             await this.replayFileService.DeleteAsync(id);
+        }
+
+        private void ValidateInput(IFormFile file)
+        {
+            if (file == null)
+            {
+                this.log.Warn("No replay data provided");
+                throw new BadRequestException("No replay data provided.");
+            }
+
+            if (file.ContentType != TEXT_CSV && !file.FileName.EndsWith(".csv"))
+            {
+                this.log.Warn("Wrong content type provided. Expected csv file format.", () => new { file.ContentType });
+                throw new BadRequestException("Wrong content type provided. Expected csv file format.");
+            }
         }
     }
 }

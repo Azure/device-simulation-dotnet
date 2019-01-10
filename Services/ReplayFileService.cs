@@ -32,9 +32,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         Task DeleteAsync(string id);
 
         /// <summary>
-        /// 
+        /// Validate replay file.
         /// </summary>
-        string Validate(Stream stream);
+        string ValidateFile(Stream stream);
     }
 
     public class ReplayFileService : IReplayFileService
@@ -145,7 +145,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Validate replay file
         /// </summary>
-        public string Validate(Stream stream)
+        public string ValidateFile(Stream stream)
         {
             var reader = new StreamReader(stream);
             var file = reader.ReadToEnd();
@@ -162,8 +162,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     }
                     catch (MalformedLineException ex)
                     {
-                        this.log.Error("Replay file has inalid csv format", () => new { ex });
-                        throw new InvalidInputException("Replay file has inalid csv format", ex);
+                        this.log.Error("Replay file has inavlid csv format", () => new { ex });
+                        throw new InvalidInputException("Replay file has invalid csv format", ex);
                     }
                 }
             }
