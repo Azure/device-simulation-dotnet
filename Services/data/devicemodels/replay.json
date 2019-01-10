@@ -5,7 +5,7 @@
   "Name": "Replay",
   "Description": "Fake device model for csv file replay",
   "Protocol": "AMQP",
-  "ReplayFile": "C:\\Git\\device-simulation-dotnet\\WebService\\bin\\Debug\\netcoreapp2.0\\\\./data/devicemodels/\\simulationReplayTest.csv",
+  "ReplayFile": "F:\\GIT\\device-simulation-dotnet\\WebService\\bin\\Debug\\netcoreapp2.0\\\\./data/devicemodels/\\simulationReplayTest.csv",
   "Simulation": {
     "InitialState": {
       "online": true
@@ -15,23 +15,16 @@
     ]
   },
   "Properties": {
-    "Type": "Chiller"
   },
   "Tags": {
   },
   "Telemetry": [
     {
-      "MessageTemplate": "{\"temperature\":${temperature},\"temperature_unit\":\"${temperature_unit}\",\"humidity\":${humidity},\"humidity_unit\":\"${humidity_unit}\",\"pressure\":${pressure},\"pressure_unit\":\"${pressure_unit}\"}",
+      "MessageTemplate": "",
       "MessageSchema": {
         "Name": "replay-sensors;v1",
         "Format": "JSON",
         "Fields": {
-          "temperature": "double",
-          "temperature_unit": "text",
-          "humidity": "double",
-          "humidity_unit": "text",
-          "pressure": "double",
-          "pressure_unit": "text"
         }
       }
     }
