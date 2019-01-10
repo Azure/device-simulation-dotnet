@@ -188,14 +188,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
                 else {
                     // Check for incorrectly formed csv
                     var values = this.currentLine.Split(',');
-                    var intervals = values[1].Split(':');
-                    var msInterval = (long.Parse(intervals[0]) * 3600000) 
-                        + (long.Parse(intervals[1]) * 60000) 
-                        + (long.Parse(intervals[2]) * 1000);
-                    this.currentLine = String.Join("", values, 2, values.Length - 2);
-                    this.whenToRun = Now + msInterval - this.prevInterval;
-                    this.prevInterval = msInterval;
-                    this.status = ActorStatus.LineReady;
+                    if (values.Length >= 3 && values[0] == "telemetry") // Only send telemetry
+                    {
+                        var intervals = values[1].Split(':');
+                        var msInterval = (long.Parse(intervals[0]) * 3600000)
+                            + (long.Parse(intervals[1]) * 60000)
+                            + (long.Parse(intervals[2]) * 1000);
+                        this.currentLine = String.Join("", values, 2, values.Length - 2);
+                        this.whenToRun = Now + msInterval - this.prevInterval;
+                        this.prevInterval = msInterval;
+                        this.status = ActorStatus.LineReady;
+                    }
                 }
             }
             catch (Exception e)
