@@ -51,6 +51,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
         private long whenToRun;
         private long prevInterval;
         private IDeviceConnectionActor deviceContext;
+        private DeviceModelMessageSchema emptySchema;
 
         private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
@@ -68,6 +69,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
             this.currentLine = "";
             this.whenToRun = 0;
             this.prevInterval = 0;
+            this.emptySchema = new DeviceModelMessageSchema();
         }
 
         /// <summary>
@@ -157,8 +159,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
         private async void SendTelemetry() {
             try
             {
-                var emptySchema = new DeviceModelMessageSchema();
-                await this.deviceContext.Client.SendMessageAsync(this.currentLine, emptySchema);
+                await this.deviceContext.Client.SendMessageAsync(this.currentLine, this.emptySchema);
                 this.status = ActorStatus.ReadLine;
                 Console.WriteLine("Sending " + this.deviceId + ": {0}", this.currentLine);
             }
