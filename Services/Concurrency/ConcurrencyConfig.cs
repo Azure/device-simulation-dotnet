@@ -12,6 +12,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         int MaxPendingTelemetry { get; }
         int MaxPendingTwinWrites { get; }
         int MinDeviceStateLoopDuration { get; }
+        int MinDeviceReplayLoopDuration { get; }
         int MinDeviceConnectionLoopDuration { get; }
         int MinDeviceTelemetryLoopDuration { get; }
         int MinDevicePropertiesLoopDuration { get; }
@@ -26,6 +27,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         private const int DEFAULT_MAX_PENDING_TELEMETRY = 1000;
         private const int DEFAULT_MAX_PENDING_TWIN_WRITES = 50;
         private const int DEFAULT_MIN_DEVICE_STATE_LOOP_DURATION = 1000;
+        private const int DEFAULT_MIN_DEVICE_REPLAY_LOOP_DURATION = 1000;
         private const int DEFAULT_MIN_DEVICE_CONNECTION_LOOP_DURATION = 1000;
         private const int DEFAULT_MIN_DEVICE_TELEMETRY_LOOP_DURATION = 500;
         private const int DEFAULT_MIN_DEVICE_PROPERTIES_LOOP_DURATION = 2000;
@@ -42,6 +44,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         private int maxPendingTelemetry;
         private int maxPendingTwinWrites;
         private int minDeviceStateLoopDuration;
+        private int MinDeviceReplayLoopDuration;
         private int minDeviceConnectionLoopDuration;
         private int minDeviceTelemetryLoopDuration;
         private int minDevicePropertiesLoopDuration;
@@ -55,6 +58,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             this.MaxPendingTelemetry = DEFAULT_MAX_PENDING_TELEMETRY;
             this.MaxPendingTwinWrites = DEFAULT_MAX_PENDING_TWIN_WRITES;
             this.MinDeviceStateLoopDuration = DEFAULT_MIN_DEVICE_STATE_LOOP_DURATION;
+            this.MinDeviceReplayLoopDuration = DEFAULT_MIN_DEVICE_REPLAY_LOOP_DURATION;
             this.MinDeviceConnectionLoopDuration = DEFAULT_MIN_DEVICE_CONNECTION_LOOP_DURATION;
             this.MinDeviceTelemetryLoopDuration = DEFAULT_MIN_DEVICE_TELEMETRY_LOOP_DURATION;
             this.MinDevicePropertiesLoopDuration = DEFAULT_MIN_DEVICE_PROPERTIES_LOOP_DURATION;
