@@ -20,12 +20,14 @@ namespace SimulationAgent.Test.SimulationThreads
         private readonly Mock<IAppConcurrencyConfig> mockAppConcurrencyConfig;
         private readonly Mock<ILogger> mockLogger;
         private readonly DeviceReplayTask target;
+        private readonly ConcurrentDictionary<string, Mock<IDeviceReplayActor>> mockDeviceReplayActors;
         private readonly ConcurrentDictionary<string, IDeviceReplayActor> mockDeviceReplayActorObjects;
         private readonly ConcurrentDictionary<string, Mock<ISimulationManager>> mockSimulationManagers;
         private readonly ConcurrentDictionary<string, ISimulationManager> mockSimulationManagerObjects;
 
         public DeviceReplayTaskTest()
         {
+            this.mockDeviceReplayActors = new ConcurrentDictionary<string, Mock<IDeviceReplayActor>>();
             this.mockDeviceReplayActorObjects = new ConcurrentDictionary<string, IDeviceReplayActor>();
             this.mockSimulationManagers = new ConcurrentDictionary<string, Mock<ISimulationManager>>();
             this.mockSimulationManagerObjects = new ConcurrentDictionary<string, ISimulationManager>();
@@ -43,8 +45,12 @@ namespace SimulationAgent.Test.SimulationThreads
             // Arrange
             var cancellationToken = new CancellationTokenSource();
 
+            this.BuildMockDeviceReplayActors(
+                this.mockDeviceReplayActors,
+                this.mockDeviceReplayActorObjects,
+                NUM_ACTORS);
+
             // Build a list of SimulationManagers
-            // TODO: Create replay actors
             this.BuildMockSimluationManagers(
                 this.mockSimulationManagers,
                 this.mockSimulationManagerObjects,
@@ -64,6 +70,27 @@ namespace SimulationAgent.Test.SimulationThreads
             // Verify that each SimulationManager was called at least once
             foreach (var simulationManager in this.mockSimulationManagers)
                 simulationManager.Value.Verify(x => x.NewConnectionLoop(), Times.Once);
+        }
+
+        private void BuildMockDeviceReplayActors(
+            ConcurrentDictionary<string, Mock<IDeviceReplayActor>> mockDictionary,
+            ConcurrentDictionary<string, IDeviceReplayActor> objectDictionary,
+            int count)
+        {
+            mockDictionary.Clear();
+            objectDictionary.Clear();
+
+            for (int i = 0; i < count; i++)
+            {
+                var deviceName = $"device_{i}";
+                var mockDeviceReplayActor = new Mock<IDeviceReplayActor>();
+
+                // Have each DeviceReplayActor report that it has work to do
+                mockDeviceReplayActor.Setup(x => x.HasWorkToDo()).Returns(true);
+
+                mockDictionary.TryAdd(deviceName, mockDeviceReplayActor);
+                objectDictionary.TryAdd(deviceName, mockDeviceReplayActor.Object);
+            }
         }
 
         /*

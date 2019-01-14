@@ -5,7 +5,7 @@
   "Name": "Replay",
   "Description": "Fake device model for csv file replay",
   "Protocol": "AMQP",
-  "ReplayFile": "F:\\GIT\\device-simulation-dotnet\\WebService\\bin\\Debug\\netcoreapp2.0\\\\./data/devicemodels/\\simulationReplayTest.csv",
+  "ReplayFile": "",
   "Simulation": {
     "InitialState": {
       "online": true

@@ -55,6 +55,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
 
         private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
+        // Replay file constants
+        private const string TELEMETRY_TYPE = "telemetry";
+        private const int NUM_CSV_COLS = 3;
+        private const int MS_HOUR = 3600000;
+        private const int MS_MINUTE = 60000;
+        private const int MS_SECOND = 1000;
+
         public DeviceReplayActor(
             ILogger logger,
             IActorsLogger actorLogger,
@@ -73,7 +80,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
         }
 
         /// <summary>
-        /// TODO: Fill in comment
+        /// Invoke this method before calling Execute(), to initialize the actor
+        /// with details like the device model and message type to simulate.
         /// </summary>
         public void Init(
             ISimulationContext simulationContext, 
@@ -120,19 +128,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
                 case ActorStatus.Restart:
                     return true;
             }
+
             return false;
         }
 
-        public async Task RunAsync()
+        public async Task RunAsync() 
         {
             switch (this.status)
             {
                 case ActorStatus.ReadLine:
                     this.ReadLine();
                     break;
+
                 case ActorStatus.LineReady:
                     this.SendTelemetry();
                     break;
+
                 case ActorStatus.Restart:
                     // Rewind the stream to the beginning
                     this.fileStream.Position = 0;
@@ -152,8 +163,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
             this.streamReader.Dispose();
 
             this.status = ActorStatus.Stopped;
-
-            // TODO: Stop the sim in the db
         }
 
         private async void SendTelemetry() {
@@ -189,13 +198,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
                 else {
                     // Check for incorrectly formed csv
                     var values = this.currentLine.Split(',');
-                    if (values.Length >= 3 && values[0] == "telemetry") // Only send telemetry
+                    if (values.Length >= NUM_CSV_COLS && values[0] == TELEMETRY_TYPE) // Only send telemetry
                     {
                         var intervals = values[1].Split(':');
-                        var msInterval = (long.Parse(intervals[0]) * 3600000)
-                            + (long.Parse(intervals[1]) * 60000)
-                            + (long.Parse(intervals[2]) * 1000);
-                        this.currentLine = String.Join("", values, 2, values.Length - 2);
+                        var msInterval = (long.Parse(intervals[0]) * MS_HOUR)
+                            + (long.Parse(intervals[1]) * MS_MINUTE)
+                            + (long.Parse(intervals[2]) * MS_SECOND);
+                        this.currentLine = String.Join("", values, NUM_CSV_COLS - 1, values.Length - NUM_CSV_COLS - 1);
                         this.whenToRun = Now + msInterval - this.prevInterval;
                         this.prevInterval = msInterval;
                         this.status = ActorStatus.LineReady;

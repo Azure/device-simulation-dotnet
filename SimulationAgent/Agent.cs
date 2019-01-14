@@ -103,8 +103,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Contains all the actors sending device replay updates to Azure IoT Hub, indexed by Simulation ID + Device ID (string concat)
         private readonly ConcurrentDictionary<string, IDeviceReplayActor> deviceReplayActors;
 
-        // TODO: Add device replay actors
-
         // Flag signaling whether the simulation is starting (to reduce blocked threads)
         private bool startingOrStopping;
 
