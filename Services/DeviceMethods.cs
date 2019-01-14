@@ -9,6 +9,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Newtonsoft.Json;
 
@@ -29,6 +30,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     {
         private readonly ILogger log;
         private readonly IDiagnosticsLogger diagnosticsLogger;
+        private readonly bool methodsEnabled;
         private IDictionary<string, Script> cloudToDeviceMethods;
         private ISmartDictionary deviceState;
         private ISmartDictionary deviceProperties;
@@ -36,11 +38,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private bool isRegistered;
 
         public DeviceMethods(
+            IServicesConfig servicesConfig,
             ILogger logger,
             IDiagnosticsLogger diagnosticsLogger)
         {
             this.log = logger;
             this.diagnosticsLogger = diagnosticsLogger;
+            this.methodsEnabled = servicesConfig.C2DMethodsEnabled;
             this.deviceId = string.Empty;
             this.isRegistered = false;
         }
@@ -59,6 +63,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 this.log.Error("Application error, each device must have a separate instance");
                 throw new Exception("Application error, each device must have a separate instance of " + this.GetType().FullName);
+            }
+
+            if (!this.methodsEnabled)
+            {
+                this.isRegistered = true;
+                this.log.Debug("Skipping methods registration, methods are disabled in the global configuration.");
+                return;
             }
 
             this.deviceId = deviceId;

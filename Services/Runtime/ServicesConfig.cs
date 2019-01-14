@@ -19,7 +19,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         string AzureManagementAdapterApiUrl { get; }
         int AzureManagementAdapterApiTimeout { get; }
         string AzureManagementAdapterApiVersion { get; }
-        bool TwinReadWriteEnabled { get; }
+        bool DeviceTwinEnabled { get; }
+        bool C2DMethodsEnabled { get; }
         Config MainStorage { get; }
         Config NodesStorage { get; set; }
         Config SimulationsStorage { get; set; }
@@ -52,6 +53,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
             this.dtf = string.Empty;
             this.dtbf = string.Empty;
             this.ihf = string.Empty;
+
+            // By default these features are enabled
+            this.DeviceTwinEnabled = true;
+            this.C2DMethodsEnabled = true;
 
             // By default, disable debugging features
             this.DevelopmentMode = false;
@@ -98,7 +103,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 
         public string DiagnosticsEndpointUrl { get; set; }
 
-        public bool TwinReadWriteEnabled { get; set; }
+        public bool DeviceTwinEnabled { get; set; }
+
+        public bool C2DMethodsEnabled { get; set; }
 
         public Config MainStorage { get; set; }
 

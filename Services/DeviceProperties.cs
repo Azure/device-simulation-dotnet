@@ -8,6 +8,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
@@ -22,13 +23,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
     public class DeviceProperties : IDevicePropertiesRequest
     {
         private readonly ILogger log;
+        private readonly bool deviceTwinEnabled;
         private string deviceId;
         private ISmartDictionary deviceProperties;
         private bool isRegistered;
 
-        public DeviceProperties(ILogger logger)
+        public DeviceProperties(
+            IServicesConfig servicesConfig,
+            ILogger logger)
         {
             this.log = logger;
+            this.deviceTwinEnabled = servicesConfig.DeviceTwinEnabled;
             this.deviceId = string.Empty;
             this.isRegistered = false;
         }
@@ -39,6 +44,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 this.log.Error("Application error, each device must have a separate instance");
                 throw new Exception("Application error, each device must have a separate instance of " + this.GetType().FullName);
+            }
+
+            if (!this.deviceTwinEnabled)
+            {
+                this.isRegistered = true;
+                this.log.Debug("Skipping twin notification registration, twin operations are disabled in the global configuration.");
+                return;
             }
 
             this.deviceId = deviceId;

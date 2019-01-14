@@ -143,5 +143,8 @@
         <None Update="data\iothub\README.md">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="data\templates\remote-monitoring-simulations-template.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>
