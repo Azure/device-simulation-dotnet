@@ -162,7 +162,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     }
                     catch (MalformedLineException ex)
                     {
-                        this.log.Error("Replay file has inavlid csv format", () => new { ex });
+                        this.log.Error("Replay file has invalid csv format", () => new { ex });
                         throw new InvalidInputException("Replay file has invalid csv format", ex);
                     }
                 }
