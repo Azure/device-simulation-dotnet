@@ -16,6 +16,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnec
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceReplay;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.SimulationThreads;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
@@ -99,6 +100,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Contains all the actors sending device property updates to Azure IoT Hub, indexed by Simulation ID + Device ID (string concat)
         private readonly ConcurrentDictionary<string, IDevicePropertiesActor> devicePropertiesActors;
 
+        // Contains all the actors sending device replay updates to Azure IoT Hub, indexed by Simulation ID + Device ID (string concat)
+        private readonly ConcurrentDictionary<string, IDeviceReplayActor> deviceReplayActors;
+
         // TODO: Add device replay actors
 
         // Flag signaling whether the simulation is starting (to reduce blocked threads)
@@ -132,7 +136,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.deviceConnectionActors = new ConcurrentDictionary<string, IDeviceConnectionActor>();
             this.deviceTelemetryActors = new ConcurrentDictionary<string, IDeviceTelemetryActor>();
             this.devicePropertiesActors = new ConcurrentDictionary<string, IDevicePropertiesActor>();
-            // TODO: Add device replay actors
+            this.deviceReplayActors = new ConcurrentDictionary<string, IDeviceReplayActor>();
         }
 
         public Task StartAsync(CancellationToken appStopToken)
@@ -316,7 +320,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                         this.deviceStateActors,
                         this.deviceConnectionActors,
                         this.deviceTelemetryActors,
-                        this.devicePropertiesActors);
+                        this.devicePropertiesActors,
+                        this.deviceReplayActors);
 
                     this.simulationManagers[simulation.Id] = manager;
 
@@ -396,7 +401,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.deviceReplayThread = new Thread(
                 () => this.deviceReplayTask.RunAsync(
                     this.simulationManagers,
-                    // TODO: Add device replay actors
+                    this.deviceReplayActors,
                     this.runningToken.Token));
 
             // State

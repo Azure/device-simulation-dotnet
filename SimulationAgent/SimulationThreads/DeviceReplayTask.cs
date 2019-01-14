@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceReplay;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.SimulationThreads
 {
@@ -14,6 +15,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     {
         Task RunAsync(
             ConcurrentDictionary<string, ISimulationManager> simulationManagers,
+            ConcurrentDictionary<string, IDeviceReplayActor> replayActors,
             CancellationToken runningToken
         );
     }
@@ -35,6 +37,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         public async Task RunAsync(
             ConcurrentDictionary<string, ISimulationManager> simulationManagers,
+            ConcurrentDictionary<string, IDeviceReplayActor> replayActors,
             CancellationToken runningToken)
         {
             var tasks = new List<Task>();
