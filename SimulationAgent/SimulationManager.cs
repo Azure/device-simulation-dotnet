@@ -526,7 +526,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         /**
          * For each device create one actor to periodically update the internal state,
          * one actor to manage the connection to the hub, and one actor for each
-         * telemetry message to send.
+         * telemetry message to send.   ......................
          */
         private void CreateActorsForDevice(string deviceId, DeviceModel deviceModel, int deviceCounter)
         {

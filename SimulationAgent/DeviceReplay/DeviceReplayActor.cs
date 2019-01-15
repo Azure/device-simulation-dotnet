@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 
 using System;
 using System.IO;
@@ -122,7 +122,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
 
             if (!this.deviceContext.Connected) return false;
 
-            switch (this.status) {
+            switch (this.status) 
+            {
                 case ActorStatus.ReadLine:
                 case ActorStatus.LineReady:
                 case ActorStatus.Restart:
@@ -165,7 +166,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
             this.status = ActorStatus.Stopped;
         }
 
-        private async void SendTelemetry() {
+        private async void SendTelemetry() 
+        {
             try
             {
                 await this.deviceContext.Client.SendMessageAsync(this.currentLine, this.emptySchema);
@@ -179,7 +181,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
             }
         }
 
-        private void ReadLine() {
+        private void ReadLine() 
+        {
             try
             {
                 this.currentLine = this.streamReader.ReadLine();
@@ -191,11 +194,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
                     {
                         this.status = ActorStatus.Restart;
                     }
-                    else {
+                    else 
+                    {
                         this.Stop();
                     }
                 }
-                else {
+                else 
+                {
                     // Check for incorrectly formed csv
                     var values = this.currentLine.Split(',');
                     if (values.Length >= NUM_CSV_COLS && values[0] == TELEMETRY_TYPE) // Only send telemetry
