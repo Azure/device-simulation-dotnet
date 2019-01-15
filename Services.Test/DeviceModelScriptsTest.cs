@@ -268,7 +268,7 @@ namespace Services.Test
             var list = new ValueListApiModel();
             var value = new ValueApiModel
             {
-                Key = "key",
+                Key = "key1",
                 Data = "{ 'invalid': json",
                 ETag = "etag"
             };
