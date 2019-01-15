@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Globalization;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
@@ -709,7 +710,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     // and is referenced in Welcome page on UI
                     simulation = simulationList[index];
                     var simulationId = index + 1;
-                    simulation.Id = simulationId.ToString();
+                    simulation.Id = simulationId.ToString(CultureInfo.InvariantCulture);
 
                     try
                     {

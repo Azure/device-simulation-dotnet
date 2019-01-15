@@ -3,8 +3,10 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
@@ -243,10 +245,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             try
             {
                 var prefix = this.GetDictKey(string.Empty);
-                var telemetryActors = this.deviceTelemetryActors.Where(a => a.Key.StartsWith(prefix)).ToList();
-                var connectionActors = this.deviceConnectionActors.Where(a => a.Key.StartsWith(prefix)).ToList();
-                var propertiesActors = this.devicePropertiesActors.Where(a => a.Key.StartsWith(prefix)).ToList();
-                var stateActors = this.deviceStateActors.Where(a => a.Key.StartsWith(prefix)).ToList();
+                var telemetryActors = this.deviceTelemetryActors.Where(a => a.Key.StartsWith(prefix, StringComparison.Ordinal)).ToList();
+                var connectionActors = this.deviceConnectionActors.Where(a => a.Key.StartsWith(prefix, StringComparison.Ordinal)).ToList();
+                var propertiesActors = this.devicePropertiesActors.Where(a => a.Key.StartsWith(prefix, StringComparison.Ordinal)).ToList();
+                var stateActors = this.deviceStateActors.Where(a => a.Key.StartsWith(prefix, StringComparison.Ordinal)).ToList();
 
                 var simulationModel = new SimulationStatisticsModel
                 {
@@ -336,7 +338,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             foreach (var actor in this.deviceStateActors)
             {
                 // TODO: make this simpler, e.g. store the list of keys
-                if (actor.Key.StartsWith(prefix))
+                if (actor.Key.StartsWith(prefix, StringComparison.Ordinal))
                 {
                     toRemove.Add(actor.Key);
                 }
@@ -353,7 +355,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             foreach (var actor in this.deviceConnectionActors)
             {
                 // TODO: make this simpler, e.g. store the list of keys
-                if (actor.Key.StartsWith(prefix))
+                if (actor.Key.StartsWith(prefix, StringComparison.Ordinal))
                 {
                     actor.Value.Stop();
                     toRemove.Add(actor.Key);
@@ -371,7 +373,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             foreach (var actor in this.deviceTelemetryActors)
             {
                 // TODO: make this simpler, e.g. store the list of keys
-                if (actor.Key.StartsWith(prefix))
+                if (actor.Key.StartsWith(prefix, StringComparison.Ordinal))
                 {
                     actor.Value.Stop();
                     toRemove.Add(actor.Key);
@@ -389,7 +391,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             foreach (var actor in this.devicePropertiesActors)
             {
                 // TODO: make this simpler, e.g. store the list of keys
-                if (actor.Key.StartsWith(prefix))
+                if (actor.Key.StartsWith(prefix, StringComparison.Ordinal))
                 {
                     actor.Value.Stop();
                     toRemove.Add(actor.Key);
@@ -433,7 +435,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             foreach (var actor in this.deviceTelemetryActors)
             {
                 // TODO: make this simpler, e.g. store the list of keys
-                if (actor.Key.StartsWith(telemetryDictPrefix))
+                if (actor.Key.StartsWith(telemetryDictPrefix, StringComparison.Ordinal))
                 {
                     actor.Value.Stop();
                     toRemove.Add(actor.Key);
@@ -475,18 +477,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 DeviceModel deviceModel = deviceModelData.Item1;
                 List<string> deviceIds = deviceModelData.Item2;
 
-                foreach (var deviceId in deviceIds)
+                Parallel.ForEach(deviceIds, deviceId =>
                 {
                     this.CreateActorsForDevice(deviceId, deviceModel, this.deviceCount);
-                    this.deviceCount++;
-                    count++;
+                    Interlocked.Increment(ref this.deviceCount);
+                    Interlocked.Increment(ref count);
+                });
 
-                    // Set ActualStartTime if required
-                    if (!this.simulation.ActualStartTime.HasValue)
-                    {
-                        this.simulation.ActualStartTime = DateTimeOffset.UtcNow;
-                        await this.simulations.UpsertAsync(this.simulation, false);
-                    }
+                // Set ActualStartTime if required
+                if (!this.simulation.ActualStartTime.HasValue)
+                {
+                    this.simulation.ActualStartTime = DateTimeOffset.UtcNow;
+                    await this.simulations.UpsertAsync(this.simulation, false);
                 }
             }
 
@@ -515,7 +517,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             // Create one connection actor for each device
             var deviceContext = this.factory.Resolve<IDeviceConnectionActor>();
-            deviceContext.Init(this.simulationContext, deviceId, deviceModel, deviceStateActor, this.simulationContext.ConnectionLoopSettings);
+            deviceContext.Init(
+                this.simulationContext, 
+                deviceId, deviceModel, 
+                deviceStateActor, 
+                this.simulationContext.ConnectionLoopSettings);
             this.deviceConnectionActors.AddOrUpdate(dictKey, deviceContext, (k, v) => deviceContext);
 
             // Create one device properties actor for each device
@@ -538,7 +544,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var deviceTelemetryActor = this.factory.Resolve<IDeviceTelemetryActor>();
                 deviceTelemetryActor.Init(this.simulationContext, deviceId, deviceModel, message, deviceStateActor, deviceContext);
 
-                var actorKey = this.GetTelemetryDictKey(dictKey, (i++).ToString());
+                var actorKey = this.GetTelemetryDictKey(dictKey, (i++).ToString(System.Globalization.CultureInfo.InvariantCulture));
                 this.deviceTelemetryActors.AddOrUpdate(actorKey, deviceTelemetryActor, (k, v) => deviceTelemetryActor);
             }
         }

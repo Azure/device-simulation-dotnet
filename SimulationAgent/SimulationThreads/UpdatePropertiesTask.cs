@@ -45,48 +45,66 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
             while (!runningToken.IsCancellationRequested)
             {
-                // TODO: resetting counters every few seconds seems to be a bug - to be revisited
-                foreach (var manager in simulationManagers)
-                {
-                    manager.Value.NewPropertiesLoop();
-                }
+                long durationMsecs = 0;
 
-                var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                foreach (var actor in devicePropertiesActors)
+                try
                 {
-                    // Avoid enqueueing async tasks that don't have anything to do
-                    if (actor.Value.HasWorkToDo())
+                    // TODO: resetting counters every few seconds seems to be a bug - to be revisited
+                    foreach (var manager in simulationManagers)
                     {
-                        tasks.Add(actor.Value.RunAsync());
+                        manager.Value.NewPropertiesLoop();
                     }
 
-                    if (tasks.Count < pendingTasksLimit) continue;
+                    var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    var limits = new SemaphoreSlim(pendingTasksLimit, pendingTasksLimit);
+                    foreach (var actor in devicePropertiesActors)
+                    {
+                        // Avoid enqueueing async tasks that don't have anything to do
+                        if (actor.Value.HasWorkToDo())
+                        {
+                            await limits.WaitAsync();
+                            var task = actor.Value.RunAsync();
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+#pragma warning disable CA2008 // Do not create tasks without passing a TaskScheduler
+                            task.ContinueWith(t =>
+                            {
+                                limits.Release();
+                            });
+#pragma warning restore CA2008 // Do not create tasks without passing a TaskScheduler
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                            tasks.Add(task);
+                        }
+                    }
 
-                    await Task.WhenAll(tasks);
-                    tasks.Clear();
+                    if (tasks.Count > 0)
+                    {
+                        await Task.WhenAll(tasks);
+                        tasks.Clear();
+                    }
+
+                    durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
+                    this.log.Debug("Device-properties loop completed", () => new { durationMsecs });
+                }
+                catch (Exception e)
+                {
+                    var msg = "Device-properties task failed";
+                    this.log.Error(msg, e);
+                    // this.logDiagnostics.LogServiceError(msg, e);
+                    throw new Exception("Device-properties task failed", e);
                 }
 
-                var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
-                this.log.Debug("Device-properties loop completed", () => new { durationMsecs });
-                this.SlowDownIfTooFast(durationMsecs, this.appConcurrencyConfig.MinDevicePropertiesLoopDuration);
-            }
-
-            // If there are pending tasks...
-            if (tasks.Count > 0)
-            {
-                await Task.WhenAll(tasks);
-                tasks.Clear();
+                await this.SlowDownIfTooFast(durationMsecs, this.appConcurrencyConfig.MinDevicePropertiesLoopDuration, runningToken);
             }
         }
 
-        private void SlowDownIfTooFast(long duration, int min)
+        private async Task SlowDownIfTooFast(long duration, int min, CancellationToken runningToken)
         {
             // Avoid sleeping for only one millisecond
             if (duration >= min || min - duration <= 1) return;
 
-            var pauseMsecs = min - (int) duration;
+            var pauseMsecs = min - (int)duration;
             this.log.Debug("Pausing device-properties thread", () => new { pauseMsecs });
-            Thread.Sleep(pauseMsecs);
+            await Task.Delay(pauseMsecs, runningToken);
         }
     }
 }

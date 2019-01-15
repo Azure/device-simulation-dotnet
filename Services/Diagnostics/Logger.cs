@@ -297,6 +297,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             this.Write(LogLevel.Error, message, callerName, filePath, lineNumber);
         }
 
+        // TODO: is this the best way to do it? Open the file, write to it and close it...
+        // Can we keep the file open and append to it directly and maybe do a flush once in a while? And only close it when we need to?
         public void LogToFile(string filename, string text)
         {
             // Without the lock, some logs would be lost due to contentions

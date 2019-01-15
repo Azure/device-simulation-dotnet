@@ -1,9 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System.Threading.Tasks;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection
 {
@@ -13,36 +11,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
     public class CredentialsSetup : IDeviceConnectionLogic
     {
         private readonly ILogger log;
-        private readonly IInstance instance;
 
-        private string deviceId;
-        private IDeviceConnectionActor deviceContext;
-        private ISimulationContext simulationContext;
-
-        public CredentialsSetup(ILogger logger, IInstance instance)
+        public CredentialsSetup(ILogger logger)
         {
             this.log = logger;
-            this.instance = instance;
         }
 
-        public void Init(IDeviceConnectionActor context, string deviceId, DeviceModel deviceModel)
+        public Task RunAsync(IDeviceConnectionActor deviceContext)
         {
-            this.instance.InitOnce();
+            this.log.Debug("Configuring device credentials...", () => new { deviceContext.DeviceId });
+            deviceContext.Device = deviceContext.SimulationContext.Devices.GetWithKnownCredentials(deviceContext.DeviceId);
+            deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.CredentialsSetupCompleted);
 
-            this.deviceContext = context;
-            this.simulationContext = context.SimulationContext;
-            this.deviceId = deviceId;
-
-            this.instance.InitComplete();
-        }
-
-        public Task RunAsync()
-        {
-            this.instance.InitRequired();
-
-            this.log.Debug("Configuring device credentials...", () => new { this.deviceId });
-            this.deviceContext.Device = this.simulationContext.Devices.GetWithKnownCredentials(this.deviceId);
-            this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.CredentialsSetupCompleted);
             return Task.CompletedTask;
         }
     }

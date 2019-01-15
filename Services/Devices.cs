@@ -109,7 +109,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         private string ioTHubHostName;
         private string connString;
-        private string fixedDeviceKey;
+        private string sharedAccessKey;
+        private string sharedAccessKeyName;
 
         public Devices(
             IServicesConfig config,
@@ -156,8 +157,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.log.Info("Selected active IoT Hub for devices", () => new { this.ioTHubHostName });
 
                 // Prepare the auth key used for all the devices
-                this.fixedDeviceKey = connStringBuilder.SharedAccessKey;
+                this.sharedAccessKey = connStringBuilder.SharedAccessKey;
                 this.log.Debug("Device authentication key defined", () => new { this.ioTHubHostName });
+
+                this.sharedAccessKeyName = connStringBuilder.SharedAccessKeyName;
 
                 this.instance.InitComplete();
             }
@@ -199,7 +202,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 this.log.Info("Selected active IoT Hub for devices", () => new { this.ioTHubHostName });
 
                 // Prepare the auth key used for all the devices
-                this.fixedDeviceKey = connStringBuilder.SharedAccessKey;
+                this.sharedAccessKey = connStringBuilder.SharedAccessKey;
                 this.log.Debug("Device authentication key defined", () => new { this.ioTHubHostName });
 
                 this.instance.InitComplete();
@@ -242,9 +245,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             this.instance.InitRequired();
 
-            return new Device(
-                this.PrepareDeviceObject(deviceId, this.fixedDeviceKey),
-                this.ioTHubHostName);
+            return new Device(this.PrepareDeviceObject(deviceId), this.ioTHubHostName);
         }
 
         // Get the device from the registry
@@ -302,7 +303,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 this.log.Debug("Creating device", () => new { deviceId });
 
-                var device = this.PrepareDeviceObject(deviceId, this.fixedDeviceKey);
+                var device = this.PrepareDeviceObject(deviceId);
                 device = await this.registry.AddDeviceAsync(device);
 
                 return new Device(device, this.ioTHubHostName);
@@ -359,7 +360,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     () => new { batchNumber, batchSize = batch.Count() });
 
                 BulkRegistryOperationResult result = await this.registry.AddDevices2Async(
-                    batch.Select(id => this.PrepareDeviceObject(id, this.fixedDeviceKey)));
+                    batch.Select(id => this.PrepareDeviceObject(id)));
 
                 this.log.Debug("Devices batch created",
                     () => new { batchNumber, result.IsSuccessful, ErrorsCount = result.Errors.Length });
@@ -478,8 +479,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         Type = AuthenticationType.Sas,
                         SymmetricKey = new SymmetricKey
                         {
-                            PrimaryKey = this.fixedDeviceKey,
-                            SecondaryKey = this.fixedDeviceKey
+                            PrimaryKey = this.sharedAccessKey,
+                            SecondaryKey = this.sharedAccessKey
                         }
                     },
                     Status = DeviceStatus.Enabled,
@@ -732,22 +733,35 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         }
 
         // Create a Device object using a predefined authentication secret key
-        private Azure.Devices.Device PrepareDeviceObject(string id, string key)
+        private Azure.Devices.Device PrepareDeviceObject(string id)
         {
             var result = new Azure.Devices.Device(id)
             {
                 Authentication = new AuthenticationMechanism
                 {
                     Type = AuthenticationType.Sas,
-                    SymmetricKey = new SymmetricKey
-                    {
-                        PrimaryKey = key,
-                        SecondaryKey = key
-                    }
+                    //SymmetricKey = new SymmetricKey
+                    //{
+                    //    PrimaryKey = key,
+                    //    SecondaryKey = key
+                    //}
                 }
             };
 
             return result;
+        }
+
+        private string GenerateSasToken(string deviceId)
+        {
+            var sasBuilder = new Azure.Devices.Common.Security.SharedAccessSignatureBuilder
+            {
+                Target = $"{this.ioTHubHostName}/devices/{deviceId}",
+                KeyName = this.sharedAccessKeyName,
+                Key = this.sharedAccessKey,
+                TimeToLive = TimeSpan.FromDays(365) // TODO: make this configurable and automatically rotate key?
+            };
+
+            return sasBuilder.ToSignature();
         }
 
         private IDeviceClientWrapper GetDeviceSdkClient(Device device, IoTHubProtocol protocol)
@@ -762,14 +776,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     this.log.Debug("Creating AMQP device client",
                         () => new { device.Id, device.IoTHubHostName });
 
-                    sdkClient = this.deviceClientFactory.CreateFromConnectionString(connectionString, TransportType.Amqp_Tcp_Only, userAgent);
+                    // sdkClient = this.deviceClientFactory.CreateFromConnectionString(connectionString, TransportType.Amqp_Tcp_Only, userAgent);
+                    sdkClient = this.deviceClientFactory.CreateFromSasToken(this.ioTHubHostName, device.Id, this.GenerateSasToken(device.Id), TransportType.Amqp_Tcp_Only, userAgent);
                     break;
 
                 case IoTHubProtocol.MQTT:
                     this.log.Debug("Creating MQTT device client",
                         () => new { device.Id, device.IoTHubHostName });
 
-                    sdkClient = this.deviceClientFactory.CreateFromConnectionString(connectionString, TransportType.Mqtt_Tcp_Only, userAgent);
+                    // sdkClient = this.deviceClientFactory.CreateFromConnectionString(connectionString, TransportType.Mqtt_Tcp_Only, userAgent);
+                    sdkClient = this.deviceClientFactory.CreateFromSasToken(this.ioTHubHostName, device.Id, this.GenerateSasToken(device.Id), TransportType.Amqp_Tcp_Only, userAgent);
                     break;
 
                 case IoTHubProtocol.HTTP:
@@ -797,7 +813,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
         private IEnumerable<IEnumerable<T>> SplitArray<T>(IReadOnlyCollection<T> array, int size)
         {
-            var count = (int) Math.Ceiling((float) array.Count / size);
+            var count = (int)Math.Ceiling((float)array.Count / size);
             for (int i = 0; i < count; i++)
             {
                 yield return array.Skip(i * size).Take(size);

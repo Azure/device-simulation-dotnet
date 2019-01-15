@@ -19,6 +19,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         DeviceModel.DeviceModelMessage Message { get; }
         long TotalMessagesCount { get; }
         long FailedMessagesCount { get; }
+        IDeviceConnectionActor DeviceContext { get; }
 
         void Init(
             ISimulationContext simulationContext,
@@ -114,6 +115,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         /// </summary>
         public long FailedMessagesCount => this.failedMessagesCount;
 
+        public IDeviceConnectionActor DeviceContext => this.deviceContext;
+
         public DeviceTelemetryActor(
             ILogger logger,
             IActorsLogger actorLogger,
@@ -191,19 +194,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         {
             this.instance.InitRequired();
 
-            this.log.Debug(this.status.ToString(), () => new { this.deviceId });
+            // this.log.Debug(this.status.ToString(), () => new { this.deviceId });
 
             switch (this.status)
             {
                 case ActorStatus.ReadyToStart:
-                    this.whenToRun = 0;
+                    this.whenToRun = Now;
                     this.HandleEvent(ActorEvents.Started);
                     break;
 
                 case ActorStatus.WaitingForQuota:
                 case ActorStatus.ReadyToSend:
                     this.status = ActorStatus.Sending;
-                    this.actorLogger.SendingTelemetry();
                     await this.sendTelemetryLogic.RunAsync();
                     break;
             }
@@ -224,7 +226,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
                 case ActorEvents.TelemetryDelivered:
                     this.simulationContext.RateLimiting.MessagingQuotaNotExceeded();
-                    this.actorLogger.TelemetryDelivered();
                     this.ScheduleTelemetry();
                     break;
 
@@ -272,17 +273,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         private void ScheduleTelemetry()
         {
             // Considering the throttling settings, when can the message be sent
-            var availableSchedule = Now + this.simulationContext.RateLimiting.GetPauseForNextMessage();
+            // var availableSchedule = Now + this.simulationContext.RateLimiting.GetPauseForNextMessage();
 
             // Looking at the device model, when should the message be sent
             // note: this.whenToRun contains the time when the last msg was sent
-            var optimalSchedule = this.whenToRun + (long) this.Message.Interval.TotalMilliseconds;
+            var optimalSchedule = this.whenToRun + (long)this.Message.Interval.TotalMilliseconds;
+
+            // If it's more than two interval delayed, won't catch up anymore, just set the next run to the closest future.
+            if ((this.whenToRun + (long)this.Message.Interval.TotalMilliseconds * 2) < Now)
+            {
+                optimalSchedule = this.whenToRun + ((Now - this.whenToRun) / (long)this.Message.Interval.TotalMilliseconds + 1) * (long)this.Message.Interval.TotalMilliseconds;
+            }
 
             // TODO: review this approach: when choosing optimalSchedule the app might overload the hub and cause throttling
-            this.whenToRun = Math.Max(optimalSchedule, availableSchedule);
+            this.whenToRun = optimalSchedule;
             this.status = ActorStatus.ReadyToSend;
 
-            this.actorLogger.TelemetryScheduled(this.whenToRun);
             this.log.Debug("Telemetry scheduled",
                 () => new
                 {

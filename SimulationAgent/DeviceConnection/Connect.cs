@@ -1,13 +1,11 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection
 {
@@ -17,84 +15,56 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
     public class Connect : IDeviceConnectionLogic
     {
         private readonly ILogger log;
-        private readonly IInstance instance;
-        private string deviceId;
-        private DeviceModel deviceModel;
-        private IDeviceConnectionActor deviceContext;
-        private ISimulationContext simulationContext;
+        private int connectedDevices = 0;
 
-        public Connect(
-            ILogger logger,
-            IInstance instance)
+        public Connect(ILogger logger)
         {
             this.log = logger;
-            this.instance = instance;
         }
 
-        public void Init(IDeviceConnectionActor context, string deviceId, DeviceModel deviceModel)
+        public async Task RunAsync(IDeviceConnectionActor deviceContext)
         {
-            this.instance.InitOnce();
-
-            this.deviceContext = context;
-            this.simulationContext = context.SimulationContext;
-            this.deviceId = deviceId;
-            this.deviceModel = deviceModel;
-
-            this.instance.InitComplete();
-        }
-
-        public async Task RunAsync()
-        {
-            this.instance.InitRequired();
-
-            this.log.Debug("Connecting...", () => new { this.deviceId });
-
             var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+
+            var deviceId = deviceContext.DeviceId;
+            var deviceModel = deviceContext.DeviceModel;
+            var simulationContext = deviceContext.SimulationContext;
 
             try
             {
                 // Ensure pending task are stopped
-                this.deviceContext.DisposeClient();
+                deviceContext.DisposeClient();
 
-                this.deviceContext.Client = this.simulationContext.Devices.GetClient(
-                    this.deviceContext.Device,
-                    this.deviceModel.Protocol);
+                deviceContext.Client = simulationContext.Devices.GetClient(deviceContext.Device, deviceModel.Protocol);
 
-                await this.deviceContext.Client.ConnectAsync();
-                await this.deviceContext.Client.RegisterMethodsForDeviceAsync(
-                    this.deviceModel.CloudToDeviceMethods,
-                    this.deviceContext.DeviceState,
-                    this.deviceContext.DeviceProperties,
-                    this.deviceContext.ScriptInterpreter);
+                await deviceContext.Client.ConnectAsync();
+                await deviceContext.Client.RegisterMethodsForDeviceAsync(deviceModel.CloudToDeviceMethods, deviceContext.DeviceState, deviceContext.DeviceProperties, deviceContext.ScriptInterpreter);
+                await deviceContext.Client.RegisterDesiredPropertiesUpdateAsync(deviceContext.DeviceProperties);
 
-                await this.deviceContext.Client.RegisterDesiredPropertiesUpdateAsync(this.deviceContext.DeviceProperties);
+                var counter = Interlocked.Increment(ref connectedDevices);
+                if (counter % 100 == 0)
+                {
+                    this.log.Info("Connected devices count", () => new { counter });
+                }
 
-                var timeSpentMsecs = GetTimeSpentMsecs();
-                this.log.Debug("Device connected",
-                    () => new { timeSpentMsecs, this.deviceId });
-                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.Connected);
+                // this.log.Info("Device connected", () => new { timeSpentMsecs = GetTimeSpentMsecs(), deviceId });
+                deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.Connected);
             }
             catch (DeviceAuthFailedException e)
             {
-                var timeSpentMsecs = GetTimeSpentMsecs();
-                this.log.Error("Invalid connection credentials",
-                    () => new { timeSpentMsecs, this.deviceId, e });
-                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.AuthFailed);
+                this.log.Error("Invalid connection credentials", () => new { timeSpentMsecs = GetTimeSpentMsecs(), deviceId, e });
+                deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.AuthFailed);
             }
             catch (DeviceNotFoundException e)
             {
-                var timeSpentMsecs = GetTimeSpentMsecs();
-                this.log.Error("Device not found",
-                    () => new { timeSpentMsecs, this.deviceId, e });
-                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceNotFound);
+                this.log.Error("Device not found", () => new { timeSpentMsecs = GetTimeSpentMsecs(), deviceId, e });
+                deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceNotFound);
             }
             catch (Exception e)
             {
-                var timeSpentMsecs = GetTimeSpentMsecs();
-                this.log.Error("Connection error",
-                    () => new { timeSpentMsecs, this.deviceId, e });
-                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.ConnectionFailed);
+                this.log.Error("Connection error", () => new { timeSpentMsecs = GetTimeSpentMsecs(), deviceId, e });
+                deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.ConnectionFailed);
             }
         }
     }

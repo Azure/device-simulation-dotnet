@@ -11,6 +11,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
     {
         uint OperationTimeoutInMilliseconds { get; set; }
         IDeviceClientWrapper CreateFromConnectionString(string connectionString, TransportType transportType, string userAgent);
+        IDeviceClientWrapper CreateFromSasToken(string hostName, string deviceId, string sasToken, TransportType transportType, string userAgent);
         Task OpenAsync();
         Task CloseAsync();
         Task SendEventAsync(Message message);
@@ -37,6 +38,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub
         public IDeviceClientWrapper CreateFromConnectionString(string connectionString, TransportType transportType, string userAgent)
         {
             var sdkClient = Azure.Devices.Client.DeviceClient.CreateFromConnectionString(connectionString, transportType);
+            sdkClient.ProductInfo = userAgent;
+
+            return this.WrapSdkClient(sdkClient);
+        }
+
+        public IDeviceClientWrapper CreateFromSasToken(string hostName, string deviceId, string sasToken, TransportType transportType, string userAgent)
+        {
+            var sdkClient = Azure.Devices.Client.DeviceClient.Create(hostName, new DeviceAuthenticationWithToken(deviceId, sasToken), transportType);
             sdkClient.ProductInfo = userAgent;
 
             return this.WrapSdkClient(sdkClient);

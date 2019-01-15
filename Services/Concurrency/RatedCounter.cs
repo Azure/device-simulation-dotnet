@@ -1,20 +1,28 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Commons;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 
 // TODO: optimize the memory usage https://github.com/Azure/device-simulation-dotnet/issues/80
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 {
+    public enum CounterUnit
+    {
+        Second,
+        Minute
+    }
+
     public class PerSecondCounter : RatedCounter
     {
         public PerSecondCounter(int rate, string name, ILogger logger)
-            : base(rate, 1000, name, logger)
+            : base(rate, CounterUnit.Second, name, logger)
         {
         }
     }
@@ -22,7 +30,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
     public class PerMinuteCounter : RatedCounter
     {
         public PerMinuteCounter(int rate, string name, ILogger logger)
-            : base(rate, 60 * 1000, name, logger)
+            : base(rate, CounterUnit.Minute, name, logger)
         {
         }
     }
@@ -40,6 +48,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         // Milliseconds in the time unit (e.g. 1 minute, 1 second, etc.)
         private readonly double timeUnitLength;
 
+        // Counter unit
+        private readonly CounterUnit counterUnit;
+
         // Counter rate
         private readonly int rate;
 
@@ -52,108 +63,182 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         private readonly ILogger log;
 
-        // Timestamp of recent events, to calculate rate
-        // Note: currently, the memory usage depends on the length of the period to
-        //       monitor, so this is a good place for future optimizations
-        private readonly Queue<long> timestamps;
+        private readonly IDictionary<DateTimeOffset, int> timeStamps;
 
-        public RatedCounter(int rate, double timeUnitLength, string name, ILogger logger)
+        private long[] counters;
+
+        private volatile int headIndex = 0;
+        private volatile int tailIndex = 0;
+        private const int INITIAL_SIZE = 32;
+        private int mask = INITIAL_SIZE - 1;
+
+        private long lastKey = 0;
+
+        private readonly object foreignLock = new object();
+
+        public RatedCounter(int rate, CounterUnit counterUnit, string name, ILogger logger)
         {
             this.log = logger;
+
+            switch (counterUnit)
+            {
+                case CounterUnit.Minute:
+                    this.timeUnitLength = 60 * 1000;
+                    break;
+                case CounterUnit.Second:
+                    this.timeUnitLength = 1000;
+                    break;
+            }
 
             if (rate < MIN_RATE)
             {
                 var msg = "The counter rate value must be greater than or equal to " + MIN_RATE;
-                this.log.Error(msg, () => new { name, rate, timeUnitLength });
+                this.log.Error(msg, () => new { name, rate, counterUnit = counterUnit.ToString() });
                 throw new InvalidConfigurationException(msg);
             }
 
             if (timeUnitLength < MIN_TIME_UNIT)
             {
                 var msg = "The counter time unit value must be greater than or equal to " + MIN_TIME_UNIT;
-                this.log.Error(msg, () => new { name, rate, timeUnitLength });
+                this.log.Error(msg, () => new { name, rate, counterUnit = counterUnit.ToString() });
                 throw new InvalidConfigurationException(msg);
             }
 
             this.rate = rate;
             this.name = name;
             this.eventsPerTimeUnit = this.rate;
-            this.timeUnitLength = timeUnitLength;
+            this.counterUnit = counterUnit;
 
-            this.timestamps = new Queue<long>();
+            this.timeStamps = new ConcurrentDictionary<DateTimeOffset, int>();
+            this.counters = new long[INITIAL_SIZE];
 
             this.log.Debug("New counter", () => new { name, this.rate, timeUnitLength });
+
+            ScheduledTasksExecutor.ScheduleTask(Clean, counterUnit == CounterUnit.Second ? 10 * 1000 : 60 * 10 * 1000);
         }
 
-        public long GetPause()
+        private void CreateNew(DateTimeOffset key)
         {
-            long pauseMsecs;
-
-            this.LogThroughput();
-
-            // Note: keep the code fast, e.g. leave ASAP and don't I/O while locking
-            // TODO: improve performance: https://github.com/Azure/device-simulation-dotnet/issues/80
-            //       * remove O(n) lookups
-            //       * optimize memory usage (e.g. daily counters)
-            lock (this.timestamps)
+            int tail = tailIndex;
+            if (tail < headIndex + mask)
             {
-                var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                this.CleanQueue(now);
-
-                // No pause if the limit hasn't been reached yet,
-                if (this.timestamps.Count < this.eventsPerTimeUnit)
-                {
-                    this.timestamps.Enqueue(now);
-                    return 0;
-                }
-
-                long when;
-                now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                var startFrom = now - this.timeUnitLength;
-                var howManyInTheLastTimeUnit = this.timestamps.Count(t => t > startFrom);
-
-                // No pause if the limit hasn't been reached in the last time unit
-                if (howManyInTheLastTimeUnit < this.eventsPerTimeUnit)
-                {
-                    when = Math.Max(this.timestamps.Last(), now);
-                }
-                else
-                {
-                    // Add one [time unit] since when the Nth event ran
-                    var oneUnitTimeAgo = this.timestamps.ElementAt(this.timestamps.Count - this.eventsPerTimeUnit);
-                    when = oneUnitTimeAgo + (long) this.timeUnitLength;
-                }
-
-                pauseMsecs = when - now;
-
-                this.timestamps.Enqueue(when);
-
-                // Ignore short pauses
-                if (pauseMsecs < 1.01)
-                {
-                    return 0;
-                }
-            }
-
-            // The caller is sending too many events. If this happens, you
-            // should consider redesigning the simulation logic to run
-            // slower, rather than relying purely on the counter.
-            if (pauseMsecs > 60000)
-            {
-                this.log.Debug("Pausing for more than a minute",
-                    () => new { this.name, seconds = pauseMsecs / 1000 });
-            }
-            else if (pauseMsecs > 15000)
-            {
-                this.log.Debug("Pausing for several seconds",
-                    () => new { this.name, seconds = pauseMsecs / 1000 });
+                this.counters[tail & mask] = 1;
+                this.timeStamps[key] = tail & mask;
+                tailIndex = tail + 1;
             }
             else
             {
-                this.log.Debug("Pausing", () => new { this.name, millisecs = pauseMsecs });
+                int head = headIndex;
+                int count = tailIndex - headIndex;
+                if (count >= mask)
+                {
+                    long[] newArray = new long[this.counters.Length << 1];
+                    var dictionary = new Dictionary<int, int>(this.counters.Length);
+                    for (int i = 0; i < this.counters.Length; i++)
+                    {
+                        newArray[i] = this.counters[(i + head) & mask];
+                        dictionary[(i + head) & mask] = i;
+                    }
+                    this.counters = newArray;
+                    foreach (var item in this.timeStamps)
+                    {
+                        this.timeStamps[item.Key] = dictionary[item.Value];
+                    }
+
+                    // Reset the field values, incl. the mask.
+                    headIndex = 0;
+                    tailIndex = tail = count;
+                    mask = (mask << 1) | 1;
+                }
+
+                this.counters[tail & mask] = 1;
+                this.timeStamps[key] = tail & mask;
+                tailIndex = tail + 1;
             }
 
-            return pauseMsecs;
+            Interlocked.Exchange(ref lastKey, key.ToUnixTimeSeconds());
+        }
+
+        /// <summary>
+        /// First get the key for current timestamp
+        ///       get the key for last item in dictionary
+        /// If the key in dictionary is older than current timestamp key (means current slot is not used), 
+        ///     create a new one and return 0
+        /// Else
+        ///     Read the value for last slot
+        ///     If it's less than limit, 
+        ///         incremental one
+        ///     Else
+        ///         Create a new one
+        /// </summary>
+        /// <returns></returns>
+        public long GetPause()
+        {
+            var now = DateTimeOffset.UtcNow;
+            var key = DateTimeOffset.Parse(now.ToString("yyyy-MM-dd HH:mm:ss") + " z");
+            if (this.counterUnit == CounterUnit.Minute)
+            {
+                key = DateTimeOffset.Parse(now.ToString("yyyy-MM-dd HH:mm") + " z");
+            }
+
+            var lastCounterKey = DateTimeOffset.FromUnixTimeSeconds(Interlocked.Read(ref this.lastKey));
+            if (lastCounterKey == DateTimeOffset.FromUnixTimeSeconds(0))
+            {
+                lock (this.foreignLock)
+                {
+                    lastCounterKey = DateTimeOffset.FromUnixTimeSeconds(Interlocked.Read(ref this.lastKey));
+                    if (lastCounterKey == DateTimeOffset.FromUnixTimeSeconds(0))
+                    {
+                        CreateNew(key);
+                        return 0;
+                    }
+                }
+            }
+
+            if (key > lastCounterKey)
+            {
+                lock (this.foreignLock)
+                {
+                    lastCounterKey = DateTimeOffset.FromUnixTimeSeconds(Interlocked.Read(ref this.lastKey));
+                    if (key > lastCounterKey)
+                    {
+                        CreateNew(key);
+                        return 0;
+                    }
+                }
+            }
+
+            // Console.WriteLine("Last Counter: {0}", lastCounterKey);
+            var currentValue = Interlocked.Read(ref this.counters[this.timeStamps[lastCounterKey]]);
+            // Console.WriteLine("CurrentValue: {0}", currentValue);
+            if (currentValue < this.eventsPerTimeUnit)
+            {
+                var newValue = Interlocked.Increment(ref this.counters[this.timeStamps[lastCounterKey]]);
+                if (newValue <= this.eventsPerTimeUnit)
+                {
+                    var pause = (long)(lastCounterKey - now).TotalMilliseconds;
+                    return pause > 0 ? pause : 0;
+                }
+                else
+                {
+                    Interlocked.Decrement(ref this.counters[this.timeStamps[lastCounterKey]]);
+                }
+            }
+
+            lock (this.foreignLock)
+            {
+                var newLastCounterKey = DateTimeOffset.FromUnixTimeSeconds(Interlocked.Read(ref this.lastKey));
+                // Console.WriteLine("New Last Counter: {0}", newLastCounter.Key);
+                if (newLastCounterKey == lastCounterKey)
+                {
+                    var newKey = this.counterUnit == CounterUnit.Minute ? lastCounterKey.AddMinutes(1) : lastCounterKey.AddSeconds(1);
+                    CreateNew(newKey);
+                    var pause = (long)(newKey - now).TotalMilliseconds;
+                    return pause > 0 ? pause : 0;
+                }
+            }
+
+            return this.GetPause();
         }
 
         // Increase the counter, taking a pause if the caller is going too fast.
@@ -164,7 +249,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
             if (pauseMsecs > 0)
             {
-                await Task.Delay((int) pauseMsecs, token);
+                await Task.Delay((int)pauseMsecs, token);
                 return true;
             }
 
@@ -178,21 +263,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         public double GetThroughputForMessages()
         {
             double speed = 0;
-            lock (this.timestamps)
+
+            lock (foreignLock)
             {
-                if (this.timestamps.Count > 1)
+                if (this.timeStamps.Count <= 1)
                 {
-                    var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                    var last = this.timestamps.Last();
+                    return speed;
+                }
 
-                    // To avoid stale stats, return 0 if there are no events in the last minute
-                    if (now - last > 60000) return 0;
+                var values = this.timeStamps.Values.ToList();
+                values.RemoveAt(values.Count - 1);
 
-                    // Time range in milliseconds
-                    long time = last - this.timestamps.First();
-
-                    // Unit for speed is messages per second
-                    speed = (1000 * (double) this.timestamps.Count / time * 10) / 10;
+                switch (this.counterUnit)
+                {
+                    case CounterUnit.Minute:
+                        speed = (double)values.Sum(v => this.counters[v]) / values.Count / 60;
+                        break;
+                    case CounterUnit.Second:
+                        speed = (double)values.Sum(v => this.counters[v]) / values.Count;
+                        break;
                 }
             }
 
@@ -201,16 +290,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         public void ResetCounter()
         {
-            lock (this.timestamps)
+            lock (this.foreignLock)
             {
-                this.timestamps.Clear();
+                this.timeStamps.Clear();
+                this.tailIndex = 0;
+                this.headIndex = 0;
+                this.mask = INITIAL_SIZE - 1;
+                this.lastKey = 0;
+                this.counters = new long[mask];
             }
         }
 
         public void ChangeConcurrencyFactor(int factor)
         {
             factor = Math.Max(1, factor);
-            this.eventsPerTimeUnit = Convert.ToInt32(Math.Round(this.rate / (double) factor));
+            this.eventsPerTimeUnit = Convert.ToInt32(Math.Round(this.rate / (double)factor));
         }
 
         private void LogThroughput()
@@ -222,12 +316,25 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
             }
         }
 
-        private void CleanQueue(long now)
+        private void Clean()
         {
-            // Clean up queue
-            while (this.timestamps.Count > 0 && (now - this.timestamps.Peek()) > 2 * this.timeUnitLength)
+            var now = DateTimeOffset.UtcNow;
+            var key = DateTimeOffset.Parse(now.ToString("yyyy-MM-dd HH:mm:ss") + " z").AddSeconds(-10);
+            if (this.counterUnit == CounterUnit.Minute)
             {
-                this.timestamps.Dequeue();
+                key = DateTimeOffset.Parse(now.ToString("yyyy-MM-dd HH:mm") + " z").AddMinutes(-10);
+            }
+
+            var keys = this.timeStamps.Keys.Where(k => k < key).ToArray();
+
+            lock (foreignLock)
+            {
+                foreach (var k in keys)
+                {
+                    Interlocked.Exchange(ref this.counters[this.headIndex & mask], 0);
+                    this.headIndex++;
+                    this.timeStamps.Remove(k);
+                }
             }
         }
     }

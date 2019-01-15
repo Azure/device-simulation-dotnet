@@ -4,6 +4,9 @@ using System;
 using System.IO;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 {
@@ -25,6 +28,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
                     .UseUrls("http://*:" + webServicePort)
                     .UseKestrel(options => { options.AddServerHeader = false; })
                     .UseIISIntegration()
+                    .ConfigureAppConfiguration((hostingContext, config) =>
+                    {
+                        var env = hostingContext.HostingEnvironment;
+                        config.SetBasePath(env.ContentRootPath)
+                            .AddIniFile(ConfigFile.DEFAULT, optional: false, reloadOnChange: true);
+
+                        if (ConfigFile.GetDevOnlyConfigFile() != null)
+                        {
+                            Console.WriteLine("===========================\nLOADING SETTINGS FROM " + ConfigFile.GetDevOnlyConfigFile() + "\n===========================");
+                            config.AddIniFile(ConfigFile.GetDevOnlyConfigFile(), optional: true, reloadOnChange: true);
+                        }
+
+                        config.AddEnvironmentVariables();
+                    })
+                    .ConfigureLogging((hostingContext, logging) =>
+                    {
+                        logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
+                        logging.AddConsole();
+                        logging.AddDebug();
+                        logging.AddEventSourceLogger();
+                    })
                     .UseStartup<Startup>()
                     .Build();
 

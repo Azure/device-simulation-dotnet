@@ -2,7 +2,7 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
@@ -27,9 +27,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         // Global settings, not affected by hub SKU or simulation settings
         private readonly IAppConcurrencyConfig appConcurrencyConfig;
 
-        public DeviceTelemetryTask(
-            IAppConcurrencyConfig appConcurrencyConfig,
-            ILogger logger)
+        public DeviceTelemetryTask(IAppConcurrencyConfig appConcurrencyConfig, ILogger logger)
         {
             this.appConcurrencyConfig = appConcurrencyConfig;
             this.log = logger;
@@ -57,100 +55,152 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             int threadCount,
             CancellationToken runningToken)
         {
-            // Once N devices are attempting to send telemetry, wait until they are done
-            var pendingTaskLimit = this.appConcurrencyConfig.MaxPendingTelemetry;
-            var tasks = new List<Task>();
+            var connected = false;
 
+            // Once N devices are attempting to send telemetry, wait until they are done
+            // var pendingTaskLimit = this.appConcurrencyConfig.MaxPendingTelemetry;
+            // var tasks = new ConcurrentDictionary<int, Task>();
+
+            // var limits = new SemaphoreSlim(pendingTaskLimit, pendingTaskLimit);
             while (!runningToken.IsCancellationRequested)
             {
                 // Calculate the first and last actor, which define a range of actors that each thread
                 // should *not* send telemetry for. As the number of actors could change at runtime,
                 // as different simulations are started, we'll re-calculate these values on each
                 // time through this loop.
-                int chunkSize = (int) Math.Ceiling(deviceTelemetryActors.Count / (double) threadCount);
+                int chunkSize = (int)Math.Ceiling(deviceTelemetryActors.Count / (double)threadCount);
                 var firstActor = chunkSize * (threadPosition - 1);
                 var lastActor = Math.Min(chunkSize * threadPosition, deviceTelemetryActors.Count);
+                // Only send telemetry for devices *other* than the ones in
+                // the chunk for the current thread, for example:
+                //
+                //    Count = 20000
+                //    chunkSize = 6667
+                //
+                //    threadPosition 1:     0,  6667
+                //    threadPosition 2:  6667, 13334
+                //    threadPosition 3: 13334, 20000
+                //
+                //    threadPosition == 1
+                //
+                //    firstActor   lastActor
+                //    |            |
+                //    v            v
+                //    +------------+-------------------------+
+                //    |    send    | don't send | don't send |
+                //    +------------+-------------------------+
+                //
+                //
+                //    threadPosition == 2
+                //
+                //                 firstActor   lastActor
+                //                 |            |
+                //                 v            v
+                //    +------------+-------------------------+
+                //    | don't send |    send    | don't send |
+                //    +------------+-------------------------+
+                //
+                //
+                //    threadPosition == 3
+                //
+                //                              firstActor   lastActor
+                //                              |            |
+                //                              v            v
+                //    +------------+-------------------------+
+                //    | don't send | don't send |    send    |
+                //    +------------+-------------------------+
 
-                var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                var index = -1;
-                foreach (var actor in deviceTelemetryActors)
+                long durationMsecs = 0;
+                try
                 {
-                    // Only send telemetry for devices *other* than the ones in
-                    // the chunk for the current thread, for example:
-                    //
-                    //    Count = 20000
-                    //    chunkSize = 6667
-                    //
-                    //    threadPosition 1:     0,  6667
-                    //    threadPosition 2:  6667, 13334
-                    //    threadPosition 3: 13334, 20000
-                    //
-                    //    threadPosition == 1
-                    //
-                    //    firstActor   lastActor
-                    //    |            |
-                    //    v            v
-                    //    +------------+-------------------------+
-                    //    |    send    | don't send | don't send |
-                    //    +------------+-------------------------+
-                    //
-                    //
-                    //    threadPosition == 2
-                    //
-                    //                 firstActor   lastActor
-                    //                 |            |
-                    //                 v            v
-                    //    +------------+-------------------------+
-                    //    | don't send |    send    | don't send |
-                    //    +------------+-------------------------+
-                    //
-                    //
-                    //    threadPosition == 3
-                    //
-                    //                              firstActor   lastActor
-                    //                              |            |
-                    //                              v            v
-                    //    +------------+-------------------------+
-                    //    | don't send | don't send |    send    |
-                    //    +------------+-------------------------+
-                    index++;
-                    if (index >= firstActor && index < lastActor)
+                    var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+                    var telemetryActors = deviceTelemetryActors.Skip(firstActor).Take(lastActor - firstActor).ToArray();
+                    if (!connected && (telemetryActors.Length == 0 || telemetryActors.Length > 0 && telemetryActors.Any(a => !a.Value.DeviceContext.Connected)))
                     {
-                        // Avoid enqueueing async tasks that don't have anything to do
-                        if (actor.Value.HasWorkToDo())
+                        await Task.Delay(5 * 1000);
+                        continue;
+                    }
+
+                    // First time connected, equally split into second to make sure each second has the same load
+                    if (!connected)
+                    {
+                        var groups = telemetryActors.Select(a => a.Value).GroupBy(a => a.Message.Interval);
+                        foreach (var group in groups)
                         {
-                            tasks.Add(actor.Value.RunAsync());
+                            var groupActors = group.ToArray();
+                            var batchCount = (int)Math.Round(((double)groupActors.Length / group.Key.TotalSeconds));
+                            for (var i = 0; i < group.Key.TotalSeconds; i++)
+                            {
+                                var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+                                IDeviceTelemetryActor[] batch;
+                                if (i == group.Key.TotalSeconds - 1)
+                                {
+                                    // Last batch take all remaining
+                                    if (i * batchCount < groupActors.Length)
+                                    {
+                                        batch = groupActors.Skip(i * batchCount).Take(groupActors.Length - i * batchCount).ToArray();
+                                    }
+                                    else
+                                    {
+                                        batch = new IDeviceTelemetryActor[0];
+                                    }
+                                }
+                                else
+                                {
+                                    batch = groupActors.Skip(i * batchCount).Take(batchCount).ToArray();
+                                }
+
+                                Parallel.ForEach(batch, a => a.RunAsync());
+                                if (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start < 1000)
+                                {
+                                    await Task.Delay(1000 - (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start));
+                                }
+                            }
                         }
 
-                        if (tasks.Count < pendingTaskLimit)
-                            continue;
-
-                        await Task.WhenAll(tasks);
-                        tasks.Clear();
+                        connected = true;
+                        continue;
                     }
+
+                    var actors = deviceTelemetryActors.Skip(firstActor).Take(lastActor - firstActor).Where(a => a.Value.HasWorkToDo()).Select(a => a.Value).ToArray();
+                    this.log.Info("Telemetry Actions", () => new { actors.Length });
+                    Parallel.ForEach(actors, actor =>
+                    {
+                        actor.RunAsync();
+                    });
+
+                    durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
+                    this.log.Debug("Telemetry loop completed", () => new { durationMsecs });
+                }
+                catch (Exception e)
+                {
+                    var msg = "Unable to start the device-telemetry threads";
+                    this.log.Error(msg, e);
+                    // this.logDiagnostics.LogServiceError(msg, e);
+                    throw new Exception("Unable to start the device-telemetry threads", e);
                 }
 
-                var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
-                this.log.Debug("Telemetry loop completed", () => new { durationMsecs });
-                this.SlowDownIfTooFast(durationMsecs, this.appConcurrencyConfig.MinDeviceTelemetryLoopDuration);
+                await this.SlowDownIfTooFast(durationMsecs, this.appConcurrencyConfig.MinDeviceTelemetryLoopDuration, runningToken);
             }
 
             // If there are pending tasks...
-            if (tasks.Count > 0)
-            {
-                await Task.WhenAll(tasks);
-                tasks.Clear();
-            }
+            //if (tasks.Count > 0)
+            //{
+            //    await Task.WhenAll(tasks.Values);
+            //    tasks.Clear();
+            //}
         }
 
-        private void SlowDownIfTooFast(long duration, int min)
+        private async Task SlowDownIfTooFast(long duration, int min, CancellationToken cancellationToken)
         {
             // Avoid sleeping for only one millisecond
             if (duration >= min || min - duration <= 1) return;
 
-            var pauseMsecs = min - (int) duration;
+            var pauseMsecs = min - (int)duration;
             this.log.Debug("Pausing device telemetry thread", () => new { pauseMsecs });
-            Thread.Sleep(pauseMsecs);
+            await Task.Delay(pauseMsecs, cancellationToken);
         }
     }
 }

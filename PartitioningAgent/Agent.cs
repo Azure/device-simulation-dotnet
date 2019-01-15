@@ -98,7 +98,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                 }
 
                 // Sleep some seconds before checking for new simulations (by default 15 seconds)
-                await Task.Delay(this.checkIntervalMsecs);
+                await Task.Delay(this.checkIntervalMsecs, appStopToken);
             }
         }
 

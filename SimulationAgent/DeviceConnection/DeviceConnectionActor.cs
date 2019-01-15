@@ -12,6 +12,28 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection
 {
+    public enum ActorStatus
+    {
+        None,
+        ReadyToStart,
+        ReadyToSetupCredentials,
+        ReadyToFetch,
+        PreparingCredentials,
+        Fetching,
+        ReadyToRegister,
+        Registering,
+        ReadyToConnect,
+        Connecting,
+        Done,
+        Stopped,
+        ReadyToDisconnect,
+        Disconnecting,
+        ReadyToDeregister,
+        Deregistering,
+        Deleted,
+        WaitingForDeviceQuota
+    }
+
     public interface IDeviceConnectionActor
     {
         ISimulationContext SimulationContext { get; }
@@ -19,11 +41,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         ISmartDictionary DeviceProperties { get; }
         IDeviceClient Client { get; set; }
         IScriptInterpreter ScriptInterpreter { get; }
+        string DeviceId { get; }
+        DeviceModel DeviceModel { get; }
         Device Device { get; set; }
         bool Connected { get; }
         long FailedDeviceConnectionsCount { get; }
         long SimulationErrorsCount { get; }
         bool IsDeleted { get; }
+        ActorStatus Status { get; }
 
         void Init(
             ISimulationContext simulationContext,
@@ -65,29 +90,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             PropertiesClientBroken,
             DeviceQuotaExceeded
         }
-
-        private enum ActorStatus
-        {
-            None,
-            ReadyToStart,
-            ReadyToSetupCredentials,
-            ReadyToFetch,
-            PreparingCredentials,
-            Fetching,
-            ReadyToRegister,
-            Registering,
-            ReadyToConnect,
-            Connecting,
-            Done,
-            Stopped,
-            ReadyToDisconnect,
-            Disconnecting,
-            ReadyToDeregister,
-            Deregistering,
-            Deleted,
-            WaitingForDeviceQuota
-        }
-
+        
         private readonly ILogger log;
         private readonly IActorsLogger actorLogger;
         private readonly IDeviceConnectionLogic fetchFromRegistryLogic;
@@ -99,8 +102,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private readonly IInstance instance;
 
         private ActorStatus status;
-        private string deviceId;
-        private DeviceModel deviceModel;
         private long whenToRun;
         private ConnectionLoopSettings loopSettings;
         private long failedDeviceConnectionsCount;
@@ -138,6 +139,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         public ISmartDictionary DeviceProperties => this.deviceStateActor.DeviceProperties;
 
         /// <summary>
+        /// Device model information
+        /// </summary>
+        public DeviceModel DeviceModel { get; private set; }
+
+        /// <summary>
+        /// Device Id
+        /// </summary>
+        public string DeviceId { get; private set; }
+
+        /// <summary>
         /// Azure IoT Hub client shared by Connect, Properties, and SendTelemetry
         /// </summary>
         public IDeviceClient Client { get; set; }
@@ -172,6 +183,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         /// </summary>
         public bool IsDeleted => this.status == ActorStatus.Deleted;
 
+        public ActorStatus Status => this.status;
+
         /// <summary>
         /// Simulation error counter in DeviceConnectionActor
         /// </summary>
@@ -205,10 +218,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.Message = null;
             this.Client = null;
             this.Device = null;
+            this.DeviceModel = null;
+            this.DeviceId = null;
 
             this.status = ActorStatus.None;
-            this.deviceModel = null;
-            this.deviceId = null;
             this.deviceStateActor = null;
 
             this.failedDeviceConnectionsCount = 0;
@@ -231,17 +244,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.instance.InitOnce();
 
             this.simulationContext = simulationContext;
-            this.deviceModel = deviceModel;
-            this.deviceId = deviceId;
+            this.DeviceModel = deviceModel;
+            this.DeviceId = deviceId;
             this.deviceStateActor = deviceStateActor;
             this.loopSettings = loopSettings;
 
-            this.credentialsSetupLogic.Init(this, this.deviceId, this.deviceModel);
-            this.fetchFromRegistryLogic.Init(this, this.deviceId, this.deviceModel);
-            this.registerLogic.Init(this, this.deviceId, this.deviceModel);
-            this.connectLogic.Init(this, this.deviceId, this.deviceModel);
-            this.deregisterLogic.Init(this, this.deviceId, this.deviceModel);
-            this.disconnectLogic.Init(this, this.deviceId, this.deviceModel);
             this.actorLogger.Init(deviceId, "Connection");
 
             this.status = ActorStatus.ReadyToStart;
@@ -280,7 +287,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         {
             this.instance.InitRequired();
 
-            this.log.Debug(this.status.ToString(), () => new { this.deviceId });
+            this.log.Debug(this.status.ToString(), () => new { this.DeviceId });
 
             switch (this.status)
             {
@@ -295,41 +302,71 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     break;
 
                 case ActorStatus.ReadyToSetupCredentials:
-                    this.status = ActorStatus.PreparingCredentials;
-                    this.actorLogger.PreparingDeviceCredentials();
-                    await this.credentialsSetupLogic.RunAsync();
+                    await SetupCredentials();
                     return;
 
                 case ActorStatus.ReadyToFetch:
-                    this.status = ActorStatus.Fetching;
-                    this.actorLogger.FetchingDevice();
-                    await this.fetchFromRegistryLogic.RunAsync();
+                    await Fetch();
                     return;
 
                 case ActorStatus.ReadyToRegister:
-                    this.status = ActorStatus.Registering;
-                    this.actorLogger.RegisteringDevice();
-                    await this.registerLogic.RunAsync();
+                    await Register();
                     return;
 
                 case ActorStatus.ReadyToConnect:
-                    this.status = ActorStatus.Connecting;
-                    this.actorLogger.ConnectingDevice();
-                    await this.connectLogic.RunAsync();
+                    await Connect();
                     return;
 
                 case ActorStatus.ReadyToDeregister:
-                    this.status = ActorStatus.Deregistering;
-                    this.actorLogger.DeregisteringDevice();
-                    await this.deregisterLogic.RunAsync();
+                    await DeRegister();
                     return;
 
                 case ActorStatus.ReadyToDisconnect:
-                    this.status = ActorStatus.Disconnecting;
-                    this.actorLogger.DisconnectingDevice();
-                    await this.disconnectLogic.RunAsync();
+                    await DisConnect();
                     return;
             }
+        }
+
+        private async Task SetupCredentials()
+        {
+            this.status = ActorStatus.PreparingCredentials;
+            this.actorLogger.PreparingDeviceCredentials();
+            await this.credentialsSetupLogic.RunAsync(this);
+        }
+
+        private async Task Fetch()
+        {
+            this.status = ActorStatus.Fetching;
+            this.actorLogger.FetchingDevice();
+            await this.fetchFromRegistryLogic.RunAsync(this);
+        }
+
+        private async Task Register()
+        {
+            this.status = ActorStatus.Registering;
+            this.actorLogger.RegisteringDevice();
+            await this.registerLogic.RunAsync(this);
+        }
+
+        private async Task Connect()
+        {
+            this.status = ActorStatus.Connecting;
+            this.actorLogger.ConnectingDevice();
+            await this.connectLogic.RunAsync(this);
+        }
+
+        private async Task DeRegister()
+        {
+            this.status = ActorStatus.Deregistering;
+            this.actorLogger.DeregisteringDevice();
+            await this.deregisterLogic.RunAsync(this);
+        }
+
+        private async Task DisConnect()
+        {
+            this.status = ActorStatus.Disconnecting;
+            this.actorLogger.DisconnectingDevice();
+            await this.disconnectLogic.RunAsync(this);
         }
 
         public void HandleEvent(ActorEvents e)
@@ -337,9 +374,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             switch (e)
             {
                 case ActorEvents.Started:
-                    if (this.loopSettings.SchedulableFetches <= 0)
-                        return;
-                    this.loopSettings.SchedulableFetches--;
+                    //if (this.loopSettings.SchedulableFetches <= 0)
+                    //    return;
+                    //this.loopSettings.SchedulableFetches--;
 
                     this.actorLogger.ActorStarted();
                     this.ScheduleCredentialsSetup();
@@ -402,7 +439,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     break;
 
                 case ActorEvents.Connected:
-                    this.actorLogger.DeviceConnected();
+                    // this.actorLogger.DeviceConnected();
                     this.status = ActorStatus.Done;
                     break;
 
@@ -460,7 +497,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.log.Warn("Creation and connection paused due to device creation quota",
                 () => new
                 {
-                    this.deviceId,
+                    this.DeviceId,
                     Status = this.status.ToString(),
                     Until = this.log.FormatDate(this.whenToRun)
                 });
@@ -500,6 +537,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
             try
             {
+                // Close existing client, won't wait
                 this.Client?.DisconnectAsync();
             }
             catch (Exception)
@@ -528,7 +566,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.log.Debug("Device credentials setup scheduled",
                 () => new
                 {
-                    this.deviceId,
+                    this.DeviceId,
                     Status = this.status.ToString(),
                     When = this.log.FormatDate(this.whenToRun)
                 });
@@ -544,7 +582,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.log.Debug("Device fetch scheduled",
                 () => new
                 {
-                    this.deviceId,
+                    this.DeviceId,
                     Status = this.status.ToString(),
                     When = this.log.FormatDate(this.whenToRun)
                 });
@@ -560,7 +598,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.log.Debug("Registration scheduled",
                 () => new
                 {
-                    this.deviceId,
+                    this.DeviceId,
                     Status = this.status.ToString(),
                     When = this.log.FormatDate(this.whenToRun)
                 });
@@ -576,7 +614,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.log.Debug("Connection scheduled",
                 () => new
                 {
-                    this.deviceId,
+                    this.DeviceId,
                     Status = this.status.ToString(),
                     When = this.log.FormatDate(this.whenToRun)
                 });
@@ -592,7 +630,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.log.Debug("Deregistration scheduled",
                 () => new
                 {
-                    this.deviceId,
+                    this.DeviceId,
                     Status = this.status.ToString(),
                     When = this.log.FormatDate(this.whenToRun)
                 });
@@ -607,7 +645,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.log.Debug("Disconnection scheduled",
                 () => new
                 {
-                    this.deviceId,
+                    this.DeviceId,
                     Status = this.status.ToString(),
                     When = this.log.FormatDate(this.whenToRun)
                 });

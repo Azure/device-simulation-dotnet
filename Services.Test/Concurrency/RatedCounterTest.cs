@@ -25,7 +25,7 @@ namespace Services.Test.Concurrency
         class BadCounter1 : RatedCounter
         {
             public BadCounter1(ILogger logger)
-                : base(1, 999, "BadCounter1", logger)
+                : base(1, CounterUnit.Second, "BadCounter1", logger)
             {
             }
         }
@@ -33,7 +33,7 @@ namespace Services.Test.Concurrency
         class BadCounter2 : RatedCounter
         {
             public BadCounter2(ILogger logger)
-                : base(0, 99999, "BadCounter2", logger)
+                : base(0, CounterUnit.Minute, "BadCounter2", logger)
             {
             }
         }

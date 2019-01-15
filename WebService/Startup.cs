@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Commons;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
@@ -38,7 +39,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         // References used to monitor the application
         private Task partitioningAgentTask;
         private Task simulationAgentTask;
-        private Task threadsMonitoringTask;
+
+        private IApplicationLifetime appLifetime;
 
         // Initialized in `Startup`
         public IConfigurationRoot Configuration { get; }
@@ -49,17 +51,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         // Invoked by `Program.cs`
         public Startup(IHostingEnvironment env)
         {
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(env.ContentRootPath)
-                .AddIniFile(ConfigFile.DEFAULT, optional: false, reloadOnChange: true);
-
-            if (ConfigFile.GetDevOnlyConfigFile() != null)
-            {
-                Console.WriteLine("===========================\nLOADING SETTINGS FROM " + ConfigFile.GetDevOnlyConfigFile() + "\n===========================");
-                builder.AddIniFile(ConfigFile.GetDevOnlyConfigFile(), optional: true, reloadOnChange: true);
-            }
-
-            this.Configuration = builder.Build();
         }
 
         // This is where you register dependencies, add services to the
@@ -92,7 +83,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             ICorsSetup corsSetup,
             IApplicationLifetime appLifetime)
         {
-            loggerFactory.AddConsole(this.Configuration.GetSection("Logging"));
+            this.appLifetime = appLifetime;
 
             // Check for Authorization header before dispatching requests
             app.UseMiddleware<AuthMiddleware>();
@@ -125,13 +116,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             // Start the partitioning agent, unless disabled
             this.partitioningAgent = this.ApplicationContainer.Resolve<IPartitioningAgent>();
             this.partitioningAgentTask = config.ServicesConfig.DisablePartitioningAgent
-                ? Task.Run(() => Thread.Sleep(TimeSpan.FromHours(1)))
+                ? Task.Delay(TimeSpan.FromDays(365), this.appStopToken.Token)
                 : this.partitioningAgent.StartAsync(this.appStopToken.Token);
 
             // Start the simulation agent, unless disabled
             this.simulationAgent = this.ApplicationContainer.Resolve<ISimulationAgent>();
             this.simulationAgentTask = config.ServicesConfig.DisableSimulationAgent
-                ? Task.Run(() => Thread.Sleep(TimeSpan.FromHours(1)))
+                ? Task.Delay(TimeSpan.FromDays(365), this.appStopToken.Token)
                 : this.simulationAgent.StartAsync(this.appStopToken.Token);
 
             // This creates sample simulations that will be shown on simulation dashboard by default
@@ -141,7 +132,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
                 this.simulationService.TrySeedAsync();
             }
 
-            this.threadsMonitoringTask = this.MonitorThreadsAsync(appLifetime);
+            AsyncScheduledTasksExecutor.ScheduleTask(MonitorThreadsAsync, 2000);
         }
 
         private void StopAgents()
@@ -155,37 +146,32 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             this.simulationAgent?.Stop();
         }
 
-        private Task MonitorThreadsAsync(IApplicationLifetime appLifetime)
+        private async Task MonitorThreadsAsync()
         {
-            return Task.Run(() =>
-                {
-                    while (!this.appStopToken.IsCancellationRequested)
+            if (this.appStopToken.IsCancellationRequested)
+            {
+                return;
+            }
+         
+            if (this.simulationAgentTask.Status == TaskStatus.Faulted
+                || this.simulationAgentTask.Status == TaskStatus.Canceled
+                || this.simulationAgentTask.Status == TaskStatus.RanToCompletion
+                || this.partitioningAgentTask.Status == TaskStatus.Faulted
+                || this.partitioningAgentTask.Status == TaskStatus.Canceled
+                || this.partitioningAgentTask.Status == TaskStatus.RanToCompletion)
+            {
+                var log = this.ApplicationContainer.Resolve<ILogger>();
+                log.Error("Part of the service is not running",
+                    () => new
                     {
-                        // Check threads every 2 seconds
-                        Thread.Sleep(2000);
+                        SimulationAgent = this.simulationAgentTask.Status.ToString(),
+                        PartitioningAgent = this.partitioningAgentTask.Status.ToString()
+                    });
 
-                        if (this.simulationAgentTask.Status == TaskStatus.Faulted
-                            || this.simulationAgentTask.Status == TaskStatus.Canceled
-                            || this.simulationAgentTask.Status == TaskStatus.RanToCompletion
-                            || this.partitioningAgentTask.Status == TaskStatus.Faulted
-                            || this.partitioningAgentTask.Status == TaskStatus.Canceled
-                            || this.partitioningAgentTask.Status == TaskStatus.RanToCompletion)
-                        {
-                            var log = this.ApplicationContainer.Resolve<ILogger>();
-                            log.Error("Part of the service is not running",
-                                () => new
-                                {
-                                    SimulationAgent = this.simulationAgentTask.Status.ToString(),
-                                    PartitioningAgent = this.partitioningAgentTask.Status.ToString()
-                                });
-
-                            // Allow few seconds to flush logs
-                            Thread.Sleep(5000);
-                            appLifetime.StopApplication();
-                        }
-                    }
-                },
-                this.appStopToken.Token);
+                // Allow few seconds to flush logs
+                await Task.Delay(5000);
+                this.appLifetime.StopApplication();
+            }
         }
 
         private void PrintBootstrapInfo(IContainer container)

@@ -46,7 +46,7 @@ namespace SimulationAgent.Test.DeviceConnection
             this.mockInstance = new Mock<IInstance>();
             this.deviceModel = new DeviceModel { Id = DEVICE_ID };
 
-            this.target = new Deregister(this.logger.Object, this.mockInstance.Object);
+            this.target = new Deregister(this.logger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -54,10 +54,9 @@ namespace SimulationAgent.Test.DeviceConnection
         {
             // Arrange
             this.SetupDeviceConnectionActor();
-            this.target.Init(this.mockDeviceContext.Object, DEVICE_ID, this.deviceModel);
 
             // Act
-            await this.target.RunAsync();
+            await this.target.RunAsync(this.mockDeviceContext.Object);
 
             // Assert
             this.devices.Verify(m => m.DeleteAsync(DEVICE_ID));
@@ -69,11 +68,10 @@ namespace SimulationAgent.Test.DeviceConnection
         {
             // Arrange
             this.SetupDeviceConnectionActor();
-            this.target.Init(this.mockDeviceContext.Object, DEVICE_ID, this.deviceModel);
             this.devices.Setup(x => x.DeleteAsync(It.IsAny<string>())).Throws<Exception>();
 
             // Act
-            await this.target.RunAsync();
+            await this.target.RunAsync(this.mockDeviceContext.Object);
 
             // Assert
             this.mockDeviceContext.Verify(x => x.HandleEvent(DeviceConnectionActor.ActorEvents.DeregisterationFailed));

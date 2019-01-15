@@ -164,16 +164,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             }
 
             // Registrations required by Autofac, these classes implement the same interface
-            builder.RegisterType<Connect>().As<Connect>();
             builder.RegisterType<SetDeviceTag>().As<SetDeviceTag>();
-            builder.RegisterType<CredentialsSetup>().As<CredentialsSetup>();
-            builder.RegisterType<FetchFromRegistry>().As<FetchFromRegistry>();
-            builder.RegisterType<Register>().As<Register>();
+
+            builder.RegisterType<CredentialsSetup>().As<CredentialsSetup>().SingleInstance();
+            builder.RegisterType<FetchFromRegistry>().As<FetchFromRegistry>().SingleInstance();
+            builder.RegisterType<Register>().As<Register>().SingleInstance();
+            builder.RegisterType<Connect>().As<Connect>().SingleInstance();
+            builder.RegisterType<Deregister>().As<Deregister>().SingleInstance();
+            builder.RegisterType<Disconnect>().As<Disconnect>().SingleInstance();
+
             builder.RegisterType<UpdateDeviceState>().As<UpdateDeviceState>();
             builder.RegisterType<SendTelemetry>().As<SendTelemetry>();
             builder.RegisterType<UpdateReportedProperties>().As<UpdateReportedProperties>();
-            builder.RegisterType<Deregister>().As<Deregister>();
-            builder.RegisterType<Disconnect>().As<Disconnect>();
             builder.RegisterType<Services.Storage.CosmosDbSql.Engine>().As<Services.Storage.CosmosDbSql.Engine>();
             builder.RegisterType<Services.Storage.TableStorage.Engine>().As<Services.Storage.TableStorage.Engine>();
         }

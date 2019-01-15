@@ -2,10 +2,7 @@
 
 using System;
 using System.Threading.Tasks;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection
 {
@@ -15,45 +12,29 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
     public class Disconnect : IDeviceConnectionLogic
     {
         private readonly ILogger log;
-        private readonly IInstance instance;
-        private string deviceId;
-        private IDeviceConnectionActor deviceContext;
 
-        public Disconnect(
-            ILogger logger,
-            IInstance instance)
+        public Disconnect(ILogger logger)
         {
             this.log = logger;
-            this.instance = instance;
         }
 
-        public void Init(IDeviceConnectionActor context, string deviceId, DeviceModel deviceModel)
+        public async Task RunAsync(IDeviceConnectionActor deviceContext)
         {
-            this.instance.InitOnce();
-
-            this.deviceContext = context;
-            this.deviceId = deviceId;
-
-            this.instance.InitComplete();
-        }
-
-        public async Task RunAsync()
-        {
-            this.instance.InitRequired();
-
-            this.log.Debug("Disconnecting...", () => new { this.deviceId });
+            var deviceId = deviceContext.DeviceId;
 
             try
             {
-                await this.deviceContext.Client.DisconnectAsync();
+                this.log.Debug("Disconnecting...", () => new { deviceId });
 
-                this.log.Debug("Device disconnected", () => new { this.deviceId });
-                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.Disconnected);
+                await deviceContext.Client.DisconnectAsync();
+
+                this.log.Debug("Device disconnected", () => new { deviceId });
+                deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.Disconnected);
             }
             catch (Exception e)
             {
-                this.log.Error("Error disconnecting device", () => new { this.deviceId, e });
-                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DisconnectionFailed);
+                this.log.Error("Error disconnecting device", () => new { deviceId, e });
+                deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DisconnectionFailed);
             }
         }
     }

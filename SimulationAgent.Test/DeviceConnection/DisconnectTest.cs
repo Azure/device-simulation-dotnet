@@ -37,9 +37,7 @@ namespace SimulationAgent.Test.DeviceConnection
             this.mockInstance = new Mock<IInstance>();
             this.deviceModel = new DeviceModel { Id = DEVICE_ID };
 
-            this.target = new Disconnect(
-                this.logger.Object,
-                this.mockInstance.Object);
+            this.target = new Disconnect(this.logger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -47,10 +45,9 @@ namespace SimulationAgent.Test.DeviceConnection
         {
             // Arrange
             this.SetupDeviceConnectionActor();
-            this.target.Init(this.mockDeviceContext.Object, DEVICE_ID, this.deviceModel);
 
             // Act
-            await this.target.RunAsync();
+            await this.target.RunAsync(this.mockDeviceContext.Object);
 
             // Assert
             this.deviceClient.Verify(x => x.DisconnectAsync());
@@ -62,11 +59,10 @@ namespace SimulationAgent.Test.DeviceConnection
         {
             // Arrange
             this.SetupDeviceConnectionActor();
-            this.target.Init(this.mockDeviceContext.Object, DEVICE_ID, this.deviceModel);
             this.mockDeviceContext.Setup(x => x.Client).Throws<Exception>();
 
             // Act
-            await this.target.RunAsync();
+            await this.target.RunAsync(this.mockDeviceContext.Object);
 
             // Assert
             this.mockDeviceContext.Verify(x => x.HandleEvent(DeviceConnectionActor.ActorEvents.DisconnectionFailed));

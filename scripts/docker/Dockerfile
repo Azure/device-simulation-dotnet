@@ -1,4 +1,4 @@
-FROM microsoft/dotnet:2.2-runtime
+FROM microsoft/dotnet:2.2-aspnetcore-runtime
 
 MAINTAINER IoTSimTeam@microsoft.com
 
@@ -6,8 +6,12 @@ LABEL Tags="Azure,IoT,Solutions,Simulation,.NET"
 
 ARG user=pcsuser
 
+
 RUN apt-get update \
-  && DEBIAN_FRONTEND=noninteractive apt-get install -y net-tools \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+	net-tools \
+	curl \
+	wget \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 

@@ -4,7 +4,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Moq;
@@ -29,9 +28,7 @@ namespace SimulationAgent.Test.DeviceConnection
             this.instance = new Mock<IInstance>();
             this.deviceContext = new Mock<IDeviceConnectionActor>();
 
-            this.target = new Connect(
-                this.log.Object,
-                this.instance.Object);
+            this.target = new Connect(this.log.Object);
 
             this.ActorInit();
         }
@@ -49,7 +46,7 @@ namespace SimulationAgent.Test.DeviceConnection
                 .Callback(() => callSequence += "dispose;");
 
             // Act
-            this.target.RunAsync().CompleteOrTimeout();
+            this.target.RunAsync(this.deviceContext.Object).CompleteOrTimeout();
 
             // Assert
             Assert.Equal("dispose;create;", callSequence);
@@ -59,14 +56,11 @@ namespace SimulationAgent.Test.DeviceConnection
 
         private void ActorInit()
         {
-            var deviceId = "abc";
             var deviceModel = new DeviceModel();
 
             this.simulationContext = new Mock<ISimulationContext>();
             this.deviceContext = new Mock<IDeviceConnectionActor>();
             this.deviceContext.SetupGet(x => x.SimulationContext).Returns(this.simulationContext.Object);
-
-            this.target.Init(this.deviceContext.Object, deviceId, deviceModel);
         }
     }
 }
