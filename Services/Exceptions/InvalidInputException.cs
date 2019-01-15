@@ -9,7 +9,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
     /// or containing invalid values. The client should fix the request before
     /// retrying.
     /// </summary>
-    public class InvalidInputException : Exception
+    public class InvalidInputException : CustomException
     {
         public InvalidInputException() : base()
         {

@@ -512,7 +512,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     if (!this.simulation.ActualStartTime.HasValue)
                     {
                         this.simulation.ActualStartTime = DateTimeOffset.UtcNow;
-                        await this.simulations.UpsertAsync(this.simulation);
+                        await this.simulations.UpsertAsync(this.simulation, false);
                     }
                 }
             }

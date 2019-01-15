@@ -9,7 +9,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
     /// providing the wrong ETag value. The client should retrieve the
     /// resource again, to have the new ETag, and retry.
     /// </summary>
-    public class ResourceOutOfDateException : Exception
+    public class ResourceOutOfDateException : CustomException
     {
         public ResourceOutOfDateException() : base()
         {

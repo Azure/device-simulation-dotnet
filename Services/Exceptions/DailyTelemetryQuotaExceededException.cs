@@ -5,7 +5,7 @@ using System;
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
 {
     // This exception is thrown when a device client reaches the daily quota
-    public class DailyTelemetryQuotaExceededException : Exception
+    public class DailyTelemetryQuotaExceededException : CustomException
     {
         public DailyTelemetryQuotaExceededException(string message) : base(message)
         {

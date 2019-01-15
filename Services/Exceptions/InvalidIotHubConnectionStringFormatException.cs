@@ -9,7 +9,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
     /// is not properly formatted. The correct format is:
     /// HostName=[hubname];SharedAccessKeyName=[iothubowner or service];SharedAccessKey=[null or valid key]
     /// </summary>
-    public class InvalidIotHubConnectionStringFormatException : Exception
+    public class InvalidIotHubConnectionStringFormatException : CustomException
     {
         public InvalidIotHubConnectionStringFormatException() : base()
         {

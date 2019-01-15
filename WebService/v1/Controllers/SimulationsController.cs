@@ -120,7 +120,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
             // Load the existing resource, so that internal properties can be copied
             var existingSimulation = await this.GetExistingSimulationAsync(id);
 
-            var simulation = await this.simulationsService.UpsertAsync(simulationApiModel.ToServiceModel(existingSimulation, this.defaultRatingConfig, id));
+            var simulation = await this.simulationsService.UpsertAsync(
+                simulationApiModel.ToServiceModel(existingSimulation, this.defaultRatingConfig, id),
+                true);
+
             return SimulationApiModel.FromServiceModel(simulation);
         }
 

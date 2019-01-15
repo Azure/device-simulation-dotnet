@@ -401,9 +401,10 @@ namespace Services.Test.Concurrency
 
             var t4 = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-            // Assert
-            Assert.InRange(t2 - t1, 6000, 7000);
-            Assert.InRange(t4 - t3, 3000, 4000);
+            // Assert (allow 1% approximation)
+            var approximation = 0.01;
+            Assert.InRange(t2 - t1, 6000 * (1 - approximation), 7000 * (1 + approximation));
+            Assert.InRange(t4 - t3, 3000 * (1 - approximation), 4000 * (1 + approximation));
         }
 
         /**

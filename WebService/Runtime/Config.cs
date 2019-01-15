@@ -7,7 +7,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth;
 
 // TODO: tests
@@ -50,15 +49,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string PORT_KEY = APPLICATION_KEY + "webservice_port";
         private const string DEVICE_MODELS_FOLDER_KEY = APPLICATION_KEY + "device_models_folder";
         private const string DEVICE_MODELS_SCRIPTS_FOLDER_KEY = APPLICATION_KEY + "device_models_scripts_folder";
-        private const string IOTHUB_CONNSTRING_KEY = APPLICATION_KEY + "iothub_connstring";
-        private const string IOTHUB_IMPORT_STORAGE_CONNSTRING_KEY = APPLICATION_KEY + "iothub_import_storage_account_connstring";
-        private const string IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY = APPLICATION_KEY + "iothub_sdk_device_client_timeout";
-        private const string TWIN_READ_WRITE_ENABLED_KEY = APPLICATION_KEY + "twin_read_write_enabled";
-        private const string USER_AGENT_KEY = APPLICATION_KEY + "user_agent";
+
+        private const string IOTHUB_SETTINGS_KEY = APPLICATION_KEY + "IoTHub:";
+        private const string IOTHUB_CONNSTRING_KEY = IOTHUB_SETTINGS_KEY + "iothub_connstring";
+        private const string IOTHUB_IMPORT_STORAGE_CONNSTRING_KEY = IOTHUB_SETTINGS_KEY + "import_storage_account_connstring";
+        private const string IOTHUB_SDK_DEVICE_CLIENT_TIMEOUT_KEY = IOTHUB_SETTINGS_KEY + "sdk_device_client_timeout";
+        private const string USER_AGENT_KEY = IOTHUB_SETTINGS_KEY + "user_agent";
+        private const string DEVICE_TWIN_ENABLED_KEY = IOTHUB_SETTINGS_KEY + "device_twin_enabled";
+        private const string C_2_D_METHODS_ENABLED_KEY = IOTHUB_SETTINGS_KEY + "c2d_methods_enabled";
 
         private const string IOTHUB_LIMITS_KEY = APPLICATION_KEY + "RateLimits:";
         private const string CONNECTIONS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "device_connections_per_second";
-        private const string REGISTRYOPS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "registry_operations_per_minute";
+        private const string REGISTRY_OPS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "registry_operations_per_minute";
         private const string DEVICE_MESSAGES_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "device_to_cloud_messages_per_second";
         private const string TWIN_READS_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "twin_reads_per_second";
         private const string TWIN_WRITES_FREQUENCY_LIMIT_KEY = IOTHUB_LIMITS_KEY + "twin_writes_per_second";
@@ -99,11 +101,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string STATISTICS_STORAGE_KEY = APPLICATION_KEY + "Storage:Statistics:";
 
         private const string STORAGE_TYPE_KEY = "type";
-        private const string STORAGE_MAX_PENDING_OPERATIONS = APPLICATION_KEY + "max_pending_storage_tasks";
-        private const string DOCUMENTDB_CONNECTION_STRING_KEY = "documentdb_connstring";
-        private const string DOCUMENTDB_DATABASE_KEY = "documentdb_database";
-        private const string DOCUMENTDB_COLLECTION_KEY = "documentdb_collection";
-        private const string DOCUMENTDB_THROUGHPUT_KEY = "documentdb_collection_throughput";
+        private const string STORAGE_MAX_PENDING_OPERATIONS = "max_pending_storage_tasks";
+        private const string COSMOSDBSQL_CONNECTION_STRING_KEY = "cosmosdbsql_connstring";
+        private const string COSMOSDBSQL_DATABASE_KEY = "cosmosdbsql_database";
+        private const string COSMOSDBSQL_COLLECTION_KEY = "cosmosdbsql_collection";
+        private const string COSMOSDBSQL_THROUGHPUT_KEY = "cosmosdbsql_collection_throughput";
+        private const string TABLESTORAGE_CONNECTION_STRING_KEY = "azuretablestorage_connstring";
+        private const string TABLESTORAGE_TABLE_KEY = "azuretablestorage_table";
 
         private const string LOGGING_KEY = APPLICATION_KEY + "Logging:";
         private const string LOGGING_LOGLEVEL_KEY = LOGGING_KEY + "LogLevel";
@@ -145,6 +149,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string DEBUGGING_DISABLE_SIMULATION_AGENT_KEY = DEBUGGING_SECTION_KEY + "disable_simulation_agent";
         private const string DEBUGGING_DISABLE_PARTITIONING_AGENT_KEY = DEBUGGING_SECTION_KEY + "disable_partitioning_agent";
         private const string DEBUGGING_DISABLE_SEED_BY_TEMPLATE_KEY = DEBUGGING_SECTION_KEY + "disable_seed_by_template";
+
+        private const string DEFAULT_USER_AGENT_STRING = "devicesimulation";
 
         public int Port { get; }
         public ILoggingConfig LoggingConfig { get; set; }
@@ -270,13 +276,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 AzureManagementAdapterApiUrl = azureManagementAdapterApiUrl,
                 AzureManagementAdapterApiTimeout = configData.GetInt(AZURE_MANAGEMENT_ADAPTER_API_TIMEOUT_KEY),
                 AzureManagementAdapterApiVersion = configData.GetString(AZURE_MANAGEMENT_ADAPTER_API_VERSION),
-                TwinReadWriteEnabled = configData.GetBool(TWIN_READ_WRITE_ENABLED_KEY, true),
+                DeviceTwinEnabled = configData.GetBool(DEVICE_TWIN_ENABLED_KEY, true),
+                C2DMethodsEnabled = configData.GetBool(C_2_D_METHODS_ENABLED_KEY, true),
                 MainStorage = GetStorageConfig(configData, MAIN_STORAGE_KEY),
                 NodesStorage = GetStorageConfig(configData, NODES_STORAGE_KEY),
                 SimulationsStorage = GetStorageConfig(configData, SIMULATIONS_STORAGE_KEY),
                 DevicesStorage = GetStorageConfig(configData, DEVICES_STORAGE_KEY),
                 PartitionsStorage = GetStorageConfig(configData, PARTITIONS_STORAGE_KEY),
-                UserAgent = configData.GetString(USER_AGENT_KEY),
+                UserAgent = configData.GetString(USER_AGENT_KEY, DEFAULT_USER_AGENT_STRING),
                 StatisticsStorage = GetStorageConfig(configData, STATISTICS_STORAGE_KEY),
                 DiagnosticsEndpointUrl = configData.GetString(LOGGING_DIAGNOSTICS_URL_KEY),
                 DevelopmentMode = configData.GetBool(DEBUGGING_DEVELOPMENT_MODE_KEY, false),
@@ -286,18 +293,35 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             };
         }
 
-        private static StorageConfig GetStorageConfig(IConfigData configData, string prefix)
+        private static Services.Storage.Config GetStorageConfig(IConfigData configData, string prefix)
         {
-            var defaults = new StorageConfig();
-            return new StorageConfig
+            var defaults = new Services.Storage.Config();
+            var storageType = configData.GetEnum(prefix + STORAGE_TYPE_KEY, Services.Storage.Type.Unknown);
+
+            switch (storageType)
             {
-                StorageType = configData.GetString(prefix + STORAGE_TYPE_KEY, defaults.StorageType),
-                MaxPendingOperations = configData.GetInt(STORAGE_MAX_PENDING_OPERATIONS, defaults.MaxPendingOperations),
-                DocumentDbConnString = configData.GetString(prefix + DOCUMENTDB_CONNECTION_STRING_KEY),
-                DocumentDbDatabase = configData.GetString(prefix + DOCUMENTDB_DATABASE_KEY),
-                DocumentDbCollection = configData.GetString(prefix + DOCUMENTDB_COLLECTION_KEY),
-                DocumentDbThroughput = configData.GetInt(prefix + DOCUMENTDB_THROUGHPUT_KEY, defaults.DocumentDbThroughput)
-            };
+                case Services.Storage.Type.CosmosDbSql:
+                    return new Services.Storage.Config
+                    {
+                        StorageType = storageType,
+                        MaxPendingOperations = configData.GetInt(prefix + STORAGE_MAX_PENDING_OPERATIONS, defaults.MaxPendingOperations),
+                        CosmosDbSqlConnString = configData.GetString(prefix + COSMOSDBSQL_CONNECTION_STRING_KEY, ""),
+                        CosmosDbSqlDatabase = configData.GetString(prefix + COSMOSDBSQL_DATABASE_KEY, ""),
+                        CosmosDbSqlCollection = configData.GetString(prefix + COSMOSDBSQL_COLLECTION_KEY, ""),
+                        CosmosDbSqlThroughput = configData.GetInt(prefix + COSMOSDBSQL_THROUGHPUT_KEY, defaults.CosmosDbSqlThroughput),
+                    };
+
+                case Services.Storage.Type.TableStorage:
+                    return new Services.Storage.Config
+                    {
+                        StorageType = storageType,
+                        MaxPendingOperations = configData.GetInt(prefix + STORAGE_MAX_PENDING_OPERATIONS, defaults.MaxPendingOperations),
+                        TableStorageConnString = configData.GetString(prefix + TABLESTORAGE_CONNECTION_STRING_KEY, ""),
+                        TableStorageTableName = configData.GetString(prefix + TABLESTORAGE_TABLE_KEY, "")
+                    };
+            }
+
+            throw new ArgumentOutOfRangeException("Unknown storage type: " + storageType);
         }
 
         private static void ShowIoTHubConnStringInstructions()
@@ -333,7 +357,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
             return new RateLimitingConfig
             {
                 ConnectionsPerSecond = configData.GetInt(CONNECTIONS_FREQUENCY_LIMIT_KEY, 50),
-                RegistryOperationsPerMinute = configData.GetInt(REGISTRYOPS_FREQUENCY_LIMIT_KEY, 50),
+                RegistryOperationsPerMinute = configData.GetInt(REGISTRY_OPS_FREQUENCY_LIMIT_KEY, 50),
                 DeviceMessagesPerSecond = configData.GetInt(DEVICE_MESSAGES_FREQUENCY_LIMIT_KEY, 50),
                 TwinReadsPerSecond = configData.GetInt(TWIN_READS_FREQUENCY_LIMIT_KEY, 5),
                 TwinWritesPerSecond = configData.GetInt(TWIN_WRITES_FREQUENCY_LIMIT_KEY, 5)

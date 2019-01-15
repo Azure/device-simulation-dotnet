@@ -1,12 +1,13 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Data;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.DocumentDb
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosDbSql
 {
-    public class DocumentDbRecord : Resource
+    public class DataRecord : Resource, IDataRecord
     {
         public const long NEVER = -1;
 
@@ -16,9 +17,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
         public string LockOwnerId { get; set; }
         public string LockOwnerType { get; set; }
         public long LockExpirationUtcMsecs { get; set; }
+
+        // "_etag" is the internal property used by the SDK
+        private const string SDK_ETAG_FIELD = "_etag";
+
         private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        public DocumentDbRecord()
+        public DataRecord()
         {
             this.Data = string.Empty;
             this.ExpirationUtcMsecs = NEVER;
@@ -27,6 +32,33 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
             this.LockOwnerId = string.Empty;
             this.LockOwnerType = string.Empty;
             this.LockExpirationUtcMsecs = NEVER;
+        }
+
+        public string GetId()
+        {
+            return this.Id;
+        }
+
+        public string GetETag()
+        {
+            return this.ETag;
+        }
+
+        public IDataRecord SetETag(string eTag)
+        {
+            this.SetPropertyValue(SDK_ETAG_FIELD, eTag);
+            return this;
+        }
+
+        public IDataRecord SetData(string data)
+        {
+            this.Data = data;
+            return this;
+        }
+
+        public string GetData()
+        {
+            return this.Data;
         }
 
         public void Touch()
@@ -83,6 +115,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.Documen
         public void ExpiresInMsecs(long durationMsecs)
         {
             this.ExpirationUtcMsecs = Now + durationMsecs;
+        }
+
+        public void ExpiresInSecs(long secs)
+        {
+            this.ExpiresInMsecs(secs * 1000);
         }
 
         public bool IsExpired()

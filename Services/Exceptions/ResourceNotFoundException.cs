@@ -8,7 +8,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
     /// This exception is thrown when a client is requesting a resource that
     /// doesn't exist yet.
     /// </summary>
-    public class ResourceNotFoundException : Exception
+    public class ResourceNotFoundException : CustomException
     {
         public ResourceNotFoundException() : base()
         {
