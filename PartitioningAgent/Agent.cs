@@ -82,7 +82,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                     var (success, activeSimulations, deletionRequiredSimulations) = await this.GetSimulations();
                     if (success)
                     {
-                        // Scale nodes in Vmss
+                        // Add/Remove VMSS nodes
                         await this.ScaleVmssNodes(activeSimulations);
 
                         // Create IoTHub devices for all the active simulations

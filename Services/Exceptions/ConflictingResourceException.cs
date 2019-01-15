@@ -10,7 +10,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
     /// identifier. The client should change the identifier or assume the
     /// resource has already been created.
     /// </summary>
-    public class ConflictingResourceException : Exception
+    public class ConflictingResourceException : CustomException
     {
         public ConflictingResourceException() : base()
         {

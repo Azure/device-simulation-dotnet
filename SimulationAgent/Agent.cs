@@ -103,15 +103,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Contains all the actors sending device replay updates to Azure IoT Hub, indexed by Simulation ID + Device ID (string concat)
         private readonly ConcurrentDictionary<string, IDeviceReplayActor> deviceReplayActors;
 
-        // TODO: Add device replay actors
-
         // Flag signaling whether the simulation is starting (to reduce blocked threads)
         private bool startingOrStopping;
+
+        // Whether the simulation interacts with device twins
+        private bool deviceTwinEnabled;
 
         // Used to stop the threads
         private CancellationTokenSource runningToken;
 
         public Agent(
+            IServicesConfig servicesConfig,
             IAppConcurrencyConfig appConcurrencyConfig,
             ISimulations simulations,
             IFactory factory,
@@ -126,6 +128,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             this.startingOrStopping = false;
             this.running = false;
+            this.deviceTwinEnabled = servicesConfig.DeviceTwinEnabled;
             this.runningToken = new CancellationTokenSource();
             this.lastPolledTime = DateTimeOffset.UtcNow;
             this.lastPrintStatisticsTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -390,11 +393,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.deviceConnectionActors,
                     this.runningToken.Token));
 
-            this.devicesPropertiesTask = this.factory.Resolve<IUpdatePropertiesTask>();
-            this.devicesPropertiesThread = new Thread(
-                () => this.devicesPropertiesTask.RunAsync(
+            // Create task and thread only if the device twin integration is enabled
+            if (this.deviceTwinEnabled)
+            {
+                this.devicesPropertiesTask = this.factory.Resolve<IUpdatePropertiesTask>();
+                this.devicesPropertiesThread = new Thread(
+                    () => this.devicesPropertiesTask.RunAsync(
+                        this.simulationManagers,
+                        this.devicePropertiesActors,
+                        this.runningToken.Token));
+            }
+
+            this.deviceReplayTask = this.factory.Resolve<IDeviceReplayTask>();
+            this.deviceReplayThread = new Thread(
+                () => this.deviceReplayTask.RunAsync(
                     this.simulationManagers,
-                    this.devicePropertiesActors,
+                    this.deviceReplayActors,
                     this.runningToken.Token));
 
             this.deviceReplayTask = this.factory.Resolve<IDeviceReplayTask>();
@@ -431,16 +445,23 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
 
             // Properties
-            try
+            if (this.deviceTwinEnabled)
             {
-                this.devicesPropertiesThread.Start();
+                try
+                {
+                    this.devicesPropertiesThread.Start();
+                }
+                catch (Exception e)
+                {
+                    var msg = "Unable to start the device-properties thread";
+                    this.log.Error(msg, e);
+                    this.logDiagnostics.LogServiceError(msg, e);
+                    throw new Exception("Unable to start the device-properties thread", e);
+                }
             }
-            catch (Exception e)
+            else
             {
-                var msg = "Unable to start the device-properties thread";
-                this.log.Error(msg, e);
-                this.logDiagnostics.LogServiceError(msg, e);
-                throw new Exception("Unable to start the device-properties thread", e);
+                this.log.Info("The device properties thread will not start because it is disabled in the global configuration");
             }
 
             // Telemetry
@@ -508,13 +529,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
 
             // Properties
-            try
+            if (this.deviceTwinEnabled)
             {
-                this.devicesPropertiesThread?.Interrupt();
-            }
-            catch (Exception e)
-            {
-                this.log.Warn("Unable to stop the devices state thread in a clean way", e);
+                try
+                {
+                    this.devicesPropertiesThread?.Interrupt();
+                }
+                catch (Exception e)
+                {
+                    this.log.Warn("Unable to stop the devices state thread in a clean way", e);
+                }
             }
 
             // Telemetry

@@ -1,0 +1,67 @@
+﻿[
+    {
+        "Name": "Remote Monitoring Multi-Model Simulation",
+        "Description": "A simulation with multiple device types for Remote Monitoring",
+        "Enabled": true,
+        "IotHubConnectionStrings": [
+            "default"
+        ],
+        "DeviceModels": [
+            {
+                "Id": "chiller-01",
+                "Count": 1
+            },
+            {
+                "Id": "chiller-02",
+                "Count": 1
+            },
+            {
+                "Id": "elevator-01",
+                "Count": 1
+            },
+            {
+                "Id": "elevator-02",
+                "Count": 1
+            },
+            {
+                "Id": "engine-01",
+                "Count": 1
+            },
+            {
+                "Id": "engine-02",
+                "Count": 1
+            },
+            {
+                "Id": "prototype-01",
+                "Count": 1
+            },
+            {
+                "Id": "prototype-02",
+                "Count": 1
+            },
+            {
+                "Id": "truck-01",
+                "Count": 1
+            },
+            {
+                "Id": "truck-02",
+                "Count": 1
+            },
+            {
+                "Id": "delivery-truck-01",
+                "Count": 1
+            },
+            {
+                "Id": "delivery-truck-02",
+                "Count": 1
+            }
+        ],
+        "RateLimits": {
+            "RegistryOperationsPerMinute": 100,
+            "TwinReadsPerSecond": 10,
+            "TwinWritesPerSecond": 10,
+            "ConnectionsPerSecond": 120,
+            "DeviceMessagesPerSecond": 120
+        }
+    }
+]

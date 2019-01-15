@@ -5,6 +5,7 @@
   "Name": "Replay",
   "Description": "Fake device model for csv file replay",
   "Protocol": "AMQP",
+  "ReplayFile": "",
   "Simulation": {
     "InitialState": {
       "online": true
@@ -13,12 +14,20 @@
     "Scripts": [
     ]
   },
-  "ReplayFile":  "simulationReplayTest.csv",
   "Properties": {
   },
   "Tags": {
   },
   "Telemetry": [
+    {
+      "MessageTemplate": "",
+      "MessageSchema": {
+        "Name": "replay-sensors;v1",
+        "Format": "JSON",
+        "Fields": {
+        }
+      }
+    }
   ],
   "CloudToDeviceMethods": {
   }
