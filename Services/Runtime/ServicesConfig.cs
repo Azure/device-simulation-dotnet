@@ -14,6 +14,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         string StorageAdapterApiUrl { get; }
         int StorageAdapterApiTimeout { get; }
         bool TwinReadWriteEnabled { get; }
+        string UserAgent { get; }
     }
 
     // TODO: test Windows/Linux folder separator
@@ -60,6 +61,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         public int StorageAdapterApiTimeout { get; set; }
 
         public bool TwinReadWriteEnabled { get; set; }
+
+        public string UserAgent { get; set; }
 
         private string NormalizePath(string path)
         {
