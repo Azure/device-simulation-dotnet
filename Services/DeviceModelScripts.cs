@@ -17,22 +17,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Get list of device model scripts.
         /// </summary>
-        Task<IEnumerable<DeviceModelScript>> GetListAsync();
+        Task<IEnumerable<DataFile>> GetListAsync();
 
         /// <summary>
         /// Get a device model script.
         /// </summary>
-        Task<DeviceModelScript> GetAsync(string id);
+        Task<DataFile> GetAsync(string id);
 
         /// <summary>
         /// Create a device model script.
         /// </summary>
-        Task<DeviceModelScript> InsertAsync(DeviceModelScript deviceModelScript);
+        Task<DataFile> InsertAsync(DataFile deviceModelScript);
 
         /// <summary>
         /// Create or replace a device model script.
         /// </summary>
-        Task<DeviceModelScript> UpsertAsync(DeviceModelScript deviceModelScript);
+        Task<DataFile> UpsertAsync(DataFile deviceModelScript);
 
         /// <summary>
         /// Delete a device model script.
@@ -74,7 +74,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Get a device model script.
         /// </summary>
-        public async Task<DeviceModelScript> GetAsync(string id)
+        public async Task<DataFile> GetAsync(string id)
         {
             if (string.IsNullOrEmpty(id))
             {
@@ -99,7 +99,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             try
             {
-                var deviceModelScript = JsonConvert.DeserializeObject<DeviceModelScript>(item.Data);
+                var deviceModelScript = JsonConvert.DeserializeObject<DataFile>(item.Data);
                 deviceModelScript.ETag = item.ETag;
                 return deviceModelScript;
             }
@@ -113,7 +113,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Get list of device model scripts.
         /// </summary>
-        public async Task<IEnumerable<DeviceModelScript>> GetListAsync()
+        public async Task<IEnumerable<DataFile>> GetListAsync()
         {
             ValueListApiModel data;
 
@@ -129,13 +129,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
             try
             {
-                var results = new List<DeviceModelScript>();
+                var results = new List<DataFile>();
                 foreach (var item in data.Items)
                 {
-                    var deviceModelScript = JsonConvert.DeserializeObject<DeviceModelScript>(item.Data);
+                    var deviceModelScript = JsonConvert.DeserializeObject<DataFile>(item.Data);
                     deviceModelScript.ETag = item.ETag;
                     deviceModelScript.Type = ScriptInterpreter.JAVASCRIPT_SCRIPT;
-                    deviceModelScript.Path = DeviceModelScript.DeviceModelScriptPath.Storage;
+                    deviceModelScript.Path = DataFile.FilePath.Storage;
                     results.Add(deviceModelScript);
                 }
 
@@ -151,7 +151,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Create a device model script.
         /// </summary>
-        public async Task<DeviceModelScript> InsertAsync(DeviceModelScript deviceModelScript)
+        public async Task<DataFile> InsertAsync(DataFile deviceModelScript)
         {
             deviceModelScript.Created = DateTimeOffset.UtcNow;
             deviceModelScript.Modified = deviceModelScript.Created;
@@ -188,7 +188,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         /// <summary>
         /// Create or replace a device model script.
         /// </summary>
-        public async Task<DeviceModelScript> UpsertAsync(DeviceModelScript deviceModelScript)
+        public async Task<DataFile> UpsertAsync(DataFile deviceModelScript)
         {
             var id = deviceModelScript.Id;
             var eTag = deviceModelScript.ETag;

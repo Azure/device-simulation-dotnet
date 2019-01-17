@@ -230,6 +230,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             log.Write("Main storage:        " + config.ServicesConfig.MainStorage.StorageType);
             log.Write("Simulations storage: " + config.ServicesConfig.SimulationsStorage.StorageType);
             log.Write("Statistics storage:  " + config.ServicesConfig.StatisticsStorage.StorageType);
+            log.Write("Replay files storage:" + config.ServicesConfig.ReplayFilesStorage.StorageType);
             log.Write("Devices storage:     " + config.ServicesConfig.DevicesStorage.StorageType);
             log.Write("Partitions storage:  " + config.ServicesConfig.PartitionsStorage.StorageType);
             log.Write("Nodes storage:       " + config.ServicesConfig.NodesStorage.StorageType);
