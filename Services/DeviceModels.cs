@@ -128,8 +128,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 modelDef = await this.GetAsync(id);
             }
 
-            modelDef.ReplayFile = simulation.ReplayFileId;
-
             Models.Simulation.DeviceModelOverride overrides = simulation.DeviceModels
                 .Where(x => equals(x.Id, id))
                 .Select(x => x.Override).FirstOrDefault();

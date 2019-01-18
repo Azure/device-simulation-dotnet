@@ -536,7 +536,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             var dictKey = this.GetDictKey(deviceId);
 
             // Create device actors for either replay or non-replay simulations
-            if (string.IsNullOrEmpty(deviceModel.ReplayFile))
+            if (string.IsNullOrEmpty(this.simulation.ReplayFileId))
             {
                 // Create one state actor for each device
                 var deviceStateActor = this.factory.Resolve<IDeviceStateActor>();

@@ -102,7 +102,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
             this.deviceContext = context;
             this.actorLogger.Init(deviceId, "Replay");
 
-            string fileId = deviceModel.ReplayFile;
+            string fileId = simulationContext.ReplayFileId;
             try
             {
                 if (!string.IsNullOrEmpty(fileId))
@@ -192,9 +192,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
                 this.currentLine = this.fileReader.ReadLine();
                 if (this.currentLine == null)
                 {
-                    // TODO: Use real variable from the simulation
-                    var runIndefinitely = false; 
-                    if (runIndefinitely)
+                    if (this.simulationContext.ReplayFileIndefinitely)
                     {
                         this.status = ActorStatus.Restart;
                     }
