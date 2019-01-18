@@ -6,10 +6,10 @@
         <RootNamespace>Microsoft.Azure.IoTSolutions.DeviceSimulation.Services</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
-      <Content Include="data\devicemodels\replay.json">
+      <Content Include="data\replayfile\replay.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
-      <Content Include="data\devicemodels\simulationReplayTest.csv">
+      <Content Include="data\replayfile\simulationReplayTest.csv">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
       <Content Include="data\templates\multiple-simulations-template.json">
