@@ -9,6 +9,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceReplay
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.SimulationThreads;
 using Moq;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace SimulationAgent.Test.SimulationThreads
 {
@@ -44,10 +45,11 @@ namespace SimulationAgent.Test.SimulationThreads
         {
             // Arrange
             var cancellationToken = new CancellationTokenSource();
-
+            
             this.BuildMockDeviceReplayActors(
                 this.mockDeviceReplayActors,
                 this.mockDeviceReplayActorObjects,
+                cancellationToken,
                 NUM_ACTORS);
 
             // Build a list of SimulationManagers
@@ -68,13 +70,14 @@ namespace SimulationAgent.Test.SimulationThreads
 
             // Assert
             // Verify that each SimulationManager was called at least once
-            foreach (var simulationManager in this.mockSimulationManagers)
-                simulationManager.Value.Verify(x => x.NewConnectionLoop(), Times.Once);
+            foreach (var actor in this.mockDeviceReplayActors)
+                actor.Value.Verify(x => x.HasWorkToDo(), Times.Once);
         }
 
         private void BuildMockDeviceReplayActors(
             ConcurrentDictionary<string, Mock<IDeviceReplayActor>> mockDictionary,
             ConcurrentDictionary<string, IDeviceReplayActor> objectDictionary,
+            CancellationTokenSource cancellationToken,
             int count)
         {
             mockDictionary.Clear();
@@ -87,6 +90,8 @@ namespace SimulationAgent.Test.SimulationThreads
 
                 // Have each DeviceReplayActor report that it has work to do
                 mockDeviceReplayActor.Setup(x => x.HasWorkToDo()).Returns(true);
+                mockDeviceReplayActor.Setup(x => x.RunAsync()).Returns(Task.CompletedTask)
+                    .Callback(() => { cancellationToken.Cancel(); });
 
                 mockDictionary.TryAdd(deviceName, mockDeviceReplayActor);
                 objectDictionary.TryAdd(deviceName, mockDeviceReplayActor.Object);
