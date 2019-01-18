@@ -44,7 +44,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
         private int maxPendingTelemetry;
         private int maxPendingTwinWrites;
         private int minDeviceStateLoopDuration;
-        private int MinDeviceReplayLoopDuration;
+        private int minDeviceReplayLoopDuration;
         private int minDeviceConnectionLoopDuration;
         private int minDeviceTelemetryLoopDuration;
         private int minDevicePropertiesLoopDuration;
@@ -208,6 +208,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 }
 
                 this.minDeviceTelemetryLoopDuration = value;
+            }
+        }
+
+        /// <summary>
+        /// When sending telemetry for all the devices in a thread, slow down if the loop through
+        /// all the devices takes less than N msecs. This is also the minimum time between two
+        /// messages from the same device.
+        /// </summary>
+        public int MinDeviceReplayLoopDuration
+        {
+            get => this.minDeviceReplayLoopDuration;
+            set
+            {
+                if (value < 1 || value > MAX_LOOP_DURATION)
+                {
+                    throw new InvalidConfigurationException(
+                        "The min duration of the device telemetry loop is not valid. " +
+                        "Use a value within 1 and " + MAX_LOOP_DURATION);
+                }
+
+                this.minDeviceReplayLoopDuration = value;
             }
         }
 

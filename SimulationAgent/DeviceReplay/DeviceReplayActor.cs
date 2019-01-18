@@ -3,9 +3,12 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
 using static Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models.DeviceModel;
@@ -14,8 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
 {
     public interface IDeviceReplayActor
     {
-        void Init(
-            ISimulationContext simulationContext,
+        Task Init(ISimulationContext simulationContext,
             string deviceId,
             DeviceModel deviceModel,
             IDeviceConnectionActor context);
@@ -42,12 +44,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
         private ISimulationContext simulationContext;
         private DeviceModel deviceModel;
         private readonly IInstance instance;
+        private readonly IReplayFileService replayFileService;
 
         private ActorStatus status;
         private string deviceId;
         private string currentLine;
-        private StreamReader streamReader;
-        private FileStream fileStream;
+        private string file;
+        private StringReader fileReader;
         private long whenToRun;
         private long prevInterval;
         private IDeviceConnectionActor deviceContext;
@@ -65,6 +68,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
         public DeviceReplayActor(
             ILogger logger,
             IActorsLogger actorLogger,
+            IServicesConfig config,
+            IEngines engines,
             IInstance instance)
         {
             this.log = logger;
@@ -77,15 +82,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
             this.whenToRun = 0;
             this.prevInterval = 0;
             this.emptySchema = new DeviceModelMessageSchema();
+            this.replayFileService = new ReplayFileService(config, engines, logger);
         }
 
         /// <summary>
         /// Invoke this method before calling Execute(), to initialize the actor
         /// with details like the device model and message type to simulate.
         /// </summary>
-        public void Init(
-            ISimulationContext simulationContext, 
-            string deviceId, 
+        public async Task Init(ISimulationContext simulationContext,
+            string deviceId,
             DeviceModel deviceModel,
             IDeviceConnectionActor context)
         {
@@ -97,20 +102,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
             this.deviceContext = context;
             this.actorLogger.Init(deviceId, "Replay");
 
-            string path = deviceModel.ReplayFile;
+            string fileId = deviceModel.ReplayFile;
             try
             {
-                // TODO: Pull from data store
-                if (File.Exists(path))
+                if (!string.IsNullOrEmpty(fileId))
                 {
-                    this.fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
-                    this.streamReader = new StreamReader(this.fileStream);
+                    var data = await this.replayFileService.GetAsync(fileId);
+                    this.file = data.Content;
+                    this.fileReader = new StringReader(this.file);
                     this.status = ActorStatus.ReadLine;
                 }
             }
             catch (Exception e)
             {
-                Console.WriteLine("The process failed: {0}", e.ToString());
+                this.log.Error("Failed to read line", () => new { this.deviceId, e });
             }
 
             this.instance.InitComplete();
@@ -147,8 +152,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
 
                 case ActorStatus.Restart:
                     // Rewind the stream to the beginning
-                    this.fileStream.Position = 0;
-                    this.streamReader.DiscardBufferedData();
+                    this.fileReader.Dispose();
+                    this.fileReader = new StringReader(this.file);
                     this.status = ActorStatus.ReadLine;
                     break;
             }
@@ -160,8 +165,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
                 () => new { this.deviceId, Status = this.status.ToString() });
 
             // Discard file reader resources
-            this.fileStream.Dispose();
-            this.streamReader.Dispose();
+            this.fileReader.Dispose();
 
             this.status = ActorStatus.Stopped;
         }
@@ -172,12 +176,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
             {
                 await this.deviceContext.Client.SendMessageAsync(this.currentLine, this.emptySchema);
                 this.status = ActorStatus.ReadLine;
-                Console.WriteLine("Sending " + this.deviceId + ": {0}", this.currentLine);
+                this.log.Debug("Sending message", () => new { this.deviceId });
             }
             catch (Exception e)
             {
                 this.Stop();
-                Console.WriteLine("Failed to send message", e.ToString());
+                this.log.Error("Failed to send message", () => new { this.deviceId, e });
             }
         }
 
@@ -185,7 +189,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
         {
             try
             {
-                this.currentLine = this.streamReader.ReadLine();
+                this.currentLine = this.fileReader.ReadLine();
                 if (this.currentLine == null)
                 {
                     // TODO: Use real variable from the simulation
@@ -219,7 +223,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceRe
             catch (Exception e)
             {
                 this.Stop();
-                Console.WriteLine("Failed to read line", e.ToString());
+                this.log.Error("Failed to read line", () => new { this.deviceId, e });
             }
         }
     }
