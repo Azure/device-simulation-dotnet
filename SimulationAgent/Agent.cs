@@ -411,13 +411,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.deviceReplayActors,
                     this.runningToken.Token));
 
-            this.deviceReplayTask = this.factory.Resolve<IDeviceReplayTask>();
-            this.deviceReplayThread = new Thread(
-                () => this.deviceReplayTask.RunAsync(
-                    this.simulationManagers,
-                    this.deviceReplayActors,
-                    this.runningToken.Token));
-
             // State
             try
             {

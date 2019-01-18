@@ -225,7 +225,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                 {
                     throw new InvalidConfigurationException(
                         "The min duration of the device telemetry loop is not valid. " +
-                        "Use a value within 1 and " + MAX_LOOP_DURATION);
+                        "Use a value within the range of 1 and " + MAX_LOOP_DURATION);
                 }
 
                 this.minDeviceReplayLoopDuration = value;
