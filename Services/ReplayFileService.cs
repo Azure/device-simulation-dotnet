@@ -9,8 +9,6 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
 using Newtonsoft.Json;
-using Microsoft.VisualBasic.FileIO;
-using FieldType = Microsoft.VisualBasic.FileIO.FieldType;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
@@ -39,6 +37,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 
     public class ReplayFileService : IReplayFileService
     {
+        private const int NUM_CSV_COLS = 3;
         private readonly IEngine replayFilesStorage;
         private readonly ILogger log;
 
@@ -148,25 +147,26 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         {
             var reader = new StreamReader(stream);
             var file = reader.ReadToEnd();
-
-            using (TextFieldParser parser = new TextFieldParser(file))
+            
+            while (!reader.EndOfStream)
             {
-                parser.TextFieldType = FieldType.Delimited;
-                parser.SetDelimiters(",");
-                while (!parser.EndOfData)
+                try
                 {
-                    try
+                    string line = reader.ReadLine();
+                    string[] fields = line.Split(',');
+                    if (fields.Length < NUM_CSV_COLS)
                     {
-                        string[] lines = parser.ReadFields();
-                    }
-                    catch (MalformedLineException ex)
-                    {
-                        this.log.Error("Replay file has invalid csv format", () => new { ex });
-                        throw new InvalidInputException("Replay file has invalid csv format", ex);
+                        this.log.Error("Replay file has invalid csv format");
+                        throw new InvalidInputException("Replay file has invalid csv format");
                     }
                 }
+                catch (Exception ex)
+                {
+                    this.log.Error("Error parsing replay file", () => new { ex });
+                    throw new InvalidInputException("Error parsing replay file", ex);
+                }
             }
-
+ 
             return file;
         }
     }
