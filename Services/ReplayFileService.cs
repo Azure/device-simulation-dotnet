@@ -45,7 +45,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public ReplayFileService(
             IServicesConfig config,
             IEngines engines,
-            IEngine storage,
             ILogger logger)
         {
             this.replayFilesStorage = engines.Build(config.ReplayFilesStorage);
