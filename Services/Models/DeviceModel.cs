@@ -63,6 +63,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
             this.Protocol = IoTHubProtocol.AMQP;
             this.Simulation = new StateSimulation();
             this.Properties = new Dictionary<string, object>();
+
             this.Telemetry = new List<DeviceModelMessage>();
             this.CloudToDeviceMethods = new Dictionary<string, Script>();
         }

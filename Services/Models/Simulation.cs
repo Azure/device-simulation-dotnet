@@ -136,9 +136,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         [JsonProperty(Order = 150)]
         public DateTimeOffset? ActualStartTime { get; set; }
 
-        // ReplayFileId is the id of the replay file in storage
+        // ReplayFileId is the replay file data in storage
         [JsonProperty(Order = 160)]
         public string ReplayFileId { get; set; }
+
+        public bool ReplayFileRunIndefinitely { get; set; }
 
         public Simulation()
         {

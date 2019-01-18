@@ -48,7 +48,6 @@ namespace Services.Test
             this.target = new ReplayFileService(
                 this.config.Object,
                 this.enginesFactory.Object,
-                this.replayFilesStorage.Object,
                 this.log.Object);
         }
 
