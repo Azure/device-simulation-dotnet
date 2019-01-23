@@ -33,7 +33,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     {
         // Wait a few seconds after checking if there are new simulations
         // or new devices, to avoid overloading the database with queries.
-        private const int PAUSE_AFTER_CHECK_MSECS = 20000;
+        private const int PAUSE_AFTER_CHECK_MSECS = 40000;
 
         // Momentary pause to wait while stopping the agent
         private const int SHUTDOWN_WAIT_INTERVAL_MSECS = 1000;
@@ -198,7 +198,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             while (!appStopToken.IsCancellationRequested && !this.runningToken.IsCancellationRequested)
             {
-
+                var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 try
                 {
                     this.SendSolutionHeartbeat();
@@ -208,22 +208,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     // Get the list of active simulations. Active simulations are already partitioned.
                     var activeSimulations = (await this.simulations.GetListAsync())
                         .Where(x => x.IsActiveNow).ToList();
-                    this.log.Info("Active simulations loaded", () => new { activeSimulations.Count });
 
                     await this.CreateSimulationManagersAsync(activeSimulations);
                     await this.SaveSimulationStatisticsAsync(activeSimulations);
                     await this.RunSimulationManagersMaintenanceAsync();
                     await this.StopInactiveSimulationsAsync(activeSimulations);
+
+                    this.log.Info("Active simulations loaded", () => new { count = activeSimulations.Count, elapsed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start });
+
+                    if (!appStopToken.IsCancellationRequested && !this.runningToken.IsCancellationRequested)
+                    {
+                        var elapsed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+                        if (elapsed < PAUSE_AFTER_CHECK_MSECS)
+                        {
+                            await Task.Delay(PAUSE_AFTER_CHECK_MSECS - (int)elapsed);
+                        }
+                    }
                 }
                 catch (Exception e)
                 {
                     this.log.Error("A critical error occurred in the simulation agent", e);
                     this.Stop();
-                }
-
-                if (!appStopToken.IsCancellationRequested && !this.runningToken.IsCancellationRequested)
-                {
-                    await Task.Delay(PAUSE_AFTER_CHECK_MSECS);
                 }
             }
         }
@@ -257,7 +262,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // Get a list of all simulations that are not active in storage.
             var activeIds = activeSimulations.Select(simulation => simulation.Id).ToList();
             var managersToStop = this.simulationManagers.Where(x => !activeIds.Contains(x.Key)).ToList();
-            
+
             foreach (var manager in managersToStop)
             {
                 this.log.Info("Stopping simulation", () => new { manager.Key });
@@ -341,19 +346,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // TODO: determine if these can be run in parallel
             foreach (var manager in this.simulationManagers.Values)
             {
-                await TryToAsync(manager.HoldAssignedPartitionsAsync(),
-                    e => this.log.Error("An unexpected error occurred while renewing partition locks", e));
+                var tasks = new List<Task>()
+                {
+                    TryToAsync(manager.HoldAssignedPartitionsAsync(),         e => this.log.Error("An unexpected error occurred while renewing partition locks",       e)),
+                    TryToAsync(manager.AssignNewPartitionsAsync(),            e => this.log.Error("An unexpected error occurred while assigning new partitions",       e)),
+                    TryToAsync(manager.HandleAssignedPartitionChangesAsync(), e => this.log.Error("An unexpected error occurred while handling partition changes",     e)),
+                    TryToAsync(manager.UpdateThrottlingLimitsAsync(),         e => this.log.Error("An unexpected error occurred while updating the throttling limits", e))
+                };
 
-                await TryToAsync(manager.AssignNewPartitionsAsync(),
-                    e => this.log.Error("An unexpected error occurred while assigning new partitions", e));
+                await Task.WhenAll(tasks);
 
-                await TryToAsync(manager.HandleAssignedPartitionChangesAsync(),
-                    e => this.log.Error("An unexpected error occurred while handling partition changes", e));
-
-                await TryToAsync(manager.UpdateThrottlingLimitsAsync(),
-                    e => this.log.Error("An unexpected error occurred while updating the throttling limits", e));
-
-                if (printStats) manager.PrintStats();
+                if (printStats)
+                {
+                    manager.PrintStats();
+                }
             }
 
             async Task TryToAsync(Task task, Action<Exception> onException)
@@ -364,7 +370,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 }
                 catch (Exception e)
                 {
-                    onException.Invoke(e);
+                    onException(e);
                 }
             }
         }

@@ -11,6 +11,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage
         // ETag string, the value is managed directly by the storage engine in use
         string GetETag();
 
+        string GetLockedOwnerId();
+
+        string GetLockedOwnerType();
+
         // ETag string. The value is not a "Property" to avoid it being saved twice.
         IDataRecord SetETag(string eTag);
 

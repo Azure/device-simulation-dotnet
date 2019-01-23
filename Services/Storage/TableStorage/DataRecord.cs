@@ -66,6 +66,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.TableSt
             return this.ETag;
         }
 
+        public string GetLockedOwnerId()
+        {
+            return this.LockOwnerId;
+        }
+
+        public string GetLockedOwnerType()
+        {
+            return this.LockOwnerType;
+        }
+
         public IDataRecord SetETag(string eTag)
         {
             this.ETag = eTag;

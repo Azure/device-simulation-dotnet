@@ -441,6 +441,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     toRemove.Add(actor.Key);
                 }
             }
+
+            foreach (var key in toRemove)
+            {
+                this.deviceTelemetryActors.TryRemove(key, out _);
+            }
         }
 
         private async Task<bool> TryToCreateActorsForPartitionAsync(DevicesPartition partition)
@@ -457,6 +462,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 try
                 {
                     DeviceModel deviceModel = await this.deviceModels.GetWithOverrideAsync(deviceModelId, this.simulation);
+                    this.log.Info(
+                        "Device Model loaded for partition", 
+                        () => new
+                        {
+                            partition.SimulationId,
+                            partition.Id,
+                            deviceCount = deviceIds.Count(),
+                            deviceModelId,
+                            Protocol = Enum.GetName(typeof(IoTHubProtocol), deviceModel.Protocol)
+                        });
                     deviceModelsData.Add(new Tuple<DeviceModel, List<string>>(deviceModel, deviceIds));
                 }
                 catch (ResourceNotFoundException)
@@ -518,9 +533,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             // Create one connection actor for each device
             var deviceContext = this.factory.Resolve<IDeviceConnectionActor>();
             deviceContext.Init(
-                this.simulationContext, 
-                deviceId, deviceModel, 
-                deviceStateActor, 
+                this.simulationContext,
+                deviceId,
+                deviceModel,
+                deviceStateActor,
                 this.simulationContext.ConnectionLoopSettings);
             this.deviceConnectionActors.AddOrUpdate(dictKey, deviceContext, (k, v) => deviceContext);
 

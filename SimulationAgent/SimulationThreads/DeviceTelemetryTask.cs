@@ -118,24 +118,35 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     var telemetryActors = deviceTelemetryActors.Skip(firstActor).Take(lastActor - firstActor).ToArray();
                     if (!connected && (telemetryActors.Length == 0 || telemetryActors.Length > 0 && telemetryActors.Any(a => !a.Value.DeviceContext.Connected)))
                     {
-                        await Task.Delay(5 * 1000);
+                        this.log.Info("Devices connecting", () => new { totalDevices = telemetryActors.Length, connected = telemetryActors.Count(a => a.Value.DeviceContext.Connected) });
+
+                        await Task.Delay(10 * 1000);
+                        continue;
+                    }
+
+                    // If there is no active actors, just set the connected to false
+                    if (telemetryActors.Length == 0)
+                    {
+                        connected = false;
                         continue;
                     }
 
                     // First time connected, equally split into second to make sure each second has the same load
                     if (!connected)
                     {
+                        this.log.Info("All devices connected, schedule telemtry");
                         var groups = telemetryActors.Select(a => a.Value).GroupBy(a => a.Message.Interval);
                         foreach (var group in groups)
                         {
                             var groupActors = group.ToArray();
-                            var batchCount = (int)Math.Round(((double)groupActors.Length / group.Key.TotalSeconds));
-                            for (var i = 0; i < group.Key.TotalSeconds; i++)
+                            var totalBatch = group.Key.TotalSeconds * 1000 / this.appConcurrencyConfig.MinDeviceTelemetryLoopDuration;
+                            var batchCount = (int)Math.Round((double)groupActors.Length / totalBatch);
+                            for (var i = 0; i < totalBatch; i++)
                             {
                                 var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
                                 IDeviceTelemetryActor[] batch;
-                                if (i == group.Key.TotalSeconds - 1)
+                                if (i == totalBatch - 1)
                                 {
                                     // Last batch take all remaining
                                     if (i * batchCount < groupActors.Length)
@@ -153,10 +164,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                                 }
 
                                 Parallel.ForEach(batch, a => a.RunAsync());
-                                if (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start < 1000)
-                                {
-                                    await Task.Delay(1000 - (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start));
-                                }
+
+                                await SlowDownIfTooFast(
+                                    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start,
+                                    this.appConcurrencyConfig.MinDeviceTelemetryLoopDuration,
+                                    runningToken);
                             }
                         }
 
@@ -176,21 +188,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 }
                 catch (Exception e)
                 {
-                    var msg = "Unable to start the device-telemetry threads";
-                    this.log.Error(msg, e);
+                    this.log.Error("Unable to start the device-telemetry threads", e);
                     // this.logDiagnostics.LogServiceError(msg, e);
                     throw new Exception("Unable to start the device-telemetry threads", e);
                 }
 
                 await this.SlowDownIfTooFast(durationMsecs, this.appConcurrencyConfig.MinDeviceTelemetryLoopDuration, runningToken);
             }
-
-            // If there are pending tasks...
-            //if (tasks.Count > 0)
-            //{
-            //    await Task.WhenAll(tasks.Values);
-            //    tasks.Clear();
-            //}
         }
 
         private async Task SlowDownIfTooFast(long duration, int min, CancellationToken cancellationToken)

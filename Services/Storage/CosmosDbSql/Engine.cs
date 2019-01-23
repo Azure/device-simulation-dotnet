@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
@@ -89,30 +88,38 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             await this.SetupStorageAsync();
 
             var result = new List<IDataRecord>();
+            var expiredRecords = new List<IDataRecord>();
 
             try
             {
                 this.log.Debug("Fetching all records", () => new { this.storageName });
-                IList<DataRecord> storageRecords = this.cosmosDbSql
-                    .CreateQuery<DataRecord>(this.cosmosDbSqlClient, this.storageConfig);
+                IList<DataRecord> storageRecords = this.cosmosDbSql.CreateQuery<DataRecord>(this.cosmosDbSqlClient, this.storageConfig);
 
                 // Delete expired records
                 foreach (var record in storageRecords)
                 {
                     if (record.IsExpired())
                     {
-                        this.log.Debug("Deleting expired record", () => new { this.storageName, record.Id, record.ETag });
-                        await this.TryToDeleteExpiredRecord(record.Id);
+                        expiredRecords.Add(record);
+                        continue;
                     }
-                    else
-                    {
-                        result.Add(record);
-                    }
+
+                    result.Add(record);
+                }
+
+                foreach (var record in expiredRecords)
+                {
+                    this.log.Debug("Deleting expired record", () => new { this.storageName, id = record.GetId(), etag = record.GetETag() });
+                    await this.TryToDeleteExpiredRecord(record.GetId());
                 }
 
                 return result;
             }
             catch (CustomException)
+            {
+                throw;
+            }
+            catch (AggregateException)
             {
                 throw;
             }
@@ -130,7 +137,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             try
             {
                 this.log.Debug("Creating new record", () => new { this.storageName, Id = input.GetId() });
-                var record = (DataRecord) input;
+                var record = (DataRecord)input;
                 record.Touch();
                 var response = await this.cosmosDbSql.CreateAsync(this.cosmosDbSqlClient, this.storageConfig, record);
                 return this.DocumentToRecord(response?.Resource);
@@ -164,7 +171,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             try
             {
                 this.log.Debug("Upserting record", () => new { this.storageName, Id = input.GetId(), eTag });
-                var record = (DataRecord) input;
+                var record = (DataRecord)input;
                 record.Touch();
                 var response = await this.cosmosDbSql.UpsertAsync(this.cosmosDbSqlClient, this.storageConfig, record, eTag);
                 return this.DocumentToRecord(response?.Resource);
@@ -247,14 +254,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
 
                 if (record.IsLockedByOthers(ownerId, ownerType))
                 {
-                    this.log.Debug("The record is locked by another client",
-                        () => new { this.storageName, id, ownerId, ownerType });
+                    this.log.Debug("The record is locked by another client", () => new
+                    {
+                        this.storageName,
+                        id,
+                        requestOwnerId = ownerId,
+                        lockedOwnerId = record.GetLockedOwnerId(),
+                        requestOwnerType = ownerType,
+                        lockedOwnerType = record.GetLockedOwnerType()
+                    });
+
                     return false;
                 }
 
                 record.Touch();
                 record.Lock(ownerId, ownerType, durationSeconds);
-                await this.cosmosDbSql.UpsertAsync(this.cosmosDbSqlClient, this.storageConfig, (Resource) record);
+                await this.cosmosDbSql.UpsertAsync(this.cosmosDbSqlClient, this.storageConfig, (Resource)record);
 
                 return true;
             }
@@ -264,7 +279,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.PreconditionFailed)
             {
-                this.log.Debug("ETag mismatch: the record has been updated by another client and cannot be locked.",
+                this.log.Warn("ETag mismatch: the record has been updated by another client and cannot be locked.",
                     () => new { this.storageName, id, ownerId, ownerType });
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
@@ -302,7 +317,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
 
                 record.Touch();
                 record.Unlock(ownerId, ownerType);
-                await this.cosmosDbSql.UpsertAsync(this.cosmosDbSqlClient, this.storageConfig, (Resource) record);
+                await this.cosmosDbSql.UpsertAsync(this.cosmosDbSqlClient, this.storageConfig, (Resource)record);
                 return true;
             }
             catch (CustomException)

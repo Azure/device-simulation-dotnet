@@ -1,11 +1,14 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection
 {
@@ -15,7 +18,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
     public class Connect : IDeviceConnectionLogic
     {
         private readonly ILogger log;
-        private int connectedDevices = 0;
+        private int connectedDeviceCount = 0;
+        private IDictionary<string, Device> connectedDevices = new ConcurrentDictionary<string, Device>();
 
         public Connect(ILogger logger)
         {
@@ -42,14 +46,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 await deviceContext.Client.RegisterMethodsForDeviceAsync(deviceModel.CloudToDeviceMethods, deviceContext.DeviceState, deviceContext.DeviceProperties, deviceContext.ScriptInterpreter);
                 await deviceContext.Client.RegisterDesiredPropertiesUpdateAsync(deviceContext.DeviceProperties);
 
-                var counter = Interlocked.Increment(ref connectedDevices);
-                if (counter % 100 == 0)
+                if (connectedDevices.ContainsKey(deviceContext.Device.Id))
                 {
-                    this.log.Info("Connected devices count", () => new { counter });
+                    this.log.Info("Re-connected device", () => new { deviceContext.Device.Id });
                 }
+                else
+                {
+                    connectedDevices[deviceContext.Device.Id] = deviceContext.Device;
+                    var counter = Interlocked.Increment(ref connectedDeviceCount);
+                    if (counter % 100 == 0)
+                    {
+                        this.log.Info("Connected devices count", () => new { counter });
+                    }
 
-                // this.log.Info("Device connected", () => new { timeSpentMsecs = GetTimeSpentMsecs(), deviceId });
-                deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.Connected);
+                    // this.log.Info("Device connected", () => new { timeSpentMsecs = GetTimeSpentMsecs(), deviceId });
+                    deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.Connected);
+                }
             }
             catch (DeviceAuthFailedException e)
             {

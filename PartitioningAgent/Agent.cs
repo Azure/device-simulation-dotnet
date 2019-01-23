@@ -66,6 +66,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
 
             this.running = true;
 
+            // Distribute the load by sleeping a random number of time
+            await Task.Delay(new Random().Next(this.checkIntervalMsecs), appStopToken);
+
             // Repeat until the agent is stopped
             while (this.running && !appStopToken.IsCancellationRequested)
             {

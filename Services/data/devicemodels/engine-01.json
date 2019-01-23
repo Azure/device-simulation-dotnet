@@ -4,7 +4,7 @@
     "Version": "0.0.1",
     "Name": "Engine",
     "Description": "Engine with fuel level, coolant and vibration sensors",
-    "Protocol": "AMQP",
+    "Protocol": "MQTT",
     "Simulation": {
         "InitialState": {
             "online": true,

@@ -785,7 +785,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                         () => new { device.Id, device.IoTHubHostName });
 
                     // sdkClient = this.deviceClientFactory.CreateFromConnectionString(connectionString, TransportType.Mqtt_Tcp_Only, userAgent);
-                    sdkClient = this.deviceClientFactory.CreateFromSasToken(this.ioTHubHostName, device.Id, this.GenerateSasToken(device.Id), TransportType.Amqp_Tcp_Only, userAgent);
+                    sdkClient = this.deviceClientFactory.CreateFromSasToken(this.ioTHubHostName, device.Id, this.GenerateSasToken(device.Id), TransportType.Mqtt_Tcp_Only, userAgent);
                     break;
 
                 case IoTHubProtocol.HTTP:
@@ -802,7 +802,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     throw new InvalidConfigurationException($"Unable to create a client for the given protocol ({protocol})");
             }
 
-            sdkClient.DisableRetryPolicy();
+            // sdkClient.DisableRetryPolicy();
             if (this.config.IoTHubSdkDeviceClientTimeout.HasValue)
             {
                 sdkClient.OperationTimeoutInMilliseconds = this.config.IoTHubSdkDeviceClientTimeout.Value;
