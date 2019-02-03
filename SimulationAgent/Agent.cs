@@ -394,7 +394,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.runningToken.Token));
 
             // Create task and thread only if the device twin integration is enabled
-            if (this.deviceTwinEnabled)
+          /*  if (this.deviceTwinEnabled)
             {
                 this.devicesPropertiesTask = this.factory.Resolve<IUpdatePropertiesTask>();
                 this.devicesPropertiesThread = new Thread(
@@ -410,6 +410,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     this.simulationManagers,
                     this.deviceReplayActors,
                     this.runningToken.Token));
+                    
 
             // State
             try
@@ -423,6 +424,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.logDiagnostics.LogServiceError(msg, e);
                 throw new Exception("Unable to start the device-state thread", e);
             }
+            */
 
             // Connection
             try
@@ -437,6 +439,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 throw new Exception("Unable to start the device-connection thread", e);
             }
 
+            /*
             // Properties
             if (this.deviceTwinEnabled)
             {
@@ -457,6 +460,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.log.Info("The device properties thread will not start because it is disabled in the global configuration");
             }
 
+            
             // Telemetry
             try
             {
@@ -497,10 +501,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.logDiagnostics.LogServiceError(msg, e);
                 throw new Exception("Unable to start the device-replay thread", e);
             }
+            */
         }
 
         private void TryToStopThreads()
         {
+            /*
             // State
             try
             {
@@ -510,6 +516,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             {
                 this.log.Warn("Unable to stop the devices state thread in a clean way", e);
             }
+            */
 
             // Connection
             try
@@ -521,6 +528,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.log.Warn("Unable to stop the connections thread in a clean way", e);
             }
 
+            /*
             // Properties
             if (this.deviceTwinEnabled)
             {
@@ -560,6 +568,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             {
                 this.log.Warn("Unable to stop the replay thread in a clean way", e);
             }
+            */
         }
 
         private void SendSolutionHeartbeat()

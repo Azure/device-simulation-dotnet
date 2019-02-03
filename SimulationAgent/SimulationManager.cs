@@ -261,8 +261,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     FailedMessages = telemetryActors.Sum(a => a.Value.FailedMessagesCount),
                     FailedDeviceConnections = connectionActors.Sum(a => a.Value.FailedDeviceConnectionsCount),
                     FailedDevicePropertiesUpdates = propertiesActors.Sum(a => a.Value.FailedTwinUpdatesCount),
-                    /* TODO: Add replay actors stats */
                 };
+
+                foreach(var element in connectionActors)
+                {
+                     simulationModel.ConnectionStats += element.Value.ConnectionStats;
+                }
 
                 await this.simulationStatistics.CreateOrUpdateAsync(this.simulation.Id, simulationModel);
             }
@@ -501,6 +505,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             {
                 DeviceModel deviceModel = deviceModelData.Item1;
                 List<string> deviceIds = deviceModelData.Item2;
+                var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+
 
                 foreach (var deviceId in deviceIds)
                 {
@@ -515,6 +522,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                         await this.simulations.UpsertAsync(this.simulation, false);
                     }
                 }
+
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Info("Devices added to the node and started",
+                                () => new { Simulation = this.simulation.Id, DeviceAddedCount = count, TotalDeviceCount = this.deviceCount, Timespent = timeSpentMsecs });
             }
 
             this.log.Info("Devices added to the node and started",
@@ -539,17 +550,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             if (string.IsNullOrEmpty(this.simulation.ReplayFileId))
             {
                 // Create one state actor for each device
-                var deviceStateActor = this.factory.Resolve<IDeviceStateActor>();
+             /*   var deviceStateActor = this.factory.Resolve<IDeviceStateActor>();
                 deviceStateActor.Init(this.simulationContext, deviceId, deviceModel, deviceCounter);
                 this.deviceStateActors.AddOrUpdate(dictKey, deviceStateActor, (k, v) => deviceStateActor);
+             */
 
                 // Create one connection actor for each device
                 var deviceContext = this.factory.Resolve<IDeviceConnectionActor>();
-                deviceContext.Init(this.simulationContext, deviceId, deviceModel, deviceStateActor, this.simulationContext.ConnectionLoopSettings);
+                deviceContext.Init(this.simulationContext, deviceId, deviceModel, null, this.simulationContext.ConnectionLoopSettings);
                 this.deviceConnectionActors.AddOrUpdate(dictKey, deviceContext, (k, v) => deviceContext);
 
                 // Create one device properties actor for each device
-                var devicePropertiesActor = this.factory.Resolve<IDevicePropertiesActor>();
+             /*    var devicePropertiesActor = this.factory.Resolve<IDevicePropertiesActor>();
                 devicePropertiesActor.Init(this.simulationContext, deviceId, deviceStateActor, deviceContext, this.simulationContext.PropertiesLoopSettings);
                 this.devicePropertiesActors.AddOrUpdate(dictKey, devicePropertiesActor, (k, v) => devicePropertiesActor);
 
@@ -571,10 +583,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     var actorKey = this.GetTelemetryDictKey(dictKey, (i++).ToString());
                     this.deviceTelemetryActors.AddOrUpdate(actorKey, deviceTelemetryActor, (k, v) => deviceTelemetryActor);
                 }
+             */
             }
             else {
                 // Create one state actor for each device
-                var deviceStateActor = this.factory.Resolve<IDeviceStateActor>();
+              /*  var deviceStateActor = this.factory.Resolve<IDeviceStateActor>();
                 deviceStateActor.Init(this.simulationContext, deviceId, deviceModel, deviceCounter);
                 this.deviceStateActors.AddOrUpdate(dictKey, deviceStateActor, (k, v) => deviceStateActor);
 
@@ -587,6 +600,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 var deviceReplayActor = this.factory.Resolve<IDeviceReplayActor>();
                 deviceReplayActor.Init(this.simulationContext, deviceId, deviceModel, deviceContext);
                 this.deviceReplayActors.AddOrUpdate(dictKey, deviceReplayActor, (k, v) => deviceReplayActor);
+                */
             }
         }
 

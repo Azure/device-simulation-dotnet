@@ -440,7 +440,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     var deviceIds = deviceList.SelectMany(x => x.Value);
                     this.log.Info("Creating devices...", () => new { simulationId });
 
-                    simulation.DeviceCreationJobId = await devices.CreateListUsingJobsAsync(deviceIds);
+                     simulation.DeviceCreationJobId = await devices.CreateListUsingJobsAsync(deviceIds);
                     simulation.DevicesCreationStarted = true;
 
                     this.log.Info("Import job created for bulk device creation", () => new { simulationId, simulation.DeviceCreationJobId });

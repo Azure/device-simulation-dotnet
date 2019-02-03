@@ -53,6 +53,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 FailedDeviceConnections = statistics.FailedDeviceConnections,
                 FailedMessages = statistics.FailedMessages,
                 FailedDevicePropertiesUpdates = statistics.FailedDevicePropertiesUpdates,
+
             };
         }
     }

@@ -84,9 +84,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         public async Task<IEnumerable<DeviceModel>> GetListAsync()
         {
             var stockDeviceModelsList = this.stockDeviceModels.GetList();
-            var customDeviceModelsList = await this.customDeviceModels.GetListAsync();
+           // var customDeviceModelsList = await this.customDeviceModels.GetListAsync();
             var deviceModels = stockDeviceModelsList
-                .Concat(customDeviceModelsList)
+           //     .Concat(customDeviceModelsList)
                 .ToList();
 
             return deviceModels;

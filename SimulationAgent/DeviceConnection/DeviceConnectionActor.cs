@@ -24,6 +24,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         long FailedDeviceConnectionsCount { get; }
         long SimulationErrorsCount { get; }
         bool IsDeleted { get; }
+        string Status { get; set; }
+        string ConnectionStats { get; set; }
 
         void Init(
             ISimulationContext simulationContext,
@@ -130,12 +132,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         /// <summary>
         /// Device state maintained by the device state actor
         /// </summary>
-        public ISmartDictionary DeviceState => this.deviceStateActor.DeviceState;
+        public ISmartDictionary DeviceState => null;
 
         /// <summary>
         /// Device properties maintained by the device state actor
         /// </summary>
-        public ISmartDictionary DeviceProperties => this.deviceStateActor.DeviceProperties;
+        public ISmartDictionary DeviceProperties => null;
 
         /// <summary>
         /// Azure IoT Hub client shared by Connect, Properties, and SendTelemetry
@@ -171,6 +173,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         /// Device is deleted
         /// </summary>
         public bool IsDeleted => this.status == ActorStatus.Deleted;
+
+        public string ConnectionStats { get; set; }
+
+        public string Status { get; set; }
 
         /// <summary>
         /// Simulation error counter in DeviceConnectionActor
@@ -315,7 +321,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 case ActorStatus.ReadyToConnect:
                     this.status = ActorStatus.Connecting;
                     this.actorLogger.ConnectingDevice();
+                    var start = DateTimeOffset.UtcNow;
+                    var startMs = start.ToUnixTimeMilliseconds();
+                    long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startMs;
                     await this.connectLogic.RunAsync();
+                    var timeSpent = GetTimeSpentMsecs();
+                    this.ConnectionStats = "StartTime=" + start + ";Duration=" + timeSpent + ";DeviceId=" + this.deviceId + ",";
+                    this.log.Debug("Device connected",
+                        () => new { StartTime = start, Duration = timeSpent, DeviceId = this.deviceId });
                     return;
 
                 case ActorStatus.ReadyToDeregister:

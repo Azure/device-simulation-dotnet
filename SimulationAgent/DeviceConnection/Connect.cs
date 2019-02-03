@@ -49,8 +49,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
             this.log.Debug("Connecting...", () => new { this.deviceId });
 
-            var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
+             var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+             long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
 
             try
             {
@@ -62,17 +62,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     this.deviceModel.Protocol);
 
                 await this.deviceContext.Client.ConnectAsync();
-                await this.deviceContext.Client.RegisterMethodsForDeviceAsync(
+             /*   await this.deviceContext.Client.RegisterMethodsForDeviceAsync(
                     this.deviceModel.CloudToDeviceMethods,
                     this.deviceContext.DeviceState,
                     this.deviceContext.DeviceProperties,
                     this.deviceContext.ScriptInterpreter);
 
                 await this.deviceContext.Client.RegisterDesiredPropertiesUpdateAsync(this.deviceContext.DeviceProperties);
-
-                var timeSpentMsecs = GetTimeSpentMsecs();
-                this.log.Debug("Device connected",
-                    () => new { timeSpentMsecs, this.deviceId });
+                */
+                 var timeSpentMsecs = GetTimeSpentMsecs();
+                // this.log.Debug("Device connected",
+                //    () => new { timeSpentMsecs, this.deviceId });
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.Connected);
             }
             catch (DeviceAuthFailedException e)
