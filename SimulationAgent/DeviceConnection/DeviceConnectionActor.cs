@@ -326,7 +326,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startMs;
                     await this.connectLogic.RunAsync();
                     var timeSpent = GetTimeSpentMsecs();
-                    this.ConnectionStats = "StartTime=" + start + ";Duration=" + timeSpent + ";DeviceId=" + this.deviceId + ",";
+                    var id = this.deviceId.Split('.');
+                    this.ConnectionStats = start.TimeOfDay + "," + timeSpent + "," + id[2] + "\n";
                     this.log.Debug("Device connected",
                         () => new { StartTime = start, Duration = timeSpent, DeviceId = this.deviceId });
                     return;
