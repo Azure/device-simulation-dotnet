@@ -99,13 +99,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("Wrong content type provided.");
             }
 
-            var deviceModelScript = new DeviceModelScript();
+            var deviceModelScript = new DataFile();
 
             try
             {
                 var content = this.javascriptInterpreter.Validate(file.OpenReadStream());
                 deviceModelScript.Content = content;
                 deviceModelScript.Name = file.FileName;
+                deviceModelScript.Type = ScriptInterpreter.JAVASCRIPT_SCRIPT;
             }
             catch (Exception e)
             {
@@ -139,7 +140,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 throw new BadRequestException("No ETag provided.");
             }
 
-            var simulationScript = new DeviceModelScript
+            var simulationScript = new DataFile
             {
                 ETag = eTag,
                 Id = id
@@ -150,6 +151,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controller
                 var reader = new StreamReader(file.OpenReadStream());
                 simulationScript.Content = reader.ReadToEnd();
                 simulationScript.Name = file.FileName;
+                simulationScript.Type = ScriptInterpreter.JAVASCRIPT_SCRIPT;
             }
             catch (Exception e)
             {

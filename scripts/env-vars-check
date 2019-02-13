@@ -13,6 +13,13 @@ detect_secrets() {
 
 detect_secrets
 
+if [ ! -z "$PCS_DEV_APPSETTINGS" ]; then
+    if [ -f "$PCS_DEV_APPSETTINGS" ]; then
+        echo "PCS_DEV_APPSETTINGS detected: skipping ENV VARS check and using settings in $PCS_DEV_APPSETTINGS"
+        exit 0
+    fi
+fi
+
 if [[ -z "$PCS_IOTHUB_CONNSTRING" && "$SECRETS_AVAILABLE" = "true" ]]; then
     echo "Error: the PCS_IOTHUB_CONNSTRING environment variable is not defined."
     exit 1

@@ -21,8 +21,7 @@
       "TwinReadsPerSecond": 10,
       "TwinWritesPerSecond": 10,
       "ConnectionsPerSecond": 120,
-      "DeviceMessagesPerSecond": 120,
-      "DeviceMessagesPerDay": 6000000
+      "DeviceMessagesPerSecond": 120
     }
   },
   {
@@ -43,8 +42,7 @@
       "TwinReadsPerSecond": 10,
       "TwinWritesPerSecond": 10,
       "ConnectionsPerSecond": 120,
-      "DeviceMessagesPerSecond": 120,
-      "DeviceMessagesPerDay": 6000000
+      "DeviceMessagesPerSecond": 120
     }
   }
 ]

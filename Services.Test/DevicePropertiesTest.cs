@@ -1,11 +1,14 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System.Reflection;
+using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Moq;
 using Services.Test.helpers;
 using Xunit;
@@ -14,7 +17,7 @@ using SdkClient = Microsoft.Azure.Devices.Client.DeviceClient;
 
 namespace Services.Test
 {
-    public class DevicePropertiesRequestTest
+    public class DevicePropertiesTest
     {
         private const string DEVICE_ID = "01";
         private const string KEY1 = "Key1";
@@ -23,15 +26,18 @@ namespace Services.Test
         private const string VALUE2 = "Value2";
 
         private readonly IDevicePropertiesRequest target;
-        private Mock<IDeviceClientWrapper> sdkClient;
-        private Mock<ILogger> logger;
+        private readonly Mock<IDeviceClientWrapper> sdkClient;
+        private readonly Mock<ILogger> logger;
+        private readonly Mock<IServicesConfig> servicesConfig;
 
-        public DevicePropertiesRequestTest(ITestOutputHelper log)
+        public DevicePropertiesTest(ITestOutputHelper log)
         {
             this.sdkClient = new Mock<IDeviceClientWrapper>();
             this.logger = new Mock<ILogger>();
+            this.servicesConfig = new Mock<IServicesConfig>();
+            this.servicesConfig.SetupGet(x => x.DeviceTwinEnabled).Returns(true);
 
-            this.target = new DeviceProperties(this.sdkClient.Object, this.logger.Object);
+            this.target = new DeviceProperties(this.servicesConfig.Object, this.logger.Object);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -41,7 +47,7 @@ namespace Services.Test
             const string NEW_VALUE = "new value";
 
             ISmartDictionary reportedProps = this.GetTestProperties();
-            this.target.RegisterChangeUpdateAsync(DEVICE_ID, reportedProps);
+            this.target.RegisterChangeUpdateAsync(this.sdkClient.Object, DEVICE_ID, reportedProps).CompleteOrTimeout();
 
             TwinCollection desiredProps = new TwinCollection();
             desiredProps[KEY1] = NEW_VALUE;
@@ -65,7 +71,7 @@ namespace Services.Test
             const string NEW_VALUE = "new value";
 
             ISmartDictionary reportedProps = this.GetTestProperties();
-            this.target.RegisterChangeUpdateAsync(DEVICE_ID, reportedProps);
+            this.target.RegisterChangeUpdateAsync(this.sdkClient.Object, DEVICE_ID, reportedProps).CompleteOrTimeout();
 
             TwinCollection desiredProps = new TwinCollection();
             desiredProps[NEW_KEY] = NEW_VALUE;
@@ -89,7 +95,7 @@ namespace Services.Test
             reportedProps.ResetChanged();
             Assert.False(reportedProps.Changed);
 
-            this.target.RegisterChangeUpdateAsync(DEVICE_ID, reportedProps);
+            this.target.RegisterChangeUpdateAsync(this.sdkClient.Object, DEVICE_ID, reportedProps).CompleteOrTimeout();
 
             TwinCollection desiredProps = new TwinCollection
             {
@@ -105,12 +111,27 @@ namespace Services.Test
             Assert.False(reportedProps.Changed);
         }
 
+        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
+        public void ItDoesntRegisterWhenTheFeatureIsDisabled()
+        {
+            // Arrange
+            this.servicesConfig.SetupGet(x => x.DeviceTwinEnabled).Returns(false);
+            var target2 = new DeviceProperties(this.servicesConfig.Object, this.logger.Object);
+
+            // Act
+            target2.RegisterChangeUpdateAsync(this.sdkClient.Object, DEVICE_ID, null).CompleteOrTimeout();
+
+            // Assert
+            this.sdkClient.Verify(x => x.SetDesiredPropertyUpdateCallbackAsync(
+                It.IsAny<DesiredPropertyUpdateCallback>(), It.IsAny<object>()), Times.Never);
+        }
+
         private ISmartDictionary GetTestProperties()
         {
             SmartDictionary properties = new SmartDictionary();
 
-            properties.Set(KEY1, VALUE1);
-            properties.Set(KEY2, VALUE2);
+            properties.Set(KEY1, VALUE1, false);
+            properties.Set(KEY2, VALUE2, false);
 
             return properties;
         }

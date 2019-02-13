@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
@@ -54,6 +55,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
             if (ConfigFile.GetDevOnlyConfigFile() != null)
             {
+                Console.WriteLine("===========================\nLOADING SETTINGS FROM " + ConfigFile.GetDevOnlyConfigFile() + "\n===========================");
                 builder.AddIniFile(ConfigFile.GetDevOnlyConfigFile(), optional: true, reloadOnChange: true);
             }
 
@@ -149,8 +151,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
             // Stop the application threads
             // TODO: see if we can rely solely on the cancellation token
-            this.partitioningAgent.Stop();
-            this.simulationAgent.Stop();
+            this.partitioningAgent?.Stop();
+            this.simulationAgent?.Stop();
         }
 
         private Task MonitorThreadsAsync(IApplicationLifetime appLifetime)
@@ -176,6 +178,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
                                     SimulationAgent = this.simulationAgentTask.Status.ToString(),
                                     PartitioningAgent = this.partitioningAgentTask.Status.ToString()
                                 });
+
+                            // Allow few seconds to flush logs
+                            Thread.Sleep(5000);
                             appLifetime.StopApplication();
                         }
                     }
@@ -197,10 +202,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
             log.Write("Connections per second:    " + config.RateLimitingConfig.ConnectionsPerSecond);
             log.Write("Registry ops per minute:   " + config.RateLimitingConfig.RegistryOperationsPerMinute);
-            log.Write("Twin reads per second:     " + config.RateLimitingConfig.TwinReadsPerSecond);
-            log.Write("Twin writes per second:    " + config.RateLimitingConfig.TwinWritesPerSecond);
             log.Write("Messages per second:       " + config.RateLimitingConfig.DeviceMessagesPerSecond);
-            log.Write("Messages per day:          " + config.RateLimitingConfig.DeviceMessagesPerDay);
+
+            if (config.ServicesConfig.DeviceTwinEnabled)
+            {
+                log.Write("Twin reads per second:     " + config.RateLimitingConfig.TwinReadsPerSecond);
+                log.Write("Twin writes per second:    " + config.RateLimitingConfig.TwinWritesPerSecond);
+            }
+            else
+            {
+                log.Write("Twin reads per second:     0 - Twin disabled");
+                log.Write("Twin writes per second:    0 - Twin disabled");
+            }
+
+            log.Write("C2D Methods:               " + (config.ServicesConfig.C2DMethodsEnabled ? "Enabled" : "Disabled"));
 
             log.Write("Number of telemetry threads:      " + config.AppConcurrencyConfig.TelemetryThreads);
             log.Write("Max pending connections:          " + config.AppConcurrencyConfig.MaxPendingConnections);
@@ -210,8 +225,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             log.Write("Min duration of connection loop:  " + config.AppConcurrencyConfig.MinDeviceConnectionLoopDuration);
             log.Write("Min duration of telemetry loop:   " + config.AppConcurrencyConfig.MinDeviceTelemetryLoopDuration);
             log.Write("Min duration of twin write loop:  " + config.AppConcurrencyConfig.MinDevicePropertiesLoopDuration);
-
             log.Write("Max devices per partition:        " + config.ClusteringConfig.MaxPartitionSize);
+
+            log.Write("Main storage:        " + config.ServicesConfig.MainStorage.StorageType);
+            log.Write("Simulations storage: " + config.ServicesConfig.SimulationsStorage.StorageType);
+            log.Write("Statistics storage:  " + config.ServicesConfig.StatisticsStorage.StorageType);
+            log.Write("Replay files storage:" + config.ServicesConfig.ReplayFilesStorage.StorageType);
+            log.Write("Devices storage:     " + config.ServicesConfig.DevicesStorage.StorageType);
+            log.Write("Partitions storage:  " + config.ServicesConfig.PartitionsStorage.StorageType);
+            log.Write("Nodes storage:       " + config.ServicesConfig.NodesStorage.StorageType);
+
+            log.Write("SDK device client timeout:                  " + config.ServicesConfig.IoTHubSdkDeviceClientTimeout);
+            log.Write("SDK Microsoft.Azure.Devices.Client version: "
+                      + typeof(Devices.Client.Message).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion);
+            log.Write("SDK Microsoft.Azure.Devices.Common version: "
+                      + typeof(Devices.Common.ExceptionExtensions).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion);
 
             if (config.ServicesConfig.DisableSimulationAgent)
             {

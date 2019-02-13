@@ -27,12 +27,12 @@ namespace SimulationAgent.Test.DeviceState
             this.mockScriptInterpreter = new Mock<IScriptInterpreter>();
             this.mockInstance = new Mock<IInstance>();
             this.mockUpdateDeviceStateLogic = new Mock<UpdateDeviceState>(
-                this.mockScriptInterpreter.Object,
                 this.mockLogger.Object,
                 this.mockInstance.Object);
 
             this.target = new DeviceStateActor(
                 this.mockUpdateDeviceStateLogic.Object,
+                this.mockScriptInterpreter.Object,
                 this.mockLogger.Object,
                 this.mockInstance.Object);
         }

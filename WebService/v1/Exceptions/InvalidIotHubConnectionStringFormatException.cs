@@ -1,10 +1,11 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions
 {
-    public class InvalidIotHubConnectionStringFormatException : Exception
+    public class InvalidIotHubConnectionStringFormatException : CustomException
     {
         /// <summary>
         /// This exception is thrown when the IoTHub connection string provided

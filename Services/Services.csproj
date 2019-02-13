@@ -6,6 +6,12 @@
         <RootNamespace>Microsoft.Azure.IoTSolutions.DeviceSimulation.Services</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
+      <Content Include="data\replayfile\replay.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <Content Include="data\replayfile\simulationReplayTest.csv">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
       <Content Include="data\templates\multiple-simulations-template.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
@@ -13,12 +19,14 @@
     <ItemGroup>
         <PackageReference Include="Google.Protobuf" Version="3.5.1" />
         <PackageReference Include="jint" Version="2.10.4" />
-        <PackageReference Include="Microsoft.Azure.Devices" Version="1.17.0" />
-        <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.18.0" />
-        <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="1.9.1" />
+        <PackageReference Include="Microsoft.Azure.Devices" Version="1.17.1" />
+        <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.18.1" />
+        <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="2.1.3" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="2.1.1" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="2.1.1" />
-        <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+        <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+        <PackageReference Include="Upn_Components_Dependencies" Version="1.0.0" />
+        <PackageReference Include="WindowsAzure.Storage" Version="9.3.3" />
     </ItemGroup>
     <ItemGroup>
         <None Update="data\devicemodels\chiller-01.json">
@@ -140,6 +148,9 @@
         </None>
         <None Update="data\iothub\README.md">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="data\templates\remote-monitoring-simulations-template.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>
 </Project>

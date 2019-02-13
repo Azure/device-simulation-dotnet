@@ -7,6 +7,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosDbSql;
 using Moq;
 using Newtonsoft.Json;
 using Services.Test.helpers;
@@ -18,40 +19,48 @@ namespace Services.Test.Statistics
     {
         private const string SIM_ID = "1";
         private static string[] NODE_IDS = { "123", "234" };
+        private List<IDataRecord> storageRecords;
+
         private readonly SimulationStatistics target;
+
         private readonly Mock<IClusterNodes> clusterNodes;
         private readonly Mock<ILogger> log;
-        private readonly Mock<IFactory> factory;
+        private readonly Mock<IEngines> enginesFactory;
         private readonly Mock<IServicesConfig> config;
-        private readonly Mock<IStorageRecords> simulationStatisticsStorage;
-        private List<StorageRecord> storageRecords;
+        private readonly Mock<IEngine> simulationStatisticsStorage;
 
         public SimulationStatisticsTest()
         {
             var STATISTICS = "statistics";
+
             this.clusterNodes = new Mock<IClusterNodes>();
             this.log = new Mock<ILogger>();
-            this.simulationStatisticsStorage = new Mock<IStorageRecords>();
-            this.factory = new Mock<IFactory>();
+            this.simulationStatisticsStorage = new Mock<IEngine>();
+            this.enginesFactory = new Mock<IEngines>();
             this.config = new Mock<IServicesConfig>();
             this.config.SetupGet(x => x.StatisticsStorage)
-                .Returns(new StorageConfig { DocumentDbCollection = STATISTICS });
+                .Returns(new Config { CosmosDbSqlCollection = STATISTICS });
 
             this.simulationStatisticsStorage
-                .Setup(x => x.Init(It.Is<StorageConfig>(c => c.DocumentDbCollection == STATISTICS)))
+                .Setup(x => x.Init(It.Is<Config>(c => c.CosmosDbSqlCollection == STATISTICS)))
                 .Returns(this.simulationStatisticsStorage.Object);
-            this.factory.Setup(x => x.Resolve<IStorageRecords>()).Returns(this.simulationStatisticsStorage.Object);
+            this.simulationStatisticsStorage
+                .Setup(x => x.BuildRecord(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns((string id, string json) => new DataRecord { Id = id, Data = json });
+
+            this.enginesFactory.Setup(x => x.Build(It.IsAny<Config>()))
+                .Returns(this.simulationStatisticsStorage.Object);
 
             this.target = new SimulationStatistics(
                 this.config.Object,
                 this.clusterNodes.Object,
-                this.factory.Object,
+                this.enginesFactory.Object,
                 this.log.Object);
 
             // Mock storage records
-            this.storageRecords = new List<StorageRecord>
+            this.storageRecords = new List<IDataRecord>
             {
-                new StorageRecord
+                new DataRecord
                 {
                     Id = $"{SIM_ID}__{NODE_IDS[0]}",
                     Data = JsonConvert.SerializeObject(
@@ -69,7 +78,7 @@ namespace Services.Test.Statistics
                             }
                         })
                 },
-                new StorageRecord
+                new DataRecord
                 {
                     Id = $"{SIM_ID}__{NODE_IDS[1]}",
                     Data = JsonConvert.SerializeObject(
@@ -160,7 +169,7 @@ namespace Services.Test.Statistics
             // Arrange
             var statisticsRecordId = $"{SIM_ID}__{NODE_IDS[0]}";
 
-            SimulationStatisticsModel inputStatistics = new SimulationStatisticsModel
+            SimulationStatisticsModel statistics = new SimulationStatisticsModel
             {
                 ActiveDevices = 5,
                 TotalMessagesSent = 300,
@@ -169,29 +178,30 @@ namespace Services.Test.Statistics
                 FailedMessages = 10
             };
 
-            SimulationStatisticsRecord expectedStatistics = new SimulationStatisticsRecord
+            SimulationStatisticsRecord statisticsRecord = new SimulationStatisticsRecord
             {
-                SimulationId = SIM_ID,
                 NodeId = NODE_IDS[0],
-                Statistics = inputStatistics
+                SimulationId = SIM_ID,
+                Statistics = statistics
             };
 
-            StorageRecord storageRecord = new StorageRecord
+            IDataRecord storageRecord = new DataRecord
             {
                 Id = statisticsRecordId,
-                Data = JsonConvert.SerializeObject(expectedStatistics)
+                Data = JsonConvert.SerializeObject(statisticsRecord)
             };
 
             this.clusterNodes.Setup(x => x.GetCurrentNodeId()).Returns(NODE_IDS[0]);
+
             this.simulationStatisticsStorage.Setup(x => x.ExistsAsync(NODE_IDS[0])).ReturnsAsync(false);
 
             // Act
-            var result = this.target.CreateOrUpdateAsync(SIM_ID, inputStatistics).CompleteOrTimeout();
+            this.target.CreateOrUpdateAsync(SIM_ID, statistics).CompleteOrTimeout();
 
             // Assert
-            this.simulationStatisticsStorage.Verify(x => x.CreateAsync(It.Is<StorageRecord>(
-                a => a.Id == storageRecord.Id &&
-                     a.Data == storageRecord.Data)));
+            this.simulationStatisticsStorage.Verify(x => x.CreateAsync(It.Is<IDataRecord>(
+                a => a.GetId() == storageRecord.GetId() &&
+                     a.GetData() == storageRecord.GetData())));
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -216,7 +226,7 @@ namespace Services.Test.Statistics
                 Statistics = inputStatistics
             };
 
-            StorageRecord storageRecord = new StorageRecord
+            IDataRecord storageRecord = new DataRecord
             {
                 Id = statisticsRecordId,
                 Data = JsonConvert.SerializeObject(expectedStatistics),
@@ -227,14 +237,14 @@ namespace Services.Test.Statistics
             this.simulationStatisticsStorage.Setup(x => x.GetAsync(statisticsRecordId)).ReturnsAsync(storageRecord);
 
             // Act
-            var result = this.target.CreateOrUpdateAsync(SIM_ID, inputStatistics).CompleteOrTimeout();
+            this.target.CreateOrUpdateAsync(SIM_ID, inputStatistics).CompleteOrTimeout();
 
             // Assert
             this.simulationStatisticsStorage.Verify(x => x.GetAsync(It.Is<string>(
                 a => a == statisticsRecordId)));
-            this.simulationStatisticsStorage.Verify(x => x.UpsertAsync(It.Is<StorageRecord>(
-                    a => a.Id == storageRecord.Id &&
-                         a.Data == storageRecord.Data),
+            this.simulationStatisticsStorage.Verify(x => x.UpsertAsync(It.Is<IDataRecord>(
+                    a => a.GetId() == storageRecord.GetId() &&
+                         a.GetData() == storageRecord.GetData()),
                 It.IsAny<string>()));
         }
 
@@ -244,7 +254,7 @@ namespace Services.Test.Statistics
             // Arrange
             var statisticsRecordId = $"{SIM_ID}__{NODE_IDS[0]}";
 
-            SimulationStatisticsModel inputStatistics = new SimulationStatisticsModel
+            var inputStatistics = new SimulationStatisticsModel
             {
                 ActiveDevices = 5,
                 TotalMessagesSent = 300,
@@ -253,29 +263,29 @@ namespace Services.Test.Statistics
                 FailedMessages = 10
             };
 
-            SimulationStatisticsRecord expectedStatistics = new SimulationStatisticsRecord
+            var expectedStatistics = new SimulationStatisticsRecord
             {
                 SimulationId = SIM_ID,
                 NodeId = NODE_IDS[0],
                 Statistics = inputStatistics
             };
 
-            StorageRecord storageRecord = new StorageRecord
+            IDataRecord newRecord = new DataRecord
             {
                 Id = statisticsRecordId,
                 Data = JsonConvert.SerializeObject(expectedStatistics),
             };
 
             this.clusterNodes.Setup(x => x.GetCurrentNodeId()).Returns(NODE_IDS[0]);
-            this.simulationStatisticsStorage.Setup(x => x.GetAsync(statisticsRecordId)).ReturnsAsync(storageRecord);
+            this.simulationStatisticsStorage.Setup(x => x.GetAsync(statisticsRecordId)).ReturnsAsync(newRecord);
 
             // Act
             var result = this.target.UpdateAsync(SIM_ID, inputStatistics).CompleteOrTimeout();
 
             // Assert
-            this.simulationStatisticsStorage.Verify(x => x.UpsertAsync(It.Is<StorageRecord>(
-                    a => a.Id == storageRecord.Id &&
-                         a.Data == storageRecord.Data),
+            this.simulationStatisticsStorage.Verify(x => x.UpsertAsync(It.Is<IDataRecord>(
+                    a => a.GetId() == newRecord.GetId() &&
+                         a.GetData() == newRecord.GetData()),
                 It.IsAny<string>()));
         }
 

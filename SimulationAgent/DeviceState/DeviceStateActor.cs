@@ -4,6 +4,7 @@ using System;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -14,6 +15,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         ISmartDictionary DeviceState { get; }
         ISmartDictionary DeviceProperties { get; }
         bool IsDeviceActive { get; }
+        IScriptInterpreter ScriptInterpreter { get; }
 
         void Init(
             ISimulationContext simulationContext,
@@ -61,19 +63,20 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
         /// the number of active devices, we can include devices which are not
         /// connected yet but being simulated.
         /// </summary>
-        public bool IsDeviceActive
-        {
-            get { return this.status == ActorStatus.Updating; }
-        }
+        public bool IsDeviceActive => this.status == ActorStatus.Updating;
 
         public string DeviceId => this.deviceId;
 
+        public IScriptInterpreter ScriptInterpreter { get; }
+
         public DeviceStateActor(
             UpdateDeviceState updateDeviceStateLogic,
+            IScriptInterpreter scriptInterpreter,
             ILogger logger,
             IInstance instance)
         {
             this.updateDeviceStateLogic = updateDeviceStateLogic;
+            this.ScriptInterpreter = scriptInterpreter;
             this.log = logger;
             this.instance = instance;
             this.status = ActorStatus.None;
@@ -180,15 +183,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
             if (model.Properties == null || this.deviceModel.CloudToDeviceMethods == null) return properties;
 
             // Add telemetry property
-            properties.Set(TELEMETRY_KEY, JToken.FromObject(this.deviceModel.GetTelemetryReportedProperty(this.log)));
+            properties.Set(TELEMETRY_KEY, JToken.FromObject(this.deviceModel.GetTelemetryReportedProperty(this.log)), true);
 
             // Add SupportedMethods property with methods listed in device model
-            properties.Set(SUPPORTED_METHODS_KEY, string.Join(",", this.deviceModel.CloudToDeviceMethods.Keys));
+            properties.Set(SUPPORTED_METHODS_KEY, string.Join(",", this.deviceModel.CloudToDeviceMethods.Keys), true);
 
             // Add properties listed in device model
             foreach (var property in model.Properties)
             {
-                properties.Set(property.Key, JToken.FromObject(property.Value));
+                properties.Set(property.Key, JToken.FromObject(property.Value), true);
             }
 
             return properties;
@@ -206,14 +209,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceSt
             // Ensure the state contains the "online" key
             if (!state.Has("online"))
             {
-                state.Set("online", true);
+                state.Set("online", true, false);
             }
 
             // TODO: This is used to control whether telemetry is calculated in UpdateDeviceState.
             //       methods can turn telemetry off/on; e.g. setting temp high- turnoff, set low, turn on
             //       it would be better to do this at the telemetry item level - we should add this in the future
             //       https://github.com/Azure/device-simulation-dotnet/issues/174
-            state.Set(CALC_TELEMETRY, true);
+            state.Set(CALC_TELEMETRY, true, false);
 
             return state;
         }

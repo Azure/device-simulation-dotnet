@@ -2,13 +2,12 @@
 
 using System;
 using System.Runtime.Serialization;
-using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 {
-    public class DeviceModelScript
+    public class DataFile
     {
         [JsonIgnore]
         public string ETag { get; set; }
@@ -16,22 +15,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public string Name { get; set; }
         public string Type { get; set; }
         public string Content { get; set; }
-        public DeviceModelScriptPath Path { get; set; }
+        public FilePath Path { get; set; }
         public DateTimeOffset Created { get; set; }
         public DateTimeOffset Modified { get; set; }
 
-        public DeviceModelScript()
+        public DataFile()
         {
             this.ETag = string.Empty;
             this.Id = string.Empty;
-            this.Type = ScriptInterpreter.JAVASCRIPT_SCRIPT;
+            this.Type = string.Empty;
             this.Content = string.Empty;
-            this.Path = DeviceModelScriptPath.Storage;
+            this.Path = FilePath.Storage;
             this.Name = string.Empty;
         }
 
         [JsonConverter(typeof(StringEnumConverter))]
-        public enum DeviceModelScriptPath
+        public enum FilePath
         {
             [EnumMember(Value = "Undefined")]
             Undefined = 0,

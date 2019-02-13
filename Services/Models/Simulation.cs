@@ -32,7 +32,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         [JsonIgnore]
         public bool DeviceDeletionRequired => !this.IsActiveNow
                                               && this.DevicesCreationComplete
-                                              && this.DeleteDevicesWhenSimulationEnds;
+                                              && (this.DeleteDevicesWhenSimulationEnds || this.DeleteDevicesOnce);
 
         [JsonIgnore]
         public bool PartitioningRequired => this.IsActiveNow && !this.PartitioningComplete;
@@ -68,6 +68,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
 
         [JsonProperty(Order = 15)]
         public bool DevicesDeletionComplete { get; set; }
+
+        [JsonProperty(Order = 16)]
+        public bool DeleteDevicesOnce { get; set; }
 
         [JsonProperty(Order = 1000)]
         public string DeviceCreationJobId { get; set; }
@@ -130,8 +133,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models
         public DateTimeOffset Modified { get; set; }
 
         // ActualStartTime is the time when Simulation was started
-        [JsonProperty(Order = 140)]
+        [JsonProperty(Order = 150)]
         public DateTimeOffset? ActualStartTime { get; set; }
+
+        // ReplayFileId is the replay file data in storage
+        [JsonProperty(Order = 160)]
+        public string ReplayFileId { get; set; }
+
+        public bool ReplayFileRunIndefinitely { get; set; }
 
         public Simulation()
         {

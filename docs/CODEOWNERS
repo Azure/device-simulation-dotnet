@@ -2,11 +2,11 @@
 
 # Order is important; the last matching pattern takes the most precedence.
 
-LICENSE             @timlaverty @dluc @hathind-ms
+LICENSE             @miwolfms @tommo-ms @saixiaohui
 
-.gitattributes      @dluc @timlaverty @hathind-ms
-.travis.yml         @dluc @timlaverty @hathind-ms
+.gitattributes      @miwolfms @tommo-ms @saixiaohui
+.travis.yml         @miwolfms @tommo-ms @saixiaohui
 
-scripts/            @dluc @timlaverty @hathind-ms
-WebService/Auth/    @dluc @timlaverty @hathind-ms
-Services/Runtime/   @dluc @timlaverty @hathind-ms
+scripts/            @miwolfms @tommo-ms @saixiaohui
+WebService/Auth/    @miwolfms @tommo-ms @saixiaohui
+Services/Runtime/   @miwolfms @tommo-ms @saixiaohui

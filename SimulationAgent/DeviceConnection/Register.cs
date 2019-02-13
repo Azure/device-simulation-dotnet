@@ -4,6 +4,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection
@@ -41,22 +42,35 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.instance.InitRequired();
 
             this.log.Debug("Registering device...", () => new { this.deviceId });
+
             var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
 
             try
             {
                 var device = await this.simulationContext.Devices.CreateAsync(this.deviceId);
 
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Debug("Device registered", () => new { timeSpentMsecs, this.deviceId });
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Debug("Device registered",
+                    () => new { timeSpentMsecs, this.deviceId });
 
                 this.deviceContext.Device = device;
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceRegistered);
             }
+            catch (TotalDeviceCountQuotaExceededException e)
+            {
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Error while registering the device, quota exceeded",
+                    () => new { timeSpentMsecs, this.deviceId, e });
+
+                this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.DeviceQuotaExceeded);
+            }
             catch (Exception e)
             {
-                var timeSpentMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
-                this.log.Error("Error while registering the device", () => new { timeSpentMsecs, this.deviceId, e });
+                var timeSpentMsecs = GetTimeSpentMsecs();
+                this.log.Error("Error while registering the device",
+                    () => new { timeSpentMsecs, this.deviceId, e });
+
                 this.deviceContext.HandleEvent(DeviceConnectionActor.ActorEvents.RegistrationFailed);
             }
         }

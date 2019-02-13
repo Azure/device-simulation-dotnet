@@ -19,6 +19,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         long GetLong(string key, int defaultValue = 0);
         uint GetUInt(string key, uint defaultValue = 0);
         uint? GetOptionalUInt(string key);
+        T GetEnum<T>(string key, T defaultValue);
     }
 
     public class ConfigData : IConfigData
@@ -28,6 +29,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
 
         public ConfigData(IConfigurationRoot configuration, ILogger logger)
         {
+            // Note: this is a dedicated logger instance hard coded at Info level
             this.log = logger;
             this.configuration = configuration;
         }
@@ -107,6 +109,27 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
                 }
 
                 return Convert.ToUInt32(value);
+            }
+            catch (Exception e)
+            {
+                throw new InvalidConfigurationException($"Unable to load configuration value for '{key}' (found: '{value}')", e);
+            }
+        }
+
+        public T GetEnum<T>(string key, T defaultValue)
+        {
+            string value = string.Empty;
+            try
+            {
+                var notFound = "NOT.FOUND." + Guid.NewGuid().ToString("N") + ".NOT.FOUND";
+                value = this.GetStringInternal(key, notFound);
+
+                if (value == notFound)
+                {
+                    return defaultValue;
+                }
+
+                return (T) Enum.Parse(typeof(T), value, true);
             }
             catch (Exception e)
             {

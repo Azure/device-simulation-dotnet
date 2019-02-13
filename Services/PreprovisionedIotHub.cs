@@ -33,6 +33,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log = logger;
             this.connectionString = config.IoTHubConnString;
             this.instance = instance;
+            this.registry = null;
         }
 
         // Ping the registry to see if the connection is healthy
@@ -55,13 +56,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             return result;
         }
 
-        // This call can throw an exception, which is fine when the exception happens during a method
-        // call. We cannot allow the exception to occur in the constructor though, because it
-        // would break DI.
+        // This call can throw an exception, which is fine when the exception happens during
+        // a method call. We cannot allow the exception to occur in the constructor though,
+        // because it would break DI.
         private async Task InitAsync()
         {
-            if (this.instance.IsInitialized) return;
-
             this.registry = RegistryManager.CreateFromConnectionString(this.connectionString);
             await this.registry.OpenAsync();
 

@@ -51,21 +51,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
         }
 
         // Map API model to service model
-        public Services.Models.DeviceModelScript ToServiceModel()
+        public Services.Models.DataFile ToServiceModel()
         {
-            return new Services.Models.DeviceModelScript
+            return new Services.Models.DataFile
             {
                 ETag = this.ETag,
                 Id = this.Id,
                 Type = this.Type,
-                Path = (Services.Models.DeviceModelScript.DeviceModelScriptPath)Enum.Parse(typeof(Services.Models.DeviceModelScript.DeviceModelScriptPath), this.Path, true),
+                Path = (Services.Models.DataFile.FilePath)Enum.Parse(typeof(Services.Models.DataFile.FilePath), this.Path, true),
                 Content = this.Content,
                 Name = this.Name
             };
         }
 
         // Map service model to API model
-        public static DeviceModelScriptApiModel FromServiceModel(Services.Models.DeviceModelScript value)
+        public static DeviceModelScriptApiModel FromServiceModel(Services.Models.DataFile value)
         {
             if (value == null) return null;
 

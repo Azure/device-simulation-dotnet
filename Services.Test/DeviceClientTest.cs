@@ -6,6 +6,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Moq;
 using Services.Test.helpers;
 using Xunit;
@@ -18,18 +19,21 @@ namespace Services.Test
         private readonly Mock<IDeviceClientWrapper> client;
         private readonly Mock<IDeviceMethods> deviceMethods;
         private readonly Mock<ILogger> log;
+        private readonly Mock<IServicesConfig> servicesConfig;
 
         public DeviceClientTest()
         {
             this.client = new Mock<IDeviceClientWrapper>();
             this.deviceMethods = new Mock<IDeviceMethods>();
             this.log = new Mock<ILogger>();
+            this.servicesConfig = new Mock<IServicesConfig>();
 
             this.target = new DeviceClient(
                 "x",
                 IoTHubProtocol.AMQP,
                 this.client.Object,
                 this.deviceMethods.Object,
+                this.servicesConfig.Object,
                 this.log.Object);
         }
 

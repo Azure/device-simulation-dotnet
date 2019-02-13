@@ -8,6 +8,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Controllers;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Exceptions;
@@ -30,11 +31,13 @@ namespace WebService.Test.v1.Controllers
         private readonly Mock<ISimulationAgent> simulationAgent;
         private readonly Mock<ILogger> log;
         private readonly SimulationsController target;
+        private readonly Mock<IFactory> factory;
 
         public SimulationsControllerTest()
         {
             this.simulationsService = new Mock<ISimulations>();
             this.devices = new Mock<IDevices>();
+            this.factory = new Mock<IFactory>();
             this.connectionStringValidation = new Mock<IConnectionStringValidation>();
             this.iothubMetrics = new Mock<IIothubMetrics>();
             this.preprovisionedIotHub = new Mock<IPreprovisionedIotHub>();
@@ -44,12 +47,12 @@ namespace WebService.Test.v1.Controllers
 
             this.target = new SimulationsController(
                 this.simulationsService.Object,
-                this.devices.Object,
                 this.connectionStringValidation.Object,
                 this.iothubMetrics.Object,
                 this.defaultRatingConfig.Object,
                 this.preprovisionedIotHub.Object,
                 this.simulationAgent.Object,
+                this.factory.Object,
                 this.log.Object);
         }
 
@@ -92,19 +95,6 @@ namespace WebService.Test.v1.Controllers
 
             // Assert
             Assert.Equal(DEFAULT_SIMULATION_ID, result.Id);
-        }
-
-        [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
-        public void ItInvokesDeleteOnceWhenDeleteSimulationWithId()
-        {
-            // Arrange
-            const string ID = "1";
-
-            // Act
-            this.target.DeleteAsync(ID).CompleteOrTimeout();
-
-            // Assert
-            this.simulationsService.Verify(x => x.DeleteAsync(ID), Times.Once);
         }
 
         [Fact, Trait(Constants.TYPE, Constants.UNIT_TEST)]
@@ -219,7 +209,7 @@ namespace WebService.Test.v1.Controllers
             var simulation = this.GetSimulationById(DEFAULT_SIMULATION_ID);
 
             this.simulationsService
-                .Setup(x => x.UpsertAsync(It.IsAny<Simulation>()))
+                .Setup(x => x.UpsertAsync(It.IsAny<Simulation>(), true))
                 .ReturnsAsync(simulation);
 
             // Act
@@ -234,6 +224,10 @@ namespace WebService.Test.v1.Controllers
 
             // Assert
             Assert.Equal(DEFAULT_SIMULATION_ID, result.Id);
+
+            // Assert - The simulation is created validating the connection string
+            this.simulationsService.Verify(
+                x=>x.UpsertAsync(It.IsAny<Simulation>(), true), Times.Once);
         }
 
         private Simulation GetSimulationById(string id)
@@ -247,10 +241,7 @@ namespace WebService.Test.v1.Controllers
                 },
                 StartTime = DateTimeOffset.UtcNow,
                 EndTime = DateTimeOffset.UtcNow.AddHours(2),
-                IotHubConnectionStrings = new List<string>
-                {
-                    ""
-                }
+                IotHubConnectionStrings = new List<string> { "" }
             };
         }
 

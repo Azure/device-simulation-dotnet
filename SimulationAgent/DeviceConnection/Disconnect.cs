@@ -14,20 +14,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
     /// </summary>
     public class Disconnect : IDeviceConnectionLogic
     {
-        private readonly IScriptInterpreter scriptInterpreter;
         private readonly ILogger log;
         private readonly IInstance instance;
         private string deviceId;
-        private DeviceModel deviceModel;
         private IDeviceConnectionActor deviceContext;
-        private ISimulationContext simulationContext;
 
         public Disconnect(
-            IScriptInterpreter scriptInterpreter,
             ILogger logger,
             IInstance instance)
         {
-            this.scriptInterpreter = scriptInterpreter;
             this.log = logger;
             this.instance = instance;
         }
@@ -37,9 +32,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.instance.InitOnce();
 
             this.deviceContext = context;
-            this.simulationContext = context.SimulationContext;
             this.deviceId = deviceId;
-            this.deviceModel = deviceModel;
 
             this.instance.InitComplete();
         }

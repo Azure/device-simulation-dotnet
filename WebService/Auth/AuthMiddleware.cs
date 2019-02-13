@@ -37,8 +37,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
         private const string AUTH_HEADER = "Authorization";
 
         // User requests are marked with this header by the reverse proxy
-        // TODO ~devis: this is a temporary solution for public preview only
-        // TODO ~devis: remove this approach and use the service to service authentication
+        // TODO: this is a temporary solution, remove this approach and use service to service authentication
         // https://github.com/Azure/pcs-auth-dotnet/issues/18
         // https://github.com/Azure/azure-iot-pcs-remote-monitoring-dotnet/issues/11
         private const string EXT_RESOURCES_HEADER = "X-Source";
@@ -92,13 +91,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
                 this.InitializeTokenValidationAsync(CancellationToken.None).Wait();
             }
 
-            // TODO ~devis: this is a temporary solution for public preview only
-            // TODO ~devis: remove this approach and use the service to service authentication
+            // TODO: this is a temporary solution, remove this approach and use service to service authentication
             // https://github.com/Azure/pcs-auth-dotnet/issues/18
             // https://github.com/Azure/azure-iot-pcs-remote-monitoring-dotnet/issues/11
-            this.log.Warn("### Service to service authentication is not available in public preview ###");
-            this.log.Warn("### Service to service authentication is not available in public preview ###");
-            this.log.Warn("### Service to service authentication is not available in public preview ###");
+            this.log.Warn("### Service to service authentication is not available ###");
         }
 
         public Task Invoke(HttpContext context)
@@ -110,7 +106,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
             {
                 // This is a service to service request running in the private
                 // network, so we skip the auth required for user requests
-                // Note: this is a temporary solution for public preview
+                // Note: this is a temporary solution
                 // https://github.com/Azure/pcs-auth-dotnet/issues/18
                 // https://github.com/Azure/azure-iot-pcs-remote-monitoring-dotnet/issues/11
 

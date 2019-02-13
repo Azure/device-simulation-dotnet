@@ -12,7 +12,7 @@
             <Variable name="ASPNETCORE_ENVIRONMENT" value="Development" />
             <Variable name="PCS_IOTHUB_CONNSTRING" value="your Azure IoT Hub connection string" />
             <Variable name="PCS_STORAGEADAPTER_WEBSERVICE_URL" value="http://localhost:9022/v1" />
-            <Variable name="PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING" value="your DocumentDb connection string" />
+            <Variable name="PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING" value="your Cosmos DB Sql connection string" />
             <Variable name="PCS_AZURE_STORAGE_ACCOUNT" value="your Azure Storage Account connection string" />
             <Variable name="PCS_RESOURCE_GROUP_LOCATION" value="your Azure resource group location" />
             <Variable name="PCS_VMSS_NAME" value="your vm scale set name" />
@@ -37,11 +37,12 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Autofac" Version="4.8.1" />
-        <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.3.0" />
-        <PackageReference Include="Microsoft.AspNetCore" Version="2.1.3" />
-        <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.2" />
+        <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.3.1" />
+        <PackageReference Include="Microsoft.AspNetCore" Version="2.1.6" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.3" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="2.1.1" />
         <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="2.1.5" />
+        <PackageReference Include="Microsoft.VisualBasic" Version="10.3.0" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\PartitioningAgent\PartitioningAgent.csproj" />

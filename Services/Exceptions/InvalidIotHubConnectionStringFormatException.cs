@@ -4,13 +4,13 @@ using System;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions
 {
-    public class InvalidIotHubConnectionStringFormatException : Exception
+    /// <summary>
+    /// This exception is thrown when the IoTHub connection string provided
+    /// is not properly formatted. The correct format is:
+    /// HostName=[hubname];SharedAccessKeyName=[iothubowner or service];SharedAccessKey=[null or valid key]
+    /// </summary>
+    public class InvalidIotHubConnectionStringFormatException : CustomException
     {
-        /// <summary>
-        /// This exception is thrown when the IoTHub connection string provided
-        /// is not properly formatted. The correct format is:
-        /// HostName=[hubname];SharedAccessKeyName=[iothubowner or service];SharedAccessKey=[null or valid key]
-        /// </summary>
         public InvalidIotHubConnectionStringFormatException() : base()
         {
         }

@@ -15,6 +15,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceReplay;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
 using Moq;
@@ -50,6 +51,7 @@ namespace SimulationAgent.Test
         private readonly ConcurrentDictionary<string, IDeviceConnectionActor> mockDeviceContext;
         private readonly ConcurrentDictionary<string, IDeviceTelemetryActor> deviceTelemetryActors;
         private readonly ConcurrentDictionary<string, IDevicePropertiesActor> devicePropertiesActors;
+        private readonly ConcurrentDictionary<string, IDeviceReplayActor> deviceReplayActors;
 
         private SimulationManager target;
 
@@ -85,13 +87,15 @@ namespace SimulationAgent.Test
             this.mockDeviceContext = new ConcurrentDictionary<string, IDeviceConnectionActor>();
             this.deviceTelemetryActors = new ConcurrentDictionary<string, IDeviceTelemetryActor>();
             this.devicePropertiesActors = new ConcurrentDictionary<string, IDevicePropertiesActor>();
+            this.deviceReplayActors = new ConcurrentDictionary<string, IDeviceReplayActor>();
 
             this.target.InitAsync(
                 simulation,
                 this.deviceStateActors,
                 this.mockDeviceContext,
                 this.deviceTelemetryActors,
-                this.devicePropertiesActors).Wait(Constants.TEST_TIMEOUT);
+                this.devicePropertiesActors,
+                this.deviceReplayActors).Wait(Constants.TEST_TIMEOUT);
         }
 
         [Fact]

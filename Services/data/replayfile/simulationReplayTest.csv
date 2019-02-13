@@ -1,0 +1,3 @@
+telemetry, 00:00:00,{"temperature": 51.32, "temperature_unit": "fahrenheit", "humidity": 69.59, "humidity_unit":"RH", "pressure": 440.20, "pressure_unit": "psi"}
+telemetry, 00:00:30,{"temperature": 71.32, "temperature_unit": "fahrenheit", "humidity": 79.59, "humidity_unit":"RH", "pressure": 240.20, "pressure_unit": "psi"}
+telemetry, 00:01:00,{"temperature": 30.00, "temperature_unit": "fahrenheit", "humidity": 59.59, "humidity_unit":"RH", "pressure": 340.20, "pressure_unit": "psi"}

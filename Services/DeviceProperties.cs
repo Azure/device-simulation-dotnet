@@ -4,41 +4,53 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Shared;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.DataStructures;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.IotHub;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
 {
     public interface IDevicePropertiesRequest
     {
         Task RegisterChangeUpdateAsync(
+            IDeviceClientWrapper client,
             string deviceId,
             ISmartDictionary deviceProperties);
     }
 
     public class DeviceProperties : IDevicePropertiesRequest
     {
-        private readonly IDeviceClientWrapper client;
         private readonly ILogger log;
+        private readonly bool deviceTwinEnabled;
         private string deviceId;
         private ISmartDictionary deviceProperties;
         private bool isRegistered;
 
-        public DeviceProperties(IDeviceClientWrapper client, ILogger logger)
+        public DeviceProperties(
+            IServicesConfig servicesConfig,
+            ILogger logger)
         {
-            this.client = client;
             this.log = logger;
+            this.deviceTwinEnabled = servicesConfig.DeviceTwinEnabled;
             this.deviceId = string.Empty;
             this.isRegistered = false;
         }
 
-        public async Task RegisterChangeUpdateAsync(string deviceId, ISmartDictionary deviceProperties)
+        public async Task RegisterChangeUpdateAsync(IDeviceClientWrapper client, string deviceId, ISmartDictionary deviceProperties)
         {
             if (this.isRegistered)
             {
                 this.log.Error("Application error, each device must have a separate instance");
                 throw new Exception("Application error, each device must have a separate instance of " + this.GetType().FullName);
+            }
+
+            if (!this.deviceTwinEnabled)
+            {
+                this.isRegistered = true;
+                this.log.Debug("Skipping twin notification registration, twin operations are disabled in the global configuration.");
+                return;
             }
 
             this.deviceId = deviceId;
@@ -47,7 +59,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             this.log.Debug("Setting up callback for desired properties updates.", () => new { this.deviceId });
 
             // Set callback that IoT Hub calls whenever the client receives a desired properties state update.
-            await this.client.SetDesiredPropertyUpdateCallbackAsync(this.OnChangeCallback, null);
+            await client.SetDesiredPropertyUpdateCallbackAsync(this.OnChangeCallback, null);
 
             this.log.Debug("Callback for desired properties updates setup successfully", () => new { this.deviceId });
 
@@ -70,13 +82,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 foreach (KeyValuePair<string, object> item in desiredProperties)
                 {
-                    // Only update if key doesn't exist or value has changed 
-                    if (!this.deviceProperties.Has(item.Key) ||
-                        (item.Value.ToString() != this.deviceProperties.Get(item.Key).ToString()))
-                    {
-                        // Update existing property or create new property if key doesn't exist.
-                        this.deviceProperties.Set(item.Key, item.Value);
-                    }
+                    // Update existing property or create new property if key doesn't exist.
+                    // Internally updates only if key doesn't exist or value has changed
+                    this.deviceProperties.Set(item.Key, item.Value, true);
                 }
             }
             catch (Exception e)
