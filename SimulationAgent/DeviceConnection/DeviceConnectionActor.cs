@@ -327,7 +327,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     await this.connectLogic.RunAsync();
                     var timeSpent = GetTimeSpentMsecs();
                     var id = this.deviceId.Split('.');
-                    this.ConnectionStats = start.TimeOfDay + "," + timeSpent + "," + id[2] + "\n";
+                    if (this.status == ActorStatus.Done)
+                    {
+                        this.ConnectionStats = start.TimeOfDay + "," + timeSpent + "," + id[2] + "\n";
+                    }
                     this.log.Debug("Device connected",
                         () => new { StartTime = start, Duration = timeSpent, DeviceId = this.deviceId });
                     return;

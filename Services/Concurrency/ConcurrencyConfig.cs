@@ -23,15 +23,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
     public class AppConcurrencyConfig : IAppConcurrencyConfig
     {
         private const int DEFAULT_TELEMETRY_THREADS = 4;
-        private const int DEFAULT_MAX_PENDING_CONNECTIONS = 200;
+        private const int DEFAULT_MAX_PENDING_CONNECTIONS = 300;
         private const int DEFAULT_MAX_PENDING_TELEMETRY = 1000;
         private const int DEFAULT_MAX_PENDING_TWIN_WRITES = 50;
         private const int DEFAULT_MIN_DEVICE_STATE_LOOP_DURATION = 1000;
         private const int DEFAULT_MIN_DEVICE_REPLAY_LOOP_DURATION = 1000;
-        private const int DEFAULT_MIN_DEVICE_CONNECTION_LOOP_DURATION = 1000;
+        private const int DEFAULT_MIN_DEVICE_CONNECTION_LOOP_DURATION = 500;
         private const int DEFAULT_MIN_DEVICE_TELEMETRY_LOOP_DURATION = 500;
         private const int DEFAULT_MIN_DEVICE_PROPERTIES_LOOP_DURATION = 2000;
-        private const int DEFAULT_MAX_PENDING_TASKS = 25;
+        private const int DEFAULT_MAX_PENDING_TASKS = 50;
 
         private const int MAX_TELEMETRY_THREADS = 20;
         private const int MAX_MAX_PENDING_CONNECTIONS = 1000;

@@ -112,8 +112,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics
             CloudBlockBlob blob;
             try
             {
-                this.log.Debug("Writing stats to blob storage -- ", () => new { statistics.ConnectionStats });
-                blob = await this.WriteStatsToBlobAsync(statistics.ConnectionStats);
+
+                byte[] bytes = Encoding.UTF8.GetBytes(statistics.ConnectionStats);
+                for (var i = 0; i < bytes.Length; i += 300000)
+                {
+                    int length = Math.Min(bytes.Length - i, 300000);
+                    this.log.Debug("Writing stats to blob storage -- ", () => new { statistics.ConnectionStats });
+                    blob = await this.WriteStatsToBlobAsync(statistics.ConnectionStats);
+                }
             }
             catch (Exception e)
             {

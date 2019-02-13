@@ -228,7 +228,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     await this.SaveSimulationStatisticsAsync(activeSimulations);
                     await this.RunSimulationManagersMaintenanceAsync();
                     await this.StopInactiveSimulationsAsync(activeSimulations);
-
+                    
                     this.LogProcessStats(applicationProcess);
 
                     Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
@@ -243,9 +243,29 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         private void LogProcessStats(Process p)
         {
+            int a, b, c, d, e, f;
+            ThreadPool.GetMaxThreads(out a, out b);
+            ThreadPool.GetMinThreads(out c, out d);
+            ThreadPool.GetAvailableThreads(out e, out f);
             this.log.Info("Process stats", () => new
             {
                 ThreadsCount = p.Threads.Count,
+
+                MinWorkingSet = p.MinWorkingSet.ToString(),
+
+                MaxWorkingSet = p.MaxWorkingSet.ToString(),
+
+                MaxAvailableWorkerThreads = a,
+
+                MaxAvailableAsyncIOThreads = b,
+
+                MinAvailableWorkerThreads = c,
+
+                MinAvailableAsyncIOThreads = d,
+
+                AvailableWorkerThreads = e,
+
+                AvailableAsyncIOThreads = f,
 
                 // The amount of physical memory, in bytes, allocated for the associated process.
                 // The working set includes both shared and private data. The shared data includes
@@ -382,6 +402,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         private void TryToStartThreads()
         {
+            ThreadPool.SetMinThreads(32000, 1000);
+            ThreadPool.SetMaxThreads(32500, 1000);
+
             this.devicesStateTask = this.factory.Resolve<IDeviceStateTask>();
             this.devicesStateThread = new Thread(
                 () => this.devicesStateTask.Run(this.deviceStateActors, this.runningToken.Token));
