@@ -323,16 +323,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     this.actorLogger.ConnectingDevice();
                     var start = DateTimeOffset.UtcNow;
                     var startMs = start.ToUnixTimeMilliseconds();
-                    long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startMs;
-                    await this.connectLogic.RunAsync();
-                    var timeSpent = GetTimeSpentMsecs();
+                   // long GetTimeSpentMsecs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - startMs;
                     var id = this.deviceId.Split('.');
-                    if (this.status == ActorStatus.Done)
-                    {
-                        this.ConnectionStats = start.TimeOfDay + "," + timeSpent + "," + id[2] + "\n";
-                    }
-                    this.log.Debug("Device connected",
-                        () => new { StartTime = start, Duration = timeSpent, DeviceId = this.deviceId });
+                        this.ConnectionStats = start.TimeOfDay + "," + id[2] + "\n";
+                        // this.ConnectionStats = start.TimeOfDay + "," + timeSpent + "," + id[2] + "\n";
+                    await this.connectLogic.RunAsync();
+                    //var timeSpent = GetTimeSpentMsecs();
+                    
+                    //this.log.Debug("Device connected",
+                    //    () => new { StartTime = start, Duration = timeSpent, DeviceId = this.deviceId });
                     return;
 
                 case ActorStatus.ReadyToDeregister:

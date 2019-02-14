@@ -6,6 +6,9 @@
     <RootNamespace>Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="4.5.0" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Services\Services.csproj" />
   </ItemGroup>
 </Project>

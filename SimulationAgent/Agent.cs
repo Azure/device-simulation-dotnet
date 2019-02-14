@@ -229,7 +229,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     await this.RunSimulationManagersMaintenanceAsync();
                     await this.StopInactiveSimulationsAsync(activeSimulations);
                     
-                    this.LogProcessStats(applicationProcess);
+                    this.LogProcessStats(applicationProcess, activeSimulations);
 
                     Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
                 }
@@ -241,12 +241,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private void LogProcessStats(Process p)
+        private void LogProcessStats(Process p, IList<Simulation> simulations)
         {
             int a, b, c, d, e, f;
             ThreadPool.GetMaxThreads(out a, out b);
             ThreadPool.GetMinThreads(out c, out d);
             ThreadPool.GetAvailableThreads(out e, out f);
+            
             this.log.Info("Process stats", () => new
             {
                 ThreadsCount = p.Threads.Count,
@@ -267,6 +268,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                 AvailableAsyncIOThreads = f,
 
+                ProcessName = p.ProcessName, 
+
+                TotalProcessorTime = p.TotalProcessorTime,
+
+                UserProcessorTime = p.UserProcessorTime,
+
                 // The amount of physical memory, in bytes, allocated for the associated process.
                 // The working set includes both shared and private data. The shared data includes
                 // the pages that contain all the instructions that the process executes, including
@@ -279,7 +286,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 // The amount of memory, in bytes, allocated for the associated process that cannot
                 // be shared with other processes.
                 PrivateMemoryMB = p.PrivateMemorySize64 / 1024 / 1024
-            });
+            });   
         }
 
         private async Task StopInactiveSimulationsAsync(IList<Simulation> activeSimulations)

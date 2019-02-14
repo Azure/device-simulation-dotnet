@@ -52,7 +52,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering
 
         private const int MAX_PARTITION_LOCK_DURATION = 300000;
         private const int MAX_MAX_PARTITION_SIZE = 10000;
-        private const int MAX_MAX_DEVICES_PER_NODE = 1000000;
+        private const int MAX_MAX_DEVICES_PER_NODE = 200000;
 
         private int checkIntervalMsecs;
         private int nodeRecordMaxAgeMsecs;
