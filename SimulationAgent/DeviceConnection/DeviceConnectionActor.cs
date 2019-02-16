@@ -355,7 +355,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 case ActorEvents.Started:
                     if (this.loopSettings.SchedulableFetches <= 0)
                         return;
-                    this.loopSettings.SchedulableFetches--;
+                   // this.loopSettings.SchedulableFetches--;
 
                     this.actorLogger.ActorStarted();
                     this.ScheduleCredentialsSetup();
@@ -364,9 +364,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 case ActorEvents.FetchFailed:
                     if (this.loopSettings.SchedulableFetches <= 0)
                         return;
-                    this.loopSettings.SchedulableFetches--;
+                    //this.loopSettings.SchedulableFetches--;
 
-                    this.failedFetchCount++;
+                    //this.failedFetchCount++;
                     this.actorLogger.DeviceFetchFailed();
                     this.ScheduleFetch();
                     break;
@@ -374,7 +374,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 case ActorEvents.DeviceNotFound:
                     if (this.loopSettings.SchedulableRegistrations <= 0)
                         return;
-                    this.loopSettings.SchedulableRegistrations--;
+                    //this.loopSettings.SchedulableRegistrations--;
 
                     this.actorLogger.DeviceNotFound();
                     this.ScheduleRegistration();
@@ -389,9 +389,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                 case ActorEvents.RegistrationFailed:
                     if (this.loopSettings.SchedulableRegistrations <= 0)
                         return;
-                    this.loopSettings.SchedulableRegistrations--;
+                    //this.loopSettings.SchedulableRegistrations--;
 
-                    this.failedRegistrationsCount++;
+                   // this.failedRegistrationsCount++;
                     this.actorLogger.DeviceRegistrationFailed();
                     this.ScheduleRegistration();
                     break;
@@ -412,7 +412,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     break;
 
                 case ActorEvents.ConnectionFailed:
-                    this.failedDeviceConnectionsCount++;
+                   // this.failedDeviceConnectionsCount++;
                     this.actorLogger.DeviceConnectionFailed();
                     this.ScheduleConnection();
                     break;
@@ -470,7 +470,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             this.status = ActorStatus.WaitingForDeviceQuota;
 
             // Pause for a minute, before checking if new quota is available
-            this.whenToRun = Now + RateLimiting.PAUSE_FOR_QUOTA_MSECS;
+            this.whenToRun = Now + 1;
 
             this.actorLogger.RegistrationScheduled(this.whenToRun);
             this.log.Warn("Creation and connection paused due to device creation quota",

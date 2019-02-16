@@ -124,7 +124,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
                     when = oneUnitTimeAgo + (long) this.timeUnitLength;
                 }
 
-                pauseMsecs = when - now;
+                pauseMsecs = 1; // when - now;
 
                 this.timestamps.Enqueue(when);
 

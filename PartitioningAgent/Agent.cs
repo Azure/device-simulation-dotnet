@@ -89,7 +89,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent
                         await this.CreateDevicesAsync(activeSimulations);
 
                         // Delete IoTHub devices for inactive simulations
-                        await this.DeleteDevicesAsync(deletionRequiredSimulations);
+                        // await this.DeleteDevicesAsync(deletionRequiredSimulations);
 
                         // Create and delete partitions
                         await this.CreatePartitionsAsync(activeSimulations);

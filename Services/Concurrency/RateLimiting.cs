@@ -48,7 +48,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
     public class RateLimiting : IRateLimiting
     {
         // When reaching a quota limit, probe the hub once a minute
-        public const long PAUSE_FOR_QUOTA_MSECS = 60 * 1000;
+        public const long PAUSE_FOR_QUOTA_MSECS = 1; //60 * 1000;
 
         private readonly ILogger log;
         private readonly IInstance instance;
@@ -122,12 +122,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
 
         public long GetPauseForNextConnection()
         {
-            return this.connections.GetPause();
+            return 1; // this.connections.GetPause();
         }
 
         public long GetPauseForNextRegistryOperation()
         {
-            return this.registryOperations.GetPause();
+            return 1; // this.registryOperations.GetPause();
         }
 
         public long GetPauseForNextTwinRead()

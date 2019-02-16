@@ -56,7 +56,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
             var pauseMsecs = min - (int) duration;
             this.log.Debug("Pausing device state thread", () => new { pauseMsecs });
-            Thread.Sleep(pauseMsecs);
+            //Thread.Sleep(pauseMsecs);
         }
     }
 }

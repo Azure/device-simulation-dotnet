@@ -215,7 +215,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                 while (this.running && !appStopToken.IsCancellationRequested)
                 {
-                    this.SendSolutionHeartbeat();
+                    //this.SendSolutionHeartbeat();
 
                     this.log.Debug("Starting simulation agent loop",
                         () => new { SimulationsCount = this.simulationManagers.Count });
@@ -232,7 +232,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     
                     this.LogProcessStats(applicationProcess, activeSimulations);
 
-                    // Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
+                     Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
                 }
             }
             catch (Exception e)
