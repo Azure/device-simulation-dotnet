@@ -552,7 +552,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
         private void ScheduleFetch()
         {
-            var pauseMsec = this.simulationContext.RateLimiting.GetPauseForNextRegistryOperation();
+            var pauseMsec = 0; // this.simulationContext.RateLimiting.GetPauseForNextRegistryOperation();
             this.whenToRun = Now + pauseMsec;
             this.status = ActorStatus.ReadyToFetch;
 
@@ -568,7 +568,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
         private void ScheduleRegistration()
         {
-            var pauseMsec = this.simulationContext.RateLimiting.GetPauseForNextRegistryOperation();
+            var pauseMsec = 0; // this.simulationContext.RateLimiting.GetPauseForNextRegistryOperation();
             this.whenToRun = Now + pauseMsec;
             this.status = ActorStatus.ReadyToRegister;
 
@@ -584,7 +584,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
         private void ScheduleConnection()
         {
-            var pauseMsec = this.simulationContext.RateLimiting.GetPauseForNextConnection();
+            var pauseMsec = 0; // this.simulationContext.RateLimiting.GetPauseForNextConnection();
             this.whenToRun = Now + pauseMsec;
             this.status = ActorStatus.ReadyToConnect;
 
@@ -600,7 +600,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
         private void ScheduleDeregistration()
         {
-            var pauseMsec = this.simulationContext.RateLimiting.GetPauseForNextRegistryOperation();
+            var pauseMsec = 0; // this.simulationContext.RateLimiting.GetPauseForNextRegistryOperation();
             this.whenToRun = Now + pauseMsec;
             this.status = ActorStatus.ReadyToDeregister;
 

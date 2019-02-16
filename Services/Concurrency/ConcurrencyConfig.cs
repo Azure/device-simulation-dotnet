@@ -23,21 +23,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency
     public class AppConcurrencyConfig : IAppConcurrencyConfig
     {
         private const int DEFAULT_TELEMETRY_THREADS = 4;
-        private const int DEFAULT_MAX_PENDING_CONNECTIONS = 20000 -1;
-        private const int DEFAULT_MAX_PENDING_TELEMETRY = 4000;
-        private const int DEFAULT_MAX_PENDING_TWIN_WRITES = 500 - 1;
-        private const int DEFAULT_MIN_DEVICE_STATE_LOOP_DURATION = 100 -1 ;
-        private const int DEFAULT_MIN_DEVICE_REPLAY_LOOP_DURATION = 100 -1;
-        private const int DEFAULT_MIN_DEVICE_CONNECTION_LOOP_DURATION = 100 -1;
-        private const int DEFAULT_MIN_DEVICE_TELEMETRY_LOOP_DURATION = 100 -1;
-        private const int DEFAULT_MIN_DEVICE_PROPERTIES_LOOP_DURATION = 100 -1;
-        private const int DEFAULT_MAX_PENDING_TASKS = 20000 -1;
+        private const int DEFAULT_MAX_PENDING_CONNECTIONS = 5000 - 1;
+        private const int DEFAULT_MAX_PENDING_TELEMETRY = 1000;
+        private const int DEFAULT_MAX_PENDING_TWIN_WRITES = 50;
+        private const int DEFAULT_MIN_DEVICE_STATE_LOOP_DURATION = 100;
+        private const int DEFAULT_MIN_DEVICE_REPLAY_LOOP_DURATION = 100;
+        private const int DEFAULT_MIN_DEVICE_CONNECTION_LOOP_DURATION = 100;
+        private const int DEFAULT_MIN_DEVICE_TELEMETRY_LOOP_DURATION = 100;
+        private const int DEFAULT_MIN_DEVICE_PROPERTIES_LOOP_DURATION = 100;
+        private const int DEFAULT_MAX_PENDING_TASKS = 2500;
 
         private const int MAX_TELEMETRY_THREADS = 20;
-        private const int MAX_MAX_PENDING_CONNECTIONS = 20001;
-        private const int MAX_MAX_PENDING_TELEMETRY = 20001;
+        private const int MAX_MAX_PENDING_CONNECTIONS = 5000;
+        private const int MAX_MAX_PENDING_TELEMETRY = 5000;
         private const int MAX_MAX_PENDING_TWIN_WRITES = 500;
-        private const int MAX_LOOP_DURATION = 6000;
+        private const int MAX_LOOP_DURATION = 200;
 
         private int telemetryThreads;
         private int maxPendingConnections;

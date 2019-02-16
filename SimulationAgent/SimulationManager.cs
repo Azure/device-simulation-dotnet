@@ -18,6 +18,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceReplay;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Statistics;
+using Microsoft.ApplicationInsights;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
@@ -269,6 +270,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 }
 
                 await this.simulationStatistics.CreateOrUpdateAsync(this.simulation.Id, simulationModel);
+
+                Dictionary<string, string> perfDict = new Dictionary<string, string>();
+                perfDict.Add("ConnectionStats", simulationModel.ConnectionStats.ToString());
+
+                // TODO: Super hack!!! DO NOT SHIP THIS!!!!
+                TelemetryClient telemetryClient = new TelemetryClient
+                {
+                    InstrumentationKey = "a86522dd-0bd2-4430-89fd-46692e37a7a4",
+                };
+                telemetryClient.Context.Session.Id = "test";
+                telemetryClient.Context.User.Id = "test";
+                telemetryClient.TrackEvent("Connection Stats", perfDict);
             }
             catch (Exception e)
             {

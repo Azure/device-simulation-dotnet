@@ -18,6 +18,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceReplay;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.SimulationThreads;
+using Microsoft.ApplicationInsights;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 {
@@ -231,7 +232,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     
                     this.LogProcessStats(applicationProcess, activeSimulations);
 
-                    Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
+                    // Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
                 }
             }
             catch (Exception e)
@@ -247,8 +248,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             ThreadPool.GetMaxThreads(out a, out b);
             ThreadPool.GetMinThreads(out c, out d);
             ThreadPool.GetAvailableThreads(out e, out f);
-            
-            this.log.Info("Process stats", () => new
+
+            var perfData = new
             {
                 ThreadsCount = p.Threads.Count,
 
@@ -286,7 +287,36 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 // The amount of memory, in bytes, allocated for the associated process that cannot
                 // be shared with other processes.
                 PrivateMemoryMB = p.PrivateMemorySize64 / 1024 / 1024
-            });   
+            };
+
+            Dictionary<string, string> perfDict = new Dictionary<string, string>();
+            perfDict.Add("WorkingSetMemoryMB", perfData.WorkingSetMemoryMB.ToString());
+            perfDict.Add("VirtualMemoryMB", perfData.VirtualMemoryMB.ToString());
+            perfDict.Add("PrivateMemoryMB", perfData.PrivateMemoryMB.ToString());
+            perfDict.Add("ThreadCount", perfData.ThreadsCount.ToString());
+            perfDict.Add("MinWorkingSet", perfData.MinWorkingSet.ToString());
+            perfDict.Add("MaxWorkingSet", perfData.MaxWorkingSet.ToString());
+            perfDict.Add("MaxAvailableWorkerThreads", perfData.MaxAvailableWorkerThreads.ToString());
+            perfDict.Add("MinAvailableWorkerThreads", perfData.MinAvailableWorkerThreads.ToString());
+            perfDict.Add("MinAvailableAsyncIOThreads", perfData.MinAvailableAsyncIOThreads.ToString());
+            perfDict.Add("MaxAvailableAsyncIOThreads", perfData.MaxAvailableAsyncIOThreads.ToString());
+            perfDict.Add("AvailableWorkerThreads", perfData.AvailableWorkerThreads.ToString());
+            perfDict.Add("AvailableAsyncIOThreads", perfData.AvailableAsyncIOThreads.ToString());
+            perfDict.Add("ProcessName", perfData.ProcessName.ToString());
+            perfDict.Add("TotalProcessorTime", perfData.TotalProcessorTime.ToString());
+            perfDict.Add("UserProcessorTime", perfData.UserProcessorTime.ToString());
+            perfDict.Add("Config.MinDeviceConnectionLoopDuration", this.appConcurrencyConfig.MinDeviceConnectionLoopDuration.ToString());
+            perfDict.Add("Config.MaxPendingConnections", this.appConcurrencyConfig.MaxPendingConnections.ToString());
+            perfDict.Add("Config.MaxPendingTasks", this.appConcurrencyConfig.MaxPendingTasks.ToString());
+          
+            // TODO: Super hack!!! DO NOT SHIP THIS!!!!
+            TelemetryClient telemetryClient = new TelemetryClient
+            {
+                InstrumentationKey = "a86522dd-0bd2-4430-89fd-46692e37a7a4",
+            };
+            telemetryClient.Context.Session.Id = "test";
+            telemetryClient.Context.User.Id = "test";
+            telemetryClient.TrackEvent("Performance Data", perfDict);
         }
 
         private async Task StopInactiveSimulationsAsync(IList<Simulation> activeSimulations)
