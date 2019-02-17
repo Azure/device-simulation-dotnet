@@ -358,7 +358,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                    // this.loopSettings.SchedulableFetches--;
 
                     this.actorLogger.ActorStarted();
-                    this.ScheduleCredentialsSetup();
+                    this.ScheduleConnection();
+                    // this.ScheduleCredentialsSetup();
                     break;
 
                 case ActorEvents.FetchFailed:
@@ -368,7 +369,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
                     //this.failedFetchCount++;
                     this.actorLogger.DeviceFetchFailed();
-                    this.ScheduleFetch();
+                    this.ScheduleConnection();
+                    // this.ScheduleFetch();
                     break;
 
                 case ActorEvents.DeviceNotFound:
@@ -377,7 +379,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
                     //this.loopSettings.SchedulableRegistrations--;
 
                     this.actorLogger.DeviceNotFound();
-                    this.ScheduleRegistration();
+                    this.ScheduleConnection();
+
+                    //this.ScheduleRegistration();
                     break;
 
                 case ActorEvents.DeviceRegistered:
@@ -393,7 +397,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
                    // this.failedRegistrationsCount++;
                     this.actorLogger.DeviceRegistrationFailed();
-                    this.ScheduleRegistration();
+                    this.ScheduleConnection();
+
+                   // this.ScheduleRegistration();
                     break;
 
                 case ActorEvents.CredentialsSetupCompleted:
@@ -408,7 +414,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
 
                 case ActorEvents.AuthFailed:
                     this.actorLogger.DeviceConnectionAuthFailed();
-                    this.ScheduleFetch();
+                    this.ScheduleConnection();
+
+                    // this.ScheduleFetch();
                     break;
 
                 case ActorEvents.ConnectionFailed:
