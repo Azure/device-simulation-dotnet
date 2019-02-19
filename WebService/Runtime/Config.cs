@@ -114,6 +114,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string LOGGING_LOGLEVEL_KEY = LOGGING_KEY + "LogLevel";
         private const string LOGGING_INCLUDEPROCESSID_KEY = LOGGING_KEY + "IncludeProcessId";
         private const string LOGGING_DATEFORMAT_KEY = LOGGING_KEY + "DateFormat";
+        private const string LOGGING_APPINSIGHTS_INSTRUMENTATION_KEY = LOGGING_KEY + "appinsights_instrumentation_key";
         private const string LOGGING_BLACKLIST_SOURCES_KEY = LOGGING_KEY + "BlackListSources";
         private const string LOGGING_WHITELIST_SOURCES_KEY = LOGGING_KEY + "WhiteListSources";
         private const string LOGGING_EXTRADIAGNOSTICS_KEY = LOGGING_KEY + "ExtraDiagnostics";
@@ -194,6 +195,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 WhiteList = whitelist,
                 DateFormat = configData.GetString(LOGGING_DATEFORMAT_KEY, Services.Diagnostics.LoggingConfig.DEFAULT_DATE_FORMAT),
                 LogProcessId = configData.GetBool(LOGGING_INCLUDEPROCESSID_KEY, true),
+                AppInsightsInstrumentationKey = configData.GetString(LOGGING_APPINSIGHTS_INSTRUMENTATION_KEY, null),
                 ExtraDiagnostics = configData.GetBool(LOGGING_EXTRADIAGNOSTICS_KEY, false),
                 ExtraDiagnosticsPath = configData.GetString(LOGGING_EXTRADIAGNOSTICSPATH_KEY)
             };

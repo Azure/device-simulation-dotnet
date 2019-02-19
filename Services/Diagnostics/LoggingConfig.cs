@@ -20,6 +20,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         bool ExtraDiagnostics { get; }
         string ExtraDiagnosticsPath { get; }
         string DateFormat { get; }
+        string AppInsightsInstrumentationKey { get; }
         HashSet<string> BlackList { get; }
         HashSet<string> WhiteList { get; }
     }
@@ -35,6 +36,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         public bool ExtraDiagnostics { get; set; }
         public string ExtraDiagnosticsPath { get; set; }
         public string DateFormat { get; set; }
+        public string AppInsightsInstrumentationKey { get; set; }
         public HashSet<string> BlackList { get; set; }
         public HashSet<string> WhiteList { get; set; }
 

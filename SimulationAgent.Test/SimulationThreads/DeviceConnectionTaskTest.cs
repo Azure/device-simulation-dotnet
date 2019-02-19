@@ -18,6 +18,7 @@ namespace SimulationAgent.Test.SimulationThreads
         private const int MAX_PENDING_TASKS = 5;
 
         private readonly Mock<IAppConcurrencyConfig> mockAppConcurrencyConfig;
+        private readonly Mock<IApplicationInsightsLogger> mockApplicationInsightsLogger;
         private readonly Mock<ILogger> mockLogger;
         private readonly DeviceConnectionTask target;
         private readonly ConcurrentDictionary<string, Mock<IDeviceConnectionActor>> mockDeviceConnectionActors;
@@ -34,9 +35,10 @@ namespace SimulationAgent.Test.SimulationThreads
 
             this.mockAppConcurrencyConfig = new Mock<IAppConcurrencyConfig>();
             this.mockAppConcurrencyConfig.SetupGet(x => x.MaxPendingTasks).Returns(MAX_PENDING_TASKS);
+            this.mockApplicationInsightsLogger = new Mock<IApplicationInsightsLogger>();
             this.mockLogger = new Mock<ILogger>();
 
-            this.target = new DeviceConnectionTask(this.mockAppConcurrencyConfig.Object, this.mockLogger.Object);
+            this.target = new DeviceConnectionTask(this.mockAppConcurrencyConfig.Object, this.mockLogger.Object, this.mockApplicationInsightsLogger.Object);
         }
 
         [Fact]
