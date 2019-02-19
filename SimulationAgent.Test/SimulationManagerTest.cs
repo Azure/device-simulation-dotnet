@@ -79,7 +79,8 @@ namespace SimulationAgent.Test
                 this.mockLogger.Object,
                 this.mockInstance.Object,
                 this.mockSimulationStatistics.Object,
-                this.mockSimulations.Object);
+                this.mockSimulations.Object,
+                null);
 
             // Initialize the target
             var simulation = new Simulation { Id = SIM_ID, PartitioningComplete = false };

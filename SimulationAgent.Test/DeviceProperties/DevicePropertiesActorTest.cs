@@ -208,7 +208,8 @@ namespace SimulationAgent.Test.DeviceProperties
                 connectLogic.Object,
                 deregisterLogic.Object,
                 disconnectLogic.Object,
-                this.mockInstance.Object);
+                this.mockInstance.Object,
+                null);
         }
     }
 }

@@ -110,6 +110,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Whether the simulation interacts with device twins
         private bool deviceTwinEnabled;
 
+        private readonly IApplicationInsightsLogger aiLogger;
+
         // Used to stop the threads
         private CancellationTokenSource runningToken;
 
@@ -119,7 +121,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             ISimulations simulations,
             IFactory factory,
             ILogger logger,
-            IDiagnosticsLogger diagnosticsLogger)
+            IDiagnosticsLogger diagnosticsLogger,
+            IApplicationInsightsLogger aiLogger)
         {
             this.appConcurrencyConfig = appConcurrencyConfig;
             this.simulations = simulations;
@@ -134,6 +137,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.lastPolledTime = DateTimeOffset.UtcNow;
             this.lastPrintStatisticsTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             this.lastSaveStatisticsTime = DateTimeOffset.UtcNow;
+            this.aiLogger = aiLogger;
+            this.aiLogger.Init();
 
             this.simulationManagers = new ConcurrentDictionary<string, ISimulationManager>();
             this.deviceStateActors = new ConcurrentDictionary<string, IDeviceStateActor>();
@@ -308,7 +313,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             perfDict.Add("Config.MinDeviceConnectionLoopDuration", this.appConcurrencyConfig.MinDeviceConnectionLoopDuration.ToString());
             perfDict.Add("Config.MaxPendingConnections", this.appConcurrencyConfig.MaxPendingConnections.ToString());
             perfDict.Add("Config.MaxPendingTasks", this.appConcurrencyConfig.MaxPendingTasks.ToString());
-          
+
+            /*
             // TODO: Super hack!!! DO NOT SHIP THIS!!!!
             TelemetryClient telemetryClient = new TelemetryClient
             {
@@ -317,6 +323,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             telemetryClient.Context.Session.Id = "test";
             telemetryClient.Context.User.Id = "test";
             telemetryClient.TrackEvent("Performance Data", perfDict);
+            */
+
+            var oneSimulation = simulations.FirstOrDefault<Simulation>();
+            var simId = oneSimulation != null ? oneSimulation.Id : "";
+            this.aiLogger.LogProcessStats(simId, p);
         }
 
         private async Task StopInactiveSimulationsAsync(IList<Simulation> activeSimulations)
@@ -347,7 +358,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             TimeSpan duration = now - this.lastSaveStatisticsTime;
 
             // Save statistics for simulations at specified interval
-            if (duration.Seconds >= SAVE_STATS_INTERVAL_SECS)
+            //if (duration.Seconds >= SAVE_STATS_INTERVAL_SECS)
             {
                 foreach (var simulation in simulations)
                 {

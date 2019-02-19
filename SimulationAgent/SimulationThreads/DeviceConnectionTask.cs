@@ -23,15 +23,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     {
         // Global settings, not affected by hub SKU or simulation settings
         private readonly IAppConcurrencyConfig appConcurrencyConfig;
-
+        private readonly IApplicationInsightsLogger aiLogger;
         private readonly ILogger log;
 
         public DeviceConnectionTask(
             IAppConcurrencyConfig appConcurrencyConfig,
-            ILogger logger)
+            ILogger logger,
+            IApplicationInsightsLogger aiLogger)
         {
             this.appConcurrencyConfig = appConcurrencyConfig;
             this.log = logger;
+            this.aiLogger = aiLogger;
         }
 
         public async Task RunAsync(
@@ -42,6 +44,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
             // Once N devices are attempting to connect, wait until they are done
             var pendingTasksLimit = this.appConcurrencyConfig.MaxPendingConnections;
             var tasks = new List<Task>();
+
+            // Initialize the Application Insights logger
+            this.aiLogger.Init();
+
+            // Keep track of the simulation ID. For now, assume that there is only one
+            // simulation running per node.
+            // TODO: extend this for the multiple-concurrent-simulation case
+            string simulationId = "";
 
             while (!runningToken.IsCancellationRequested)
             {
@@ -63,6 +73,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                     if (tasks.Count < pendingTasksLimit) continue;
 
+                    // Log the count of pending connection tasks
+                    this.aiLogger.WaitingForConnectionTasks(simulationId, tasks.Count);
+
                     await Task.WhenAll(tasks);
                     tasks.Clear();
                 }
@@ -70,11 +83,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                 // Wait for any pending tasks.
                 if (tasks.Count > 0)
                 {
+                    // Log the count of pending connection tasks
+                    this.aiLogger.WaitingForConnectionTasks(simulationId, tasks.Count);
                     await Task.WhenAll(tasks);
                     tasks.Clear();
                 }
 
                 var durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
+
+                this.log.Debug("Device-connection loop completed", () => new { durationMsecs });
+                if (durationMsecs > 0)
+                {
+                    this.aiLogger.DeviceConnectionLoopCompleted(simulationId, durationMsecs);
+                }
                 //this.log.Debug("Device-state loop completed", () => new { StartTime = before, Duration = durationMsecs });
                 // this.SlowDownIfTooFast(durationMsecs, this.appConcurrencyConfig.MinDeviceConnectionLoopDuration);
             }

@@ -78,6 +78,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private readonly IInstance instance;
         private readonly ISimulations simulations;
         private readonly int maxDevicePerNode;
+        private readonly IApplicationInsightsLogger aiLogger;
 
         // Data shared with other simulations
         private ConcurrentDictionary<string, IDeviceStateActor> deviceStateActors;
@@ -104,7 +105,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             ILogger logger,
             IInstance instance,
             ISimulationStatistics simulationStatistics,
-            ISimulations simulations)
+            ISimulations simulations,
+            IApplicationInsightsLogger aiLogger)
         {
             this.simulationContext = simulationContext;
             this.devicePartitions = devicePartitions;
@@ -116,7 +118,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.instance = instance;
             this.maxDevicePerNode = clusteringConfig.MaxDevicesPerNode;
             this.simulations = simulations;
-
+            this.aiLogger = aiLogger;
+            this.aiLogger.Init();
             this.assignedPartitions = new ConcurrentDictionary<string, DevicesPartition>();
             this.nodeCount = 1;
             this.deviceCount = 0;
@@ -271,6 +274,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                 await this.simulationStatistics.CreateOrUpdateAsync(this.simulation.Id, simulationModel);
 
+                /*
                 Dictionary<string, string> perfDict = new Dictionary<string, string>();
                 perfDict.Add("ConnectionStats", simulationModel.ConnectionStats.ToString());
 
@@ -282,6 +286,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 telemetryClient.Context.Session.Id = "test";
                 telemetryClient.Context.User.Id = "test";
                 telemetryClient.TrackEvent("Connection Stats", perfDict);
+                */
+
+                this.aiLogger.AddConnectionStats(this.simulation.Id, simulationModel.ConnectionStats.ToString());
             }
             catch (Exception e)
             {

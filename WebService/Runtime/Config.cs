@@ -151,6 +151,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string DEBUGGING_DISABLE_PARTITIONING_AGENT_KEY = DEBUGGING_SECTION_KEY + "disable_partitioning_agent";
         private const string DEBUGGING_DISABLE_SEED_BY_TEMPLATE_KEY = DEBUGGING_SECTION_KEY + "disable_seed_by_template";
 
+        private const string LOGGING_APPINSIGHTS_INSTRUMENTATION_KEY = LOGGING_KEY + "appinsights_instrumentation_key";
+
         private const string DEFAULT_USER_AGENT_STRING = "devicesimulation";
 
         public int Port { get; }
@@ -192,6 +194,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 LogLevel = logLevel,
                 BlackList = blacklist,
                 WhiteList = whitelist,
+                AppInsightsInstrumentationKey = configData.GetString(LOGGING_APPINSIGHTS_INSTRUMENTATION_KEY, "a86522dd-0bd2-4430-89fd-46692e37a7a4"),
                 DateFormat = configData.GetString(LOGGING_DATEFORMAT_KEY, Services.Diagnostics.LoggingConfig.DEFAULT_DATE_FORMAT),
                 LogProcessId = configData.GetBool(LOGGING_INCLUDEPROCESSID_KEY, true),
                 ExtraDiagnostics = configData.GetBool(LOGGING_EXTRADIAGNOSTICS_KEY, false),

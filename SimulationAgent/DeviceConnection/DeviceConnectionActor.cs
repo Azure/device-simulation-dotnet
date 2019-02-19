@@ -99,6 +99,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
         private readonly IDeviceConnectionLogic deregisterLogic;
         private readonly IDeviceConnectionLogic disconnectLogic;
         private readonly IInstance instance;
+        private readonly IApplicationInsightsLogger aiLogger;
 
         private ActorStatus status;
         private string deviceId;
@@ -194,11 +195,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceCo
             Connect connectLogic,
             Deregister deregisterLogic,
             Disconnect disconnectLogic,
-            IInstance instance)
+            IInstance instance,
+            IApplicationInsightsLogger aiLogger)
         {
             this.log = logger;
             this.actorLogger = actorLogger;
-
+            this.aiLogger = aiLogger;
             this.credentialsSetupLogic = credentialsSetupLogic;
             this.fetchFromRegistryLogic = fetchFromRegistryLogic;
             this.registerLogic = registerLogic;

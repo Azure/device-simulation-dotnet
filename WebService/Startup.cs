@@ -73,6 +73,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             // Add controllers as services so they'll be resolved.
             services.AddMvc().AddControllersAsServices();
 
+            // Add Application Insights
+            services.AddApplicationInsightsTelemetry();
+
             // Prepare DI container
             this.ApplicationContainer = DependencyResolution.Init(services);
 
