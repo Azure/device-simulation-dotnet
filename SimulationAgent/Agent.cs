@@ -56,6 +56,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         private readonly ILogger log;
         private readonly IDiagnosticsLogger logDiagnostics;
+        private readonly IApplicationInsightsLogger aiLogger;
         private readonly ISimulations simulations;
         private readonly IFactory factory;
         private DateTimeOffset lastPolledTime;
@@ -117,6 +118,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             IAppConcurrencyConfig appConcurrencyConfig,
             ISimulations simulations,
             IFactory factory,
+            IApplicationInsightsLogger aiLogger,
             ILogger logger,
             IDiagnosticsLogger diagnosticsLogger)
         {
@@ -125,6 +127,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.factory = factory;
             this.log = logger;
             this.logDiagnostics = diagnosticsLogger;
+            this.aiLogger = aiLogger;
+            this.aiLogger.Init();
 
             this.startingOrStopping = false;
             this.running = false;
@@ -229,7 +233,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                     await this.RunSimulationManagersMaintenanceAsync();
                     await this.StopInactiveSimulationsAsync(activeSimulations);
 
-                    this.LogProcessStats(applicationProcess);
+                    this.LogProcessStats(applicationProcess, activeSimulations);
 
                     Thread.Sleep(PAUSE_AFTER_CHECK_MSECS);
                 }
@@ -241,9 +245,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             }
         }
 
-        private void LogProcessStats(Process p)
+        private void LogProcessStats(Process p, IList<Simulation> activeSimulations)
         {
-            this.log.Info("Process stats", () => new
+            var data = new
             {
                 ThreadsCount = p.Threads.Count,
 
@@ -259,7 +263,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 // The amount of memory, in bytes, allocated for the associated process that cannot
                 // be shared with other processes.
                 PrivateMemoryMB = p.PrivateMemorySize64 / 1024 / 1024
-            });
+            };
+
+            this.log.Info("Process stats", () => data);
+
+            // Obtain a single simulation ID for use correlating Application Insights data
+            // with this process
+            var oneSimulation = activeSimulations.FirstOrDefault<Simulation>();
+            var simId = oneSimulation != null ? oneSimulation.Id : "";
+            this.aiLogger.LogProcessStats(simId, p);
+
+
         }
 
         private async Task StopInactiveSimulationsAsync(IList<Simulation> activeSimulations)

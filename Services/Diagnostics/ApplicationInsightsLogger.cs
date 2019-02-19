@@ -8,6 +8,7 @@ using System.Text;
 using Microsoft.ApplicationInsights;
 using Microsoft.Azure.IoTSolutions.Diagnostics.Services.Models;
 using System.Diagnostics;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Clustering;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 {
@@ -15,16 +16,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
     {
         private readonly IInstance instance;
         private readonly ILoggingConfig loggingConfig;
+        private readonly string nodeId;
 
         private string simulationId;
         private TelemetryClient telemetryClient;
 
         public ApplicationInsightsLogger(
             ILoggingConfig loggingConfig,
+            IClusterNodes clusterNodes,
             IInstance instance)
         {
-            this.instance = instance;
             this.loggingConfig = loggingConfig;
+            this.nodeId = clusterNodes.GetCurrentNodeId();
+            this.instance = instance;
         }
 
         public void Init()
@@ -84,7 +88,22 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         {
             this.instance.InitRequired();
 
-            throw new NotImplementedException();
+            Dictionary<string, string> properties = new Dictionary<string, string>();
+
+            // Approximate the CPU usage of this process as the ratio of the CPU time over the
+            // time that the process started.
+            var procUsageSeconds = p.TotalProcessorTime.TotalSeconds;
+            var procTotalSeconds = DateTime.Now.Subtract(p.StartTime).TotalSeconds;
+            properties.Add("CPU utilization", (procUsageSeconds / procTotalSeconds).ToString());
+
+            var model = new AppInsightsDataModel
+            {
+                EventType = "Performance (Simulation Agent)",
+                SessionId = simulationId,
+                EventProperties = properties,
+            };
+
+            this.TrackEvent(model);
         }
 
         private void AddProcessStats(ref Dictionary<string, string> properties)
@@ -97,6 +116,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
         private void TrackEvent(AppInsightsDataModel model)
         {
+            // Add the node ID to each event
+            model.EventProperties.Add("Node ID", this.nodeId);
+
             // Set the simulation ID before tracking each event
             this.telemetryClient.Context.Session.Id = model.SessionId;
             this.telemetryClient.TrackEvent(model.EventType, model.EventProperties);
