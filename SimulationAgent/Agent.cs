@@ -272,8 +272,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             var oneSimulation = activeSimulations.FirstOrDefault<Simulation>();
             var simId = oneSimulation != null ? oneSimulation.Id : "";
             this.aiLogger.LogProcessStats(simId, p);
-
-
         }
 
         private async Task StopInactiveSimulationsAsync(IList<Simulation> activeSimulations)

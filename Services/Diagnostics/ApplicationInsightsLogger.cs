@@ -96,6 +96,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             var procTotalSeconds = DateTime.Now.Subtract(p.StartTime).TotalSeconds;
             properties.Add("CPU utilization", (procUsageSeconds / procTotalSeconds).ToString());
 
+            //PerformanceCounter avgCounterSamples;
+            PerformanceCounter perfCounter = new PerformanceCounter("Process", "% Processor Time", p.ProcessName, true);
+            properties.Add("CPU %", perfCounter.NextValue().ToString());
+
             var model = new AppInsightsDataModel
             {
                 EventType = "Performance (Simulation Agent)",
