@@ -21,6 +21,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         private string simulationId;
         private TelemetryClient telemetryClient;
 
+        private DateTime prevDateTime;
+        private TimeSpan prevTotalCpuTimeSpan;
+        private DateTime currentDateTime;
+        private TimeSpan currentTotalCpuTimeSpan;
+
         public ApplicationInsightsLogger(
             ILoggingConfig loggingConfig,
             IClusterNodes clusterNodes,
@@ -34,6 +39,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         public void Init()
         {
             this.instance.InitOnce();
+
+            // Record the timestamp at the point this object is initialized. This will be
+            // a crude approximation of the process start time, although this will need to 
+            // be improved to be more accurate
+            this.prevDateTime = DateTime.Now;
+            this.currentTotalCpuTimeSpan = Process.GetCurrentProcess().TotalProcessorTime;
 
             this.telemetryClient = new TelemetryClient
             {
@@ -61,7 +72,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             };
 
             this.TrackEvent(model);
-
         }
 
         public void DeviceConnectionLoopCompleted(string simulationid, long durationMsecs)
@@ -92,13 +102,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
             // Approximate the CPU usage of this process as the ratio of the CPU time over the
             // time that the process started.
-            var procUsageSeconds = p.TotalProcessorTime.TotalSeconds;
-            var procTotalSeconds = DateTime.Now.Subtract(p.StartTime).TotalSeconds;
-            properties.Add("CPU utilization", (procUsageSeconds / procTotalSeconds).ToString());
+            //TimeSpan newCpuTime = p.TotalProcessorTime - this.currentTotalCpuTimeSpan;
+            //var numerator = (newCpuTime - this.prevCpuTime).TotalSeconds;
+            //var denominator = (Environment.ProcessorCount * DateTime.UtcNow.totim .Subtract(this.prevCpuTime).TotalSeconds);
+            //double cpuUsageLastInterval = numerator / denominator;
+            this.currentDateTime = DateTime.Now;
+            this.currentTotalCpuTimeSpan = p.TotalProcessorTime;
 
-            //PerformanceCounter avgCounterSamples;
-            PerformanceCounter perfCounter = new PerformanceCounter("Process", "% Processor Time", p.ProcessName, true);
-            properties.Add("CPU %", perfCounter.NextValue().ToString());
+            double usage = (this.currentTotalCpuTimeSpan.TotalMilliseconds - this.prevTotalCpuTimeSpan.TotalMilliseconds)
+                           / this.currentDateTime.Subtract(this.prevDateTime).TotalMilliseconds
+                           / Convert.ToDouble(Environment.ProcessorCount);
+
+            this.prevDateTime = this.currentDateTime;
+            this.prevTotalCpuTimeSpan = this.currentTotalCpuTimeSpan;
+
+            properties.Add("CPU utilization", usage.ToString());
 
             var model = new AppInsightsDataModel
             {
@@ -115,7 +133,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             // log how many threads are in use
             Process p = Process.GetCurrentProcess();
             properties.Add("Thread count", p.Threads.Count.ToString());
-
         }
 
         private void TrackEvent(AppInsightsDataModel model)
