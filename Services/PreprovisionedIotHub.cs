@@ -40,7 +40,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             
             try
             {
-                await this.InitAsync();
+                this.SetupHub();
                 await this.registry.GetDeviceAsync("healthcheck");
                 result.IsHealthy = true;
                 result.Message = "Alive and Well!";

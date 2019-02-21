@@ -52,7 +52,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             var errors = new List<string>();
 
             string storageAdapterName = "StorageAdapter";
-            string diagnosticsName = "Diagnostics";
 
             // Simulation status
             var simulationIsRunning = await this.CheckIsSimulationRunningAsync(errors);
@@ -63,14 +62,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 storageAdapterName,
                 this.servicesConfig.StorageAdapterApiUrl);
             SetServiceStatus(storageAdapterName, storageAdapterResult, result, errors);
-
-            // Check access to Diagnostics
-            var diagnosticsResult = await this.PingServiceAsync(
-                diagnosticsName,
-                this.servicesConfig.DiagnosticsEndpointUrl);
-            // Note: Overall simulation service status is independent of diagnostics service
-            // Hence not using SetServiceStatus on diagnosticsResult
-            result.Dependencies.Add(diagnosticsName, diagnosticsResult);
 
             // Preprovisioned IoT hub status
             var isHubPreprovisioned = this.IsHubConnectionStringConfigured();
@@ -94,8 +85,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             {
                 result.Status.Message = string.Join("; ", errors);
             }
-
-            result.Properties.Add("DiagnosticsEndpointUrl", this.servicesConfig?.DiagnosticsEndpointUrl);
+            
             result.Properties.Add("StorageAdapterApiUrl", this.servicesConfig?.StorageAdapterApiUrl);
             this.log.Info(
                 "Service status request",
@@ -129,14 +119,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             try
             {
                 var simulationList = await this.simulations.GetListAsync();
-                var runningSimulation = simulationList.FirstOrDefault(s => s.ShouldBeRunning);
+                var runningSimulation = simulationList.FirstOrDefault(s => s.ShouldBeRunning());
                 simulationRunning = (runningSimulation != null);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 var msg = "Unable to fetch simulation status";
                 errors.Add(msg);
-                this.log.Error(msg, e);
             }
 
             return simulationRunning;
