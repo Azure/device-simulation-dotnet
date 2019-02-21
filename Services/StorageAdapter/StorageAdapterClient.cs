@@ -62,7 +62,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
                 {
                     var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(response.Content);
                     message = data["Status"].ToString();
-                    status = data["Status"].ToString().StartsWith("OK:");
+                    status = data["Status"].ToString().Contains("true");
                 }
             }
             catch (Exception e)
