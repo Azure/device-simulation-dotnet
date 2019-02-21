@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
@@ -19,6 +18,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
         private readonly ILogger log;
         private readonly IInstance instance;
         private readonly IFactory factory;
+        private readonly IDiagnosticsLogger diagnosticsLogger;
 
         private Config storageConfig;
 
@@ -34,10 +34,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
         public Engine(
             IFactory factory,
             ILogger logger,
+            IDiagnosticsLogger diagnosticsLogger,
             IInstance instance)
         {
             this.log = logger;
             this.instance = instance;
+            this.diagnosticsLogger = diagnosticsLogger;
             this.factory = factory;
 
             this.disposedValue = false;
@@ -118,7 +120,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             }
             catch (Exception e)
             {
-                this.log.Error("Unexpected error while reading from Cosmos DB SQL", () => new { this.storageName, e });
+                const string MSG = "Unexpected error while reading from Cosmos DB SQL";
+                var errorData = new { this.storageName, e };
+
+                this.log.Error(MSG, () => errorData);
+                this.diagnosticsLogger.LogServiceError(MSG, errorData);
                 throw new ExternalDependencyException(e);
             }
         }
@@ -146,8 +152,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             }
             catch (Exception e)
             {
-                this.log.Error("Unexpected error while writing to Cosmos DB SQL",
-                    () => new { this.storageName, Id = input.GetId(), e });
+                const string MSG = "Unexpected error while writing to Cosmos DB SQL";
+                var errorData = new { this.storageName, Id = input.GetId(), e };
+
+                this.log.Error(MSG, () => errorData);
+                this.diagnosticsLogger.LogServiceError(MSG, errorData);
                 throw new ExternalDependencyException(e);
             }
         }
@@ -182,8 +191,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             }
             catch (Exception e)
             {
-                this.log.Error("Unexpected error while writing to Cosmos DB SQL",
-                    () => new { this.storageName, Id = input.GetId(), eTag, e });
+                const string MSG = "Unexpected error while writing to Cosmos DB SQL";
+                var errorData = new { this.storageName, Id = input.GetId(), eTag, e };
+
+                this.log.Error(MSG, () => errorData);
+                this.diagnosticsLogger.LogServiceError(MSG, errorData);
                 throw new ExternalDependencyException(e);
             }
         }
@@ -207,8 +219,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             }
             catch (Exception e)
             {
-                this.log.Error("Unexpected error while writing to Cosmos DB SQL",
-                    () => new { this.storageName, id, e });
+                const string MSG = "Unexpected error while writing to Cosmos DB SQL";
+                var errorData = new { this.storageName, id, e };
+
+                this.log.Error(MSG, () => errorData);
+                this.diagnosticsLogger.LogServiceError(MSG, errorData);
                 throw new ExternalDependencyException(e);
             }
         }
@@ -274,8 +289,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             }
             catch (Exception e)
             {
-                this.log.Error("Unexpected error while writing to Cosmos DB SQL",
-                    () => new { this.storageName, id, ownerId, ownerType, lockDurationSecs = durationSeconds, e });
+                const string MSG = "Unexpected error while writing to Cosmos DB SQL";
+                var errorData = new { this.storageName, id, ownerId, ownerType, lockDurationSecs = durationSeconds, e };
+
+                this.log.Error(MSG, () => errorData);
+                this.diagnosticsLogger.LogServiceError(MSG, errorData);
             }
 
             return false;
@@ -321,8 +339,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             }
             catch (Exception e)
             {
-                this.log.Error("Unexpected error while writing to Cosmos DB SQL",
-                    () => new { this.storageName, id, ownerId, ownerType, e });
+                const string MSG = "Unexpected error while writing to Cosmos DB SQL";
+                var errorData = new { this.storageName, id, ownerId, ownerType, e };
+
+                this.log.Error(MSG, () => errorData);
+                this.diagnosticsLogger.LogServiceError(MSG, errorData);
             }
 
             return false;
@@ -397,8 +418,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             }
             catch (Exception e)
             {
-                this.log.Error("Unexpected error while reading from Cosmos DB SQL",
-                    () => new { this.storageName, id, e });
+                const string MSG = "Unexpected error while reading from Cosmos DB SQL";
+                var errorData = new { this.storageName, id, e};
+
+                this.log.Error(MSG, () => errorData);
+                this.diagnosticsLogger.LogServiceError(MSG, errorData);
                 throw new ExternalDependencyException(e);
             }
         }
@@ -436,7 +460,11 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Storage.CosmosD
             catch (Exception e)
             {
                 // Log and do not throw, we're just trying to delete and will retry automatically later
-                this.log.Warn("Unexpected error while writing to Cosmos DB SQL", () => new { this.storageName, id, e });
+                const string MSG = "Unexpected error while writing to Cosmos DB SQL";
+                var errorData = new { this.storageName, id, e };
+
+                this.log.Error(MSG, () => errorData);
+                this.diagnosticsLogger.LogServiceError(MSG, errorData);
             }
         }
     }

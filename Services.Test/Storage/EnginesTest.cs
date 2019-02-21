@@ -28,8 +28,9 @@ namespace Services.Test.Storage
             // implement the same interface and don't have a parameterless ctor
             this.instance = new Mock<IInstance>();
             var logger = new Mock<ILogger>();
+            var mockDiagnosticsLogger = new Mock<IDiagnosticsLogger>();
             this.factory.Setup(x => x.Resolve<CosmosDbSqlEngine>())
-                .Returns(new CosmosDbSqlEngine(this.factory.Object, logger.Object, this.instance.Object));
+                .Returns(new CosmosDbSqlEngine(this.factory.Object, logger.Object, mockDiagnosticsLogger.Object, this.instance.Object));
             this.factory.Setup(x => x.Resolve<TableStorageEngine>())
                 .Returns(new TableStorageEngine(this.factory.Object, logger.Object, this.instance.Object));
         }
