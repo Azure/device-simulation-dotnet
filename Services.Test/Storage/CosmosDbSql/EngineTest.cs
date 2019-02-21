@@ -26,6 +26,7 @@ namespace Services.Test.Storage.CosmosDbSql
 
         private readonly Mock<IFactory> factory;
         private readonly Mock<ILogger> logger;
+        private readonly Mock<IDiagnosticsLogger> mockDiagnosticsLogger;
         private readonly Mock<IInstance> instance;
         private readonly Mock<ISDKWrapper> cosmosDbSql;
         private readonly Mock<IDocumentClient> cosmosDbSqlClient;
@@ -39,6 +40,7 @@ namespace Services.Test.Storage.CosmosDbSql
         {
             this.factory = new Mock<IFactory>();
             this.logger = new Mock<ILogger>();
+            this.mockDiagnosticsLogger = new Mock<IDiagnosticsLogger>();
             this.instance = new Mock<IInstance>();
 
             this.storageConfig = new Config { CosmosDbSqlDatabase = "db", CosmosDbSqlCollection = "coll" };
@@ -49,7 +51,7 @@ namespace Services.Test.Storage.CosmosDbSql
             this.cosmosDbSqlClient = new Mock<IDocumentClient>();
             this.cosmosDbSql.Setup(x => x.GetClientAsync(this.storageConfig)).ReturnsAsync(this.cosmosDbSqlClient.Object);
 
-            this.target = new Engine(this.factory.Object, this.logger.Object, this.instance.Object);
+            this.target = new Engine(this.factory.Object, this.logger.Object, this.mockDiagnosticsLogger.Object, this.instance.Object);
 
             this.target.Init(this.storageConfig);
             this.instance.Invocations.Clear();
@@ -59,7 +61,7 @@ namespace Services.Test.Storage.CosmosDbSql
         public void ItCanBeInitializedOnlyOnce()
         {
             // Act
-            var engine = new Engine(this.factory.Object, this.logger.Object, this.instance.Object);
+            var engine = new Engine(this.factory.Object, this.logger.Object, this.mockDiagnosticsLogger.Object, this.instance.Object);
             engine.Init(this.storageConfig);
 
             // Assert
