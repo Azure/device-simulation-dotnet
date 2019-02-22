@@ -17,6 +17,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         private readonly IInstance instance;
         private readonly ILoggingConfig loggingConfig;
         private readonly string nodeId;
+        private readonly bool enabled;
 
         private string simulationId;
         private TelemetryClient telemetryClient;
@@ -32,6 +33,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
             IInstance instance)
         {
             this.loggingConfig = loggingConfig;
+            this.enabled = loggingConfig.LocalApplicationInsightsDiagnostics;
             this.nodeId = clusterNodes.GetCurrentNodeId();
             this.instance = instance;
         }
@@ -58,6 +60,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         {
             this.instance.InitRequired();
 
+            if (!this.enabled) return;
+
             Dictionary<string, string> eventProperties = new Dictionary<string, string>();
             eventProperties.Add("Pending connection task count", taskCount.ToString());
 
@@ -77,6 +81,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         public void DeviceConnectionLoopCompleted(string simulationid, long durationMsecs)
         {
             this.instance.InitRequired();
+
+            if (!this.enabled) return;
 
             Dictionary<string, string> eventProperties = new Dictionary<string, string>();
             eventProperties.Add("Duration", durationMsecs.ToString());
@@ -98,21 +104,29 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         {
             this.instance.InitRequired();
 
+            if (!this.enabled) return;
+
             Dictionary<string, string> properties = new Dictionary<string, string>();
 
-            // Approximate the CPU usage of this process as the ratio of the CPU time over the
-            // time that the process started.
-            //TimeSpan newCpuTime = p.TotalProcessorTime - this.currentTotalCpuTimeSpan;
-            //var numerator = (newCpuTime - this.prevCpuTime).TotalSeconds;
-            //var denominator = (Environment.ProcessorCount * DateTime.UtcNow.totim .Subtract(this.prevCpuTime).TotalSeconds);
-            //double cpuUsageLastInterval = numerator / denominator;
+            // Get the current timespan and processor usage time, which will be
+            // compared to the previous values from N-1 cycle.
             this.currentDateTime = DateTime.Now;
             this.currentTotalCpuTimeSpan = p.TotalProcessorTime;
 
+            // Approximate CPU usage % as the ratio of the CPU usage over a given timespan,
+            // and the actual duration of that timespan, normalized by the number of processors
+            // reported:
+            //
+            //                     CPU milliseconds used
+            // CPU utilization % = ---------------------
+            //                     duration of timespan
+            //                     ---------------------
+            //                         # of cores
             double usage = (this.currentTotalCpuTimeSpan.TotalMilliseconds - this.prevTotalCpuTimeSpan.TotalMilliseconds)
                            / this.currentDateTime.Subtract(this.prevDateTime).TotalMilliseconds
                            / Convert.ToDouble(Environment.ProcessorCount);
 
+            // Update the previous values with the values from this cycle.
             this.prevDateTime = this.currentDateTime;
             this.prevTotalCpuTimeSpan = this.currentTotalCpuTimeSpan;
 

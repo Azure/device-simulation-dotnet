@@ -119,6 +119,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string LOGGING_WHITELIST_SOURCES_KEY = LOGGING_KEY + "WhiteListSources";
         private const string LOGGING_EXTRADIAGNOSTICS_KEY = LOGGING_KEY + "ExtraDiagnostics";
         private const string LOGGING_EXTRADIAGNOSTICSPATH_KEY = LOGGING_KEY + "ExtraDiagnosticsPath";
+        private const string LOGGING_LOCAL_APPLICATION_INSIGHTS_KEY = LOGGING_KEY + "LocalApplicationInsightsDiagnostics";
+        private const string LOGGING_LOCAL_APPLICATION_INSIGHTS_INSTRUMENTATION_KEY = LOGGING_KEY + "Local_Application_Insights_Instrumentation_key";
         private const string LOGGING_DIAGNOSTICS_URL_KEY = LOGGING_KEY + "diagnostics_endpoint_url";
 
         private const string CLIENT_AUTH_KEY = APPLICATION_KEY + "ClientAuth:";
@@ -197,7 +199,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 LogProcessId = configData.GetBool(LOGGING_INCLUDEPROCESSID_KEY, true),
                 AppInsightsInstrumentationKey = configData.GetString(LOGGING_APPINSIGHTS_INSTRUMENTATION_KEY, null),
                 ExtraDiagnostics = configData.GetBool(LOGGING_EXTRADIAGNOSTICS_KEY, false),
-                ExtraDiagnosticsPath = configData.GetString(LOGGING_EXTRADIAGNOSTICSPATH_KEY)
+                ExtraDiagnosticsPath = configData.GetString(LOGGING_EXTRADIAGNOSTICSPATH_KEY),
+                LocalApplicationInsightsDiagnostics = configData.GetBool(LOGGING_LOCAL_APPLICATION_INSIGHTS_KEY),
+                Local_Application_Insights_Instrumentation_key = configData.GetString(LOGGING_LOCAL_APPLICATION_INSIGHTS_INSTRUMENTATION_KEY, null)
             };
 
             return result;

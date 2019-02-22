@@ -6,22 +6,15 @@
       "launchUrl": "http://localhost:9003/v1/status",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "PCS_APPINSIGHTS_INSTRUMENTATIONKEY": "Your Application Insights instrumentation key",
-        "PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING": "Your Cosmos DB SQL connection string",
-        "PCS_AZURE_STORAGE_ACCOUNT": "Your Azure Storage Account connection string",
         "PCS_STORAGEADAPTER_WEBSERVICE_URL": "http://localhost:9022/v1",
         "PCS_RESOURCE_GROUP_LOCATION": "Your Azure resource group location",
         "PCS_VMSS_NAME": "Your VM Scale Set name",
         "PCS_LOG_LEVEL": "Debug",
         "PCS_AUTH_REQUIRED": "false",
-        "PCS_AUTH_ISSUER": "",
-        "PCS_AUTH_AUDIENCE": "",
-        "PCS_CORS_WHITELIST": "",
         "PCS_SUBSCRIPTION_DOMAIN": "",
         "PCS_SUBSCRIPTION_ID": "",
         "PCS_RESOURCE_GROUP": "",
-        "PCS_IOHUB_NAME": "",
-        "PCS_SEED_TEMPLATE": ""
+        "PCS_IOHUB_NAME": ""
       },
       "applicationUrl": "http://localhost:9003/v1/status"
     }
