@@ -1,5 +1,5 @@
 language: csharp
-dotnet: 2.0.3
+dotnet: 2.1
 mono: none
 sudo: false
 cache:
@@ -12,6 +12,5 @@ addons:
     packages:
     # This package is used only to address an issue in Travis CI, which would
     # otherwise install a newer 2.1.x preview, which breaks the build.
-    - dotnet-hostfxr-2.0.3
 script:
 - "bash ./$CODEBASE/scripts/build"
