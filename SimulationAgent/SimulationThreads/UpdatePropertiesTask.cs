@@ -3,8 +3,10 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
@@ -57,23 +59,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                     var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                     var limits = new SemaphoreSlim(pendingTasksLimit, pendingTasksLimit);
-                    foreach (var actor in devicePropertiesActors)
+                    var actors = devicePropertiesActors.Where(a => a.Value.HasWorkToDo()).ToArray();
+                    this.log.Debug("List of twin update actors to be executed", () => new { actors.Length });
+                    foreach (var actor in actors)
                     {
-                        // Avoid enqueueing async tasks that don't have anything to do
-                        if (actor.Value.HasWorkToDo())
-                        {
-                            await limits.WaitAsync();
-                            var task = actor.Value.RunAsync();
+                        await limits.WaitAsync();
+                        var task = actor.Value.RunAsync();
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 #pragma warning disable CA2008 // Do not create tasks without passing a TaskScheduler
-                            task.ContinueWith(t =>
-                            {
-                                limits.Release();
-                            });
+                        task.ContinueWith(t =>
+                        {
+                            limits.Release();
+                        });
 #pragma warning restore CA2008 // Do not create tasks without passing a TaskScheduler
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                            tasks.Add(task);
-                        }
+                        tasks.Add(task);
                     }
 
                     if (tasks.Count > 0)

@@ -43,7 +43,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                 var state = this.context.DeviceState.GetAll();
 
                 this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
-                if (!state.ContainsKey("online") || (bool) state["online"])
+                if (!state.ContainsKey("online") || (bool)state["online"])
                 {
                     // Device could be rebooting, updating firmware, etc.
                     this.log.Debug("The device state says the device is online", () => new { this.deviceId });
@@ -52,8 +52,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                     await this.context.Client.UpdatePropertiesAsync(this.context.DeviceProperties);
 
                     var timeSpentMsecs = GetTimeSpentMsecs();
-                    this.log.Debug("Device property updates delivered",
-                        () => new { timeSpentMsecs, this.deviceId, properties });
+                    this.log.Debug("Device property updates delivered", () => new { timeSpentMsecs, this.deviceId, properties });
 
                     // Mark properties as updated
                     this.context.DeviceProperties.ResetChanged();
@@ -64,8 +63,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DevicePr
                 {
                     // Device could be rebooting, updating firmware, etc.
                     var timeSpentMsecs = GetTimeSpentMsecs();
-                    this.log.Debug("No properties will be updated because the device is offline",
-                        () => new { timeSpentMsecs, this.deviceId });
+                    this.log.Debug("No properties will be updated because the device is offline", () => new { timeSpentMsecs, this.deviceId });
 
                     this.context.HandleEvent(DevicePropertiesActor.ActorEvents.PropertiesUpdateFailed);
                 }
