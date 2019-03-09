@@ -16,6 +16,7 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceConnection;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceProperties;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceReplay;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceState;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTelemetry;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.SimulationThreads;
@@ -78,6 +79,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // The thread used to send telemetry
         private Task devicesTelemetryTask;
 
+        // The thread responsible for replaying simulations from a file
+        private Task deviceReplayTask;
+
         // List of simulation managers, one for each simulation
         private readonly ConcurrentDictionary<string, ISimulationManager> simulationManagers;
 
@@ -92,6 +96,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
         // Contains all the actors sending device property updates to Azure IoT Hub, indexed by Simulation ID + Device ID (string concat)
         private readonly ConcurrentDictionary<string, IDevicePropertiesActor> devicePropertiesActors;
+
+        // Contains all the actors sending device replay updates to Azure IoT Hub, indexed by Simulation ID + Device ID (string concat)
+        private readonly ConcurrentDictionary<string, IDeviceReplayActor> deviceReplayActors;
 
         // Whether the simulation interacts with device twins
         private readonly bool deviceTwinEnabled;
@@ -129,6 +136,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.deviceConnectionActors = new ConcurrentDictionary<string, IDeviceConnectionActor>();
             this.deviceTelemetryActors = new ConcurrentDictionary<string, IDeviceTelemetryActor>();
             this.devicePropertiesActors = new ConcurrentDictionary<string, IDevicePropertiesActor>();
+            this.deviceReplayActors = new ConcurrentDictionary<string, IDeviceReplayActor>();
         }
 
         public Task StartAsync(CancellationToken appStopToken)
@@ -319,7 +327,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                         this.deviceStateActors,
                         this.deviceConnectionActors,
                         this.deviceTelemetryActors,
-                        this.devicePropertiesActors);
+                        this.devicePropertiesActors,
+                        this.deviceReplayActors);
 
                     this.simulationManagers[simulation.Id] = manager;
 
@@ -395,13 +404,21 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.log.Info("The device properties thread will not start because it is disabled in the global configuration");
             }
 
+            var deviceReplayExecutor = this.factory.Resolve<IDeviceReplayTask>();
+            this.deviceReplayTask = deviceReplayExecutor.RunAsync(this.simulationManagers, this.deviceReplayActors, this.runningCancellationTokenSource.Token);
+
             var deviceTelemetrySender = this.factory.Resolve<IDeviceTelemetryTask>();
             this.devicesTelemetryTask = deviceTelemetrySender.RunAsync(this.deviceTelemetryActors, this.runningCancellationTokenSource.Token, this);
         }
 
         private async Task TryToStopThreadsAsync()
         {
-            await Task.WhenAll(this.deviceStateTask, this.devicesConnectionTask, this.devicesPropertiesTask, this.devicesTelemetryTask);
+            await Task.WhenAll(
+                this.deviceStateTask, 
+                this.devicesConnectionTask, 
+                this.devicesPropertiesTask, 
+                this.deviceReplayTask,
+                this.devicesTelemetryTask);
         }
 
         private void SendSolutionHeartbeat()

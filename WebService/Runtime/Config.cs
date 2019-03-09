@@ -99,6 +99,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
         private const string DEVICES_STORAGE_KEY = APPLICATION_KEY + "Storage:Devices:";
         private const string PARTITIONS_STORAGE_KEY = APPLICATION_KEY + "Storage:Partitions:";
         private const string STATISTICS_STORAGE_KEY = APPLICATION_KEY + "Storage:Statistics:";
+        private const string REPLAY_FILES_STORAGE_KEY = APPLICATION_KEY + "Storage:ReplayFiles:";
 
         private const string STORAGE_TYPE_KEY = "type";
         private const string STORAGE_MAX_PENDING_OPERATIONS = "max_pending_storage_tasks";
@@ -285,6 +286,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime
                 PartitionsStorage = GetStorageConfig(configData, PARTITIONS_STORAGE_KEY),
                 UserAgent = configData.GetString(USER_AGENT_KEY, DEFAULT_USER_AGENT_STRING),
                 StatisticsStorage = GetStorageConfig(configData, STATISTICS_STORAGE_KEY),
+                ReplayFilesStorage = GetStorageConfig(configData, REPLAY_FILES_STORAGE_KEY),
                 DiagnosticsEndpointUrl = configData.GetString(LOGGING_DIAGNOSTICS_URL_KEY),
                 DevelopmentMode = configData.GetBool(DEBUGGING_DEVELOPMENT_MODE_KEY, false),
                 DisableSimulationAgent = configData.GetBool(DEBUGGING_DISABLE_SIMULATION_AGENT_KEY, false),

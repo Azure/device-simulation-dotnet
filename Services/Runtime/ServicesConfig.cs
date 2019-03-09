@@ -27,6 +27,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         Config DevicesStorage { get; set; }
         Config PartitionsStorage { get; set; }
         Config StatisticsStorage { get; set; }
+        Config ReplayFilesStorage { get; set; }
         string DiagnosticsEndpointUrl { get; }
         string UserAgent { get; }
         bool DevelopmentMode { get; }
@@ -115,6 +116,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime
         public Config DevicesStorage { get; set; }
 
         public Config PartitionsStorage { get; set; }
+
+        public Config ReplayFilesStorage { get; set; }
 
         public string UserAgent { get; set; }
 

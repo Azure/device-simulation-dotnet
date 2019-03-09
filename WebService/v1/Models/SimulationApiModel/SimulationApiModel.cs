@@ -73,6 +73,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
         // Note: read-only property, used only to report the simulation status
         [JsonProperty(PropertyName = "Statistics")]
         public SimulationStatistics Statistics { get; set; }
+        
+        [JsonProperty(PropertyName = "ReplayFileId")]
+        public string ReplayFileId { get; set; }
+
+        [JsonProperty(PropertyName = "ReplayFileIndefinitely")]
+        public bool ReplayFileIndefinitely { get; set; }
 
         [JsonProperty(PropertyName = "RateLimits")]
         public SimulationRateLimits RateLimits { get; set; }
@@ -136,6 +142,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
             result.EndTime = DateHelper.ParseDateExpression(this.EndTime, now);
             result.DeviceModels = this.DeviceModels?.Select(x => x.ToServiceModel()).ToList();
             result.RateLimits = this.RateLimits.ToServiceModel(defaultRateLimits);
+            result.ReplayFileId = this.ReplayFileId;
+            result.ReplayFileRunIndefinitely = this.ReplayFileIndefinitely;
 
             // Overwrite the value only if the request included the field, i.e. don't
             // enable/disable the simulation if the user didn't explicitly ask to.
@@ -182,7 +190,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Sim
                 DeleteDevicesOnce = value.DeleteDevicesOnce,
                 DevicesDeletionComplete = value.DevicesDeletionComplete,
                 DeleteDevicesWhenSimulationEnds = value.DeleteDevicesWhenSimulationEnds,
-                IotHubs = new List<SimulationIotHub>()
+                IotHubs = new List<SimulationIotHub>(),
+                ReplayFileId = value.ReplayFileId,
+                ReplayFileIndefinitely = value.ReplayFileRunIndefinitely
+
             };
 
             foreach (var iotHubConnectionString in value.IotHubConnectionStrings)

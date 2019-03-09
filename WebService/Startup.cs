@@ -19,6 +19,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using ILogger = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics.ILogger;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 {
@@ -62,7 +63,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             services.AddCors();
 
             // Add controllers as services so they'll be resolved.
-            services.AddMvc().AddControllersAsServices();
+            services.AddMvc().AddControllersAsServices().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             // Prepare DI container
             this.ApplicationContainer = DependencyResolution.Init(services);
@@ -215,6 +216,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             log.Write("Main storage:                                " + config.ServicesConfig.MainStorage.StorageType);
             log.Write("Simulations storage:                         " + config.ServicesConfig.SimulationsStorage.StorageType);
             log.Write("Statistics storage:                          " + config.ServicesConfig.StatisticsStorage.StorageType);
+            log.Write("Replay files storage:                        " + config.ServicesConfig.ReplayFilesStorage.StorageType);
             log.Write("Devices storage:                             " + config.ServicesConfig.DevicesStorage.StorageType);
             log.Write("Partitions storage:                          " + config.ServicesConfig.PartitionsStorage.StorageType);
             log.Write("Nodes storage:                               " + config.ServicesConfig.NodesStorage.StorageType);

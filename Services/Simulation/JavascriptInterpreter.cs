@@ -85,7 +85,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Simulation
             {
                 Program program;
                 bool isInStorage = string.Equals(script.Path.Trim(),
-                    DeviceModelScript.DeviceModelScriptPath.Storage.ToString(),
+                    DataFile.FilePath.Storage.ToString(),
                     StringComparison.OrdinalIgnoreCase);
                 string filename = isInStorage ? script.Id : script.Path;
 

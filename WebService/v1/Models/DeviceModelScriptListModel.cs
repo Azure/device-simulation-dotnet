@@ -25,7 +25,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models
         }
 
         // Map service model to API model
-        public static DeviceModelScriptListModel FromServiceModel(IEnumerable<DeviceModelScript> value)
+        public static DeviceModelScriptListModel FromServiceModel(IEnumerable<DataFile> value)
         {
             if (value == null) return null;
 

@@ -49,14 +49,14 @@ namespace Services.Test
             // Arrange
             var id = Guid.NewGuid().ToString();
             var eTag = Guid.NewGuid().ToString();
-            var deviceModelScript = new DeviceModelScript { Id = id, ETag = eTag };
+            var deviceModelScript = new DataFile { Id = id, ETag = eTag };
 
             this.storage
                 .Setup(x => x.UpdateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(this.BuildValueApiModel(deviceModelScript));
 
             // Act
-            DeviceModelScript result = this.target.InsertAsync(deviceModelScript).Result;
+            DataFile result = this.target.InsertAsync(deviceModelScript).Result;
 
             // Assert
             Assert.NotNull(result);
@@ -73,10 +73,10 @@ namespace Services.Test
             // Arrange
             var id = Guid.NewGuid().ToString();
 
-            var deviceModelScript = new DeviceModelScript { Id = id, ETag = "oldEtag" };
+            var deviceModelScript = new DataFile { Id = id, ETag = "oldEtag" };
             this.TheScriptExists(id, deviceModelScript);
 
-            var updatedSimulationScript = new DeviceModelScript { Id = id, ETag = "newETag" };
+            var updatedSimulationScript = new DataFile { Id = id, ETag = "newETag" };
             this.storage
                 .Setup(x => x.UpdateAsync(
                     STORAGE_COLLECTION,
@@ -94,7 +94,7 @@ namespace Services.Test
             this.storage.Verify(x => x.UpdateAsync(
                 STORAGE_COLLECTION,
                 id,
-                It.Is<string>(json => JsonConvert.DeserializeObject<DeviceModelScript>(json).Id == id && !json.Contains("ETag")),
+                It.Is<string>(json => JsonConvert.DeserializeObject<DataFile>(json).Id == id && !json.Contains("ETag")),
                 "oldEtag"), Times.Once());
 
             Assert.Equal(updatedSimulationScript.Id, deviceModelScript.Id);
@@ -107,7 +107,7 @@ namespace Services.Test
         {
             // Arrange
             var id = Guid.NewGuid().ToString();
-            var deviceModelScript = new DeviceModelScript { Id = id, ETag = "Etag" };
+            var deviceModelScript = new DataFile { Id = id, ETag = "Etag" };
             this.TheScriptDoesntExist(id);
             this.storage
                 .Setup(x => x.UpdateAsync(
@@ -133,11 +133,11 @@ namespace Services.Test
         {
             // Arrange
             var id = Guid.NewGuid().ToString();
-            var deviceModelScriptInStorage = new DeviceModelScript { Id = id, ETag = "ETag" };
+            var deviceModelScriptInStorage = new DataFile { Id = id, ETag = "ETag" };
             this.TheScriptExists(id, deviceModelScriptInStorage);
 
             // Act & Assert
-            var deviceModelScript = new DeviceModelScript { Id = id, ETag = "not-matching-Etag" };
+            var deviceModelScript = new DataFile { Id = id, ETag = "not-matching-Etag" };
             Assert.ThrowsAsync<ConflictingResourceException>(
                     async () => await this.target.UpsertAsync(deviceModelScript))
                 .Wait(Constants.TEST_TIMEOUT);
@@ -147,7 +147,7 @@ namespace Services.Test
         public void ItThrowsExceptionWhenInsertDeviceModelScriptFailed()
         {
             // Arrange
-            var deviceModelScript = new DeviceModelScript { Id = "id", ETag = "Etag" };
+            var deviceModelScript = new DataFile { Id = "id", ETag = "Etag" };
             this.storage
                 .Setup(x => x.UpdateAsync(
                     It.IsAny<string>(),
@@ -166,7 +166,7 @@ namespace Services.Test
         public void ItFailsToUpsertWhenUnableToFetchScriptFromStorage()
         {
             // Arrange
-            var deviceModelScript = new DeviceModelScript { Id = "id", ETag = "Etag" };
+            var deviceModelScript = new DataFile { Id = "id", ETag = "Etag" };
             this.storage
                 .Setup(x => x.GetAsync(It.IsAny<string>(), It.IsAny<string>()))
                 .ThrowsAsync(new SomeException());
@@ -182,7 +182,7 @@ namespace Services.Test
         {
             // Arrange
             var id = Guid.NewGuid().ToString();
-            var deviceModelScript = new DeviceModelScript { Id = id, ETag = "Etag" };
+            var deviceModelScript = new DataFile { Id = id, ETag = "Etag" };
             this.TheScriptExists(id, deviceModelScript);
 
             this.storage
@@ -203,7 +203,7 @@ namespace Services.Test
         public void ItThrowsExternalDependencyExceptionWhenFailedFetchingDeviceModelScriptInStorage()
         {
             // Arrange
-            var deviceModelScript = new DeviceModelScript { Id = "id", ETag = "Etag" };
+            var deviceModelScript = new DataFile { Id = "id", ETag = "Etag" };
 
             // Act
             var ex = Record.Exception(() => this.target.UpsertAsync(deviceModelScript).Result);
@@ -268,7 +268,7 @@ namespace Services.Test
             var list = new ValueListApiModel();
             var value = new ValueApiModel
             {
-                Key = "key",
+                Key = "key1",
                 Data = "{ 'invalid': json",
                 ETag = "etag"
             };
@@ -286,14 +286,14 @@ namespace Services.Test
                 .Throws<ResourceNotFoundException>();
         }
 
-        private void TheScriptExists(string id, DeviceModelScript deviceModelScript)
+        private void TheScriptExists(string id, DataFile deviceModelScript)
         {
             this.storage
                 .Setup(x => x.GetAsync(STORAGE_COLLECTION, id))
                 .ReturnsAsync(this.BuildValueApiModel(deviceModelScript));
         }
 
-        private ValueApiModel BuildValueApiModel(DeviceModelScript deviceModelScript)
+        private ValueApiModel BuildValueApiModel(DataFile deviceModelScript)
         {
             return new ValueApiModel
             {

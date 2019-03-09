@@ -9,6 +9,12 @@
       <NoWarn>1701;1702;CA2007</NoWarn>
     </PropertyGroup>
     <ItemGroup>
+      <Content Include="data\replayfile\replay.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <Content Include="data\replayfile\simulationReplayTest.csv">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
       <Content Include="data\templates\multiple-simulations-template.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
@@ -23,6 +29,7 @@
         <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="2.2.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="2.2.0" />
         <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+        <PackageReference Include="Upn_Components_Dependencies" Version="1.0.0" />
         <PackageReference Include="WindowsAzure.Storage" Version="9.3.3" />
     </ItemGroup>
     <ItemGroup>

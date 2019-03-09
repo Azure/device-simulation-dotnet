@@ -4,9 +4,9 @@ using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.DeviceModelScriptApiModel
+namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.ReplayFileApiModel
 {
-    public class DeviceModelScriptApiModel
+    public class ReplayFileApiModel
     {
         private const string DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:sszzz";
 
@@ -34,13 +34,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
         [JsonProperty(PropertyName = "$metadata", Order = 1000)]
         public IDictionary<string, string> Metadata => new Dictionary<string, string>
         {
-            { "$type", "DeviceModelScript;" + v1.Version.NUMBER },
-            { "$uri", "/" + v1.Version.PATH + "/simulationscripts/" + this.Id },
+            { "$type", "ReplayFile;" + v1.Version.NUMBER },
+            { "$uri", "/" + v1.Version.PATH + "/replayfile/" + this.Id },
             { "$created", this.created.ToString(DATE_FORMAT) },
             { "$modified", this.modified.ToString(DATE_FORMAT) }
         };
 
-        public DeviceModelScriptApiModel()
+        public ReplayFileApiModel()
         {
             this.ETag = string.Empty;
             this.Id = string.Empty;
@@ -60,16 +60,16 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.v1.Models.Dev
                 Type = this.Type,
                 Path = (Services.Models.DataFile.FilePath)Enum.Parse(typeof(Services.Models.DataFile.FilePath), this.Path, true),
                 Content = this.Content,
-                Name = this.Name
+                Name = this.Name,
             };
         }
 
         // Map service model to API model
-        public static DeviceModelScriptApiModel FromServiceModel(Services.Models.DataFile value)
+        public static ReplayFileApiModel FromServiceModel(Services.Models.DataFile value)
         {
             if (value == null) return null;
 
-            var result = new DeviceModelScriptApiModel
+            var result = new ReplayFileApiModel
             {
                 ETag = value.ETag,
                 Id = value.Id,

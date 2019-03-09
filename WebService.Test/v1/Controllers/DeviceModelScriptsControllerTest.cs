@@ -94,7 +94,7 @@ namespace WebService.Test.v1.Controllers
             IFormFile file = this.SetupFileMock();
 
             this.deviceModelScriptsService
-                .Setup(x => x.InsertAsync(It.IsAny<DeviceModelScript>()))
+                .Setup(x => x.InsertAsync(It.IsAny<DataFile>()))
                 .ReturnsAsync(deviceModelScript);
 
             // Act
@@ -123,7 +123,7 @@ namespace WebService.Test.v1.Controllers
             IFormFile file = this.SetupFileMock();
 
             this.deviceModelScriptsService
-                .Setup(x => x.UpsertAsync(It.IsAny<DeviceModelScript>()))
+                .Setup(x => x.UpsertAsync(It.IsAny<DataFile>()))
                 .ReturnsAsync(deviceModelScript);
 
             // Act
@@ -199,23 +199,23 @@ namespace WebService.Test.v1.Controllers
             return fileMock.Object;
         }
 
-        private DeviceModelScript GetDeviceModelScriptById(string id)
+        private DataFile GetDeviceModelScriptById(string id)
         {
-            return new DeviceModelScript
+            return new DataFile
             {
                 Id = id,
                 ETag = "etag",
-                Path = DeviceModelScript.DeviceModelScriptPath.Storage
+                Path = DataFile.FilePath.Storage
             };
         }
 
-        private List<DeviceModelScript> GetDeviceModelScripts()
+        private List<DataFile> GetDeviceModelScripts()
         {
-            return new List<DeviceModelScript>
+            return new List<DataFile>
             {
-                new DeviceModelScript { Id = "Id_1", ETag = "Etag_1" },
-                new DeviceModelScript { Id = "Id_2", ETag = "Etag_2" },
-                new DeviceModelScript { Id = "Id_3", ETag = "Etag_3" }
+                new DataFile { Id = "Id_1", ETag = "Etag_1" },
+                new DataFile { Id = "Id_2", ETag = "Etag_2" },
+                new DataFile { Id = "Id_3", ETag = "Etag_3" }
             };
         }
     }

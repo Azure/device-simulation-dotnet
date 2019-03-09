@@ -12,6 +12,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     public interface ISimulationContext
     {
         IRateLimiting RateLimiting { get; }
+        string ReplayFileId { get; }
+        bool ReplayFileIndefinitely { get; }
         IDevices Devices { get; }
         ConnectionLoopSettings ConnectionLoopSettings { get; }
         PropertiesLoopSettings PropertiesLoopSettings { get; }
@@ -27,6 +29,9 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
     {
         // Note: this applies to a single hub; simulations with multiple hubs are not supported yet
         public IRateLimiting RateLimiting { get; }
+
+        public string ReplayFileId { get; private set; }
+        public bool ReplayFileIndefinitely { get; private set; }
 
         public IDevices Devices { get; }
         public ConnectionLoopSettings ConnectionLoopSettings { get; private set; }
@@ -50,6 +55,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             var rateLimits = simulation.RateLimits;
             this.RateLimiting.Init(rateLimits);
+
+            this.ReplayFileId = simulation.ReplayFileId;
+            this.ReplayFileIndefinitely = simulation.ReplayFileRunIndefinitely;
+
             this.ConnectionLoopSettings = new ConnectionLoopSettings(rateLimits);
             this.PropertiesLoopSettings = new PropertiesLoopSettings(rateLimits);
 
