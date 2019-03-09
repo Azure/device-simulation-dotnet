@@ -14,7 +14,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
     {
         Task RunAsync(
             ConcurrentDictionary<string, IDeviceStateActor> deviceStateActors,
-            CancellationToken runningToken);
+            CancellationToken runningToken,
+            ISimulationAgentEventHandler simulationAgentEventHandler);
     }
 
     public class DeviceStateTask : IDeviceStateTask
@@ -34,16 +35,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
         public async Task RunAsync(
             ConcurrentDictionary<string, IDeviceStateActor> deviceStateActors,
-            CancellationToken runningToken)
+            CancellationToken runningToken, 
+            ISimulationAgentEventHandler simulationAgentEventHandler)
         {
-            while (!runningToken.IsCancellationRequested)
+            try
             {
-                long durationMsecs = 0;
-
-                try
+                while (!runningToken.IsCancellationRequested)
                 {
+                    long durationMsecs = 0;
+
                     var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
+                    // TODO: change to run parallel? 
                     foreach (var deviceStateActor in deviceStateActors)
                     {
                         deviceStateActor.Value.Run();
@@ -51,17 +54,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                     durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                     this.log.Debug("Device state loop completed", () => new { durationMsecs });
-                }
-                catch (Exception e)
-                {
-                    var msg = "Exception happened for device-state task";
-                    this.log.Error(msg, e);
-                    // this.logDiagnostics.LogServiceError(msg, e);
-                    throw new Exception("Unable to start the device-state thread", e);
-                }
 
-
-                await this.SlowDownIfTooFast(durationMsecs, this.appConcurrencyConfig.MinDeviceStateLoopDuration, runningToken);
+                    await this.SlowDownIfTooFast(durationMsecs, this.appConcurrencyConfig.MinDeviceStateLoopDuration, runningToken);
+                }
+            }
+            catch (Exception e)
+            {
+                var msg = "Exception happened for device-state task";
+                this.log.Error(msg, e);
+                simulationAgentEventHandler?.OnError(e);
+                // this.logDiagnostics.LogServiceError(msg, e);
+                // throw new Exception("Unable to start the device-state thread", e);
             }
         }
 

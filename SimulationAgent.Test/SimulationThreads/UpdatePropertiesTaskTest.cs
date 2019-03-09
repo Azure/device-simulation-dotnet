@@ -66,7 +66,8 @@ namespace SimulationAgent.Test.SimulationThreads
             var targetTask = this.target.RunAsync(
                 this.mockSimulationManagerObjects,
                 this.mockDevicePropertiesActorObjects,
-                cancellationToken.Token);
+                cancellationToken.Token,
+                null);
 
             // Assert
             // Verify that each SimulationManager was called at least once

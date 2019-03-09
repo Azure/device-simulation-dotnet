@@ -18,7 +18,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         Task RunAsync(
             ConcurrentDictionary<string, ISimulationManager> simulationManagers,
             ConcurrentDictionary<string, IDevicePropertiesActor> devicePropertiesActors,
-            CancellationToken runningToken);
+            CancellationToken runningToken,
+            ISimulationAgentEventHandler simulationAgentEventHandler);
     }
 
     public class UpdatePropertiesTask : IUpdatePropertiesTask
@@ -39,28 +40,30 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         public async Task RunAsync(
             ConcurrentDictionary<string, ISimulationManager> simulationManagers,
             ConcurrentDictionary<string, IDevicePropertiesActor> devicePropertiesActors,
-            CancellationToken runningToken)
+            CancellationToken runningToken,
+            ISimulationAgentEventHandler simulationAgentEventHandler)
         {
             // Once N devices are attempting to write twins, wait until they are done
             var pendingTasksLimit = this.appConcurrencyConfig.MaxPendingTwinWrites;
-            var tasks = new List<Task>();
 
-            while (!runningToken.IsCancellationRequested)
+            try
             {
-                long durationMsecs = 0;
 
-                try
+                while (!runningToken.IsCancellationRequested)
                 {
+                    long durationMsecs = 0;
+
                     // TODO: resetting counters every few seconds seems to be a bug - to be revisited
                     foreach (var manager in simulationManagers)
                     {
                         manager.Value.NewPropertiesLoop();
                     }
 
+                    var tasks = new List<Task>();
+
                     var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                     var limits = new SemaphoreSlim(pendingTasksLimit, pendingTasksLimit);
                     var actors = devicePropertiesActors.Where(a => a.Value.HasWorkToDo()).ToArray();
-                    this.log.Debug("List of twin update actors to be executed", () => new { actors.Length });
                     foreach (var actor in actors)
                     {
                         await limits.WaitAsync();
@@ -83,17 +86,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     }
 
                     durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
-                    this.log.Debug("Device-properties loop completed", () => new { durationMsecs });
-                }
-                catch (Exception e)
-                {
-                    var msg = "Device-properties task failed";
-                    this.log.Error(msg, e);
-                    // this.logDiagnostics.LogServiceError(msg, e);
-                    throw new Exception("Device-properties task failed", e);
-                }
+                    this.log.Debug("Device-properties loop completed", () => new { durationMsecs, actors.Length });
 
-                await this.SlowDownIfTooFast(durationMsecs, this.appConcurrencyConfig.MinDevicePropertiesLoopDuration, runningToken);
+                    await this.SlowDownIfTooFast(durationMsecs, this.appConcurrencyConfig.MinDevicePropertiesLoopDuration, runningToken);
+                }
+            }
+            catch (Exception e)
+            {
+                var msg = "Device-properties task failed";
+                this.log.Error(msg, e);
+                // this.logDiagnostics.LogServiceError(msg, e);
+                // throw new Exception("Device-properties task failed", e);
+                simulationAgentEventHandler?.OnError(e);
             }
         }
 

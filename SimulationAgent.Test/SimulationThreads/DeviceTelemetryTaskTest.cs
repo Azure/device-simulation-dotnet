@@ -61,9 +61,8 @@ namespace SimulationAgent.Test.SimulationThreads
             // so that the main loop in the target will only run once.
             var targetTask = this.target.RunAsync(
                 this.deviceTelemetryActorObjects,
-                threadPosition,
-                TELEMETRY_THREAD_COUNT,
-                cancellationToken.Token);
+                cancellationToken.Token,
+                null);
             targetTask.CompleteOrTimeout();
 
             // Assert

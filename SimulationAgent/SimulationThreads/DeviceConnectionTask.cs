@@ -17,7 +17,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         Task RunAsync(
             ConcurrentDictionary<string, ISimulationManager> simulationManagers,
             ConcurrentDictionary<string, IDeviceConnectionActor> deviceConnectionActors,
-            CancellationToken runningToken);
+            CancellationToken runningToken,
+            ISimulationAgentEventHandler simulationAgentEventHandler);
     }
 
     public class DeviceConnectionTask : IDeviceConnectionTask
@@ -38,18 +39,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
         public async Task RunAsync(
             ConcurrentDictionary<string, ISimulationManager> simulationManagers,
             ConcurrentDictionary<string, IDeviceConnectionActor> deviceConnectionActors,
-            CancellationToken runningToken)
+            CancellationToken runningToken,
+            ISimulationAgentEventHandler simulationAgentEventHandler)
         {
-            // Once N devices are attempting to connect, wait until they are done
-            var pendingTasksLimit = this.appConcurrencyConfig.MaxPendingConnections;
-            var tasks = new List<Task>();
-
-            while (!runningToken.IsCancellationRequested)
+            try
             {
-                long durationMsecs = 0;
+                // Once N devices are attempting to connect, wait until they are done
+                var pendingTasksLimit = this.appConcurrencyConfig.MaxPendingConnections;
+                var batchCount = pendingTasksLimit % 100 > 0 ? pendingTasksLimit / 100 + 1 : pendingTasksLimit / 100;
 
-                try
+                while (!runningToken.IsCancellationRequested)
                 {
+                    long durationMsecs = 0;
+
                     // TODO: resetting counters every few seconds seems to be a bug - to be revisited
                     // Was this introduced to react to the changing number of nodes?
                     //foreach (var manager in simulationManagers)
@@ -58,11 +60,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
                     //}
 
                     var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                    var batchCount = pendingTasksLimit % 100 > 0 ? pendingTasksLimit / 100 + 1 : pendingTasksLimit / 100;
                     var limits = new SemaphoreSlim(batchCount, batchCount);
                     var actorGroups = deviceConnectionActors.Where(a => a.Value.HasWorkToDo()).Select(a => a.Value).GroupBy(a => a.Status).ToArray();
                     foreach (var group in actorGroups)
                     {
+                        var tasks = new List<Task>();
+
                         var actors = group.ToArray();
                         for (var i = 0; i < (actors.Length % 100 > 0 ? actors.Length / 100 + 1 : actors.Length / 100); i++)
                         {
@@ -87,16 +90,17 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.Simulati
 
                     durationMsecs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - before;
                     this.log.Debug("Device-state loop completed", () => new { durationMsecs });
-                }
-                catch (Exception e)
-                {
-                    var msg = "Device-connection failed";
-                    this.log.Error(msg, e);
-                    // this.logDiagnostics.LogServiceError(msg, e);
-                    throw new Exception("Unable to start the device-connection thread", e);
-                }
 
-                await this.SlowDownIfTooFast(durationMsecs, this.appConcurrencyConfig.MinDeviceConnectionLoopDuration, runningToken);
+                    await this.SlowDownIfTooFast(durationMsecs, this.appConcurrencyConfig.MinDeviceConnectionLoopDuration, runningToken);
+                }
+            }
+            catch (Exception e)
+            {
+                var msg = "Device-connection failed";
+                this.log.Error(msg, e);
+                // this.logDiagnostics.LogServiceError(msg, e);
+                simulationAgentEventHandler?.OnError(e);
+                // throw new Exception("Unable to start the device-connection thread", e);
             }
         }
 

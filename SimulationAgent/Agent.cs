@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Commons;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Concurrency;
@@ -26,10 +27,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         Task StartAsync(CancellationToken appStopToken);
         Task AddDeviceAsync(string simulationId, string name, string modelId);
         Task DeleteDevicesAsync(List<string> ids);
-        void Stop();
+        Task StopAsync();
     }
 
-    public class Agent : ISimulationAgent
+    public class Agent : ISimulationAgent, ISimulationAgentEventHandler
     {
         // Wait a few seconds after checking if there are new simulations
         // or new devices, to avoid overloading the database with queries.
@@ -74,8 +75,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // The thread responsible for sending device property updates to Azure IoT Hub
         private Task devicesPropertiesTask;
 
-        // Array of threads used to send telemetry
-        private Task[] devicesTelemetryTasks;
+        // The thread used to send telemetry
+        private Task devicesTelemetryTask;
 
         // List of simulation managers, one for each simulation
         private readonly ConcurrentDictionary<string, ISimulationManager> simulationManagers;
@@ -92,14 +93,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         // Contains all the actors sending device property updates to Azure IoT Hub, indexed by Simulation ID + Device ID (string concat)
         private readonly ConcurrentDictionary<string, IDevicePropertiesActor> devicePropertiesActors;
 
-        // Flag signaling whether the simulation is starting (to reduce blocked threads)
-        private bool startingOrStopping;
-
         // Whether the simulation interacts with device twins
-        private bool deviceTwinEnabled;
+        private readonly bool deviceTwinEnabled;
 
         // Used to stop the threads
-        private CancellationTokenSource runningToken;
+        private readonly CancellationTokenSource runningCancellationTokenSource;
+
+        // Flag signaling whether the simulation is starting (to reduce blocked threads)
+        private bool startingOrStopping;
 
         public Agent(
             IServicesConfig servicesConfig,
@@ -118,7 +119,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             this.startingOrStopping = false;
             this.running = false;
             this.deviceTwinEnabled = servicesConfig.DeviceTwinEnabled;
-            this.runningToken = new CancellationTokenSource();
+            this.runningCancellationTokenSource = new CancellationTokenSource();
             this.lastPolledTime = DateTimeOffset.UtcNow;
             this.lastPrintStatisticsTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             this.lastSaveStatisticsTime = DateTimeOffset.UtcNow;
@@ -149,14 +150,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             return this.RunAsync(appStopToken);
         }
 
-        public void Stop()
+        public async Task StopAsync()
         {
             // Signal threads to stop
-            this.runningToken.Cancel();
+            this.runningCancellationTokenSource.Cancel();
 
             while (this.startingOrStopping)
             {
-                Thread.Sleep(SHUTDOWN_WAIT_INTERVAL_MSECS);
+                await Task.Delay(SHUTDOWN_WAIT_INTERVAL_MSECS);
             }
 
             this.startingOrStopping = true;
@@ -166,7 +167,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
             // Allow some time to pass before trying to stop threads
             Thread.Sleep(SHUTDOWN_WAIT_BEFORE_STOPPING_THREADS_MSECS);
-            this.TryToStopThreads();
+            await this.TryToStopThreadsAsync();
         }
 
         // TODO: Implement support for adding devices to a running simulation.
@@ -196,7 +197,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
             ScheduledTasksExecutor.ScheduleTask(this.LogProcessStats, PAUSE_AFTER_CHECK_MSECS);
             // AsyncScheduledTasksExecutor.ScheduleTask(() => this.RunSimulationAgentAsync(appStopToken), PAUSE_AFTER_CHECK_MSECS);
 
-            while (!appStopToken.IsCancellationRequested && !this.runningToken.IsCancellationRequested)
+            while (!appStopToken.IsCancellationRequested && !this.runningCancellationTokenSource.IsCancellationRequested)
             {
                 var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 try
@@ -216,7 +217,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
 
                     this.log.Info("Active simulations loaded", () => new { count = activeSimulations.Count, elapsed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start });
 
-                    if (!appStopToken.IsCancellationRequested && !this.runningToken.IsCancellationRequested)
+                    if (!appStopToken.IsCancellationRequested && !this.runningCancellationTokenSource.IsCancellationRequested)
                     {
                         var elapsed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start;
                         if (elapsed < PAUSE_AFTER_CHECK_MSECS)
@@ -228,7 +229,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 catch (Exception e)
                 {
                     this.log.Error("A critical error occurred in the simulation agent", e);
-                    this.Stop();
+                    await this.StopAsync();
                 }
             }
         }
@@ -378,85 +379,29 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
         private void StartTasks()
         {
             var devicesStateExecutor = this.factory.Resolve<IDeviceStateTask>();
-            this.deviceStateTask = devicesStateExecutor.RunAsync(this.deviceStateActors, this.runningToken.Token);
+            this.deviceStateTask = devicesStateExecutor.RunAsync(this.deviceStateActors, this.runningCancellationTokenSource.Token, this);
 
             var deviceConnectionExecutor = this.factory.Resolve<IDeviceConnectionTask>();
-            this.devicesConnectionTask = deviceConnectionExecutor.RunAsync(this.simulationManagers, this.deviceConnectionActors, this.runningToken.Token);
+            this.devicesConnectionTask = deviceConnectionExecutor.RunAsync(this.simulationManagers, this.deviceConnectionActors, this.runningCancellationTokenSource.Token, this);
 
             // Create task and thread only if the device twin integration is enabled
             if (this.deviceTwinEnabled)
             {
                 var devicePropertyExecutor = this.factory.Resolve<IUpdatePropertiesTask>();
-                this.devicesPropertiesTask = devicePropertyExecutor.RunAsync(this.simulationManagers, this.devicePropertiesActors, this.runningToken.Token);
+                this.devicesPropertiesTask = devicePropertyExecutor.RunAsync(this.simulationManagers, this.devicePropertiesActors, this.runningCancellationTokenSource.Token, this);
             }
             else
             {
                 this.log.Info("The device properties thread will not start because it is disabled in the global configuration");
             }
 
-            // Telemetry
-            // TODO: I doubt multiple telemetry threads can help here
-            var telemetryThreadCount = this.appConcurrencyConfig.TelemetryThreads;
-            this.devicesTelemetryTasks = new Task[telemetryThreadCount];
-            for (int i = 0; i < telemetryThreadCount; i++)
-            {
-                var deviceTelemetrySender = this.factory.Resolve<IDeviceTelemetryTask>();
-                var telemetryThreadPosition = i + 1;
-                this.devicesTelemetryTasks[i] = deviceTelemetrySender.RunAsync(this.deviceTelemetryActors, telemetryThreadPosition, telemetryThreadCount, this.runningToken.Token);
-            }
+            var deviceTelemetrySender = this.factory.Resolve<IDeviceTelemetryTask>();
+            this.devicesTelemetryTask = deviceTelemetrySender.RunAsync(this.deviceTelemetryActors, this.runningCancellationTokenSource.Token, this);
         }
 
-        private void TryToStopThreads()
+        private async Task TryToStopThreadsAsync()
         {
-            // State
-            //try
-            //{
-            //    this.devicesStateThread?.Interrupt();
-            //}
-            //catch (Exception e)
-            //{
-            //    this.log.Warn("Unable to stop the devices state thread in a clean way", e);
-            //}
-
-            //// Connection
-            //try
-            //{
-            //    this.devicesConnectionTask?.Interrupt();
-            //}
-            //catch (Exception e)
-            //{
-            //    this.log.Warn("Unable to stop the connections thread in a clean way", e);
-            //}
-
-            //// Properties
-            //if (this.deviceTwinEnabled)
-            //{
-            //    try
-            //    {
-            //        this.devicesPropertiesTask?.Interrupt();
-            //    }
-            //    catch (Exception e)
-            //    {
-            //        this.log.Warn("Unable to stop the devices state thread in a clean way", e);
-            //    }
-            //}
-
-            //// Telemetry
-            //for (int i = 0; i < this.devicesTelemetryTasks.Length; i++)
-            //{
-            //    try
-            //    {
-            //        if (this.devicesTelemetryTasks[i] != null)
-            //        {
-            //            // TODO: should wait for the task to complete
-            //            // this.devicesTelemetryTasks[i].;
-            //        }
-            //    }
-            //    catch (Exception e)
-            //    {
-            //        this.log.Warn("Unable to stop the telemetry thread in a clean way", () => new { threadNumber = i, e });
-            //    }
-            //}
+            await Task.WhenAll(this.deviceStateTask, this.devicesConnectionTask, this.devicesPropertiesTask, this.devicesTelemetryTask);
         }
 
         private void SendSolutionHeartbeat()
@@ -471,6 +416,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                 this.lastPolledTime = now;
                 this.logDiagnostics.LogServiceHeartbeat();
             }
+        }
+
+        public void OnError(Exception exception)
+        {
+            // Do something with exception or handle differently if exception happened?
+            this.log.Error("Shutdown due to exception", exception);
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            this.StopAsync();
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         }
     }
 }

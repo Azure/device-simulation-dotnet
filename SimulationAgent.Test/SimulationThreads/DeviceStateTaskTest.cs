@@ -50,7 +50,7 @@ namespace SimulationAgent.Test.SimulationThreads
             cancellationTokenSource.Cancel();
 
             // Act
-            this.target.RunAsync(this.mockDeviceStateActorObjects, cancellationTokenSource.Token).GetAwaiter().GetResult();
+            this.target.RunAsync(this.mockDeviceStateActorObjects, cancellationTokenSource.Token, null).GetAwaiter().GetResult();
 
             // Assert
             // Verify that 'Run' was called on each actor
