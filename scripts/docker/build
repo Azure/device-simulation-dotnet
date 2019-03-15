@@ -65,6 +65,7 @@ build_docker_image() {
     cp scripts/docker/.dockerignore              out/docker/
     cp scripts/docker/Dockerfile                 out/docker/
     cp scripts/docker/content/run.sh             out/docker/
+	cp scripts/docker/content/set_env.sh         out/docker/
 
     cd out/docker/
 
