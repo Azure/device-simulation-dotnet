@@ -262,34 +262,58 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
         public void Stop()
         {
             this.status = ActorStatus.Stopped;
+            this.log.Debug("Telemetry stopped",
+                () => new
+                {
+                    this.deviceId,
+                    Status = this.status.ToString()
+                });
         }
 
         private void Reset()
         {
             this.status = ActorStatus.ReadyToStart;
+            this.log.Debug("Telemetry reset",
+                () => new
+                {
+                    this.deviceId,
+                    Status = this.status.ToString()
+                });
         }
 
         private void ScheduleTelemetry()
         {
-            // Considering the throttling settings, when can the message be sent
-            var availableSchedule = Now + this.simulationContext.RateLimiting.GetPauseForNextMessage();
+            if (this.deviceStateActor.IsDeviceActive)
+            {
+                // Considering the throttling settings, when can the message be sent
+                var availableSchedule = Now + this.simulationContext.RateLimiting.GetPauseForNextMessage();
 
-            // Looking at the device model, when should the message be sent
-            // note: this.whenToRun contains the time when the last msg was sent
-            var optimalSchedule = this.whenToRun + (long) this.Message.Interval.TotalMilliseconds;
+                // Looking at the device model, when should the message be sent
+                // note: this.whenToRun contains the time when the last msg was sent
+                var optimalSchedule = this.whenToRun + (long)this.Message.Interval.TotalMilliseconds;
 
-            // TODO: review this approach: when choosing optimalSchedule the app might overload the hub and cause throttling
-            this.whenToRun = Math.Max(optimalSchedule, availableSchedule);
-            this.status = ActorStatus.ReadyToSend;
+                // TODO: review this approach: when choosing optimalSchedule the app might overload the hub and cause throttling
+                this.whenToRun = Math.Max(optimalSchedule, availableSchedule);
+                this.status = ActorStatus.ReadyToSend;
 
-            this.actorLogger.TelemetryScheduled(this.whenToRun);
-            this.log.Debug("Telemetry scheduled",
-                () => new
-                {
-                    this.deviceId,
-                    Status = this.status.ToString(),
-                    When = this.log.FormatDate(this.whenToRun)
-                });
+                this.actorLogger.TelemetryScheduled(this.whenToRun);
+                this.log.Debug("Telemetry scheduled",
+                    () => new
+                    {
+                        this.deviceId,
+                        Status = this.status.ToString(),
+                        When = this.log.FormatDate(this.whenToRun)
+                    });
+            }
+            else
+            {
+                this.log.Debug("Device is not active, skipping telemetry send action.", 
+                    () => new
+                    {
+                        this.deviceId,
+                        Status = this.status.ToString()
+                    });
+            }
         }
 
         private void PauseForQuotaExceeded()
