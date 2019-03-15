@@ -47,6 +47,7 @@ cd %APP_HOME%
     copy scripts\docker\.dockerignore               out\docker\
     copy scripts\docker\Dockerfile                  out\docker\
     copy scripts\docker\content\run.sh              out\docker\
+	copy scripts\docker\content\set_env.sh          out\docker\
 
     cd out\docker\
     docker build --compress --tag %DOCKER_TAG% --label "%DOCKER_LABEL2%" .
