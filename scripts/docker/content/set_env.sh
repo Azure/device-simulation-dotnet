@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Copyright (c) Microsoft. All rights reserved.
 
 AUTH_SERVER_URL=""
 RESOURCE_TYPE=""
@@ -91,4 +90,8 @@ set_env_vars() {
     done
 }
 
-set_env_vars $@
+main() {
+  if [ "$PCS_KEYVAULT_NAME" != "" ] && [ "$PCS_AAD_APPID" != "" ] && [ "$PCS_AAD_APPSECRET" != "" ]; then
+    set_env_vars $@
+  fi
+}
