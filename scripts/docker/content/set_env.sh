@@ -96,3 +96,5 @@ main() {
     set_env_vars $@
   fi
 }
+
+main $@
