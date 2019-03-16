@@ -31,7 +31,7 @@ _get_keyvault_secret() {
 __set_keyvault_auth_server() {
 
     # Bare (unauthenticated) request to get secret.
-    key_vault_wo_auth_call=$(curl -i "https://$PCS_KEYVAULT_NAME.vault.azure.net/secrets/authEnabled/?api-version=7.0" | grep 'www.*')
+    key_vault_wo_auth_call=$(curl -i -L "https://$PCS_KEYVAULT_NAME.vault.azure.net/secrets/authEnabled/?api-version=7.0" | grep -Fi WWW-Authenticate)
 
     wo_auth_call_resp_header=${key_vault_wo_auth_call#*:}
 
