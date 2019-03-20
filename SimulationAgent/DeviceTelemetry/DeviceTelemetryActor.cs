@@ -290,7 +290,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
                 // Looking at the device model, when should the message be sent
                 // note: this.whenToRun contains the time when the last msg was sent
-                var optimalSchedule = this.whenToRun + (long)this.Message.Interval.TotalMilliseconds;
+                var optimalSchedule = this.whenToRun + (long) this.Message.Interval.TotalMilliseconds;
 
                 // TODO: review this approach: when choosing optimalSchedule the app might overload the hub and cause throttling
                 this.whenToRun = Math.Max(optimalSchedule, availableSchedule);
