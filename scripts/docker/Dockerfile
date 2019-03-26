@@ -1,6 +1,6 @@
-FROM microsoft/dotnet:2.0.3-runtime-jessie
+FROM microsoft/dotnet:2.1-aspnetcore-runtime
 
-MAINTAINER Devis Lucato (https://github.com/dluc)
+LABEL maintainer = @miwolfms @tommo-ms @saixiaohui
 
 LABEL Tags="Azure,IoT,Solutions,Simulation,.NET"
 
