@@ -19,6 +19,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using ILogger = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics.ILogger;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 {
@@ -72,7 +73,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             services.AddCors();
 
             // Add controllers as services so they'll be resolved.
-            services.AddMvc().AddControllersAsServices();
+            services.AddMvc().AddControllersAsServices().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             // Prepare DI container
             this.ApplicationContainer = DependencyResolution.Init(services);

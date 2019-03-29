@@ -35,30 +35,40 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent.DeviceTe
 
         public async Task RunAsync()
         {
-            var state = this.context.DeviceState.GetAll();
-
-            // device could be rebooting, updating firmware, etc.
-            this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
-            if (!state.ContainsKey("online") || (bool) state["online"])
+            try
             {
-                this.log.Debug("The device state says the device is online, sending telemetry...", () => new { this.deviceId });
-            }
-            else
-            {
-                this.log.Debug("No telemetry will be sent because the device is offline...", () => new { this.deviceId });
-                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
-                return;
-            }
+                var state = this.context.DeviceState.GetAll();
 
-            // Inject the device state into the message template
-            this.log.Debug("Preparing the message content using the device state", () => new { this.deviceId });
-            var msg = this.message.MessageTemplate;
-            foreach (var value in state)
-            {
-                msg = msg.Replace("${" + value.Key + "}", value.Value.ToString());
-            }
+                // device could be rebooting, updating firmware, etc.
+                this.log.Debug("Checking to see if device is online", () => new { this.deviceId });
+                if (!state.ContainsKey("online") || (bool) state["online"])
+                {
+                    this.log.Debug("The device state says the device is online, sending telemetry...", () => new { this.deviceId });
+                }
+                else
+                {
+                    this.log.Debug("No telemetry will be sent because the device is offline...", () => new { this.deviceId });
+                    this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetryDelivered);
+                    return;
+                }
 
-            await this.SendTelemetryMessageAsync(msg);
+                // Inject the device state into the message template
+                this.log.Debug("Preparing the message content using the device state", () => new { this.deviceId });
+                var msg = this.message.MessageTemplate;
+                foreach (var value in state)
+                {
+                    msg = msg.Replace("${" + value.Key + "}", value.Value.ToString());
+                }
+
+                await this.SendTelemetryMessageAsync(msg);
+            }
+            catch (Exception e)
+            {
+                this.log.Error("Unexpected error while sending telemetry",
+                    () => new { this.deviceId, e });
+
+                this.context.HandleEvent(DeviceTelemetryActor.ActorEvents.TelemetrySendFailure);
+            }
         }
 
         private async Task SendTelemetryMessageAsync(string msg)
