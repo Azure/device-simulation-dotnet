@@ -92,6 +92,8 @@ set_env_vars() {
 }
 
 main() {
+  # For the script to fetch the secrets from key-vault foll. variables PCS_KEYVAULT_NAME,
+  # PCS_AAD_APPID, PCS_AAD_APPSECRET must be available as "environment" variables.
   if [[ "$PCS_KEYVAULT_NAME" != "" ]] && [[ "$PCS_AAD_APPID" != "" ]] && [[ "$PCS_AAD_APPSECRET" != "" ]]; then
     set_env_vars $@
   fi
