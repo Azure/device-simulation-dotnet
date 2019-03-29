@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
@@ -158,6 +159,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
         private Task MonitorThreadsAsync(IApplicationLifetime appLifetime)
         {
+            const string MSG = "Part of the service is not running";
+
             return Task.Run(() =>
                 {
                     while (!this.appStopToken.IsCancellationRequested)
@@ -173,12 +176,18 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
                             || this.partitioningAgentTask.Status == TaskStatus.RanToCompletion)
                         {
                             var log = this.ApplicationContainer.Resolve<ILogger>();
-                            log.Error("Part of the service is not running",
-                                () => new
-                                {
-                                    SimulationAgent = this.simulationAgentTask.Status.ToString(),
-                                    PartitioningAgent = this.partitioningAgentTask.Status.ToString()
-                                });
+                            var diagnosticsLogger = this.ApplicationContainer.Resolve<IDiagnosticsLogger>();
+
+                            var errorData = new
+                            {
+                                SimulationAgent = this.simulationAgentTask.Status.ToString(),
+                                PartitioningAgent = this.partitioningAgentTask.Status.ToString()
+                            };
+
+                            log.Error(MSG, () => errorData);
+
+                            // Send diagnostics information
+                            diagnosticsLogger.LogServiceError(MSG, errorData);
 
                             // Allow few seconds to flush logs
                             Thread.Sleep(5000);
