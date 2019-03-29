@@ -9,8 +9,8 @@ AUTH_TOKEN=""
 _acquire_token() {
     __set_keyvault_auth_server
 
-    local _temp=$(curl -X POST -H "Content-Type: application/x-www-form-urlencoded" -d "client_id=$PCS_AAD_APPID&resource=https%3A%2F%2Fvault.azure.net&client_secret=$PCS_AAD_APPSECRET&grant_type=client_credentials" $AUTH_SERVER_URL/oauth2/token)
-    AUTH_TOKEN=$(__parse_json $_temp "access_token")
+    local _value=$(curl -X POST -H "Content-Type: application/x-www-form-urlencoded" -d "client_id=$PCS_AAD_APPID&resource=https%3A%2F%2Fvault.azure.net&client_secret=$PCS_AAD_APPSECRET&grant_type=client_credentials" $AUTH_SERVER_URL/oauth2/token)
+    AUTH_TOKEN=$(__parse_json $_value "access_token")
 }
 
 # Fetch key vault secret.
@@ -51,27 +51,27 @@ __set_keyvault_auth_server() {
 
 #Removes Bearer authorization prefix to extract auth server url from 401 redirect of keyvault.
 __extract_auth_server() {
-    AUTH_SERVER_URL=$(__extract_value_from_double_quotes $2)
+    AUTH_SERVER_URL=$(__remove_double_quotes $2)
 }
 
 #Removes "resource" prefix to extract resource type from 401 redirect of keyvault.
 __extract_resource_type() {
-    RESOURCE_TYPE=$(__extract_value_from_double_quotes $1)
+    RESOURCE_TYPE=$(__remove_double_quotes $1)
 }
 
-__extract_value_from_double_quotes() {
-    local string=$1
+__remove_double_quotes() {
+    local input=$1
     # Remove trailing and prefixed double quotes.
-    local _temp=${string#*'"'}
-    _temp=${_temp%'"'}
+    local _value=${input#*'"'}
+    _value=${_value%'"'}
 
     #return the value
-    echo $_temp
+    echo $_value
 }
 
 __parse_json() {
-  _temp=`echo $1 | sed 's/\\\\\//\//g' | sed 's/[{}]//g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | sed 's/\"\:\"/\|/g' | sed 's/[\,]/ /g' | sed 's/\"//g' | grep -w $2`;
-  echo ${_temp##*|};
+  _value=`echo $1 | sed 's/\\\\\//\//g' | sed 's/[{}]//g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | sed 's/\"\:\"/\|/g' | sed 's/[\,]/ /g' | sed 's/\"//g' | grep -w $2`;
+  echo ${_value##*|};
 }
 
 ############# Main function #############
