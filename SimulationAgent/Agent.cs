@@ -327,10 +327,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent
                         this.deviceReplayActors);
 
                     this.simulationManagers[simulation.Id] = manager;
-
-                    var msg = "New simulation manager created";
-                    this.log.Info(msg, () => new { SimulationId = simulation.Id });
-                    this.logDiagnostics.LogServiceStart(msg);
                 }
                 catch (Exception e)
                 {

@@ -85,6 +85,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
         private const int DEVICES_PER_MODEL_IN_DEFAULT_TEMPLATE = 1;
 
         private readonly IServicesConfig config;
+        private readonly IDiagnosticsLogger logDiagnostics;
         private readonly IDeviceModels deviceModels;
         private readonly IStorageAdapterClient storageAdapterClient;
         private readonly IEngine mainStorage;
@@ -309,6 +310,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             if (simulationIsRestarting)
             {
                 simulation = await this.ResetSimulationStatisticsAsync(simulation);
+
+                simulation = await this.ResetSimulationStatisticsAsync(simulation);
+                Dictionary<string, string> data = new Dictionary<string, string>();
+                data.Add("SimulationId", simulation.Id);
+                data.Add("StartTime", simulation.StartTime != null ? simulation.StartTime.ToString() : null);
+                data.Add("DeviceModels", simulation.DeviceModels != null ? simulation.DeviceModels.ToString() : null);
+                data.Add("CustomDeviceModels", simulation.CustomDevices != null ? simulation.CustomDevices.ToString() : null);
+
+                this.diagnosticsLogger.LogEvent("SimulationStart", data.ToString());
             }
             else if (simulationIsStopping)
             {
@@ -318,6 +328,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 // This boolean triggers the deletion of partitions from the storage
                 // in the partitioning agent.
                 simulation.PartitioningComplete = false;
+
+                Dictionary<string, string> data = new Dictionary<string, string>();
+                data.Add("SimulationId", simulation.Id);
+                data.Add("StopTime", simulation.StoppedTime != null ? simulation.StoppedTime.ToString() : null);
+                data.Add("DeviceModels", simulation.DeviceModels != null ? simulation.DeviceModels.ToString() : null);
+                data.Add("CustomDeviceModels", simulation.CustomDevices != null ? simulation.CustomDevices.ToString() : null);
+                data.Add("Statistics", simulation.Statistics != null ? simulation.Statistics.ToString() : null);
+
+                this.diagnosticsLogger.LogEvent("SimulationStop", data.ToString());
             }
 
             return await this.SaveAsync(simulation, simulation.ETag);
@@ -357,6 +376,13 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
             if (simulationIsRestarting)
             {
                 simulation = await this.ResetSimulationStatisticsAsync(simulation);
+                Dictionary<string, string> data = new Dictionary<string, string>();
+                data.Add("SimulationId", simulation.Id);
+                data.Add("StartTime", simulation.StartTime != null ? simulation.StartTime.ToString() : null);
+                data.Add("DeviceModels", simulation.DeviceModels != null ? simulation.DeviceModels.ToString() : null);
+                data.Add("CustomDeviceModels", simulation.CustomDevices != null ? simulation.CustomDevices.ToString() : null);
+
+                this.diagnosticsLogger.LogEvent("SimulationRestart", data.ToString());
             }
             else if (simulationIsStopping)
             {
@@ -366,6 +392,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                 // This boolean triggers the deletion of partitions from the storage
                 // in the partitioning agent.
                 simulation.PartitioningComplete = false;
+
+                Dictionary<string, string> data = new Dictionary<string, string>();
+                data.Add("SimulationId", simulation.Id);
+                data.Add("StopTime", simulation.StoppedTime != null ? simulation.StoppedTime.ToString() : null);
+                data.Add("DeviceModels", simulation.DeviceModels != null ? simulation.DeviceModels.ToString() : null);
+                data.Add("CustomDeviceModels", simulation.CustomDevices != null ? simulation.CustomDevices.ToString() : null);
+                data.Add("Statistics", simulation.Statistics != null ? simulation.Statistics.ToString() : null);
+
+                this.diagnosticsLogger.LogEvent("SimulationStop", data.ToString());
 
                 // Reset active device count to 0
                 await this.ResetActiveDevicesStatistics(simulation);
