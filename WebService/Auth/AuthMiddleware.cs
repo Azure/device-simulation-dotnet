@@ -53,6 +53,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
         private TokenValidationParameters tokenValidationParams;
         private readonly bool authRequired;
         private bool tokenValidationInitialized;
+        private DateTime tokenValidationExpiration;
 
         public AuthMiddleware(
             // ReSharper disable once UnusedParameter.Local
@@ -67,6 +68,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
             this.log = log;
             this.authRequired = config.AuthRequired;
             this.tokenValidationInitialized = false;
+            this.tokenValidationExpiration = DateTime.UtcNow;
 
             // This will show in development mode, or in case auth is turned off
             if (!this.authRequired)
@@ -83,7 +85,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
                     this.config.JwtIssuer,
                     this.config.JwtAudience,
                     this.config.JwtAllowedAlgos,
-                    this.config.JwtClockSkew
+                    this.config.JwtClockSkew,
+                    this.config.OpenIdTimeToLive
                 });
 
                 this.InitializeTokenValidationAsync(CancellationToken.None).Wait();
@@ -196,7 +199,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
 
         private async Task<bool> InitializeTokenValidationAsync(CancellationToken token)
         {
-            if (this.tokenValidationInitialized) return true;
+            // If the token has been initialized and is not past expiry, return.
+            if (this.tokenValidationInitialized && !this.TokenValidationExpired()) return true;
 
             try
             {
@@ -224,6 +228,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
                 };
 
                 this.tokenValidationInitialized = true;
+                this.tokenValidationExpiration = DateTime.UtcNow.Add(this.config.OpenIdTimeToLive);
             }
             catch (Exception e)
             {
@@ -231,6 +236,15 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
             }
 
             return this.tokenValidationInitialized;
+        }
+
+        /// <summary>
+        /// Checks if the OpenId Connect token has hit the expiration time.
+        /// </summary>
+        /// <returns>true if the token has expired</returns>
+        private bool TokenValidationExpired()
+        {
+            return this.tokenValidationExpiration > DateTime.UtcNow;
         }
     }
 }
