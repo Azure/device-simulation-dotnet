@@ -36,6 +36,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
         // Clock skew allowed when validating tokens expiration
         // Default: 2 minutes
         TimeSpan JwtClockSkew { get; set; }
+
+        // Time to live for the OpenId Connect validation token.
+        // The metadata settings will expire so the token needs to be
+        // periodically recreated.
+        // Default: 7 days
+        TimeSpan OpenIdTimeToLive { get; set; }
     }
 
     public class ClientAuthConfig : IClientAuthConfig
@@ -49,5 +55,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth
         public string JwtIssuer { get; set; }
         public string JwtAudience { get; set; }
         public TimeSpan JwtClockSkew { get; set; }
+        public TimeSpan OpenIdTimeToLive { get; set; }
     }
 }
