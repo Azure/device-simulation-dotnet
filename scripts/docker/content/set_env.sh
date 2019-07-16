@@ -81,10 +81,14 @@ set_env_vars() {
     while test ${#} -gt 0
     do
         _key=$1
-        _value=$(_get_keyvault_secret $2)
-
-        # export in current shell
-        export $_key=$_value
+	
+        if [ -z "${!_key}" ]; then
+                _value=$(_get_keyvault_secret $2)
+                # export in current shell
+                export $_key=$_value
+        else
+            echo "Variable $_key already set."
+        fi
 
         shift
         shift
