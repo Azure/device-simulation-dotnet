@@ -13,7 +13,7 @@
             "vibration_unit": "mm",
             "temperature": 75.0,
             "temperature_unit": "F",
-			"moving": true
+	    "moving": true
         },
         "Interval": "00:00:10",
         "Scripts": [
