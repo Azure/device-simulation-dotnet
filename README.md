@@ -66,7 +66,7 @@ The service can be started from any C# IDE and from the command line.
 The only difference you might notice is how environment variables
 are configured. See the [Configuration and Environment variables](#configuration-and-environment-variables) documentation below for more information.
 
-1. [Install .NET Core 2.x][dotnet-install]
+1. [Install .NET Core SDK 2.1.607][dotnet-install]
 1. Install any recent edition of Visual Studio (Windows/MacOS) or Visual
    Studio Code (Windows/MacOS/Linux).
 1. Create an instance of [Azure IoT Hub][iothub-url].
@@ -208,7 +208,7 @@ https://github.com/Azure/device-simulation-dotnet/issues.
 [postman-url]: https://www.getpostman.com
 [wiki-createsim-url]: https://github.com/Azure/device-simulation-dotnet/wiki/%5BAPI-Specifications%5D-Simulations#create-default-simulation
 [vs-install-url]: https://www.visualstudio.com/downloads
-[dotnet-install]: https://www.microsoft.com/net/learn/get-started
+[dotnet-install]: https://dotnet.microsoft.com/download/dotnet-core/2.1
 [windows-envvars-howto-url]: https://superuser.com/questions/949560/how-do-i-set-system-environment-variables-in-windows-10
 [docker-compose-install-url]: https://docs.docker.com/compose/install
 
