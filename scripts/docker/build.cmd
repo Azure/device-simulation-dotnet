@@ -26,6 +26,13 @@ cd %APP_HOME%
 :: Restore packages and build the application
     call dotnet restore
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
+
+    echo.
+    echo ##############################################
+    echo ######### Running dotnet build... ############
+    echo ##############################################
+    echo.
+
     call dotnet build --configuration %CONFIGURATION%
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
 
@@ -40,15 +47,29 @@ cd %APP_HOME%
 
     mkdir out\docker\webservice
 
+    echo.
+    echo ##############################################
+    echo ######### Running dotnet publish... ##########
+    echo ##############################################
+    echo.
+
     dotnet publish WebService      --configuration %CONFIGURATION% --output bin\Docker
+
+    echo.
+    echo #####################################################################################
+    echo ####### Copying files from WebService\bin\Docker to out\docker\webservice... ########
+    echo #####################################################################################
+    echo.
 
     xcopy /s WebService\bin\Docker\*       out\docker\webservice\
 
+    echo Copying .dockerignore...
     copy scripts\docker\.dockerignore               out\docker\
     copy scripts\docker\Dockerfile                  out\docker\
     copy scripts\docker\content\run.sh              out\docker\
 
     cd out\docker\
+    echo Running docker build...
     docker build --compress --tag %DOCKER_TAG% --label "%DOCKER_LABEL2%" .
 
     IF %ERRORLEVEL% NEQ 0 GOTO FAIL
