@@ -1,0 +1,26 @@
+
+# The following is appended to /etc/nanorc during the VM setup.
+# Leave one empty line at the top and at the bottom.
+
+syntax "ini" "\.ini(\.old|\.bak|\.example|~)?$"
+
+## Values
+color brightred "=.*$"
+
+## Equal sign
+color green "="
+
+## Numbers
+color brightblue "-?[0-9\.]+\s*($|;)"
+
+## ON/OFF
+color brightmagenta "(ON|OFF|On|Off|on|off)\s*($|;)"
+
+## Sections
+color brightcyan "^\s*\[.*\]"
+
+## Keys
+color cyan "^\s*[a-zA-Z0-9_\.]+"
+
+## Comments
+color brightyellow ";.*$"
