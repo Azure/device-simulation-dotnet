@@ -1,5 +1,5 @@
 language: csharp
-dotnet: 2.1
+dotnet: 2.1.607
 mono: none
 sudo: false
 cache:
