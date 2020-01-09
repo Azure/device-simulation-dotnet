@@ -1,0 +1,25 @@
+
+# The following is appended to /etc/bashrc during the VM setup.
+# Leave one empty line at the top and at the bottom.
+
+eval `dircolors -b`
+
+alias ls='ls --color=auto'
+alias l='ls --color=auto -lAF'
+alias ll='l|less'
+alias rm='rm -i'
+alias cp='cp -ia'
+alias mv='mv -i'
+alias grep='grep --color=auto'
+alias df='df -h'
+alias nano='nano -cES --tabsize=4'
+alias mkdir='mkdir -p'
+
+export HISTCONTROL=ignorespace:ignoredups
+export HISTTIMEFORMAT='%F %T '
+export HISTSIZE=32767
+export HISTFILESIZE=3276700
+
+export PS1="\n\e[32;44;1m \h\e[37m - [\u] \e[0m\e[30;47m  (\t)  \e[0m\n\w :# "
+
+export PATH="$HOME/bin:$PATH"

@@ -1,0 +1,155 @@
+version: '2'
+
+# When editing this file, restart the services to apply the changes, running:
+#     sudo /app/start.sh
+# To add custom device models from a folder, upload the files into the VM, and use the "volumes"
+# section of "devicesimulation-svc" to mount the folder. Make sure lines are indented correctly.
+# Example:
+#
+#    volumes:
+#      - /absolute-path/my-device-models:/app/data:ro
+# To change the simulation service configuration, create a custom appsettings.ini file, and use the
+# "volumes" section of "devicesimulation-svc" to mount the file. Make sure lines are indented correctly.
+# Example:
+#
+#    volumes:
+#      - /app/custom-device-simulation-appsettings.ini:/app/webservice/appsettings.ini:ro
+
+services:
+  apigateway-svc:
+    image: azureiotpcs/simulation-api-gateway:DS-2.0.0
+    restart: always
+    ports:
+      - "443:443"
+    depends_on:
+      - webui-svc
+      - devicesimulation-svc
+      - diagnostics-svc
+      - config-svc
+    volumes:
+      - /app/certs:/app/certs:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10240k"
+        max-file: "10"
+
+  webui-svc:
+    image: azureiotpcs/device-simulation-webui:${PCS_DOCKER_TAG}
+    restart: always
+    depends_on:
+      - devicesimulation-svc
+      - diagnostics-svc
+      - config-svc
+    volumes:
+      - /app/webui-config.js:/app/build/webui-config.js:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10240k"
+        max-file: "10"
+
+  devicesimulation-svc:
+    image: azureiotpcs/device-simulation-dotnet:${PCS_DOCKER_TAG}
+    restart: always
+    depends_on:
+      - storageadapter-svc
+      - diagnostics-svc
+    environment:
+      - PCS_LOG_LEVEL
+      - PCS_IOTHUB_CONNSTRING
+      - PCS_STORAGEADAPTER_WEBSERVICE_URL=http://storageadapter-svc:9022/v1
+      - PCS_AUTH_ISSUER
+      - PCS_AUTH_AUDIENCE
+      - PCS_AUTH_REQUIRED
+      - PCS_CORS_WHITELIST
+      - PCS_SUBSCRIPTION_DOMAIN
+      - PCS_SUBSCRIPTION_ID
+      - PCS_WEBUI_AUTH_AAD_APPID
+      - PCS_WEBUI_AUTH_AAD_TENANT
+      - PCS_AAD_CLIENT_SP_ID
+      - PCS_AAD_SECRET
+      - PCS_RESOURCE_GROUP
+      - PCS_IOHUB_NAME
+      - PCS_DIAGNOSTICS_WEBSERVICE_URL=http://diagnostics-svc:9006/v1
+      - PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING
+      - PCS_AZURE_STORAGE_ACCOUNT
+      - PCS_RESOURCE_GROUP_LOCATION
+      - PCS_VMSS_NAME
+      - PCS_SEED_TEMPLATE
+      - PCS_SOLUTION_TYPE
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10240k"
+        max-file: "10"
+    volumes:
+      - /tmp/share:/tmp/share
+# To mount custom device models, upload the files to the VM, edit and uncomment the following line:
+#     - /absolute-path/my-device-models:/app/data:ro
+# To mount a custom service configuration, create a custom file, edit and uncomment the following line:
+#     - /app/custom-device-simulation-appsettings.ini:/app/webservice/appsettings.ini:ro
+
+  storageadapter-svc:
+    image: azureiotpcs/pcs-storage-adapter-dotnet:DS-1.0.2
+    restart: always
+    environment:
+      - PCS_LOG_LEVEL
+      - PCS_STORAGEADAPTER_DOCUMENTDB_CONNSTRING
+      - PCS_AUTH_ISSUER
+      - PCS_AUTH_AUDIENCE
+      - PCS_AUTH_REQUIRED
+      - PCS_CORS_WHITELIST
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10240k"
+        max-file: "10"
+
+  diagnostics-svc:
+    image: azureiotpcs/pcs-diagnostics-dotnet:Diagnostics-2.0.1
+    restart: always
+    depends_on:
+      - config-svc
+    environment:
+      - PCS_LOG_LEVEL
+      - PCS_AUTH_ISSUER
+      - PCS_AUTH_AUDIENCE
+      - PCS_AUTH_REQUIRED
+      - PCS_CORS_WHITELIST
+      - PCS_CLOUD_TYPE
+      - PCS_SUBSCRIPTION_ID
+      - PCS_DEPLOYMENT_ID
+      - PCS_SOLUTION_TYPE
+      - PCS_SOLUTION_NAME
+      - PCS_IOTHUB_NAME
+      - PCS_CONFIG_WEBSERVICE_URL=http://config-svc:9005/v1
+      - PCS_APPINSIGHTS_INSTRUMENTATIONKEY
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10240k"
+        max-file: "10"
+
+  config-svc:
+    image: azureiotpcs/pcs-config-dotnet:DS-1.0.2
+    restart: always
+    depends_on:
+      - storageadapter-svc
+    environment:
+      - PCS_STORAGEADAPTER_WEBSERVICE_URL=http://storageadapter-svc:9022/v1
+      - PCS_SOLUTION_TYPE
+      - PCS_BINGMAP_KEY
+      - PCS_AUTH_ISSUER
+      - PCS_AUTH_AUDIENCE
+      - PCS_AUTH_REQUIRED
+      - PCS_CORS_WHITELIST
+      - PCS_APPLICATION_SECRET
+      - PCS_DEVICESIMULATION_WEBSERVICE_URL
+      - PCS_TELEMETRY_WEBSERVICE_URL
+      - PCS_IOTHUBMANAGER_WEBSERVICE_URL
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10240k"
+        max-file: "10"
