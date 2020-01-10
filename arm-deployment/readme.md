@@ -1,1 +1,0 @@
-The files in this directory are used when Device Simulation is deployed from [azureiotsolutions.com](https://www.azureiotsolutions.com). There shouldn't be any need to modify these files to change the actual behavior of Device Simulation itself.
