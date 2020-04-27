@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Exceptions;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Http;
+using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Models;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Runtime;
 using Newtonsoft.Json;
 
@@ -15,7 +16,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
 {
     public interface IStorageAdapterClient
     {
-        Task<Tuple<bool, string>> PingAsync();
         Task<ValueListApiModel> GetAllAsync(string collectionId);
         Task<ValueApiModel> GetAsync(string collectionId, string key);
         Task<ValueApiModel> CreateAsync(string collectionId, string value);
@@ -48,36 +48,6 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.StorageAdapter
             this.serviceUri = config.StorageAdapterApiUrl;
             this.timeout = config.StorageAdapterApiTimeout;
             this.diagnosticsLogger = diagnosticsLogger;
-        }
-
-        public async Task<Tuple<bool, string>> PingAsync()
-        {
-            var status = false;
-            var message = "";
-
-            try
-            {
-                var response = await this.httpClient.GetAsync(this.PrepareRequest($"status"));
-                if (response.IsError)
-                {
-                    message = "Status code: " + response.StatusCode;
-                }
-                else
-                {
-                    var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(response.Content);
-                    message = data["Status"].ToString();
-                    status = data["Status"].ToString().StartsWith("OK:");
-                }
-            }
-            catch (Exception e)
-            {
-                const string MSG = "Storage adapter check failed";
-                this.log.Error(MSG, e);
-                this.diagnosticsLogger.LogServiceError(MSG, e.Message);
-                message = e.Message;
-            }
-
-            return new Tuple<bool, string>(status, message);
         }
 
         public async Task<ValueListApiModel> GetAllAsync(string collectionId)
