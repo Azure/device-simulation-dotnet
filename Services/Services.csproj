@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
+        <TargetFramework>netstandard2.1</TargetFramework>
         <LangVersion>latest</LangVersion>
         <AssemblyName>Microsoft.Azure.IoTSolutions.DeviceSimulation.Services</AssemblyName>
         <RootNamespace>Microsoft.Azure.IoTSolutions.DeviceSimulation.Services</RootNamespace>

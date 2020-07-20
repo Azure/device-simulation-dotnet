@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <LangVersion>latest</LangVersion>
     <AssemblyName>Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent</AssemblyName>
     <RootNamespace>Microsoft.Azure.IoTSolutions.DeviceSimulation.SimulationAgent</RootNamespace>
