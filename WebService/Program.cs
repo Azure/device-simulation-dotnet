@@ -22,7 +22,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
                 a cross-platform asynchronous I/O library.
                 https://docs.microsoft.com/aspnet/core/fundamentals/servers
                 */
-                var host = new WebHostBuilder() // TODO: Use HostBuilder instead of WebHostBuilder? https://docs.microsoft.com/en-us/aspnet/core/migration/22-to-30?view=aspnetcore-3.1&tabs=visual-studio#kestrel
+                // TODO: Use HostBuilder instead of WebHostBuilder? https://docs.microsoft.com/en-us/aspnet/core/migration/22-to-30?view=aspnetcore-3.1&tabs=visual-studio#kestrel
+                var host = new WebHostBuilder() 
                     .UseUrls("http://*:" + webServicePort)
                     .UseKestrel(options => { options.AddServerHeader = false; })
                     .UseIISIntegration()
