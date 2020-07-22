@@ -52,10 +52,6 @@ cd %APP_HOME%
     echo ######### Running dotnet publish... ##########
     echo ##############################################
     echo.
-    echo ###################
-    echo CONFIGURATION:
-    echo %CONFIGURATION%
-    echo ###################
 
     :: DotNet 3.x:
     :: If a relative path is specified when publishing a project, the output directory generated 
