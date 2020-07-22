@@ -1,4 +1,4 @@
-FROM microsoft/dotnet:2.1-aspnetcore-runtime
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
 
 LABEL maintainer = @miwolfms @tommo-ms @saixiaohui
 

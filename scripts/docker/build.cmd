@@ -52,8 +52,22 @@ cd %APP_HOME%
     echo ######### Running dotnet publish... ##########
     echo ##############################################
     echo.
+    echo ###################
+    echo CONFIGURATION:
+    echo %CONFIGURATION%
+    echo ###################
 
-    dotnet publish WebService      --configuration %CONFIGURATION% --output bin\Docker
+    :: DotNet 3.x:
+    :: If a relative path is specified when publishing a project, the output directory generated 
+    :: is relative to the current working directory, not to the project file location.
+
+    :: DotNet 2.x:
+    :: If a relative path is specified when publishing a project, the output directory generated 
+    :: is relative to the project file location, not to the current working directory.
+
+    :: See https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-publish
+
+    dotnet publish WebService      --configuration %CONFIGURATION% --output WebService\bin\Docker
 
     echo.
     echo #####################################################################################
