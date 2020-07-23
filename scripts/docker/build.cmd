@@ -53,16 +53,9 @@ cd %APP_HOME%
     echo ##############################################
     echo.
 
-    :: DotNet 3.x:
-    :: If a relative path is specified when publishing a project, the output directory generated 
-    :: is relative to the current working directory, not to the project file location.
-
-    :: DotNet 2.x:
-    :: If a relative path is specified when publishing a project, the output directory generated 
-    :: is relative to the project file location, not to the current working directory.
-
-    :: See https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-publish
-
+    :: Note that .Net 3 and .Net 2 handle relative paths differently (when using the --output flag)
+    :: See https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-publish if the output files
+    :: are missing.
     dotnet publish WebService      --configuration %CONFIGURATION% --output WebService\bin\Docker
 
     echo.

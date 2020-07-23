@@ -66,7 +66,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             this.Configuration = builder.Build();
         }
 
-        // This is where you register dependencies add services to the
+        // This is where you register dependencies and add services to the
         // container. This method is called by the runtime, before the
         // Configure method below, to configure the app's services.
         public IServiceProvider ConfigureServices(IServiceCollection services)
