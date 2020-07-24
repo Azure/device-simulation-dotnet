@@ -23,7 +23,6 @@ namespace Services.Test
         private readonly Mock<IServicesConfig> config;
         private readonly Mock<IEngines> enginesFactory;
         private readonly Mock<IEngine> replayFilesStorage;
-        private readonly Mock<ILogger> logger;
         private readonly ReplayFileService target;
 
         public ReplayFileServiceTest()

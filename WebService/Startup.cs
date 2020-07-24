@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.PartitioningAgent;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics;
@@ -16,10 +15,10 @@ using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Auth;
 using Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService.Runtime;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using ILogger = Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics.ILogger;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 {
@@ -49,7 +48,10 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
         public IContainer ApplicationContainer { get; private set; }
 
         // Invoked by `Program.cs`
-        public Startup(IHostingEnvironment env)
+        // The host provides services that are available to the Startup class constructor. 
+        // The app adds additional services via ConfigureServices. Both the host and app 
+        // services are available in Configure and throughout the app.
+        public Startup(IHostEnvironment env)
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
@@ -64,16 +66,19 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             this.Configuration = builder.Build();
         }
 
-        // This is where you register dependencies, add services to the
+        // This is where you register dependencies and add services to the
         // container. This method is called by the runtime, before the
-        // Configure method below.
+        // Configure method below, to configure the app's services.
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
             // Setup (not enabling yet) CORS
             services.AddCors();
 
-            // Add controllers as services so they'll be resolved.
-            services.AddMvc().AddControllersAsServices().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            // ASP.Net 2.2 -> 3.1 converstion
+            services.AddLogging(builder => builder.AddConsole());
+
+            // Enable controllers and enable Newtonsoft-compatibile JSON handling
+            services.AddControllers().AddNewtonsoftJson();
 
             // Prepare DI container
             this.ApplicationContainer = DependencyResolution.Init(services);
@@ -87,15 +92,14 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
 
         // This method is called by the runtime, after the ConfigureServices
         // method above. Use this method to add middleware.
+        // This method is used by ASP.Net Core to configure the middleware pipeline.
+        // The Configure method is used to specify how the app responds to HTTP requests.
         public void Configure(
             IApplicationBuilder app,
-            IHostingEnvironment env,
             ILoggerFactory loggerFactory,
             ICorsSetup corsSetup,
-            IApplicationLifetime appLifetime)
+            IHostApplicationLifetime appLifetime)
         {
-            loggerFactory.AddConsole(this.Configuration.GetSection("Logging"));
-
             // Check for Authorization header before dispatching requests
             app.UseMiddleware<AuthMiddleware>();
 
@@ -103,7 +107,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             // see: https://docs.microsoft.com/aspnet/core/security/cors
             corsSetup.UseMiddleware(app);
 
-            app.UseMvc();
+            app.UseRouting();
+            app.UseEndpoints(endpoints => endpoints.MapControllers());
 
             // Start simulation agent and partitioning agent threads
             appLifetime.ApplicationStarted.Register(() => this.StartAgents(appLifetime));
@@ -114,7 +119,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             appLifetime.ApplicationStopped.Register(() => this.ApplicationContainer.Dispose());
         }
 
-        private void StartAgents(IApplicationLifetime appLifetime)
+        private void StartAgents(IHostApplicationLifetime appLifetime)
         {
             // Temporary workaround to allow twin JSON deserialization in IoT SDK
             JsonConvert.DefaultSettings = () => new JsonSerializerSettings
@@ -157,7 +162,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.WebService
             this.simulationAgent?.Stop();
         }
 
-        private Task MonitorThreadsAsync(IApplicationLifetime appLifetime)
+        private Task MonitorThreadsAsync(IHostApplicationLifetime appLifetime)
         {
             const string MSG = "Part of the service is not running";
 

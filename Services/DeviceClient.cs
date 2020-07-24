@@ -191,7 +191,7 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services
                     await this.SendProtobufMessageAsync(message, schema);
                     break;
                 default:
-                    throw new UnknownMessageFormatException($"Message format {schema.Format.ToString()} is invalid. Check the Telemetry format against the permitted values Binary, Text, Json, Protobuf");
+                    throw new UnknownMessageFormatException($"Message format {schema.Format} is invalid. Check the Telemetry format against the permitted values Binary, Text, Json, Protobuf");
             }
         }
 
