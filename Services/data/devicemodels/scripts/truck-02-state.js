@@ -64,9 +64,27 @@ function varylocation(latitude, longitude, distance) {
     // Convert to meters, use Earth radius, convert to radians
     var radians = (distance * 1609.344 / 6378137) * (180 / Math.PI);
     return {
-        latitude: latitude + radians,
-        longitude: longitude + radians / Math.cos(latitude * Math.PI / 180)
+        latitude: roundTo((latitude + radians), 6),
+        longitude: roundTo((longitude + radians / Math.cos(latitude * Math.PI / 180)), 6)
     };
+}
+
+function roundTo(n, digits) {
+    var negative = false;
+    if (digits === undefined) {
+        digits = 0;
+    }
+    if (n < 0) {
+        negative = true;
+        n = n * -1;
+    }
+    var multiplicator = Math.pow(10, digits);
+    n = parseFloat((n * multiplicator).toFixed(11));
+    n = (Math.round(n) / multiplicator).toFixed(digits);
+    if (negative) {
+        n = (n * -1).toFixed(digits);
+    }
+    return n;
 }
 
 /**
@@ -86,8 +104,9 @@ function main(context, previousState, previousProperties) {
     // using the previous function state.
     restoreSimulation(previousState, previousProperties);
 
-    // 0.1 miles around some location
-    var coords = varylocation(center_latitude, center_longitude, 0.1);
+    // Between -1.5 and 1.5 miles around start location
+    var distance = roundTo(vary(0.05, 2500, -1.5, 1.5), 2);
+    var coords = varylocation(center_latitude, center_longitude, distance);
     state.latitude = coords.latitude;
     state.longitude = coords.longitude;
 
