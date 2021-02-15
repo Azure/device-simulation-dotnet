@@ -14,6 +14,8 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
 
         void LogServiceHeartbeat();
 
+        void LogEvent(string eventName, string message);
+
         void LogServiceError(
             string message,
             string exceptionMessage = "",
@@ -72,6 +74,12 @@ namespace Microsoft.Azure.IoTSolutions.DeviceSimulation.Services.Diagnostics
         public void LogServiceHeartbeat()
         {
             var jsonStruct = new JsonStruct(SERVICE_HEARTBEAT_EVENT, null);
+            this.PostRequest(this.diagnosticsEndpoint, jsonStruct);
+        }
+
+        public void LogEvent(string eventName, string message)
+        {
+            var jsonStruct = new JsonStruct(eventName + message, null);
             this.PostRequest(this.diagnosticsEndpoint, jsonStruct);
         }
 
